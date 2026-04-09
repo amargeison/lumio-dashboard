@@ -46,57 +46,30 @@ const isPro = (plan: string) =>
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { id: 'dashboard',         label: 'Dashboard',             icon: '🏠', group: 'OVERVIEW' },
-  { id: 'morning',           label: 'Morning Briefing',      icon: '🌅', group: 'OVERVIEW' },
-  { id: 'orderofmerit',      label: 'Order of Merit & Race', icon: '📊', group: 'PERFORMANCE' },
-  { id: 'merit-forecaster',  label: 'Merit Forecaster',      icon: '📈', group: 'PERFORMANCE' },
-  { id: 'entry-manager',     label: 'Entry Manager',         icon: '🗒️', group: 'PERFORMANCE' },
-  { id: 'schedule',          label: 'Tournament Schedule',   icon: '🗓️', group: 'PERFORMANCE' },
-  { id: 'live-scores',       label: 'Live Scores',           icon: '🔴', group: 'PERFORMANCE' },
-  { id: 'draw-bracket',      label: 'Draw & Bracket',        icon: '🏆', group: 'PERFORMANCE' },
-  { id: 'averages',          label: 'Three-Dart Average',    icon: '🎯', group: 'PERFORMANCE' },
-  { id: 'advanced-stats',    label: 'Advanced Stats',        icon: '📊', group: 'PERFORMANCE' },
-  { id: 'dartboard-heatmap', label: 'Dartboard Heatmap',     icon: '🎯', group: 'PERFORMANCE' },
-  { id: 'checkout',          label: 'Checkout Analysis',     icon: '✅', group: 'PERFORMANCE' },
-  { id: 'opponentintel',     label: 'Opponent Intel',        icon: '🔍', group: 'PERFORMANCE' },
-  { id: 'pressure-analysis', label: 'Pressure Analysis',     icon: '🧠', group: 'PERFORMANCE' },
-  { id: 'match-prep',        label: 'Match Prep',            icon: '⚡', group: 'PERFORMANCE' },
-  { id: 'practicelog',       label: 'Practice Log',          icon: '📋', group: 'PERFORMANCE' },
-  { id: 'matchreports',      label: 'Match Reports',         icon: '📄', group: 'PERFORMANCE' },
-  { id: 'video',             label: 'Video Library',         icon: '🎬', group: 'PERFORMANCE' },
-  { id: 'performance-rating',label: 'Performance Rating',    icon: '⭐', group: 'PERFORMANCE' },
-  { id: 'nine-dart-tracker', label: 'Nine-Dart Tracker',     icon: '⚡', group: 'PERFORMANCE' },
-  { id: 'premier-league',    label: 'Premier League',        icon: '🏆', group: 'PERFORMANCE' },
-  { id: 'world-series',      label: 'World Series',          icon: '🌍', group: 'PERFORMANCE' },
-  { id: 'teamhub',           label: 'Team Hub',              icon: '👥', group: 'TEAM' },
-  { id: 'physio-recovery',   label: 'Physio & Recovery',     icon: '⚕️', group: 'TEAM' },
-  { id: 'mental',            label: 'Mental Performance',    icon: '🧠', group: 'TEAM' },
-  { id: 'walk-on-music',     label: 'Walk-on Music',         icon: '🎤', group: 'TEAM' },
-  { id: 'pairs-events',      label: 'Pairs & Team Events',   icon: '👥', group: 'TEAM' },
-  { id: 'team-comms',        label: 'Team Comms',            icon: '💬', group: 'TEAM' },
-  { id: 'fan-engagement',    label: 'Fan Engagement',        icon: '📣', group: 'TEAM' },
-  { id: 'nutrition-log',     label: 'Nutrition & Conditioning', icon: '🥗', group: 'TEAM' },
-  { id: 'sponsorship',       label: 'Sponsorship',           icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'exhibitions',       label: 'Exhibition Manager',    icon: '🎪', group: 'COMMERCIAL' },
-  { id: 'media',             label: 'Media & Content',       icon: '📱', group: 'COMMERCIAL' },
-  { id: 'financial',         label: 'Financial Dashboard',   icon: '💰', group: 'COMMERCIAL' },
-  { id: 'agent',             label: 'Agent Pipeline',        icon: '📬', group: 'COMMERCIAL' },
-  { id: 'travel',            label: 'Travel & Logistics',    icon: '✈️', group: 'OPERATIONS' },
-  { id: 'tourcard',          label: 'Tour Card & Q-School',  icon: '🏛️', group: 'OPERATIONS' },
-  { id: 'tour-card-monitor', label: 'Tour Card Monitor',     icon: '🛡️', group: 'OPERATIONS' },
-  { id: 'prize-forecaster',  label: 'Prize Money Forecaster',icon: '💷', group: 'OPERATIONS' },
-  { id: 'equipment',         label: 'Equipment Setup',       icon: '📦', group: 'OPERATIONS' },
-  { id: 'academy-dev',       label: 'Academy & Dev',         icon: '🏅', group: 'OPERATIONS' },
-  { id: 'practice-games',    label: 'Practice Games',        icon: '#️⃣', group: 'OPERATIONS' },
-  { id: 'board-booking',     label: 'Practice Board Booking',icon: '📍', group: 'OPERATIONS' },
-  { id: 'accreditations',    label: 'Accreditations',        icon: '🛡️', group: 'OPERATIONS' },
-  { id: 'county-darts',      label: 'County Darts',          icon: '🥇', group: 'OPERATIONS' },
-  { id: 'career',            label: 'Career Planning',       icon: '🚀', group: 'OPERATIONS' },
-  { id: 'datahub',           label: 'Data Hub',              icon: '📡', group: 'OPERATIONS' },
-  { id: 'settings',          label: 'Settings',              icon: '⚙️', group: 'OPERATIONS' },
-  { id: 'dartconnect',       label: 'DartConnect',           icon: '🔌', group: 'INTEGRATIONS' },
-  { id: 'pdclive',           label: 'PDC Live Data',         icon: '📡', group: 'INTEGRATIONS' },
-  { id: 'womens-darts',      label: "Women's Darts",         icon: '⭐', group: 'INTEGRATIONS' },
+  { id: 'dashboard',       label: 'Dashboard',          icon: '🏠', group: 'OVERVIEW'     },
+  { id: 'morning',         label: 'Morning Briefing',   icon: '🌅', group: 'OVERVIEW'     },
+  { id: 'performance',     label: 'Performance',        icon: '🎯', group: 'PERFORMANCE'  },
+  { id: 'schedule',        label: 'Tournament Sched',   icon: '🗓️', group: 'MATCH'        },
+  { id: 'live-scores',     label: 'Live Scores',        icon: '🔴', group: 'MATCH'        },
+  { id: 'draw-bracket',    label: 'Draw & Bracket',     icon: '🏆', group: 'MATCH'        },
+  { id: 'match-prep',      label: 'Match Prep',         icon: '⚡', group: 'MATCH'        },
+  { id: 'opponentintel',   label: 'Opponent Intel',     icon: '🔍', group: 'MATCH'        },
+  { id: 'teamhub',         label: 'Team Hub',           icon: '👥', group: 'TEAM'         },
+  { id: 'physio-recovery', label: 'Physio',             icon: '⚕️', group: 'TEAM'         },
+  { id: 'mental',          label: 'Mental Performance', icon: '🧠', group: 'TEAM'         },
+  { id: 'walk-on-music',   label: 'Walk-on Music',      icon: '🎤', group: 'TEAM'         },
+  { id: 'nutrition-log',   label: 'Nutrition',          icon: '🥗', group: 'TEAM'         },
+  { id: 'sponsorship',     label: 'Sponsorship',        icon: '🤝', group: 'COMMERCIAL'   },
+  { id: 'exhibitions',     label: 'Exhibitions',        icon: '🎪', group: 'COMMERCIAL'   },
+  { id: 'media',           label: 'Media & Content',    icon: '📱', group: 'COMMERCIAL'   },
+  { id: 'financial',       label: 'Financial',          icon: '💰', group: 'COMMERCIAL'   },
+  { id: 'agent',           label: 'Agent Pipeline',     icon: '📬', group: 'COMMERCIAL'   },
+  { id: 'travel',          label: 'Travel',             icon: '✈️', group: 'TOOLS'        },
+  { id: 'tourcard',        label: 'Tour Card',          icon: '🏛️', group: 'TOOLS'        },
+  { id: 'equipment',       label: 'Equipment',          icon: '📦', group: 'TOOLS'        },
+  { id: 'career',          label: 'Career Planning',    icon: '🚀', group: 'TOOLS'        },
+  { id: 'datahub',         label: 'Data Hub',           icon: '📡', group: 'TOOLS'        },
+  { id: 'settings',        label: 'Settings',           icon: '⚙️', group: 'TOOLS'        },
 ];
 
 // ─── DEMO PLAYER ──────────────────────────────────────────────────────────────
@@ -203,237 +176,479 @@ const QuickActionsBar = ({ onNavigate }: { onNavigate: (id: string) => void }) =
   );
 };
 
+// ─── AI DEPARTMENT INTELLIGENCE SECTION ──────────────────────────────────────
+interface DartsAISectionProps {
+  context: string
+  player: DartsPlayer
+  session: SportsDemoSession
+}
+
+function DartsAISection({ context, player, session }: DartsAISectionProps) {
+  const [summary, setSummary]     = useState<string | null>(null)
+  const [loading, setLoading]     = useState(false)
+  const [generated, setGenerated] = useState(false)
+
+  const HIGHLIGHTS: Record<string, string[]> = {
+    dashboard:      ['Match tonight — European Championship R1. Win = £110,000 + ranking points', 'Red Dragon sponsor post due before tonight — agent chasing', '3-dart average up 0.8 this week — form trending well', 'Dortmund venue: 14°C overcast — travel confirmed', 'Practice session at 10:00 — focus on D16 checkout'],
+    orderofmerit:   ['Currently #19 PDC Order of Merit — up 2 this week', '£12,400 drops off after Players Ch. 8 (Apr 2023)', 'Win tonight: hold at #19. Loss: risk dropping to #22', 'Top-16 OOM qualifies for World Matchplay — currently inside', 'Madrid deadline: must win at least one match to stay safe'],
+    averages:       ['3-dart avg 97.8 — top-10 PDC level', 'Checkout % 38.2% — above tour average (35%)', '180s per match: 4.2 — strong', 'First 9-dart attempt this season: Prague Open leg 3', 'Floor average (97.3) above TV average (99.1) — reverse the trend'],
+    checkout:       ['D16 success rate: 62% — below your D20 (78%)', 'Checkout on D4 only 44% — needs focused practice', 'High checkout (141+): 8 this season, 3 this month', 'Opponent tonight: G. Price averages 41.2% checkout', 'Recommend: start on D20/D18 more often — data supports it'],
+    opponentintel:  ['G. Price: averages 101.2 on TV — 4pts above you', 'Price weakness: slow start legs — lead early', 'Price checkout: 39.8% — similar to yours', 'H2H: 3–4 in Price\'s favour. Last 3: 2–1 to you', 'Price under pressure: tends to miss doubles in deciding legs'],
+    practicelog:    ['14 sessions this week — highest in 3 weeks', 'D16 practice sessions flagged by coach: 3 booked', 'Average practice 3DA: 99.4 — above match average', '10:00 session today — focus D16, checkout routes', 'Mental coach review Thursday — pressure darts focus'],
+    sponsorship:    ['Red Dragon: barrel content shoot today 16:00', 'Paddy Power ambassador inquiry — agent reviewing', '2 social posts outstanding for Betway', 'Winmau board deal up for renewal — Jun 2026', 'Total sponsor income YTD: £84,200'],
+    travel:         ['Tonight: Dortmund Westfalenhallen — 14°C overcast', 'Next: Prague Open — flights needed Mon 14 Apr', 'Bahrain Masters: visa application submitted', 'Madrid Premier League: hotel confirmed 3 May', 'Travel budget remaining: £8,400 of £24k season allocation'],
+    financial:      ['Prize money YTD: £187,420', 'European Ch. R1 prize: £10,000 (W) / £3,000 (L)', 'Agent commission: 15% of gross prize money', 'Tax instalment due 31 Jul — accountant briefed', 'Camp costs this month: £4,200 — on budget'],
+    mental:         ['Pre-match routine: 45-min focused warm-up confirmed', 'Pressure darts session Thursday with Marcos', 'G. Price: known to be disruptive pre-match — stay focused', 'Last 3 deciding legs vs top-16: won 2 of 3 — improving', 'Breathing protocol review requested by coach'],
+    default:        ['Match tonight — European Championship R1', 'Red Dragon content shoot today 16:00', 'D16 checkout rate below target — practice today', 'Prague Open flights needed this week', 'OOM: #19 PDC — hold position tonight'],
+  }
+
+  const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
+
+  const generateSummary = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are the AI performance analyst for ${session.userName || player.name}, PDC #${player.pdcRank} professional darts player nicknamed "${player.nickname}".
+
+Generate a concise AI department summary for the "${context}" section.
+
+Player context:
+- PDC Ranking: #${player.pdcRank}
+- 3-dart average: ${player.threeDartAverage}
+- Tonight's match: European Championship R1 vs G. Price (#7) in Dortmund
+- Checkout %: ${player.checkoutPercent}%
+
+Write 4-5 bullet points covering the most important insight for ${context}.
+Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
+          }]
+        })
+      })
+      const data = await res.json()
+      setSummary(data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : '').join('') || '')
+      setGenerated(true)
+    } catch { setSummary('Unable to generate summary.') }
+    setLoading(false)
+  }
+
+  const renderSummary = (text: string) =>
+    text.split('\n').filter(l => l.trim()).map((line, i) => (
+      <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0">
+        <span>{line}</span>
+      </div>
+    ))
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-800/60">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">🤖 AI Department Intelligence</span>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span>✨</span>
+              <span className="text-sm font-bold text-white">AI Summary</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
+            </div>
+          </div>
+          {!summary && !loading && (
+            <button onClick={generateSummary}
+              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
+              Generate AI summary for this section →
+            </button>
+          )}
+          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+          {summary && !loading && <div>{renderSummary(summary)}</div>}
+        </div>
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><span>⚡</span><span className="text-sm font-bold text-white">AI Key Highlights</span></div>
+            <span className="text-[10px] text-red-400 cursor-pointer">Performance</span>
+          </div>
+          <div className="space-y-2">
+            {highlights.map((h, i) => (
+              <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
+                <span className="text-xs text-red-400 font-bold flex-shrink-0 w-4">{i+1}</span>
+                <span className="text-xs text-gray-300">{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
-function DashboardView({ player, onNavigate }: { player: DartsPlayer; onNavigate: (id: string) => void }) {
-  const [dashTab, setDashTab] = useState<'tasks'|'insights'|'dontmiss'|'team'>('tasks');
+function DashboardView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
+  const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Jake'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  const ROUNDUP_CHANNELS = [
+    { label: 'Agent Messages',     icon: '📞', count: 2, color: '#dc2626', urgent: false },
+    { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#F97316', urgent: true  },
+    { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#F59E0B', urgent: false },
+    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#dc2626', urgent: true  },
+    { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#10B981', urgent: false },
+    { label: 'Prize Money',        icon: '💰', count: 1, color: '#D97706', urgent: false },
+    { label: 'Travel & Hotels',    icon: '✈️', count: 2, color: '#6B7280', urgent: false },
+    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false },
+  ]
+
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
-
-      {/* World clock strip */}
-      <div className="flex items-center gap-6 px-1 mb-4 text-xs text-gray-400">
-        <div className="flex items-center gap-1.5">
-          <span className="text-gray-500">🇬🇧</span>
-          <span className="text-white font-medium">London</span>
-          <span>12:00 BST</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-gray-500">🇩🇪</span>
-          <span className="text-white font-medium">Dortmund</span>
-          <span>13:00 CET</span>
-          <span className="ml-1 text-red-400 text-[10px] font-medium">TONIGHT</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-gray-500">🇦🇺</span>
-          <span className="text-white font-medium">Melbourne</span>
-          <span>21:00 AEST</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-gray-500">🇺🇸</span>
-          <span className="text-white font-medium">Las Vegas</span>
-          <span>04:00 PDT</span>
-        </div>
-        <div className="ml-auto text-gray-500">Dortmund · 14°C · Overcast</div>
-      </div>
-
-      <SectionHeader icon="🏠" title={`Good morning, ${player.name.split(' ')[0]}.`} subtitle="Here's your overview — PDC European Championship week." />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="PDC Rank" value={`#${player.pdcRank}`} sub="▲2 this week" color="red" />
-        <StatCard label="Order of Merit" value={`#${player.orderOfMeritRank}`} sub="£687,420" color="orange" />
-        <StatCard label="3-Dart Avg" value={player.threeDartAverage} sub="2025 season" color="teal" />
-        <StatCard label="Career High" value="#12" sub="Mar 2024" color="purple" />
-      </div>
-
-      {/* OoM expiry warning strip */}
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-950/40 border border-amber-800/30 text-sm mb-4">
-        <span className="text-amber-400 text-base">⏰</span>
-        <span className="text-amber-200">
-          <span className="font-medium">£12,400 drops off your Order of Merit this week</span>
-          <span className="text-amber-400/70"> — Players Ch. 8 (Apr 2023). Win your match tonight to stay at #19.</span>
-        </span>
-        <button onClick={() => onNavigate('merit-forecaster')} className="ml-auto text-amber-400 text-xs hover:text-amber-300 whitespace-nowrap">
-          Merit Forecaster →
-        </button>
-      </div>
-
-      {/* Quick Win tabs */}
-      <div className="rounded-xl bg-gray-900/60 border border-white/5 mb-4">
-        <div className="flex border-b border-white/5">
-          {(['tasks','insights','dontmiss','team'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setDashTab(t)}
-              className={`px-4 py-2.5 text-xs font-medium transition-colors ${dashTab === t ? 'text-red-400 border-b-2 border-red-500 -mb-px' : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {t === 'tasks' ? 'Daily Tasks' : t === 'insights' ? 'Insights' : t === 'dontmiss' ? "Don't Miss" : 'Team'}
+      {/* Quick Actions */}
+      <div className="overflow-x-auto pb-2 -mx-1">
+        <div className="flex gap-2 px-1 min-w-max">
+          {[
+            { label: 'Log Practice',      icon: '🎯' },
+            { label: 'Match Report',      icon: '📋' },
+            { label: 'Equipment Check',   icon: '🏹' },
+            { label: 'Sponsor Post',      icon: '📱' },
+            { label: 'Book Flight',       icon: '✈️' },
+            { label: 'Exhibition Book',   icon: '🎪' },
+            { label: 'Order of Merit',    icon: '📊' },
+            { label: 'Checkout Trainer',  icon: '🔢' },
+            { label: 'Travel Info',       icon: '🗺️' },
+            { label: 'Add Expense',       icon: '💰' },
+          ].map((a, i) => (
+            <button key={i}
+              className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-red-500/40 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
+              <span>{a.icon}</span>{a.label}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="p-4">
-          {dashTab === 'tasks' && (
-            <div className="space-y-2.5">
-              {[
-                { done: false, text: 'Confirm practice session time with venue (10:00)' },
-                { done: false, text: 'Review Red Dragon barrel options before content shoot' },
-                { done: true,  text: 'Check PDC entry system — Prague Open confirmed' },
-                { done: false, text: 'Reply to Paddy Power ambassador inquiry' },
-                { done: false, text: 'Sign off travel insurance for Bahrain Masters' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-sm">
-                  <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center ${item.done ? 'bg-green-500/20 border-green-500/40' : 'border-white/10'}`}>
-                    {item.done && <span className="text-green-400 text-[10px]">✓</span>}
-                  </div>
-                  <span className={item.done ? 'text-gray-500 line-through' : 'text-gray-300'}>{item.text}</span>
+      {/* Greeting banner */}
+      <div className="bg-gradient-to-r from-red-900/20 to-[#0d1117] border border-red-600/20 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{greeting}, {firstName}. 🎯</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+            </p>
+            <p className="text-xs text-gray-600 italic mt-2">
+              &quot;The harder you work, the luckier you get.&quot; — Gary Player
+            </p>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-xs text-right">
+            {[
+              { city:'London',   tz:'Europe/London'       },
+              { city:'New York', tz:'America/New_York'    },
+              { city:'Dortmund', tz:'Europe/Berlin'       },
+              { city:'Dubai',    tz:'Asia/Dubai'          },
+            ].map(({ city, tz }) => (
+              <div key={city}>
+                <div className="text-white font-bold">
+                  {new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {dashTab === 'insights' && (
-            <div className="space-y-2.5">
-              {[
-                { icon: '📉', text: 'Doubles conversion 38.2% — 4.1% below your 2025 season average' },
-                { icon: '✅', text: '2-0 vs left-handed opponents in 2025' },
-                { icon: '⚠️', text: 'Average drops 3.1 pts in deciding legs — focus for mental coach' },
-                { icon: '🏆', text: 'Best average this season: 104.7 (Players Championship 12)' },
-                { icon: '📈', text: 'Last 8 weeks: 6 wins 2 losses — strongest run of 2025' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
-                  <span className="text-base leading-5 flex-shrink-0">{item.icon}</span>
-                  <span>{item.text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {dashTab === 'dontmiss' && (
-            <div className="space-y-2.5">
-              {[
-                { icon: '🔴', text: 'Red Dragon contract renewal: 23 days', view: 'sponsorship', cta: '→ Sponsorship' },
-                { icon: '⚠️', text: 'Prague Open entry window closes: 6 days', view: 'entry-manager', cta: '→ Entry Manager' },
-                { icon: '⚠️', text: '£4,200 prize payment pending — Players Championship 19', view: 'prize-forecaster', cta: '→ Prize Forecaster' },
-                { icon: '📅', text: 'Q-School reserve list update: Friday', view: 'tour-card-monitor', cta: '→ Tour Card Monitor' },
-                { icon: '🎵', text: 'Walk-on music approval needed for Grand Slam submission', view: 'walk-on-music', cta: '→ Walk-on Music' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start justify-between gap-3 text-sm">
-                  <div className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0">{item.icon}</span>
-                    <span className="text-gray-300">{item.text}</span>
-                  </div>
-                  <button onClick={() => onNavigate(item.view)} className="text-red-400 text-xs hover:text-red-300 whitespace-nowrap flex-shrink-0">
-                    {item.cta}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {dashTab === 'team' && (
-            <div className="space-y-3">
-              {[
-                { name: 'Marco',    role: 'Coach',        msg: 'Focus on T20 cluster tightness — pulling left under pressure' },
-                { name: 'James',    role: 'Agent',        msg: 'Red Dragon renewal call scheduled Thursday 14:00' },
-                { name: 'Dr. Singh',role: 'Physio',       msg: 'Shoulder treatment confirmed 08:30 tomorrow' },
-                { name: 'Sarah',    role: 'Mental coach', msg: 'Pre-match routine updated — check Match Prep before tonight' },
-              ].map((item, i) => (
-                <div key={i} className="text-sm">
-                  <span className="text-white font-medium">{item.name}</span>
-                  <span className="text-gray-500 text-xs ml-1.5">{item.role}</span>
-                  <p className="text-gray-400 mt-0.5">{item.msg}</p>
-                </div>
-              ))}
-            </div>
-          )}
+                <div className="text-gray-500">{city}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.pdcRank}</div>
+            <div className="text-xs text-gray-400 mt-0.5">PDC Ranking</div>
+            <div className="text-[10px] text-green-400 mt-1">↑2 this week</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">{player.threeDartAverage}</div>
+            <div className="text-xs text-gray-400 mt-0.5">3-Dart Average</div>
+            <div className="text-[10px] text-gray-500 mt-1">2025 season</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">{player.checkoutPercent}%</div>
+            <div className="text-xs text-gray-400 mt-0.5">Checkout %</div>
+            <div className="text-[10px] text-gray-500 mt-1">Season avg</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#12</div>
+            <div className="text-xs text-gray-400 mt-0.5">Career High</div>
+            <div className="text-[10px] text-gray-500 mt-1">Mar 2024</div>
+          </div>
         </div>
       </div>
 
-      {/* Sponsor obligation strip */}
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/40 border border-white/5 text-sm mb-4">
-        <span className="text-base">🤝</span>
-        <span className="text-gray-300">
-          <span className="font-medium">Red Dragon</span>
-          <span className="text-gray-500"> · Content shoot today 16:00 · Barrel review video · 2 posts due this week</span>
-        </span>
-        <button onClick={() => onNavigate('sponsorship')} className="ml-auto text-red-400 text-xs hover:text-red-300 whitespace-nowrap">
-          → Sponsorship
-        </button>
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">
+        {([
+          { id:'today',      label:'Today',       icon:'🏠' },
+          { id:'quickwins',  label:'Quick Wins',  icon:'⚡' },
+          { id:'dailytasks', label:'Daily Tasks', icon:'✅' },
+          { id:'insights',   label:'Insights',    icon:'📊' },
+          { id:'dontmiss',   label:"Don't Miss",  icon:'🔴' },
+          { id:'team',       label:'Team',        icon:'👥' },
+        ] as const).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
+              dashTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
+            }`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
       </div>
 
-      {/* This Week */}
-      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
-        <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-3">THIS WEEK</div>
-        <div className="text-white font-bold text-lg mb-1">PDC European Championship · Dortmund</div>
-        <div className="text-gray-400 text-sm mb-3">20:00 · Tonight · First round · Prize fund: £500,000 · Win = £110,000</div>
-        <div className="bg-black/20 rounded-lg p-3">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">TONIGHT&apos;S OPPONENT</div>
-          <div className="text-white font-medium">Gerwyn Price (#7) — &quot;The Iceman&quot;</div>
-          <div className="text-xs text-gray-400 mt-1">Average: 96.2 · Checkout: 40.1% · 180s/leg: 0.79</div>
+      {/* TODAY */}
+      {dashTab === 'today' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT: Morning Roundup */}
+          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div>
+              <span className="text-[10px] text-gray-600">Since you were last here</span>
+            </div>
+            <div className="space-y-2">
+              {ROUNDUP_CHANNELS.map((ch, i) => (
+                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{ch.icon}</span>
+                    <span className="text-sm text-gray-300">{ch.label}</span>
+                    {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                    <span className="text-gray-700 text-xs">▾</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* MIDDLE: Tonight's match + schedule */}
+          <div className="space-y-4">
+            <div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
+              <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">TONIGHT — PDC EUROPEAN CHAMPIONSHIP R1</div>
+              <div className="flex items-center justify-between">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
+                    {session.photoDataUrl ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                  </div>
+                  <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
+                  <div className="text-[10px] text-red-400">#{player.pdcRank} PDC</div>
+                </div>
+                <div className="text-center px-4">
+                  <div className="text-2xl font-black text-gray-600">VS</div>
+                  <div className="text-[10px] text-gray-500 mt-1">20:00 · Dortmund</div>
+                  <div className="text-[10px] text-green-400 mt-0.5">Win = £110,000</div>
+                </div>
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">GP</div>
+                  <div className="text-xs font-bold text-white">G. Price</div>
+                  <div className="text-[10px] text-gray-500">#7 PDC</div>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-amber-400">
+                H2H: 3–4 Price. His checkout 39.8% vs yours {player.checkoutPercent}% — close match. Start strong.
+              </div>
+            </div>
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+              <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
+              <div className="space-y-2">
+                {[
+                  { time:'09:00', label:'AI Morning Briefing',        done:true  },
+                  { time:'10:00', label:'Practice — D16 checkout',    done:false },
+                  { time:'12:00', label:'Red Dragon content shoot',   done:false },
+                  { time:'14:00', label:'Physio — shoulder & elbow',  done:false },
+                  { time:'16:30', label:'Pre-match warm-up routine',  done:false },
+                  { time:'20:00', label:'Match vs G. Price — R1',     done:false, highlight:true },
+                  { time:'22:30', label:'Post-match media',           done:false },
+                ].map((s, i) => (
+                  <div key={i} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${s.highlight ? 'text-red-400' : ''}`}>
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-green-500/20 border-green-500' : s.highlight ? 'border-red-500 bg-red-500/10' : 'border-gray-700'}`}>
+                      {s.done && <span className="text-[8px] text-green-400">✓</span>}
+                    </div>
+                    <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
+                    <span className={`text-xs ${s.done ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Photo frame + venue info */}
+          <div className="space-y-4">
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <div className="flex items-center gap-2">
+                  <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
+                  <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
+                  <button className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
+                {session.photoDataUrl
+                  ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                  : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                {['3s','5s','10s','30s'].map(s => (
+                  <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-red-600/20 text-red-400':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
+              <div className="text-sm font-bold text-white">Westfalenhallen, Dortmund</div>
+              <div className="text-xs text-gray-500 mt-1">14°C · Overcast · Doors open 18:00</div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">20:00</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£110,000</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£30,000</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Darts</span></div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Recent Form */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Recent Form — Last 5</div>
-        <div className="space-y-2">
+      {/* QUICK WINS */}
+      {dashTab === 'quickwins' && (
+        <div className="space-y-3">
           {[
-            { r: 'W', score: '6-2', avg: '101.4', prize: '£8,000' },
-            { r: 'W', score: '6-4', avg: '98.7', prize: '£6,000' },
-            { r: 'L', score: '3-6', avg: '94.1', prize: '£0' },
-            { r: 'W', score: '6-3', avg: '99.2', prize: '£12,000' },
-            { r: 'W', score: '6-1', avg: '103.8', prize: '£16,000' },
+            { p:1, action:'Practice D16 checkout before 10:00 warm-up',             impact:'High', cat:'Performance', icon:'🎯' },
+            { p:2, action:'Reply to Paddy Power ambassador inquiry — agent waiting', impact:'High', cat:'Commercial',  icon:'🤝' },
+            { p:3, action:'Book Prague Open flights — Mon 14 Apr depart',            impact:'High', cat:'Travel',      icon:'✈️' },
+            { p:4, action:'Red Dragon content shoot prep — 12:00 today',             impact:'High', cat:'Sponsor',     icon:'🐉' },
+            { p:5, action:'Review G. Price checkout patterns before 16:30',          impact:'High', cat:'Match Prep',  icon:'📊' },
+            { p:6, action:'Submit Betway social posts — 2 outstanding',              impact:'Med',  cat:'Commercial',  icon:'📱' },
+            { p:7, action:'Confirm hotel for Madrid Premier League (3 May)',          impact:'Med',  cat:'Travel',      icon:'🏨' },
+          ].map((w, i) => (
+            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all">
+              <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{w.p}</div>
+              <span className="text-lg flex-shrink-0">{w.icon}</span>
+              <div className="flex-1"><p className="text-sm text-gray-200">{w.action}</p><span className="text-[10px] text-gray-500">{w.cat}</span></div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${w.impact==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DAILY TASKS */}
+      {dashTab === 'dailytasks' && (
+        <div className="space-y-3">
+          {[
+            { time:'09:00', task:'AI Morning Briefing',             done:true,  cat:'Routine'    },
+            { time:'10:00', task:'Practice — D16 checkout routes',  done:false, cat:'Training'   },
+            { time:'11:00', task:'Physio — elbow treatment',        done:false, cat:'Wellness'   },
+            { time:'12:00', task:'Red Dragon content shoot',        done:false, cat:'Sponsor'    },
+            { time:'14:00', task:'Agent call — Paddy Power inquiry',done:false, cat:'Commercial' },
+            { time:'16:30', task:'Pre-match warm-up routine',       done:false, cat:'Prep'       },
+            { time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', done:false, cat:'Match',  highlight:true },
+            { time:'20:00', task:'Match vs G. Price — EC R1',       done:false, cat:'Match',     highlight:true },
+            { time:'22:30', task:'Post-match media duties',         done:false, cat:'Media'      },
+          ].map((t, i) => (
+            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${t.highlight?'bg-red-600/10 border-red-600/30':t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':t.highlight?'border-red-500':'border-gray-600'}`}>
+                {t.done && <span className="text-[9px] text-white font-bold">✓</span>}
+              </div>
+              <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{t.time}</span>
+              <div className="flex-1">
+                <span className={`text-sm ${t.done?'line-through text-gray-600':t.highlight?'text-red-400 font-semibold':'text-gray-200'}`}>{t.task}</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{t.cat}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* INSIGHTS */}
+      {dashTab === 'insights' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { title:'PDC Ranking',         value:`#${player.pdcRank}`, sub:'Up 2 this week',               color:'#dc2626', icon:'📊' },
+            { title:'Points at risk',      value:'£12,400',  sub:'Drop off after Players Ch. 8', color:'#EF4444', icon:'⚠️' },
+            { title:'3-Dart avg (last 5)', value:'98.4',     sub:'↑0.6 above season avg',        color:'#22C55E', icon:'🎯' },
+            { title:'Prize money YTD',     value:'£187k',    sub:'Ahead of projection (+8%)',    color:'#F59E0B', icon:'💰' },
+            { title:'Checkout %',          value:`${player.checkoutPercent}%`, sub:'Above tour avg (35%)', color:'#8B5CF6', icon:'🔢' },
+            { title:'Sponsor obligations', value:'2 due',    sub:'Betway posts + Red Dragon',    color:'#EC4899', icon:'🤝' },
+          ].map((ins, i) => (
+            <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4">
+              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 mb-1">{ins.title}</div>
+                <div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div>
+                <div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DON'T MISS */}
+      {dashTab === 'dontmiss' && (
+        <div className="space-y-3">
+          {[
+            { urgency:'TONIGHT', item:'Match vs G. Price — European Championship R1. 20:00 Dortmund.', action:'View match prep →', color:'#dc2626' },
+            { urgency:'TODAY',   item:'Red Dragon content shoot at 12:00 — prep kit and backdrop.', action:'Open brief →', color:'#EF4444' },
+            { urgency:'THIS WK', item:'Prague Open flights — depart Mon 14 Apr. Prices rising.', action:'Book flight →', color:'#F59E0B' },
+            { urgency:'THIS WK', item:'2 Betway social posts outstanding — agent chasing.', action:'View obligation →', color:'#F59E0B' },
+            { urgency:'14 DAYS', item:'Paddy Power ambassador decision — respond to agent by 25 Apr.', action:'View inquiry →', color:'#8B5CF6' },
+            { urgency:'MAY 3',   item:'Madrid Premier League hotel not confirmed. Deadline approaching.', action:'Book hotel →', color:'#6B7280' },
+          ].map((d, i) => (
+            <div key={i} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+              <span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.urgency==='TONIGHT'||d.urgency==='TODAY'?'bg-red-600/20 text-red-400':d.urgency==='THIS WK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.urgency}</span>
+              <div className="flex-1">
+                <p className="text-sm text-gray-200 mb-1">{d.item}</p>
+                <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TEAM */}
+      {dashTab === 'team' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA' },
+            { name:'Steve Morris',    role:'Coach',              status:'Pre-match briefing at 16:30',     available:true,  initials:'SM' },
+            { name:'Dr Paul Reid',    role:'Physiotherapist',    status:'Elbow treatment 11:00 today',     available:true,  initials:'PR' },
+            { name:'Red Dragon',      role:'Equipment Sponsor',  status:'Content shoot 12:00 today',       available:true,  initials:'RD' },
+            { name:'James Wright',    role:'Agent',              status:'Paddy Power response pending',    available:true,  initials:'JW' },
+            { name:'Marcos Silva',    role:'Sports Psychologist',status:'Pre-match call 15:00',            available:true,  initials:'MS' },
           ].map((m, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${m.r === 'W' ? 'bg-teal-600/20 text-teal-400' : 'bg-red-600/20 text-red-400'}`}>{m.r}</div>
-              <span className="text-sm text-gray-200 w-12">{m.score}</span>
-              <span className="text-xs text-gray-400">avg {m.avg}</span>
-              <span className="text-xs text-gray-500 ml-auto">{m.prize}</span>
+            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+              <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white">{m.name}</div>
+                <div className="text-[10px] text-red-400">{m.role}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div>
+              </div>
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.available?'bg-green-400':'bg-gray-600'}`} />
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Alerts */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Alerts</div>
-        <div className="space-y-2">
-          {[
-            { icon: '🔴', text: 'Red Dragon contract renewal: 23 days', color: 'text-red-400' },
-            { icon: '⚠️', text: 'European Tour entry deadline: 6 days (Prague Open)', color: 'text-amber-400' },
-            { icon: '⚠️', text: '£4,200 prize money payment pending (Players Championship)', color: 'text-amber-400' },
-          ].map((a, i) => (
-            <div key={i} className={`flex items-center gap-2 text-xs ${a.color} py-1.5 border-b border-gray-800/50`}>
-              <span>{a.icon}</span><span>{a.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Today's Schedule */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Today&apos;s Schedule</div>
-        <div className="space-y-2">
-          {[
-            { time: '10:00', event: 'Practice session: doubles finishing (90 min)' },
-            { time: '12:30', event: 'Physio: shoulder treatment' },
-            { time: '14:00', event: 'Red Dragon content shoot — barrel review video' },
-            { time: '16:00', event: 'Travel to Dortmund (flight BA1234)' },
-            { time: '20:00', event: 'PDC European Championship R1 vs G. Price' },
-          ].map((s, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
-              <span className="text-xs text-red-400 font-medium w-12">{s.time}</span>
-              <span className="text-sm text-gray-300">{s.event}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <DartsAISection context="dashboard" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MORNING BRIEFING VIEW ────────────────────────────────────────────────────
-function MorningBriefingView({ player: _player }: { player: DartsPlayer }) {
+function MorningBriefingView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const briefingItems = [
     { id: 'match', icon: '🎯', title: "Tonight's match", urgent: true,
@@ -512,12 +727,13 @@ function MorningBriefingView({ player: _player }: { player: DartsPlayer }) {
         </div>
       </div>
       <p className="text-xs text-gray-600 text-center">Briefing generated at 06:30 · Connect Claude API for AI-personalised audio briefing</p>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── ORDER OF MERIT VIEW ──────────────────────────────────────────────────────
-function OrderOfMeritView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function OrderOfMeritView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const expiryMonths = [
     { month: 'Jan', amount: 0 }, { month: 'Feb', amount: 8000 }, { month: 'Mar', amount: 0 },
     { month: 'Apr', amount: 12000 }, { month: 'May', amount: 0 }, { month: 'Jun', amount: 24000 },
@@ -610,12 +826,13 @@ function OrderOfMeritView({ onNavigate }: { onNavigate: (id: string) => void }) 
           </div>
         </div>
       </div>
+      <DartsAISection context="orderofmerit" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TOURNAMENT SCHEDULE VIEW ─────────────────────────────────────────────────
-function TournamentScheduleView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function TournamentScheduleView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const events = [
     { event: 'PDC European Championship', level: 'Major TV', prize: '£500k', date: 'This week', deadline: 'Entered', status: 'Playing' },
     { event: 'Prague Open', level: 'European Tour', prize: '£120k', date: 'Apr 28', deadline: 'Apr 22 ← 6d', status: 'Enter Now' },
@@ -670,12 +887,13 @@ function TournamentScheduleView({ onNavigate }: { onNavigate: (id: string) => vo
           <div className="py-1.5 border-b border-gray-800/50">Players Ch 9/10 — withdrawal deadline Apr 25.</div>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── THREE-DART AVERAGE VIEW ──────────────────────────────────────────────────
-function ThreeDartAverageView({ player, onNavigate }: { player: DartsPlayer; onNavigate: (id: string) => void }) {
+function ThreeDartAverageView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   const matchAvgs = [
     { opp: 'Hump', avg: 94.2 }, { opp: 'Lit', avg: 99.8 }, { opp: 'MvG', avg: 96.1 },
     { opp: 'Price', avg: 101.4 }, { opp: 'Clay', avg: 98.7 }, { opp: 'Rock', avg: 103.2 },
@@ -753,12 +971,13 @@ function ThreeDartAverageView({ player, onNavigate }: { player: DartsPlayer; onN
           ))}
         </div>
       </div>
+      <DartsAISection context="averages" player={player} session={session} />
     </div>
   );
 }
 
 // ─── CHECKOUT ANALYSIS VIEW ───────────────────────────────────────────────────
-function CheckoutAnalysisView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function CheckoutAnalysisView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const doubles = [
     { double: 'D20', rate: 47, attempts: 234, primary: true }, { double: 'D16', rate: 51, attempts: 198 },
     { double: 'D8', rate: 44, attempts: 156 }, { double: 'D4', rate: 43, attempts: 89 },
@@ -850,12 +1069,13 @@ function CheckoutAnalysisView({ onNavigate }: { onNavigate: (id: string) => void
           ))}
         </div>
       </div>
+      <DartsAISection context="checkout" player={player} session={session} />
     </div>
   );
 }
 
 // ─── OPPONENT INTEL VIEW ──────────────────────────────────────────────────────
-function OpponentIntelView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -941,12 +1161,13 @@ function OpponentIntelView({ onNavigate }: { onNavigate: (id: string) => void })
           ))}
         </div>
       </div>
+      <DartsAISection context="opponentintel" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PRACTICE LOG VIEW ────────────────────────────────────────────────────────
-function PracticeLogView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [practiceTab, setPracticeTab] = useState<'log' | 'stats' | 'goals'>('log');
   const [aiAnalysis, setAiAnalysis] = useState<Record<number, { loading: boolean; result: string | null }>>({});
 
@@ -1054,12 +1275,13 @@ function PracticeLogView({ onNavigate }: { onNavigate: (id: string) => void }) {
           </div>
         </div>
       )}
+      <DartsAISection context="practicelog" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
-function MatchReportsView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<Record<string, string>>({});
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
@@ -1126,12 +1348,13 @@ function MatchReportsView({ onNavigate }: { onNavigate: (id: string) => void }) 
           </div>
         ))}
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── VIDEO LIBRARY VIEW ───────────────────────────────────────────────────────
-function VideoLibraryView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function VideoLibraryView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [videoTab, setVideoTab] = useState<'match' | 'practice' | 'analysis' | 'walkons'>('match');
   const [expandedAnalysis, setExpandedAnalysis] = useState<number | null>(null);
   return (
@@ -1219,12 +1442,13 @@ function VideoLibraryView({ onNavigate }: { onNavigate: (id: string) => void }) 
           <div className="text-xs text-gray-500">Used since PDC debut (2019). Crowd favourite at Ally Pally.</div>
         </div>
       )}
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TEAM HUB VIEW ────────────────────────────────────────────────────────────
-function TeamHubView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function TeamHubView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const team = [
     { name: 'Jake Morrison', role: 'Player', contact: 'jake@jakemorrison.com', detail: 'Tour player since 2019' },
     { name: 'Dave Harris', role: 'Manager', contact: 'dave@dhsports.com', detail: 'DH Sports Management' },
@@ -1263,12 +1487,13 @@ function TeamHubView({ onNavigate }: { onNavigate: (id: string) => void }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MENTAL PERFORMANCE VIEW ──────────────────────────────────────────────────
-function MentalPerformanceView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1329,12 +1554,13 @@ function MentalPerformanceView({ onNavigate }: { onNavigate: (id: string) => voi
           ))}
         </div>
       </div>
+      <DartsAISection context="mental" player={player} session={session} />
     </div>
   );
 }
 
 // ─── SPONSORSHIP VIEW ─────────────────────────────────────────────────────────
-function SponsorshipView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1394,12 +1620,13 @@ function SponsorshipView({ onNavigate }: { onNavigate: (id: string) => void }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="sponsorship" player={player} session={session} />
     </div>
   );
 }
 
 // ─── EXHIBITION MANAGER VIEW ──────────────────────────────────────────────────
-function ExhibitionManagerView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function ExhibitionManagerView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1473,12 +1700,13 @@ function ExhibitionManagerView({ onNavigate }: { onNavigate: (id: string) => voi
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MEDIA CONTENT VIEW ───────────────────────────────────────────────────────
-function MediaContentView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1542,12 +1770,13 @@ function MediaContentView({ onNavigate }: { onNavigate: (id: string) => void }) 
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── FINANCIAL DASHBOARD VIEW ─────────────────────────────────────────────────
-function FinancialDashboardView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function FinancialDashboardView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1616,12 +1845,13 @@ function FinancialDashboardView({ onNavigate }: { onNavigate: (id: string) => vo
           ))}
         </div>
       </div>
+      <DartsAISection context="financial" player={player} session={session} />
     </div>
   );
 }
 
 // ─── AGENT PIPELINE VIEW ──────────────────────────────────────────────────────
-function AgentPipelineView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1668,12 +1898,13 @@ function AgentPipelineView({ onNavigate }: { onNavigate: (id: string) => void })
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TRAVEL LOGISTICS VIEW ────────────────────────────────────────────────────
-function TravelLogisticsView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1720,12 +1951,13 @@ function TravelLogisticsView({ onNavigate }: { onNavigate: (id: string) => void 
           <div className="py-1.5">USA (Las Vegas, Dec): ESTA required — apply 72h before</div>
         </div>
       </div>
+      <DartsAISection context="travel" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TOUR CARD & Q-SCHOOL VIEW ────────────────────────────────────────────────
-function TourCardQSchoolView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function TourCardQSchoolView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -1777,12 +2009,13 @@ function TourCardQSchoolView({ onNavigate }: { onNavigate: (id: string) => void 
           <div className="text-xs text-gray-400">CT9: R2 (£500) · CT10: QF (£1,000) · CT11: DNP · CT12: SF (£2,000)</div>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── EQUIPMENT SETUP VIEW ─────────────────────────────────────────────────────
-function EquipmentSetupView({ player: _player }: { player: DartsPlayer }) {
+function EquipmentSetupView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [activeSetup, setActiveSetup] = useState(0);
   const [tab, setTab] = useState<'specs' | 'performance' | 'changes' | 'compare'>('specs');
 
@@ -2104,12 +2337,13 @@ function EquipmentSetupView({ player: _player }: { player: DartsPlayer }) {
           <button className="ml-auto text-red-400 text-xs hover:text-red-300 whitespace-nowrap">→ Sponsorship</button>
         </div>
       )}
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── CAREER PLANNING VIEW ─────────────────────────────────────────────────────
-function CareerPlanningView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function CareerPlanningView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -2180,12 +2414,13 @@ function CareerPlanningView({ onNavigate }: { onNavigate: (id: string) => void }
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── DATA HUB VIEW ────────────────────────────────────────────────────────────
-function DataHubView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [showDCConfirm, setShowDCConfirm] = useState(false);
   const [showIDConfirm, setShowIDConfirm] = useState(false);
 
@@ -2246,12 +2481,13 @@ function DataHubView({ onNavigate }: { onNavigate: (id: string) => void }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-function SettingsView({ player, onNavigate }: { player: DartsPlayer; onNavigate: (id: string) => void }) {
+function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar onNavigate={onNavigate} />
@@ -2293,13 +2529,14 @@ function SettingsView({ player, onNavigate }: { player: DartsPlayer; onNavigate:
         <div className="text-sm font-semibold text-red-400 mb-2">Danger Zone</div>
         <button className="px-4 py-2 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30">Reset to demo data</button>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ─── DartConnect Integration ──────────────────────────────────────────────────
-function DartConnectView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function DartConnectView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [apiKey, setApiKey] = useState('');
   const [connected, setConnected] = useState(false);
   const sessions = [
@@ -2377,12 +2614,13 @@ function DartConnectView({ onNavigate }: { onNavigate: (id: string) => void }) {
           </div>
         </>
       )}
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PDC Live Data ────────────────────────────────────────────────────────────
-function PDCLiveView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function PDCLiveView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const events = [
     { name: 'Players Ch. 23 (Wigan)',     date: '14 Apr', status: 'Entered',    earned: 2500,  hold: 2500,  gain: 5000 },
     { name: 'Players Ch. 24 (Wigan)',     date: '15 Apr', status: 'Entered',    earned: 10000, hold: 10000, gain: 12000 },
@@ -2508,12 +2746,13 @@ function PDCLiveView({ onNavigate }: { onNavigate: (id: string) => void }) {
           <div className="text-xs text-gray-400">You are <span className="text-teal-300 font-bold">£142,000 above</span> the #64 Tour Card cutoff. Q-School not required next January.</div>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Women's Darts ────────────────────────────────────────────────────────────
-function WomensDartsView({ onNavigate }: { onNavigate: (id: string) => void }) {
+function WomensDartsView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const oom = [
     { rank: 1, name: 'Beau Greaves',    country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 68420, avg: 90.4 },
     { rank: 2, name: 'Fallon Sherrock', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earnings: 52800, avg: 86.2 },
@@ -2674,13 +2913,14 @@ function WomensDartsView({ onNavigate }: { onNavigate: (id: string) => void }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── STUB VIEW (placeholder for new sidebar items) ───────────────────────────
 // ─── DARTBOARD HEATMAP VIEW ───────────────────────────────────────────────────
-function DartboardHeatmapView({ player: _player }: { player: DartsPlayer }) {
+function DartboardHeatmapView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [scenario, setScenario] = useState<'match' | 'practice' | 'pressure'>('match');
   const [hoveredSeg, setHoveredSeg] = useState<number | null>(null);
   const [compare, setCompare] = useState(false);
@@ -2852,12 +3092,13 @@ function DartboardHeatmapView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── ADVANCED STATS VIEW ──────────────────────────────────────────────────────
-function AdvancedStatsView({ player }: { player: DartsPlayer }) {
+function AdvancedStatsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const first9Avg = [102.1, 106.4, 98.3, 103.8, 108.4, 101.2, 99.8, 105.7, 103.2, 101.6, 108.9, 100.4, 104.8, 102.1, 103.9];
   const scoringZones = [
     { label: '180 (max)', jake: 198, pdc: 162, color: 'bg-red-500' },
@@ -2979,12 +3220,13 @@ function AdvancedStatsView({ player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MATCH PREP VIEW ──────────────────────────────────────────────────────────
-function MatchPrepView({ player: _player }: { player: DartsPlayer }) {
+function MatchPrepView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const routes = [
     { score: 170, route: 'T20 T20 Bull', note: 'Max checkout — only if confident' },
     { score: 164, route: 'T20 T18 Bull', note: 'Keep bull as fallback' },
@@ -3094,12 +3336,13 @@ function MatchPrepView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── WALK-ON MUSIC VIEW ───────────────────────────────────────────────────────
-function WalkOnMusicView({ player: _player }: { player: DartsPlayer }) {
+function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [showToast, setShowToast] = useState(false);
   const [newTrack, setNewTrack] = useState('');
   const [reason, setReason] = useState('');
@@ -3179,6 +3422,7 @@ function WalkOnMusicView({ player: _player }: { player: DartsPlayer }) {
         </div>
         {showToast && <div className="mt-3 px-3 py-2 rounded-lg bg-green-600/20 border border-green-500/30 text-green-300 text-sm">✓ Request submitted for review</div>}
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -3217,7 +3461,7 @@ function loadScores(key: string, fallback: number[]): number[] {
   } catch { return fallback; }
 }
 
-function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
+function PracticeGamesView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [bobs27, setBobs27] = useState<number[]>(() => loadScores('bobs27', PRACTICE_DEFAULTS.bobs27));
   const [atc, setAtc] = useState<number[]>(() => loadScores('atc', PRACTICE_DEFAULTS.atc));
   const [t180, setT180] = useState<number[]>(() => loadScores('t180', PRACTICE_DEFAULTS.t180));
@@ -3381,12 +3625,13 @@ function PracticeGamesView({ player: _player }: { player: DartsPlayer }) {
       <div className="flex justify-end">
         <button onClick={resetAll} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 border border-white/10 text-xs font-medium hover:bg-gray-700 hover:text-white">↺ Reset to demo data</button>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PHYSIO & RECOVERY VIEW ───────────────────────────────────────────────────
-function PhysioRecoveryView({ player: _player }: { player: DartsPlayer }) {
+function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
   const bodyParts: Record<string, { status: string; note: string; colour: string }> = {
     'Right shoulder': { status: 'Monitor', note: 'Minor tightness 3/10 — cleared for play, ice post-match', colour: 'amber' },
@@ -3504,12 +3749,13 @@ function PhysioRecoveryView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── DRAW & BRACKET VIEW ──────────────────────────────────────────────────────
-function DrawBracketView({ player: _player }: { player: DartsPlayer }) {
+function DrawBracketView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [tournament, setTournament] = useState<'european' | 'grand-slam' | 'matchplay' | 'uk-open'>('european');
   const [showFull, setShowFull] = useState(false);
   const path = [
@@ -3591,12 +3837,13 @@ function DrawBracketView({ player: _player }: { player: DartsPlayer }) {
       <div className="bg-amber-950/20 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
         ℹ️ Players Championship events use a no-advance-draw format — opponents are drawn on the day of the event.
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PRIZE MONEY FORECAST VIEW ────────────────────────────────────────────────
-function PrizeForecastView({ player: _player }: { player: DartsPlayer }) {
+function PrizeForecastView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const pctEarned = (42800 / 150000) * 100;
   const years = [
     { year: '2020', amount: 32000 },
@@ -3735,6 +3982,7 @@ function PrizeForecastView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -3742,7 +3990,7 @@ function PrizeForecastView({ player: _player }: { player: DartsPlayer }) {
 // ─── LIVE SCORES VIEW ─────────────────────────────────────────────────────────
 type LiveMatch = { p1: string; r1: number; p2: string; r2: number; avg1: number; avg2: number; status: 'live' | 'upcoming' | 'complete'; board: number; round: string; isJake?: boolean; time?: string };
 
-function LiveScoresView({ player: _player }: { player: DartsPlayer }) {
+function LiveScoresView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'jake' | 'all' | 'upcoming'>('jake');
 
   const allMatches: LiveMatch[] = [
@@ -3924,12 +4172,13 @@ function LiveScoresView({ player: _player }: { player: DartsPlayer }) {
         <span>Total 180s: <span className="text-white">31</span></span>
         <span className="ml-auto text-gray-600">* Demo data · Live would update from DartConnect every 3s</span>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── ACADEMY & DEV VIEW ───────────────────────────────────────────────────────
-function AcademyDevView({ player: _player }: { player: DartsPlayer }) {
+function AcademyDevView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const devTour = [
     { pos: 1, name: 'Gian van Veen', flag: '🇳🇱', earned: 18400 },
     { pos: 2, name: 'Niko Springer', flag: '🇩🇪', earned: 14200 },
@@ -4084,12 +4333,13 @@ function AcademyDevView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PAIRS & TEAM EVENTS VIEW ─────────────────────────────────────────────────
-function PairsEventsView({ player }: { player: DartsPlayer }) {
+function PairsEventsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const englishPlayers = [
     { pos: 1, pdcPos: 1, name: 'Luke Littler', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
     { pos: 2, pdcPos: 6, name: 'Michael Smith', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
@@ -4204,6 +4454,7 @@ function PairsEventsView({ player }: { player: DartsPlayer }) {
           <span>PL threshold: Top 10</span>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -4218,7 +4469,7 @@ function StubView({ title, sub }: { title: string; sub: string }) {
 }
 
 // ─── Entry Manager ────────────────────────────────────────────────────────────
-function EntryManagerView({ player: _player }: { player: DartsPlayer }) {
+function EntryManagerView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToast(msg);
@@ -4339,12 +4590,13 @@ function EntryManagerView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Pressure Analysis ────────────────────────────────────────────────────────
-function PressureAnalysisView({ player }: { player: DartsPlayer }) {
+function PressureAnalysisView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const comparisons = [
     { label: 'Match average',   standard: 97.8,  pressure: 94.2, unit: '' },
     { label: 'Checkout %',      standard: 41.2,  pressure: 33.8, unit: '%' },
@@ -4501,12 +4753,13 @@ function PressureAnalysisView({ player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Merit Forecaster ─────────────────────────────────────────────────────────
-function MeritForecasterView({ player: _player }: { player: DartsPlayer }) {
+function MeritForecasterView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [selectedRound, setSelectedRound] = useState<string>('r1-win');
 
   const currentOom = 687420;
@@ -4659,12 +4912,13 @@ function MeritForecasterView({ player: _player }: { player: DartsPlayer }) {
           })}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Tour Card Monitor ────────────────────────────────────────────────────────
-function TourCardMonitorView({ player }: { player: DartsPlayer }) {
+function TourCardMonitorView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [targetRank, setTargetRank] = useState(19);
 
   const currentOom = 687420;
@@ -4852,6 +5106,7 @@ function TourCardMonitorView({ player }: { player: DartsPlayer }) {
           <p>⚠️ <strong className="text-gray-200">Reset:</strong> New tour card holders start at £0 OoM — previous earnings do not carry over</p>
         </div>
       </details>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -4887,7 +5142,7 @@ function mapSupabaseToDartsPlayer(row: Record<string, unknown>): DartsPlayer {
 }
 
 // ─── Performance Rating ───────────────────────────────────────────────────────
-function PerformanceRatingView({ player }: { player: DartsPlayer }) {
+function PerformanceRatingView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const components = [
     { label: 'Three-dart average',  weight: 30, score: 78, raw: '97.8',     benchmark: 'PDC avg 96.8' },
     { label: 'Checkout %',          weight: 25, score: 72, raw: '41.2%',    benchmark: 'PDC avg 38.1%' },
@@ -4991,12 +5246,13 @@ function PerformanceRatingView({ player }: { player: DartsPlayer }) {
       <p className="text-xs text-gray-600 text-center">
         Rating uses {player.name.split(' ')[0]}&apos;s live stats · Recalculates after each event
       </p>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Nine-Dart Tracker ────────────────────────────────────────────────────────
-function NineDartTrackerView({ player: _player }: { player: DartsPlayer }) {
+function NineDartTrackerView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const routes = [
     { name: "Classic (Jake's)", darts: ['T20', 'T20', 'T20', 'T20', 'T20', 'T20', 'T19', 'D16'] },
     { name: 'Bull finish', darts: ['T20', 'T20', 'T20', 'T20', 'T20', 'T20', 'T20', 'D25'] },
@@ -5078,12 +5334,13 @@ function NineDartTrackerView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Premier League ───────────────────────────────────────────────────────────
-function PremierLeagueView({ player: _player }: { player: DartsPlayer }) {
+function PremierLeagueView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const plTable = [
     { pos: 1, name: 'Luke Littler', pts: 42, w: 14, d: 0, l: 2, avg: 103.2 },
     { pos: 2, name: 'Michael van Gerwen', pts: 36, w: 11, d: 3, l: 2, avg: 101.8 },
@@ -5156,12 +5413,13 @@ function PremierLeagueView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── World Series ─────────────────────────────────────────────────────────────
-function WorldSeriesView({ player: _player }: { player: DartsPlayer }) {
+function WorldSeriesView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const events = [
     { name: 'US Masters', location: 'Las Vegas, USA', date: 'Jun 2025', prize: '£450,000', criteria: 'OoM Top 24', status: '🟡 Expected (OoM holds Top 24)', history: 'Never qualified' },
     { name: 'Australian Darts Open', location: 'Brisbane, Australia', date: 'Jul 2025', prize: '£350,000', criteria: 'OoM Top 32 + invite', status: '✅ Confirmed', history: '2024: R2 exit (avg 98.1)' },
@@ -5215,12 +5473,13 @@ function WorldSeriesView({ player: _player }: { player: DartsPlayer }) {
           <p>• Jake&apos;s OoM (#19) puts him in the expected bracket for most WS events</p>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Team Comms ───────────────────────────────────────────────────────────────
-function TeamCommsView({ player }: { player: DartsPlayer }) {
+function TeamCommsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [activeThread, setActiveThread] = useState<string>('marco');
   const [draft, setDraft] = useState('');
   const first = player.name.split(' ')[0];
@@ -5286,12 +5545,13 @@ function TeamCommsView({ player }: { player: DartsPlayer }) {
           </div>
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Fan Engagement ───────────────────────────────────────────────────────────
-function FanEngagementView({ player: _player }: { player: DartsPlayer }) {
+function FanEngagementView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const platforms = [
     { name: 'Twitter/X', handle: '@JakeMorrisonDarts', followers: 48200, growth: '+2.4%', engagement: '3.8%' },
     { name: 'Instagram', handle: '@jakemorrisondarts', followers: 31400, growth: '+4.1%', engagement: '5.2%' },
@@ -5352,12 +5612,13 @@ function FanEngagementView({ player: _player }: { player: DartsPlayer }) {
         </div>
       </div>
       <p className="text-xs text-gray-600 text-center">Connect social APIs in Settings for real-time data · Currently showing demo estimates</p>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Nutrition & Conditioning ─────────────────────────────────────────────────
-function NutritionLogView({ player: _player }: { player: DartsPlayer }) {
+function NutritionLogView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'today' | 'log' | 'plan'>('today');
   const todayMeals = [
     { time: '07:30', meal: 'Breakfast', detail: 'Porridge with banana, black coffee', kcal: 380 },
@@ -5448,12 +5709,13 @@ function NutritionLogView({ player: _player }: { player: DartsPlayer }) {
           </div>
         </div>
       )}
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Practice Board Booking ───────────────────────────────────────────────────
-function BoardBookingView({ player: _player }: { player: DartsPlayer }) {
+function BoardBookingView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [city, setCity] = useState('Dortmund');
   type Venue = { name: string; distance: string; boards: number; contact: string; notes: string };
   const venues: Record<string, Venue[]> = {
@@ -5515,12 +5777,13 @@ function BoardBookingView({ player: _player }: { player: DartsPlayer }) {
         ))}
       </div>
       <p className="text-xs text-gray-600 text-center">Venue list is curated and manually maintained · More cities added regularly</p>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Accreditations ───────────────────────────────────────────────────────────
-function AccreditationsView({ player: _player }: { player: DartsPlayer }) {
+function AccreditationsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   type AccredStatus = 'active' | 'pending' | 'expired';
   const accreds: Array<{ venue: string; event: string; status: AccredStatus; expires: string; badge: string; notes: string }> = [
     { venue: 'Alexandra Palace', event: 'PDC World Championship', status: 'active', expires: 'Jan 2026', badge: 'Player pass + backstage', notes: 'Annual renewal after World Championship. PDPA membership required.' },
@@ -5577,12 +5840,13 @@ function AccreditationsView({ player: _player }: { player: DartsPlayer }) {
           );
         })}
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── County Darts ─────────────────────────────────────────────────────────────
-function CountyDartsView({ player: _player }: { player: DartsPlayer }) {
+function CountyDartsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const results = [
     { date: 'Mar 2025', opponent: 'Lancashire', result: 'W', score: '8-4', avg: 101.4, competition: 'Yorkshire vs Lancashire' },
     { date: 'Jan 2025', opponent: 'Derbyshire', result: 'W', score: '7-5', avg: 98.7, competition: 'Yorkshire Championship' },
@@ -5629,6 +5893,7 @@ function CountyDartsView({ player: _player }: { player: DartsPlayer }) {
           ))}
         </div>
       </div>
+      <DartsAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -5662,6 +5927,65 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
   )
 }
 
+function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPlayer; session: SportsDemoSession; onNavigate: (id: string) => void }) {
+  const [perfTab, setPerfTab] = useState('orderofmerit');
+  const PERF_TABS = [
+    { id: 'orderofmerit',      label: 'Order of Merit' },
+    { id: 'merit-forecaster',  label: 'Points Forecaster' },
+    { id: 'averages',          label: '3-Dart Average' },
+    { id: 'advanced-stats',    label: 'Advanced Stats' },
+    { id: 'dartboard-heatmap', label: 'Dartboard Heatmap' },
+    { id: 'checkout',          label: 'Checkout Analysis' },
+    { id: 'matchreports',      label: 'Match Reports' },
+    { id: 'practicelog',       label: 'Practice Log' },
+    { id: 'video',             label: 'Video Library' },
+    { id: 'performance-rating',label: 'Performance Rating' },
+    { id: 'pressure-analysis', label: 'Pressure Analysis' },
+    { id: 'nine-dart-tracker', label: '9-Dart Tracker' },
+    { id: 'premier-league',    label: 'Premier League' },
+    { id: 'world-series',      label: 'World Series' },
+  ];
+
+  const renderPerfTab = () => {
+    switch (perfTab) {
+      case 'orderofmerit':      return <OrderOfMeritView onNavigate={onNavigate} player={player} session={session} />;
+      case 'merit-forecaster':  return <MeritForecasterView player={player} session={session} />;
+      case 'averages':          return <ThreeDartAverageView player={player} onNavigate={onNavigate} session={session} />;
+      case 'advanced-stats':    return <AdvancedStatsView player={player} session={session} />;
+      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} session={session} />;
+      case 'checkout':          return <CheckoutAnalysisView onNavigate={onNavigate} player={player} session={session} />;
+      case 'matchreports':      return <MatchReportsView onNavigate={onNavigate} player={player} session={session} />;
+      case 'practicelog':       return <PracticeLogView onNavigate={onNavigate} player={player} session={session} />;
+      case 'video':             return <VideoLibraryView onNavigate={onNavigate} player={player} session={session} />;
+      case 'performance-rating':return <PerformanceRatingView player={player} session={session} />;
+      case 'pressure-analysis': return <PressureAnalysisView player={player} session={session} />;
+      case 'nine-dart-tracker': return <NineDartTrackerView player={player} session={session} />;
+      case 'premier-league':    return <PremierLeagueView player={player} session={session} />;
+      case 'world-series':      return <WorldSeriesView player={player} session={session} />;
+      default:                  return <OrderOfMeritView onNavigate={onNavigate} player={player} session={session} />;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎯" title="Performance" subtitle="All performance data, stats, and analysis in one place." />
+      <div className="flex gap-1 overflow-x-auto pb-2 -mx-1">
+        <div className="flex gap-1 px-1 min-w-max">
+          {PERF_TABS.map(t => (
+            <button key={t.id} onClick={() => setPerfTab(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                perfTab === t.id ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'text-gray-500 hover:text-gray-300 border border-transparent'
+              }`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {renderPerfTab()}
+    </div>
+  );
+}
+
 function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -5692,7 +6016,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
   }, [slug]);
 
   const player: DartsPlayer = livePlayer || DEMO_PLAYER;
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
   const renderView = () => {
     // Pro-only feature gate — demo player is on Premier League so all pass.
@@ -5712,58 +6036,59 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
       );
     }
     switch (activeSection) {
-      case 'dashboard':     return <DashboardView player={player} onNavigate={setActiveSection} />;
-      case 'morning':       return <MorningBriefingView player={player} />;
-      case 'orderofmerit':  return <OrderOfMeritView onNavigate={setActiveSection} />;
-      case 'schedule':      return <TournamentScheduleView onNavigate={setActiveSection} />;
-      case 'averages':      return <ThreeDartAverageView player={player} onNavigate={setActiveSection} />;
-      case 'checkout':      return <CheckoutAnalysisView onNavigate={setActiveSection} />;
-      case 'opponentintel': return <OpponentIntelView onNavigate={setActiveSection} />;
-      case 'practicelog':   return <PracticeLogView onNavigate={setActiveSection} />;
-      case 'matchreports':  return <MatchReportsView onNavigate={setActiveSection} />;
-      case 'video':         return <VideoLibraryView onNavigate={setActiveSection} />;
-      case 'teamhub':       return <TeamHubView onNavigate={setActiveSection} />;
-      case 'mental':        return <MentalPerformanceView onNavigate={setActiveSection} />;
-      case 'sponsorship':   return <SponsorshipView onNavigate={setActiveSection} />;
-      case 'exhibitions':   return <ExhibitionManagerView onNavigate={setActiveSection} />;
-      case 'media':         return <MediaContentView onNavigate={setActiveSection} />;
-      case 'financial':     return <FinancialDashboardView onNavigate={setActiveSection} />;
-      case 'agent':         return <AgentPipelineView onNavigate={setActiveSection} />;
-      case 'travel':        return <TravelLogisticsView onNavigate={setActiveSection} />;
-      case 'tourcard':      return <TourCardQSchoolView onNavigate={setActiveSection} />;
-      case 'equipment':     return <EquipmentSetupView player={player} />;
-      case 'career':        return <CareerPlanningView onNavigate={setActiveSection} />;
-      case 'datahub':       return <DataHubView onNavigate={setActiveSection} />;
-      case 'settings':      return <SettingsView player={player} onNavigate={setActiveSection} />;
-      case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} />;
-      case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} />;
-      case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} />;
-      case 'merit-forecaster':  return <MeritForecasterView player={player} />;
-      case 'entry-manager':     return <EntryManagerView player={player} />;
-      case 'live-scores':       return <LiveScoresView player={player} />;
-      case 'draw-bracket':      return <DrawBracketView player={player} />;
-      case 'advanced-stats':    return <AdvancedStatsView player={player} />;
-      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} />;
-      case 'pressure-analysis': return <PressureAnalysisView player={player} />;
-      case 'match-prep':        return <MatchPrepView player={player} />;
-      case 'physio-recovery':   return <PhysioRecoveryView player={player} />;
-      case 'walk-on-music':     return <WalkOnMusicView player={player} />;
-      case 'pairs-events':      return <PairsEventsView player={player} />;
-      case 'tour-card-monitor': return <TourCardMonitorView player={player} />;
-      case 'prize-forecaster':  return <PrizeForecastView player={player} />;
-      case 'academy-dev':       return <AcademyDevView player={player} />;
-      case 'practice-games':    return <PracticeGamesView player={player} />;
-      case 'performance-rating': return <PerformanceRatingView player={player} />;
-      case 'nine-dart-tracker':  return <NineDartTrackerView player={player} />;
-      case 'premier-league':     return <PremierLeagueView player={player} />;
-      case 'world-series':       return <WorldSeriesView player={player} />;
-      case 'team-comms':         return <TeamCommsView player={player} />;
-      case 'fan-engagement':     return <FanEngagementView player={player} />;
-      case 'nutrition-log':      return <NutritionLogView player={player} />;
-      case 'board-booking':      return <BoardBookingView player={player} />;
-      case 'accreditations':     return <AccreditationsView player={player} />;
-      case 'county-darts':       return <CountyDartsView player={player} />;
-      default:              return <DashboardView player={player} onNavigate={setActiveSection} />;
+      case 'dashboard':     return <DashboardView player={player} session={session} />;
+      case 'morning':       return <MorningBriefingView player={player} session={session} />;
+      case 'performance':   return <DartsPerformanceView player={player} session={session} onNavigate={setActiveSection} />;
+      case 'orderofmerit':  return <OrderOfMeritView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'schedule':      return <TournamentScheduleView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'averages':      return <ThreeDartAverageView player={player} onNavigate={setActiveSection} session={session} />;
+      case 'checkout':      return <CheckoutAnalysisView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'opponentintel': return <OpponentIntelView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'practicelog':   return <PracticeLogView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'matchreports':  return <MatchReportsView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'video':         return <VideoLibraryView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'teamhub':       return <TeamHubView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'mental':        return <MentalPerformanceView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'sponsorship':   return <SponsorshipView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'exhibitions':   return <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'media':         return <MediaContentView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'financial':     return <FinancialDashboardView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'agent':         return <AgentPipelineView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'travel':        return <TravelLogisticsView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'tourcard':      return <TourCardQSchoolView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'equipment':     return <EquipmentSetupView player={player} session={session} />;
+      case 'career':        return <CareerPlanningView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'datahub':       return <DataHubView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'settings':      return <SettingsView player={player} onNavigate={setActiveSection} session={session} />;
+      case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'merit-forecaster':  return <MeritForecasterView player={player} session={session} />;
+      case 'entry-manager':     return <EntryManagerView player={player} session={session} />;
+      case 'live-scores':       return <LiveScoresView player={player} session={session} />;
+      case 'draw-bracket':      return <DrawBracketView player={player} session={session} />;
+      case 'advanced-stats':    return <AdvancedStatsView player={player} session={session} />;
+      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} session={session} />;
+      case 'pressure-analysis': return <PressureAnalysisView player={player} session={session} />;
+      case 'match-prep':        return <MatchPrepView player={player} session={session} />;
+      case 'physio-recovery':   return <PhysioRecoveryView player={player} session={session} />;
+      case 'walk-on-music':     return <WalkOnMusicView player={player} session={session} />;
+      case 'pairs-events':      return <PairsEventsView player={player} session={session} />;
+      case 'tour-card-monitor': return <TourCardMonitorView player={player} session={session} />;
+      case 'prize-forecaster':  return <PrizeForecastView player={player} session={session} />;
+      case 'academy-dev':       return <AcademyDevView player={player} session={session} />;
+      case 'practice-games':    return <PracticeGamesView player={player} session={session} />;
+      case 'performance-rating': return <PerformanceRatingView player={player} session={session} />;
+      case 'nine-dart-tracker':  return <NineDartTrackerView player={player} session={session} />;
+      case 'premier-league':     return <PremierLeagueView player={player} session={session} />;
+      case 'world-series':       return <WorldSeriesView player={player} session={session} />;
+      case 'team-comms':         return <TeamCommsView player={player} session={session} />;
+      case 'fan-engagement':     return <FanEngagementView player={player} session={session} />;
+      case 'nutrition-log':      return <NutritionLogView player={player} session={session} />;
+      case 'board-booking':      return <BoardBookingView player={player} session={session} />;
+      case 'accreditations':     return <AccreditationsView player={player} session={session} />;
+      case 'county-darts':       return <CountyDartsView player={player} session={session} />;
+      default:              return <DashboardView player={player} session={session} />;
     }
   };
 
