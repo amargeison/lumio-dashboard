@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
 import { use } from 'react'
 import {
   Users, TrendingUp, Headphones, AlertCircle,
@@ -6084,8 +6086,32 @@ function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: P
   )
 }
 
+const FOOTBALL_ROLES = [
+  { id: 'ceo',        label: 'CEO / Chairman',        icon: '🏛️' },
+  { id: 'dof',        label: 'Director of Football',  icon: '📋' },
+  { id: 'coach',      label: 'Head Coach',             icon: '🎽' },
+  { id: 'medical',    label: 'Head of Medical',        icon: '🏥' },
+  { id: 'commercial', label: 'Commercial Director',    icon: '💼' },
+  { id: 'academy',    label: 'Academy Director',       icon: '🎓' },
+]
+
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  return (
+    <SportsDemoGate
+      sport="football"
+      accentColor="#10B981"
+      sportLabel="Football"
+      defaultClubName="Lumio FC"
+      roles={FOOTBALL_ROLES}
+    >
+      {(session) => <FootballDashboardInner slug={slug} session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function FootballDashboardInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
+  void slug
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
@@ -6341,27 +6367,4 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
                         ))}
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-                      {'\u{1F4CA}'} Insights
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
-          </main>
-        </div>
-      </div>
-
-      {activeAction && (
-        <FootballActionModal
-          actionId={activeAction}
-          onClose={() => setActiveAction(null)}
-          onToast={fireToast}
-        />
-      )}
-      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
-    </div>
-  )
-}
+              
