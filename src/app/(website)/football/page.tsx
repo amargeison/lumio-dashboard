@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { FOOTBALL_ROLES } from '../components/sportRoles'
 
 const RED = '#EF4444'
 const RED_LIGHT = '#F87171'
@@ -324,6 +326,8 @@ export default function FootballLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="football" demoHref="/football/lumio-dev" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={FOOTBALL_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight

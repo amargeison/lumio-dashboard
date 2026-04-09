@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { BOXING_ROLES } from '../components/sportRoles'
 
 const RED = '#C41E3A'
 const RED_LIGHT = '#EF4455'
@@ -294,6 +296,8 @@ export default function BoxingLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="boxing" demoHref="/boxing/boxing-demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={BOXING_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight

@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { RUGBY_ROLES } from '../components/sportRoles'
 
 const ACCENT = '#8B5CF6'
 const BG = '#0A0B10'
@@ -70,6 +72,8 @@ export default function RugbyPage() {
           ))}
         </div>
       </section>
+
+      <SportRoleTabs sport="rugby" demoHref="/rugby/demo" accentColor="#0D9488" accentColorDim="rgba(13,148,136,0.15)" roles={RUGBY_ROLES} />
 
       {/* Who It's For */}
       <section className="max-w-5xl mx-auto px-6 py-20">

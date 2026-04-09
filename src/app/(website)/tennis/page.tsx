@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import SportRoleTabs from '../components/SportRoleTabs'
+import { TENNIS_ROLES } from '../components/sportRoles'
 
 const PURPLE = '#7C3AED'
 const PURPLE_LIGHT = '#A855F7'
@@ -503,6 +505,8 @@ export default function TennisLandingPage() {
           </div>
         </div>
       </section>
+
+      <SportRoleTabs sport="tennis" demoHref="/tennis/demo" accentColor="#8B5CF6" accentColorDim="rgba(139,92,246,0.15)" roles={TENNIS_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
