@@ -67,15 +67,22 @@ const SIDEBAR_ITEMS = [
   { id: 'racket',      label: 'Racket & Strings',    icon: '🎾', group: 'TEAM'         },
   { id: 'mental',      label: 'Mental Performance',  icon: '🧠', group: 'TEAM'         },
   { id: 'travel',      label: 'Travel & Logistics',  icon: '✈️', group: 'TEAM'         },
+  { id: 'partners',    label: 'Playing Partners',    icon: '🤜', group: 'TEAM'         },
+  { id: 'doubles',     label: 'Doubles',             icon: '🎭', group: 'TEAM'         },
+  { id: 'teamcomms',   label: 'Team Comms',          icon: '💬', group: 'TEAM'         },
   { id: 'sponsorship', label: 'Sponsorship',         icon: '🤝', group: 'COMMERCIAL'   },
   { id: 'financial',   label: 'Financial',           icon: '💰', group: 'COMMERCIAL'   },
   { id: 'media',       label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL'   },
   { id: 'exhibition',  label: 'Exhibitions',         icon: '🎪', group: 'COMMERCIAL'   },
   { id: 'pipeline',    label: 'Agent Pipeline',      icon: '📋', group: 'COMMERCIAL'   },
+  { id: 'prizeforecast', label: 'Prize Forecaster',  icon: '💵', group: 'COMMERCIAL'   },
   { id: 'entries',     label: 'Entry Manager',       icon: '📋', group: 'TOOLS'        },
   { id: 'career',      label: 'Career Planning',     icon: '🚀', group: 'TOOLS'        },
   { id: 'academy',     label: 'Academy & Dev',       icon: '🎓', group: 'TOOLS'        },
   { id: 'datahub',     label: 'Data Hub',            icon: '🔌', group: 'TOOLS'        },
+  { id: 'courtbooking', label: 'Court Booking',       icon: '🏟️', group: 'TOOLS'        },
+  { id: 'federation',  label: 'Federation',          icon: '🏛️', group: 'TOOLS'        },
+  { id: 'accreditations', label: 'Accreditations',   icon: '🪪', group: 'TOOLS'        },
   { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'TOOLS'        },
 ];
 
@@ -235,6 +242,172 @@ const StatCard = ({ label, value, sub, color = 'purple' }: { label: string; valu
     </div>
   );
 };
+
+// ─── AI DEPARTMENT INTELLIGENCE SECTION ──────────────────────────────────────
+interface TennisAISectionProps {
+  context: string
+  player: TennisPlayer
+  session: SportsDemoSession
+}
+
+function TennisAISection({ context, player, session }: TennisAISectionProps) {
+  const [summary, setSummary]   = useState<string | null>(null)
+  const [loading, setLoading]   = useState(false)
+  const [generated, setGenerated] = useState(false)
+
+  const HIGHLIGHTS: Record<string, string[]> = {
+    dashboard:    ['Match vs Martinez today — H2H 3–1 in your favour', 'Rolex renewal due in 47 days — agent follow-up needed', '312 pts drop off after Monte-Carlo — win tonight critical', 'Roland-Garros direct acceptance confirmed', 'New coach debrief requested for 17:00'],
+    morning:      ['Morning briefing generated for player and coaching staff', 'Key focus: clay serve adjustment needed before match', 'Physio clearance confirmed — shoulder green-lit', 'Weather update: 22°C, light wind — no rain expected', 'Opponent intel summary ready for review'],
+    rankings:     ['↑2 places this week — momentum building on clay', '312 pts drop off after Monte-Carlo — must defend', 'Race to Turin: currently 8th — top 8 qualifies', 'Career high at #44 — achievable by Wimbledon with current form', 'Madrid M1000 next — 500 pts available'],
+    forecaster:   ['Win Monte-Carlo final: projected #58 (+9 places)', 'QF exit this week: holds at #67 (0 change)', 'R1 loss: drops to #71 (−4 places)', 'Roland-Garros run critical for top-50 push', 'Grass season historically weak — plan schedule carefully'],
+    entries:      ['Roland-Garros direct acceptance confirmed', 'Wimbledon: ranked 61st — inside direct acceptance', 'US Open: entry deadline 14 Jul — confirm with agent', 'Hamburg 500 clashes with Eastbourne — decision needed', 'Winston-Salem wildcard application submitted'],
+    schedule:     ['Monte-Carlo QF tonight — biggest match of clay season', 'Madrid M1000 starts 26 Apr — direct flight needed', 'Roland-Garros 25 May — hotel booking not confirmed', 'Halle grass camp 8–14 Jun — physio travel confirmed', '3 back-to-back weeks in Jun — load management critical'],
+    scout:        ['Martinez: 71% first serve on clay — pressure his second', 'Martinez: weak backhand under high kick serve', 'Martinez: 4 double faults avg vs top-70 opponents', 'Set play: Martinez breaks serve in 3rd set 62% of time', 'Net approach: Martinez rarely comes to net — use drop shots'],
+    surface:      ['Clay win rate 68% — above ATP tour average', 'Hard court serve % 4% higher than clay — adjust strategy', 'Grass: historically weakest surface — 41% win rate', 'Indoor hard: 82% win rate — strongest surface', 'Monte-Carlo clay slower than Roland-Garros — heavier topspin needed'],
+    performance:  ['Season record: 24W–11L — on pace for best year', 'Serve % improving: 64% first serve last 5 matches', 'Return points won: 44% — top-50 level', 'Break point conversion: 38% — needs improvement', '3-set matches: 7W–4L — stamina strong'],
+    matchprep:    ['Martinez H2H: 3–1 — mental edge confirmed', 'Clay kick serve to backhand: primary tactic', 'Neutralise Martinez net approach with lob', 'Target: 70%+ first serve to hold easily', 'Return game: attack his second serve early'],
+    matchreports: ['Last 5: W W L W W — strong form coming in', 'Saracens QF match: 6-3 6-4 — dominant display', 'Loss to Ruud: serve let us down (54% first serve)', 'Average match duration this clay season: 98 min', 'Double fault count trending down — good sign'],
+    practice:     ['Serve patterns session today 10:00 — focus kick to backhand', 'Carlos recommends 90-min session max — match tonight', 'Upcoming grass prep starts Halle camp 8 Jun', 'Forehand cross-court consistency improving (+8% last week)', 'Mental performance session Thursday — Marcos confirmed'],
+    video:        ['Martinez full match from Barcelona uploaded', '5 new practice clips tagged by Carlos', 'Shot heatmap update available after today\'s match', 'Barcelona semi-final review — tactical notes ready', 'Serve motion analysis: pronation timing improved'],
+    travel:       ['Monte-Carlo hotel confirmed — checkout Sunday', 'Madrid: flights needed Mon 26 Apr — book today', 'Roland-Garros: apartment booking pending — deadline 1 May', 'Halle camp: Carlos and physio travel confirmed', 'Bahrain Masters: visa application submitted'],
+    sponsorship:  ['Rolex renewal due in 47 days — priority action', 'Red Dragon content shoot today 16:00', 'Nike kit obligation: 4 posts due this season (2 remaining)', 'New inquiry from Paddy Power — agent reviewing', 'Lululemon post due this week — check brief'],
+    financial:    ['Prize money YTD: £387,420 — ahead of projection', 'Monte-Carlo QF prize: £47,500 banked', 'Tax instalment due 31 Jul — accountant briefed', 'Agent commission: 15% of gross prize money', 'Equipment budget: £8,200 remaining for season'],
+    team:         ['Carlos (coach): debrief requested 17:00 today', 'Dr. Lee: shoulder treatment 08:30 complete', 'Nutritionist plan updated for clay season', 'Physio travel confirmed for Madrid and Paris', 'Agent: 3 sponsor inquiries pending response'],
+    mental:       ['Pre-match routine completed — focus levels good', 'Martinez mental game: tends to lose focus in 3rd set', 'Pressure training this week: tiebreak scenarios', 'Marcos (psychologist) session Thursday 14:00', 'Breathing protocol review — Carlos recommends update'],
+    default:      ['Match vs Martinez today — prepare well', 'Rolex renewal due in 47 days', '312 pts drop off after Monte-Carlo', 'Roland-Garros direct acceptance confirmed', 'Coach debrief requested for 17:00'],
+  }
+
+  const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
+
+  const generateSummary = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are the AI performance analyst for ${session.userName || player.name}, ATP #${player.ranking} professional tennis player.
+
+Generate a concise AI department summary for the "${context}" section of their management platform.
+
+Player context:
+- Ranking: #${player.ranking} ATP
+- Current tournament: Monte-Carlo Masters (clay)
+- Today's match: vs C. Martinez (#34) at 13:00, Court 4
+- Season record: 24W-11L
+- Next tournaments: Madrid M1000, Roland-Garros
+
+Write 4-5 bullet points covering:
+- Most important insight or action for this specific section (${context})
+- Any risks or opportunities relevant to ${context}
+- One data-backed observation
+- One recommended action
+
+Format: Start each line with a relevant emoji then the insight. Be specific and concise.
+No headers. Plain bullet points only. Max 180 words total.`
+          }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : ''
+      ).join('') || ''
+      setSummary(text)
+      setGenerated(true)
+    } catch {
+      setSummary('Unable to generate summary. Check API connection.')
+    }
+    setLoading(false)
+  }
+
+  const renderSummary = (text: string) =>
+    text.split('\n').filter(l => l.trim()).map((line, i) => (
+      <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0">
+        <span className="flex-shrink-0">{/^[\u{1F300}-\u{1FAFF}]/u.test(line) ? '' : '•'}</span>
+        <span>{line}</span>
+      </div>
+    ))
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-800/60">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">🤖 AI Department Intelligence</span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span>✨</span>
+              <span className="text-sm font-bold text-white">AI Summary</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+              <button onClick={generateSummary} disabled={loading}
+                className="text-gray-600 hover:text-gray-400 text-sm">
+                {loading ? '⟳' : '↺'}
+              </button>
+            </div>
+          </div>
+
+          {!summary && !loading && (
+            <button onClick={generateSummary}
+              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-[#0ea5e9]/40 hover:text-[#0ea5e9] transition-all">
+              Generate AI summary for this section →
+            </button>
+          )}
+
+          {loading && (
+            <div className="space-y-2">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />
+              ))}
+            </div>
+          )}
+
+          {summary && !loading && (
+            <div className="space-y-0">
+              {renderSummary(summary)}
+            </div>
+          )}
+
+          {summary && summary.toLowerCase().includes('watch') && (
+            <div className="mt-3 p-2.5 bg-amber-600/10 border border-amber-600/20 rounded-lg">
+              <span className="text-[10px] text-amber-400">⚠ Watch out — see AI note above</span>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span>⚡</span>
+              <span className="text-sm font-bold text-white">AI Key Highlights</span>
+            </div>
+            <span className="text-[10px] text-[#0ea5e9] cursor-pointer hover:underline">Performance</span>
+          </div>
+          <div className="space-y-2">
+            {highlights.map((h, i) => (
+              <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
+                <span className="text-xs text-[#0ea5e9] font-bold flex-shrink-0 w-4">{i+1}</span>
+                <span className="text-xs text-gray-300">{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── SECTION HEADER ────────────────────────────────────────────────────────────
 const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: string }) => (
@@ -613,307 +786,259 @@ const IncomeExpenseChart = () => {
 };
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
-function DashboardView({ player, setActiveSection }: { player: TennisPlayer; setActiveSection: (id: string) => void }) {
-  const [aiTab, setAiTab] = useState<'quickwins' | 'daily' | 'insights' | 'dontmiss' | 'team'>('quickwins');
-  const expiringPoints = [
-    { pts: 125, event: '2025 Monte-Carlo (R32)', expires: '2026-04-16', days: 7 },
-    { pts: 90, event: '2025 Barcelona (R16)', expires: '2026-04-24', days: 15 },
-  ];
-  const today = new Date();
-  const isGrassWindow = today.getMonth() >= 3 && today.getMonth() <= 5;
+function DashboardView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  const nextMatch = { opponent: 'C. Martinez', nationality: '🇪🇸', ranking: 34, time: '13:00', court: 'Court 4', tournament: 'Monte-Carlo Masters', surface: 'Clay' };
-  const todayTasks = [
-    { time: '07:30', task: 'AI Morning Briefing', done: true },
-    { time: '08:30', task: 'Physio treatment — right shoulder', done: true },
-    { time: '10:00', task: 'Practice session — serve patterns (90 min)', done: false },
-    { time: '11:45', task: 'Stringing with Carlos — clay tensions (2x Wilson Luxilon ALU)', done: false },
-    { time: '12:30', task: 'Pre-match meal + rest', done: false },
-    { time: '13:00', task: 'Match vs C. Martinez — Court 4', done: false },
-    { time: '15:30', task: 'Post-match debrief with Marco', done: false },
-    { time: 'By 18:00', task: 'Lululemon Instagram post due — agent has drafted caption', done: false },
-  ];
-
-  const aiTabs = [
-    { id: 'quickwins' as const, label: 'Quick Wins' },
-    { id: 'daily' as const, label: 'Daily Tasks' },
-    { id: 'insights' as const, label: 'Insights' },
-    { id: 'dontmiss' as const, label: "Don't Miss" },
-    { id: 'team' as const, label: 'Team' },
-  ];
+  const ROUNDUP_CHANNELS = [
+    { label: 'Agent Messages',      icon: '📞', count: 2, color: '#8B5CF6', urgent: false },
+    { label: 'Tournament Desk',     icon: '🏆', count: 3, color: '#0ea5e9', urgent: true  },
+    { label: 'Media & Sponsor',     icon: '📱', count: 4, color: '#F59E0B', urgent: false },
+    { label: 'Physio & Medical',    icon: '⚕️', count: 1, color: '#EF4444', urgent: true  },
+    { label: 'Coach Messages',      icon: '🎾', count: 2, color: '#10B981', urgent: false },
+    { label: 'Prize Money',         icon: '💰', count: 1, color: '#D97706', urgent: false },
+    { label: 'Travel & Logistics',  icon: '✈️', count: 3, color: '#6B7280', urgent: false },
+    { label: 'Wildcard & Entries',  icon: '📋', count: 2, color: '#EC4899', urgent: false },
+  ]
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
-      <SectionHeader icon="🏠" title={`Good morning, ${player.name.split(' ')[0]}.`} subtitle="Here's your overview for today." />
 
-      <div className="space-y-2">
-        {expiringPoints.map((e,i)=>(
-          <div key={i} className={`flex items-center justify-between px-4 py-2.5 rounded-lg border ${e.days<=7?'bg-red-900/20 border-red-600/30':'bg-yellow-900/20 border-yellow-600/30'}`}>
-            <div className="flex items-center gap-3">
-              <span className="text-lg">{e.days<=7?'🔴':'🟡'}</span>
-              <div>
-                <div className="text-xs font-semibold text-white">{e.pts} pts expiring — {e.event}</div>
-                <div className="text-[10px] text-gray-400">Expires {e.expires} · {e.days} days away</div>
-              </div>
-            </div>
-            <div className={`text-xs font-bold ${e.days<=7?'text-red-400':'text-yellow-400'}`}>
-              {e.days<=7?'URGENT — needs result this week':'Act this fortnight'}
-            </div>
-          </div>
-        ))}
+      {/* Quick Actions Bar */}
+      <div className="overflow-x-auto pb-2 -mx-1">
+        <div className="flex gap-2 px-1 min-w-max">
+          {[
+            { label: 'Book Flight',       icon: '✈️' },
+            { label: 'Log Practice',      icon: '🎾' },
+            { label: 'Book Stringing',    icon: '🔧' },
+            { label: 'Log Injury',        icon: '⚕️' },
+            { label: 'View Draw',         icon: '🏆' },
+            { label: 'Match Notes',       icon: '📝' },
+            { label: 'Wildcard Request',  icon: '🎯' },
+            { label: 'Sponsor Post',      icon: '📱' },
+            { label: 'Press Statement',   icon: '📣' },
+            { label: 'Add Expense',       icon: '💰' },
+            { label: 'Flight Search',     icon: '🔍' },
+            { label: 'Video Upload',      icon: '🎬' },
+          ].map((a, i) => (
+            <button key={i}
+              className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-[#0ea5e9]/50 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
+              <span>{a.icon}</span>{a.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {isGrassWindow && (
-        <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🌿</span>
-              <div>
-                <div className="text-sm font-semibold text-green-400">Grass Season Preparation — 28 Days</div>
-                <div className="text-xs text-gray-400 mt-0.5">Alex&apos;s best surface (72% win rate). Halle and Queen&apos;s entry deadlines approaching.</div>
-              </div>
-            </div>
+      {/* Greeting + KPI strip */}
+      <div className="bg-gradient-to-r from-[#0ea5e9]/20 to-[#0d1117] border border-[#0ea5e9]/20 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {greeting}, {firstName}. 👋
+            </h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+            </p>
+            <p className="text-xs text-gray-600 italic mt-2">
+              {'"Champions keep playing until they get it right." — Billie Jean King'}
+            </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="hidden md:flex items-center gap-6 text-xs text-right">
             {[
-              { event: 'Halle Open', deadline: '15 May', status: 'Entry open' },
-              { event: "Queen's Club", deadline: '15 May', status: 'Entry open' },
-              { event: 'Wimbledon', deadline: '1 Jun', status: 'Rankings based' },
-            ].map(e=>(
-              <div key={e.event} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
-                <div className="text-xs font-medium text-white">{e.event}</div>
-                <div className="text-[10px] text-gray-500">Deadline: {e.deadline}</div>
-                <div className="text-[10px] text-green-400">{e.status}</div>
+              { city:'London',    tz:'Europe/London'         },
+              { city:'New York',  tz:'America/New_York'      },
+              { city:'Melbourne', tz:'Australia/Melbourne'   },
+              { city:'Dubai',     tz:'Asia/Dubai'            },
+            ].map(({ city, tz }) => {
+              const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })
+              return (
+                <div key={city}>
+                  <div className="text-white font-bold">{time}</div>
+                  <div className="text-gray-500">{city}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.ranking}</div>
+            <div className="text-xs text-gray-400 mt-0.5">ATP Ranking</div>
+            <div className="text-[10px] text-green-400 mt-1">↑2 this week</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.race_ranking}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Race Standing</div>
+            <div className="text-[10px] text-gray-500 mt-1">Race to Turin</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">{player.ranking_points?.toLocaleString()}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Ranking Points</div>
+            <div className="text-[10px] text-gray-500 mt-1">Rolling 52 weeks</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#0ea5e9]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.career_high}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Career High</div>
+            <div className="text-[10px] text-gray-500 mt-1">{player.career_high_date}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Three-column main layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* LEFT: Morning Roundup */}
+        <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span>🌅</span>
+              <span className="text-sm font-bold text-white">Morning Roundup</span>
+            </div>
+            <span className="text-[10px] text-gray-600">Since you were last here</span>
+          </div>
+          <div className="space-y-2">
+            {ROUNDUP_CHANNELS.map((ch, i) => (
+              <div key={i}
+                className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{ch.icon}</span>
+                  <span className="text-sm text-gray-300">{ch.label}</span>
+                  {ch.urgent && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                  <span className="text-gray-700 text-xs">▾</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* World Clock Strip */}
-      <div className="flex items-center gap-6 bg-[#0d0f1a] border border-gray-800 rounded-xl px-5 py-3">
-        <div className="text-xs text-gray-500 font-medium">WORLD CLOCK</div>
-        {[
-          { city: 'London', time: '12:00 BST' },
-          { city: 'New York', time: '07:00 EDT' },
-          { city: 'Melbourne', time: '21:00 AEST' },
-          { city: 'Dubai', time: '15:00 GST' },
-        ].map((c, i) => (
-          <div key={i} className="text-center">
-            <div className="text-xs text-gray-500">{c.city}</div>
-            <div className="text-sm text-white font-medium">{c.time}</div>
-          </div>
-        ))}
-        <div className="ml-auto">
-          <div className="text-xs text-gray-500">Tournament Location</div>
-          <div className="text-sm text-white font-medium">Monaco — 22C, Wind: 8km/h SW</div>
-        </div>
-      </div>
-
-      {/* Key Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="ATP Ranking" value={`#${player.ranking}`} sub="^2 this week" color="purple" />
-        <StatCard label="Race Standing" value={`#${player.race_ranking}`} sub="Race to Turin" color="teal" />
-        <StatCard label="Ranking Points" value={player.ranking_points.toLocaleString()} sub="Rolling 52 weeks" color="blue" />
-        <StatCard label="Career High" value={`#${player.career_high}`} sub={player.career_high_date} color="orange" />
-      </div>
-
-      {(() => {
-        const totalMatches90d = MATCH_LOAD_DATA.reduce((a,w)=>a+w.matches,0);
-        const matchLoadRisk = totalMatches90d > 20;
-        const rankingBuffer = 312;
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`flex items-center gap-3 p-3 rounded-xl border ${rankingBuffer > 200 ? 'bg-green-900/10 border-green-600/20' : 'bg-red-900/10 border-red-600/20'}`}>
-              <span className="text-xl">🛡️</span>
-              <div className="flex-1">
-                <div className="text-xs font-semibold text-white">Ranking Security</div>
-                <div className="text-[10px] text-gray-400">Top-100 buffer: +{rankingBuffer} pts</div>
-              </div>
-              <button onClick={() => setActiveSection('rankings')} className="text-[10px] text-purple-400 hover:text-purple-300">View →</button>
+        {/* MIDDLE: Today's match + schedule */}
+        <div className="space-y-4">
+          <div className="bg-[#0d1117] border border-[#0ea5e9]/30 rounded-2xl p-5">
+            <div className="text-[10px] text-[#0ea5e9] font-bold uppercase tracking-wider mb-3">
+              TODAY&apos;S MATCH &mdash; MONTE-CARLO MASTERS
             </div>
-            <div className={`flex items-center gap-3 p-3 rounded-xl border ${matchLoadRisk ? 'bg-red-900/10 border-red-600/20' : 'bg-green-900/10 border-green-600/20'}`}>
-              <span className="text-xl">📊</span>
-              <div className="flex-1">
-                <div className="text-xs font-semibold text-white">Match Load (90d)</div>
-                <div className={`text-[10px] ${matchLoadRisk ? 'text-red-400' : 'text-green-400'}`}>{totalMatches90d} matches — {matchLoadRisk ? '⚠ Over threshold' : '✓ Safe'}</div>
-              </div>
-              <button onClick={() => setActiveSection('physio')} className="text-[10px] text-purple-400 hover:text-purple-300">View →</button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Today's Match */}
-      <div className="bg-gradient-to-r from-purple-900/40 to-teal-900/20 border border-purple-600/30 rounded-xl p-5">
-        <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-3">TODAY'S MATCH — {nextMatch.tournament}</div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-600/30 border-2 border-purple-500/50 flex items-center justify-center text-xl">{player.flag}</div>
-            <div>
-              <div className="text-white font-bold text-lg">{player.name}</div>
-              <div className="text-gray-400 text-sm">#{player.ranking} ATP</div>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">VS</div>
-            <div className="text-xs text-gray-500">{nextMatch.time} . {nextMatch.court}</div>
-          </div>
-          <div className="flex items-center gap-4 text-right">
-            <div>
-              <div className="text-white font-bold text-lg">{nextMatch.opponent}</div>
-              <div className="text-gray-400 text-sm">#{nextMatch.ranking} ATP</div>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-red-600/20 border-2 border-red-500/30 flex items-center justify-center text-xl">{nextMatch.nationality}</div>
-          </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-4 text-sm text-gray-400">
-          <SurfaceBadge surface={nextMatch.surface} />
-          <span>H2H: <span className="text-white font-medium">3 - 1</span> in your favour</span>
-          <span>Clay serve avg: <span className="text-yellow-400 font-medium">61%</span> (4% below season avg)</span>
-          <span className="ml-auto text-teal-400 text-xs">Coach notes ready</span>
-        </div>
-      </div>
-
-      {/* Today's Schedule */}
-      <div>
-        <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">TODAY'S SCHEDULE</div>
-        <div className="space-y-2">
-          {todayTasks.map((t, i) => (
-            <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${t.done ? 'bg-gray-900/30 border-gray-800/50 opacity-50' : 'bg-[#0d0f1a] border-gray-800'}`}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}>
-                {t.done && <span className="text-teal-400 text-xs">✓</span>}
-              </div>
-              <div className="text-xs text-gray-500 w-16 flex-shrink-0">{t.time}</div>
-              <div className={`text-sm ${t.done ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{t.task}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Alerts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-          <div className="text-yellow-400 text-sm font-semibold mb-1">Points Expiring This Week</div>
-          <div className="text-white font-bold text-lg">125 pts</div>
-          <div className="text-xs text-gray-400">Monte-Carlo QF last year — need SF to maintain</div>
-        </div>
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-          <div className="text-blue-400 text-sm font-semibold mb-1">Sponsor Obligation Today</div>
-          <div className="text-white font-bold text-lg">Lululemon Post</div>
-          <div className="text-xs text-gray-400">Caption drafted by James — review in Sponsorship tab</div>
-        </div>
-        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-          <div className="text-green-400 text-sm font-semibold mb-1">Prize Money This Week</div>
-          <div className="text-white font-bold text-lg">EUR 47,500 (QF)</div>
-          <div className="text-xs text-gray-400">SF would add EUR 92,000 . Final EUR 197,000</div>
-        </div>
-      </div>
-
-      {/* AI Overview Tabs */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="flex border-b border-gray-800">
-          {aiTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setAiTab(tab.id)}
-              className={`flex-1 py-3 text-xs font-medium transition-all ${aiTab === tab.id ? 'text-purple-400 border-b-2 border-purple-500 bg-purple-600/5' : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <div className="p-5">
-          {aiTab === 'quickwins' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { title: 'Review stringing order', desc: 'Carlos has your clay setup ready — confirm 24kg mains or adjust for humidity.', action: 'Go to Racket & Strings', urgency: 'medium' },
-                { title: 'Approve Lululemon post', desc: 'James drafted your match-day caption. Review and approve before 18:00.', action: 'Go to Sponsorship', urgency: 'high' },
-                { title: 'Confirm Barcelona hotel', desc: 'Hotel Arts Barcelona — 3 rooms, check-in 20 Apr. Agent needs your sign-off.', action: 'Go to Travel', urgency: 'low' },
-              ].map((item, i) => (
-                <div key={i} className={`p-4 rounded-lg border ${item.urgency === 'high' ? 'border-yellow-600/30 bg-yellow-600/5' : item.urgency === 'medium' ? 'border-blue-600/30 bg-blue-600/5' : 'border-gray-800 bg-gray-900/20'}`}>
-                  <div className="text-sm font-semibold text-white mb-1">{item.title}</div>
-                  <div className="text-xs text-gray-400 mb-3">{item.desc}</div>
-                  <button className="text-xs text-purple-400 hover:text-purple-300">{item.action} &rarr;</button>
+            <div className="flex items-center justify-between">
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/20 border border-[#0ea5e9]/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">
+                  {session.photoDataUrl
+                    ? <img src={session.photoDataUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                    : firstName.slice(0, 2).toUpperCase()}
                 </div>
-              ))}
+                <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
+                <div className="text-[10px] text-[#0ea5e9]">#{player.ranking} ATP</div>
+              </div>
+              <div className="text-center px-4">
+                <div className="text-2xl font-black text-gray-600">VS</div>
+                <div className="text-[10px] text-gray-500 mt-1">13:00 · Court 4</div>
+                <div className="text-[10px] text-[#0ea5e9] mt-0.5">Clay · H2H: 3–1</div>
+              </div>
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">CM</div>
+                <div className="text-xs font-bold text-white">C. Martinez</div>
+                <div className="text-[10px] text-gray-500">#34 ATP</div>
+              </div>
             </div>
-          )}
-          {aiTab === 'daily' && (
+            <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-amber-400">
+              Clay serve avg: 61% (4% below season avg) — focus on kick serve to backhand
+            </div>
+          </div>
+
+          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+            <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
             <div className="space-y-2">
-              {todayTasks.map((t, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className={`w-2 h-2 rounded-full ${t.done ? 'bg-teal-500' : 'bg-gray-600'}`}></span>
-                  <span className="text-gray-500 w-16 text-xs">{t.time}</span>
-                  <span className={t.done ? 'line-through text-gray-500' : ''}>{t.task}</span>
+              {[
+                { time:'07:30', label:'AI Morning Briefing',          done:true  },
+                { time:'08:30', label:'Physio treatment — shoulder',  done:true  },
+                { time:'10:00', label:'Practice — serve patterns',    done:false },
+                { time:'11:45', label:'Stringing with Carlos',        done:false },
+                { time:'13:00', label:'Match vs C. Martinez',         done:false, highlight:true },
+                { time:'15:30', label:'Post-match physio',            done:false },
+                { time:'17:00', label:'Coach debrief',                done:false },
+              ].map((s, i) => (
+                <div key={i} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${s.highlight ? 'text-[#0ea5e9]' : ''}`}>
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                    s.done ? 'bg-green-500/20 border-green-500' : s.highlight ? 'border-[#0ea5e9] bg-[#0ea5e9]/10' : 'border-gray-700'
+                  }`}>
+                    {s.done && <span className="text-[8px] text-green-400">✓</span>}
+                  </div>
+                  <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
+                  <span className={`text-xs ${s.done ? 'line-through text-gray-600' : s.highlight ? 'text-[#0ea5e9] font-semibold' : 'text-gray-300'}`}>
+                    {s.label}
+                  </span>
                 </div>
               ))}
             </div>
-          )}
-          {aiTab === 'insights' && (
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-purple-600/5 border border-purple-600/20">
-                <div className="text-sm text-white font-medium">Ranking trajectory on track</div>
-                <div className="text-xs text-gray-400 mt-1">Current trajectory puts you at #52 by year-end. A strong clay swing (SF at Roland-Garros) could push you to #38.</div>
-              </div>
-              <div className="p-3 rounded-lg bg-teal-600/5 border border-teal-600/20">
-                <div className="text-sm text-white font-medium">Season stats above 2025 baseline</div>
-                <div className="text-xs text-gray-400 mt-1">Win rate: 68% (vs 62% same period last year). Aces/match up 0.4. First serve % stable.</div>
-              </div>
-              <div className="p-3 rounded-lg bg-yellow-600/5 border border-yellow-600/20">
-                <div className="text-sm text-white font-medium">450 points expiring in next 12 weeks</div>
-                <div className="text-xs text-gray-400 mt-1">Monte-Carlo QF (125), Barcelona R2 (45), Roland-Garros R3 (45), Wimbledon R2 (45), US Open QF (180). Defend aggressively.</div>
+          </div>
+        </div>
+
+        {/* RIGHT: Photo frame + AI Morning Summary */}
+        <div className="space-y-4">
+          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+              <div className="flex items-center gap-2">
+                <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
+                <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
+                <button className="text-[10px] text-[#0ea5e9] hover:text-[#38bdf8]">+ Add</button>
               </div>
             </div>
-          )}
-          {aiTab === 'dontmiss' && (
-            <div className="space-y-3">
+            <div className="rounded-xl overflow-hidden bg-gradient-to-br from-[#0ea5e9]/20 to-gray-900 h-40 flex items-center justify-center">
+              {session.photoDataUrl
+                ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                : <div className="text-center">
+                    <div className="text-4xl mb-2">🎾</div>
+                    <div className="text-xs text-gray-600">Add your photo in settings</div>
+                  </div>}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              {['3s','5s','10s','30s'].map(s => (
+                <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-[#0ea5e9]/20 text-[#0ea5e9]':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span>🤖</span>
+                <span className="text-sm font-bold text-white">AI Morning Summary</span>
+              </div>
+              <span className="text-[10px] text-gray-600">
+                {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+              </span>
+            </div>
+            <div className="space-y-2">
               {[
-                { label: 'Rolex contract renewal', detail: '47 days remaining. James has scheduled Friday call.', color: 'red' },
-                { label: 'Lululemon post due today', detail: 'Caption drafted. Approve by 18:00.', color: 'yellow' },
-                { label: 'Barcelona entry deadline', detail: 'Already entered — confirmed.', color: 'teal' },
-                { label: "Queen's Club wildcard", detail: 'LTA request submitted. Decision expected 1 May.', color: 'blue' },
-                { label: 'Davis Cup finals selection', detail: 'Sep 2026. Captain reviewing squad.', color: 'purple' },
+                "Match vs C. Martinez today — H2H 3–1 in your favour. Clay serve avg 4% below season — focus kick serve.",
+                "312 ranking points drop off after Monte-Carlo. Win tonight keeps you at #67. Loss risks dropping to #71.",
+                "Rolex renewal due in 47 days — agent follow-up scheduled for tomorrow.",
+                "Roland-Garros direct acceptance confirmed — no wildcard needed. Entry deadline 3 May.",
+                "New Coach debrief added — Carlos requests 17:00 session post-match.",
               ].map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border border-${item.color}-600/30 bg-${item.color}-600/5`}>
-                  <div className={`w-2 h-2 rounded-full bg-${item.color}-500`}></div>
-                  <div>
-                    <div className="text-sm text-white font-medium">{item.label}</div>
-                    <div className="text-xs text-gray-400">{item.detail}</div>
-                  </div>
+                <div key={i} className="flex gap-2 text-xs text-gray-400">
+                  <span className="text-[#0ea5e9] font-bold flex-shrink-0 w-4">{i+1}</span>
+                  <span>{item}</span>
                 </div>
               ))}
             </div>
-          )}
-          {aiTab === 'team' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { name: 'Marco Bianchi', role: 'Coach', status: 'Match prep uploaded 08:15', icon: '📋', statusColor: 'teal' },
-                { name: 'Sarah Okafor', role: 'Physio', status: 'Shoulder treatment complete. Cleared.', icon: '⚕️', statusColor: 'green' },
-                { name: 'James Whitfield', role: 'Agent', status: 'Lululemon draft ready for review.', icon: '🤝', statusColor: 'yellow' },
-              ].map((m, i) => (
-                <div key={i} className="p-4 rounded-lg bg-gray-900/30 border border-gray-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{m.icon}</span>
-                    <div>
-                      <div className="text-sm text-white font-medium">{m.name}</div>
-                      <div className="text-xs text-purple-400">{m.role}</div>
-                    </div>
-                  </div>
-                  <div className={`text-xs text-${m.statusColor}-400`}>{m.status}</div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
+
+      <TennisAISection context="dashboard" player={player} session={session} />
     </div>
-  );
+  )
 }
 
 // ─── MORNING BRIEFING VIEW ─────────────────────────────────────────────────────
-function MorningBriefingView({ player }: { player: TennisPlayer }) {
+function MorningBriefingView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [playing, setPlaying] = useState(false);
   const [recipient, setRecipient] = useState<'player' | 'coach' | 'agent' | 'physio'>('player');
   const [briefing, setBriefing] = useState<string | null>(null);
@@ -1101,12 +1226,13 @@ Be direct, specific, professional. Around 250 words.`
           ))}
         </div>
       </div>
+      <TennisAISection context="morning" player={player} session={session} />
     </div>
   );
 }
 
 // ─── RANKINGS VIEW ─────────────────────────────────────────────────────────────
-function RankingsView({ player }: { player: TennisPlayer }) {
+function RankingsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [scenarioLoading, setScenarioLoading] = useState(false);
   const [rankScenarios, setRankScenarios] = useState<{event: string; result: string; pts: number}[]>([
     { event: 'Rome Masters 1000', result: 'Quarterfinal', pts: 180 },
@@ -1332,12 +1458,13 @@ function RankingsView({ player }: { player: TennisPlayer }) {
           </div>
         );
       })()}
+      <TennisAISection context="rankings" player={player} session={session} />
     </div>
   );
 }
 
 // ─── SCHEDULE VIEW ─────────────────────────────────────────────────────────────
-function ScheduleView() {
+function ScheduleView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const calendar = [
     { date: '6-12 Apr',   tournament: 'Monte-Carlo Masters',              cat: 'Masters 1000',  surface: 'Clay',        location: '🇲🇨 Monaco',    status: 'active',   points: 215, entered: true },
     { date: '13-19 Apr',  tournament: 'Barcelona Open',                   cat: 'ATP 500',       surface: 'Clay',        location: '🇪🇸 Barcelona', status: 'upcoming', points: 0,   entered: true },
@@ -1411,12 +1538,13 @@ function ScheduleView() {
           </tbody>
         </table>
       </div>
+      <TennisAISection context="schedule" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PERFORMANCE VIEW ──────────────────────────────────────────────────────────
-function PerformanceView({ player }: { player: TennisPlayer }) {
+function PerformanceView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [perfTab, setPerfTab] = useState<'overview' | 'serve' | 'return' | 'pressure'>('overview');
 
   const surfaces = [
@@ -1654,6 +1782,7 @@ function PerformanceView({ player }: { player: TennisPlayer }) {
           <div className="text-sm text-gray-400 text-center py-8">Under Pressure analysis — coming soon</div>
         </div>
       )}
+      <TennisAISection context="performance" player={player} session={session} />
     </div>
   );
 }
@@ -1661,7 +1790,7 @@ function PerformanceView({ player }: { player: TennisPlayer }) {
 // ─── MATCH PREP VIEW ───────────────────────────────────────────────────────────
 
 // ─── SHOT HEATMAPS VIEW ──────────────────────────────────────────────────────
-function ShotHeatmapsView() {
+function ShotHeatmapsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [heatmapTab, setHeatmapTab] = useState<'serve' | 'return' | 'groundstroke' | 'net'>('serve');
   const [handFilter, setHandFilter] = useState<string>('all');
   const [surfaceFilter, setSurfaceFilter] = useState<string>('all');
@@ -1935,12 +2064,13 @@ function ShotHeatmapsView() {
           <div className="text-xs text-gray-300">Under pressure (30-40), 73% of double faults go long to deuce court — a specific pattern triggered by going for too much. Fix: at 30-40, default to kick serve to the body, 165km/h, not the flat T serve. Percentage play eliminates the long miss.</div>
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PERFORMANCE RATING VIEW ─────────────────────────────────────────────────
-function PerformanceRatingView() {
+function PerformanceRatingView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const matchData = [
     { opp: 'Alc', rating: 61 }, { opp: 'Med', rating: 73 }, { opp: 'Rub', rating: 58 },
     { opp: 'Fri', rating: 79 }, { opp: 'Nda', rating: 44 }, { opp: 'Zve', rating: 68 },
@@ -2079,10 +2209,11 @@ function PerformanceRatingView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
-function MatchPrepView() {
+function MatchPrepView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const opponent = {
     name: 'Carlos Martinez',
     flag: '🇪🇸',
@@ -2175,12 +2306,13 @@ function MatchPrepView() {
           <p className="text-teal-400">Key: win the first set. He mentally disengages if he loses it.</p>
         </div>
       </div>
+      <TennisAISection context="matchprep" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PRACTICE LOG VIEW ─────────────────────────────────────────────────────────
-function PracticeLogView() {
+function PracticeLogView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [practiceTab, setPracticeTab] = useState<'log' | 'aiinsights' | 'progress'>('log');
   const [aiAnalysis, setAiAnalysis] = useState<Record<number, { loading: boolean; result: string | null }>>({});
 
@@ -2555,7 +2687,7 @@ function SwingVisionCards() {
     </div>
   );
 }
-function VideoLibraryView() {
+function VideoLibraryView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const videos = [
     { title: 'Monte-Carlo R2 vs Hurkacz', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
     { title: 'Monte-Carlo R1 vs Cerundolo', category: 'Match Footage', date: '7 Apr 2026', duration: '1h 18m', tags: ['clay', 'win', 'M1000'] },
@@ -2645,12 +2777,13 @@ function VideoLibraryView() {
         {/* SwingVision Video Cards */}
         <SwingVisionCards />
       </div>
+      <TennisAISection context="video" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TEAM HUB VIEW ────────────────────────────────────────────────────────────
-function TeamHubView({ player }: { player: TennisPlayer }) {
+function TeamHubView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const team = [
     {
       role: 'Lead Coach', name: 'Marco Bianchi', flag: '🇮🇹',
@@ -2730,12 +2863,13 @@ function TeamHubView({ player }: { player: TennisPlayer }) {
           </div>
         ))}
       </div>
+      <TennisAISection context="team" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PHYSIO VIEW ──────────────────────────────────────────────────────────────
-function PhysioView() {
+function PhysioView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const totalMatches90d = MATCH_LOAD_DATA.reduce((a,w)=>a+w.matches,0);
   const totalHours90d = MATCH_LOAD_DATA.reduce((a,w)=>a+w.hours,0);
   const fatigueRisk = totalMatches90d > 20;
@@ -2870,12 +3004,13 @@ function PhysioView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── NUTRITION & CONDITIONING VIEW ────────────────────────────────────────────
-function NutritionView({ player: _player }: { player: TennisPlayer }) {
+function NutritionView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const matchDayPlan = [
     { time: '07:00', meal: 'Breakfast', detail: 'Oats with banana + honey, 2 eggs, orange juice', kcal: 680, carbs: 95, protein: 28, fat: 14 },
     { time: '10:30', meal: 'Pre-match snack', detail: 'Rice cakes with peanut butter, energy gel, 500ml water + electrolytes', kcal: 340, carbs: 52, protein: 8, fat: 10 },
@@ -2954,12 +3089,13 @@ function NutritionView({ player: _player }: { player: TennisPlayer }) {
           </div>
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PRESSURE ANALYSIS VIEW ───────────────────────────────────────────────────
-function PressureAnalysisView({ player: _player }: { player: TennisPlayer }) {
+function PressureAnalysisView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const pressureStats = [
     { scenario: '30-40 (break point down)', winPct: 38, total: 89, won: 34, trend: 'down' },
     { scenario: 'Tiebreak games', winPct: 61, total: 46, won: 28, trend: 'up' },
@@ -3032,6 +3168,7 @@ function PressureAnalysisView({ player: _player }: { player: TennisPlayer }) {
         <div className="text-sm font-semibold text-purple-400 mb-2">Marco&apos;s Pressure Assessment</div>
         <div className="text-xs text-gray-300 leading-relaxed">Alex&apos;s tiebreak record (61%) is above tour average and is a genuine weapon — especially on grass (71%). The main vulnerability is at 30-40 when serving: only 38% of these points are won. Mental trigger: at 30-40, default to kick serve to the body.</div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -3052,7 +3189,7 @@ const SIGNATURE_SHOTS = [
   { shot: 'Body Serve Return Winner', count: 89, winPct: 66, surface: 'All', description: 'Aggressive return off body serve — forehand block winner' },
 ];
 
-function AceTrackerView({ player: _player }: { player: TennisPlayer }) {
+function AceTrackerView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const careerAces = 214;
   const seasonAces = 87;
   const nextMilestone = ACE_MILESTONES.find(m=>!m.achieved);
@@ -3120,12 +3257,13 @@ function AceTrackerView({ player: _player }: { player: TennisPlayer }) {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── RACKET & STRINGS VIEW ────────────────────────────────────────────────────
-function RacketView() {
+function RacketView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [humidity, setHumidity] = useState(65);
   const tensionHistory = [
     { tournament: 'Monte-Carlo 2026', surface: 'Clay', humidity: 72, mains: 24, crosses: 23, result: 'QF', note: 'Good feel — Luxilon ALU 125' },
@@ -3269,12 +3407,13 @@ function RacketView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PLAYING PARTNERS VIEW ─────────────────────────────────────────────────────
-function PlayingPartnersView() {
+function PlayingPartnersView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const hittingPartners = [
     { name: 'Lucas Moreau', ranking: 245, nationality: '🇫🇷', available: true, notes: 'Reliable clay hitter. Good baseline rallies. Available Monte-Carlo through Madrid.' },
     { name: 'Tom Henning', ranking: 312, nationality: '🇩🇪', available: true, notes: 'Strong serve. Good grass practice partner. Halle/Wimbledon stretch.' },
@@ -3370,12 +3509,13 @@ function PlayingPartnersView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── DOUBLES VIEW ──────────────────────────────────────────────────────────────
-function DoublesView({ player }: { player: TennisPlayer }) {
+function DoublesView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const doublesH2H = [
     { opponents: 'Mektic / Pavic', result: 'L', score: '4-6, 3-6', tournament: 'Australian Open 2026' },
     { opponents: 'Salisbury / Ram', result: 'W', score: '6-3, 7-6', tournament: 'Rotterdam 2026' },
@@ -3484,12 +3624,13 @@ function DoublesView({ player }: { player: TennisPlayer }) {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── SPONSORSHIP VIEW ─────────────────────────────────────────────────────────
-function SponsorshipView() {
+function SponsorshipView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const deals = [
     {
       sponsor: 'Wilson', category: 'Racket & Equipment', type: 'Equipment + Bonus', value: 'GBP 45,000/yr + bonuses', status: 'Active', expiry: 'Dec 2027', daysLeft: 638,
@@ -3593,12 +3734,13 @@ function SponsorshipView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="sponsorship" player={player} session={session} />
     </div>
   );
 }
 
 // ─── FINANCIAL VIEW ───────────────────────────────────────────────────────────
-function FinancialView() {
+function FinancialView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const prizeMoneyLog = [
     { tournament: 'Australian Open', round: 'R4', prize_usd: 332000, prize_gbp: 262000, currency: 'AUD', surface: 'Hard', cat: 'Grand Slam' },
     { tournament: 'Rotterdam ATP 500', round: 'W', prize_usd: 118000, prize_gbp: 93000, currency: 'EUR', surface: 'Indoor', cat: 'ATP 500' },
@@ -3718,12 +3860,13 @@ function FinancialView() {
         </div>
         <div className="mt-3 text-xs text-gray-500">Export structured data by jurisdiction for your accountant. 20+ jurisdictions tracked annually.</div>
       </div>
+      <TennisAISection context="financial" player={player} session={session} />
     </div>
   );
 }
 
 // ─── EXHIBITION VIEW ───────────────────────────────────────────────────────────
-function ExhibitionView() {
+function ExhibitionView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const exhibitions = [
     { date: '13 Apr 2026', event: 'Monte-Carlo Exhibition Night', location: '🇲🇨 Monaco', fee: 'GBP 25,000', status: 'Confirmed', opponent: 'G. Monfils' },
     { date: '28 Jun 2026', event: 'Giorgio Armani Tennis Classic', location: '🇬🇧 London (Hurlingham)', fee: 'GBP 15,000', status: 'Confirmed', opponent: 'TBD' },
@@ -3792,12 +3935,13 @@ function ExhibitionView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── AGENT PIPELINE VIEW ───────────────────────────────────────────────────────
-function AgentPipelineView() {
+function AgentPipelineView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const deals = [
     { sponsor: 'Nike', value: 'GBP 150k/yr', stage: 'Negotiating', nextStep: 'Counter-offer due 15 Apr', category: 'Apparel (potential switch)' },
     { sponsor: 'Porsche', value: 'GBP 80k/yr', stage: 'Contacted', nextStep: 'Intro meeting scheduled 22 Apr', category: 'Automotive' },
@@ -3879,12 +4023,13 @@ function AgentPipelineView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MEDIA & CONTENT VIEW ─────────────────────────────────────────────────────
-function MediaView() {
+function MediaView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [pressLoading, setPressLoading] = useState(false);
   const [pressResult, setPressResult] = useState<{press_quote: string; social_instagram: string; social_x: string} | null>(null);
   const [matchResult, setMatchResult] = useState('Won 6-4 4-6 7-5 vs Cerundolo');
@@ -3993,19 +4138,68 @@ function MediaView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-// ─── TRAVEL VIEW ─────────────────────────────────────────────────────────────
-function TravelView() {
-  const upcoming = [
-    { event: 'Depart Monte-Carlo to Barcelona', date: '20 Apr', details: 'Flight EasyJet U2-4871 . 11:30 MCM to BCN . Team: Alex + Marco + Sarah', status: 'Booked' },
-    { event: 'Arrive Barcelona — Hotel Arts', date: '20 Apr', details: 'Check-in 15:00 . 3 rooms booked (Alex suite, team rooms)', status: 'Confirmed' },
-    { event: 'Practice courts — Real Club de Tenis Barcelona', date: '21 Apr', details: '09:00-11:30 . Court 2 reserved . Luis joining remotely for conditioning review', status: 'Confirmed' },
-    { event: 'Barcelona ATP 500 — First round', date: '14-15 Apr (TBC)', details: 'Draw TBC . Transport from hotel arranged by tournament', status: 'TBC' },
-    { event: 'Barcelona to Madrid (transfer)', date: '20 Apr', details: 'High-speed rail AVE . 2h journey . All 3 team members', status: 'Not booked' },
-  ];
+// ─── TRAVEL RESEARCHER VIEW ──────────────────────────────────────────────────
+interface FlightResult{airline:string;flightNo:string;departure:string;arrival:string;duration:string;stops:string;price:number;class:string;bookingUrl?:string;score:number}
+interface HotelResult{name:string;stars:number;area:string;distanceToVenue:string;pricePerNight:number;totalPrice:number;rating:number;amenities:string[];bookingUrl?:string;score:number}
+
+function TravelView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const [tStep,setTStep]=useState<1|2|3|4>(1)
+  const [searching,setSearching]=useState(false)
+  const [searchPhase,setSearchPhase]=useState('')
+  const [flightResults,setFlightResults]=useState<FlightResult[]>([])
+  const [hotelResults,setHotelResults]=useState<HotelResult[]>([])
+  const [selectedFlight,setSelectedFlight]=useState<FlightResult|null>(null)
+  const [selectedHotel,setSelectedHotel]=useState<HotelResult|null>(null)
+  const [bookingEmail,setBookingEmail]=useState('')
+  const [emailSent,setEmailSent]=useState(false)
+  const [aiNarrative,setAiNarrative]=useState('')
+  const [trOrigin,setTrOrigin]=useState('London (LHR)')
+  const [trDest,setTrDest]=useState('')
+  const [trTourney,setTrTourney]=useState('')
+  const [trDepart,setTrDepart]=useState('')
+  const [trReturn,setTrReturn]=useState('')
+  const [trCabin,setTrCabin]=useState<'economy'|'premium_economy'|'business'>('economy')
+  const [trMaxFlight,setTrMaxFlight]=useState('')
+  const [trHotelBudget,setTrHotelBudget]=useState('')
+  const trNights=7,trPax=1
+  const [trGym,setTrGym]=useState(true)
+  const [trCourts,setTrCourts]=useState(false)
+  const [trEarly,setTrEarly]=useState(false)
+
+  const UPCOMING=[{name:'Madrid Open',dest:'Madrid (MAD)',dates:'26 Apr – 4 May'},{name:'Roland-Garros',dest:'Paris (CDG)',dates:'25 May – 8 Jun'},{name:'Halle Open',dest:'Hanover (HAJ)',dates:'9–15 Jun'},{name:'Wimbledon',dest:'London (LHR)',dates:'30 Jun – 13 Jul'},{name:'US Open',dest:'New York (JFK)',dates:'25 Aug – 7 Sep'},{name:'Bahrain Masters',dest:'Bahrain (BAH)',dates:'12–18 Oct'}]
+
+  const runSearch=async()=>{
+    setSearching(true);setTStep(2);setFlightResults([]);setHotelResults([]);setAiNarrative('')
+    try{
+      setSearchPhase('✈️ Searching flights from '+trOrigin+' to '+trDest+'...')
+      await new Promise(r=>setTimeout(r,800))
+      setSearchPhase('💰 Comparing fares...')
+      const fr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic. Sort by score desc.`}]})})
+      const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+      try{setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))}
+      catch{setFlightResults([{airline:'British Airways',flightNo:'BA0459',departure:'07:15 LHR',arrival:'10:30 MAD',duration:'2h 15m',stops:'Direct',price:189,class:trCabin,bookingUrl:'https://www.britishairways.com',score:94},{airline:'Iberia',flightNo:'IB3167',departure:'06:45 LHR',arrival:'10:05 MAD',duration:'2h 20m',stops:'Direct',price:142,class:trCabin,bookingUrl:'https://www.iberia.com',score:88},{airline:'Vueling',flightNo:'VY7822',departure:'11:30 LHR',arrival:'14:55 MAD',duration:'2h 25m',stops:'Direct',price:98,class:trCabin,bookingUrl:'https://www.vueling.com',score:81},{airline:'easyJet',flightNo:'EZY8821',departure:'13:00 LGW',arrival:'16:20 MAD',duration:'2h 20m',stops:'Direct',price:74,class:trCabin,bookingUrl:'https://www.easyjet.com',score:72},{airline:'Ryanair',flightNo:'FR1234',departure:'06:00 STN',arrival:'09:25 MAD',duration:'2h 25m',stops:'Direct',price:52,class:trCabin,bookingUrl:'https://www.ryanair.com',score:61}])}
+      setSearchPhase('🏨 Searching hotels...')
+      await new Promise(r=>setTimeout(r,700))
+      const hr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value.'} Need: ${[trGym&&'Gym',trCourts&&'Courts',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+      const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+      try{setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))}
+      catch{setHotelResults([{name:'AC Hotel Cuzco',stars:4,area:'Cuzco/IFEMA',distanceToVenue:'8 min taxi',pricePerNight:189,totalPrice:1323,rating:8.6,amenities:['Gym','Restaurant','Bar','WiFi'],bookingUrl:'https://www.booking.com',score:91},{name:'Eurostars Madrid Tower',stars:5,area:'IFEMA',distanceToVenue:'5 min taxi',pricePerNight:240,totalPrice:1680,rating:9.1,amenities:['Gym','Pool','Spa','Restaurant'],bookingUrl:'https://www.booking.com',score:88},{name:'Hotel Puerta de América',stars:5,area:'Av. de América',distanceToVenue:'12 min taxi',pricePerNight:210,totalPrice:1470,rating:8.9,amenities:['Gym','Pool','Tennis courts'],bookingUrl:'https://www.booking.com',score:85},{name:'Ibis Madrid Alcalá',stars:3,area:'East Madrid',distanceToVenue:'15 min taxi',pricePerNight:89,totalPrice:623,rating:8.1,amenities:['WiFi','Restaurant'],bookingUrl:'https://www.booking.com',score:71}])}
+      setAiNarrative(`Best: ${flightResults[0]?.airline??'Iberia'} £${flightResults[0]?.price??142} + ${hotelResults[0]?.name??'AC Hotel Cuzco'} £${hotelResults[0]?.pricePerNight??189}/night. Total est: £${((flightResults[0]?.price??142)*trPax+(hotelResults[0]?.totalPrice??1323)).toLocaleString()}.`)
+      setTStep(3)
+    }catch(e){console.error(e)}
+    setSearching(false);setSearchPhase('')
+  }
+
+  const genEmail=()=>{if(!selectedFlight&&!selectedHotel)return;setBookingEmail([`Subject: Travel — ${trTourney||trDest} — ${session.userName||player.name}`,'',`Hi,`,'',`Please book for ${session.userName||player.name} (ATP #${player.ranking}):`,selectedFlight?`\n✈️ ${selectedFlight.airline} (${selectedFlight.flightNo})\n${trOrigin} → ${trDest}\nDepart: ${trDepart}\nClass: ${selectedFlight.class}\nPrice: £${selectedFlight.price*trPax}\nBook: ${selectedFlight.bookingUrl}`:'',selectedHotel?`\n🏨 ${selectedHotel.name} (${selectedHotel.stars}★)\nCheck-in: ${trDepart}\nNights: ${trNights}\nPrice: £${selectedHotel.totalPrice}\nBook: ${selectedHotel.bookingUrl}${trEarly?'\nEarly check-in requested.':''}`:'',`\nTotal: £${((selectedFlight?.price??0)*trPax+(selectedHotel?.totalPrice??0)).toLocaleString()}`,'','Thanks',session.userName||player.name].filter(Boolean).join('\n'));setTStep(4)}
+
+  const ScBadge=({s}:{s:number})=><div className={`text-[10px] px-2 py-1 rounded-full font-bold ${s>=90?'bg-green-600/20 text-green-400':s>=75?'bg-purple-600/20 text-purple-400':s>=60?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{s} Lumio</div>
+
+  void session // used in genEmail
 
   return (
     <div className="space-y-6">
@@ -4050,12 +4244,13 @@ function TravelView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="travel" player={player} session={session} />
     </div>
   );
 }
 
 // ─── FEDERATION VIEW ─────────────────────────────────────────────────────────
-function FederationView() {
+function FederationView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar />
@@ -4121,12 +4316,13 @@ function FederationView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── CAREER PLANNING VIEW ─────────────────────────────────────────────────────
-function CareerView({ player }: { player: TennisPlayer }) {
+function CareerView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [careerTab, setCareerTab] = useState<'1year' | '3year' | '5year' | '10year'>('1year');
 
   const goals = [
@@ -4283,12 +4479,13 @@ function CareerView({ player }: { player: TennisPlayer }) {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── ACADEMY VIEW ──────────────────────────────────────────────────────────────
-function AcademyView() {
+function AcademyView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <QuickActionsBar />
@@ -4382,12 +4579,13 @@ function AcademyView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MENTAL PERFORMANCE VIEW ───────────────────────────────────────────────────
-function MentalPerformanceView() {
+function MentalPerformanceView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const debriefLog = [
     { date: '9 Apr', match: 'Monte-Carlo R2 vs Hurkacz', topic: 'Pressure serve at 5-4', outcome: 'Held serve. Positive close-out.', rating: 8 },
     { date: '15 Mar', match: 'Indian Wells QF vs Rune', topic: 'Third set collapse', outcome: 'Lost composure after losing 2nd set. Need reset routine.', rating: 4 },
@@ -4515,6 +4713,7 @@ function MentalPerformanceView() {
           </table>
         </div>
       </div>
+      <TennisAISection context="mental" player={player} session={session} />
     </div>
   );
 }
@@ -4522,7 +4721,7 @@ function MentalPerformanceView() {
 // ─── SETTINGS VIEW ─────────────────────────────────────────────────────────────
 
 // ─── COURT BOOKING VIEW ───────────────────────────────────────────────────────
-function CourtBookingView() {
+function CourtBookingView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [bookings, setBookings] = useState<Array<{id:string, date:string, time:string, court:string, type:string, partner:string, notes:string, status:'confirmed'|'pending'|'cancelled'}>>([
     { id:'1', date:'2025-04-07', time:'09:00', court:'Court 3 (Clay)', type:'Practice', partner:'Marco Bianchi (Coach)', notes:'Serve practice + baseline drills', status:'confirmed' },
     { id:'2', date:'2025-04-07', time:'14:00', court:'Court 1 (Hard)', type:'Match Play', partner:'Training Partner', notes:'Simulated match conditions', status:'confirmed' },
@@ -4729,10 +4928,11 @@ function CourtBookingView() {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
-function SettingsView({ player }: { player: TennisPlayer }) {
+function SettingsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [tourMode, setTourMode] = useState<'ATP' | 'WTA'>(player.tour || 'ATP');
   return (
     <div className="space-y-6">
@@ -4981,7 +5181,7 @@ function PlayerCard({ player }: { player: TennisPlayer }) {
 }
 
 // ─── LIVE SCORES VIEW ──────────────────────────────────────────────────────────
-const LiveScoresView = ({ liveScores, fixtures }: { liveScores: any[]; fixtures: any[] }) => {
+const LiveScoresView = ({ liveScores, fixtures, player, session }: { liveScores: any[]; fixtures: any[]; player: TennisPlayer; session: SportsDemoSession }) => {
   const DEMO_MATCHES = [
     { p1: 'J. Sinner [1]', p2: 'C. Alcaraz [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
     { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
@@ -5026,12 +5226,13 @@ const LiveScoresView = ({ liveScores, fixtures }: { liveScores: any[]; fixtures:
         ))}
       </div>
       {isDemo && <p className="text-xs text-gray-600 text-center">Powered by API-Tennis — add NEXT_PUBLIC_TENNIS_API_KEY to enable live data</p>}
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 };
 
 // ─── OPPONENT SCOUT VIEW ────────────────────────────────────────────────────────
-const OpponentScoutView = ({ h2hData }: { h2hData: any[] }) => {
+const OpponentScoutView = ({ h2hData, player, session }: { h2hData: any[]; player: TennisPlayer; session: SportsDemoSession }) => {
   const opponent = { name: 'Carlos Ferreira', ranking: 54, flag: '🇧🇷', nationality: 'Brazilian', age: 26, height: "6'0\" / 183cm", plays: 'Left-handed', backhand: 'Two-handed', coach: 'Ricardo Souza' };
   return (
     <div>
@@ -5087,12 +5288,13 @@ const OpponentScoutView = ({ h2hData }: { h2hData: any[] }) => {
           ))}
         </ul>
       </div>
+      <TennisAISection context="scout" player={player} session={session} />
     </div>
   );
 };
 
 // ─── SURFACE ANALYSIS VIEW ──────────────────────────────────────────────────────
-const SurfaceAnalysisView = ({ player }: { player: TennisPlayer }) => {
+const SurfaceAnalysisView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const surfaces = [
     { name: 'Clay', emoji: '🟤', win: 68, matches: 50, titles: 1, wl: '34-16', best: 'QF Roland Garros', color: 'orange' },
     { name: 'Hard', emoji: '🔵', win: 61, matches: 72, titles: 1, wl: '44-28', best: 'R16 US Open', color: 'blue' },
@@ -5175,12 +5377,13 @@ const SurfaceAnalysisView = ({ player }: { player: TennisPlayer }) => {
         <StatCard label="Deciding Sets" value="64%" sub="9/14" color="blue" />
         <StatCard label="5-Set Record" value="3-1" sub="75% win rate" color="teal" />
       </div>
+      <TennisAISection context="surface" player={player} session={session} />
     </div>
   );
 };
 
 // ─── DRAW & BRACKET VIEW ────────────────────────────────────────────────────────
-const DrawBracketView = () => {
+const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const [drawTab, setDrawTab] = useState<'draw'|'schedule'|'prize'|'points'>('draw');
   const rounds = ['R16', 'QF', 'SF', 'Final'];
   const bracket = [
@@ -5275,12 +5478,13 @@ const DrawBracketView = () => {
           <p className="text-gray-500 text-sm">{drawTab === 'schedule' ? 'Order of Play — updated daily by tournament' : 'Points breakdown by round'}</p>
         </div>
       )}
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 };
 
 // ─── TEAM COMMS VIEW ────────────────────────────────────────────────────────────
-const TeamCommsView = () => {
+const TeamCommsView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const [recipient, setRecipient] = useState('All Team');
   const [msgType, setMsgType] = useState('Update');
   const [msgText, setMsgText] = useState('');
@@ -5334,12 +5538,13 @@ const TeamCommsView = () => {
           </div>
         ))}
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 };
 
 // ─── ACCREDITATIONS VIEW ────────────────────────────────────────────────────────
-const AccreditationsView = () => {
+const AccreditationsView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const accreditations = [
     { name: 'ATP Tour Card', status: 'Active', org: 'ATP', expires: 'Dec 2026', daysLeft: 270 },
     { name: 'ITF Registration', status: 'Active', org: 'ITF', expires: 'Dec 2026', daysLeft: 270 },
@@ -5431,12 +5636,13 @@ const AccreditationsView = () => {
           </div>
         ))}
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 };
 
 // ─── POINTS FORECASTER VIEW ──────────────────────────────────────────────────
-const PointsForecasterView = ({ player }: { player: TennisPlayer }) => {
+const PointsForecasterView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const [selectedRound, setSelectedRound] = useState(1);
   const scenarios = [
     { round: 'R32', points: 10, rankingImpact: -80 },
@@ -5529,12 +5735,13 @@ const PointsForecasterView = ({ player }: { player: TennisPlayer }) => {
           <span>Need +{(raceTarget - racePoints).toLocaleString()} pts for qualification ({raceTarget.toLocaleString()} threshold)</span>
         </div>
       </div>
+      <TennisAISection context="forecaster" player={player} session={session} />
     </div>
   );
 };
 
 // ─── ENTRY MANAGER VIEW ─────────────────────────────────────────────────────────
-const EntryManagerView = () => {
+const EntryManagerView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const entries = [
     { tournament: 'Madrid Open', level: 'Masters 1000', surface: 'Clay', date: '28 Apr', deadline: 'CLOSED', signin: '26 Apr', status: 'Entered', daysLeft: 0 },
     { tournament: 'Rome Masters', level: 'Masters 1000', surface: 'Clay', date: '12 May', deadline: '14 Apr', signin: '10 May', status: 'Entered', daysLeft: 9 },
@@ -5605,12 +5812,13 @@ const EntryManagerView = () => {
         <StatCard label="Wildcards" value="1" sub="used" color="orange" />
         <StatCard label="Protected Ranking" value="0" sub="entries used" color="teal" />
       </div>
+      <TennisAISection context="entries" player={player} session={session} />
     </div>
   );
 };
 
 // ─── MATCH REPORTS VIEW ──────────────────────────────────────────────────────
-const MatchReportsView = () => {
+const MatchReportsView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<Record<string, string>>({});
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
@@ -5698,12 +5906,13 @@ const MatchReportsView = () => {
           </div>
         ))}
       </div>
+      <TennisAISection context="matchreports" player={player} session={session} />
     </div>
   );
 };
 
 // ─── DATA HUB VIEW ──────────────────────────────────────────────────────────────
-const DataHubView = () => {
+const DataHubView = ({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) => {
   const hasApiKey = !!TENNIS_API_KEY;
   const [toastMsg, setToastMsg] = useState('');
   const sources = [
@@ -5767,14 +5976,15 @@ const DataHubView = () => {
           {toastMsg}
         </div>
       )}
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 };
 
 // ─── GPS & COURT HEATMAP VIEW ─────────────────────────────────────────────────
-function GPSCourtView({ player: _player }: { player: TennisPlayer }) {
+function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [selectedDay, setSelectedDay] = useState(GPS_SESSIONS_TENNIS.length - 1);
-  const session = GPS_SESSIONS_TENNIS[selectedDay];
+  const gpsSession = GPS_SESSIONS_TENNIS[selectedDay];
   const latestACWR = GPS_SESSIONS_TENNIS[GPS_SESSIONS_TENNIS.length - 1].acwr;
   const acwrStatus = latestACWR > 1.3 ? { label: 'High Risk', color: 'text-red-400', bg: 'bg-red-600/20' }
     : latestACWR > 1.15 ? { label: 'Monitor', color: 'text-yellow-400', bg: 'bg-yellow-600/20' }
@@ -5843,7 +6053,7 @@ function GPSCourtView({ player: _player }: { player: TennisPlayer }) {
             ))}
           </div>
           <div className="space-y-2 text-xs border-t border-gray-800 pt-4">
-            {([['Type',session.type],['Surface',session.surface],['Duration',session.duration>0?`${session.duration} min`:'Rest day'],['Distance',session.distance>0?`${session.distance} km`:'—'],['Load',session.load>0?`${session.load} AU`:'—'],['ACWR',session.acwr.toFixed(2)]] as [string,string][]).map(([l,v])=>(
+            {([['Type',gpsSession.type],['Surface',gpsSession.surface],['Duration',gpsSession.duration>0?`${gpsSession.duration} min`:'Rest day'],['Distance',gpsSession.distance>0?`${gpsSession.distance} km`:'—'],['Load',gpsSession.load>0?`${gpsSession.load} AU`:'—'],['ACWR',gpsSession.acwr.toFixed(2)]] as [string,string][]).map(([l,v])=>(
               <div key={l} className="flex justify-between">
                 <span className="text-gray-500">{l}</span>
                 <span className="text-white">{v}</span>
@@ -5889,12 +6099,13 @@ function GPSCourtView({ player: _player }: { player: TennisPlayer }) {
           <span className="text-red-400">■ High load</span>
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── PRIZE FORECASTER VIEW ────────────────────────────────────────────────────
-function PrizeForecasterView({ player: _player }: { player: TennisPlayer }) {
+function PrizeForecasterView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const prizeTables: Record<string, Record<string, number>> = {
     'Grand Slam': { 'Winner': 3000000, 'Final': 1700000, 'Semifinal': 900000, 'Quarterfinal': 560000, 'Round of 16': 218000, 'Round of 32': 118000, 'First Round': 60000 },
     'Masters 1000': { 'Winner': 1000000, 'Final': 550000, 'Semifinal': 280000, 'Quarterfinal': 148000, 'Round of 16': 72000, 'Round of 32': 36000, 'First Round': 15000 },
@@ -5977,6 +6188,7 @@ function PrizeForecasterView({ player: _player }: { player: TennisPlayer }) {
           ))}
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -6046,7 +6258,7 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
 
 
 // ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
-function MatchReportsView() {
+function MatchReportsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<Record<string, string>>({});
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
@@ -6255,12 +6467,13 @@ function MatchReportsView() {
           </div>
         ))}
       </div>
+      <TennisAISection context="matchreports" player={player} session={session} />
     </div>
   );
 }
 
 // ─── DATA HUB VIEW ��───────────────────────────────────────────────────────────
-function DataHubView() {
+function DataHubView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [showComStatConfirm, setShowComStatConfirm] = useState(false);
 
   const hasApiKey = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_TENNIS_API_KEY;
@@ -6409,19 +6622,19 @@ function DataHubView() {
     ]
     const renderPerfTab = () => {
       switch (perfTab) {
-        case 'rankings':     return <RankingsView player={player} />
-        case 'forecaster':   return <PointsForecasterView player={player} />
-        case 'surface':      return <SurfaceAnalysisView player={player} />
-        case 'stats':        return <PerformanceView player={player} />
-        case 'matchreports': return <MatchReportsView />
-        case 'practice':     return <PracticeLogView />
-        case 'video':        return <VideoLibraryView />
-        case 'heatmaps':     return <ShotHeatmapsView />
-        case 'rating':       return <PerformanceRatingView />
-        case 'pressure':     return <PressureAnalysisView player={player} />
-        case 'ace':          return <AceTrackerView player={player} />
-        case 'gps':          return <GPSCourtView player={player} />
-        default:             return <RankingsView player={player} />
+        case 'rankings':     return <RankingsView player={player} session={session} />
+        case 'forecaster':   return <PointsForecasterView player={player} session={session} />
+        case 'surface':      return <SurfaceAnalysisView player={player} session={session} />
+        case 'stats':        return <PerformanceView player={player} session={session} />
+        case 'matchreports': return <MatchReportsView player={player} session={session} />
+        case 'practice':     return <PracticeLogView player={player} session={session} />
+        case 'video':        return <VideoLibraryView player={player} session={session} />
+        case 'heatmaps':     return <ShotHeatmapsView player={player} session={session} />
+        case 'rating':       return <PerformanceRatingView player={player} session={session} />
+        case 'pressure':     return <PressureAnalysisView player={player} session={session} />
+        case 'ace':          return <AceTrackerView player={player} session={session} />
+        case 'gps':          return <GPSCourtView player={player} session={session} />
+        default:             return <RankingsView player={player} session={session} />
       }
     }
     return (
@@ -6443,31 +6656,49 @@ function DataHubView() {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} setActiveSection={setActiveSection} />;
-      case 'morning':      return <MorningBriefingView player={player} />;
-      case 'performance':  return <PerformanceTabsView />;
-      case 'schedule':     return <ScheduleView />;
-      case 'livescores':   return <LiveScoresView liveScores={liveScores} fixtures={fixtures} />;
-      case 'matchprep':    return <MatchPrepView />;
-      case 'scout':        return <OpponentScoutView h2hData={h2hData} />;
-      case 'draw':         return <DrawBracketView />;
-      case 'team':         return <TeamHubView player={player} />;
-      case 'physio':       return <PhysioView />;
-      case 'nutrition':    return <NutritionView player={player} />;
-      case 'racket':       return <RacketView />;
-      case 'mental':       return <MentalPerformanceView />;
-      case 'travel':       return <TravelView />;
-      case 'sponsorship':  return <SponsorshipView />;
-      case 'financial':    return <FinancialView />;
-      case 'media':        return <MediaView />;
-      case 'exhibition':   return <ExhibitionView />;
-      case 'pipeline':     return <AgentPipelineView />;
-      case 'entries':      return <EntryManagerView />;
-      case 'career':       return <CareerView player={player} />;
-      case 'academy':      return <AcademyView />;
-      case 'datahub':      return <DataHubView />;
-      case 'settings':     return <SettingsView player={player} />;
-      default:             return <DashboardView player={player} setActiveSection={setActiveSection} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} />;
+      case 'morning':      return <MorningBriefingView player={player} session={session} />;
+      case 'rankings':     return <RankingsView player={player} session={session} />;
+      case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
+      case 'entries':      return <EntryManagerView player={player} session={session} />;
+      case 'schedule':     return <ScheduleView player={player} session={session} />;
+      case 'performance':  return <PerformanceView player={player} session={session} />;
+      case 'matchprep':    return <MatchPrepView player={player} session={session} />;
+      case 'matchreports': return <MatchReportsView player={player} session={session} />;
+      case 'practice':     return <PracticeLogView player={player} session={session} />;
+      case 'video':        return <VideoLibraryView player={player} session={session} />;
+      case 'shotheatmaps': return <ShotHeatmapsView player={player} session={session} />;
+      case 'perfrating':   return <PerformanceRatingView player={player} session={session} />;
+      case 'team':         return <TeamHubView player={player} session={session} />;
+      case 'physio':       return <PhysioView player={player} session={session} />;
+      case 'nutrition':    return <NutritionView player={player} session={session} />;
+      case 'pressure':     return <PressureAnalysisView player={player} session={session} />;
+      case 'acetracker':   return <AceTrackerView player={player} session={session} />;
+      case 'racket':       return <RacketView player={player} session={session} />;
+      case 'partners':     return <PlayingPartnersView player={player} session={session} />;
+      case 'doubles':      return <DoublesView player={player} session={session} />;
+      case 'sponsorship':  return <SponsorshipView player={player} session={session} />;
+      case 'media':        return <MediaView player={player} session={session} />;
+      case 'financial':    return <FinancialView player={player} session={session} />;
+      case 'prizeforecast': return <PrizeForecasterView player={player} session={session} />;
+      case 'exhibition':   return <ExhibitionView player={player} session={session} />;
+      case 'pipeline':     return <AgentPipelineView player={player} session={session} />;
+      case 'travel':       return <TravelView player={player} session={session} />;
+      case 'federation':   return <FederationView player={player} session={session} />;
+      case 'datahub':      return <DataHubView player={player} session={session} />;
+      case 'career':       return <CareerView player={player} session={session} />;
+      case 'academy':      return <AcademyView player={player} session={session} />;
+      case 'mental':       return <MentalPerformanceView player={player} session={session} />;
+      case 'courtbooking': return <CourtBookingView player={player} session={session} />;
+      case 'teamcomms':    return <TeamCommsView player={player} session={session} />;
+      case 'accreditations': return <AccreditationsView player={player} session={session} />;
+      case 'settings':     return <SettingsView player={player} session={session} />;
+      case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} player={player} session={session} />;
+      case 'scout':       return <OpponentScoutView h2hData={h2hData} player={player} session={session} />;
+      case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
+      case 'gps':         return <GPSCourtView player={player} session={session} />;
+      case 'draw':        return <DrawBracketView player={player} session={session} />;
+      default:             return <DashboardView player={player} session={session} />;
     }
   };
 
@@ -6625,6 +6856,7 @@ function DataHubView() {
           </div>
         </div>
       </div>
+      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
