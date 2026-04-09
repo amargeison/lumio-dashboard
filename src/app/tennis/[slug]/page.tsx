@@ -6795,7 +6795,6 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           </div>
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
     </div>
   );
 }
