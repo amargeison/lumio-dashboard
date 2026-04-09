@@ -297,6 +297,112 @@ const PlayerCard = ({ player, setActiveSection = () => {} }: { player: GolfPlaye
   </div>
 );
 
+// ─── AI SECTION COMPONENT ────────────────────────────────────────────────────
+interface GolfAISectionProps {
+  context: string
+  player: GolfPlayer
+  session: SportsDemoSession
+}
+
+function GolfAISection({ context, player, session }: GolfAISectionProps) {
+  const [summary, setSummary] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [generated, setGenerated] = useState(false)
+
+  const HIGHLIGHTS: Record<string, string[]> = {
+    dashboard:    ['Tee time: 09:24 tomorrow — Augusta National, Hole 1', 'OWGR at risk: 285pts defending this week', 'SG: Putting +0.8 this tournament — above average', 'Caddie confirmed: course notes ready for review', 'Rolex renewal due in 30 days — agent follow-up needed'],
+    owgr:         ['Current OWGR: #42 — up 3 this week', '285 pts defending this week — must finish T20 or better to hold', 'Career high #31 achievable by end of FedEx Cup swing', 'Top-50 OWGR locks Masters invitation for 2027', 'European Ryder Cup points: currently 8th in standings'],
+    strokes:      ['SG: Approach +1.2 this season — top-30 on tour', 'SG: Putting −0.4 this week — needs work', 'SG: Off the tee −0.1 — consistent but not a strength', 'SG: Around green +0.8 — chipping has improved significantly', 'Short game gains offsetting driver inconsistency'],
+    coursefit:     ['Augusta: historically +2.1 SG vs field — good fit', 'Bermuda greens: putting avg −0.6 — prepare for slower roll', 'Par 5 scoring: −0.8 below field avg — birdie opportunity', 'Wind conditions forecast: 15mph — club down approach', 'Course notes from caddie: favour left side holes 10–12'],
+    practicelog:  ['12 range sessions this week — focus on 7-iron consistency', 'Putting green: 200 3-footers logged — 96% success rate', 'Bunker practice: 3 sessions — splash shot improving', 'TrackMan session Tuesday: carry distance +4yds vs last month', 'Pre-round routine: 45 min confirmed for tomorrow'],
+    sponsorship:  ['Rolex renewal: 30-day deadline — agent briefed', 'Callaway content obligation: 2 posts this month (0 done)', 'BMW Pro-Am partner: hospitality day confirmed 2 May', 'New inquiry: luxury watch brand — £120k/yr offer pending', 'Nike apparel: wearing obligation confirmed for this event'],
+    travel:       ['Augusta hotel: confirmed 3 nights (Mon–Thu)', 'Private jet: booked departure Thu post-round', 'Next event: Zurich Classic — New Orleans, 24–27 Apr', 'Caddie flights: confirmed and reimbursed', 'European Tour leg: 4 events confirmed Jun–Jul'],
+    financial:    ['Prize money YTD: £412,800', 'This week\'s purse: $20M — cut = $28,000, win = $3.6M', 'Agent commission: 15% of gross prize money', 'Tax instalment due Jul 31 — accountant briefed', 'Equipment budget: Callaway covered — save £12k this season'],
+    mental:       ['Pre-round routine complete — focus on process not result', 'Last 3 final rounds: 67, 72, 69 — solid closing ability', 'Crowd management: Augusta is loud — noise-cancelling earbuds in bag', 'Breathing protocol: 3-breath reset between shots confirmed', 'Psychologist session next Monday — post-tournament review'],
+    default:      ['Tee time 09:24 tomorrow — Augusta National', 'OWGR 285pts defending this week', 'SG: Putting needs attention this round', 'Rolex renewal due in 30 days', 'Caddie course notes ready for review'],
+  }
+
+  const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
+
+  const generateSummary = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are the AI performance analyst for ${session.userName || player.name}, a professional golfer.
+
+Generate a concise AI department summary for the "${context}" section.
+
+Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos}, career high #${player.career_high_owgr}, tour: ${player.tour}.
+
+Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No headers.`
+          }]
+        })
+      })
+      const data = await res.json()
+      setSummary(data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || '')
+      setGenerated(true)
+    } catch { setSummary('Unable to generate summary.') }
+    setLoading(false)
+  }
+
+  const renderSummary = (text: string) =>
+    text.split('\n').filter(l => l.trim()).map((line, i) => (
+      <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0"><span>{line}</span></div>
+    ))
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-800/60">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">🤖 AI Department Intelligence</span>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><span>✨</span><span className="text-sm font-bold text-white">AI Summary</span></div>
+            <div className="flex items-center gap-2">
+              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
+            </div>
+          </div>
+          {!summary && !loading && (
+            <button onClick={generateSummary} className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-green-600/40 hover:text-green-500 transition-all">
+              Generate AI summary for this section →
+            </button>
+          )}
+          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+          {summary && !loading && <div>{renderSummary(summary)}</div>}
+        </div>
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><span>⚡</span><span className="text-sm font-bold text-white">AI Key Highlights</span></div>
+            <span className="text-[10px] text-green-500 cursor-pointer">Performance</span>
+          </div>
+          <div className="space-y-2">
+            {highlights.map((h, i) => (
+              <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
+                <span className="text-xs text-green-500 font-bold flex-shrink-0 w-4">{i+1}</span>
+                <span className="text-xs text-gray-300">{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 
 const POINTS_EXPIRY = [
@@ -390,7 +496,8 @@ function SeasonIntelligenceStrip() {
   );
 }
 
-function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setActiveSection: (s: string) => void }) {
+function DashboardView({ player, session, setActiveSection }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void }) {
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>('today');
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
@@ -408,139 +515,298 @@ function DashboardView({ player, setActiveSection }: { player: GolfPlayer; setAc
     { time: 'By 18:00', task: 'Callaway Instagram post due — Sarah has drafted caption', done: false },
     { time: '20:00', task: 'Dr. Reed — mental performance check-in (video call)', done: false },
   ];
+
+  const quickActions = [
+    { icon: '✈️', label: 'Book Flight', target: 'travel' },
+    { icon: '📋', label: 'Log Round', target: 'matchprep' },
+    { icon: '🗺️', label: 'Course Notes', target: 'coursefit' },
+    { icon: '🏌️', label: 'Caddie Briefing', target: 'caddie' },
+    { icon: '⚕️', label: 'Log Injury', target: 'physio' },
+    { icon: '🤝', label: 'Sponsor Post', target: 'sponsorship' },
+    { icon: '🎯', label: 'TrackMan Session', target: 'trackman' },
+    { icon: '📋', label: 'Practice Log', target: 'practicelog' },
+    { icon: '💰', label: 'Add Expense', target: 'financial' },
+    { icon: '📱', label: 'Media Request', target: 'media' },
+  ];
+
+  const morningChannels = [
+    { icon: '📊', label: 'OWGR Movement', detail: '#87 → holding — 285pts defending this week' },
+    { icon: '🏌️', label: 'Caddie Notes', detail: 'Mick updated hole strategy for Eichenried R1' },
+    { icon: '⚕️', label: 'Physio Check', detail: 'Lower back mild — cleared for play, treatment 13:00' },
+    { icon: '📈', label: 'SG Alert', detail: 'Putting −1.18 strokes/round — focus of today\'s session' },
+    { icon: '🤝', label: 'Sponsor Alert', detail: 'Callaway post due by 18:00 — Sarah has caption' },
+    { icon: '💰', label: 'Financial', detail: 'Prize money YTD: £367k — on track for £450k target' },
+    { icon: '🧠', label: 'Mental', detail: 'Dr. Reed video call at 20:00 — pre-tournament check-in' },
+    { icon: '🌤️', label: 'Weather', detail: 'Munich: 22°C, partly cloudy, wind 8mph W — ideal conditions' },
+  ];
+
+  const WorldClock = ({ city, offset }: { city: string; offset: number }) => {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const cityTime = new Date(utc + offset * 3600000);
+    const h = cityTime.getHours().toString().padStart(2, '0');
+    const m = cityTime.getMinutes().toString().padStart(2, '0');
+    return (
+      <div className="text-center">
+        <div className="text-xs text-gray-500">{city}</div>
+        <div className="text-sm font-bold text-white">{h}:{m}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🏠" title={`Good morning, ${player.name.split(' ')[0]}.`} subtitle="Here's your overview for today — BMW International Open, Munich." />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="OWGR" value={`#${player.owgr}`} sub="▲3 this week" color="green" />
-        <StatCard label="Race to Dubai" value={`#${player.race_to_dubai_pos}`} sub="Top 50 = card secured" color="teal" />
-        <StatCard label="OWGR Pts Avg" value={player.owgr_points.toFixed(2)} sub="Rolling 104 weeks" color="purple" />
-        <StatCard label="Career High" value={`#${player.career_high_owgr}`} sub="May 2025" color="orange" />
-      </div>
-      {/* This week's event */}
-      <div className="bg-gradient-to-r from-green-900/30 to-teal-900/20 border border-green-600/30 rounded-xl p-5">
-        <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-3">THIS WEEK — BMW INTERNATIONAL OPEN · MUNICH · DP WORLD TOUR</div>
-        <div className="grid grid-cols-3 gap-4">
-          <div><div className="text-xs text-gray-500 mb-1">Tee Time — R1</div><div className="text-white font-bold text-lg">09:42</div><div className="text-xs text-gray-400">Thursday · Hole 1</div></div>
-          <div><div className="text-xs text-gray-500 mb-1">Course Fit Score</div><div className="text-teal-400 font-bold text-lg">8.1 / 10</div><div className="text-xs text-gray-400">3rd best fit on tour</div></div>
-          <div><div className="text-xs text-gray-500 mb-1">Prize Fund</div><div className="text-white font-bold text-lg">$4.5M</div><div className="text-xs text-gray-400">Win = £1.32M</div></div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-white/10 text-xs text-gray-400">
-          SG Putting alert: <span className="text-yellow-400 font-medium">losing 1.18 strokes/round</span> from 8–15ft over last 6 events · Focus of today's session
-        </div>
-      </div>
       {/* Quick Actions Bar */}
-      <div className="flex items-center gap-3 border-b border-t border-gray-800/50 bg-[#0a0c14]">
-        <span className="text-xs text-gray-500 font-medium px-4 whitespace-nowrap">Quick Actions</span>
-        <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {[
-            { icon: <Clipboard size={12} />, label: 'Caddie Sheet', target: 'caddie' },
-            { icon: <Activity size={12} />, label: 'Log Practice', target: 'practicelog' },
-            { icon: <Heart size={12} />, label: 'Log Injury', target: 'physio' },
-            { icon: <BarChart size={12} />, label: 'SG Analysis', target: 'strokes' },
-            { icon: <Map size={12} />, label: 'Course Fit', target: 'coursefit' },
-            { icon: <DollarSign size={12} />, label: 'Prize Money', target: 'financial' },
-            { icon: <Handshake size={12} />, label: 'Sponsor Check', target: 'sponsorship' },
-            { icon: <Star size={12} />, label: 'Pro-Am Prep', target: 'proam' },
-            { icon: <TrendingUp size={12} />, label: 'OWGR Tracker', target: 'owgr' },
-          ].map((a, i) => (
+      <div className="flex items-center gap-3 border-b border-gray-800/50 bg-[#0a0c14] -mx-6 -mt-6 px-6">
+        <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Quick Actions</span>
+        <div className="flex items-center gap-2 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {quickActions.map((a, i) => (
             <button key={i} onClick={() => setActiveSection(a.target)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 bg-green-700 text-gray-50">
-              {a.icon}{a.label}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 text-gray-50" style={{ background: '#15803D' }}>
+              <span>{a.icon}</span>{a.label}
             </button>
           ))}
         </div>
       </div>
-      {/* Recent form */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Recent Form — Last 5 Events</div>
-        <FormTracker results={recentForm} />
-        <div className="grid grid-cols-5 gap-2 mt-3 text-center">
-          {recentForm.map((r, i) => (
-            <div key={i}>
-              <div className="text-xs text-gray-500 truncate">{r.event}</div>
-              <div className="text-xs text-gray-400">{r.prize}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Alerts */}
-      <div className="grid grid-cols-3 gap-4">
-        {(() => {
-          const now = new Date();
-          const upcoming = POINTS_EXPIRY.filter(e => new Date(e.expires) >= now);
-          if (upcoming.length === 0) {
-            return (
-              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4">
-                <div className="text-gray-300 text-sm font-semibold mb-1">✅ Points Expiring</div>
-                <div className="text-white font-bold text-lg">All clear</div>
-                <div className="text-xs text-gray-500">No upcoming expiries in the next 104 weeks.</div>
-              </div>
-            );
-          }
-          const sorted = [...upcoming].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
-          const primary = sorted[0];
-          const secondary = sorted[1];
-          const urg = getExpiryUrgency(primary.expires);
-          const palette: Record<string, { bg: string; border: string; text: string; badgeBg: string }> = {
-            red:    { bg: 'bg-red-500/10',    border: 'border-red-500/40',    text: 'text-red-400',    badgeBg: 'bg-red-500/20' },
-            yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', badgeBg: 'bg-yellow-500/20' },
-            gray:   { bg: 'bg-gray-800/40',   border: 'border-gray-700/40',   text: 'text-gray-300',   badgeBg: 'bg-gray-700/40' },
-          };
-          const c = palette[urg.color];
-          const secondaryUrg = secondary ? getExpiryUrgency(secondary.expires) : null;
-          const showSecondary = secondaryUrg && secondaryUrg.daysLeft <= 60;
-          return (
-            <div className={`${c.bg} border ${c.border} rounded-xl p-4`}>
-              <div className="flex items-center justify-between mb-1">
-                <div className={`${c.text} text-sm font-semibold`}>⚠️ Points Expiring</div>
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${c.badgeBg} ${c.text} uppercase tracking-wider`}>{urg.label}</span>
-              </div>
-              <div className="text-white font-bold text-lg">{primary.points} pts · {urg.daysLeft < 0 ? 'EXPIRED' : `${urg.daysLeft} days`}</div>
-              <div className="text-xs text-gray-400">{primary.event} {primary.pos} — expires {primary.expires}</div>
-              {showSecondary && (
-                <div className="text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-white/5">
-                  Next: {secondary.points} pts · {secondary.event} {secondary.pos} ({secondaryUrg!.daysLeft} days)
-                </div>
-              )}
-            </div>
-          );
-        })()}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-          <div className="text-blue-400 text-sm font-semibold mb-1">📋 Obligation Today</div>
-          <div className="text-white font-bold text-lg">Callaway Post</div>
-          <div className="text-xs text-gray-400">Caption drafted by Sarah — review in Sponsorship tab</div>
-        </div>
-        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-          <div className="text-green-400 text-sm font-semibold mb-1">💰 Prize This Week</div>
-          <div className="text-white font-bold text-lg">Win = £1.32M</div>
-          <div className="text-xs text-gray-400">T10 = £142k · MC = £0 + travel costs</div>
-        </div>
-      </div>
-      {/* Today schedule */}
-      <div>
-        <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">TODAY'S SCHEDULE</div>
-        <div className="space-y-2">
-          {tasks.map((t, i) => (
-            <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${t.done ? 'bg-gray-900/30 border-gray-800/50 opacity-50' : 'bg-[#0d0f1a] border-gray-800'}`}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}>
-                {t.done && <span className="text-teal-400 text-xs">✓</span>}
-              </div>
-              <div className="text-xs text-gray-500 w-16 flex-shrink-0">{t.time}</div>
-              <div className={`text-sm ${t.done ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{t.task}</div>
-            </div>
-          ))}
+
+      {/* Greeting Banner */}
+      <div className="bg-gradient-to-r from-[#15803D]/20 to-teal-900/20 border border-[#15803D]/30 rounded-xl p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>Good morning, {player.name.split(' ')[0]}.</h1>
+            <p className="text-sm text-gray-400 mt-1">Here is your overview for today — BMW International Open, Munich.</p>
+          </div>
+          <div className="flex items-center gap-6">
+            <WorldClock city="London" offset={1} />
+            <WorldClock city="New York" offset={-4} />
+            <WorldClock city="Augusta" offset={-4} />
+            <WorldClock city="Dubai" offset={4} />
+          </div>
         </div>
       </div>
 
-      {/* Season Intelligence Strip */}
-      <SeasonIntelligenceStrip />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="OWGR Ranking" value={`#${player.owgr}`} sub="▲3 this week" color="green" />
+        <StatCard label="Race to Dubai" value={`#${player.race_to_dubai_pos}`} sub={`${player.race_to_dubai_points} pts`} color="teal" />
+        <StatCard label="Season Earnings" value="£367k" sub="Target: £450k" color="yellow" />
+        <StatCard label="Scoring Average" value="70.2" sub="Last 10 rounds" color="purple" />
+      </div>
+
+      {/* Tab Bar */}
+      <div className="flex items-center gap-1 border-b border-gray-800/50 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {([
+          { id: 'today' as const, label: 'Today' },
+          { id: 'quickwins' as const, label: 'Quick Wins' },
+          { id: 'tasks' as const, label: 'Daily Tasks' },
+          { id: 'insights' as const, label: 'Insights' },
+          { id: 'dontmiss' as const, label: "Don't Miss" },
+          { id: 'team' as const, label: 'Team' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${dashTab === t.id ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {dashTab === 'today' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Col 1: Morning Roundup */}
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-sm font-semibold text-white mb-4">🌅 Morning Roundup</div>
+            <div className="space-y-2">
+              {morningChannels.map((ch, i) => (
+                <div key={i} className="flex items-start gap-3 py-2 border-b border-gray-800/40 last:border-0">
+                  <span className="text-base flex-shrink-0 mt-0.5">{ch.icon}</span>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-300">{ch.label}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{ch.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Col 2: Today's Round */}
+          <div className="space-y-4">
+            <div className="bg-gradient-to-br from-[#15803D]/15 to-teal-900/10 border border-[#15803D]/30 rounded-xl p-5">
+              <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-3">TODAY'S ROUND</div>
+              <div className="text-white font-bold text-lg mb-1">Augusta National Golf Club</div>
+              <div className="text-sm text-gray-400 mb-4">Round 2 · Hole 1 · 09:24 tee time</div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-black/20 rounded-lg p-3 text-center">
+                  <div className="text-white font-bold">09:24</div>
+                  <div className="text-[10px] text-gray-500">Tee Time</div>
+                </div>
+                <div className="bg-black/20 rounded-lg p-3 text-center">
+                  <div className="text-white font-bold">R2</div>
+                  <div className="text-[10px] text-gray-500">Round</div>
+                </div>
+                <div className="bg-black/20 rounded-lg p-3 text-center">
+                  <div className="text-white font-bold">7,545</div>
+                  <div className="text-[10px] text-gray-500">Yards</div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 mb-2">Playing With</div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+                  <span className="text-sm">🇪🇺</span>
+                  <span className="text-xs text-gray-300 font-medium">R. McIlroy</span>
+                </div>
+                <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+                  <span className="text-sm">🇺🇸</span>
+                  <span className="text-xs text-gray-300 font-medium">S. Scheffler</span>
+                </div>
+              </div>
+            </div>
+            {/* Recent Form */}
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-sm font-semibold text-white mb-3">Recent Form — Last 5</div>
+              <FormTracker results={recentForm} />
+              <div className="grid grid-cols-5 gap-2 mt-3 text-center">
+                {recentForm.map((r, i) => (
+                  <div key={i}>
+                    <div className="text-xs text-gray-500 truncate">{r.event}</div>
+                    <div className="text-xs text-gray-400">{r.prize}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Col 3: Photo Frame + Venue */}
+          <div className="space-y-4">
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+              <div className="h-40 flex items-center justify-center text-6xl" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>⛳</div>
+              <div className="p-4">
+                <div className="text-white font-semibold text-sm">{player.name}</div>
+                <div className="text-xs text-gray-500 mt-1">#{player.owgr} OWGR · {player.nationality} {player.flag}</div>
+                <div className="text-xs text-gray-500 mt-1">{player.tour} · Age {player.age}</div>
+              </div>
+            </div>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-sm font-semibold text-white mb-3">🏟️ Venue Info</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-gray-500">Course</span><span className="text-gray-300">Golfclub München Eichenried</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Location</span><span className="text-gray-300">Munich, Germany</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Event</span><span className="text-gray-300">BMW International Open</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Prize Fund</span><span className="text-gray-300">$4.5M (Win = £1.32M)</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Course Fit</span><span className="text-teal-400 font-medium">8.1 / 10</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Weather</span><span className="text-gray-300">22°C · 8mph W</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dashTab === 'quickwins' && (
+        <div className="grid grid-cols-3 gap-4">
+          {(() => {
+            const now = new Date();
+            const upcoming = POINTS_EXPIRY.filter(e => new Date(e.expires) >= now);
+            const sorted = [...upcoming].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
+            const primary = sorted[0];
+            const urg = primary ? getExpiryUrgency(primary.expires) : null;
+            return urg && primary ? (
+              <div className={`${urg.color === 'red' ? 'bg-red-500/10 border-red-500/40' : urg.color === 'yellow' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-gray-800/40 border-gray-700/40'} border rounded-xl p-4`}>
+                <div className="text-sm font-semibold mb-1" style={{ color: urg.color === 'red' ? '#f87171' : urg.color === 'yellow' ? '#facc15' : '#d1d5db' }}>⚠️ Points Expiring</div>
+                <div className="text-white font-bold text-lg">{primary.points} pts · {urg.daysLeft} days</div>
+                <div className="text-xs text-gray-400">{primary.event} {primary.pos} — expires {primary.expires}</div>
+              </div>
+            ) : (
+              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4">
+                <div className="text-gray-300 text-sm font-semibold mb-1">✅ Points Expiring</div>
+                <div className="text-white font-bold text-lg">All clear</div>
+              </div>
+            );
+          })()}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+            <div className="text-blue-400 text-sm font-semibold mb-1">📋 Obligation Today</div>
+            <div className="text-white font-bold text-lg">Callaway Post</div>
+            <div className="text-xs text-gray-400">Caption drafted by Sarah — review in Sponsorship tab</div>
+          </div>
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+            <div className="text-green-400 text-sm font-semibold mb-1">💰 Prize This Week</div>
+            <div className="text-white font-bold text-lg">Win = £1.32M</div>
+            <div className="text-xs text-gray-400">T10 = £142k · MC = £0 + travel costs</div>
+          </div>
+        </div>
+      )}
+
+      {dashTab === 'tasks' && (
+        <div>
+          <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">TODAY'S SCHEDULE</div>
+          <div className="space-y-2">
+            {tasks.map((t, i) => (
+              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${t.done ? 'bg-gray-900/30 border-gray-800/50 opacity-50' : 'bg-[#0d0f1a] border-gray-800'}`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}>
+                  {t.done && <span className="text-teal-400 text-xs">✓</span>}
+                </div>
+                <div className="text-xs text-gray-500 w-16 flex-shrink-0">{t.time}</div>
+                <div className={`text-sm ${t.done ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{t.task}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {dashTab === 'insights' && <SeasonIntelligenceStrip />}
+
+      {dashTab === 'dontmiss' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5">
+            <div className="text-red-400 text-sm font-semibold mb-2">⏰ Callaway Renewal</div>
+            <div className="text-white font-bold text-lg mb-1">18 days remaining</div>
+            <div className="text-xs text-gray-400">Agent Sarah has a renewal proposal ready. Review in Sponsorship tab before your call with Callaway on Friday.</div>
+          </div>
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-5">
+            <div className="text-yellow-400 text-sm font-semibold mb-2">📊 OWGR Watch</div>
+            <div className="text-white font-bold text-lg mb-1">Top 50 Push Required</div>
+            <div className="text-xs text-gray-400">Currently #{player.owgr}. Top 50 locks Masters 2027 invitation and WGC eligibility. Need strong results in next 4 events.</div>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
+            <div className="text-blue-400 text-sm font-semibold mb-2">🧠 Mental Performance</div>
+            <div className="text-white font-bold text-lg mb-1">Video Call 20:00</div>
+            <div className="text-xs text-gray-400">Dr. Reed pre-tournament check-in. Putting anxiety cycle from recent rounds is the focus.</div>
+          </div>
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-5">
+            <div className="text-purple-400 text-sm font-semibold mb-2">⚕️ Physio Flag</div>
+            <div className="text-white font-bold text-lg mb-1">Lower Back — Managed</div>
+            <div className="text-xs text-gray-400">Cleared to play but treatment at 13:00 with Tom. Watch 4th round fatigue especially on par 5s.</div>
+          </div>
+        </div>
+      )}
+
+      {dashTab === 'team' && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { name: player.coach, role: 'Lead Coach', status: 'On-site Munich', color: 'green' },
+            { name: player.caddie, role: 'Caddie', status: 'On-site Munich', color: 'green' },
+            { name: player.physio, role: 'Physio', status: 'Treatment 13:00', color: 'yellow' },
+            { name: player.agent, role: 'Agent', status: 'Callaway renewal!', color: 'red' },
+            { name: player.short_game_coach, role: 'Short Game', status: 'Remote (video)', color: 'blue' },
+            { name: player.fitness_trainer, role: 'Fitness', status: 'London (remote)', color: 'blue' },
+            { name: player.mental_coach, role: 'Mental Coach', status: 'Video call 20:00', color: 'purple' },
+          ].map((m, i) => {
+            const statusColors: Record<string, string> = { green: 'text-green-400', yellow: 'text-yellow-400', red: 'text-red-400', blue: 'text-blue-400', purple: 'text-purple-400' };
+            return (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
+                <div className="text-xs text-white font-semibold">{m.name}</div>
+                <div className="text-[10px] text-green-400 mt-0.5">{m.role}</div>
+                <div className={`text-[10px] mt-1 ${statusColors[m.color]}`}>{m.status}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <GolfAISection context="dashboard" player={player} session={session} />
     </div>
   );
 }
 
 // ─── Round Prep (with AI post-round debrief) ─────────────────────────────────
-function RoundPrepView() {
+function RoundPrepView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'prep'|'debrief'|'scorecard'>('prep');
   const [form, setForm] = useState({
     tournament: 'BMW International Open',
@@ -724,6 +990,7 @@ function RoundPrepView() {
       )}
 
       {tab === 'scorecard' && <ScorecardEntry />}
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -903,7 +1170,7 @@ function ScorecardEntry() {
   );
 }
 
-function MorningBriefingView({ player }: { player: GolfPlayer }) {
+function MorningBriefingView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [recipient, setRecipient] = useState<'player'|'caddie'|'coach'|'agent'>('player');
   const [briefings, setBriefings] = useState<Record<string, string>>({ player: '', caddie: '', coach: '', agent: '' });
   const [loading, setLoading] = useState(false);
@@ -1007,6 +1274,7 @@ function MorningBriefingView({ player }: { player: GolfPlayer }) {
           </div>
         ))}
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -1115,7 +1383,7 @@ function RollingExpiryCalendar({ points }: { points: ExpiryEntry[] }) {
   );
 }
 
-function OWGRView({ player }: { player: GolfPlayer }) {
+function OWGRView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const scenarios = [
     { result: 'Win', event: 'BMW International', newOWGR: 71, change: '+16', rtd: 'T35' },
     { result: 'T2–T5', event: 'BMW International', newOWGR: 79, change: '+8', rtd: 'T41' },
@@ -1206,6 +1474,7 @@ function OWGRView({ player }: { player: GolfPlayer }) {
         <div className="text-sm font-semibold text-white mb-4">📅 Rolling 104-Week Expiry Calendar</div>
         <RollingExpiryCalendar points={pointsExpiry} />
       </div>
+      <GolfAISection context="owgr" player={player} session={session} />
     </div>
   );
 }
@@ -1388,7 +1657,7 @@ function CompetitorTracker() {
   );
 }
 
-function ScheduleView() {
+function ScheduleView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'calendar' | 'competitors'>('calendar');
   const calendar = [
     { date: '3–6 Jul',   event: 'BMW International Open',         tier: 'DP World Tour',  venue: 'Golfclub München Eichenried, Munich',    status: 'active',   entered: true, prize: '$4.5M' },
@@ -1449,6 +1718,7 @@ function ScheduleView() {
         </table>
       </div>
       </>}
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -1615,7 +1885,7 @@ function PuttingHeatMap() {
   );
 }
 
-function StrokesGainedView() {
+function StrokesGainedView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const roundData = [
     { round: 'R4 KLM Open', ott: 0.8, atg: 1.2, arg: 0.4, putt: -0.8, ttg: 2.0, total: 1.6, score: '67' },
     { round: 'R3 KLM Open', ott: 0.4, atg: 0.9, arg: -0.2, putt: -1.4, ttg: 1.1, total: -0.3, score: '71' },
@@ -1692,11 +1962,12 @@ function StrokesGainedView() {
           </table>
         </div>
       </div>
+      <GolfAISection context="strokes" player={player} session={session} />
     </div>
   );
 }
 
-function CourseFitView() {
+function CourseFitView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const courses = [
     { event: 'BMW International Open', venue: 'Golfclub München Eichenried', fit: 8.1, ott: 9.2, atg: 7.4, putting: 6.8, prevResult: 'T14 (2024)', note: 'Approach from 150–175 is elite. Putting surface suits right-to-left readers.' },
     { event: 'BMW PGA Championship', venue: 'Wentworth', fit: 9.0, ott: 8.8, atg: 9.1, putting: 7.2, prevResult: 'T6 (2024)', note: 'Best course fit on tour. Long course favours his driving distance.' },
@@ -1739,11 +2010,12 @@ function CourseFitView() {
           </div>
         ))}
       </div>
+      <GolfAISection context="coursefit" player={player} session={session} />
     </div>
   );
 }
 
-function CaddieView() {
+function CaddieView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const strategy = [
     { hole: 1, par: 4, yards: 432, wind: 'Into', strategy: 'Driver, leave 150–160 to flag. Miss short and right — bunkers left are punishing.', risk: 'Low' },
     { hole: 2, par: 5, yards: 556, wind: 'Down', strategy: 'Driver, 3-wood into green in two. Pin back-left — land middle, take 2 putts.', risk: 'Med' },
@@ -1854,11 +2126,12 @@ th { background: #eee; text-transform: uppercase; font-size: 9px; letter-spacing
           </table>
         </div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function TeamHubView({ player }: { player: GolfPlayer }) {
+function TeamHubView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const team = [
     { role: 'Lead Coach', name: 'Pete Larsen', flag: '🇸🇪', status: 'On-site Munich', statusColor: 'green', lastNote: 'Practice session notes uploaded · 08:30', desc: 'Full swing, course management, practice structure' },
     { role: 'Short Game Coach', name: 'Dave Pelz Jr.', flag: '🇺🇸', status: 'Remote (video)', statusColor: 'blue', lastNote: 'Putting drill programme sent · Yesterday', desc: 'Putting, chipping, bunker play, wedge game' },
@@ -1888,11 +2161,12 @@ function TeamHubView({ player }: { player: GolfPlayer }) {
           </div>
         ))}
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function PhysioView() {
+function PhysioView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const recovery = [
     { day: 'Today', score: 78, hrv: 62, rhr: 52, sleep: 7.0 },
     { day: 'Yesterday', score: 84, hrv: 68, rhr: 50, sleep: 7.8 },
@@ -1946,11 +2220,12 @@ function PhysioView() {
           </div>
         ))}
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function EquipmentView() {
+function EquipmentView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const bag = [
     { club: 'Driver', brand: 'TaylorMade Qi10 Max', loft: '9.5°', shaft: 'Graphite Design Tour AD XC', flex: 'X', notes: 'Main gaming driver — 3 available' },
     { club: '3-Wood', brand: 'TaylorMade Qi10', loft: '15°', shaft: 'Mitsubishi Diamana Blue', flex: 'X', notes: 'Used for tight tee shots and second shots' },
@@ -1990,11 +2265,12 @@ function EquipmentView() {
           </table>
         </div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function MentalView() {
+function MentalView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const routines = [
     { phase: 'Night Before', steps: ['Review hole strategy notes with Mick', 'Visualise first 3 holes', 'Read pre-round mindset note from Dr. Reed', 'No social media after 9pm', 'Lights out by 10:30pm'] },
     { phase: 'Morning of Round', steps: ['Morning briefing at 07:30', 'Light breakfast — no new foods', 'Practice putting for 20 minutes', 'Swing warmup 45 min before tee', 'Focus word: "committed"'] },
@@ -2029,11 +2305,12 @@ function MentalView() {
           "James — today is a course you know well and one where your game profile fits. The putting anxiety from recent rounds is understandable, but it's created a cycle of tension that's the real problem — not the putts themselves. Today: make your reads, commit fully, and accept the outcome. The routine we practised controls the controllables. Whatever the line does after you hit it is not yours to manage. Play shot to shot. You've done the work."
         </div>
       </div>
+      <GolfAISection context="mental" player={player} session={session} />
     </div>
   );
 }
 
-function SponsorshipView() {
+function SponsorshipView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const deals = [
     { sponsor: 'TaylorMade', cat: 'Clubs', value: '£80k/yr + bonuses', status: 'Active', expiry: 'Dec 2026', days: 275, obligations: ['Use TaylorMade driver, woods, irons in all events', 'Social: 1 post/month minimum', 'Attend 1 TaylorMade event/yr'], bonuses: ['Win bonus: +£15k', 'Top 50 OWGR: +£10k'] },
     { sponsor: 'Callaway', cat: 'Wedges + Ball', value: '£55k/yr', status: 'Renewal due', expiry: 'Jul 26 2026', days: 18, obligations: ['Callaway wedges in all events', 'Chrome Tour X ball mandatory', 'Social: 2 posts/month', 'Appear in 1 campaign/yr'], bonuses: ['Top 10 this week: +£8.5k'] },
@@ -2063,11 +2340,12 @@ function SponsorshipView() {
           </div>
         ))}
       </div>
+      <GolfAISection context="sponsorship" player={player} session={session} />
     </div>
   );
 }
 
-function FinancialView() {
+function FinancialView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const prizeMoney = [
     { event: 'KLM Open', pos: 'T3', amount_eur: 124000, amount_gbp: 104000, tour: 'DP World Tour' },
     { event: 'Austrian Alpine Open', pos: 'T31', amount_eur: 18000, amount_gbp: 15000, tour: 'DP World Tour' },
@@ -2236,11 +2514,12 @@ ${barHtml}
           ))}
         </div>
       </div>
+      <GolfAISection context="financial" player={player} session={session} />
     </div>
   );
 }
 
-function CareerView() {
+function CareerView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [planTab, setPlanTab] = useState<'1yr'|'3yr'|'5yr'|'10yr'>('1yr');
   const plans: Record<string, { title: string; goals: string[]; financial: string[]; milestones: string[] }> = {
     '1yr': {
@@ -2304,11 +2583,12 @@ function CareerView() {
         <StatCard label="Turned Pro" value={DEMO_PLAYER.turned_pro.toString()} sub={`${2026 - DEMO_PLAYER.turned_pro} years on tour`} color="blue" />
         <StatCard label="Age" value={DEMO_PLAYER.age} sub="Peak window now" color="orange" />
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function ExemptionsView() {
+function ExemptionsView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const statusCats = [
     { category: 'DP World Tour Card Status', value: '2026 Card holder (Race to Dubai #43)', status: 'Secure', note: 'Top 115 retained cards for 2027. Currently safe.' },
     { category: 'OWGR World Top 50', value: '#87 — not currently top 50', status: 'Watch', note: 'Top 50 earn Masters, Players, and all 4 Majors invitations. #61 career high needed to reactivate.' },
@@ -2334,11 +2614,12 @@ function ExemptionsView() {
           </div>
         ))}
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
-function ProAmView() {
+function ProAmView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const appearances = [
     { event: 'BMW International Open Pro-Am', date: 'Wed 2 Jul', type: 'Title Sponsor', fee: 'Included (BMW deal)', partners: 'BMW AG executives — briefed', status: 'Tomorrow' },
     { event: 'Callaway Golf Day (Wentworth)', date: '15 Sep', type: 'Equipment partner', fee: '£5,000', partners: 'TBC — agent to confirm', status: 'Confirmed' },
@@ -2372,7 +2653,7 @@ function ProAmView() {
   );
 }
 
-function PracticeLogView() {
+function PracticeLogView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const sessions = [
     { date: 'Today 08:30', type: 'Putting', duration: '120 min', coach: 'Pete Larsen', focus: '8–15ft putts · Left-to-right reads · 120 balls from each position', notes: 'SG Putting has been -1.18 over 6 rounds — priority session before R1', outcome: '' },
     { date: 'Yesterday', type: 'Short Game', duration: '60 min', coach: 'Dave Pelz Jr.', focus: 'Bunker play · Flop shots · 50yd pitch shots', notes: 'Around Green has been +0.15 — maintaining. 3 failed bunker saves last week flagged.', outcome: 'Good session — bunker technique improved' },
@@ -2398,12 +2679,13 @@ function PracticeLogView() {
           </div>
         ))}
       </div>
+      <GolfAISection context="practicelog" player={player} session={session} />
     </div>
   );
 }
 
 // Generic placeholder for remaining views
-function PlaceholderView({ title, icon, description }: { title: string; icon: string; description: string }) {
+function PlaceholderView({ title, icon, description, player, session }: { title: string; icon: string; description: string; player: GolfPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
       <SectionHeader icon={icon} title={title} />
@@ -2416,12 +2698,13 @@ function PlaceholderView({ title, icon, description }: { title: string; icon: st
           <div className="text-xs text-gray-400">{description} Full module with demo data available once connected to the Lumio Supabase backend.</div>
         </div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── ARCCOS INTEGRATION VIEW ──────────────────────────────────────────────────
-function ArccosView() {
+function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sgFeed = [
     { date: 'Jul 5 — R2 BMW International', ott: 0.6, atg: 0.8, arg: 0.2, putt: -1.4, total: 0.2, rounds: 1 },
@@ -2535,12 +2818,13 @@ function ArccosView() {
         <div className="text-sm font-semibold text-blue-400 mb-1">ℹ️ Arccos Pro Insights — Access Model</div>
         <div className="text-xs text-gray-400">Arccos Pro Insights is invitation-only for touring professionals — not purchased like the consumer app ($155/yr). Molinari's team recruits players directly. Lumio Tour's integration works with both: Arccos Pro data flows in for invited tour players, consumer Arccos data flows in for all others. The integration requires an Arccos account (consumer or Pro).</div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── DATAGOLF INTEGRATION VIEW ────────────────────────────────────────────────
-function DataGolfView() {
+function DataGolfView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const coverage = [
     { tour: 'DP World Tour', events: '42+', sg: '✓ Round-level', owgr: '✓ Full', courseHistory: '✓', odds: '✓' },
@@ -2636,12 +2920,13 @@ function DataGolfView() {
         <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ Pricing & Access</div>
         <div className="text-xs text-gray-400">DataGolf offers a free tier for public data. The paid API tier (needed for SG categories, course history, and real-time data) starts at approximately $150–$500/month depending on call volume and data depth. For Lumio Tour, this is a backend cost — not charged to players — absorbed as product infrastructure.</div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── TRACKMAN INTEGRATION VIEW ────────────────────────────────────────────────
-function TrackManView() {
+function TrackManView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sessions = [
     { date: 'Jul 2 — Pre-tournament range (Eichenried)', club: '7-Iron', balls: 48, ballSpeed: 118, launchAngle: 17.2, spinRate: 7140, carry: 168, dispersion: '±8yd', smash: 1.34 },
@@ -2730,12 +3015,13 @@ function TrackManView() {
         <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ TrackMan API — Phase 2</div>
         <div className="text-xs text-gray-400">TrackMan has a developer API for authorised integrations. Connection requires the coach or player to authorise Lumio Tour as a connected app within their TrackMan Performance Studio account. Data shared: session metadata, club averages, ball flight parameters, and dispersion charts. No video data transferred. This is scoped as a Phase 2 integration.</div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── SHOTLINK VIEW ────────────────────────────────────────────────────────────
-function ShotLinkView() {
+function ShotLinkView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const phases = [
     { phase: 'Phase 1 (Now)', label: 'DP World Tour — Arccos + DataGolf', desc: 'Arccos sensors provide on-course shot data. DataGolf API provides round-level SG benchmarks. No ShotLink required — DP World Tour doesn\'t use it.', status: 'active', icon: '✓' },
     { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — DataGolf SG', desc: 'Scottish Open, BMW International, and other co-sanctioned events have PGA Tour fields. DataGolf\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
@@ -2807,12 +3093,13 @@ function ShotLinkView() {
           ))}
         </div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── LPGA / LET MODE VIEW ─────────────────────────────────────────────────────
-function LPGAView() {
+function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [activeTab, setActiveTab] = useState<'overview'|'rankings'|'schedule'|'roadmap'>('overview');
   const lpgaTours = [
     { tour: 'LPGA Tour', players: '~170 active', rankings: 'Rolex Women\'s World Golf Rankings (RWGR)', analytic: 'No dedicated analytics platform', platform: 'Nothing beyond LPGA.com portal' },
@@ -2951,12 +3238,13 @@ function LPGAView() {
           </div>
         </div>
       )}
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
 
 // ─── MOBILE APP VIEW ──────────────────────────────────────────────────────────
-function MobileAppView() {
+function MobileAppView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const features = [
     { section: 'OVERVIEW', items: ['Morning Briefing (voice playback)', 'Dashboard — today\'s schedule and alerts', 'Notification centre'] },
     { section: 'ON COURSE', items: ['Caddie Workflow — hole strategy + carry sheet', 'In-round stat logging (fairways, GIR, putts, sand saves)', 'Post-round debrief voice note', 'WHOOP recovery check-in'] },
@@ -3048,6 +3336,7 @@ function MobileAppView() {
         </div>
         <div className="mt-4 text-xs text-gray-600">Register your interest at lumiotour.com — early access for pilot players from Month 5</div>
       </div>
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -3078,7 +3367,7 @@ const PIPELINE: PipelineColumn[] = [
   ]},
 ];
 
-function AgentPipelineView() {
+function AgentPipelineView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'pipeline' | 'pitch'>('pipeline');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('Clubs');
@@ -3222,6 +3511,7 @@ function AgentPipelineView() {
           </div>
         </div>
       )}
+      <GolfAISection context="default" player={player} session={session} />
     </div>
   );
 }
@@ -3285,37 +3575,37 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} setActiveSection={setActiveSection} />;
-      case 'morning':     return <MorningBriefingView player={player} />;
-      case 'owgr':        return <OWGRView player={player} />;
-      case 'schedule':    return <ScheduleView />;
-      case 'strokes':     return <StrokesGainedView />;
-      case 'coursefit':   return <CourseFitView />;
-      case 'caddie':      return <CaddieView />;
-      case 'team':        return <TeamHubView player={player} />;
-      case 'physio':      return <PhysioView />;
-      case 'equipment':   return <EquipmentView />;
-      case 'mental':      return <MentalView />;
-      case 'sponsorship': return <SponsorshipView />;
-      case 'financial':   return <FinancialView />;
-      case 'career':      return <CareerView />;
-      case 'proam':       return <ProAmView />;
-      case 'practicelog': return <PracticeLogView />;
-      case 'exemptions':  return <ExemptionsView />;
-      case 'matchprep':   return <RoundPrepView />;
-      case 'media':       return <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." />;
-      case 'agent':       return <AgentPipelineView />;
-      case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." />;
-      case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." />;
-      case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." />;
-      case 'settings':    return <PlaceholderView icon="⚙️" title="Settings" description="Profile, notifications, team access, data integrations (Arccos, WHOOP, TrackMan), and billing." />;
-      case 'arccos':      return <ArccosView />;
-      case 'datagolf':    return <DataGolfView />;
-      case 'trackman':    return <TrackManView />;
-      case 'shotlink':    return <ShotLinkView />;
-      case 'lpga':        return <LPGAView />;
-      case 'mobileapp':   return <MobileAppView />;
-      default:            return <DashboardView player={player} setActiveSection={setActiveSection} />;
+      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} />;
+      case 'morning':     return <MorningBriefingView player={player} session={session} />;
+      case 'owgr':        return <OWGRView player={player} session={session} />;
+      case 'schedule':    return <ScheduleView player={player} session={session} />;
+      case 'strokes':     return <StrokesGainedView player={player} session={session} />;
+      case 'coursefit':   return <CourseFitView player={player} session={session} />;
+      case 'caddie':      return <CaddieView player={player} session={session} />;
+      case 'team':        return <TeamHubView player={player} session={session} />;
+      case 'physio':      return <PhysioView player={player} session={session} />;
+      case 'equipment':   return <EquipmentView player={player} session={session} />;
+      case 'mental':      return <MentalView player={player} session={session} />;
+      case 'sponsorship': return <SponsorshipView player={player} session={session} />;
+      case 'financial':   return <FinancialView player={player} session={session} />;
+      case 'career':      return <CareerView player={player} session={session} />;
+      case 'proam':       return <ProAmView player={player} session={session} />;
+      case 'practicelog': return <PracticeLogView player={player} session={session} />;
+      case 'exemptions':  return <ExemptionsView player={player} session={session} />;
+      case 'matchprep':   return <RoundPrepView player={player} session={session} />;
+      case 'media':       return <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
+      case 'agent':       return <AgentPipelineView player={player} session={session} />;
+      case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;
+      case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." player={player} session={session} />;
+      case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." player={player} session={session} />;
+      case 'settings':    return <PlaceholderView icon="⚙️" title="Settings" description="Profile, notifications, team access, data integrations (Arccos, WHOOP, TrackMan), and billing." player={player} session={session} />;
+      case 'arccos':      return <ArccosView player={player} session={session} />;
+      case 'datagolf':    return <DataGolfView player={player} session={session} />;
+      case 'trackman':    return <TrackManView player={player} session={session} />;
+      case 'shotlink':    return <ShotLinkView player={player} session={session} />;
+      case 'lpga':        return <LPGAView player={player} session={session} />;
+      case 'mobileapp':   return <MobileAppView player={player} session={session} />;
+      default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} />;
     }
   };
 

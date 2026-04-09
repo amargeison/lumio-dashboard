@@ -191,7 +191,7 @@ const QuickActionsBar = () => {
 };
 
 // ─── WAVE BANNER ──────────────────────────────────────────────────────────────
-const WaveBanner = ({ fighter }: { fighter: BoxingFighter }) => (
+const WaveBanner = ({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) => (
   <div className="bg-gradient-to-r from-red-900/60 via-[#07080F] to-orange-900/40 rounded-xl px-5 py-3 mb-5">
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -231,7 +231,7 @@ const WaveBanner = ({ fighter }: { fighter: BoxingFighter }) => (
 );
 
 // ─── FIGHTER CARD ─────────────────────────────────────────────────────────────
-const FighterCard = ({ fighter }: { fighter: BoxingFighter }) => (
+const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) => (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
     <div className="flex flex-col items-center text-center mb-3">
       <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mb-2 border-2 border-red-500/40"
@@ -339,211 +339,477 @@ function RingZoneBar({ session }: { session: typeof GPS_SESSIONS[0] }) {
   );
 }
 
+// ─── AI DEPARTMENT INTELLIGENCE SECTION ──────────────────────────────────────
+interface BoxingAISectionProps {
+  context: string
+  fighter: BoxingFighter
+  session: SportsDemoSession
+}
+
+function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
+  const [summary, setSummary]     = useState<string | null>(null)
+  const [loading, setLoading]     = useState(false)
+  const [generated, setGenerated] = useState(false)
+
+  const HIGHLIGHTS: Record<string, string[]> = {
+    dashboard:    ['Fight Night in 21 days — Demetrius Johnson (WBC #3)', 'Weight on track: 169.2 lbs — cut to 160 by weigh-in manageable', 'Sparring this week: 8 rounds logged — no incidents', 'Purse bid deadline: IBF mandatory — 30 Apr', 'GPS load: ACWR 1.12 — optimal zone, maintain intensity'],
+    training:     ['Session load this week: 4,820 AU — on plan', 'Sparring quality: coach rated 8.2/10 last session', 'Jab speed improving: +0.04s vs last camp avg', 'Right hand power: 94% of peak — near fight-ready', 'Conditioning: VO2 max 58.4 — top 5% for weight class'],
+    weight:       ['Current: 169.2 lbs → target 160 lbs at weigh-in', '9.2 lbs to cut — 21 days — on schedule', 'Water cut phase starts 5 days before — plan confirmed with Dr Lee', 'Last camp cut: 8.8 lbs in 18 days — comparable', 'Nutrition plan updated for cut phase: -400 cal/day from next week'],
+    rankings:     ['WBC #8 — up 1 this month', 'IBF #6 — mandatory position approaching', 'Win vs Johnson: projected WBC #5 / IBF mandatory confirmed', 'Top-5 all major belts = world title shot by end of year', 'Promoter pipeline: 2 world title offers pending Johnson result'],
+    sponsorship:  ['Everlast: glove deal — 2 posts due this month', 'BoXer Media: fight night appearance confirmed', 'New inquiry: sports nutrition brand — £45k/yr offer', 'Manager reviewing Under Armour camp partnership', 'Prize money media allocation: confirm with promoter'],
+    travel:       ['Fight venue: MGM Grand Garden Arena, Las Vegas', 'Camp departs: 14 Apr — 7 days before weigh-in', 'Hotel: MGM Grand — 7 nights confirmed', 'Corner team flights: 4 booked, 1 pending (cutman)', 'Media day: 19 Apr — arrivals press conference'],
+    financial:    ['Purse (guaranteed): £380,000', 'PPV upside: estimated £120k–£280k additional', 'Camp costs this cycle: £42,800 — on budget', 'Agent commission: 15% of gross purse', 'Tax instalment due Jul — accountant briefed'],
+    mental:       ['Mindset: coach rates 9.1/10 this camp — best in career', 'Visualisation sessions: daily at 07:00 — 14 completed', 'Johnson mental game: known to intimidate pre-fight — stay composed', 'Cut stress protocol: start breathing practice at -10 lbs', 'Post-fight plan confirmed — reduces anxiety about outcome'],
+    default:      ['Fight Night in 21 days — Johnson (WBC #3)', 'Weight on track: 169.2 lbs — cut manageable', 'Purse bid deadline: 30 Apr — agent actioning', 'GPS load: ACWR 1.12 — optimal', 'Sparring: 8 rounds this week — good sessions'],
+  }
+
+  const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
+
+  const generateSummary = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are the AI performance analyst for ${session.userName || fighter.name}, a ${fighter.weight_class} professional boxer nicknamed "${fighter.nickname}".
+
+Generate a concise AI department summary for the "${context}" section.
+
+Fighter context:
+- WBC Ranking: #${fighter.rankings.wbc}
+- IBF Ranking: #${fighter.rankings.ibf}
+- Record: ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KO)
+- Next fight: ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking}) in ${fighter.next_fight.days_away} days
+- Weight: ${fighter.current_weight}kg → ${fighter.target_weight}kg
+- Camp Day: ${fighter.camp_day}/${fighter.camp_total}
+
+Write 4-5 bullet points covering the most important insight for ${context}.
+Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
+          }]
+        })
+      })
+      const data = await res.json()
+      setSummary(data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : '').join('') || '')
+      setGenerated(true)
+    } catch { setSummary('Unable to generate summary.') }
+    setLoading(false)
+  }
+
+  const renderSummary = (text: string) =>
+    text.split('\n').filter(l => l.trim()).map((line, i) => (
+      <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0">
+        <span>{line}</span>
+      </div>
+    ))
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-800/60">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">🤖 AI Department Intelligence</span>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span>✨</span>
+              <span className="text-sm font-bold text-white">AI Summary</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
+            </div>
+          </div>
+          {!summary && !loading && (
+            <button onClick={generateSummary}
+              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
+              Generate AI summary for this section →
+            </button>
+          )}
+          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+          {summary && !loading && <div>{renderSummary(summary)}</div>}
+        </div>
+        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><span>⚡</span><span className="text-sm font-bold text-white">AI Key Highlights</span></div>
+            <span className="text-[10px] text-red-400 cursor-pointer">Performance</span>
+          </div>
+          <div className="space-y-2">
+            {highlights.map((h, i) => (
+              <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
+                <span className="text-xs text-red-400 font-bold flex-shrink-0 w-4">{i+1}</span>
+                <span className="text-xs text-gray-300">{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CampDashboardView({ fighter }: { fighter: BoxingFighter }) {
-  const todaySessions = [
-    { time: '06:00', type: 'Roadwork', detail: '8km steady state run + hill sprints x6', status: 'completed', statusColor: 'text-green-400' },
-    { time: '11:00', type: 'Sparring', detail: '8 rounds w/ Darnell "Tank" Hughes (southpaw)', status: 'upcoming', statusColor: 'text-yellow-400' },
-    { time: '15:00', type: 'Strength', detail: 'Upper body power — bench press, med ball throws', status: 'upcoming', statusColor: 'text-yellow-400' },
-    { time: '18:00', type: 'Physio', detail: 'Soft tissue work, shoulder mobility, ice bath', status: 'scheduled', statusColor: 'text-gray-400' },
-  ];
-
-  const sparringWeek = [
-    { day: 'Mon', partner: 'Darnell Hughes', rounds: 8, style: 'Southpaw pressure', notes: 'Mirror Petrov jab patterns' },
-    { day: 'Tue', partner: 'Rest Day', rounds: 0, style: '—', notes: 'Recovery / film study' },
-    { day: 'Wed', partner: 'Chris Adebayo', rounds: 6, style: 'Orthodox counter', notes: 'Work behind the jab' },
-    { day: 'Thu', partner: 'Jake Morrison', rounds: 10, style: 'Big heavyweight', notes: 'Clinch work & inside fighting' },
-    { day: 'Fri', partner: 'Darnell Hughes', rounds: 8, style: 'Southpaw pressure', notes: 'Simulate championship rounds' },
-    { day: 'Sat', partner: 'Open sparring', rounds: 6, style: 'Mixed', notes: 'Controlled rounds, speed focus' },
-  ];
-
-  const weightLog = [
-    { day: 18, weight: 98.4 }, { day: 19, weight: 98.1 }, { day: 20, weight: 97.9 },
-    { day: 21, weight: 98.0 }, { day: 22, weight: 97.8 },
-  ];
-
+function CampDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
+  const firstName = session.userName?.split(' ')[0] || fighter.name?.split(' ')[0] || 'Marcus'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const recoveryScore = 81;
   const campProgress = Math.round((fighter.camp_day / fighter.camp_total) * 100);
 
+  const ROUNDUP_CHANNELS = [
+    { label: 'Manager',            icon: '💼', count: 2, color: '#dc2626', urgent: true  },
+    { label: 'Promoter Messages',  icon: '🏟️', count: 1, color: '#F97316', urgent: true  },
+    { label: 'Sponsor Obligations',icon: '🤝', count: 2, color: '#F59E0B', urgent: false },
+    { label: 'Trainer / Corner',   icon: '🥊', count: 1, color: '#10B981', urgent: false },
+    { label: 'Medical Team',       icon: '🏥', count: 1, color: '#22C55E', urgent: false },
+    { label: 'Agent',              icon: '🕵️', count: 3, color: '#D97706', urgent: false },
+    { label: 'Media Requests',     icon: '📱', count: 2, color: '#6B7280', urgent: false },
+    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false },
+  ]
+
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
-      <SectionHeader icon="🏕️" title="Camp Dashboard" subtitle={`Day ${fighter.camp_day} of ${fighter.camp_total} — ${fighter.next_fight.opponent} fight camp`} />
-
-      {/* Camp Banner */}
-      <div className="bg-gradient-to-r from-red-900/40 via-[#0D1117] to-orange-900/30 border border-red-600/20 rounded-xl p-5">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <div className="text-lg font-bold text-white">Camp Day {fighter.camp_day} / {fighter.camp_total}</div>
-            <div className="text-sm text-gray-400 mt-1">vs {fighter.next_fight.opponent} {fighter.next_fight.opponent_flag} — {fighter.next_fight.opponent_record} — {fighter.next_fight.opponent_ranking}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{fighter.next_fight.venue} — {fighter.next_fight.broadcast}</div>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-400">{fighter.next_fight.days_away}</div>
-              <div className="text-xs text-gray-500">Days to Fight</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-400">{fighter.current_weight}kg</div>
-              <div className="text-xs text-gray-500">Current Weight</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{recoveryScore}%</div>
-              <div className="text-xs text-gray-500">Recovery</div>
-            </div>
-          </div>
-        </div>
-        {/* Progress bar */}
-        <div className="mt-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Camp Progress</span>
-            <span>{campProgress}%</span>
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-2">
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full transition-all" style={{ width: `${campProgress}%` }}></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Days to Fight" value={fighter.next_fight.days_away} sub={fighter.next_fight.date} color="red" />
-        <StatCard label="Camp Day" value={`${fighter.camp_day}/${fighter.camp_total}`} sub="Specific phase begins" color="yellow" />
-        <StatCard label="Weight vs Target" value={`${fighter.current_weight}kg`} sub={`Target: ${fighter.target_weight}kg (-${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg)`} color="teal" />
-        <StatCard label="Recovery Score" value={`${recoveryScore}%`} sub="HRV: 62ms — Good" color="green" />
-      </div>
-
-      {/* GPS Ring Activity */}
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-sm font-semibold text-white">Live Ring Heatmap — Today&apos;s Sparring</div>
-            <div className="text-xs text-gray-400">Day 22 · 75 min sparring · UWB tracking active</div>
-          </div>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-600/30 font-medium">● LUMIO VEST LIVE</span>
-        </div>
-        <div className="flex gap-6 items-start">
-          <div className="flex-shrink-0">
-            <RingHeatmap session={GPS_SESSIONS[GPS_SESSIONS.length - 1]} size={220} />
-          </div>
-          <div className="flex-1 space-y-4">
-            <RingZoneBar session={GPS_SESSIONS[GPS_SESSIONS.length - 1]} />
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
-                <div className="text-orange-400 font-bold text-lg">1.25</div>
-                <div className="text-gray-500">ACWR</div>
-              </div>
-              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
-                <div className="text-teal-400 font-bold text-lg">358</div>
-                <div className="text-gray-500">Session Load</div>
-              </div>
-              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
-                <div className="text-white font-bold text-lg">4.9km</div>
-                <div className="text-gray-500">Distance</div>
-              </div>
-              <div className="bg-[#0a0c14] border border-gray-800 rounded p-2 text-center">
-                <div className="text-yellow-400 font-bold text-lg">75m</div>
-                <div className="text-gray-500">Duration</div>
-              </div>
-            </div>
-            <div className="text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-600/20 rounded p-2">
-              ⚠ ACWR 1.25 — approaching upper threshold. Monitor tomorrow&apos;s session load.
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="text-xs text-yellow-400">Camp phase: Specific — Transitioning to fight-specific drills and opponent-patterned sparring</div>
-
-      {/* Today's Sessions */}
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Today&apos;s Sessions</div>
-        <div className="space-y-3">
-          {todaySessions.map((session, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 bg-[#0a0c14] border border-gray-800 rounded-lg">
-              <div className="text-xs font-mono text-gray-500 w-12">{session.time}</div>
-              <div className="flex-1">
-                <div className="text-sm text-white font-medium">{session.type}</div>
-                <div className="text-xs text-gray-400">{session.detail}</div>
-              </div>
-              <span className={`text-xs font-medium ${session.statusColor}`}>{session.status}</span>
-            </div>
+      {/* Quick Actions */}
+      <div className="overflow-x-auto pb-2 -mx-1">
+        <div className="flex gap-2 px-1 min-w-max">
+          {[
+            { label: 'Log Sparring',      icon: '🥊' },
+            { label: 'Weight Check',       icon: '⚖️' },
+            { label: 'Camp Report',        icon: '📋' },
+            { label: 'Book Flight',        icon: '✈️' },
+            { label: 'Sponsor Post',       icon: '📱' },
+            { label: 'Medical Check',      icon: '🏥' },
+            { label: 'Purse Bid Alert',    icon: '🔔' },
+            { label: 'Press Statement',    icon: '🎤' },
+            { label: 'Add Expense',        icon: '💰' },
+            { label: 'Video Upload',       icon: '🎬' },
+          ].map((a, i) => (
+            <button key={i}
+              className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-red-500/40 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
+              <span>{a.icon}</span>{a.label}
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weight Trajectory */}
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <div className="text-sm font-semibold text-white mb-4">Weight Trajectory (Last 5 Days)</div>
-          <div className="flex items-end gap-2 h-32">
-            {weightLog.map((entry, i) => {
-              const min = 96;
-              const max = 99;
-              const height = ((entry.weight - min) / (max - min)) * 100;
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="text-[10px] text-gray-400">{entry.weight}</div>
-                  <div className="w-full bg-red-500/60 rounded-t" style={{ height: `${height}%` }}></div>
-                  <div className="text-[10px] text-gray-600">D{entry.day}</div>
-                </div>
-              );
-            })}
+      {/* Greeting banner */}
+      <div className="bg-gradient-to-r from-red-900/20 to-[#0d1117] border border-red-600/20 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{greeting}, {firstName}. 🥊</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+            </p>
+            <p className="text-xs text-gray-600 italic mt-2">
+              &quot;Everyone has a plan until they get punched in the mouth.&quot; — Mike Tyson
+            </p>
           </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">Target: {fighter.target_weight}kg</span>
-            <span className="text-teal-400">On track — {(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to go</span>
+          <div className="hidden md:flex items-center gap-6 text-xs text-right">
+            {[
+              { city:'London',    tz:'Europe/London'    },
+              { city:'New York',  tz:'America/New_York' },
+              { city:'Las Vegas', tz:'America/Los_Angeles' },
+              { city:'Dubai',     tz:'Asia/Dubai'       },
+            ].map(({ city, tz }) => (
+              <div key={city}>
+                <div className="text-white font-bold">
+                  {new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}
+                </div>
+                <div className="text-gray-500">{city}</div>
+              </div>
+            ))}
           </div>
         </div>
+        {/* KPI cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{fighter.rankings.wbc}</div>
+            <div className="text-xs text-gray-400 mt-0.5">WBC Ranking</div>
+            <div className="text-[10px] text-green-400 mt-1">Up 1 this month</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{fighter.rankings.ibf}</div>
+            <div className="text-xs text-gray-400 mt-0.5">IBF Ranking</div>
+            <div className="text-[10px] text-gray-500 mt-1">Mandatory approaching</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">{fighter.current_weight}kg</div>
+            <div className="text-xs text-gray-400 mt-0.5">Current Weight</div>
+            <div className="text-[10px] text-teal-400 mt-1">Target: {fighter.target_weight}kg</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">{fighter.next_fight.days_away}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Days to Fight</div>
+            <div className="text-[10px] text-red-400 mt-1">{fighter.next_fight.date}</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Opposition Notes */}
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <div className="text-sm font-semibold text-white mb-4">Opposition Quick Notes</div>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-red-900/30 border border-red-500/30 flex items-center justify-center text-lg">{fighter.next_fight.opponent_flag}</div>
-            <div>
-              <div className="text-sm text-white font-medium">{fighter.next_fight.opponent}</div>
-              <div className="text-xs text-gray-400">{fighter.next_fight.opponent_record} — {fighter.next_fight.opponent_ranking}</div>
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">
+        {([
+          { id:'today',      label:'Today',       icon:'🏠' },
+          { id:'quickwins',  label:'Quick Wins',  icon:'⚡' },
+          { id:'dailytasks', label:'Daily Tasks', icon:'✅' },
+          { id:'insights',   label:'Insights',    icon:'📊' },
+          { id:'dontmiss',   label:"Don't Miss",  icon:'🔴' },
+          { id:'team',       label:'Team',        icon:'👥' },
+        ] as const).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
+              dashTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
+            }`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* TODAY */}
+      {dashTab === 'today' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT: Morning Roundup */}
+          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div>
+              <span className="text-[10px] text-gray-600">Since you were last here</span>
+            </div>
+            <div className="space-y-2">
+              {ROUNDUP_CHANNELS.map((ch, i) => (
+                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{ch.icon}</span>
+                    <span className="text-sm text-gray-300">{ch.label}</span>
+                    {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                    <span className="text-gray-700 text-xs">▾</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="space-y-2 text-xs">
-            <div className="p-2 bg-[#0a0c14] rounded border border-gray-800"><span className="text-red-400 font-medium">Danger:</span> <span className="text-gray-300">Heavy right hand, 86% KO rate. Loads up from distance.</span></div>
-            <div className="p-2 bg-[#0a0c14] rounded border border-gray-800"><span className="text-yellow-400 font-medium">Weakness:</span> <span className="text-gray-300">Slow feet after round 6. Fades in championship rounds.</span></div>
-            <div className="p-2 bg-[#0a0c14] rounded border border-gray-800"><span className="text-green-400 font-medium">Exploit:</span> <span className="text-gray-300">Body shots to the right side. Pull counters when he lunges.</span></div>
-            <div className="p-2 bg-[#0a0c14] rounded border border-gray-800"><span className="text-blue-400 font-medium">Style:</span> <span className="text-gray-300">Orthodox pressure fighter. Likes to walk forward behind a pawing jab.</span></div>
+
+          {/* MIDDLE: Fight Camp Status + schedule */}
+          <div className="space-y-4">
+            <div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
+              <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">FIGHT CAMP STATUS</div>
+              <div className="flex items-center justify-between">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
+                    {session.photoDataUrl ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                  </div>
+                  <div className="text-xs font-bold text-white">{session.userName || fighter.name}</div>
+                  <div className="text-[10px] text-red-400">WBC #{fighter.rankings.wbc}</div>
+                </div>
+                <div className="text-center px-4">
+                  <div className="text-2xl font-black text-gray-600">VS</div>
+                  <div className="text-[10px] text-gray-500 mt-1">{fighter.next_fight.days_away} days · {fighter.next_fight.venue.split(',')[1]?.trim() || fighter.next_fight.venue}</div>
+                  <div className="text-[10px] text-green-400 mt-0.5">ACWR: 1.12 (optimal)</div>
+                </div>
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">{fighter.next_fight.opponent_flag}</div>
+                  <div className="text-xs font-bold text-white">{fighter.next_fight.opponent}</div>
+                  <div className="text-[10px] text-gray-500">{fighter.next_fight.opponent_ranking}</div>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-2 text-[10px]">
+                <div className="text-gray-400">Weight: <span className="text-white font-bold">{fighter.current_weight}kg</span> → <span className="text-teal-400">{fighter.target_weight}kg</span></div>
+                <div className="text-gray-400 text-right">Camp: <span className="text-white font-bold">Day {fighter.camp_day}/{fighter.camp_total}</span> ({campProgress}%)</div>
+              </div>
+            </div>
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
+              <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
+              <div className="space-y-2">
+                {[
+                  { time:'06:00', label:'Roadwork — 8km + hill sprints',        done:true  },
+                  { time:'11:00', label:'Sparring 8rds — Darnell Hughes',       done:false },
+                  { time:'15:00', label:'Strength — upper body power',          done:false },
+                  { time:'16:30', label:'Film study — Petrov last 3 fights',    done:false },
+                  { time:'18:00', label:'Physio — shoulder mobility + ice bath',done:false },
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-green-500/20 border-green-500' : 'border-gray-700'}`}>
+                      {s.done && <span className="text-[8px] text-green-400">✓</span>}
+                    </div>
+                    <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
+                    <span className={`text-xs ${s.done ? 'line-through text-gray-600' : 'text-gray-300'}`}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Photo frame + Camp Info */}
+          <div className="space-y-4">
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <div className="flex items-center gap-2">
+                  <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
+                  <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
+                  <button className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
+                {session.photoDataUrl
+                  ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                  : <div className="text-center"><div className="text-4xl mb-2">🥊</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                {['3s','5s','10s','30s'].map(s => (
+                  <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-red-600/20 text-red-400':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Camp Info</div>
+              <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
+              <div className="text-xs text-gray-500 mt-1">{fighter.next_fight.broadcast} · {fighter.next_fight.date}</div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex justify-between text-gray-400"><span>Days to fight:</span><span className="text-red-400 font-bold">{fighter.next_fight.days_away}</span></div>
+                <div className="flex justify-between text-gray-400"><span>Weight status:</span><span className="text-teal-400 font-bold">{fighter.current_weight}kg → {fighter.target_weight}kg</span></div>
+                <div className="flex justify-between text-gray-400"><span>Recovery:</span><span className="text-green-400 font-bold">{recoveryScore}%</span></div>
+                <div className="flex justify-between text-gray-400"><span>Opponent:</span><span className="text-white">{fighter.next_fight.opponent} ({fighter.next_fight.opponent_ranking})</span></div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Sparring Schedule */}
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Sparring Schedule — This Week</div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-gray-500 border-b border-gray-800">
-                <th className="text-left py-2 pr-4">Day</th>
-                <th className="text-left py-2 pr-4">Partner</th>
-                <th className="text-center py-2 pr-4">Rounds</th>
-                <th className="text-left py-2 pr-4">Style</th>
-                <th className="text-left py-2">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sparringWeek.map((day, i) => (
-                <tr key={i} className="border-b border-gray-800/50">
-                  <td className="py-2 pr-4 text-gray-300 font-medium">{day.day}</td>
-                  <td className="py-2 pr-4 text-white">{day.partner}</td>
-                  <td className="py-2 pr-4 text-center text-gray-300">{day.rounds || '—'}</td>
-                  <td className="py-2 pr-4 text-gray-400">{day.style}</td>
-                  <td className="py-2 text-gray-500">{day.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* QUICK WINS */}
+      {dashTab === 'quickwins' && (
+        <div className="space-y-3">
+          {[
+            { p:1, action:'Review Petrov tape — focus on rounds 6-12 fatigue patterns',     impact:'High', cat:'Match Prep',   icon:'🎬' },
+            { p:2, action:'Confirm DAZN promo shoot logistics with Sarah Chen',              impact:'High', cat:'Media',        icon:'📺' },
+            { p:3, action:'Reply to Under Armour camp partnership proposal — agent waiting',  impact:'High', cat:'Commercial',   icon:'🤝' },
+            { p:4, action:'Weight check before 11am sparring session',                        impact:'High', cat:'Weight',       icon:'⚖️' },
+            { p:5, action:'Book cutman flight — 1 pending for corner team',                   impact:'Med',  cat:'Travel',       icon:'✈️' },
+            { p:6, action:'Complete sponsor social post — Under Armour kit photo',             impact:'Med',  cat:'Sponsor',      icon:'📱' },
+            { p:7, action:'Submit camp expense report to accountant',                          impact:'Med',  cat:'Financial',    icon:'🧾' },
+          ].map((w, i) => (
+            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all">
+              <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{w.p}</div>
+              <span className="text-lg flex-shrink-0">{w.icon}</span>
+              <div className="flex-1"><p className="text-sm text-gray-200">{w.action}</p><span className="text-[10px] text-gray-500">{w.cat}</span></div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${w.impact==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+
+      {/* DAILY TASKS */}
+      {dashTab === 'dailytasks' && (
+        <div className="space-y-3">
+          {[
+            { time:'06:00', task:'Roadwork — 8km + hill sprints x6',              done:true,  cat:'Training'   },
+            { time:'09:00', task:'Weight check — morning weigh-in',               done:true,  cat:'Weight'     },
+            { time:'11:00', task:'Sparring — 8 rounds w/ Darnell Hughes',         done:false, cat:'Training'   },
+            { time:'13:00', task:'Nutrition — post-sparring meal + supplements',   done:false, cat:'Recovery'   },
+            { time:'15:00', task:'Strength — upper body power session',            done:false, cat:'Training'   },
+            { time:'16:30', task:'Film study — Petrov fight tape analysis',        done:false, cat:'Strategy'   },
+            { time:'18:00', task:'Physio — shoulder mobility + ice bath',          done:false, cat:'Recovery'   },
+            { time:'19:00', task:'Sponsor post — Under Armour kit photo',          done:false, cat:'Commercial' },
+            { time:'20:00', task:'Visualisation session — fight night routine',    done:false, cat:'Mental'     },
+          ].map((t, i) => (
+            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':'border-gray-600'}`}>
+                {t.done && <span className="text-[9px] text-white font-bold">✓</span>}
+              </div>
+              <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{t.time}</span>
+              <div className="flex-1">
+                <span className={`text-sm ${t.done?'line-through text-gray-600':'text-gray-200'}`}>{t.task}</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{t.cat}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* INSIGHTS */}
+      {dashTab === 'insights' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { title:'WBC Ranking',         value:`#${fighter.rankings.wbc}`, sub:'Up 1 this month',                         color:'#dc2626', icon:'🥊' },
+            { title:'IBF Ranking',          value:`#${fighter.rankings.ibf}`, sub:'Mandatory position approaching',          color:'#EF4444', icon:'🏆' },
+            { title:'Weight to cut',        value:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg`, sub:`${fighter.current_weight}kg → ${fighter.target_weight}kg`, color:'#22C55E', icon:'⚖️' },
+            { title:'Camp progress',        value:`${campProgress}%`,  sub:`Day ${fighter.camp_day} of ${fighter.camp_total}`, color:'#F59E0B', icon:'🏕️' },
+            { title:'ACWR',                 value:'1.12',        sub:'Optimal zone — maintain intensity',            color:'#8B5CF6', icon:'📡' },
+            { title:'Sponsor obligations',  value:'2 due',       sub:'Under Armour post + DAZN shoot',              color:'#EC4899', icon:'🤝' },
+          ].map((ins, i) => (
+            <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4">
+              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 mb-1">{ins.title}</div>
+                <div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div>
+                <div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DON'T MISS */}
+      {dashTab === 'dontmiss' && (
+        <div className="space-y-3">
+          {[
+            { urgency:'TODAY',    item:'DAZN promo shoot — confirm logistics with Sarah Chen today.', action:'View media →', color:'#dc2626' },
+            { urgency:'TODAY',    item:'Under Armour kit photo due — sponsor post outstanding.', action:'Open brief →', color:'#EF4444' },
+            { urgency:'THIS WK',  item:'Cutman flight not booked — 1 corner team member pending.', action:'Book flight →', color:'#F59E0B' },
+            { urgency:'THIS WK',  item:'Agent reviewing Under Armour camp partnership — respond by Friday.', action:'View offer →', color:'#F59E0B' },
+            { urgency:'30 APR',   item:'Purse bid deadline — IBF mandatory. Agent actioning.', action:'View purse bid →', color:'#8B5CF6' },
+            { urgency:'MAY 22',   item:'Fight Night vs {fighter.next_fight.opponent} — {fighter.next_fight.venue}.', action:'Fight Night Ops →', color:'#6B7280' },
+          ].map((d, i) => (
+            <div key={i} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+              <span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.urgency==='TODAY'?'bg-red-600/20 text-red-400':d.urgency==='THIS WK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.urgency}</span>
+              <div className="flex-1">
+                <p className="text-sm text-gray-200 mb-1">{d.item}</p>
+                <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TEAM */}
+      {dashTab === 'team' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { name: fighter.trainer,           role:'Head Trainer',      status:'Sparring session 11:00 — pad work after',   available:true,  initials:'JB' },
+            { name: fighter.manager,           role:'Manager',           status:'Purse bid deadline 30 Apr — actioning',      available:true,  initials:'DW' },
+            { name: fighter.cutman,            role:'Cutman',            status:'Flight pending — book today',                available:true,  initials:'MW' },
+            { name: fighter.strength_coach,    role:'Strength Coach',    status:'Upper body session 15:00',                   available:true,  initials:'GM' },
+            { name: fighter.nutritionist,      role:'Nutritionist',      status:'Cut phase nutrition plan updated',           available:true,  initials:'PK' },
+            { name: fighter.physio,            role:'Physio',            status:'Shoulder treatment 18:00',                   available:true,  initials:'LB' },
+          ].map((m, i) => (
+            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+              <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white">{m.name}</div>
+                <div className="text-[10px] text-red-400">{m.role}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div>
+              </div>
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.available?'bg-green-400':'bg-gray-600'}`} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <BoxingAISection context="dashboard" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -551,7 +817,7 @@ function CampDashboardView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── TRAINING LOG VIEW ────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function TrainingLogView({ fighter }: { fighter: BoxingFighter }) {
+function TrainingLogView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const weekLog = [
     { date: '2026-03-30', am: 'Roadwork 8km + sprints', pm: 'Pads — Jim Bevan (10 rds)', evening: 'Core & stretching', load: 8, notes: 'Sharp on pads. Left hook timing improved.' },
     { date: '2026-03-31', am: 'Rest / Recovery swim', pm: 'Sparring 8 rds (Hughes)', evening: 'Ice bath + massage', load: 9, notes: 'Good body work. Need to tighten guard after throwing.' },
@@ -666,6 +932,7 @@ function TrainingLogView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -673,7 +940,7 @@ function TrainingLogView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── SPARRING PLANNER VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function SparringPlannerView({ fighter }: { fighter: BoxingFighter }) {
+function SparringPlannerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const sparringPartners = [
     { name: 'Darnell "Tank" Hughes', weight: '96.2kg', stance: 'Southpaw', style: 'Pressure fighter', record: '14-2 (10 KO)', available: true, rate: '£400/day', notes: 'Best Petrov mimic — similar jab, walks forward' },
     { name: 'Chris Adebayo', weight: '100.5kg', stance: 'Orthodox', style: 'Counter puncher', record: '11-0 (7 KO)', available: true, rate: '£350/day', notes: 'Fast hands, good for working behind the jab' },
@@ -784,6 +1051,7 @@ function SparringPlannerView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -791,7 +1059,7 @@ function SparringPlannerView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── OPPOSITION ANALYSIS VIEW ─────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function OppositionAnalysisView({ fighter }: { fighter: BoxingFighter }) {
+function OppositionAnalysisView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const tendencies = [
     { area: 'Jab', rating: 78, notes: 'Pawing jab to set up the right hand. Rarely doubles up.' },
     { area: 'Right Hand', rating: 92, notes: 'Devastating power. Loads up from distance. Telegraphs slightly.' },
@@ -929,6 +1197,7 @@ function OppositionAnalysisView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -936,7 +1205,7 @@ function OppositionAnalysisView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── WEIGHT TRACKER VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function WeightTrackerView({ fighter }: { fighter: BoxingFighter }) {
+function WeightTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const dailyWeights = [
     { day: 1, date: '2026-03-14', weight: 101.2, notes: 'Camp start — baseline weigh-in' },
     { day: 2, date: '2026-03-15', weight: 101.0, notes: '' },
@@ -1072,6 +1341,7 @@ function WeightTrackerView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="weight" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1079,7 +1349,7 @@ function WeightTrackerView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CUT PLANNER VIEW ─────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CutPlannerView({ fighter }: { fighter: BoxingFighter }) {
+function CutPlannerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [cutAiLoading, setCutAiLoading] = useState(false);
   const [cutAiResult, setCutAiResult] = useState<{assessment: string; daily_target: string; gps_adjustment: string; risk_flags: string[]; recommendation: string} | null>(null);
 
@@ -1219,6 +1489,7 @@ function CutPlannerView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         )}
       </div>
+      <BoxingAISection context="weight" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1226,7 +1497,7 @@ function CutPlannerView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── RECOVERY & HRV VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function RecoveryHRVView({ fighter }: { fighter: BoxingFighter }) {
+function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const weeklyHRV = [
     { day: 'Mon', hrv: 58, rhr: 52, sleep: 7.2, recovery: 75, notes: 'Post hard sparring, lower than baseline' },
     { day: 'Tue', hrv: 64, rhr: 50, sleep: 8.1, recovery: 83, notes: 'Good recovery after rest day' },
@@ -1313,6 +1584,7 @@ function RecoveryHRVView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1320,7 +1592,7 @@ function RecoveryHRVView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── MEDICAL RECORD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function MedicalRecordView({ fighter }: { fighter: BoxingFighter }) {
+function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const medicalHistory = [
     { date: '2026-03-14', type: 'Pre-Camp Physical', provider: 'Dr. Sarah Mitchell', result: 'PASS', notes: 'Full clearance for camp. All bloods normal. ECG normal sinus rhythm.' },
     { date: '2026-02-28', type: 'MRI — Right Hand', provider: 'London Imaging Centre', result: 'CLEAR', notes: 'No fracture. Mild soft tissue inflammation resolved. Cleared for full training.' },
@@ -1450,6 +1722,7 @@ function MedicalRecordView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1457,7 +1730,7 @@ function MedicalRecordView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── WORLD RANKINGS VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function WorldRankingsView({ fighter }: { fighter: BoxingFighter }) {
+function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const rankings: Record<string, { name: string; country: string; record: string; isMarcus?: boolean }[]> = {
     WBC: [
       { name: 'Tyson Fury', country: '🇬🇧', record: '34-1-1 (24 KO)' },
@@ -1682,6 +1955,7 @@ function WorldRankingsView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="rankings" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1689,7 +1963,7 @@ function WorldRankingsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── MANDATORY TRACKER VIEW ───────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function MandatoryTrackerView({ fighter }: { fighter: BoxingFighter }) {
+function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const mandatories = [
     { body: 'WBC', champion: 'Tyson Fury', mandatory: 'Zhilei Zhang (#2)', status: 'Ordered', deadline: 'Sep 2026', relevance: 'If Zhang wins, creates opening at #2. If Fury vacates, #1 vs #2 for vacant.' },
     { body: 'WBA', champion: 'Oleksandr Usyk', mandatory: 'Daniel Dubois (#2)', status: 'Negotiations', deadline: 'Jul 2026', relevance: 'Dubois rematch clause active. Marcus needs to be #5 or higher to enter eliminators.' },
@@ -1753,6 +2027,7 @@ function MandatoryTrackerView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="rankings" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1760,7 +2035,7 @@ function MandatoryTrackerView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── PATH TO TITLE VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function PathToTitleView({ fighter }: { fighter: BoxingFighter }) {
+function PathToTitleView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pathSteps = [
     { step: 1, fight: 'Viktor Petrov (WBC #3)', date: 'May 22, 2026', importance: 'Must-win to crack top 3 across all bodies', outcome: 'Win → WBC #3, WBO #3 projected', status: 'scheduled' },
     { step: 2, fight: 'WBC Eliminator (vs #2 or #4)', date: 'Oct/Nov 2026', importance: 'Official eliminator for mandatory position', outcome: 'Win → WBC mandatory challenger', status: 'projected' },
@@ -1828,6 +2103,7 @@ function PathToTitleView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="rankings" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1835,7 +2111,7 @@ function PathToTitleView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── PURSE BID ALERTS VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function PurseBidAlertsView() {
+function PurseBidAlertsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [purseBid, setPurseBid] = useState(3000000);
   const [isChampion, setIsChampion] = useState(false);
 
@@ -1921,6 +2197,7 @@ function PurseBidAlertsView() {
           ))}
         </div>
       </div>
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -1928,7 +2205,7 @@ function PurseBidAlertsView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── PURSE SIMULATOR VIEW ─────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function PurseSimulatorView({ fighter }: { fighter: BoxingFighter }) {
+function PurseSimulatorView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [headlinePurse, setHeadlinePurse] = useState(800000);
   const [managerFee, setManagerFee] = useState(25);
   const [trainerFee, setTrainerFee] = useState(12);
@@ -2172,6 +2449,7 @@ function PurseSimulatorView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2179,7 +2457,7 @@ function PurseSimulatorView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── FIGHT EARNINGS VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function FightEarningsView({ fighter }: { fighter: BoxingFighter }) {
+function FightEarningsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const earnings = [
     { fight: 'vs Dillian White', date: 'Nov 2025', purse: 450000, bonuses: 25000, ppv: 0, net: 148500, venue: 'AO Arena, Manchester' },
     { fight: 'vs Derek Chisora', date: 'Jul 2025', purse: 200000, bonuses: 10000, ppv: 0, net: 68250, venue: 'Copper Box, London' },
@@ -2251,6 +2529,7 @@ function FightEarningsView({ fighter }: { fighter: BoxingFighter }) {
           })}
         </div>
       </div>
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2258,7 +2537,7 @@ function FightEarningsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAMP COSTS VIEW ──────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CampCostsView({ fighter }: { fighter: BoxingFighter }) {
+function CampCostsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const costs = [
     { category: 'Sparring Partners', budget: 12000, spent: 5200, remaining: 6800, notes: '4 partners, various rates' },
     { category: 'Gym Rental', budget: 3500, spent: 1600, remaining: 1900, notes: 'Private gym — 10 weeks' },
@@ -2328,6 +2607,7 @@ function CampCostsView({ fighter }: { fighter: BoxingFighter }) {
           </table>
         </div>
       </div>
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2335,7 +2615,7 @@ function CampCostsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── TAX TRACKER VIEW ─────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function TaxTrackerView() {
+function TaxTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const taxYear = {
     year: '2025/26',
     grossIncome: 685000,
@@ -2404,6 +2684,7 @@ function TaxTrackerView() {
           ))}
         </div>
       </div>
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2411,7 +2692,7 @@ function TaxTrackerView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── TEAM OVERVIEW VIEW ───────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function TeamOverviewView({ fighter }: { fighter: BoxingFighter }) {
+function TeamOverviewView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const team = [
     { name: 'Jim Bevan', role: 'Head Trainer', phone: '+44 7700 900123', email: 'jim.bevan@boxingcoach.co.uk', responsibilities: 'All technical training, pad work, fight strategy, corner management, sparring oversight', since: '2021' },
     { name: 'Danny Walsh', role: 'Manager', phone: '+44 7700 900456', email: 'danny@walshmanagement.com', responsibilities: 'Fight negotiations, career planning, contract management, media deals, TV negotiations', since: '2020' },
@@ -2453,6 +2734,7 @@ function TeamOverviewView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         ))}
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2460,7 +2742,7 @@ function TeamOverviewView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── FIGHTER BRIEFING VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function FighterBriefingView({ fighter }: { fighter: BoxingFighter }) {
+function FighterBriefingView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const briefingItems = [
     { section: 'Camp Status', content: `Day ${fighter.camp_day} of ${fighter.camp_total}. Entering specific phase. All systems on track. Weight at ${fighter.current_weight}kg (target ${fighter.target_weight}kg). Recovery score 81%. No injuries of concern.` },
     { section: 'This Week\'s Focus', content: 'Transition to opponent-specific sparring. Increase sparring rounds from 26 to 30. Focus on body-head combinations and lateral movement. Drill clinch exits and uppercut counters.' },
@@ -2496,6 +2778,7 @@ function FighterBriefingView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2503,7 +2786,7 @@ function FighterBriefingView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── TRAINER NOTES VIEW ───────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function TrainerNotesView({ fighter }: { fighter: BoxingFighter }) {
+function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const notes = [
     { date: 'April 4, 2026', category: 'Sparring', content: 'Excellent session with Hughes today. Marcus is reading the jab better and slipping right effectively. The body-head combination we drilled on pads is now translating to live sparring. Need to keep hands higher after throwing the right hand — leaving himself open for the counter. This is something Petrov will exploit.' },
     { date: 'April 3, 2026', category: 'Pads', content: 'Power session on pads. 12 rounds focused on counter punching off the back foot. Left hook to the body is landing with real venom. Introduced a new pull counter right hand — Marcus picked it up quickly. Will need 2-3 more sessions before it becomes instinctive.' },
@@ -2546,6 +2829,7 @@ function TrainerNotesView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2553,7 +2837,7 @@ function TrainerNotesView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── MANAGER DASHBOARD VIEW ───────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function ManagerDashboardView({ fighter }: { fighter: BoxingFighter }) {
+function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const fightOffers = [
     { opponent: 'Viktor Petrov', purse: '£800,000', broadcast: 'DAZN PPV', venue: 'O2 Arena, London', status: 'SIGNED', date: 'May 22, 2026', notes: 'WBC eliminator implications' },
     { opponent: 'Zhilei Zhang', purse: '£1,200,000 (projected)', broadcast: 'DAZN / ESPN', venue: 'TBD', status: 'Informal enquiry', date: 'Q4 2026', notes: 'If Marcus beats Petrov — massive fight' },
@@ -2639,6 +2923,7 @@ function ManagerDashboardView({ fighter }: { fighter: BoxingFighter }) {
           </table>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2646,7 +2931,7 @@ function ManagerDashboardView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── SPONSORSHIPS VIEW ────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function SponsorshipsView({ fighter }: { fighter: BoxingFighter }) {
+function SponsorshipsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const sponsors = [
     { brand: 'Under Armour', type: 'Kit & Apparel', value: '£65,000/yr', start: 'Jan 2024', end: 'Dec 2026', deliverables: '4 social posts/month, ring walk kit, photoshoot x2/yr', status: 'Active' },
     { brand: 'Bulk Powders', type: 'Supplement Partner', value: '£25,000/yr', start: 'Mar 2025', end: 'Feb 2027', deliverables: '2 social posts/month, product use in camp content', status: 'Active' },
@@ -2687,6 +2972,7 @@ function SponsorshipsView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         ))}
       </div>
+      <BoxingAISection context="sponsorship" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2694,7 +2980,7 @@ function SponsorshipsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── MEDIA OBLIGATIONS VIEW ───────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function MediaObligationsView({ fighter }: { fighter: BoxingFighter }) {
+function MediaObligationsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const obligations = [
     { date: 'Apr 12', event: 'DAZN Promo Shoot', location: 'DAZN Studios, London', duration: '3 hours', type: 'Broadcast', notes: 'Fight promo package, 30-sec trailer, social clips', status: 'Confirmed' },
     { date: 'Apr 15', event: 'Sky Sports Interview', location: 'Sky Studios, Isleworth', duration: '45 min', type: 'TV', notes: 'Pre-fight feature for Sky Sports Boxing show', status: 'Confirmed' },
@@ -2742,6 +3028,7 @@ function MediaObligationsView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2749,7 +3036,7 @@ function MediaObligationsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── APPEARANCE FEES VIEW ─────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function AppearanceFeesView() {
+function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const appearances = [
     { event: 'Charity Gala — Help for Heroes', date: 'Feb 8, 2026', fee: '£3,500', type: 'Charity', notes: 'After-dinner speech, photo ops, auction item signing', status: 'Completed' },
     { event: 'Betfair Launch Event', date: 'Jan 22, 2026', fee: '£5,000', type: 'Corporate', notes: 'Brand ambassador appearance, 2-hour commitment', status: 'Completed' },
@@ -2797,6 +3084,7 @@ function AppearanceFeesView() {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2804,7 +3092,7 @@ function AppearanceFeesView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CONTRACT TRACKER VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function ContractTrackerView({ fighter }: { fighter: BoxingFighter }) {
+function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const contracts = [
     { title: 'Matchroom Promotional Agreement', counterparty: 'Matchroom Sport', type: 'Promotional', start: 'Jan 2024', end: 'Dec 2027', fights: '6-fight deal (3 remaining)', value: 'Per-fight basis', status: 'Active', keyTerms: '3 fights remaining. Matchroom has first option on all UK fights. DAZN broadcast rights included.' },
     { title: 'Management Agreement', counterparty: 'Danny Walsh / Walsh Management', type: 'Management', start: 'Jun 2020', end: 'Jun 2028', fights: 'All fights', value: '25% of purse', status: 'Active', keyTerms: '8-year deal with 2-year renewal option. Covers all fight purses, commercial income split negotiable.' },
@@ -2934,6 +3222,7 @@ function ContractTrackerView({ fighter }: { fighter: BoxingFighter }) {
           <span>Dec 2027 (expires)</span>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2941,7 +3230,7 @@ function ContractTrackerView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── FIGHT RECORD VIEW ────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function FightRecordView({ fighter }: { fighter: BoxingFighter }) {
+function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [debrief, setDebrief] = useState<{performance_rating: string; strengths: string; weaknesses: string; gps_insight: string; next_camp_focus: string} | null>(null);
   const [debriefLoading, setDebriefLoading] = useState(false);
   const [selectedFight, setSelectedFight] = useState('vs White (Nov 2025)');
@@ -3082,6 +3371,7 @@ function FightRecordView({ fighter }: { fighter: BoxingFighter }) {
           </table>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3089,7 +3379,7 @@ function FightRecordView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAREER STATS VIEW ────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CareerStatsView({ fighter }: { fighter: BoxingFighter }) {
+function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const stats = [
     { label: 'Win Rate', value: '95.7%', detail: '22 wins from 23 fights' },
     { label: 'KO Rate', value: '81.8%', detail: '18 KOs from 22 wins' },
@@ -3152,6 +3442,7 @@ function CareerStatsView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3159,7 +3450,7 @@ function CareerStatsView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── PROMOTER PIPELINE VIEW ───────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function PromoterPipelineView({ fighter }: { fighter: BoxingFighter }) {
+function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pipeline = [
     { opponent: 'Viktor Petrov', promoter: 'Matchroom/Top Rank co-promote', purse: '£800,000', date: 'May 22, 2026', stage: 'Signed', broadcast: 'DAZN PPV', notes: 'Fight contracts exchanged. Camp underway.' },
     { opponent: 'Zhilei Zhang', promoter: 'Matchroom/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'DAZN / TNT Sports', notes: 'Conditional on Petrov win. Eddie Hearn has opened dialogue with Frank Warren\'s team.' },
@@ -3209,6 +3500,7 @@ function PromoterPipelineView({ fighter }: { fighter: BoxingFighter }) {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3216,7 +3508,7 @@ function PromoterPipelineView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── AGENT INTEL VIEW ─────────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function AgentIntelView() {
+function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const intel = [
     { source: 'Industry contact (Top Rank)', date: 'Apr 3, 2026', content: 'Petrov\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Sam Jones loss closely. Petrov has been sparring with Efe Ajagba to simulate a taller, more technical opponent.' },
     { source: 'Boxing Scene report', date: 'Apr 2, 2026', content: 'WBC expected to order eliminator between #3 and #5 if Petrov loses. This means a Marcus win could skip the eliminator stage entirely and go straight to mandatory position, depending on how WBC executive committee votes.' },
@@ -3250,6 +3542,7 @@ function AgentIntelView() {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3257,7 +3550,7 @@ function AgentIntelView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── AI MORNING BRIEFING VIEW ─────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function AIMorningBriefingView({ fighter }: { fighter: BoxingFighter }) {
+function AIMorningBriefingView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [briefing, setBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -3359,6 +3652,7 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
           </div>
         </div>
       )}
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3366,7 +3660,7 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── OPPOSITION SCOUT VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function OppositionScoutView({ fighter }: { fighter: BoxingFighter }) {
+function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [scoutTarget, setScoutTarget] = useState('Viktor Petrov');
   const [scoutLoading, setScoutLoading] = useState(false);
   const [scoutResult, setScoutResult] = useState<{style_analysis: string; key_threat: string; weakness: string; ring_strategy: string; gps_target_zones: string} | null>(null);
@@ -3462,6 +3756,7 @@ function OppositionScoutView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         ))}
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3469,7 +3764,7 @@ function OppositionScoutView({ fighter }: { fighter: BoxingFighter }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── BROADCAST TRACKER VIEW ───────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function BroadcastTrackerView() {
+function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const broadcasts = [
     { fight: 'Cole vs Petrov', date: 'May 22, 2026', broadcaster: 'DAZN PPV', territory: 'Global', estimated_viewers: '800k-1.2m', card_position: 'Main Event', notes: 'First PPV headliner. DAZN investing heavily in promotion.' },
     { fight: 'Fury vs Zhang', date: 'TBD 2026', broadcaster: 'TNT Sports / ESPN+', territory: 'UK & US', estimated_viewers: '2-3m', card_position: 'N/A', notes: 'Key fight to watch — impacts WBC rankings.' },
@@ -3530,6 +3825,7 @@ function BroadcastTrackerView() {
           ))}
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3537,7 +3833,7 @@ function BroadcastTrackerView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── INDUSTRY NEWS VIEW ───────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function IndustryNewsView() {
+function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const news = [
     { date: 'Apr 4, 2026', headline: 'WBC to order eliminator between #3 and #5 by end of summer', source: 'Boxing Scene', relevance: 'Direct', summary: 'If Marcus beats Petrov and takes the #3 spot, he could be in line for a mandatory eliminator by Q4 2026. The WBC executive committee will vote at their May convention.' },
     { date: 'Apr 3, 2026', headline: 'Fury considering retirement after Zhang fight', source: 'ESPN', relevance: 'High', summary: 'If Fury retires, the WBC title could become vacant, significantly accelerating the path to a title shot for top contenders including Marcus.' },
@@ -3577,6 +3873,7 @@ function IndustryNewsView() {
           </div>
         ))}
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3584,13 +3881,13 @@ function IndustryNewsView() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── GPS LOAD MONITOR VIEW ────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function GPSLoadMonitorView({ fighter }: { fighter: BoxingFighter }) {
+function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [selectedDay, setSelectedDay] = useState(GPS_SESSIONS.length - 1);
   const [footworkLoading, setFootworkLoading] = useState(false);
   const [footworkResult, setFootworkResult] = useState<{drills: {name: string; description: string; reason: string}[]; summary: string} | null>(null);
   const [compareA, setCompareA] = useState(0);
   const [compareB, setCompareB] = useState(GPS_SESSIONS.length - 1);
-  const session = GPS_SESSIONS[selectedDay];
+  const gpsSession = GPS_SESSIONS[selectedDay];
 
   const generateFootworkAnalysis = async () => {
     setFootworkLoading(true);
@@ -3752,20 +4049,20 @@ function GPSLoadMonitorView({ fighter }: { fighter: BoxingFighter }) {
             ))}
           </div>
           <div className="space-y-2 text-xs border-t border-gray-800 pt-4">
-            <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="text-white">{session.type}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="text-white">{session.duration} min</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Distance</span><span className="text-teal-400">{session.distance} km</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Session Load</span><span className="text-orange-400">{session.load} AU</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">ACWR</span><span className={session.acwr > 1.3 ? 'text-red-400' : session.acwr > 1.15 ? 'text-yellow-400' : 'text-green-400'}>{session.acwr.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="text-white">{gpsSession.type}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="text-white">{gpsSession.duration} min</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Distance</span><span className="text-teal-400">{gpsSession.distance} km</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Session Load</span><span className="text-orange-400">{gpsSession.load} AU</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">ACWR</span><span className={gpsSession.acwr > 1.3 ? 'text-red-400' : gpsSession.acwr > 1.15 ? 'text-yellow-400' : 'text-green-400'}>{gpsSession.acwr.toFixed(2)}</span></div>
           </div>
         </div>
 
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <div className="text-sm font-semibold text-white mb-4">Ring Heatmap — {session.date}</div>
+          <div className="text-sm font-semibold text-white mb-4">Ring Heatmap — {gpsSession.date}</div>
           <div className="flex justify-center mb-4">
-            <RingHeatmap session={session} size={240} />
+            <RingHeatmap session={gpsSession} size={240} />
           </div>
-          <RingZoneBar session={session} />
+          <RingZoneBar session={gpsSession} />
         </div>
       </div>
 
@@ -3892,11 +4189,12 @@ function GPSLoadMonitorView({ fighter }: { fighter: BoxingFighter }) {
           );
         })()}
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
 
-function GPSVestDashboardView({ fighter }: { fighter: BoxingFighter }) {
+function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const vests = [
     { id: 'LF-001', assigned: 'Marcus Cole', status: 'Active', battery: 94, lastSync: '08:14 today', sessions: 22, firmware: 'v2.4.1' },
     { id: 'LF-002', assigned: 'Darnell Hughes (Sparring)', status: 'Active', battery: 67, lastSync: '08:14 today', sessions: 14, firmware: 'v2.4.1' },
@@ -3986,6 +4284,7 @@ function GPSVestDashboardView({ fighter }: { fighter: BoxingFighter }) {
           </div>
         </div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3998,7 +4297,7 @@ const COMPUBOX_DATA = [
   { round: 5, jabsLanded: 11, jabsThrown: 27, powerLanded: 10, powerThrown: 21, received: 11, ringZone: { centre: 50, ropes: 33, corners: 17 } },
 ];
 
-function PunchAnalyticsView({ fighter: _fighter }: { fighter: BoxingFighter }) {
+function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const totalJabsLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsLanded,0);
   const totalJabsThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsThrown,0);
   const totalPowerLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.powerLanded,0);
@@ -4047,6 +4346,7 @@ function PunchAnalyticsView({ fighter: _fighter }: { fighter: BoxingFighter }) {
           Rounds where Marcus spent &gt;55% in the centre ring (R1, R2, R4) averaged <span className="text-green-400 font-medium">49% connect rate</span>. Rounds where he drifted to the ropes (&gt;35%) dropped to <span className="text-red-400 font-medium">37% connect rate</span>. This confirms the centre-ring strategy is directly linked to punch output efficiency. Jim&apos;s instruction: &quot;work the jab to keep centre position&quot; is statistically validated.
         </div>
       </div>
+      <BoxingAISection context="default" fighter={_fighter} session={session} />
     </div>
   );
 }
@@ -4065,7 +4365,7 @@ const FIGHT_NIGHT_TIMELINE = [
   { time: '22:10', title: 'FIRST BELL',                   detail: 'Show time.' },
 ]
 
-function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
+function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [roundTab, setRoundTab] = useState<'early' | 'mid' | 'late'>('early')
 
   const generateCornerSheet = () => {
@@ -4303,6 +4603,7 @@ function FightNightOpsView({ fighter }: { fighter: BoxingFighter }) {
         </div>
         <div className="text-xs text-gray-500 mt-3 text-center">Heavyweight division — no upper limit</div>
       </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   )
 }
@@ -4348,43 +4649,43 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'camp':             return <CampDashboardView fighter={fighter} />;
-      case 'training':        return <TrainingLogView fighter={fighter} />;
-      case 'sparring':        return <SparringPlannerView fighter={fighter} />;
-      case 'opposition':      return <OppositionAnalysisView fighter={fighter} />;
-      case 'fight-night':     return <FightNightOpsView fighter={fighter} />;
-      case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} />;
-      case 'weight':          return <WeightTrackerView fighter={fighter} />;
-      case 'cut':             return <CutPlannerView fighter={fighter} />;
-      case 'recovery':        return <RecoveryHRVView fighter={fighter} />;
-      case 'medical':         return <MedicalRecordView fighter={fighter} />;
-      case 'rankings':        return <WorldRankingsView fighter={fighter} />;
-      case 'mandatory':       return <MandatoryTrackerView fighter={fighter} />;
-      case 'pathtotitle':     return <PathToTitleView fighter={fighter} />;
-      case 'pursebid':        return <PurseBidAlertsView />;
-      case 'pursesim':        return <PurseSimulatorView fighter={fighter} />;
-      case 'earnings':        return <FightEarningsView fighter={fighter} />;
-      case 'campcosts':       return <CampCostsView fighter={fighter} />;
-      case 'tax':             return <TaxTrackerView />;
-      case 'teamoverview':    return <TeamOverviewView fighter={fighter} />;
-      case 'briefing':        return <FighterBriefingView fighter={fighter} />;
-      case 'trainernotes':    return <TrainerNotesView fighter={fighter} />;
-      case 'managerdash':     return <ManagerDashboardView fighter={fighter} />;
-      case 'sponsorships':    return <SponsorshipsView fighter={fighter} />;
-      case 'media':           return <MediaObligationsView fighter={fighter} />;
-      case 'appearances':     return <AppearanceFeesView />;
-      case 'contracts':       return <ContractTrackerView fighter={fighter} />;
-      case 'fightrecord':     return <FightRecordView fighter={fighter} />;
-      case 'careerstats':     return <CareerStatsView fighter={fighter} />;
-      case 'promoterpipeline':return <PromoterPipelineView fighter={fighter} />;
-      case 'agentintel':      return <AgentIntelView />;
-      case 'aibriefing':      return <AIMorningBriefingView fighter={fighter} />;
-      case 'opscout':         return <OppositionScoutView fighter={fighter} />;
-      case 'broadcast':       return <BroadcastTrackerView />;
-      case 'news':            return <IndustryNewsView />;
-      case 'gps':             return <GPSLoadMonitorView fighter={fighter} />;
-      case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} />;
-      default:                return <CampDashboardView fighter={fighter} />;
+      case 'camp':             return <CampDashboardView fighter={fighter} session={session} />;
+      case 'training':        return <TrainingLogView fighter={fighter} session={session} />;
+      case 'sparring':        return <SparringPlannerView fighter={fighter} session={session} />;
+      case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
+      case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
+      case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
+      case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
+      case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
+      case 'recovery':        return <RecoveryHRVView fighter={fighter} session={session} />;
+      case 'medical':         return <MedicalRecordView fighter={fighter} session={session} />;
+      case 'rankings':        return <WorldRankingsView fighter={fighter} session={session} />;
+      case 'mandatory':       return <MandatoryTrackerView fighter={fighter} session={session} />;
+      case 'pathtotitle':     return <PathToTitleView fighter={fighter} session={session} />;
+      case 'pursebid':        return <PurseBidAlertsView fighter={fighter} session={session} />;
+      case 'pursesim':        return <PurseSimulatorView fighter={fighter} session={session} />;
+      case 'earnings':        return <FightEarningsView fighter={fighter} session={session} />;
+      case 'campcosts':       return <CampCostsView fighter={fighter} session={session} />;
+      case 'tax':             return <TaxTrackerView fighter={fighter} session={session} />;
+      case 'teamoverview':    return <TeamOverviewView fighter={fighter} session={session} />;
+      case 'briefing':        return <FighterBriefingView fighter={fighter} session={session} />;
+      case 'trainernotes':    return <TrainerNotesView fighter={fighter} session={session} />;
+      case 'managerdash':     return <ManagerDashboardView fighter={fighter} session={session} />;
+      case 'sponsorships':    return <SponsorshipsView fighter={fighter} session={session} />;
+      case 'media':           return <MediaObligationsView fighter={fighter} session={session} />;
+      case 'appearances':     return <AppearanceFeesView fighter={fighter} session={session} />;
+      case 'contracts':       return <ContractTrackerView fighter={fighter} session={session} />;
+      case 'fightrecord':     return <FightRecordView fighter={fighter} session={session} />;
+      case 'careerstats':     return <CareerStatsView fighter={fighter} session={session} />;
+      case 'promoterpipeline':return <PromoterPipelineView fighter={fighter} session={session} />;
+      case 'agentintel':      return <AgentIntelView fighter={fighter} session={session} />;
+      case 'aibriefing':      return <AIMorningBriefingView fighter={fighter} session={session} />;
+      case 'opscout':         return <OppositionScoutView fighter={fighter} session={session} />;
+      case 'broadcast':       return <BroadcastTrackerView fighter={fighter} session={session} />;
+      case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
+      case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
+      case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
+      default:                return <CampDashboardView fighter={fighter} session={session} />;
     }
   };
 
@@ -4512,14 +4813,14 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            <WaveBanner fighter={fighter} />
+            <WaveBanner fighter={fighter} session={session} />
             {renderView()}
           </div>
 
           {/* Fighter Card Column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0"
             style={{ width: '220px' }}>
-            <FighterCard fighter={fighter} />
+            <FighterCard fighter={fighter} session={session} />
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Next Fight</div>
               <div className="text-xs text-red-400 font-medium">{fighter.next_fight.opponent} {fighter.next_fight.opponent_flag}</div>
