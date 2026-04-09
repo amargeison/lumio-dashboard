@@ -2335,7 +2335,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
 
   const handleAiAnalysis = async (sessionIdx: number) => {
     setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: true, result: null } }));
-    const session = sessions[sessionIdx];
+    const practiceSession = sessions[sessionIdx];
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -2350,7 +2350,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
           max_tokens: 500,
           messages: [{
             role: 'user',
-            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${session.date}, Type: ${session.type}, Duration: ${session.duration}, Partner: ${session.partner}, Coach notes: ${session.coachNotes}. Provide exactly: 3 specific technical observations, 2 areas to focus on next session, 1 tactical pattern to develop. Be concise and specific to tennis.`
+            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${practiceSession.date}, Type: ${practiceSession.type}, Duration: ${practiceSession.duration}, Partner: ${practiceSession.partner}, Coach notes: ${practiceSession.coachNotes}. Provide exactly: 3 specific technical observations, 2 areas to focus on next session, 1 tactical pattern to develop. Be concise and specific to tennis.`
           }],
         }),
       });
@@ -4199,8 +4199,6 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
 
   const ScBadge=({s}:{s:number})=><div className={`text-[10px] px-2 py-1 rounded-full font-bold ${s>=90?'bg-green-600/20 text-green-400':s>=75?'bg-purple-600/20 text-purple-400':s>=60?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{s} Lumio</div>
 
-  void session // used in genEmail
-
   return (
     <div className="space-y-6">
       <QuickActionsBar />
@@ -4215,7 +4213,13 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="text-sm font-semibold text-white mb-4">Upcoming Travel — Clay Swing</div>
         <div className="space-y-3">
-          {upcoming.map((t, i) => (
+          {([
+            { event: 'Madrid Open', date: '26 Apr – 4 May', details: 'Flight + hotel TBC', status: 'Not booked' },
+            { event: 'Roland-Garros', date: '25 May – 8 Jun', details: 'Apartment booked, flights TBC', status: 'Confirmed' },
+            { event: 'Halle Open', date: '9–15 Jun', details: 'Hotel confirmed, flights booked', status: 'Booked' },
+            { event: 'Wimbledon', date: '30 Jun – 13 Jul', details: 'Rented house confirmed', status: 'Confirmed' },
+            { event: 'US Open', date: '25 Aug – 7 Sep', details: 'Hotel shortlisted, flights TBC', status: 'Not booked' },
+          ] as Array<{ event: string; date: string; details: string; status: string }>).map((t, i) => (
             <div key={i} className="flex items-start gap-3 py-3 border-b border-gray-800/50">
               <div className={`text-xs px-2 py-0.5 rounded mt-0.5 flex-shrink-0 ${t.status === 'Confirmed' || t.status === 'Booked' ? 'bg-teal-600/20 text-teal-400' : t.status === 'Not booked' ? 'bg-red-600/20 text-red-400' : 'bg-gray-700 text-gray-400'}`}>{t.status}</div>
               <div>
@@ -6063,11 +6067,11 @@ function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; 
         </div>
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-semibold text-white">Court Heatmap — {session.date}</div>
-            {session.court.length === 0 && <span className="text-xs text-gray-500 italic">No court data</span>}
+            <div className="text-sm font-semibold text-white">Court Heatmap — {gpsSession.date}</div>
+            {gpsSession.court.length === 0 && <span className="text-xs text-gray-500 italic">No court data</span>}
           </div>
           <div className="flex justify-center">
-            <TennisCourtHeatmap session={session} size={220} />
+            <TennisCourtHeatmap session={gpsSession} size={220} />
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
             <div className="text-center text-purple-400">Baseline heavy</div>
@@ -6099,7 +6103,7 @@ function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; 
           <span className="text-red-400">■ High load</span>
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
+      <TennisAISection context="default" player={player} session={demoSession} />
     </div>
   );
 }
