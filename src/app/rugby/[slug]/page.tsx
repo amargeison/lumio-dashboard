@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import type { SportsDemoSession } from '@/components/sports-demo'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface RugbyClub {
@@ -23,6 +25,16 @@ interface RugbyClub {
   nextFixtureDate: string;
   plan: string;
 }
+
+// ─── RUGBY ROLES ──────────────────────────────────────────────────────────────
+const RUGBY_ROLES = [
+  { id: 'ceo',        label: 'CEO / Chairman',      icon: '🏛️' },
+  { id: 'dor',        label: 'Director of Rugby',   icon: '🏉' },
+  { id: 'coach',      label: 'Head Coach',           icon: '🎽' },
+  { id: 'medical',    label: 'Head of Medical',      icon: '🏥' },
+  { id: 'commercial', label: 'Commercial Director',  icon: '💼' },
+  { id: 'academy',    label: 'Academy Director',     icon: '🎓' },
+]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
@@ -330,8 +342,10 @@ function ClubDashboardView({club}:{club:RugbyClub}) {
 }
 
 // ─── INSIGHTS VIEW ──────────────────────────────────────────────────────────
-function InsightsView({club}:{club:RugbyClub}) {
-  const [activeRole, setActiveRole] = useState('dor');
+function InsightsView({club, activeRole: activeRoleProp = 'dor'}:{club:RugbyClub; activeRole?: string}) {
+  const [localRole, setLocalRole] = useState(activeRoleProp);
+  const activeRole = localRole;
+  const setActiveRole = setLocalRole;
   const roles = [{id:'dor',label:'Director of Rugby',icon:'🏉'},{id:'coach',label:'Head Coach',icon:'🎽'},{id:'medical',label:'Head of Medical',icon:'🏥'},{id:'recruitment',label:'Recruitment',icon:'🔍'},{id:'academy',label:'Academy',icon:'🎓'},{id:'analysis',label:'Analysis',icon:'🎬'},{id:'commercial',label:'Commercial',icon:'💼'},{id:'ceo',label:'CEO / Chairman',icon:'🏛️'}];
   const headroom = club.capCeiling - club.currentSpend;
   return (
@@ -2539,16 +2553,31 @@ Keep under 400 words.` }]
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function RugbyPortalPage() {
+  return (
+    <SportsDemoGate
+      sport="rugby"
+      accentColor="#7C3AED"
+      sportLabel="Rugby"
+      defaultClubName="Hartfield RFC"
+      roles={RUGBY_ROLES}
+    >
+      {(session) => <RugbyPortalInner session={session} />}
+    </SportsDemoGate>
+  )
+}
+
+function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection,setActiveSection]=useState('dashboard');
   const [sidebarCollapsed,setSidebarCollapsed]=useState(false);
   const club = DEMO_CLUB;
+  const activeRole = session.role;
   const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','PERFORMANCE','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
 
   const renderView = () => {
     switch(activeSection) {
       case 'dashboard':       return <ClubDashboardView club={club}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
-      case 'insights':        return <InsightsView club={club}/>;
+      case 'insights':        return <InsightsView club={club} activeRole={activeRole}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
       case 'calendar':        return <ClubCalendarView/>;
       case 'capdashboard':    return <CapDashboardView club={club}/>;
@@ -2614,7 +2643,7 @@ export default function RugbyPortalPage() {
           <div className="p-3 border-b border-gray-800">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-purple-500/40" style={{background:'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(124,58,237,0.3))'}}>{club.leaguePosition}</div>
-              <div><div className="text-xs font-semibold text-white">{club.name}</div><div className="text-[10px] text-gray-500">{club.league} · #{club.leaguePosition}</div></div>
+              <div><div className="text-xs font-semibold text-white">{session.clubName || club.name}</div><div className="text-[10px] text-gray-500">{club.league} · #{club.leaguePosition}</div></div>
             </div>
           </div>
         )}
@@ -2637,6 +2666,26 @@ export default function RugbyPortalPage() {
             );
           })}
         </nav>
+
+        <RoleSwitcher
+          session={session}
+          roles={RUGBY_ROLES}
+          accentColor="#7C3AED"
+          onRoleChange={(role) => {
+            const key = 'lumio_rugby_demo_session'
+            const stored = localStorage.getItem(key)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+            }
+            setActiveSection(activeSection)
+          }}
+          onReset={() => {
+            localStorage.removeItem('lumio_rugby_demo_session')
+            window.location.reload()
+          }}
+          collapsed={sidebarCollapsed}
+        />
 
         {!sidebarCollapsed&&(
           <div className="p-3 border-t border-gray-800">
@@ -2665,11 +2714,17 @@ export default function RugbyPortalPage() {
           {/* Right Sidebar */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{width:'220px'}}>
             <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-4 text-center">
-              <div className="text-3xl mb-2">🏉</div>
-              <div className="text-sm font-bold text-white">{club.name}</div>
+              {session.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={session.logoUrl} alt="" className="w-10 h-10 rounded-full mx-auto mb-2 object-cover" />
+              ) : (
+                <div className="text-3xl mb-2">🏉</div>
+              )}
+              <div className="text-sm font-bold text-white">{session.clubName || club.name}</div>
               <div className="text-[10px] text-gray-500">{club.league}</div>
               <div className="text-xs text-purple-400 font-medium mt-1">#{club.leaguePosition} in league</div>
               <div className="text-xs text-gray-400 mt-1">{club.stadium}</div>
+              {session.userName && <div className="text-[10px] text-gray-500 mt-2 border-t border-gray-800 pt-2">{session.userName}</div>}
             </div>
             <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Next Match</div>
