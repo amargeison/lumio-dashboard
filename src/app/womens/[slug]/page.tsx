@@ -26,21 +26,31 @@ interface WomensClub {
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
   { id: 'briefing',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
+  { id: 'insights',     label: 'Insights',            icon: '📊', group: 'OVERVIEW' },
   { id: 'fsr',          label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
   { id: 'salary',       label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',      label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
   { id: 'welfare',      label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
   { id: 'acl',          label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
+  { id: 'cycle',        label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
   { id: 'maternity',    label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
   { id: 'mental',       label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
   { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
   { id: 'match',        label: 'Match Preparation',   icon: '⚽', group: 'FOOTBALL' },
+  { id: 'transfers',   label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
+  { id: 'analytics',   label: 'Analytics',           icon: '📉', group: 'FOOTBALL' },
+  { id: 'scouting',    label: 'Scouting',            icon: '🔭', group: 'FOOTBALL' },
+  { id: 'academy',     label: 'Academy',             icon: '🎓', group: 'FOOTBALL' },
+  { id: 'halftime',    label: 'AI Halftime Brief',   icon: '🤖', group: 'FOOTBALL' },
   { id: 'sponsorship',  label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
   { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
   { id: 'board',        label: 'Board Suite',         icon: '🏛️', group: 'COMMERCIAL' },
   { id: 'financial',    label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
+  { id: 'media',        label: 'Media & PR',          icon: '📣', group: 'COMMERCIAL' },
+  { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
+  { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
   { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
   { id: 'gps',          label: 'GPS & PlayerData',    icon: '📡', group: 'OPERATIONS' },
   { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
@@ -101,6 +111,233 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
     {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
   </div>
 )
+
+// ─── INSIGHTS VIEW ───────────────────────────────────────────────────────────
+const InsightsView = ({ club }: { club: WomensClub }) => {
+  const [activeRole, setActiveRole] = useState('coach');
+  const roles = [
+    { id: 'coach', label: 'Head Coach', icon: '🎽' },
+    { id: 'dof', label: 'Director of Football', icon: '📋' },
+    { id: 'welfare', label: 'Welfare Lead', icon: '❤️' },
+    { id: 'doctor', label: 'Club Doctor', icon: '🏥' },
+    { id: 'commercial', label: 'Commercial Director', icon: '💼' },
+    { id: 'academy', label: 'Academy Director', icon: '🎓' },
+    { id: 'board', label: 'Board', icon: '🏛️' },
+    { id: 'media', label: 'Media & Comms', icon: '📣' },
+  ];
+  const ICard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <div className={`bg-[#0D1117] border border-gray-800 rounded-xl p-5 ${className}`}>{children}</div>
+  );
+  const IH3 = ({ children }: { children: React.ReactNode }) => <h3 className="text-sm font-bold text-white mb-3">{children}</h3>;
+  const thd = "text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30";
+  const ttd = "p-3 text-gray-400 text-xs";
+
+  const coachContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Head Coach View" subtitle="Performance, cycle overlay, and squad readiness" icon="🎽" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Squad Available" value="19/24" sub="5 unavailable (injury/cycle load cap)" color="pink" />
+        <StatCard label="Today's ACL Flags" value="2" sub="Emily Zhang · Priya Nair" color="red" />
+        <StatCard label="xG Last Match" value="0.31" sub="vs Brighton (L 0–1)" color="amber" />
+        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Bristol City (A)" color="blue" />
+      </div>
+      <ICard>
+        <IH3>Squad Readiness — Cycle Phase Overlay</IH3>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Fitness</th><th className="text-left p-3">Cycle</th><th className="text-left p-3">Load Cap</th><th className="text-left p-3">ACL</th><th className="text-left p-3">Available</th>
+        </tr></thead><tbody>
+          {[
+            {n:'Emma Clarke',p:'GK',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
+            {n:'Priya Nair',p:'FW',f:'92%',c:'Ovulatory',lc:'95%',acl:'⚠ Laxity',av:'✓',avC:'amber'},
+            {n:'Emily Zhang',p:'CM',f:'88%',c:'Luteal',lc:'60%',acl:'🔴 High risk',av:'Limited',avC:'red'},
+            {n:'Charlotte Reed',p:'CB',f:'95%',c:'Menstrual',lc:'65%',acl:'—',av:'Limited',avC:'amber'},
+            {n:'Jade Osei',p:'LB',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
+            {n:'Abbi Walsh',p:'RM',f:'97%',c:'Luteal',lc:'80%',acl:'⚠ Luteal',av:'✓',avC:'amber'},
+            {n:'Lucy Whitmore',p:'CM',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
+            {n:'Sophie Turner',p:'CB',f:'40%',c:'—',lc:'RTP P3',acl:'—',av:'No — injured',avC:'red'},
+          ].map((r,i)=>{
+            const lcN=parseInt(r.lc);const lcC=isNaN(lcN)?'text-blue-400':lcN<=65?'text-red-400':lcN<=85?'text-amber-400':'text-green-400';
+            const avB=r.avC==='green'?'bg-green-600/20 text-green-400':r.avC==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400';
+            return<tr key={i} className="border-b border-gray-800/50">
+              <td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.f}</td><td className={ttd}>{r.c}</td>
+              <td className="p-3"><span className={`text-xs font-bold ${lcC}`}>{r.lc}</span></td>
+              <td className="p-3">{r.acl.startsWith('🔴')?<span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400">{r.acl}</span>:r.acl.startsWith('⚠')?<span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400">{r.acl}</span>:<span className="text-gray-600">—</span>}</td>
+              <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${avB}`}>{r.av}</span></td>
+            </tr>;
+          })}
+        </tbody></table></div>
+      </ICard>
+      <ICard>
+        <IH3>Form &amp; Momentum</IH3>
+        <div className="flex gap-2 mb-4">{['L','W','W','D','W'].map((r,i)=><span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${r==='W'?'bg-green-600/20 text-green-400':r==='L'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{r}</span>)}</div>
+        <div className="text-xs text-gray-500 mb-2">xG trend last 5:</div>
+        <svg viewBox="0 0 200 40" className="w-full max-w-xs" style={{height:40}}>
+          {[0.31,1.42,0.98,0.67,1.21].map((v,i,a)=>{const x=i*50;const y=40-(v/1.5)*36;return i<a.length-1?<line key={i} x1={x} y1={y} x2={(i+1)*50} y2={40-(a[i+1]/1.5)*36} stroke="#EC4899" strokeWidth="2"/>:null;})}
+          {[0.31,1.42,0.98,0.67,1.21].map((v,i)=><circle key={i} cx={i*50} cy={40-(v/1.5)*36} r="3" fill="#EC4899"/>)}
+          {[0.31,1.42,0.98,0.67,1.21].map((v,i)=><text key={`t${i}`} x={i*50} y={40-(v/1.5)*36-6} textAnchor="middle" fill="#9CA3AF" fontSize="7">{v}</text>)}
+        </svg>
+      </ICard>
+      <ICard>
+        <IH3>Tactical Notes — Next Opponent (Bristol City Women)</IH3>
+        <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Cycle consideration: 3 players in high-load-cap phases. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
+      </ICard>
+    </div>
+  );
+
+  const dofContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Director of Football View" subtitle="FSR headroom, transfers, and squad planning" icon="📋" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="FSR Headroom" value="£380k" sub="Before 80% cap breach" color="green" />
+        <StatCard label="Contract Expiries" value="4" sub="End of season 2026" color="amber" />
+        <StatCard label="Transfer Window" value="12 days" sub="Summer window opens" color="blue" />
+        <StatCard label="Squad Age (avg)" value="24.3" sub="Median 23 — good curve" color="pink" />
+      </div>
+      <ICard>
+        <IH3>FSR Headroom Tracker</IH3>
+        <div className="flex justify-between text-xs mb-2"><span className="text-gray-400">£2.18M spent</span><span className="text-gray-400">£2.56M cap</span></div>
+        <div className="h-4 bg-gray-800 rounded-full overflow-hidden mb-2"><div className="h-full rounded-full bg-pink-500" style={{width:'85%'}}/></div>
+        <div className="text-xs text-teal-400 mb-4">Headroom: £380k</div>
+        <IH3>Proposed Signings Impact</IH3>
+        <div className="space-y-2">{[{t:'LB — Lena Müller (Hoffenheim)',s:'£62k',h:'£318k',c:'green'},{t:'FW — Chloe Dubois (D1 Arkema)',s:'£78k',h:'£240k',c:'green'},{t:'CM — Unknown',s:'£120k',h:'£120k',c:'amber'}].map((r,i)=><div key={i} className="flex items-center justify-between p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-xs text-gray-200">{r.t}</div><div className="flex items-center gap-4 text-xs"><span className="text-gray-500">{r.s}</span><span className={`font-bold ${r.c==='green'?'text-green-400':'text-amber-400'}`}>→ {r.h}</span></div></div>)}</div>
+      </ICard>
+      <ICard>
+        <IH3>Contract Expiry Pipeline</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Ends</th><th className="text-left p-3">Value</th><th className="text-left p-3">Action</th></tr></thead><tbody>
+          {[{n:'Lucy Whitmore',p:'CM',e:'Jun 2026',v:'£55k/yr',a:'Renewal offer sent'},{n:'Jade Osei',p:'LB',e:'Jun 2026',v:'£48k/yr',a:'Negotiating'},{n:'Tilly Brooks',p:'FW',e:'Jun 2026',v:'£38k/yr',a:'Below WSL min — review'},{n:'Megan Hughes',p:'CM',e:'Dec 2026',v:'£52k/yr',a:'Monitor'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.e}</td><td className={ttd}>{r.v}</td><td className="p-3 text-xs text-pink-400">{r.a}</td></tr>)}
+        </tbody></table>
+      </ICard>
+      <ICard>
+        <IH3>Squad Age Distribution</IH3>
+        <svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{height:80}}>
+          {[{l:'U21',v:4},{l:'21–24',v:8},{l:'25–28',v:7},{l:'29+',v:5}].map((b,i)=>{const x=i*50+5;const h=(b.v/8)*55;return<g key={i}><rect x={x} y={70-h} width={35} height={h} fill="#EC4899" rx="3" opacity="0.8"/><text x={x+17.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x+17.5} y={66-h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">{b.v}</text></g>;})}
+        </svg>
+      </ICard>
+    </div>
+  );
+
+  const welfareContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Welfare Lead View" subtitle="Cycle flags, ACL risk, mental health, and compliance" icon="❤️" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Active Welfare Cases" value="3" sub="ACL · MH · Maternity" color="amber" />
+        <StatCard label="Cycle Opt-in Rate" value="64%" sub="14 of 22 eligible" color="pink" />
+        <StatCard label="Check-ins Overdue" value="2" sub="Action required" color="red" />
+        <StatCard label="Carney Compliance" value="91%" sub="2 criteria below threshold" color="green" />
+      </div>
+      <ICard><IH3>Priority Actions Today</IH3><div className="space-y-2">{[{t:'Emily Zhang — ACL composite 87/100. Immediate load reduction to 60% and physio consultation.',c:'red'},{t:'Priya Nair — Ovulatory phase + yellow card risk. Substitution recommended before 60 min.',c:'amber'},{t:'Ava Mitchell — Maternity leave starts May 2026. Pre-leave medical due by 30 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
+      <ICard><IH3>Cycle Phase Summary — Squad Today</IH3><div className="space-y-2">{[{l:'Menstrual',v:3,c:'bg-red-500'},{l:'Follicular',v:8,c:'bg-pink-500'},{l:'Ovulatory',v:3,c:'bg-purple-500'},{l:'Luteal',v:8,c:'bg-amber-500'}].map(p=><div key={p.l} className="flex items-center gap-3"><div className="w-20 text-xs text-gray-400">{p.l}</div><div className="flex-1 bg-gray-800 rounded-full h-3"><div className={`${p.c} h-3 rounded-full`} style={{width:`${(p.v/22)*100}%`}}/></div><span className="text-xs text-gray-300 w-8 text-right">{p.v}</span></div>)}</div></ICard>
+      <ICard><IH3>Karen Carney Review — Welfare Criteria</IH3><div className="space-y-1.5">{[{t:'Licensed performance psychologist available',s:'✓'},{t:'Monthly wellbeing check-ins logged',s:'✓'},{t:'Maternity policy documented and enacted',s:'✓'},{t:'Mental health first aider on staff',s:'✓'},{t:'PFA referral pathway in place',s:'✓'},{t:'No selection pressure during recovery',s:'✓'},{t:'Independent welfare officer appointed (in progress)',s:'⚠'},{t:'Annual welfare audit completed (due Jun 2026)',s:'⚠'}].map((c,i)=><div key={i} className="flex items-center gap-2 text-xs"><span className={c.s==='✓'?'text-green-400':'text-amber-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
+    </div>
+  );
+
+  const doctorContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Club Doctor View" subtitle="Medical records, ACL composite scores, and injury risk" icon="🏥" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Active Injuries" value="3" sub="1 severe · 1 moderate · 1 minor" color="red" />
+        <StatCard label="ACL Red Flags" value="2" sub="Immediate action required" color="red" />
+        <StatCard label="Screenings Overdue" value="4" sub="Schedule this week" color="amber" />
+        <StatCard label="RTP Players" value="1" sub="Sophie Turner — Phase 3" color="blue" />
+      </div>
+      <ICard><IH3>ACL Composite Score — Medical View</IH3><div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[{n:'Emily Zhang',p:'CM',t:98,l:'red' as const,a:'Contact physio NOW. No training today.'},{n:'Priya Nair',p:'FW',t:53,l:'amber' as const,a:'Avoid cutting drills. Review post-training.'},{n:'Sophie Turner',p:'CB',t:57,l:'amber' as const,a:'Continue RTP Phase 3. ACL physio Thu.'},{n:'Jade Osei',p:'LB',t:15,l:'green' as const,a:'Clear for full training.'},{n:'Emma Clarke',p:'GK',t:18,l:'green' as const,a:'Schedule overdue ACL screening.'}].map(p=><div key={p.n} className={`border rounded-xl p-3 ${p.l==='red'?'bg-red-600/10 border-red-600/30':p.l==='amber'?'bg-amber-600/10 border-amber-600/30':'bg-green-600/10 border-green-600/30'}`}><div className="flex items-center gap-2 mb-2"><div className={`w-5 h-5 rounded-full ${p.l==='red'?'bg-red-500':p.l==='amber'?'bg-amber-500':'bg-green-500'}`}/><div><div className="text-xs font-bold text-white">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.t}/100</div></div></div><div className="text-[10px] text-gray-400">{p.a}</div></div>)}</div></ICard>
+      <ICard><IH3>Injury Register</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Injury</th><th className="text-left p-3">Severity</th><th className="text-left p-3">RTP</th></tr></thead><tbody>{[{n:'Sophie Turner',i:'ACL',s:'Severe',r:'Aug 2026'},{n:'Megan Hughes',i:'Hamstring',s:'Moderate',r:'May 2026'},{n:'Tilly Brooks',i:'Concussion',s:'Minor',r:'14 Apr 2026'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.i}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.s==='Severe'?'bg-red-600/20 text-red-400':r.s==='Moderate'?'bg-amber-600/20 text-amber-400':'bg-blue-600/20 text-blue-400'}`}>{r.s}</span></td><td className={ttd}>{r.r}</td></tr>)}</tbody></table></ICard>
+      <ICard><IH3>Upcoming Medical Appointments</IH3><div className="space-y-2">{['Thu 10 Apr — Emily Zhang physio consultation (ACL flag)','Fri 11 Apr — Tilly Brooks concussion clearance','Mon 14 Apr — Sophie Turner RTP Phase 3 assessment','Wed 16 Apr — Squad ACL screening block (4 players)'].map((a,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{a}</div>)}</div></ICard>
+    </div>
+  );
+
+  const commercialContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Commercial Director View" subtitle="Sponsorship, revenue, and standalone attribution" icon="💼" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Total Commercial Revenue" value="£1.42M" sub="Women-attributed" color="pink" />
+        <StatCard label="Active Sponsors" value="6" sub="3 renewal due" color="green" />
+        <StatCard label="Pipeline Value" value="£285k" sub="3 live opportunities" color="blue" />
+        <StatCard label="Standalone Revenue %" value="31%" sub="vs parent club benchmark" color="teal" />
+      </div>
+      <ICard><IH3>Sponsorship Portfolio</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Sponsor</th><th className="text-left p-3">Type</th><th className="text-left p-3">Value</th><th className="text-left p-3">Attr</th><th className="text-left p-3">Renewal</th><th className="text-left p-3">Status</th></tr></thead><tbody>{[{n:'Kestrel Finance',t:'Kit',v:'£420k',a:'100%',r:'Jun 2027',s:'Active',c:'green'},{n:'Barclays (WSL)',t:'League',v:'£85k',a:'100%',r:'League',s:'Active',c:'green'},{n:'NovaTech UK',t:'Sleeve',v:'£40k',a:'100%',r:'Dec 2026',s:'Active',c:'green'},{n:'Meridian Insurance',t:'Shared',v:'£95k',a:'11.9%',r:'Mar 2026',s:'Review',c:'amber'},{n:'Local Energy Co',t:"Women's",v:'£35k',a:'100%',r:'Apr 2026',s:'Renewal',c:'red'},{n:'Oakridge Council',t:'Community',v:'£18k',a:'100%',r:'Jun 2026',s:'Active',c:'green'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.t}</td><td className={ttd}>{r.v}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.r}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.c==='green'?'bg-green-600/20 text-green-400':r.c==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400'}`}>{r.s}</span></td></tr>)}</tbody></table></div></ICard>
+      <ICard><IH3>Pipeline Opportunities</IH3><div className="space-y-2">{['Cycle tracking app partnership — Lumio Cycle data product. Est. £60–120k/yr. In discussion.','Women\'s kit sleeve — post-Carney opportunity. Est. £25–40k/yr. Proposal stage.','GPS vest bundle — Kitman Labs co-sell. Est. £85k one-off. Scoping.'].map((o,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {o}</div>)}</div></ICard>
+      <ICard><IH3>Revenue YoY Trend</IH3><svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{height:80}}>{[{l:'23/24',v:1.06},{l:'24/25',v:1.27},{l:'25/26',v:1.42}].map((b,i)=>{const x=i*65+10;const h=(b.v/1.5)*55;return<g key={i}><rect x={x} y={70-h} width={45} height={h} fill="#EC4899" rx="3" opacity="0.8"/><text x={x+22.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x+22.5} y={66-h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">£{b.v}M</text></g>;})}</svg></ICard>
+    </div>
+  );
+
+  const academyContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Academy Director View" subtitle="FA Girls' Centre of Excellence · U21/U18" icon="🎓" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Academy Players" value="34" sub="U18: 18 · U21: 16" color="pink" />
+        <StatCard label="First Team Promotions" value="2" sub="This season" color="green" />
+        <StatCard label="CoE Compliance" value="87%" sub="3 criteria outstanding" color="amber" />
+        <StatCard label="Development Contracts" value="8" sub="Scholarship agreements" color="blue" />
+      </div>
+      <ICard><IH3>FA Girls&apos; Centre of Excellence Compliance</IH3><div className="space-y-1.5">{[{t:'Qualified coaching staff ratio met (1:15)',s:'✓'},{t:'Safeguarding DBS checks up to date',s:'✓'},{t:'Education welfare officer in post',s:'✓'},{t:'Player development plans filed (all U18)',s:'✓'},{t:'Medical screening completed (all academy)',s:'✓'},{t:'Physiotherapy provision (shared — standalone required by Aug 2026)',s:'⚠'},{t:'S&C coach (U18 — recruitment underway)',s:'⚠'},{t:'Mental health practitioner for academy (Required Jun 2026 — urgent)',s:'✗'}].map((c,i)=><div key={i} className="flex items-center gap-2 text-xs"><span className={c.s==='✓'?'text-green-400':c.s==='⚠'?'text-amber-400':'text-red-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
+      <ICard><IH3>U18 Squad — GPS Development Profiles</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Age</th><th className="text-left p-3">Pos</th><th className="text-left p-3">GPS</th><th className="text-left p-3">Rating</th><th className="text-left p-3">Potential</th></tr></thead><tbody>{[{n:'Isla Pearce',a:17,p:'FW',g:'64 AU',d:'★★★★☆',po:'High'},{n:'Freya Watts',a:16,p:'CM',g:'58 AU',d:'★★★☆☆',po:'Medium'},{n:"Niamh O'Brien",a:17,p:'CB',g:'71 AU',d:'★★★★★',po:'Elite'},{n:'Becca Lane',a:15,p:'GK',g:'55 AU',d:'★★★☆☆',po:'Monitor'},{n:'Simone Ashby',a:17,p:'LB',g:'62 AU',d:'★★★★☆',po:'High'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.g}</td><td className="p-3 text-pink-400 text-xs">{r.d}</td><td className="p-3 text-xs text-teal-400">{r.po}</td></tr>)}</tbody></table></ICard>
+      <ICard><IH3>Dual Pathway — First Team Bridge</IH3><div className="space-y-2">{["Niamh O'Brien — nominated for dual registration from May 2026. Pending DoF sign-off.","Isla Pearce — training with first team Fridays. No formal registration yet."].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-pink-600/20 rounded-lg text-xs text-gray-300">{t}</div>)}</div></ICard>
+    </div>
+  );
+
+  const boardContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Board View" subtitle="Financial performance, FSR compliance, and strategic KPIs" icon="🏛️" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Season P&L" value="-£420k" sub="Operating loss (budgeted)" color="amber" />
+        <StatCard label="FSR Status" value="SAFE" sub="68% of relevant revenue" color="green" />
+        <StatCard label="3-Year Revenue Target" value="£4.2M" sub="By 2027/28" color="blue" />
+        <StatCard label="Karen Carney Score" value="91/100" sub="2 criteria outstanding" color="pink" />
+      </div>
+      <ICard><IH3>Financial Summary</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Category</th><th className="text-left p-3">Budget</th><th className="text-left p-3">Actual</th><th className="text-left p-3">Variance</th></tr></thead><tbody>{[{c:'Revenue',b:'£3.4M',a:'£3.2M',v:'-£200k',vc:'amber'},{c:'Salary',b:'£2.3M',a:'£2.18M',v:'+£120k',vc:'green'},{c:'Operations',b:'£800k',a:'£840k',v:'-£40k',vc:'amber'},{c:'Commercial',b:'£180k',a:'£165k',v:'-£15k',vc:'amber'},{c:'Net',b:'—',a:'-£420k',v:'On budget',vc:'green'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.c}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.a}</td><td className="p-3"><span className={`text-xs font-bold ${r.vc==='green'?'text-green-400':'text-amber-400'}`}>{r.v}</span></td></tr>)}</tbody></table></ICard>
+      <ICard><IH3>Strategic KPIs — 3-Year Plan</IH3><div className="space-y-3">{[{l:'Revenue growth to £4.2M',v:76,c:'£3.2M'},{l:'Avg attendance to 4,500',v:62,c:'2,800'},{l:'WSL top 6 finish',v:100,c:'5th — On track'}].map(k=><div key={k.l}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{k.l}</span><span className="text-gray-300">{k.c} ({k.v}%)</span></div><div className="h-2 bg-gray-800 rounded-full"><div className="h-2 rounded-full bg-pink-500" style={{width:`${k.v}%`}}/></div></div>)}</div></ICard>
+      <ICard><IH3>Board Actions Required</IH3><div className="space-y-2">{[{t:'Academy mental health practitioner — recruitment sign-off by 30 Apr.',c:'red'},{t:'Local Energy Co renewal — £35k deal expiring. Uplift to £45k approval.',c:'amber'},{t:'Lumio Cycle data product — Board presentation Mon 14 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
+    </div>
+  );
+
+  const mediaContent = () => (
+    <div className="space-y-6">
+      <SectionHeader title="Media & Comms View" subtitle="Audience growth, social media, and fan engagement" icon="📣" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Social Followers" value="42.8k" sub="+18% this season" color="pink" />
+        <StatCard label="Match Attendance" value="2,800 avg" sub="+340 vs last season" color="green" />
+        <StatCard label="Media Requests" value="3 pending" sub="2 interview · 1 feature" color="amber" />
+        <StatCard label="Fan Hub Members" value="1,240" sub="Launched Jan 2026" color="blue" />
+      </div>
+      <ICard><IH3>Social Media Performance</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Platform</th><th className="text-left p-3">Followers</th><th className="text-left p-3">Growth</th><th className="text-left p-3">Best Post</th><th className="text-left p-3">Eng.</th></tr></thead><tbody>{[{p:'Instagram',f:'18.4k',g:'+22%',b:'48k (WSL goal)',e:'6.8%'},{p:'TikTok',f:'14.2k',g:'+41%',b:'112k (BTS reel)',e:'9.2%'},{p:'X',f:'7.6k',g:'+8%',b:'22k (match thread)',e:'3.1%'},{p:'YouTube',f:'2.6k',g:'+14%',b:'8.4k (profile)',e:'4.7%'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.f}</td><td className="p-3 text-green-400 text-xs">{r.g}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.e}</td></tr>)}</tbody></table></div></ICard>
+      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Bristol City) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
+      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'BBC Sport — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Athletic — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Sky Sports — matchday access vs Bristol City (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
+      <ICard><IH3>Fan Hub Highlights</IH3><div className="grid grid-cols-3 gap-3">{[{l:'Members',v:'1,240'},{l:'Match Overlap',v:'68%'},{l:'Top Topic',v:'Player welfare'}].map(s=><div key={s.l} className="text-center p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-lg font-bold text-pink-400">{s.v}</div><div className="text-[10px] text-gray-500 mt-0.5">{s.l}</div></div>)}</div></ICard>
+    </div>
+  );
+
+  const renderRole = () => {
+    switch (activeRole) {
+      case 'coach': return coachContent();
+      case 'dof': return dofContent();
+      case 'welfare': return welfareContent();
+      case 'doctor': return doctorContent();
+      case 'commercial': return commercialContent();
+      case 'academy': return academyContent();
+      case 'board': return boardContent();
+      case 'media': return mediaContent();
+      default: return coachContent();
+    }
+  };
+
+  return (
+    <div>
+      <SectionHeader title={`${club.name} — Insights`} subtitle="Role-based dashboards — 8 views for 8 roles across the club" icon="📊" />
+      <div className="overflow-x-auto pb-2 mb-6">
+        <div className="flex gap-1 min-w-max">
+          {roles.map(r => (
+            <button key={r.id} onClick={() => setActiveRole(r.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap transition-all ${activeRole===r.id?'bg-pink-600/20 text-pink-400 border-b-2 border-pink-500':'text-gray-500 hover:text-gray-300'}`}>
+              <span>{r.icon}</span>{r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {renderRole()}
+    </div>
+  );
+};
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
 const DashboardView = ({ club }: { club: WomensClub }) => (
@@ -402,6 +639,144 @@ const MorningBriefingView = ({ club }: { club: WomensClub }) => {
   )
 }
 
+// ─── CYCLE TRACKING VIEW ─────────────────────────────────────────────────────
+const CycleTrackingView = () => {
+  const squad = [
+    { name: 'Emma Clarke', phase: 'Follicular', day: 8, loadTarget: 100, aclFlag: '', gpsLoad: 82, adjustment: 'None' },
+    { name: 'Priya Nair', phase: 'Ovulatory', day: 14, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 77, adjustment: '-5% intensity' },
+    { name: 'Emily Zhang', phase: 'Luteal', day: 21, loadTarget: 75, aclFlag: '🔴 ACL elevated (prev ACL + luteal)', gpsLoad: 91, adjustment: '-25% load cap' },
+    { name: 'Charlotte Reed', phase: 'Menstrual', day: 2, loadTarget: 60, aclFlag: '', gpsLoad: 68, adjustment: 'Rest day recommended' },
+    { name: 'Jade Osei', phase: 'Follicular', day: 10, loadTarget: 100, aclFlag: '', gpsLoad: 88, adjustment: 'None' },
+    { name: 'Abbi Walsh', phase: 'Luteal', day: 19, loadTarget: 80, aclFlag: '⚠ Luteal phase', gpsLoad: 84, adjustment: '-20% intensity' },
+    { name: 'Lucy Whitmore', phase: 'Ovulatory', day: 13, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 79, adjustment: '-5% intensity' },
+    { name: 'Megan Hughes', phase: 'Follicular', day: 6, loadTarget: 100, aclFlag: '', gpsLoad: 71, adjustment: 'None' },
+  ];
+  const loadColor = (t: number) => t <= 75 ? 'text-red-400' : t <= 85 ? 'text-amber-400' : 'text-green-400';
+  const flagBadge = (f: string) => {
+    if (f.startsWith('🔴')) return <span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400 font-medium">{f}</span>;
+    if (f.startsWith('⚠')) return <span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium">{f}</span>;
+    return <span className="text-gray-600">—</span>;
+  };
+  const phases = [
+    { name: 'Menstrual', days: 'Days 1–5', desc: 'Low energy. Prioritise recovery, flexibility, technique. Reduced intensity.', color: 'border-red-600/30 bg-red-900/10' },
+    { name: 'Follicular', days: 'Days 6–13', desc: 'Rising oestrogen. Peak strength and power window. Full load appropriate.', color: 'border-green-600/30 bg-green-900/10' },
+    { name: 'Ovulatory', days: 'Days 13–15', desc: 'Ligament laxity increases. Reduce cutting/pivoting drills. ACL caution.', color: 'border-amber-600/30 bg-amber-900/10' },
+    { name: 'Luteal', days: 'Days 16–28', desc: 'Fatigue, reduced reaction time. Lower intensity. Highest ACL risk window.', color: 'border-pink-600/30 bg-pink-900/10' },
+  ];
+  const adjustedPlayers = squad.filter(p => p.adjustment !== 'None');
+  const composites = [
+    { name: 'Emily Zhang', prevAcl: 40, cycle: 30, gps: 20, biomech: 8, total: 98, light: 'red' as const, action: 'Reduce to 60% load today. No cutting drills.' },
+    { name: 'Priya Nair', prevAcl: 0, cycle: 30, gps: 15, biomech: 8, total: 53, light: 'amber' as const, action: 'Avoid sharp pivots. Monitor closely.' },
+  ];
+  const lightColor = (l: string) => l === 'red' ? 'bg-red-500' : l === 'amber' ? 'bg-amber-500' : 'bg-green-500';
+  const lightBg = (l: string) => l === 'red' ? 'bg-red-600/10 border-red-600/30' : l === 'amber' ? 'bg-amber-600/10 border-amber-600/30' : 'bg-green-600/10 border-green-600/30';
+
+  return (
+    <div>
+      <SectionHeader title="Cycle Tracking & GPS Integration" subtitle="Opt-in · Private · Role-gated to Medical and Welfare Lead only" icon="🌸" />
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-300">
+        🔒 All cycle data is opt-in, encrypted, and accessible only to the player, Club Doctor, and Welfare Lead. Never visible to coaching staff without player consent.
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Opt-in Rate', value: '14/22', sub: '64% of eligible squad', color: 'text-pink-400' },
+          { label: 'High-Risk Phase Today', value: '3 players', sub: 'Luteal — reduced load', color: 'text-amber-400' },
+          { label: 'ACL Flags Today', value: '2', sub: 'Cycle × GPS composite', color: 'text-red-400' },
+          { label: 'Training Adjustments', value: '7', sub: 'Auto-applied today', color: 'text-teal-400' },
+        ].map(s => (
+          <div key={s.label} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
+            <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Phase</th><th className="text-left p-3">Day</th><th className="text-left p-3">Load Target</th><th className="text-left p-3">ACL Flag</th><th className="text-left p-3">GPS Load</th><th className="text-left p-3">Adjustment</th>
+          </tr></thead>
+          <tbody>
+            {squad.map((p, i) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                <td className="p-3 text-gray-400 text-xs">{p.phase}</td>
+                <td className="p-3 text-gray-400 text-xs">{p.day}</td>
+                <td className="p-3"><span className={`text-sm font-bold ${loadColor(p.loadTarget)}`}>{p.loadTarget}%</span></td>
+                <td className="p-3">{flagBadge(p.aclFlag)}</td>
+                <td className="p-3 text-gray-400 text-xs">{p.gpsLoad} AU</td>
+                <td className="p-3 text-xs text-gray-300">{p.adjustment}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Phase Guide</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {phases.map(p => (
+            <div key={p.name} className={`border rounded-lg p-3 ${p.color}`}>
+              <div className="text-sm font-bold text-white">{p.name} <span className="text-[10px] text-gray-400 font-normal ml-1">{p.days}</span></div>
+              <div className="text-xs text-gray-300 mt-1">{p.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Auto-Generated Today&apos;s Training Adjustments</h3>
+        <div className="space-y-2">
+          {adjustedPlayers.map((p, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-[#0a0c14] border border-gray-800 rounded-lg">
+              <div>
+                <div className="text-sm text-white font-medium">{p.name}</div>
+                <div className="text-[10px] text-gray-500">{p.phase} · Day {p.day}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-amber-400 font-bold">{p.adjustment}</div>
+                <div className="text-[10px] text-gray-500">{p.aclFlag || 'Phase-based adjustment'}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Cycle × ACL Composite Score</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {composites.map(c => (
+            <div key={c.name} className={`border rounded-xl p-4 ${lightBg(c.light)}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-8 h-8 rounded-full ${lightColor(c.light)} flex items-center justify-center text-lg`}>
+                  {c.light === 'red' ? '🔴' : '🟡'}
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-white">{c.name}</div>
+                  <div className="text-xs text-gray-400">Composite: {c.total}/100</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-1 text-center text-[10px] mb-3">
+                {[{l:'Prev ACL',v:c.prevAcl},{l:'Cycle',v:c.cycle},{l:'GPS',v:c.gps},{l:'Biomech',v:c.biomech}].map(s=>(
+                  <div key={s.l} className="bg-[#0a0c14] rounded p-1.5">
+                    <div className="text-gray-400">{s.l}</div>
+                    <div className="text-white font-bold text-sm">{s.v}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-gray-300">{c.action}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-[10px] text-gray-600">Data source: Opt-in app (Lumio Cycle) · Kitman Labs GPS integration · Updated 06:30 today</div>
+    </div>
+  );
+};
+
 // ─── ACL RISK MONITOR VIEW ────────────────────────────────────────────────────
 const ACLRiskMonitorView = () => {
   const aclPlayers: Array<{name:string;pos:string;history:string;lastScreening:string;nextDue:string;overdue:boolean;risk:'High'|'Medium'|'Low'}> = [
@@ -429,6 +804,45 @@ const ACLRiskMonitorView = () => {
   return (
     <div>
       <SectionHeader title="ACL Risk Monitor" subtitle="Women face ACL injury rates 3–6× higher than men. Active monitoring is mandated under Karen Carney Review standards." icon="🦵" />
+
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-1">ACL Composite Risk Score — Daily Traffic Light</h3>
+        <p className="text-xs text-gray-500 mb-4">Previous ACL (40%) + Cycle Phase (30%) + GPS Load (20%) + Biomechanical (10%)</p>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          {[
+            { name: 'Emily Zhang', pos: 'CM', prevAcl: 40, cycle: 30, gps: 20, biomech: 8, total: 98, light: 'red' as const, action: 'Reduce to 60% load today. No cutting drills.' },
+            { name: 'Priya Nair', pos: 'FW', prevAcl: 0, cycle: 30, gps: 15, biomech: 8, total: 53, light: 'amber' as const, action: 'Avoid sharp pivots. Monitor closely.' },
+            { name: 'Sophie Turner', pos: 'CB', prevAcl: 40, cycle: 0, gps: 5, biomech: 12, total: 57, light: 'amber' as const, action: 'Continue RTP Phase 3 protocol.' },
+            { name: 'Jade Osei', pos: 'LB', prevAcl: 0, cycle: 0, gps: 10, biomech: 5, total: 15, light: 'green' as const, action: 'Full training cleared.' },
+            { name: 'Emma Clarke', pos: 'GK', prevAcl: 0, cycle: 0, gps: 12, biomech: 6, total: 18, light: 'green' as const, action: 'Full training cleared.' },
+          ].map(p => (
+            <div key={p.name} className={`border rounded-xl p-3 ${p.light === 'red' ? 'bg-red-600/10 border-red-600/30' : p.light === 'amber' ? 'bg-amber-600/10 border-amber-600/30' : 'bg-green-600/10 border-green-600/30'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm ${p.light === 'red' ? 'bg-red-500' : p.light === 'amber' ? 'bg-amber-500' : 'bg-green-500'}`}>
+                  {p.light === 'red' ? '🔴' : p.light === 'amber' ? '🟡' : '🟢'}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">{p.name}</div>
+                  <div className="text-[10px] text-gray-500">{p.pos}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-1 text-[9px] mb-2">
+                {[{l:'Prev ACL',v:p.prevAcl},{l:'Cycle',v:p.cycle},{l:'GPS',v:p.gps},{l:'Biomech',v:p.biomech}].map(s=>(
+                  <div key={s.l} className="bg-[#0a0c14] rounded px-1.5 py-1 text-center">
+                    <span className="text-gray-500">{s.l}: </span><span className="text-white font-bold">{s.v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className={`text-[10px] font-bold mb-1 ${p.light === 'red' ? 'text-red-400' : p.light === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>Score: {p.total}/100</div>
+              <div className="text-[10px] text-gray-400">{p.action}</div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-amber-600/10 border border-amber-600/30 rounded-lg p-3 text-xs text-amber-400">
+          Composite score is updated daily at 06:30 using GPS data from Kitman Labs, cycle phase from opt-in Lumio Cycle app, and biomechanical assessments from the last 30 days.
+        </div>
+      </div>
+
       <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-3 mb-6 text-xs text-red-400 font-medium">⚠ {overdueCount} players have overdue ACL screenings — welfare lead notified</div>
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
@@ -1210,6 +1624,1391 @@ const TacticsSetPiecesView = () => (
   </div>
 )
 
+// ─── MEDIA & PR VIEW ────────────────────────────────────────────────────────
+const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState<'requests'|'calendar'|'coverage'|'guidelines'>('requests');
+  const requests = [
+    {id:1,outlet:"BBC Sport Women's Football",type:'Feature',contact:'Sarah Davies',subject:'Lumio Cycle — welfare integration in women\'s football',deadline:'15 Apr 2026',urgency:'high',status:'Pending approval',notes:'National exposure. Welfare Lead and Head Coach required. Opportunity to position Oakridge as welfare-leading club.',recommended:'Accept — high-profile welfare story aligns with Karen Carney mission.'},
+    {id:2,outlet:'The Athletic',type:'Interview',contact:'James Pearce',subject:'Sarah Frost — mid-season manager interview',deadline:'18 Apr 2026',urgency:'medium',status:'Pending approval',notes:'Subscriber-only piece. Positive profile opportunity ahead of final-third push.',recommended:'Accept — strong readership among WSL audience.'},
+    {id:3,outlet:'Sky Sports',type:'Matchday Access',contact:'Emma Holt (Production)',subject:'Broadcast access — Bristol City W (Sat 12 Apr)',deadline:'Thu 10 Apr',urgency:'urgent',status:'Confirm by Thu',notes:'Pre-match tunnel access, post-match mixed zone, manager interview. Live WSL broadcast.',recommended:'Accept immediately — live broadcast reaches 400k+ viewers.'},
+    {id:4,outlet:"Women's Football Weekly (Podcast)",type:'Podcast',contact:'Chloe Grant',subject:'Player guest — Emma Clarke',deadline:'25 Apr 2026',urgency:'low',status:'Under review',notes:'45-minute episode. Emma Clarke proposed. Good platform for player brand-building.',recommended:'Accept — low commitment, high player welfare value.'},
+    {id:5,outlet:'Guardian Sport',type:'Comment piece',contact:'Anya Singh',subject:'FSR impact on WSL clubs — DoF comment requested',deadline:'20 Apr 2026',urgency:'medium',status:'Declined — refer to FA',notes:'Sensitive regulatory topic. Referred to FA communications team.',recommended:'Already declined — correct decision.'},
+  ];
+  const coverage = [
+    {date:'5 Apr',outlet:'BBC Sport',headline:'Oakridge Women climb to 5th with Nair brace',reach:'1.2M',sentiment:'positive'},
+    {date:'2 Apr',outlet:'The Athletic',headline:'How Oakridge are redefining welfare in women\'s football',reach:'85k',sentiment:'positive'},
+    {date:'29 Mar',outlet:'Sky Sports',headline:'Oakridge Women vs Arsenal: Match Report',reach:'420k',sentiment:'neutral'},
+    {date:'22 Mar',outlet:"Women's Football Wkly",headline:'Player profile: Priya Nair — the WSL\'s in-form striker',reach:'32k',sentiment:'positive'},
+    {date:'15 Mar',outlet:'Daily Mail Sport',headline:'Oakridge Women in transfer talks over NWSL forward',reach:'2.1M',sentiment:'neutral'},
+    {date:'8 Mar',outlet:'Guardian Sport',headline:'IWD: Oakridge Women on cycle-tracking welfare pilot',reach:'340k',sentiment:'positive'},
+  ];
+  const guidelines = [
+    {topic:'Player welfare & medical',rule:'No comment without Welfare Lead approval. Refer to club statement template.',restricted:true},
+    {topic:'Transfer speculation',rule:'"We do not comment on speculation regarding player movements."',restricted:true},
+    {topic:'FSR and financial matters',rule:'Refer all financial regulatory questions to the FA communications team.',restricted:true},
+    {topic:'Match results & tactics',rule:'Manager or assistant manager only. No tactical detail beyond what was visible publicly.',restricted:false},
+    {topic:'Player personal life',rule:'No comment without explicit player consent. Privacy policy applies.',restricted:true},
+    {topic:'Sponsorship deals',rule:'Commercial Director approval required. No figures disclosed without Board sign-off.',restricted:true},
+    {topic:'Karen Carney / welfare criteria',rule:'Welfare Lead must approve all public statements referencing specific criteria scores.',restricted:false},
+    {topic:'Injuries and availability',rule:'General fitness updates only (fit / doubtful / ruled out). No diagnosis or timeline.',restricted:false},
+  ];
+  const urgencyStyle = (u:string) => u==='urgent'?'bg-red-600/20 text-red-400 border border-red-600/30':u==='high'?'bg-amber-600/20 text-amber-400 border border-amber-600/30':u==='medium'?'bg-blue-600/20 text-blue-400 border border-blue-600/30':'bg-gray-800 text-gray-500';
+  const sentimentStyle = (s:string) => s==='positive'?'text-green-400':s==='negative'?'text-red-400':'text-gray-400';
+
+  return (
+    <div>
+      <SectionHeader title="Media & PR" subtitle="Requests · Calendar · Coverage log · PR guidelines" icon="📣"/>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Open Requests" value="3" sub="1 urgent · 2 pending" color="amber"/>
+        <StatCard label="Coverage (month)" value="6" sub="5 positive · 1 neutral" color="green"/>
+        <StatCard label="Total Reach" value="4.2M" sub="Cumulative this month" color="pink"/>
+        <StatCard label="Next Press Day" value="Sat" sub="Sky Sports — Bristol City (H)" color="blue"/>
+      </div>
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        {[{id:'requests',label:'Media Requests',icon:'📬'},{id:'calendar',label:'PR Calendar',icon:'📅'},{id:'coverage',label:'Coverage Log',icon:'📰'},{id:'guidelines',label:'PR Guidelines',icon:'📋'}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id as typeof activeTab)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+            {t.id==='requests'&&<span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400">{requests.filter(r=>r.urgency==='urgent'||r.urgency==='high').length}</span>}
+          </button>
+        ))}
+      </div>
+      {activeTab==='requests'&&<div className="space-y-4">{requests.map(r=>(
+        <div key={r.id} className={`bg-[#0D1117] border rounded-xl p-5 ${r.urgency==='urgent'?'border-red-600/40':r.urgency==='high'?'border-amber-600/30':'border-gray-800'}`}>
+          <div className="flex items-start justify-between mb-3"><div><div className="flex items-center gap-2 mb-1"><span className="text-sm font-bold text-white">{r.outlet}</span><span className={`text-[10px] px-2 py-0.5 rounded ${urgencyStyle(r.urgency)}`}>{r.urgency==='urgent'?'🔴 URGENT':r.urgency==='high'?'🟡 High':r.urgency==='medium'?'Medium':'Low'}</span><span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">{r.type}</span></div><p className="text-xs text-gray-300 font-medium">{r.subject}</p><p className="text-[10px] text-gray-600">Contact: {r.contact} · Deadline: {r.deadline}</p></div><span className={`text-[10px] px-2 py-1 rounded font-medium flex-shrink-0 ml-4 ${r.status.includes('Declined')?'bg-gray-800 text-gray-500':r.status==='Confirm by Thu'?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{r.status}</span></div>
+          <p className="text-xs text-gray-400 mb-2">{r.notes}</p>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-800"><p className="text-[10px] text-pink-400">💡 {r.recommended}</p>{!r.status.includes('Declined')&&<div className="flex gap-2"><button className="px-3 py-1 rounded-lg text-[10px] bg-gray-800 text-gray-400 hover:text-white">Decline</button><button className="px-3 py-1 rounded-lg text-[10px] font-bold bg-pink-600 hover:bg-pink-500 text-white">Accept →</button></div>}</div>
+        </div>
+      ))}</div>}
+      {activeTab==='calendar'&&<div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">PR & Media Calendar — April / May 2026</h3></div><div className="divide-y divide-gray-800">
+        {[{date:'Thu 10 Apr',items:[{time:'10:00',type:'Press conf',label:'Pre-match presser — Bristol City W',urgency:'high'},{time:'14:00',type:'Deadline',label:'Sky Sports access confirmation',urgency:'urgent'}]},{date:'Fri 11 Apr',items:[{time:'11:00',type:'Content',label:'Player spotlight: Emma Clarke — TikTok',urgency:'low'}]},{date:'Sat 12 Apr',items:[{time:'12:00',type:'Matchday',label:'Sky Sports tunnel access',urgency:'high'},{time:'14:30',type:'Matchday',label:'KO vs Bristol City W',urgency:'high'},{time:'16:30',type:'Post-match',label:'Mixed zone + manager interview',urgency:'high'}]},{date:'Mon 14 Apr',items:[{time:'09:00',type:'Internal',label:'Weekly comms meeting',urgency:'low'},{time:'15:00',type:'Interview',label:'BBC Sport — welfare feature filming',urgency:'high'}]},{date:'Wed 16 Apr',items:[{time:'11:00',type:'Deadline',label:'BBC Sport feature deadline',urgency:'medium'}]},{date:'Fri 18 Apr',items:[{time:'13:00',type:'Interview',label:'The Athletic — Sarah Frost',urgency:'medium'}]},{date:'25 Apr',items:[{time:'10:00',type:'Podcast',label:"Women's Football Weekly — Emma Clarke",urgency:'low'}]}].map((day,i)=>(
+          <div key={i} className="flex gap-4 p-4"><div className="w-20 flex-shrink-0"><div className="text-xs font-bold text-white">{day.date.split(' ').slice(-2).join(' ')}</div><div className="text-[10px] text-gray-600">{day.date.split(' ')[0]}</div></div><div className="flex-1 space-y-2">{day.items.map((item,j)=><div key={j} className={`flex items-center gap-3 py-1.5 px-3 rounded-lg ${item.urgency==='urgent'?'bg-red-600/10 border border-red-600/20':item.urgency==='high'?'bg-amber-600/5 border border-amber-600/10':'bg-gray-900/50 border border-gray-800/50'}`}><span className="text-[10px] text-gray-600 w-10 flex-shrink-0">{item.time}</span><span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${item.type==='Matchday'?'bg-pink-600/20 text-pink-400':item.type==='Press conf'?'bg-purple-600/20 text-purple-400':item.type==='Interview'?'bg-blue-600/20 text-blue-400':item.type==='Deadline'?'bg-red-600/20 text-red-400':item.type==='Podcast'?'bg-teal-600/20 text-teal-400':item.type==='Content'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500'}`}>{item.type}</span><span className="text-xs text-gray-300">{item.label}</span></div>)}</div></div>
+        ))}
+      </div></div>}
+      {activeTab==='coverage'&&<div className="space-y-4"><div className="grid grid-cols-3 gap-4 mb-2"><StatCard label="Positive" value="5/6" sub="This month" color="green"/><StatCard label="Total reach" value="4.2M" sub="Cumulative" color="pink"/><StatCard label="Top outlet" value="Daily Mail" sub="2.1M reach" color="blue"/></div><div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider"><th className="text-left p-3">Date</th><th className="text-left p-3">Outlet</th><th className="text-left p-3">Headline</th><th className="text-center p-3">Reach</th><th className="text-center p-3">Sentiment</th></tr></thead><tbody>{coverage.map((c,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-500 text-xs">{c.date}</td><td className="p-3 text-gray-300 text-xs font-medium">{c.outlet}</td><td className="p-3 text-gray-400 text-xs">{c.headline}</td><td className="p-3 text-center text-xs text-pink-400 font-medium">{c.reach}</td><td className="p-3 text-center"><span className={`text-xs font-medium ${sentimentStyle(c.sentiment)}`}>{c.sentiment==='positive'?'↑ Positive':'→ Neutral'}</span></td></tr>)}</tbody></table></div></div>}
+      {activeTab==='guidelines'&&<div className="space-y-4"><div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4"><p className="text-xs text-amber-300"><strong>Policy:</strong> All media requests must be approved by the Communications Director. Restricted topics require additional sign-off.</p></div><div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Media Response Guidelines — Oakridge Women FC</h3></div><div className="divide-y divide-gray-800">{guidelines.map((g,i)=><div key={i} className={`p-4 ${g.restricted?'bg-red-600/5':''}`}><div className="flex items-center gap-2 mb-1.5"><span className="text-xs font-bold text-white">{g.topic}</span>{g.restricted&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/20 text-red-400">🔒 Restricted</span>}</div><p className="text-xs text-gray-400">{g.rule}</p></div>)}</div></div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-3">Standard Response Templates</h3><div className="space-y-3">{[{s:'Transfer speculation',r:'Oakridge Women FC does not comment on speculation regarding player movements.'},{s:'Player injury details',r:'[Player name] is currently being assessed by our medical team.'},{s:'Financial / FSR queries',r:'All financial matters are handled in conjunction with the FA.'},{s:'Welfare / cycle tracking',r:'Player welfare is at the core of everything we do. Specific protocols are confidential.'}].map((t,i)=><div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{t.s}</div><p className="text-xs text-gray-300 italic">&ldquo;{t.r}&rdquo;</p></div>)}</div></div>
+      </div>}
+    </div>
+  );
+};
+
+// ─── SOCIAL MEDIA VIEW ──────────────────────────────────────────────────────
+const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState<'dashboard'|'calendar'|'posts'|'performance'>('dashboard');
+  const platforms = [
+    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL goal vs Chelsea'},
+    {name:'TikTok',icon:'🎵',followers:14200,growth:41,engRate:9.2,bestReach:112000,bestPost:'Behind scenes reel'},
+    {name:'X',icon:'𝕏',followers:7600,growth:8,engRate:3.1,bestReach:22000,bestPost:'Matchday thread'},
+    {name:'YouTube',icon:'▶️',followers:2600,growth:14,engRate:4.7,bestReach:8400,bestPost:'Player profile ep4'},
+  ];
+  const scheduledPosts = [
+    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Bristol City. 🏟️ #WSL',status:'Scheduled',reach:'~12k'},
+    {date:'Thu 10 Apr',time:'18:30',platform:'X',type:'Match preview',caption:'Three points on the line. 💪',status:'Scheduled',reach:'~3k'},
+    {date:'Fri 11 Apr',time:'12:00',platform:'TikTok',type:'Player spotlight',caption:'Meet our GK Emma Clarke 🧤',status:'Draft',reach:'~18k'},
+    {date:'Sat 12 Apr',time:'11:30',platform:'Instagram',type:'Matchday hype',caption:'Game day. 🌸 Come on Oakridge!',status:'Scheduled',reach:'~20k'},
+    {date:'Sat 12 Apr',time:'14:31',platform:'X',type:'Live thread',caption:'KO: Live match updates 🔴',status:'Scheduled',reach:'~6k'},
+    {date:'Sat 12 Apr',time:'17:00',platform:'TikTok',type:'Post-match reel',caption:'Highlights + player reactions 🎬',status:'Needs approval',reach:'~35k'},
+    {date:'Mon 14 Apr',time:'10:00',platform:'YouTube',type:'Behind the season',caption:'Episode 7 — The April push 🎙️',status:'In edit',reach:'~4k'},
+    {date:'Wed 16 Apr',time:'14:00',platform:'Instagram',type:'Welfare story',caption:'How we\'re leading on player welfare 💜',status:'Draft',reach:'~22k'},
+  ];
+  const platformColor = (p:string) => p==='Instagram'?'bg-pink-600/20 text-pink-400':p==='TikTok'?'bg-gray-700 text-gray-300':p==='X'?'bg-blue-600/20 text-blue-400':'bg-red-600/20 text-red-400';
+  const statusColor = (s:string) => s==='Scheduled'?'text-green-400':s==='Needs approval'?'text-red-400':s==='Draft'?'text-gray-500':'text-amber-400';
+  const monthlyData = {labels:['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'],followers:[31200,33100,35400,36200,36800,38100,39400,41200,42800],engagement:[4.2,4.8,5.1,4.9,5.8,6.2,6.8,7.1,7.4]};
+
+  return (
+    <div>
+      <SectionHeader title="Social Media" subtitle="Instagram · TikTok · X · YouTube · Content calendar" icon="📱"/>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Total Followers" value="42.8k" sub="+18% this season" color="pink"/>
+        <StatCard label="Best platform" value="TikTok" sub="9.2% engagement" color="purple"/>
+        <StatCard label="Posts this month" value="14" sub="4 pending approval" color="amber"/>
+        <StatCard label="Best reach" value="112k" sub="TikTok BTS" color="blue"/>
+      </div>
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        {[{id:'dashboard',label:'Dashboard',icon:'📊'},{id:'calendar',label:'Content Cal',icon:'📅'},{id:'posts',label:'Scheduled',icon:'📤'},{id:'performance',label:'Performance',icon:'📈'}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id as typeof activeTab)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+      {activeTab==='dashboard'&&<div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{platforms.map(p=><div key={p.name} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><span className="text-lg">{p.icon}</span><span className="text-[10px] text-green-400 font-bold">+{p.growth}%</span></div><div className="text-xl font-bold text-white mb-0.5">{(p.followers/1000).toFixed(1)}k</div><div className="text-[10px] text-gray-500 mb-2">{p.name}</div><div className="w-full bg-gray-800 rounded-full h-1 mb-2"><div className="h-1 rounded-full" style={{width:`${Math.min((p.followers/20000)*100,100)}%`,backgroundColor:'#EC4899'}}/></div><div className="text-[10px] text-gray-500">{p.engRate}% eng</div></div>)}</div>
+        {(()=>{const W=600,H=160,pL=48,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=30000,mx=44000,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.followers.map((f,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((f-mn)/(mx-mn))*iH}`).join(' ');const area=`${path} L ${pL+(monthlyData.labels.length-1)*sX} ${pT+iH} L ${pL} ${pT+iH} Z`;return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Total Follower Growth</h3><p className="text-xs text-gray-500 mb-4">31.2k Aug → 42.8k Apr (+37%)</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={area} fill="#EC4899" opacity="0.07"/><path d={path} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.followers.map((f,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((f-mn)/(mx-mn))*iH} r="3" fill="#EC4899"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Chelsea — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Tottenham W (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
+      </div>}
+      {activeTab==='calendar'&&<div className="space-y-4">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Weekly Pillars</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{day:'Mon',theme:'Training insights',icon:'⚽',pl:'TikTok · Stories'},{day:'Wed',theme:'Player spotlight',icon:'⭐',pl:'TikTok · IG'},{day:'Fri',theme:'Match preview',icon:'🎯',pl:'All platforms'},{day:'Sat',theme:'Match day',icon:'🔴',pl:'Live — all'}].map(c=><div key={c.day} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold text-pink-400">{c.day}</span><span>{c.icon}</span></div><div className="text-xs font-semibold text-white mb-1">{c.theme}</div><div className="text-[10px] text-gray-500">{c.pl}</div></div>)}</div></div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Upcoming — April</h3><div className="space-y-2">{scheduledPosts.map((p,i)=><div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50 last:border-0"><div className="w-20 flex-shrink-0"><div className="text-[10px] text-gray-400">{p.date}</div><div className="text-[10px] text-gray-600">{p.time}</div></div><span className={`text-[10px] px-2 py-0.5 rounded flex-shrink-0 ${platformColor(p.platform)}`}>{p.platform}</span><span className="text-[10px] text-gray-500 flex-shrink-0">{p.type}</span><span className="text-xs text-gray-300 flex-1 truncate">{p.caption}</span><span className={`text-[10px] flex-shrink-0 font-medium ${statusColor(p.status)}`}>{p.status}</span></div>)}</div></div>
+      </div>}
+      {activeTab==='posts'&&<div className="space-y-3"><div className="flex items-center justify-between mb-2"><p className="text-xs text-gray-500">{scheduledPosts.length} posts</p><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600/20 text-pink-400 border border-pink-600/30">+ Schedule</button></div>{scheduledPosts.map((p,i)=><div key={i} className={`bg-[#0D1117] border rounded-xl p-4 ${p.status==='Needs approval'?'border-red-600/40':p.status==='Scheduled'?'border-green-600/20':'border-gray-800'}`}><div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(p.platform)}`}>{p.platform}</span><span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded">{p.type}</span><span className="text-[10px] text-gray-600">{p.date} · {p.time}</span></div><div className="flex items-center gap-2"><span className="text-[10px] text-gray-500">{p.reach}</span><span className={`text-[10px] font-bold ${statusColor(p.status)}`}>{p.status}</span></div></div><p className="text-xs text-gray-300 mb-2">{p.caption}</p>{p.status==='Needs approval'&&<div className="flex gap-2 pt-2 border-t border-gray-800"><button className="px-3 py-1 rounded text-[10px] bg-gray-800 text-gray-400">Edit</button><button className="px-3 py-1 rounded text-[10px] font-bold bg-green-600/20 text-green-400 border border-green-600/30">Approve ✓</button></div>}</div>)}</div>}
+      {activeTab==='performance'&&<div className="space-y-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Platform Breakdown</h3></div><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider"><th className="text-left p-3">Platform</th><th className="text-center p-3">Followers</th><th className="text-center p-3">Growth</th><th className="text-center p-3">Eng %</th><th className="text-center p-3">Best reach</th><th className="text-left p-3">Best post</th></tr></thead><tbody>{platforms.map((p,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3"><div className="flex items-center gap-2"><span>{p.icon}</span><span className="text-xs text-gray-200 font-medium">{p.name}</span></div></td><td className="p-3 text-center text-xs text-white font-bold">{(p.followers/1000).toFixed(1)}k</td><td className="p-3 text-center text-xs text-green-400 font-bold">+{p.growth}%</td><td className="p-3 text-center text-xs text-pink-400 font-bold">{p.engRate}%</td><td className="p-3 text-center text-xs text-purple-400 font-bold">{(p.bestReach/1000).toFixed(0)}k</td><td className="p-3 text-xs text-gray-400">{p.bestPost}</td></tr>)}</tbody></table></div>
+        {(()=>{const W=600,H=160,pL=36,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=3.5,mx=8.5,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.engagement.map((e,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((e-mn)/(mx-mn))*iH}`).join(' ');return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Engagement Rate — Season Trend</h3><p className="text-xs text-gray-500 mb-4">Welfare content driving highest engagement.</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={path} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.engagement.map((e,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((e-mn)/(mx-mn))*iH} r="3" fill="#8B5CF6"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
+      </div>}
+    </div>
+  );
+};
+
+// ─── FAN HUB VIEW ───────────────────────────────────────────────────────────
+const FanHubView = ({ club: _club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState<'overview'|'forum'|'events'|'memberships'>('overview');
+  const forumTopics = [
+    {id:1,category:'Match Discussion',title:'Brighton W (H) — Post match thread 🟢',posts:84,views:1240,lastActive:'2h ago',hot:true},
+    {id:2,category:'Player Welfare',title:'Lumio Cycle tracking — what do you think?',posts:67,views:890,lastActive:'4h ago',hot:true},
+    {id:3,category:'Transfers',title:'Summer window wishlist — who should we sign?',posts:112,views:2100,lastActive:'1h ago',hot:true},
+    {id:4,category:'Match Discussion',title:'Bristol City W (A) — Preview thread',posts:31,views:540,lastActive:'6h ago',hot:false},
+    {id:5,category:'General',title:'Season tickets 2026/27 — thoughts on pricing?',posts:48,views:710,lastActive:'12h ago',hot:false},
+    {id:6,category:'Academy',title:'U18 talent watch — who to look out for?',posts:29,views:480,lastActive:'1d ago',hot:false},
+    {id:7,category:'Commercial',title:'New kit launch reaction — love it or leave it?',posts:95,views:1680,lastActive:'3h ago',hot:true},
+    {id:8,category:'Player Welfare',title:'Karen Carney standards — club update appreciated',posts:22,views:340,lastActive:'2d ago',hot:false},
+  ];
+  const categoryColor = (c:string) => c==='Match Discussion'?'bg-green-600/20 text-green-400':c==='Player Welfare'?'bg-pink-600/20 text-pink-400':c==='Transfers'?'bg-blue-600/20 text-blue-400':c==='Academy'?'bg-purple-600/20 text-purple-400':c==='Commercial'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400';
+  const membershipTiers = [
+    {name:'Fan Hub Free',price:'£0/yr',color:'border-gray-700',badge:'bg-gray-800 text-gray-400',features:['Access to Fan Hub forum','Monthly club newsletter','Match result notifications','Public match highlights'],members:842},
+    {name:'Supporter',price:'£25/yr',color:'border-pink-600/40',badge:'bg-pink-600/20 text-pink-400',features:['Everything in Free','Early ticket access (24hr)','Monthly Q&A with players','Exclusive BTS content','Digital matchday programme'],members:312},
+    {name:'Club Member',price:'£60/yr',color:'border-purple-600/40',badge:'bg-purple-600/20 text-purple-300',features:['Everything in Supporter','Training session guest pass','Annual meet-the-manager event','Priority season ticket','Member kit discount (15%)','Welfare newsletter'],members:86},
+  ];
+  const upcomingEvents = [
+    {date:'Sat 12 Apr',event:'Fan Zone — Bristol City W (H)',location:'Oakridge Stadium',type:'Matchday',tickets:'Free entry'},
+    {date:'Sun 20 Apr',event:'Player Q&A — Supporter exclusive',location:'Club Lounge',type:'Supporter',tickets:'Members only'},
+    {date:'Sat 3 May',event:'Season Finale Fan Day',location:'Oakridge Stadium',type:'All fans',tickets:'RSVP required'},
+    {date:'Sun 11 May',event:'End of Season Awards Night',location:'Oakridge Conference',type:'Club Mbr',tickets:'Club members only'},
+    {date:'Sat 7 Jun',event:'Meet the Manager — 2026/27 Preview',location:'Oakridge Stadium',type:'Club Mbr',tickets:'Club members only'},
+    {date:'Sat 28 Jun',event:'New Kit Launch — Fan Hub first',location:'Oakridge Stadium',type:'All fans',tickets:'Free entry'},
+  ];
+
+  return (
+    <div>
+      <SectionHeader title="Fan Hub" subtitle="Community · Forum · Events · Memberships" icon="💜"/>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Hub Members" value="1,240" sub="842 free · 398 paid" color="pink"/>
+        <StatCard label="Forum Posts" value="488" sub="This month" color="purple"/>
+        <StatCard label="Match overlap" value="68%" sub="Members who attend" color="teal"/>
+        <StatCard label="Events" value="2" sub="1 matchday · 1 members" color="blue"/>
+      </div>
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        {[{id:'overview',label:'Overview',icon:'📊'},{id:'forum',label:'Forum',icon:'💬'},{id:'events',label:'Events',icon:'🎟️'},{id:'memberships',label:'Memberships',icon:'🏅'}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id as typeof activeTab)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+      {activeTab==='overview'&&<div className="space-y-6">
+        {(()=>{const W=600,H=160,pL=40,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,ms=['Jan','Feb','Mar','Apr'],mv=[820,960,1110,1240],mn=700,mx=1400,sX=iW/(ms.length-1);const path=mv.map((m,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((m-mn)/(mx-mn))*iH}`).join(' ');const area=`${path} L ${pL+(ms.length-1)*sX} ${pT+iH} L ${pL} ${pT+iH} Z`;return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Fan Hub Member Growth</h3><p className="text-xs text-gray-500 mb-4">Launched Jan 2026 — 1,240 members in 4 months.</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={area} fill="#EC4899" opacity="0.08"/><path d={path} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{mv.map((m,i)=><g key={i}><circle cx={pL+i*sX} cy={pT+iH-((m-mn)/(mx-mn))*iH} r="4" fill="#EC4899"/><text x={pL+i*sX} y={pT+iH-((m-mn)/(mx-mn))*iH-8} fontSize="9" fill="#EC4899" textAnchor="middle" fontWeight="bold">{m.toLocaleString()}</text></g>)}{ms.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Trending Topics</h3><div className="space-y-2">{forumTopics.filter(t=>t.hot).map((t,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className="text-[10px] text-orange-400">🔥</span><div><div className="text-xs text-gray-200">{t.title}</div><div className="flex items-center gap-2 mt-0.5"><span className={`text-[9px] px-1.5 py-0.5 rounded ${categoryColor(t.category)}`}>{t.category}</span><span className="text-[10px] text-gray-600">{t.lastActive}</span></div></div></div><div className="text-right flex-shrink-0 ml-4"><div className="text-xs text-pink-400 font-bold">{t.posts} posts</div><div className="text-[10px] text-gray-600">{t.views.toLocaleString()} views</div></div></div>)}</div></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Top topic" value="Transfers" sub="112 posts" color="blue"/><StatCard label="New members" value="+130" sub="This month" color="green"/><StatCard label="Paid conversions" value="32%" sub="Free → paid" color="pink"/><StatCard label="Fan revenue" value="£9.8k" sub="Memberships YTD" color="teal"/></div>
+      </div>}
+      {activeTab==='forum'&&<div className="space-y-4"><div className="flex items-center justify-between mb-2"><p className="text-xs text-gray-500">{forumTopics.length} topics · {forumTopics.reduce((s,t)=>s+t.posts,0)} posts</p><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600/20 text-pink-400 border border-pink-600/30">+ New topic</button></div><div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider"><th className="text-left p-3">Topic</th><th className="text-left p-3">Category</th><th className="text-center p-3">Posts</th><th className="text-center p-3">Views</th><th className="text-center p-3">Active</th></tr></thead><tbody>{forumTopics.map((t,i)=><tr key={i} className="border-b border-gray-800/50 hover:bg-white/[0.02] cursor-pointer"><td className="p-3"><div className="flex items-center gap-2">{t.hot&&<span className="text-orange-400 text-xs">🔥</span>}<span className="text-xs text-gray-200">{t.title}</span></div></td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${categoryColor(t.category)}`}>{t.category}</span></td><td className="p-3 text-center text-xs text-pink-400 font-bold">{t.posts}</td><td className="p-3 text-center text-xs text-gray-400">{t.views.toLocaleString()}</td><td className="p-3 text-center text-[10px] text-gray-500">{t.lastActive}</td></tr>)}</tbody></table></div></div>}
+      {activeTab==='events'&&<div className="space-y-4"><div className="flex items-center justify-between mb-2"><p className="text-xs text-gray-500">{upcomingEvents.length} events · Apr–Jun 2026</p><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600/20 text-pink-400 border border-pink-600/30">+ Add event</button></div>{upcomingEvents.map((e,i)=><div key={i} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 hover:border-pink-600/20 transition-colors"><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 mb-1"><span className="text-sm font-bold text-white">{e.event}</span><span className={`text-[10px] px-2 py-0.5 rounded ${e.type==='Matchday'?'bg-green-600/20 text-green-400':e.type==='Supporter'?'bg-pink-600/20 text-pink-400':e.type==='Club Mbr'?'bg-purple-600/20 text-purple-400':'bg-blue-600/20 text-blue-400'}`}>{e.type}</span></div><div className="flex items-center gap-3 text-[10px] text-gray-500"><span>📅 {e.date}</span><span>📍 {e.location}</span><span>🎟️ {e.tickets}</span></div></div><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600/20 text-pink-400 border border-pink-600/30 flex-shrink-0 ml-4">Manage →</button></div></div>)}</div>}
+      {activeTab==='memberships'&&<div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">{membershipTiers.map((tier,i)=><div key={i} className={`bg-[#0D1117] border-2 rounded-xl p-5 ${tier.color}`}><div className="flex items-center justify-between mb-3"><div><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${tier.badge}`}>{tier.name}</span><div className="text-xl font-bold text-white mt-2">{tier.price}</div></div><div className="text-right"><div className="text-lg font-bold text-pink-400">{tier.members}</div><div className="text-[10px] text-gray-600">members</div></div></div><div className="space-y-1.5">{tier.features.map((f,j)=><div key={j} className="flex items-start gap-1.5 text-xs text-gray-300"><span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>{f}</div>)}</div><div className="mt-4 pt-3 border-t border-gray-800"><div className="w-full bg-gray-800 rounded-full h-1.5 mb-1"><div className="h-1.5 rounded-full bg-pink-500" style={{width:`${(tier.members/1240)*100}%`}}/></div><div className="text-[10px] text-gray-600">{((tier.members/1240)*100).toFixed(0)}% of total</div></div></div>)}</div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Membership Revenue — YTD</h3><div className="space-y-3">{[{tier:'Fan Hub Free',members:842,revenue:0,color:'#6B7280'},{tier:'Supporter',members:312,revenue:7800,color:'#EC4899'},{tier:'Club Member',members:86,revenue:5160,color:'#8B5CF6'}].map(r=><div key={r.tier}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{r.tier} ({r.members})</span><span className="text-white font-bold">{r.revenue===0?'Free':`£${r.revenue.toLocaleString()}`}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{width:`${(r.revenue/12960)*100}%`,backgroundColor:r.color}}/></div></div>)}<div className="pt-3 border-t border-gray-800 flex justify-between text-sm"><span className="text-gray-400">Total YTD</span><span className="text-pink-400 font-bold">£12,960</span></div></div></div>
+      </div>}
+    </div>
+  );
+};
+
+// ─── ACADEMY VIEW ───────────────────────────────────────────────────────────
+const AcademyView = ({ club: _club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'u18' | 'u21' | 'pathway'>('overview')
+  const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null)
+
+  const u18Players = [
+    { id: 1,  name: "Niamh O'Brien",  age: 17, pos: 'CB',  gpsAvg: 71, devRating: 5, potential: 'Elite',  scholarshipYr: 2, appearances: 14, goals: 1,  assists: 2,  notes: 'Fast-track candidate. Composure on ball exceptional for age. Nominated for dual reg May 2026.' },
+    { id: 2,  name: 'Isla Pearce',     age: 17, pos: 'FW',  gpsAvg: 64, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 12, goals: 7,  assists: 3,  notes: 'Training with first team Fridays. Clinical finisher. Needs work on press contribution.' },
+    { id: 3,  name: 'Freya Watts',     age: 16, pos: 'CM',  gpsAvg: 58, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 9,  goals: 1,  assists: 4,  notes: 'Good technical base. Decision-making in tight spaces developing well.' },
+    { id: 4,  name: 'Becca Lane',      age: 15, pos: 'GK',  gpsAvg: 55, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 11, goals: 0,  assists: 0,  notes: 'Strong shot-stopper. Distribution improving. Youngest GK in U18s.' },
+    { id: 5,  name: 'Simone Ashby',    age: 17, pos: 'LB',  gpsAvg: 62, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 13, goals: 0,  assists: 6,  notes: 'Best delivery from wide areas in academy. CoE licence player.' },
+    { id: 6,  name: 'Raya Obi',        age: 16, pos: 'DM',  gpsAvg: 60, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 8,  goals: 0,  assists: 1,  notes: 'Reads the game well. Physical development needed before first-team consideration.' },
+    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Wyscout flagged as one of top U18 wingers in Women's Champ region." },
+    { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
+    { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
+    { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
+  ]
+
+  const u21Players = [
+    { id: 11, name: 'Dani Cross',      age: 20, pos: 'CM',  gpsAvg: 78, devRating: 4, potential: 'High',   contract: 'Scholar → Pro offer pending', appearances: 18, goals: 3,  assists: 9,  firstTeamSessions: 12, notes: 'Training with first team regularly. DoF view: ready for dual reg next window.' },
+    { id: 12, name: 'Priya Sadhu',     age: 19, pos: 'LB',  gpsAvg: 74, devRating: 4, potential: 'High',   contract: 'Scholar — Year 2',            appearances: 16, goals: 1,  assists: 8,  firstTeamSessions: 6,  notes: "Technically outstanding. Overlapping full-back — fits Frost's system perfectly." },
+    { id: 13, name: 'Ellie Moran',     age: 21, pos: 'GK',  gpsAvg: 70, devRating: 3, potential: 'Medium', contract: 'Pro contract — Year 1',        appearances: 20, goals: 0,  assists: 0,  firstTeamSessions: 4,  notes: "3rd-choice GK. Loan move to Women's Champ club recommended for regular minutes." },
+    { id: 14, name: 'Sasha Kone',      age: 20, pos: 'FW',  gpsAvg: 82, devRating: 5, potential: 'Elite',  contract: 'Scholar → Pro contract offer',  appearances: 17, goals: 14, assists: 4,  firstTeamSessions: 18, notes: 'Top scorer in U21 WSL. First-team debut made Feb 2026. Elite potential — protect from external interest.' },
+    { id: 15, name: 'Abby Thornton',   age: 19, pos: 'CB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 15, goals: 1,  assists: 2,  firstTeamSessions: 2,  notes: 'Solid defensively. Aerial strength above average for age. Needs more first-team exposure.' },
+    { id: 16, name: 'Meg Farr',        age: 21, pos: 'RW',  gpsAvg: 76, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 19, goals: 6,  assists: 10, firstTeamSessions: 8,  notes: 'Winger with excellent delivery. Pushing for first-team squad place next season.' },
+    { id: 17, name: 'Tara Flynn',      age: 20, pos: 'DM',  gpsAvg: 69, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 14, goals: 0,  assists: 3,  firstTeamSessions: 3,  notes: 'Reads the game well. Lacks top-end pace. Potential loan candidate Summer 2026.' },
+  ]
+
+  const potentialColor = (p: string) =>
+    p === 'Elite'  ? 'bg-pink-600/20 text-pink-300 border border-pink-500/40' :
+    p === 'High'   ? 'bg-purple-600/20 text-purple-300' :
+    p === 'Medium' ? 'bg-blue-600/20 text-blue-300' :
+                     'bg-gray-800 text-gray-500'
+
+  const devStars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n)
+
+  const allPlayers = [...u18Players, ...u21Players]
+  const selectedP  = selectedPlayer !== null ? allPlayers.find(p => p.id === selectedPlayer) : null
+
+  const pathwaySteps = [
+    { stage: 'U14–U16 CoE',      label: "Girls' Centre of Excellence Entry",    desc: 'FA-licensed CoE. Education welfare officer. Safeguarding. Parent consent.' },
+    { stage: 'U16 Scholar',      label: 'Scholarship Agreement',                 desc: 'Two-year scholarship. Weekly stipend. Education programme. Development plan filed.' },
+    { stage: 'U18 Academy',      label: 'U18 Academy Registration',              desc: "FA Girls' U18 league. GPS profiling begins. Monthly development reviews." },
+    { stage: 'U21 Development',  label: 'U21 Squad / Dual Registration',         desc: 'Professional development contract or dual reg with lower-league club for minutes.' },
+    { stage: 'First Team Bridge',label: 'First Team Training Integration',       desc: 'Named in first-team matchday squad. Senior contract offer triggered at this stage.' },
+    { stage: 'First Team',       label: 'WSL First Team Contract',              desc: 'Full professional contract. FSR-compliant salary. Karen Carney welfare protections apply.' },
+  ]
+
+  return (
+    <div>
+      <SectionHeader title="Academy & Player Pathway" subtitle="FA Girls' Centre of Excellence · U18 · U21 · First Team Bridge" icon="🎓" />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Academy Players" value="34"   sub="U18: 10 · U21: 7 · Scholars: 27" color="pink"  />
+        <StatCard label="Elite Potential" value="2"    sub="Niamh O'Brien · Sasha Kone"       color="purple" />
+        <StatCard label="First Team Ready" value="3"   sub="Dual reg candidates this window"  color="green"  />
+        <StatCard label="CoE Compliance"  value="87%"  sub="3 criteria outstanding"           color="amber"  />
+      </div>
+
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        {[
+          { id: 'overview', label: 'Overview',   icon: '📊' },
+          { id: 'u18',      label: 'U18 Squad',  icon: '🌱' },
+          { id: 'u21',      label: 'U21 Squad',  icon: '⬆️' },
+          { id: 'pathway',  label: 'Pathway',    icon: '🛤️' },
+        ].map(t => (
+          <button key={t.id} onClick={() => { setActiveTab(t.id as typeof activeTab); setSelectedPlayer(null) }}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab === t.id ? 'border-pink-500 text-pink-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white">FA Girls&apos; Centre of Excellence — Compliance</h3>
+              <span className="text-xs px-2 py-1 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">87% compliant</span>
+            </div>
+            <div className="space-y-2">
+              {[
+                { item: 'Qualified coaching staff ratio met (1:15)',                         status: 'green' },
+                { item: 'Safeguarding DBS checks up to date (all staff)',                    status: 'green' },
+                { item: 'Education welfare officer in post',                                 status: 'green' },
+                { item: 'Player development plans filed (all registered players)',           status: 'green' },
+                { item: 'Medical screening completed (all academy players)',                  status: 'green' },
+                { item: 'Parent/guardian consent and registration forms complete',           status: 'green' },
+                { item: 'Safeguarding policy reviewed and published (within 12 months)',     status: 'green' },
+                { item: 'GPS profiling in place (U18 and above)',                            status: 'green' },
+                { item: 'Physiotherapy provision dedicated to academy (not shared)',          status: 'amber', note: 'Currently shared with first team — standalone required by Aug 2026' },
+                { item: 'Strength & conditioning coach dedicated to U18',                    status: 'amber', note: 'Recruitment underway — target start Jun 2026' },
+                { item: 'Mental health practitioner dedicated to academy',                    status: 'red',   note: 'URGENT — required by Jun 2026. Board sign-off needed by 30 Apr.' },
+              ].map((r, i) => (
+                <div key={i} className={`flex items-start gap-2.5 py-2 border-b border-gray-800/50 last:border-0 ${r.status === 'red' ? 'bg-red-600/5 rounded px-2 -mx-2' : ''}`}>
+                  <span className={`mt-0.5 flex-shrink-0 text-sm ${r.status === 'green' ? 'text-green-400' : r.status === 'amber' ? 'text-amber-400' : 'text-red-400'}`}>
+                    {r.status === 'green' ? '✓' : r.status === 'amber' ? '⚠' : '✗'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs text-gray-300">{r.item}</span>
+                    {r.note && <p className={`text-[10px] mt-0.5 ${r.status === 'red' ? 'text-red-400' : 'text-amber-400'}`}>{r.note}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-1">GPS Load Profile — Academy vs First Team</h3>
+            <p className="text-xs text-gray-500 mb-4">Average daily GPS load (AU) by squad. First team benchmark shown as dashed line.</p>
+            {(() => {
+              const W = 560, H = 160, padL = 40, padR = 16, padT = 16, padB = 36
+              const innerW = W - padL - padR, innerH = H - padT - padB, maxGPS = 100, firstTeamAvg = 84
+              const groups = [
+                { label: 'U15', avg: 48, color: '#6B7280' }, { label: 'U16', avg: 56, color: '#8B5CF6' },
+                { label: 'U17', avg: 63, color: '#3B82F6' }, { label: 'U18', avg: 62, color: '#0D9488' },
+                { label: 'U21', avg: 75, color: '#EC4899' }, { label: '1st', avg: 84, color: '#22C55E' },
+              ]
+              const barW = (innerW / groups.length) * 0.55, barGap = innerW / groups.length
+              const ftY = padT + innerH - (firstTeamAvg / maxGPS) * innerH
+              return (
+                <svg viewBox={`0 0 ${W} ${H}`} width="100%">
+                  {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
+                  {[0, 25, 50, 75, 100].map((v, i) => <text key={i} x={padL - 6} y={padT + innerH - (v / maxGPS) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+                  <line x1={padL} x2={W - padR} y1={ftY} y2={ftY} stroke="#22C55E" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.6" />
+                  <text x={W - padR + 2} y={ftY + 3} fontSize="8" fill="#22C55E">1st avg</text>
+                  {groups.map((g, i) => {
+                    const barH = (g.avg / maxGPS) * innerH, x = padL + i * barGap + (barGap - barW) / 2
+                    return (
+                      <g key={g.label}>
+                        <rect x={x} y={padT + innerH - barH} width={barW} height={barH} fill={g.color} opacity="0.8" rx="2" />
+                        <text x={x + barW / 2} y={padT + innerH - barH - 4} fontSize="9" fill={g.color} textAnchor="middle" fontWeight="bold">{g.avg}</text>
+                        <text x={x + barW / 2} y={H - 4} fontSize="9" fill="#6B7280" textAnchor="middle">{g.label}</text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              )
+            })()}
+            <p className="text-[10px] text-gray-600 mt-2">GPS load increases progressively through age groups. U21 squad operating at 89% of first-team avg — transition gap closing well.</p>
+          </div>
+
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-4">Promotion Pipeline — This Season</h3>
+            <div className="space-y-3">
+              {[
+                { name: "Sasha Kone",     from: 'U21', to: 'First Team',       status: 'Debut made Feb 2026',              timing: 'Now',         color: 'green' },
+                { name: "Niamh O'Brien", from: 'U18', to: 'U21 / Dual Reg',   status: 'Dual reg nominated — pending DoF', timing: 'May 2026',    color: 'pink' },
+                { name: 'Dani Cross',     from: 'U21', to: 'First Team Squad', status: 'Pro offer pending — DoF decision', timing: 'Summer 2026', color: 'pink' },
+                { name: 'Isla Pearce',    from: 'U18', to: 'U21 / Friday train',status: 'Informal — no registration yet',  timing: 'Assess May',  color: 'amber' },
+                { name: 'Ellie Moran',    from: 'U21', to: "Loan — Women's Ch",status: 'Loan recommended for minutes',     timing: 'Summer 2026', color: 'blue' },
+              ].map((p, i) => (
+                <div key={i} className={`flex items-center justify-between py-2.5 px-3 rounded-lg border ${p.color === 'green' ? 'border-green-600/30 bg-green-600/5' : p.color === 'pink' ? 'border-pink-600/30 bg-pink-600/5' : p.color === 'amber' ? 'border-amber-600/30 bg-amber-600/5' : 'border-blue-600/30 bg-blue-600/5'}`}>
+                  <div>
+                    <div className="text-xs font-bold text-white">{p.name}</div>
+                    <div className="text-[10px] text-gray-500">{p.from} → {p.to}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-medium ${p.color === 'green' ? 'text-green-400' : p.color === 'pink' ? 'text-pink-400' : p.color === 'amber' ? 'text-amber-400' : 'text-blue-400'}`}>{p.status}</div>
+                    <div className="text-[10px] text-gray-600">{p.timing}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Academy Goals (season)" value="44"  sub="U18: 21 · U21: 23"    color="pink"  />
+            <StatCard label="Avg GPS Load — U21"     value="75"  sub="AU/session"            color="teal"  />
+            <StatCard label="First Team Sessions"    value="53"  sub="Academy players in FT" color="purple"/>
+            <StatCard label="Scholar Contracts"      value="8"   sub="Active scholarships"   color="blue"  />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'u18' && (
+        <div>
+          {selectedP && selectedP.id <= 10 && (
+            <div className="bg-[#0D1117] border border-pink-600/40 rounded-xl p-5 mb-6">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-bold text-white">{selectedP.name}</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${potentialColor((selectedP as typeof u18Players[0]).potential)}`}>{(selectedP as typeof u18Players[0]).potential}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{selectedP.pos} · Age {selectedP.age} · Scholar Year {(selectedP as typeof u18Players[0]).scholarshipYr}</p>
+                </div>
+                <button onClick={() => setSelectedPlayer(null)} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                {[
+                  { v: selectedP.gpsAvg, l: 'GPS avg (AU)', c: 'text-pink-400' },
+                  { v: devStars((selectedP as typeof u18Players[0]).devRating), l: 'Dev rating', c: 'text-amber-400' },
+                  { v: selectedP.appearances, l: 'Appearances', c: 'text-white' },
+                  { v: selectedP.goals, l: 'Goals', c: 'text-green-400' },
+                  { v: selectedP.assists, l: 'Assists', c: 'text-blue-400' },
+                ].map(s => (
+                  <div key={s.l} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center">
+                    <div className={`text-lg font-bold ${s.c}`}>{s.v}</div>
+                    <div className="text-[10px] text-gray-500">{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mb-3">
+                <div className="flex justify-between text-[10px] text-gray-500 mb-1"><span>GPS load vs first-team benchmark (84 AU)</span><span className={selectedP.gpsAvg >= 75 ? 'text-green-400' : selectedP.gpsAvg >= 60 ? 'text-amber-400' : 'text-gray-500'}>{selectedP.gpsAvg} AU — {((selectedP.gpsAvg / 84) * 100).toFixed(0)}% of 1st team</span></div>
+                <div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full bg-pink-500" style={{ width: `${Math.min((selectedP.gpsAvg / 84) * 100, 100)}%` }} /></div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{selectedP.notes}</p>
+            </div>
+          )}
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white">U18 Academy Squad</h3>
+              <span className="text-[10px] text-gray-500">{u18Players.length} players · FA Girls&apos; CoE registered</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider">
+                <th className="text-left p-3">Player</th><th className="text-center p-3">Age</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Scholar Yr</th><th className="text-center p-3">GPS avg</th><th className="text-center p-3">Dev rating</th><th className="text-center p-3">Apps</th><th className="text-center p-3">G</th><th className="text-center p-3">A</th><th className="text-left p-3">Potential</th><th className="p-3"></th>
+              </tr></thead>
+              <tbody>
+                {u18Players.map(p => (
+                  <tr key={p.id} onClick={() => setSelectedPlayer(selectedPlayer === p.id ? null : p.id)} className={`border-b border-gray-800/50 cursor-pointer transition-colors ${selectedPlayer === p.id ? 'bg-pink-600/5' : 'hover:bg-white/[0.02]'}`}>
+                    <td className="p-3 text-gray-200 font-medium text-xs">{p.name}</td>
+                    <td className="p-3 text-center text-xs text-gray-400">{p.age}</td>
+                    <td className="p-3 text-center"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{p.pos}</span></td>
+                    <td className="p-3 text-center text-xs text-gray-400">Yr {p.scholarshipYr}</td>
+                    <td className="p-3 text-center"><span className={`text-xs font-bold ${p.gpsAvg >= 68 ? 'text-green-400' : p.gpsAvg >= 58 ? 'text-amber-400' : 'text-gray-500'}`}>{p.gpsAvg}</span></td>
+                    <td className="p-3 text-center text-xs text-amber-400">{devStars(p.devRating)}</td>
+                    <td className="p-3 text-center text-xs text-gray-300">{p.appearances}</td>
+                    <td className="p-3 text-center text-xs text-green-400 font-bold">{p.goals}</td>
+                    <td className="p-3 text-center text-xs text-blue-400 font-bold">{p.assists}</td>
+                    <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${potentialColor(p.potential)}`}>{p.potential}</span></td>
+                    <td className="p-3 text-gray-600 text-xs">→</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="p-3 border-t border-gray-800 text-[10px] text-gray-600">Click any player to expand GPS and development profile</div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'u21' && (
+        <div>
+          {selectedP && selectedP.id >= 11 && (
+            <div className="bg-[#0D1117] border border-pink-600/40 rounded-xl p-5 mb-6">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-bold text-white">{selectedP.name}</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${potentialColor((selectedP as typeof u21Players[0]).potential)}`}>{(selectedP as typeof u21Players[0]).potential}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{selectedP.pos} · Age {selectedP.age} · {(selectedP as typeof u21Players[0]).contract}</p>
+                </div>
+                <button onClick={() => setSelectedPlayer(null)} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                {[
+                  { v: selectedP.gpsAvg, l: 'GPS avg (AU)', c: 'text-pink-400' },
+                  { v: selectedP.appearances, l: 'Appearances', c: 'text-white' },
+                  { v: selectedP.goals, l: 'Goals', c: 'text-green-400' },
+                  { v: selectedP.assists, l: 'Assists', c: 'text-blue-400' },
+                  { v: (selectedP as typeof u21Players[0]).firstTeamSessions, l: '1st team sessions', c: 'text-purple-400' },
+                ].map(s => (
+                  <div key={s.l} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center">
+                    <div className={`text-lg font-bold ${s.c}`}>{s.v}</div>
+                    <div className="text-[10px] text-gray-500">{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mb-3">
+                <div className="flex justify-between text-[10px] text-gray-500 mb-1"><span>GPS load vs first-team benchmark (84 AU)</span><span className={selectedP.gpsAvg >= 78 ? 'text-green-400' : 'text-amber-400'}>{selectedP.gpsAvg} AU — {((selectedP.gpsAvg / 84) * 100).toFixed(0)}% of 1st team</span></div>
+                <div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full bg-pink-500" style={{ width: `${Math.min((selectedP.gpsAvg / 84) * 100, 100)}%` }} /></div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{selectedP.notes}</p>
+            </div>
+          )}
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white">U21 Development Squad</h3>
+              <span className="text-[10px] text-gray-500">{u21Players.length} players</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider">
+                <th className="text-left p-3">Player</th><th className="text-center p-3">Age</th><th className="text-center p-3">Pos</th><th className="text-center p-3">GPS avg</th><th className="text-center p-3">Apps</th><th className="text-center p-3">G</th><th className="text-center p-3">A</th><th className="text-center p-3">1st Team</th><th className="text-left p-3">Contract</th><th className="text-left p-3">Potential</th><th className="p-3"></th>
+              </tr></thead>
+              <tbody>
+                {u21Players.map(p => (
+                  <tr key={p.id} onClick={() => setSelectedPlayer(selectedPlayer === p.id ? null : p.id)} className={`border-b border-gray-800/50 cursor-pointer transition-colors ${selectedPlayer === p.id ? 'bg-pink-600/5' : 'hover:bg-white/[0.02]'}`}>
+                    <td className="p-3 text-gray-200 font-medium text-xs">{p.name}</td>
+                    <td className="p-3 text-center text-xs text-gray-400">{p.age}</td>
+                    <td className="p-3 text-center"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{p.pos}</span></td>
+                    <td className="p-3 text-center"><span className={`text-xs font-bold ${p.gpsAvg >= 78 ? 'text-green-400' : p.gpsAvg >= 68 ? 'text-amber-400' : 'text-gray-500'}`}>{p.gpsAvg}</span></td>
+                    <td className="p-3 text-center text-xs text-gray-300">{p.appearances}</td>
+                    <td className="p-3 text-center text-xs text-green-400 font-bold">{p.goals}</td>
+                    <td className="p-3 text-center text-xs text-blue-400 font-bold">{p.assists}</td>
+                    <td className="p-3 text-center text-xs text-purple-400 font-medium">{p.firstTeamSessions}</td>
+                    <td className="p-3 text-[10px] text-gray-400">{p.contract}</td>
+                    <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${potentialColor(p.potential)}`}>{p.potential}</span></td>
+                    <td className="p-3 text-gray-600 text-xs">→</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="p-3 border-t border-gray-800 text-[10px] text-gray-600">Click any player to expand GPS and development profile</div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'pathway' && (
+        <div className="space-y-6">
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-5">Player Development Pathway — Oakridge Women FC</h3>
+            <div className="relative">
+              <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-800" />
+              {pathwaySteps.map((step, i) => {
+                const isActive = i >= 2 && i <= 4
+                const colors = ['border-gray-600 bg-gray-800','border-gray-600 bg-gray-800','border-teal-500 bg-teal-500/20','border-blue-500 bg-blue-500/20','border-pink-500 bg-pink-500/20','border-green-500 bg-green-500/20']
+                const labelColors = ['text-gray-400','text-gray-400','text-teal-400','text-blue-400','text-pink-400','text-green-400']
+                return (
+                  <div key={i} className="flex gap-5 mb-6 pl-12 relative">
+                    <div className={`absolute left-3 top-0.5 w-5 h-5 rounded-full border-2 ${colors[i]}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-xs font-bold ${labelColors[i]}`}>{step.stage}</span>
+                        {isActive && <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-600/20 text-pink-400">Active</span>}
+                      </div>
+                      <div className="text-sm font-semibold text-white mb-1">{step.label}</div>
+                      <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-3">FA Dual Registration Rules — Women&apos;s Football</h3>
+            <div className="space-y-2">
+              {[
+                "Players can be dual registered between WSL and Women's Championship clubs only",
+                'Maximum of 5 dual-registered players per club per registration window',
+                "Player must be eligible for both clubs' league (age, nationality, contract)",
+                'Dual registration period: minimum 28 days, maximum end of season',
+                "Parent club retains registration rights and can recall with 7 days' notice",
+                'Player cannot play for both clubs in the same matchweek',
+              ].map((r, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs py-1.5 border-b border-gray-800/50 last:border-0">
+                  <span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                  <span className="text-gray-300">{r}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-4">Current Dual Reg Candidates</h3>
+            <div className="space-y-3">
+              {[
+                { name: "Niamh O'Brien", squad: 'U18 → U21/Dual reg', status: 'Nominated', detail: "CB · Age 17 · GPS 71 AU · Elite potential. Dual reg to Women's Champ club recommended from May 2026.", action: 'DoF approval needed', color: 'pink' },
+                { name: 'Ellie Moran', squad: 'U21 → Loan', status: 'Recommended', detail: "GK · Age 21 · 3rd-choice. Loan to Women's Champ recommended for 2026/27 for regular minutes.", action: 'Summer window — target clubs identified', color: 'blue' },
+                { name: 'Tara Flynn', squad: 'U21 → Loan', status: 'Under review', detail: 'DM · Age 20 · Lacks top-end pace for WSL but technically sound. Loan candidate Summer 2026.', action: 'Review post-season', color: 'amber' },
+              ].map((c, i) => (
+                <div key={i} className={`rounded-xl p-4 border ${c.color === 'pink' ? 'border-pink-600/30 bg-pink-600/5' : c.color === 'blue' ? 'border-blue-600/30 bg-blue-600/5' : 'border-amber-600/30 bg-amber-600/5'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{c.name}</span>
+                      <span className="text-[10px] text-gray-500">{c.squad}</span>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${c.color === 'pink' ? 'bg-pink-600/20 text-pink-400' : c.color === 'blue' ? 'bg-blue-600/20 text-blue-400' : 'bg-amber-600/20 text-amber-400'}`}>{c.status}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-2">{c.detail}</p>
+                  <p className={`text-[10px] font-medium ${c.color === 'pink' ? 'text-pink-400' : c.color === 'blue' ? 'text-blue-400' : 'text-amber-400'}`}>→ {c.action}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── SCOUTING VIEW ──────────────────────────────────────────────────────────
+const ScoutingView = ({ club }: { club: WomensClub }) => {
+  const [scoutTab, setScoutTab] = useState<'database'|'watchlist'|'reports'>('database');
+  const [filterPosition, setFilterPosition] = useState('All');
+  const [filterLeague, setFilterLeague] = useState('All');
+  const [filterAvail, setFilterAvail] = useState('All');
+  const [maxSalaryFilter, setMaxSalaryFilter] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState<number|null>(null);
+  const FSR_HEADROOM = club.fsrHeadroom ?? 380000;
+  const fmtS = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
+
+  const players = [
+    {id:1,name:'Freya Johansson',age:24,nat:'🇸🇪',pos:'CM',league:'WSL',club:'Leicester W',salary:52000,avail:'Contract expires Jun 2026',wyscout:7.8,xG:0.14,xA:0.31,progPasses:42,aerials:58,tackles:3.2,rating:'A',tags:['Ball-playing','High press','Technical']},
+    {id:2,name:'Amara Diallo',age:22,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Bordeaux W',salary:44000,avail:'Free agent',wyscout:7.4,xG:0.38,xA:0.12,progPasses:18,aerials:62,tackles:1.1,rating:'A',tags:['Pace','In behind','Clinical']},
+    {id:3,name:'Lena Müller',age:26,nat:'🇩🇪',pos:'LB',league:'Frauen-Bundesliga',club:'Hoffenheim W',salary:62000,avail:'Approach made',wyscout:7.6,xG:0.06,xA:0.28,progPasses:38,aerials:44,tackles:4.8,rating:'A',tags:['Overlapping','Delivery','Defensive']},
+    {id:4,name:'Niamh Gallagher',age:28,nat:'🇮🇪',pos:'CB',league:'WSL',club:'Everton W',salary:58000,avail:'Contract expires Jun 2026',wyscout:7.2,xG:0.04,xA:0.08,progPasses:22,aerials:78,tackles:5.1,rating:'B',tags:['Aerial','Leadership','Positional']},
+    {id:5,name:'Chloe Dubois',age:23,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Montpellier W',salary:48000,avail:'Scouting only',wyscout:7.5,xG:0.44,xA:0.19,progPasses:14,aerials:51,tackles:0.9,rating:'A',tags:['Pace','Dribbling','Pressing']},
+    {id:6,name:'Rosa Lindqvist',age:25,nat:'🇸🇪',pos:'CB',league:'WSL',club:'Brighton W',salary:54000,avail:'Watchlist',wyscout:6.9,xG:0.03,xA:0.06,progPasses:19,aerials:82,tackles:4.4,rating:'B',tags:['Positional','Ball-playing']},
+    {id:7,name:'Kezia Okafor',age:27,nat:'🇳🇬',pos:'FW',league:'NWSL',club:'Portland Thorns',salary:88000,avail:'Fee required (est. £45k)',wyscout:8.1,xG:0.51,xA:0.22,progPasses:20,aerials:66,tackles:1.4,rating:'A+',tags:['Physical','Aerial','Clinical','Leadership']},
+    {id:8,name:'Yuki Tanaka',age:21,nat:'🇯🇵',pos:'AM',league:'NWSL',club:'San Diego Wave',salary:46000,avail:'Loan available',wyscout:7.3,xG:0.22,xA:0.38,progPasses:48,aerials:29,tackles:2.1,rating:'A',tags:['Creative','Final third','Technical']},
+    {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Aston Villa W',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
+    {id:10,name:'Marta Sousa',age:24,nat:'🇵🇹',pos:'LW',league:'D1 Arkema',club:'PSG Féminines',salary:72000,avail:'Scouting only',wyscout:7.9,xG:0.28,xA:0.41,progPasses:36,aerials:33,tackles:2.8,rating:'A',tags:['Pace','Delivery','Creative','Dribbling']},
+    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"Women's Champ",club:'Crystal Palace W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
+    {id:12,name:'Sofía Reyes',age:26,nat:'🇲🇽',pos:'GK',league:'NWSL',club:'Kansas City',salary:55000,avail:'Contract expires Dec 2026',wyscout:7.4,xG:null,xA:null,progPasses:null,aerials:null,tackles:null,rating:'A',tags:['Shot-stopping','Distribution','Leadership'],saves:4.2,savePct:74},
+    {id:13,name:'Hana Novak',age:25,nat:'🇨🇿',pos:'CM',league:'Frauen-Bundesliga',club:'Bayern Munich W',salary:68000,avail:'Scouting only',wyscout:7.7,xG:0.11,xA:0.29,progPasses:44,aerials:48,tackles:4.1,rating:'A',tags:['Box-to-box','High press','Technical']},
+    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"Women's Champ",club:'Sheffield Utd W',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
+    {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Liverpool W',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
+  ];
+
+  const positions = ['All','GK','CB','LB','RB','DM','CM','AM','LW','RW','FW'];
+  const leagues = ['All','WSL',"Women's Champ",'NWSL','D1 Arkema','Frauen-Bundesliga'];
+  const availOpts = ['All','Free agent','Contract expires Jun 2026','Loan available','Fee required'];
+
+  const filtered = players.filter(p => {
+    const pm = filterPosition==='All'||p.pos===filterPosition;
+    const lm = filterLeague==='All'||p.league===filterLeague;
+    const sm = !maxSalaryFilter||p.salary<=Number(maxSalaryFilter);
+    const am = filterAvail==='All'||p.avail.toLowerCase().includes(filterAvail.toLowerCase());
+    return pm&&lm&&sm&&am;
+  });
+
+  const ratingColor = (r: string) => r==='A+'?'bg-pink-600/30 text-pink-300 border border-pink-600/40':r==='A'?'bg-purple-600/20 text-purple-300':'bg-gray-800 text-gray-400';
+  const selectedP = selectedPlayer!==null?players.find(p=>p.id===selectedPlayer):null;
+  const watchlist = players.filter(p=>[1,2,3,7,8].includes(p.id));
+
+  return (
+    <div>
+      <SectionHeader title="Scouting" subtitle="Wyscout · WSL · Women's Championship · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
+      <div className="flex gap-1 mb-6 border-b border-gray-800">
+        {[{id:'database',label:'Player Database',icon:'🔍'},{id:'watchlist',label:'Watchlist',icon:'⭐'},{id:'reports',label:'Scout Reports',icon:'📝'}].map(t=>(
+          <button key={t.id} onClick={()=>{setScoutTab(t.id as typeof scoutTab);setSelectedPlayer(null)}}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px ${scoutTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+            {t.id==='watchlist'&&<span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-pink-600/20 text-pink-400">{watchlist.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {scoutTab==='database'&&(
+        <div>
+          {selectedP&&(
+            <div className="bg-[#0D1117] border border-pink-600/40 rounded-xl p-5 mb-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1"><span className="text-lg">{selectedP.nat}</span><h3 className="text-base font-bold text-white">{selectedP.name}</h3><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(selectedP.rating)}`}>{selectedP.rating}</span></div>
+                  <p className="text-xs text-gray-400">{selectedP.pos} · {selectedP.club} · {selectedP.league} · Age {selectedP.age}</p>
+                </div>
+                <button onClick={()=>setSelectedPlayer(null)} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
+              </div>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
+                <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-pink-400">{selectedP.wyscout}</div><div className="text-[10px] text-gray-500">Wyscout</div></div>
+                {selectedP.pos!=='GK'?<>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-purple-400">{selectedP.xG?.toFixed(2)??'—'}</div><div className="text-[10px] text-gray-500">xG/90</div></div>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-blue-400">{selectedP.xA?.toFixed(2)??'—'}</div><div className="text-[10px] text-gray-500">xA/90</div></div>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-teal-400">{selectedP.progPasses??'—'}</div><div className="text-[10px] text-gray-500">Prog. passes</div></div>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-amber-400">{selectedP.aerials??'—'}%</div><div className="text-[10px] text-gray-500">Aerial %</div></div>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-green-400">{selectedP.tackles??'—'}</div><div className="text-[10px] text-gray-500">Tackles pg</div></div>
+                </>:<>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-purple-400">{(selectedP as typeof selectedP & {saves?:number}).saves??'—'}</div><div className="text-[10px] text-gray-500">Saves pg</div></div>
+                  <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-blue-400">{(selectedP as typeof selectedP & {savePct?:number}).savePct??'—'}%</div><div className="text-[10px] text-gray-500">Save %</div></div>
+                </>}
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-4">{selectedP.tags.map(tag=><span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-pink-600/10 text-pink-400 border border-pink-600/20">{tag}</span>)}</div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between mb-2"><span className="text-xs font-bold text-white">FSR Impact</span><span className={`text-xs font-bold ${FSR_HEADROOM-selectedP.salary>0?'text-green-400':'text-red-400'}`}>{FSR_HEADROOM-selectedP.salary>0?'✓ Within cap':'✗ Exceeds cap'}</span></div>
+                <div className="space-y-1 text-xs text-gray-400">
+                  <div className="flex justify-between"><span>Headroom</span><span className="text-white">{fmtS(FSR_HEADROOM)}</span></div>
+                  <div className="flex justify-between"><span>Salary est.</span><span className="text-pink-400">{fmtS(selectedP.salary)}/yr</span></div>
+                  <div className="flex justify-between border-t border-gray-800 pt-1 mt-1"><span>After signing</span><span className={FSR_HEADROOM-selectedP.salary>100000?'text-green-400 font-bold':FSR_HEADROOM-selectedP.salary>0?'text-amber-400 font-bold':'text-red-400 font-bold'}>{fmtS(FSR_HEADROOM-selectedP.salary)}</span></div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between"><div><span className="text-[10px] text-gray-500">Availability: </span><span className="text-xs text-amber-400">{selectedP.avail}</span></div><div className="flex gap-2"><button className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-300 hover:text-white">Add to watchlist</button><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white">Request report →</button></div></div>
+            </div>
+          )}
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div><label className="text-[10px] text-gray-500 mb-1.5 block uppercase tracking-wider">Position</label><div className="flex flex-wrap gap-1">{positions.map(p=><button key={p} onClick={()=>setFilterPosition(p)} className={`px-2 py-0.5 rounded text-[10px] font-medium ${filterPosition===p?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>)}</div></div>
+              <div><label className="text-[10px] text-gray-500 mb-1.5 block uppercase tracking-wider">League</label><div className="flex flex-wrap gap-1">{leagues.map(l=><button key={l} onClick={()=>setFilterLeague(l)} className={`px-2 py-0.5 rounded text-[10px] font-medium ${filterLeague===l?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{l}</button>)}</div></div>
+              <div><label className="text-[10px] text-gray-500 mb-1.5 block uppercase tracking-wider">Availability</label><div className="flex flex-wrap gap-1">{availOpts.map(a=><button key={a} onClick={()=>setFilterAvail(a)} className={`px-2 py-0.5 rounded text-[10px] font-medium ${filterAvail===a?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{a.length>18?a.slice(0,18)+'…':a}</button>)}</div></div>
+              <div><label className="text-[10px] text-gray-500 mb-1.5 block uppercase tracking-wider">Max Salary (FSR: {fmtS(FSR_HEADROOM)})</label><input type="number" value={maxSalaryFilter} onChange={e=>setMaxSalaryFilter(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white w-full focus:outline-none focus:border-pink-500"/></div>
+            </div>
+            <div className="mt-3 flex items-center justify-between"><span className="text-[10px] text-gray-500">{filtered.length} players matching</span><button onClick={()=>{setFilterPosition('All');setFilterLeague('All');setFilterAvail('All');setMaxSalaryFilter('')}} className="text-[10px] text-gray-600 hover:text-gray-400">Clear ✕</button></div>
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider">
+              <th className="text-left p-3">Player</th><th className="text-left p-3">Club / League</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-center p-3">Rating</th><th className="text-center p-3">Wyscout</th><th className="text-center p-3">xG</th><th className="text-center p-3">xA</th><th className="text-left p-3">Salary</th><th className="text-left p-3">FSR after</th><th className="text-left p-3">Availability</th><th className="p-3"></th>
+            </tr></thead><tbody>
+              {filtered.length===0?<tr><td colSpan={12} className="p-8 text-center text-gray-600 text-sm">No players match filters.</td></tr>:filtered.map(p=>{
+                const ha=FSR_HEADROOM-p.salary;const hc=ha>200000?'text-green-400':ha>80000?'text-amber-400':'text-red-400';
+                const ac=p.avail==='Free agent'?'text-green-400':p.avail.includes('expires')?'text-amber-400':p.avail==='Loan available'?'text-blue-400':p.avail.includes('Fee')?'text-orange-400':'text-gray-500';
+                return<tr key={p.id} onClick={()=>setSelectedPlayer(selectedPlayer===p.id?null:p.id)} className={`border-b border-gray-800/50 cursor-pointer transition-colors ${selectedPlayer===p.id?'bg-pink-600/5 border-pink-600/20':'hover:bg-white/[0.02]'}`}>
+                  <td className="p-3"><div className="flex items-center gap-2"><span className="text-sm">{p.nat}</span><span className="text-gray-200 font-medium text-xs">{p.name}</span></div><div className="flex flex-wrap gap-1 mt-1">{p.tags.slice(0,2).map(t=><span key={t} className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">{t}</span>)}</div></td>
+                  <td className="p-3"><div className="text-xs text-gray-300">{p.club}</div><div className="text-[10px] text-gray-600">{p.league}</div></td>
+                  <td className="p-3 text-center"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">{p.pos}</span></td>
+                  <td className="p-3 text-center text-xs text-gray-400">{p.age}</td>
+                  <td className="p-3 text-center"><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(p.rating)}`}>{p.rating}</span></td>
+                  <td className="p-3 text-center text-xs font-bold text-pink-400">{p.wyscout}</td>
+                  <td className="p-3 text-center text-xs text-purple-400">{p.xG?.toFixed(2)??'—'}</td>
+                  <td className="p-3 text-center text-xs text-blue-400">{p.xA?.toFixed(2)??'—'}</td>
+                  <td className="p-3 text-xs text-gray-300">{fmtS(p.salary)}/yr</td>
+                  <td className={`p-3 text-xs font-medium ${hc}`}>{fmtS(ha)}</td>
+                  <td className={`p-3 text-[10px] font-medium ${ac}`}>{p.avail}</td>
+                  <td className="p-3 text-gray-600 text-xs">→</td>
+                </tr>;
+              })}
+            </tbody></table></div>
+            <div className="p-3 border-t border-gray-800 text-[10px] text-gray-600">Wyscout Women&apos;s database · Salaries estimated · FSR based on {club.league} headroom</div>
+          </div>
+        </div>
+      )}
+
+      {scoutTab==='watchlist'&&(
+        <div className="space-y-4">
+          <div className="flex items-center justify-between"><p className="text-xs text-gray-500">{watchlist.length} players on watchlist</p><button className="text-xs text-pink-400 hover:text-pink-300">Export watchlist →</button></div>
+          {watchlist.map(p=>{
+            const ha=FSR_HEADROOM-p.salary;const hc=ha>200000?'text-green-400':ha>80000?'text-amber-400':'text-red-400';
+            return<div key={p.id} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 hover:border-pink-600/30 transition-colors">
+              <div className="flex items-start justify-between mb-3"><div className="flex items-center gap-3"><span className="text-xl">{p.nat}</span><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{p.name}</span><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(p.rating)}`}>{p.rating}</span></div><p className="text-xs text-gray-500">{p.pos} · {p.club} · {p.league} · Age {p.age}</p></div></div><div className="text-right"><div className="text-sm font-bold text-pink-400">{p.wyscout}</div><div className="text-[10px] text-gray-600">Wyscout</div></div></div>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {p.pos!=='GK'?<><div className="text-center"><div className="text-xs font-bold text-purple-400">{p.xG?.toFixed(2)}</div><div className="text-[9px] text-gray-600">xG/90</div></div><div className="text-center"><div className="text-xs font-bold text-blue-400">{p.xA?.toFixed(2)}</div><div className="text-[9px] text-gray-600">xA/90</div></div><div className="text-center"><div className="text-xs font-bold text-teal-400">{p.progPasses}</div><div className="text-[9px] text-gray-600">Prog</div></div><div className="text-center"><div className="text-xs font-bold text-amber-400">{p.tackles}</div><div className="text-[9px] text-gray-600">Tackles</div></div></>:<><div className="text-center"><div className="text-xs font-bold text-purple-400">{(p as typeof p&{saves?:number}).saves??'—'}</div><div className="text-[9px] text-gray-600">Saves</div></div><div className="text-center"><div className="text-xs font-bold text-blue-400">{(p as typeof p&{savePct?:number}).savePct??'—'}%</div><div className="text-[9px] text-gray-600">Save%</div></div></>}
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-3">{p.tags.map(tag=><span key={tag} className="text-[9px] px-2 py-0.5 rounded-full bg-pink-600/10 text-pink-400 border border-pink-600/20">{tag}</span>)}</div>
+              <div className="flex items-center justify-between pt-3 border-t border-gray-800"><div className="space-y-0.5"><div className="text-xs text-gray-400">Salary: <span className="text-white font-medium">{fmtS(p.salary)}/yr</span></div><div className={`text-xs font-medium ${hc}`}>FSR after: {fmtS(ha)}</div><div className="text-xs text-amber-400">{p.avail}</div></div><div className="flex gap-2"><button className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">Remove ✕</button><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white">Full report →</button></div></div>
+            </div>;
+          })}
+        </div>
+      )}
+
+      {scoutTab==='reports'&&(
+        <div className="space-y-5">
+          <div className="flex items-center justify-between"><p className="text-xs text-gray-500">3 scout reports filed</p><button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">+ New Report</button></div>
+          {[
+            {player:'Kezia Okafor',pos:'FW',club:'Portland Thorns (NWSL)',nat:'🇳🇬',scout:'Mark Hendry',date:'4 Apr 2026',match:'Portland vs San Diego',rating:'A+',rec:'Sign — priority target',summary:'Dominant aerial presence. Clinical finish — brace. Showed leadership organising front line.',strengths:['Aerial dominance — 7/9 duels won','Clinical finishing (2 goals)','High press — 8 defensive actions','Leadership — directed press triggers'],concerns:['Salary est. £88k — near FSR ceiling','Transfer fee likely £40–50k','NWSL contract runs to Dec 2026'],score:{technique:8,athleticism:9,pressing:9,finishing:8,leadership:9}},
+            {player:'Freya Johansson',pos:'CM',club:'Leicester W (WSL)',nat:'🇸🇪',scout:'Lisa Park',date:'29 Mar 2026',match:'Leicester W vs Bristol City W',rating:'A',rec:'Approach — contract expiring',summary:'Composed in possession. Dictated tempo. 11 forward passes into final third. Defensively disciplined.',strengths:['Progressive passing — 11 into final third','Positional discipline','Comfortable both feet','Technical under press'],concerns:['Not aerial threat','Recovery pace vs physical FW','May attract WSL top-6 interest'],score:{technique:9,athleticism:7,pressing:8,finishing:6,leadership:7}},
+            {player:'Amara Diallo',pos:'FW',club:'Bordeaux W (D1 Arkema)',nat:'🇫🇷',scout:'Mark Hendry',date:'22 Mar 2026',match:'Bordeaux vs Montpellier',rating:'A',rec:'Sign immediately — free agent',summary:'Electric pace on the left. Ran in behind 6 times. Pressing from front effective. Free agent — exceptional value.',strengths:['Blistering pace — consistent threat','Pressing from front (3 ball recoveries)','Free agent — no fee, £44k salary','Young (22) with significant upside'],concerns:['Decision-making inconsistent','Aerial minimal — 2/8 duels','D1→WSL adaptation 3–4 months'],score:{technique:7,athleticism:9,pressing:8,finishing:7,leadership:6}},
+          ].map((r,i)=>(
+            <div key={i} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+              <div className="flex items-start justify-between mb-4"><div className="flex items-center gap-3"><span className="text-2xl">{r.nat}</span><div><div className="flex items-center gap-2 mb-0.5"><span className="text-sm font-bold text-white">{r.player}</span><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(r.rating)}`}>{r.rating}</span></div><p className="text-xs text-gray-500">{r.pos} · {r.club} · {r.match}</p><p className="text-[10px] text-gray-600">Scout: {r.scout} · {r.date}</p></div></div><div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${r.rec.startsWith('Sign')?'bg-green-600/20 text-green-400 border border-green-600/30':'bg-pink-600/20 text-pink-400 border border-pink-600/30'}`}>{r.rec}</div></div>
+              <p className="text-xs text-gray-300 mb-4 leading-relaxed">{r.summary}</p>
+              <div className="mb-4"><h4 className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Attribute Scores</h4><div className="space-y-1.5">{Object.entries(r.score).map(([attr,val])=><div key={attr} className="flex items-center gap-3"><span className="text-[10px] text-gray-500 w-20 capitalize">{attr}</span><div className="flex-1 bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full bg-pink-500" style={{width:`${(val/10)*100}%`}}/></div><span className="text-[10px] font-bold text-pink-400 w-6 text-right">{val}</span></div>)}</div></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div className="bg-green-600/5 border border-green-600/20 rounded-lg p-3"><h4 className="text-[10px] font-bold text-green-400 mb-2">Strengths</h4><div className="space-y-1">{r.strengths.map((s,j)=><div key={j} className="flex items-start gap-1.5 text-xs text-gray-300"><span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>{s}</div>)}</div></div>
+                <div className="bg-amber-600/5 border border-amber-600/20 rounded-lg p-3"><h4 className="text-[10px] font-bold text-amber-400 mb-2">Concerns</h4><div className="space-y-1">{r.concerns.map((c,j)=><div key={j} className="flex items-start gap-1.5 text-xs text-gray-300"><span className="text-amber-400 mt-0.5 flex-shrink-0">⚠</span>{c}</div>)}</div></div>
+              </div>
+              <div className="flex gap-2 pt-3 border-t border-gray-800"><button className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">Share with DoF</button><button className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">Add to watchlist</button><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white">Initiate approach →</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── ANALYTICS VIEW ─────────────────────────────────────────────────────────
+const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
+  const [activeChart, setActiveChart] = useState<'xg' | 'pressing' | 'progressive' | 'shotmap'>('xg')
+
+  const WSL_AVG_XG = 1.24
+  const WSL_AVG_XGA = 1.31
+  const WSL_AVG_PPDA = 9.8
+
+  const matchData = [
+    { match: 'Man City W',    venue: 'H', result: 'L', score: '1–2', xG: 0.98, xGA: 1.87, ppda: 12.1, progPasses: 28 },
+    { match: 'Chelsea W',     venue: 'A', result: 'L', score: '0–3', xG: 0.22, xGA: 2.94, ppda: 16.4, progPasses: 14 },
+    { match: 'Arsenal W',     venue: 'H', result: 'D', score: '1–1', xG: 0.91, xGA: 0.88, ppda: 11.2, progPasses: 22 },
+    { match: 'Liverpool W',   venue: 'A', result: 'W', score: '2–1', xG: 1.62, xGA: 0.74, ppda: 7.8,  progPasses: 36 },
+    { match: 'Brighton W',    venue: 'H', result: 'L', score: '0–1', xG: 0.31, xGA: 0.87, ppda: 14.2, progPasses: 18 },
+    { match: 'Aston Villa W', venue: 'A', result: 'W', score: '3–1', xG: 2.14, xGA: 0.62, ppda: 6.9,  progPasses: 41 },
+    { match: 'Everton W',     venue: 'H', result: 'W', score: '2–0', xG: 1.74, xGA: 0.28, ppda: 8.1,  progPasses: 38 },
+    { match: 'Leicester W',   venue: 'A', result: 'D', score: '2–2', xG: 1.38, xGA: 1.41, ppda: 9.4,  progPasses: 31 },
+    { match: 'Tottenham W',   venue: 'H', result: 'W', score: '4–0', xG: 2.88, xGA: 0.14, ppda: 5.2,  progPasses: 52 },
+    { match: 'West Ham W',    venue: 'A', result: 'W', score: '1–0', xG: 1.12, xGA: 0.44, ppda: 8.8,  progPasses: 33 },
+  ]
+
+  const avgXG  = matchData.reduce((s, m) => s + m.xG,  0) / matchData.length
+  const avgXGA = matchData.reduce((s, m) => s + m.xGA, 0) / matchData.length
+  const avgPPDA = matchData.reduce((s, m) => s + m.ppda, 0) / matchData.length
+  const avgProg = matchData.reduce((s, m) => s + m.progPasses, 0) / matchData.length
+
+  return (
+    <div>
+      <SectionHeader title="Analytics" subtitle="StatsBomb Women's API · xG · Pressing Intensity · Progressive Passes" icon="📉" />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="xG per 90 (season)" value={avgXG.toFixed(2)} sub={`WSL avg: ${WSL_AVG_XG} — ${avgXG >= WSL_AVG_XG ? '↑ above avg' : '↓ below avg'}`} color={avgXG >= WSL_AVG_XG ? 'green' : 'amber'} />
+        <StatCard label="xGA per 90 (season)" value={avgXGA.toFixed(2)} sub={`WSL avg: ${WSL_AVG_XGA} — ${avgXGA <= WSL_AVG_XGA ? '↑ better than avg' : '↓ worse than avg'}`} color={avgXGA <= WSL_AVG_XGA ? 'green' : 'red'} />
+        <StatCard label="PPDA (pressing)" value={avgPPDA.toFixed(1)} sub={`WSL avg: ${WSL_AVG_PPDA} — lower = more pressing`} color={avgPPDA <= WSL_AVG_PPDA ? 'green' : 'amber'} />
+        <StatCard label="Progressive Passes" value={Math.round(avgProg)} sub="Per match average" color="blue" />
+      </div>
+
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        {[
+          { id: 'xg',          label: 'xG Timeline',          icon: '⚽' },
+          { id: 'pressing',    label: 'Pressing Intensity',    icon: '🔥' },
+          { id: 'progressive', label: 'Progressive Passes',    icon: '➡️' },
+          { id: 'shotmap',     label: 'Shot Map',              icon: '🎯' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveChart(t.id as typeof activeChart)}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeChart === t.id ? 'border-pink-500 text-pink-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeChart === 'xg' && (() => {
+        const W = 640, H = 220, padL = 36, padR = 16, padT = 20, padB = 40
+        const innerW = W - padL - padR, innerH = H - padT - padB, maxVal = 3.2
+        const stepX = innerW / (matchData.length - 1)
+        const xGPath  = matchData.map((m, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (m.xG  / maxVal) * innerH}`).join(' ')
+        const xGAPath = matchData.map((m, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (m.xGA / maxVal) * innerH}`).join(' ')
+        const wslY = padT + innerH - (WSL_AVG_XG / maxVal) * innerH
+        const wslYA = padT + innerH - (WSL_AVG_XGA / maxVal) * innerH
+        return (
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">xG Per Match — Oakridge Women vs WSL Average</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Expected goals for (pink) and against (purple). Dashed = WSL average.</p>
+              </div>
+              <div className="flex items-center gap-4 text-[10px] flex-shrink-0">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-pink-500 rounded" />xG For</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-purple-500 rounded" />xG Against</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-px inline-block border-t border-dashed border-teal-500" />WSL Avg</span>
+              </div>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="overflow-visible">
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
+              {[0, 0.8, 1.6, 2.4, 3.2].map((v, i) => <text key={i} x={padL - 6} y={padT + innerH - (v / maxVal) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v.toFixed(1)}</text>)}
+              <line x1={padL} x2={W - padR} y1={wslY} y2={wslY} stroke="#0D9488" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
+              <line x1={padL} x2={W - padR} y1={wslYA} y2={wslYA} stroke="#0D9488" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
+              <path d={xGPath} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              {matchData.map((m, i) => <circle key={`f${i}`} cx={padL + i * stepX} cy={padT + innerH - (m.xG / maxVal) * innerH} r="3.5" fill="#EC4899" />)}
+              <path d={xGAPath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              {matchData.map((m, i) => <circle key={`a${i}`} cx={padL + i * stepX} cy={padT + innerH - (m.xGA / maxVal) * innerH} r="3.5" fill="#8B5CF6" />)}
+              {matchData.map((m, i) => <text key={m.match} x={padL + i * stepX} y={H - 6} fontSize="8" fill="#6B7280" textAnchor="middle">{m.match.replace(' W', '').slice(0, 8)}</text>)}
+              {matchData.map((m, i) => <text key={`r${i}`} x={padL + i * stepX} y={padT - 6} fontSize="8" fill={m.result === 'W' ? '#22C55E' : m.result === 'D' ? '#F59E0B' : '#EF4444'} textAnchor="middle" fontWeight="bold">{m.result}</text>)}
+            </svg>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="text-gray-600 border-b border-gray-800">
+                  <th className="text-left pb-2">Match</th><th className="text-center pb-2">H/A</th><th className="text-center pb-2">Result</th><th className="text-center pb-2">xG</th><th className="text-center pb-2">xGA</th><th className="text-center pb-2">xG Diff</th>
+                </tr></thead>
+                <tbody>
+                  {matchData.map((m, i) => {
+                    const diff = m.xG - m.xGA
+                    return (
+                      <tr key={i} className="border-b border-gray-800/40">
+                        <td className="py-1.5 text-gray-300">{m.match}</td>
+                        <td className="py-1.5 text-center text-gray-500">{m.venue}</td>
+                        <td className="py-1.5 text-center"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${m.result === 'W' ? 'bg-green-600/20 text-green-400' : m.result === 'D' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>{m.result} {m.score}</span></td>
+                        <td className="py-1.5 text-center text-pink-400 font-medium">{m.xG.toFixed(2)}</td>
+                        <td className="py-1.5 text-center text-purple-400 font-medium">{m.xGA.toFixed(2)}</td>
+                        <td className={`py-1.5 text-center font-bold ${diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-gray-400'}`}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 pt-3 border-t border-gray-800 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · 2025/26 WSL Season</div>
+          </div>
+        )
+      })()}
+
+      {activeChart === 'pressing' && (() => {
+        const W = 640, H = 200, padL = 40, padR = 16, padT = 20, padB = 40
+        const innerW = W - padL - padR, innerH = H - padT - padB, maxPPDA = 18
+        const barW = (innerW / matchData.length) * 0.6, barGap = innerW / matchData.length
+        return (
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+            <div className="mb-2">
+              <h3 className="text-sm font-bold text-white">Pressing Intensity — PPDA Per Match</h3>
+              <p className="text-xs text-gray-500 mt-0.5">PPDA = Passes Allowed Per Defensive Action. Lower = more intense press. WSL avg: {WSL_AVG_PPDA}. Oakridge avg: {avgPPDA.toFixed(1)}.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[
+                { label: 'Oakridge (season avg)', value: avgPPDA.toFixed(1), color: '#EC4899', note: avgPPDA < WSL_AVG_PPDA ? '↑ More pressing than avg' : '↓ Less pressing than avg' },
+                { label: 'WSL Average', value: String(WSL_AVG_PPDA), color: '#0D9488', note: 'Benchmark' },
+                { label: 'WSL Top 3 avg', value: '7.2', color: '#8B5CF6', note: 'Chelsea, Arsenal, Man City' },
+              ].map(c => (
+                <div key={c.label} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+                  <div className="text-xl font-bold mb-0.5" style={{ color: c.color }}>{c.value}</div>
+                  <div className="text-[10px] text-gray-500">{c.label}</div>
+                  <div className="text-[9px] text-gray-600 mt-0.5">{c.note}</div>
+                </div>
+              ))}
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="overflow-visible">
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + t * innerH} y2={padT + t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
+              {[0, 6, 9, 12, 18].map((v, i) => <text key={i} x={padL - 6} y={padT + (v / maxPPDA) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+              <line x1={padL} x2={W - padR} y1={padT + (WSL_AVG_PPDA / maxPPDA) * innerH} y2={padT + (WSL_AVG_PPDA / maxPPDA) * innerH} stroke="#0D9488" strokeWidth="1.5" strokeDasharray="5 3" />
+              <text x={W - padR + 2} y={padT + (WSL_AVG_PPDA / maxPPDA) * innerH + 3} fontSize="8" fill="#0D9488">avg</text>
+              {matchData.map((m, i) => {
+                const barH = (m.ppda / maxPPDA) * innerH
+                const x = padL + i * barGap + (barGap - barW) / 2
+                const color = m.ppda <= 8 ? '#22C55E' : m.ppda <= 11 ? '#EC4899' : m.ppda <= 14 ? '#F59E0B' : '#EF4444'
+                return (
+                  <g key={i}>
+                    <rect x={x} y={padT + innerH - barH} width={barW} height={barH} fill={color} opacity="0.8" rx="2" />
+                    <text x={x + barW / 2} y={padT + innerH - barH - 4} fontSize="8" fill={color} textAnchor="middle" fontWeight="bold">{m.ppda}</text>
+                    <text x={x + barW / 2} y={H - 6} fontSize="7.5" fill="#6B7280" textAnchor="middle">{m.match.replace(' W', '').slice(0, 7)}</text>
+                    <text x={x + barW / 2} y={H - 16} fontSize="7" fill={m.result === 'W' ? '#22C55E' : m.result === 'D' ? '#F59E0B' : '#EF4444'} textAnchor="middle" fontWeight="bold">{m.result}</text>
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-3">
+                <div className="text-xs font-bold text-green-400 mb-1">Best pressing performances</div>
+                <div className="text-xs text-gray-400">Tottenham W (PPDA 5.2) and Aston Villa W (6.9) — both resulted in wins with high xG.</div>
+              </div>
+              <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-3">
+                <div className="text-xs font-bold text-red-400 mb-1">Worst pressing performances</div>
+                <div className="text-xs text-gray-400">Chelsea A (PPDA 16.4) and Brighton H (14.2) — both losses. Low press allowed opposition to build freely.</div>
+              </div>
+            </div>
+            <div className="mt-3 text-[10px] text-gray-600">Color: 🟢 Elite (&lt;8) · 🩷 Good (8–11) · 🟡 Average (11–14) · 🔴 Low (&gt;14)</div>
+          </div>
+        )
+      })()}
+
+      {activeChart === 'progressive' && (() => {
+        const W = 640, H = 200, padL = 36, padR = 16, padT = 20, padB = 40
+        const innerW = W - padL - padR, innerH = H - padT - padB, maxProg = 56
+        const stepX = innerW / (matchData.length - 1)
+        const progPath = matchData.map((m, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (m.progPasses / maxProg) * innerH}`).join(' ')
+        const areaPath = `${progPath} L ${padL + (matchData.length - 1) * stepX} ${padT + innerH} L ${padL} ${padT + innerH} Z`
+        return (
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">Progressive Passes Per Match</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Passes that move the ball ≥10 yards toward goal. Season avg: {Math.round(avgProg)}/match. WSL avg: 29.</p>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-pink-400">{Math.round(avgProg)}</div>
+                <div className="text-[10px] text-gray-500">season avg</div>
+              </div>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="overflow-visible">
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
+              {[0, 14, 28, 42, 56].map((v, i) => <text key={i} x={padL - 6} y={padT + innerH - (v / maxProg) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+              <line x1={padL} x2={W - padR} y1={padT + innerH - (29 / maxProg) * innerH} y2={padT + innerH - (29 / maxProg) * innerH} stroke="#0D9488" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
+              <path d={areaPath} fill="#EC4899" opacity="0.07" />
+              <path d={progPath} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              {matchData.map((m, i) => {
+                const cx = padL + i * stepX, cy = padT + innerH - (m.progPasses / maxProg) * innerH
+                return (
+                  <g key={i}>
+                    <circle cx={cx} cy={cy} r="3.5" fill="#EC4899" />
+                    <text x={cx} y={cy - 8} fontSize="8" fill="#EC4899" textAnchor="middle">{m.progPasses}</text>
+                    <text x={cx} y={H - 6} fontSize="8" fill="#6B7280" textAnchor="middle">{m.match.replace(' W', '').slice(0, 7)}</text>
+                    <text x={cx} y={H - 16} fontSize="7" fill={m.result === 'W' ? '#22C55E' : m.result === 'D' ? '#F59E0B' : '#EF4444'} textAnchor="middle" fontWeight="bold">{m.result}</text>
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="mt-4 bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
+              <h4 className="text-xs font-bold text-white mb-2">Key Insight — Progressive Passes vs Result</h4>
+              <div className="space-y-1.5">
+                {[
+                  { threshold: '35+ progressive passes', record: '3W 0D 0L', color: 'green' },
+                  { threshold: '25–34 progressive passes', record: '1W 2D 0L', color: 'amber' },
+                  { threshold: 'Under 25 progressive passes', record: '0W 0D 4L', color: 'red' },
+                ].map(r => (
+                  <div key={r.threshold} className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{r.threshold}</span>
+                    <span className={`text-xs font-bold ${r.color === 'green' ? 'text-green-400' : r.color === 'amber' ? 'text-amber-400' : 'text-red-400'}`}>{r.record}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2">Strong correlation: 35+ progressive passes = 100% win rate. Below 25 = 0 wins this season.</p>
+            </div>
+            <div className="mt-3 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · Progressive pass = ≥10 yards toward goal</div>
+          </div>
+        )
+      })()}
+
+      {activeChart === 'shotmap' && (() => {
+        const shots = [
+          { x: 50, y: 8,  xg: 0.42, result: 'goal',  player: 'E. Zhang' },
+          { x: 44, y: 14, xg: 0.18, result: 'saved',  player: 'P. Nair' },
+          { x: 56, y: 14, xg: 0.22, result: 'saved',  player: 'A. Walsh' },
+          { x: 38, y: 20, xg: 0.08, result: 'off target', player: 'L. Whitmore' },
+          { x: 62, y: 22, xg: 0.06, result: 'off target', player: 'J. Osei' },
+          { x: 50, y: 11, xg: 0.35, result: 'goal',   player: 'P. Nair' },
+          { x: 47, y: 18, xg: 0.14, result: 'blocked', player: 'E. Zhang' },
+          { x: 53, y: 16, xg: 0.19, result: 'saved',  player: 'A. Walsh' },
+          { x: 72, y: 28, xg: 0.04, result: 'off target', player: 'L. Whitmore' },
+          { x: 29, y: 30, xg: 0.03, result: 'blocked', player: 'C. Reed' },
+          { x: 50, y: 6,  xg: 0.61, result: 'goal',   player: 'P. Nair' },
+          { x: 58, y: 9,  xg: 0.38, result: 'saved',  player: 'E. Zhang' },
+          { x: 43, y: 24, xg: 0.09, result: 'blocked', player: 'J. Osei' },
+          { x: 65, y: 18, xg: 0.11, result: 'off target', player: 'A. Walsh' },
+          { x: 50, y: 13, xg: 0.28, result: 'goal',   player: 'E. Zhang' },
+        ]
+        const PW = 500, PH = 340
+        const lineColor = 'rgba(255,255,255,0.15)'
+        const sx = (xPct: number) => (xPct / 100) * PW
+        const sy = (yPct: number) => PH - (yPct / 50) * PH
+        const dotColor = (result: string) => result === 'goal' ? '#22C55E' : result === 'saved' ? '#EC4899' : result === 'blocked' ? '#F59E0B' : '#6B7280'
+        const totalXG = shots.reduce((s, sh) => s + sh.xg, 0)
+        const goals = shots.filter(s => s.result === 'goal').length
+        return (
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">Shot Map — Season Aggregate</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{shots.length} shots · {goals} goals · Total xG: {totalXG.toFixed(2)} · Conversion: {((goals / shots.length) * 100).toFixed(0)}%</p>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] flex-shrink-0">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-green-500" />Goal</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-pink-500" />Saved</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-amber-500" />Blocked</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-gray-500" />Off target</span>
+              </div>
+            </div>
+            <svg viewBox={`0 0 ${PW} ${PH}`} width="100%" style={{ maxHeight: 300 }}>
+              <rect width={PW} height={PH} fill="#0a1a0a" rx="4" />
+              <line x1={0} y1={0} x2={PW} y2={0} stroke={lineColor} strokeWidth="1.5" />
+              <line x1={0} y1={0} x2={0} y2={PH} stroke={lineColor} strokeWidth="1.5" />
+              <line x1={PW} y1={0} x2={PW} y2={PH} stroke={lineColor} strokeWidth="1.5" />
+              <line x1={0} y1={PH} x2={PW} y2={PH} stroke={lineColor} strokeWidth="1.5" />
+              {(() => {
+                const paLeft = PW * 0.203, paRight = PW * 0.797, paTop = PH * 0.314
+                return (
+                  <>
+                    <rect x={paLeft} y={paTop} width={paRight - paLeft} height={PH - paTop} fill="none" stroke={lineColor} strokeWidth="1.5" />
+                    <rect x={PW * 0.368} y={PH * 0.882} width={PW * 0.264} height={PH * 0.118} fill="none" stroke={lineColor} strokeWidth="1" />
+                    <rect x={PW * 0.424} y={PH - 8} width={PW * 0.152} height={10} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+                    <circle cx={PW * 0.5} cy={PH * 0.765} r="2" fill={lineColor} />
+                    <path d={`M ${PW*0.316} ${paTop} A ${PW*0.184} ${PW*0.184} 0 0 1 ${PW*0.684} ${paTop}`} fill="none" stroke={lineColor} strokeWidth="1" />
+                  </>
+                )
+              })()}
+              {shots.map((s, i) => {
+                const r = Math.max(5, s.xg * 22)
+                return <circle key={i} cx={sx(s.x)} cy={sy(s.y)} r={r} fill={dotColor(s.result)} opacity={s.result === 'goal' ? 0.9 : 0.55} stroke={s.result === 'goal' ? '#fff' : 'none'} strokeWidth="1.5" />
+              })}
+              <text x={8} y={PH - 8} fontSize="10" fill="rgba(255,255,255,0.3)">← Attacking direction</text>
+            </svg>
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { player: 'P. Nair', shots: 4, goals: 2, xg: 1.03 },
+                { player: 'E. Zhang', shots: 4, goals: 2, xg: 0.94 },
+                { player: 'A. Walsh', shots: 3, goals: 0, xg: 0.46 },
+                { player: 'L. Whitmore', shots: 2, goals: 0, xg: 0.12 },
+              ].map(p => (
+                <div key={p.player} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+                  <div className="text-xs font-bold text-white mb-1">{p.player}</div>
+                  <div className="text-[10px] text-gray-500">{p.shots} shots · {p.goals} goals</div>
+                  <div className="text-[10px] text-pink-400 mt-0.5">xG: {p.xg.toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · Bubble size = xG value</div>
+          </div>
+        )
+      })()}
+    </div>
+  )
+}
+
+// ─── TRANSFERS VIEW ──────────────────────────────────────────────────────────
+const TransfersView = ({ club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState<'tracker' | 'researcher'>('tracker');
+  const [step, setStep] = useState<1|2|3|4>(1);
+  const [position, setPosition] = useState('');
+  const [maxSalary, setMaxSalary] = useState('');
+  const [style, setStyle] = useState('');
+  const [league, setLeague] = useState('WSL');
+  const [results, setResults] = useState<string|null>(null);
+  const [loading, setLoading] = useState(false);
+  const FSR_HEADROOM = club.fsrHeadroom ?? 380000;
+  const fmt2 = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
+
+  const runSearch = async () => {
+    setLoading(true); setResults(null);
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are a women's football transfer analyst for ${club.name}, a ${club.league} club.
+Search criteria: Position: ${position}. Max salary: £${maxSalary}/yr. Style: ${style}. Target leagues: ${league}. FSR headroom: ${fmt2(FSR_HEADROOM)}.
+Generate 5 player profiles. For each: **[Name]** — [Club], [Nationality]. Age, position, est salary, FSR impact, style match (2 sentences), key stats, availability, Wyscout rating (6.8–8.4), recommended action.
+After profiles add **## FSR IMPACT SUMMARY** table and **## RECOMMENDED SIGNING** paragraph.
+Use plausible fictional names — no real WSL players. WSL salary range £28k–£120k. Format with markdown.` }]
+        })
+      });
+      const data = await response.json();
+      setResults(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'No results.');
+      setStep(4);
+    } catch { setResults('Error connecting to AI.'); }
+    setLoading(false);
+  };
+
+  const renderMd = (text: string) => text.split('\n').map((line,i) => {
+    if (line.startsWith('## ')||line.startsWith('**## ')) return <h3 key={i} className="text-sm font-bold text-white mt-6 mb-2 border-b border-gray-800 pb-1">{line.replace(/\*\*?##\s?/g,'')}</h3>;
+    if (line.startsWith('**')&&line.endsWith('**')) return <p key={i} className="text-sm font-bold text-pink-400 mt-4 mb-1">{line.replace(/\*\*/g,'')}</p>;
+    if (line.startsWith('- ')) return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1 ml-2"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ','')}</span></div>;
+    if (line.trim()==='') return <div key={i} className="h-1"/>;
+    return <p key={i} className="text-xs text-gray-300 mb-1 leading-relaxed">{line}</p>;
+  });
+
+  return (
+    <div>
+      <SectionHeader title="Transfers" subtitle="WSL market · FSR-gated · AI Transfer Researcher" icon="🔁" />
+      <div className="flex gap-1 mb-6 border-b border-gray-800">
+        {[{id:'tracker',label:'Transfer Tracker',icon:'📋'},{id:'researcher',label:'AI Transfer Researcher',icon:'🤖'}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id as 'tracker'|'researcher')}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab==='tracker'&&(
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="FSR Headroom" value={fmt2(FSR_HEADROOM)} sub="Available for new signings" color="green" />
+            <StatCard label="Window Status" value="Open" sub="Summer — closes 31 Aug" color="blue" />
+            <StatCard label="Targets Identified" value="6" sub="3 priority · 3 watchlist" color="pink" />
+            <StatCard label="Outgoing Risk" value="2" sub="Contract expiries this window" color="amber" />
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between"><h3 className="text-sm font-bold text-white">Incoming Targets</h3><span className="text-[10px] text-gray-500">Summer 2026</span></div>
+            <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th><th className="text-left p-3">Club</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Est. Salary</th><th className="text-left p-3">FSR Impact</th><th className="text-left p-3">Priority</th><th className="text-left p-3">Status</th>
+            </tr></thead><tbody>
+              {[
+                {player:'Lena Müller',club:'Hoffenheim',pos:'LB',salary:62000,priority:'High',status:'Approach made',sc:'pink'},
+                {player:'Chloe Dubois',club:'D1 Arkema',pos:'FW',salary:78000,priority:'High',status:'Scouting',sc:'blue'},
+                {player:'Amara Diallo',club:'Free agent',pos:'CM',salary:45000,priority:'High',status:'Contract talks',sc:'green'},
+                {player:'Rosa Lindqvist',club:'Rosengård (SWE)',pos:'CB',salary:55000,priority:'Medium',status:'Watchlist',sc:'gray'},
+                {player:'Yuki Tanaka',club:'INAC Kobe',pos:'AM',salary:48000,priority:'Medium',status:'Watchlist',sc:'gray'},
+                {player:'Kezia Okafor',club:'NWSL Portland',pos:'FW',salary:92000,priority:'Low',status:'Monitor',sc:'gray'},
+              ].map((r,i)=>{
+                const ha=FSR_HEADROOM-r.salary;const hc=ha>200000?'text-green-400':ha>80000?'text-amber-400':'text-red-400';
+                const pc=r.priority==='High'?'bg-pink-600/20 text-pink-400':r.priority==='Medium'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400';
+                const stc=r.sc==='pink'?'bg-pink-600/20 text-pink-400':r.sc==='green'?'bg-green-600/20 text-green-400':r.sc==='blue'?'bg-blue-600/20 text-blue-400':'bg-gray-800 text-gray-500';
+                return<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.player}</td><td className="p-3 text-gray-400 text-xs">{r.club}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">{r.pos}</span></td><td className="p-3 text-gray-300 text-xs">{fmt2(r.salary)}/yr</td><td className={`p-3 text-xs font-medium ${hc}`}>{fmt2(ha)} left</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${pc}`}>{r.priority}</span></td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${stc}`}>{r.status}</span></td></tr>;
+              })}
+            </tbody></table></div>
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Outgoing Risk — Contract Expiries</h3></div>
+            <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Ends</th><th className="text-left p-3">Salary</th><th className="text-left p-3">Status</th><th className="text-left p-3">Risk</th></tr></thead><tbody>
+              {[{n:'Lucy Whitmore',p:'CM',e:'Jun 2026',s:'£55k',st:'Offer sent — awaiting',r:'Medium'},{n:'Jade Osei',p:'LB',e:'Jun 2026',s:'£48k',st:'Negotiating — agent involved',r:'High'},{n:'Tilly Brooks',p:'FW',e:'Jun 2026',s:'£38k',st:'Below WSL min — review',r:'Low'}].map((r,i)=>{
+                const rc=r.r==='High'?'bg-red-600/20 text-red-400':r.r==='Medium'?'bg-amber-600/20 text-amber-400':'bg-green-600/20 text-green-400';
+                return<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.n}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">{r.p}</span></td><td className="p-3 text-gray-400 text-xs">{r.e}</td><td className="p-3 text-gray-300 text-xs">{r.s}/yr</td><td className="p-3 text-gray-400 text-xs">{r.st}</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${rc}`}>{r.r}</span></td></tr>;
+              })}
+            </tbody></table>
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-4">Window Timeline</h3>
+            <div className="relative"><div className="absolute left-3 top-0 bottom-0 w-px bg-gray-800"/>
+              {[{d:'1 Jun 2026',l:'Summer window opens',c:'blue'},{d:'30 Jun 2026',l:'Whitmore + Osei contracts end',c:'amber'},{d:'15 Jul 2026',l:'Pre-season begins — squad must be set',c:'pink'},{d:'31 Aug 2026',l:'Window closes — deadline day',c:'red'}].map((t,i)=>(
+                <div key={i} className="flex items-start gap-4 mb-4 pl-8 relative">
+                  <div className={`absolute left-1.5 top-1 w-3 h-3 rounded-full border-2 ${t.c==='blue'?'border-blue-500 bg-blue-500/20':t.c==='amber'?'border-amber-500 bg-amber-500/20':t.c==='red'?'border-red-500 bg-red-500/20':'border-pink-500 bg-pink-500/20'}`}/>
+                  <div><div className="text-xs font-semibold text-white">{t.l}</div><div className="text-[10px] text-gray-500 mt-0.5">{t.d}</div></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab==='researcher'&&(
+        <div className="space-y-6">
+          <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 flex items-center justify-between">
+            <div><p className="text-sm font-bold text-pink-400">FSR Headroom: {fmt2(FSR_HEADROOM)}</p><p className="text-xs text-gray-400 mt-0.5">All AI recommendations filtered to your FSR salary cap.</p></div>
+            <span className="text-2xl">🤖</span>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            {[1,2,3,4].map(s=><div key={s} className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step>=s?'bg-pink-600 text-white':'bg-gray-800 text-gray-600'}`}>{s}</div>{s<4&&<div className={`h-px w-8 ${step>s?'bg-pink-600':'bg-gray-800'}`}/>}</div>)}
+            <span className="text-xs text-gray-500 ml-2">{step===1?'Position':step===2?'Budget & League':step===3?'Playing Style':'Results'}</span>
+          </div>
+          {step===1&&(
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
+              <h3 className="text-sm font-bold text-white mb-1">Step 1 — Position</h3><p className="text-xs text-gray-500 mb-4">Select the primary position.</p>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">{['GK','CB','LB','RB','CM','DM','AM','LW','RW','FW','SS','Any'].map(p=><button key={p} onClick={()=>setPosition(p)} className={`py-2 rounded-lg text-xs font-semibold ${position===p?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>)}</div>
+              <button onClick={()=>{if(position)setStep(2)}} disabled={!position} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button>
+            </div>
+          )}
+          {step===2&&(
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
+              <h3 className="text-sm font-bold text-white mb-1">Step 2 — Budget &amp; League</h3><p className="text-xs text-gray-500 mb-4">FSR headroom: {fmt2(FSR_HEADROOM)}</p>
+              <div className="space-y-4">
+                <div><label className="text-xs text-gray-400 mb-1 block">Max annual salary (£)</label><input type="number" value={maxSalary} onChange={e=>setMaxSalary(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"/>{maxSalary&&Number(maxSalary)>FSR_HEADROOM&&<p className="text-xs text-red-400 mt-1">⚠ Exceeds FSR headroom</p>}</div>
+                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL',"Women's Championship",'NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
+              </div>
+              <div className="flex gap-2 mt-5"><button onClick={()=>setStep(1)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={()=>{if(maxSalary&&league)setStep(3)}} disabled={!maxSalary||!league} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button></div>
+            </div>
+          )}
+          {step===3&&(
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
+              <h3 className="text-sm font-bold text-white mb-1">Step 3 — Playing Style</h3><p className="text-xs text-gray-500 mb-4">Claude will match this against available players.</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">{['High press — engine','Ball-playing — technical','Physical — aerial','Pace — in behind','Creative — final third','Defensive — positional','Box-to-box — hybrid','Set piece specialist','Leadership — experienced'].map(s2=><button key={s2} onClick={()=>setStyle(s2)} className={`py-2 px-3 rounded-lg text-xs text-left font-medium ${style===s2?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{s2}</button>)}</div>
+              <div className="mb-4"><label className="text-xs text-gray-400 mb-1 block">Or describe in your own words</label><input type="text" value={style} onChange={e=>setStyle(e.target.value)} placeholder="e.g. Left-footed CB who can carry ball" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white w-full focus:outline-none focus:border-pink-500"/></div>
+              <div className="flex gap-2"><button onClick={()=>setStep(2)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={runSearch} disabled={!style||loading} className="px-6 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white flex items-center gap-2">{loading?<><span className="animate-spin inline-block">⟳</span> Searching...</>:'🤖 Find Players →'}</button></div>
+            </div>
+          )}
+          {step===4&&results&&(
+            <div className="space-y-4">
+              <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">AI Results</span><span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">{position} · {fmt2(Number(maxSalary))}/yr max · {league}</span></div><button onClick={()=>{setStep(1);setPosition('');setMaxSalary('');setStyle('');setLeague('WSL');setResults(null)}} className="text-xs text-gray-500 hover:text-gray-300">↺ New search</button></div>
+              <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4"><span className="text-pink-400 font-bold text-xs">🤖 Lumio AI Transfer Researcher</span><span className="text-[10px] text-gray-600">· FSR-filtered · {club.league}</span></div>
+                <div>{renderMd(results)}</div>
+                <div className="mt-5 pt-4 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · WSL database · FSR headroom: {fmt2(FSR_HEADROOM)}</span><button className="text-xs text-pink-400 hover:text-pink-300">Export shortlist →</button></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── AI HALFTIME BRIEF VIEW ─────────────────────────────────────────────────
+const AIHalftimeBriefView = () => {
+  const [brief, setBrief] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const matchContext = { opponent: 'Brighton Women', score: '0–1', minute: 45, venue: 'Home', formation: '4-3-3' }
+
+  const generateBrief = async () => {
+    setLoading(true)
+    setBrief(null)
+    try {
+      const prompt = `You are the AI performance analyst for Oakridge Women FC women's football club. Generate a structured halftime brief for the coaching staff.
+
+Match context:
+- Opponent: ${matchContext.opponent}
+- Score: ${matchContext.score} (we are trailing)
+- Venue: ${matchContext.venue}
+- Formation: ${matchContext.formation}
+
+GPS Data (first half):
+- High intensity runs: Us 38 vs Them 52
+- Avg speed: Us 6.8 km/h vs Them 7.2 km/h
+- Distance covered: Us 42.1km vs Them 45.3km
+- Sprint count: Us 14 vs Them 22
+
+StatsBomb xG:
+- xG: Us 0.31 vs Them 0.87
+- Shots: Us 2 vs Them 6
+- Progressive passes: Us 18 vs Them 31
+- PPDA (pressing intensity): Us 14.2 vs Them 8.1 (lower = more pressing)
+
+WELFARE FLAGS (confidential — coaching staff only):
+- Cycle flags: Emily Zhang (Luteal, load cap 60%), Priya Nair (Ovulatory, ligament laxity)
+- ACL event detection: Emily Zhang exceeded high-deceleration threshold 3 times
+- Mental health: Charlotte Reed flagged pre-match anxiety
+
+Available substitutes: Lucy Whitmore, Jade Osei, Abbi Walsh, Tilly Brooks, Mia Ford
+Yellow cards: Priya Nair
+
+Generate the brief in exactly this structure:
+
+## 🔴 SITUATION
+One paragraph summary of match state and urgency.
+
+## ⚡ PHYSICAL
+Bullet points on GPS findings and what they mean tactically. Flag Emily Zhang's ACL deceleration events clearly.
+
+## 🎯 TACTICAL
+3–4 specific adjustments based on xG and pressing data. Be direct and actionable.
+
+## ❤️ WELFARE (Confidential)
+List the cycle and mental health flags with specific recommended actions. Be clinical and respectful.
+
+## 🔄 SUBSTITUTION RECOMMENDATIONS
+Recommend 1–2 substitutions with reasoning, factoring in welfare flags and yellow cards.
+
+## 💬 TEAM TALK
+One short, direct motivational paragraph for the manager to adapt.
+
+Keep the tone professional, concise, and match-ready. This will be read in a 15-minute halftime window.`
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      const data = await response.json()
+      const text = data.content?.map((b: { type: string; text?: string }) => b.type === 'text' ? b.text : '').join('') || ''
+      setBrief(text)
+    } catch {
+      setBrief('Error generating brief. Check API connection.')
+    }
+    setLoading(false)
+  }
+
+  const renderBrief = (text: string) => {
+    return text.split('\n').map((line, i) => {
+      if (line.startsWith('## ')) {
+        return <h3 key={i} className="text-sm font-bold text-white mt-5 mb-2 flex items-center gap-2">{line.replace('## ', '')}</h3>
+      }
+      if (line.startsWith('- ')) {
+        return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ', '')}</span></div>
+      }
+      if (line.trim() === '') return <div key={i} className="h-1" />
+      return <p key={i} className="text-xs text-gray-300 mb-2 leading-relaxed">{line}</p>
+    })
+  }
+
+  return (
+    <div>
+      <SectionHeader title="AI Halftime Brief" subtitle="GPS + StatsBomb xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <StatCard label="Opponent" value="Brighton W" color="blue" />
+        <StatCard label="Score" value="0 – 1" sub="Trailing" color="red" />
+        <StatCard label="xG" value="0.31 – 0.87" sub="Us vs Them" color="amber" />
+        <StatCard label="ACL Events" value="3" sub="Emily Zhang" color="red" />
+        <StatCard label="Welfare Flags" value="3" sub="Cycle + MH" color="pink" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
+          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">GPS — First Half</h3>
+          {[
+            { label: 'High intensity runs', us: 38, them: 52 },
+            { label: 'Sprint count', us: 14, them: 22 },
+            { label: 'Distance (km)', us: 42.1, them: 45.3 },
+          ].map(r => (
+            <div key={r.label} className="mb-2">
+              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
+              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-pink-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
+          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">StatsBomb xG</h3>
+          {[
+            { label: 'xG', us: 0.31, them: 0.87 },
+            { label: 'Shots', us: 2, them: 6 },
+            { label: 'Prog. passes', us: 18, them: 31 },
+          ].map(r => (
+            <div key={r.label} className="mb-2">
+              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
+              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-purple-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-red-600/30 rounded-xl p-4">
+          <h3 className="text-xs font-bold text-red-400 mb-3 uppercase tracking-wider">🔴 Welfare Flags</h3>
+          <div className="space-y-2">
+            <div className="rounded p-2 bg-red-600/10 border border-red-600/20"><div className="text-[10px] font-bold text-red-400">ACL EVENT DETECTED</div><div className="text-[10px] text-gray-400 mt-0.5">Emily Zhang — 3× high-decel threshold exceeded</div></div>
+            <div className="rounded p-2 bg-amber-600/10 border border-amber-600/20"><div className="text-[10px] font-bold text-amber-400">CYCLE FLAG</div><div className="text-[10px] text-gray-400 mt-0.5">Luteal (Zhang) + Ovulatory (Nair)</div></div>
+            <div className="rounded p-2 bg-blue-600/10 border border-blue-600/20"><div className="text-[10px] font-bold text-blue-400">MENTAL HEALTH</div><div className="text-[10px] text-gray-400 mt-0.5">Charlotte Reed — pre-match anxiety</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <button
+          onClick={generateBrief}
+          disabled={loading}
+          className="px-6 py-3 rounded-xl text-sm font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-pink-900/40 disabled:text-pink-800 text-white transition-all flex items-center gap-2"
+        >
+          {loading ? (
+            <><span className="animate-spin">⟳</span> Generating Halftime Brief...</>
+          ) : (
+            <><span>🤖</span> Generate AI Halftime Brief</>
+          )}
+        </button>
+        {!brief && !loading && (
+          <p className="text-xs text-gray-500 mt-2">Combines GPS + xG + ACL events + cycle welfare flags → structured coaching brief in seconds.</p>
+        )}
+      </div>
+
+      {brief && (
+        <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-pink-400 font-bold text-sm">🤖 Lumio AI Brief</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">CONFIDENTIAL — Coaching Staff Only</span>
+            </div>
+            <button onClick={generateBrief} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button>
+          </div>
+          <div className="divide-y divide-gray-800/50">
+            {renderBrief(brief)}
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+            <span className="text-[10px] text-gray-600">Generated by Claude · Lumio Women&apos;s FC · Halftime {matchContext.minute}&apos;</span>
+            <button className="text-xs text-pink-400 hover:text-pink-300">Print for dressing room →</button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 bg-pink-600/10 border border-pink-600/30 rounded-xl p-4">
+        <p className="text-xs text-pink-300"><strong>Why this is world-leading:</strong> No other women&apos;s football platform combines GPS load data, StatsBomb xG, real-time ACL deceleration event detection, and menstrual cycle phase welfare flags into a single AI-generated coaching brief. This is unique to Lumio Women&apos;s FC.</p>
+      </div>
+    </div>
+  )
+}
+
 // ─── MATCH PREPARATION VIEW ─────────────────────────────────────────────────
 const MatchPreparationView = () => {
   const [checklist, setChecklist] = useState<Record<string, boolean>>({
@@ -1783,19 +3582,29 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
       case 'fsr':         return <FSRDashboardView club={club} />
       case 'welfare':     return <WelfareView />
       case 'briefing':    return <MorningBriefingView club={club} />
+      case 'insights':    return <InsightsView club={club} />
       case 'salary':      return <SalaryComplianceView />
       case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
+      case 'cycle':       return <CycleTrackingView />
       case 'maternity':   return <MaternityTrackerView />
       case 'mental':      return <MentalHealthView />
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
       case 'tactics':     return <TacticsSetPiecesView />
       case 'match':       return <MatchPreparationView />
+      case 'transfers':   return <TransfersView club={club} />
+      case 'analytics':   return <AnalyticsView club={club} />
+      case 'scouting':    return <ScoutingView club={club} />
+      case 'academy':     return <AcademyView club={club} />
+      case 'halftime':    return <AIHalftimeBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
       case 'financial':   return <FinancialPlanningView club={club} />
+      case 'media':       return <MediaPRView club={club} />
+      case 'social':      return <SocialMediaView club={club} />
+      case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <StaffDirectoryView />
       case 'gps':         return <GPSPlayerDataView />
       case 'medical':     return <MedicalRecordsView />

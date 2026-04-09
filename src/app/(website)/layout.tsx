@@ -9,18 +9,18 @@ import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',  href: '/sports-product' },
-  { label: 'Football', href: '/football' },
-  { label: "Women's FC", href: '/womens-football' },
-  { label: 'Rugby',    href: '/rugby' },
-  { label: 'Tennis',   href: '/tennis' },
-  { label: 'Golf',     href: '/golf' },
-  { label: 'Darts',    href: '/darts' },
-  { label: 'Boxing',   href: '/boxing' },
-  { label: 'Cricket',  href: '/cricket' },
-  { label: 'Pricing',  href: '/pricing-sports' },
-  { label: 'About',    href: '/about' },
-  { label: 'Blog',     href: '/blog' },
+  { label: 'Product',    href: '/product' },
+  { label: 'Football',   href: '/football' },
+  { label: 'Womens FC',  href: '/womens' },
+  { label: 'Rugby',      href: '/rugby' },
+  { label: 'Cricket',    href: '/cricket' },
+  { label: 'Tennis',     href: '/tennis' },
+  { label: 'Golf',       href: '/golf' },
+  { label: 'Boxing',     href: '/boxing' },
+  { label: 'Darts',      href: '/darts' },
+  { label: 'Pricing',    href: '/pricing' },
+  { label: 'About',      href: '/about' },
+  { label: 'Blog',       href: '/blog' },
 ]
 
 const BUSINESS_NAV: { label: string; href: string; badge?: string }[] = [
@@ -194,8 +194,8 @@ function Nav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={isSports ? '/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '56px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+          <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+            style={{ height: isSports ? '112px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {!isSports && !isSchools && (
             <span style={{
               fontSize: 10,
@@ -214,10 +214,10 @@ function Nav() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className={`hidden md:flex items-center ${isSports ? 'gap-0' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 1, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 1, overflow: 'hidden' }}>
+        <nav className={`hidden md:flex items-center ${isSports ? 'gap-2' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 1, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 1, overflow: 'hidden' }}>
           {navLinks.map(l => (
             <Link key={l.label} href={l.href}
-              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-xs font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
+              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
               style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
@@ -593,8 +593,8 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={isSports ? '/Lumio_Sports_logo.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
-              style={{ width: '100px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
+            <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+              style={{ width: '200px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               Your business, fully connected.
             </p>
