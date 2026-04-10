@@ -3563,6 +3563,71 @@ function PreSeasonView({ club }: { club: RugbyClub }) {
   const [aiHighlights, setAiHighlights] = useState('')
   const hasGenerated = useRef(false)
 
+  // ── TRAINING CAMP STATE ──
+  const CAMP_KEY = 'lumio_rugby_training_camp'
+  const [showCampModal, setShowCampModal] = useState(false)
+  const [trainingCamp, setTrainingCamp] = useState<{name:string;departure:string;returnDate:string;destination:string;squadSize:number;budget:number;activatedAt:string}|null>(() => {
+    try { const s = localStorage.getItem(CAMP_KEY); return s ? JSON.parse(s) : null } catch { return null }
+  })
+  const [campSchedule, setCampSchedule] = useState<Array<{day:number;date:string;am:string;pm:string;eve:string}>>(() => {
+    try { const s = localStorage.getItem(CAMP_KEY + '_schedule'); return s ? JSON.parse(s) : [] } catch { return [] }
+  })
+  const [kitChecklist, setKitChecklist] = useState<Record<string,boolean>>(() => {
+    try { const s = localStorage.getItem(CAMP_KEY + '_kit'); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+  const [campBudget, setCampBudget] = useState<Record<string,number>>(() => {
+    try { const s = localStorage.getItem(CAMP_KEY + '_budget'); return s ? JSON.parse(s) : {flights:0,accommodation:0,meals:0,facility:0,misc:0} } catch { return {flights:0,accommodation:0,meals:0,facility:0,misc:0} }
+  })
+  const [campContent, setCampContent] = useState<Record<string,boolean>>(() => {
+    try { const s = localStorage.getItem(CAMP_KEY + '_content'); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+  const [venueResults, setVenueResults] = useState<string|null>(null)
+  const [venueLoading, setVenueLoading] = useState(false)
+  const [contentIdeas, setContentIdeas] = useState<string|null>(null)
+  const [contentLoading, setContentLoading] = useState(false)
+  const [expandedSections, setExpandedSections] = useState<Record<string,boolean>>({venue:true,schedule:true,kit:false,budget:false,content:false})
+
+  // Training camp form state
+  const [campForm, setCampForm] = useState({name:'',departure:'',returnDate:'',destination:'',squadSize:35,budget:25000})
+
+  const toggleSection = (id: string) => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }))
+
+  const activateTrainingCamp = () => {
+    if (!campForm.name || !campForm.departure || !campForm.returnDate || !campForm.destination) return
+    const camp = { ...campForm, activatedAt: new Date().toISOString() }
+    localStorage.setItem(CAMP_KEY, JSON.stringify(camp))
+    setTrainingCamp(camp)
+    setShowCampModal(false)
+    // Generate schedule
+    const dep = new Date(campForm.departure)
+    const ret = new Date(campForm.returnDate)
+    const days = Math.max(1, Math.ceil((ret.getTime() - dep.getTime()) / 86400000)) + 1
+    const amDefaults = ["Fitness testing", "Scrums & lineouts", "Contact drills", "Double session", "Match simulation"]
+    const pmDefaults = ["Recovery & gym", "Video analysis", "Skills & handling", "Rest", "Friendly match"]
+    const sched = Array.from({length: days}, (_, i) => {
+      const d = new Date(dep); d.setDate(d.getDate() + i)
+      return { day: i+1, date: d.toISOString().split('T')[0], am: amDefaults[i % amDefaults.length], pm: pmDefaults[i % pmDefaults.length], eve: i === 0 ? 'Team dinner' : i === days-1 ? 'Awards night' : 'Free time' }
+    })
+    setCampSchedule(sched)
+    localStorage.setItem(CAMP_KEY + '_schedule', JSON.stringify(sched))
+  }
+
+  const findVenues = () => {
+    if (!trainingCamp) return
+    setVenueLoading(true)
+    fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 rugby training camp venues near ${trainingCamp.destination} for a squad of ${trainingCamp.squadSize}. Requirements: Full size grass pitch, gym, pool, video analysis room, medical room. For each venue give: name, location, facilities, estimated cost per night, and a one-line verdict. Format as numbered list.` }] })
+    }).then(r => r.json()).then(d => setVenueResults(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setVenueResults('Unable to generate.')).finally(() => setVenueLoading(false))
+  }
+
+  const generateContentIdeas = () => {
+    if (!trainingCamp) return
+    setContentLoading(true)
+    fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 social media content ideas for a rugby team's training camp in ${trainingCamp.destination}. Include: behind-the-scenes, player challenges, sponsor integration opportunities, fan engagement, and match-day build-up. One line each with emoji.` }] })
+    }).then(r => r.json()).then(d => setContentIdeas(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setContentIdeas('Unable to generate.')).finally(() => setContentLoading(false))
+  }
+
   // Load from localStorage
   useEffect(() => {
     try {
@@ -3915,6 +3980,202 @@ function PreSeasonView({ club }: { club: RugbyClub }) {
           ))}
         </div>
       </div>
+
+      {/* Training Camp */}
+      {!trainingCamp ? (
+        <div className="rounded-2xl p-5" style={{ backgroundColor: '#0F1015', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🏕️</span>
+              <span className="text-sm font-bold text-white">Training Camp</span>
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#F59E0B' }}>NEW</span>
+            </div>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Plan your squad&apos;s away camp — venue, schedule, budget and content all in one place.</p>
+          <button onClick={() => setShowCampModal(true)} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#F59E0B' }}>Schedule Training Camp →</button>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-5 space-y-4" style={{ backgroundColor: '#0F1015', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🏕️</span>
+              <span className="text-sm font-bold text-white">Training Camp — {trainingCamp.name}</span>
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#22C55E' }}>ACTIVE</span>
+            </div>
+            <button onClick={() => { localStorage.removeItem(CAMP_KEY); localStorage.removeItem(CAMP_KEY+'_schedule'); localStorage.removeItem(CAMP_KEY+'_kit'); localStorage.removeItem(CAMP_KEY+'_budget'); localStorage.removeItem(CAMP_KEY+'_content'); setTrainingCamp(null); setCampSchedule([]); setKitChecklist({}); setCampBudget({flights:0,accommodation:0,meals:0,facility:0,misc:0}); setCampContent({}); setVenueResults(null); setContentIdeas(null) }}
+              className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Cancel Camp</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>Destination</div><div className="text-xs font-bold text-white">{trainingCamp.destination}</div></div>
+            <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>Departure</div><div className="text-xs font-bold text-white">{trainingCamp.departure}</div></div>
+            <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>Return</div><div className="text-xs font-bold text-white">{trainingCamp.returnDate}</div></div>
+            <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>Budget</div><div className="text-xs font-bold text-white">£{trainingCamp.budget.toLocaleString()}</div></div>
+          </div>
+
+          {/* Section 1 — Venue Finder AI */}
+          <div style={{ borderTop: '1px solid #1F2937' }}>
+            <button onClick={() => toggleSection('venue')} className="flex items-center justify-between w-full py-3">
+              <span className="text-sm font-bold text-white">🤖 Venue Finder AI</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{expandedSections.venue ? '▾' : '▸'}</span>
+            </button>
+            {expandedSections.venue && (
+              <div className="space-y-3 pb-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><div className="text-[10px] mb-1" style={{ color: '#6B7280' }}>Destination</div><input readOnly value={trainingCamp.destination} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+                  <div><div className="text-[10px] mb-1" style={{ color: '#6B7280' }}>Squad Size</div><input readOnly value={trainingCamp.squadSize} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+                </div>
+                <div><div className="text-[10px] mb-1" style={{ color: '#6B7280' }}>Requirements</div><input readOnly value="Full size grass pitch, gym, pool, video analysis room, medical room" className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+                <button onClick={findVenues} disabled={venueLoading} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#3B82F6' }}>{venueLoading ? 'Searching...' : 'Find Venues →'}</button>
+                {venueResults && <div className="rounded-lg p-3 text-xs leading-relaxed whitespace-pre-line" style={{ backgroundColor: '#111318', color: '#D1D5DB', border: '1px solid #1F2937' }}>{venueResults}</div>}
+              </div>
+            )}
+          </div>
+
+          {/* Section 2 — Camp Schedule */}
+          <div style={{ borderTop: '1px solid #1F2937' }}>
+            <button onClick={() => toggleSection('schedule')} className="flex items-center justify-between w-full py-3">
+              <span className="text-sm font-bold text-white">📅 Camp Schedule</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{expandedSections.schedule ? '▾' : '▸'}</span>
+            </button>
+            {expandedSections.schedule && (
+              <div className="space-y-2 pb-3">
+                {campSchedule.map((day, i) => (
+                  <div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-white">Day {day.day}</span>
+                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{day.date}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div><div className="text-[9px] mb-1" style={{ color: '#6B7280' }}>AM</div><input value={day.am} onChange={e => { const next = [...campSchedule]; next[i] = {...next[i], am: e.target.value}; setCampSchedule(next); localStorage.setItem(CAMP_KEY+'_schedule', JSON.stringify(next)) }} className="w-full px-2 py-1.5 rounded text-[10px] text-white" style={{ backgroundColor: '#0D0F17', border: '1px solid #374151' }} /></div>
+                      <div><div className="text-[9px] mb-1" style={{ color: '#6B7280' }}>PM</div><input value={day.pm} onChange={e => { const next = [...campSchedule]; next[i] = {...next[i], pm: e.target.value}; setCampSchedule(next); localStorage.setItem(CAMP_KEY+'_schedule', JSON.stringify(next)) }} className="w-full px-2 py-1.5 rounded text-[10px] text-white" style={{ backgroundColor: '#0D0F17', border: '1px solid #374151' }} /></div>
+                      <div><div className="text-[9px] mb-1" style={{ color: '#6B7280' }}>Evening</div><input value={day.eve} onChange={e => { const next = [...campSchedule]; next[i] = {...next[i], eve: e.target.value}; setCampSchedule(next); localStorage.setItem(CAMP_KEY+'_schedule', JSON.stringify(next)) }} className="w-full px-2 py-1.5 rounded text-[10px] text-white" style={{ backgroundColor: '#0D0F17', border: '1px solid #374151' }} /></div>
+                    </div>
+                  </div>
+                ))}
+                {campSchedule.length === 0 && <p className="text-xs" style={{ color: '#6B7280' }}>No schedule generated yet.</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Section 3 — Kit & Equipment Checklist */}
+          <div style={{ borderTop: '1px solid #1F2937' }}>
+            <button onClick={() => toggleSection('kit')} className="flex items-center justify-between w-full py-3">
+              <span className="text-sm font-bold text-white">🎒 Kit & Equipment Checklist</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{expandedSections.kit ? '▾' : '▸'}</span>
+            </button>
+            {expandedSections.kit && (() => {
+              const kitItems = ['Training jerseys','Shorts & socks','Boots (FG + SG)','GPS vests','Contact pads','Tackle shields','Cones & poles','Water bottles']
+              const medItems = ['First aid kit','Ice machine','Strapping tape','Physio table','Resistance bands','Foam rollers','AED','Medication box']
+              const allItems = [...kitItems, ...medItems]
+              const checked = allItems.filter(item => kitChecklist[item]).length
+              return (
+                <div className="space-y-3 pb-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-2 rounded-full transition-all" style={{ width: `${(checked/16)*100}%`, backgroundColor: checked === 16 ? '#22C55E' : '#F59E0B' }} /></div>
+                    <span className="text-xs font-bold" style={{ color: checked === 16 ? '#22C55E' : '#F59E0B' }}>{checked}/16</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-[10px] font-bold mb-2" style={{ color: '#9CA3AF' }}>KIT</div>
+                      {kitItems.map(item => (
+                        <button key={item} onClick={() => { const next = {...kitChecklist, [item]: !kitChecklist[item]}; setKitChecklist(next); localStorage.setItem(CAMP_KEY+'_kit', JSON.stringify(next)) }}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-[10px] mb-1" style={{ color: kitChecklist[item] ? '#22C55E' : '#9CA3AF' }}>
+                          <span>{kitChecklist[item] ? '✅' : '⬜'}</span><span style={{ textDecoration: kitChecklist[item] ? 'line-through' : 'none' }}>{item}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold mb-2" style={{ color: '#9CA3AF' }}>MEDICAL</div>
+                      {medItems.map(item => (
+                        <button key={item} onClick={() => { const next = {...kitChecklist, [item]: !kitChecklist[item]}; setKitChecklist(next); localStorage.setItem(CAMP_KEY+'_kit', JSON.stringify(next)) }}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-[10px] mb-1" style={{ color: kitChecklist[item] ? '#22C55E' : '#9CA3AF' }}>
+                          <span>{kitChecklist[item] ? '✅' : '⬜'}</span><span style={{ textDecoration: kitChecklist[item] ? 'line-through' : 'none' }}>{item}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* Section 4 — Camp Budget */}
+          <div style={{ borderTop: '1px solid #1F2937' }}>
+            <button onClick={() => toggleSection('budget')} className="flex items-center justify-between w-full py-3">
+              <span className="text-sm font-bold text-white">💰 Camp Budget</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{expandedSections.budget ? '▾' : '▸'}</span>
+            </button>
+            {expandedSections.budget && (() => {
+              const items = [{key:'flights',label:'Flights'},{key:'accommodation',label:'Accommodation'},{key:'meals',label:'Meals'},{key:'facility',label:'Facility hire'},{key:'misc',label:'Misc'}]
+              const total = Object.values(campBudget).reduce((a,b) => a+b, 0)
+              const overBudget = total > trainingCamp.budget
+              return (
+                <div className="space-y-3 pb-3">
+                  {items.map(item => (
+                    <div key={item.key} className="flex items-center gap-3">
+                      <span className="text-xs w-28" style={{ color: '#9CA3AF' }}>{item.label}</span>
+                      <input type="number" value={campBudget[item.key] || 0} onChange={e => { const next = {...campBudget, [item.key]: Number(e.target.value)}; setCampBudget(next); localStorage.setItem(CAMP_KEY+'_budget', JSON.stringify(next)) }}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs text-white text-right" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid #1F2937' }}>
+                    <span className="text-xs font-bold text-white">Total</span>
+                    <span className="text-sm font-black" style={{ color: overBudget ? '#EF4444' : '#22C55E' }}>£{total.toLocaleString()} <span className="text-[10px] font-normal" style={{ color: '#6B7280' }}>/ £{trainingCamp.budget.toLocaleString()}</span></span>
+                  </div>
+                  {overBudget && <div className="text-[10px] px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>Over budget by £{(total - trainingCamp.budget).toLocaleString()}</div>}
+                </div>
+              )
+            })()}
+          </div>
+
+          {/* Section 5 — Content & Sponsor Planner */}
+          <div style={{ borderTop: '1px solid #1F2937' }}>
+            <button onClick={() => toggleSection('content')} className="flex items-center justify-between w-full py-3">
+              <span className="text-sm font-bold text-white">📸 Content & Sponsor Planner</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{expandedSections.content ? '▾' : '▸'}</span>
+            </button>
+            {expandedSections.content && (() => {
+              const contentSlots = ['Behind-the-scenes training reel','Player challenge video','Sponsor integration post','Fan Q&A / live session','Match-day build-up content']
+              return (
+                <div className="space-y-3 pb-3">
+                  {contentSlots.map(slot => (
+                    <button key={slot} onClick={() => { const next = {...campContent, [slot]: !campContent[slot]}; setCampContent(next); localStorage.setItem(CAMP_KEY+'_content', JSON.stringify(next)) }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left" style={{ backgroundColor: campContent[slot] ? 'rgba(34,197,94,0.08)' : '#111318', border: `1px solid ${campContent[slot] ? 'rgba(34,197,94,0.2)' : '#1F2937'}` }}>
+                      <span className="text-sm">{campContent[slot] ? '✅' : '⬜'}</span>
+                      <span className="text-xs" style={{ color: campContent[slot] ? '#22C55E' : '#9CA3AF', textDecoration: campContent[slot] ? 'line-through' : 'none' }}>{slot}</span>
+                    </button>
+                  ))}
+                  <button onClick={generateContentIdeas} disabled={contentLoading} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#8B5CF6' }}>{contentLoading ? 'Generating...' : 'Generate Content Ideas AI →'}</button>
+                  {contentIdeas && <div className="rounded-lg p-3 text-xs leading-relaxed whitespace-pre-line" style={{ backgroundColor: '#111318', color: '#D1D5DB', border: '1px solid #1F2937' }}>{contentIdeas}</div>}
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Training Camp Activation Modal */}
+      {showCampModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowCampModal(false) }}>
+          <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <h2 className="text-lg font-bold text-white mb-4">🏕️ Schedule Training Camp</h2>
+            <div className="space-y-3">
+              <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Camp Name</label><input value={campForm.name} onChange={e => setCampForm(f => ({...f, name: e.target.value}))} placeholder="e.g. Portugal Training Camp" className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Departure</label><input type="date" value={campForm.departure} onChange={e => setCampForm(f => ({...f, departure: e.target.value}))} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+                <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Return</label><input type="date" value={campForm.returnDate} onChange={e => setCampForm(f => ({...f, returnDate: e.target.value}))} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              </div>
+              <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Destination</label><input value={campForm.destination} onChange={e => setCampForm(f => ({...f, destination: e.target.value}))} placeholder="e.g. Faro, Portugal" className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Squad Size</label><input type="number" value={campForm.squadSize} onChange={e => setCampForm(f => ({...f, squadSize: Number(e.target.value)}))} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+                <div><label className="text-[10px] mb-1 block" style={{ color: '#6B7280' }}>Budget (£)</label><input type="number" value={campForm.budget} onChange={e => setCampForm(f => ({...f, budget: Number(e.target.value)}))} className="w-full px-3 py-2 rounded-lg text-xs text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              </div>
+              <button onClick={activateTrainingCamp} disabled={!campForm.name || !campForm.departure || !campForm.returnDate || !campForm.destination} className="w-full py-2.5 rounded-xl text-xs font-bold text-white mt-2" style={{ backgroundColor: campForm.name && campForm.departure && campForm.returnDate && campForm.destination ? '#F59E0B' : '#374151' }}>Activate Training Camp 🏕️</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

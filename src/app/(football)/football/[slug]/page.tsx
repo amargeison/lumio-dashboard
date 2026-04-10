@@ -51,6 +51,7 @@ type DeptId =
   | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
   | 'find-club' | 'find-player' | 'pyramid'
   | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
+  | 'preseason'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -121,6 +122,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
   { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
   { id: 'statsbomb',   label: 'StatsBomb',      icon: Activity,       section: 'Leagues' },
+  { id: 'preseason',   label: 'Pre-Season',     icon: Calendar,       section: 'Tools' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
 
@@ -6086,6 +6088,304 @@ function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: P
   )
 }
 
+// ─── Pre-Season Camp View (Football) ─────────────────────────────────────────
+function PreSeasonCampView() {
+  const SK = 'lumio_football_preseason'
+  const CK = 'lumio_football_training_camp'
+  const ACCENT = '#003DA5'
+  const ACCENT_DIM = 'rgba(0,61,165,0.15)'
+  const BG = '#07080F'
+  const CARD = '#0F1629'
+  const CARD_ALT = '#111827'
+  const BORDER = 'rgba(255,255,255,0.07)'
+  const TEXT = '#F1F5F9'
+  const MUTED = '#94A3B8'
+  const DIM = '#475569'
+  const GREEN = '#10B981'
+  const RED = '#EF4444'
+  const AMBER = '#F59E0B'
+
+  const scoreColor = (s: number) => s >= 80 ? GREEN : s >= 60 ? AMBER : RED
+
+  // Pre-season activation state
+  const [camp, setCamp] = useState<{ opener: string; opposition: string; squad: number; formation: string } | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState({ opener: '', opposition: '', squad: '25', formation: '4-4-2' })
+  useEffect(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(SK) : null; if (s) setCamp(JSON.parse(s)) } catch {} }, [])
+  const activate = () => { const c = { opener: form.opener, opposition: form.opposition, squad: parseInt(form.squad), formation: form.formation }; setCamp(c); localStorage.setItem(SK, JSON.stringify(c)); setShowModal(false) }
+  const deactivate = () => { setCamp(null); localStorage.removeItem(SK) }
+  const daysTo = camp ? Math.max(0, Math.ceil((new Date(camp.opener).getTime() - Date.now()) / 86400000)) : 0
+
+  // Readiness scores
+  const readinessScores = [
+    { label: 'Fitness Base', score: 72 },
+    { label: 'Tactical Shape', score: 58 },
+    { label: 'Set Pieces', score: 65 },
+    { label: 'Squad Depth', score: 71 },
+    { label: 'Match Sharpness', score: 51 },
+    { label: 'Injury Status', score: 80 },
+  ]
+  const overallScore = Math.round(readinessScores.reduce((a, s) => a + s.score, 0) / readinessScores.length)
+
+  // Daily checklist
+  const today2 = new Date().toISOString().split('T')[0]
+  const checklistKey = `${SK}_checklist_${today2}`
+  const checklistItems = ['Morning fitness session', 'Tactical shape drill', 'Set piece practice', 'Small-sided games', 'Video analysis session', 'Recovery & physio', 'Match simulation', 'Nutrition check-in']
+  const [checklist, setChecklist] = useState<boolean[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(checklistKey) : null; return s ? JSON.parse(s) : Array(8).fill(false) } catch { return Array(8).fill(false) } })
+  useEffect(() => { localStorage.setItem(checklistKey, JSON.stringify(checklist)) }, [checklist, checklistKey])
+  const completedChecklist = checklist.filter(Boolean).length
+
+  // Training Camp state
+  const [campSections, setCampSections] = useState<Record<string, boolean>>({ venue: false, schedule: false, kit: false, budget: false, content: false })
+  const toggleSection = (s: string) => setCampSections(p => ({ ...p, [s]: !p[s] }))
+
+  // Venue AI
+  const [venueQuery, setVenueQuery] = useState({ destination: '', squad: camp?.squad?.toString() || '25', requirements: 'Full size grass pitch, gym, pool, 2 meeting rooms' })
+  const [venueResults, setVenueResults] = useState<string | null>(null)
+  const [venueLoading, setVenueLoading] = useState(false)
+  const searchVenues = async () => {
+    setVenueLoading(true)
+    try {
+      const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a football pre-season training camp venue finder. Find 3 ideal training camp venues near/in "${venueQuery.destination}" for a squad of ${venueQuery.squad}. Requirements: ${venueQuery.requirements}. For each venue give: name, location, facilities, approximate cost per day, pros/cons. Format as a clear numbered list.` }] }) })
+      const data = await res.json()
+      setVenueResults(data.content?.[0]?.text || 'No results returned')
+    } catch { setVenueResults('Failed to search venues') }
+    setVenueLoading(false)
+  }
+
+  // Schedule
+  const DAYS = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
+  const AM_DEFAULTS = ['Fitness testing', 'Tactical shape', 'Set pieces', 'Double session', 'Match simulation', 'Fitness testing', 'Tactical shape']
+  const PM_DEFAULTS = ['Recovery & gym', 'Video analysis', 'Small-sided games', 'Rest', 'Friendly match', 'Recovery & gym', 'Video analysis']
+  const [schedule, setSchedule] = useState<{ am: string; pm: string; eve: string }[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_schedule`) : null; return s ? JSON.parse(s) : DAYS.map((_, i) => ({ am: AM_DEFAULTS[i] || 'Training', pm: PM_DEFAULTS[i] || 'Recovery', eve: 'Team meeting' })) } catch { return DAYS.map((_, i) => ({ am: AM_DEFAULTS[i] || 'Training', pm: PM_DEFAULTS[i] || 'Recovery', eve: 'Team meeting' })) } })
+  useEffect(() => { localStorage.setItem(`${CK}_schedule`, JSON.stringify(schedule)) }, [schedule])
+
+  // Kit & Equipment
+  const KIT_ITEMS = ['Training kits (home)', 'Training kits (away)', 'Match kits', 'Goalkeeping kits', 'Training boots (spare)', 'Cones & markers', 'Training bibs', 'Footballs (x30)']
+  const MEDICAL_ITEMS = ['Physio table (portable)', 'Ice bath supplies', 'Strapping & tape', 'First aid kits (x3)', 'Resistance bands', 'Foam rollers', 'GPS vests', 'Heart rate monitors']
+  const [kitChecked, setKitChecked] = useState<boolean[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_kit`) : null; return s ? JSON.parse(s) : Array(16).fill(false) } catch { return Array(16).fill(false) } })
+  useEffect(() => { localStorage.setItem(`${CK}_kit`, JSON.stringify(kitChecked)) }, [kitChecked])
+  const kitProgress = Math.round((kitChecked.filter(Boolean).length / 16) * 100)
+
+  // Budget
+  const [budget, setBudget] = useState<{ flights: number; accommodation: number; meals: number; facility: number; misc: number; total: number }>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_budget`) : null; return s ? JSON.parse(s) : { flights: 12000, accommodation: 18000, meals: 8000, facility: 5000, misc: 2000, total: 50000 } } catch { return { flights: 12000, accommodation: 18000, meals: 8000, facility: 5000, misc: 2000, total: 50000 } } })
+  useEffect(() => { localStorage.setItem(`${CK}_budget`, JSON.stringify(budget)) }, [budget])
+  const budgetSpent = budget.flights + budget.accommodation + budget.meals + budget.facility + budget.misc
+  const budgetPct = Math.round((budgetSpent / budget.total) * 100)
+
+  // Content & Sponsor Planner
+  const [contentSlots, setContentSlots] = useState<{ title: string; type: string; sponsor: string }[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_content`) : null; return s ? JSON.parse(s) : [{ title: 'Arrival day vlog', type: 'Video', sponsor: '' }, { title: 'Training montage', type: 'Reel', sponsor: '' }, { title: 'Player interview', type: 'Video', sponsor: '' }, { title: 'Behind the scenes', type: 'Story', sponsor: '' }, { title: 'Match highlights', type: 'Video', sponsor: '' }] } catch { return [{ title: 'Arrival day vlog', type: 'Video', sponsor: '' }, { title: 'Training montage', type: 'Reel', sponsor: '' }, { title: 'Player interview', type: 'Video', sponsor: '' }, { title: 'Behind the scenes', type: 'Story', sponsor: '' }, { title: 'Match highlights', type: 'Video', sponsor: '' }] } })
+  useEffect(() => { localStorage.setItem(`${CK}_content`, JSON.stringify(contentSlots)) }, [contentSlots])
+  const [contentIdeas, setContentIdeas] = useState<string | null>(null)
+  const [contentLoading, setContentLoading] = useState(false)
+  const generateContentIdeas = async () => {
+    setContentLoading(true)
+    try {
+      const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a football club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) })
+      const data = await res.json()
+      setContentIdeas(data.content?.[0]?.text || null)
+    } catch { setContentIdeas('Failed to generate ideas') }
+    setContentLoading(false)
+  }
+
+  // Card helper
+  const cardStyle = { backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12 }
+  const sectionHeader = (label: string, key: string, emoji: string) => (
+    <button onClick={() => toggleSection(key)} className="w-full flex items-center justify-between p-4" style={{ ...cardStyle, cursor: 'pointer' }}>
+      <div className="flex items-center gap-2"><span>{emoji}</span><span className="text-sm font-bold" style={{ color: TEXT }}>{label}</span></div>
+      <span style={{ color: MUTED, fontSize: 18 }}>{campSections[key] ? '−' : '+'}</span>
+    </button>
+  )
+
+  if (!camp) return (
+    <div className="space-y-6">
+      <div className="rounded-2xl p-12 text-center" style={cardStyle}>
+        <div className="text-6xl mb-4">⚽</div>
+        <h2 className="text-2xl font-black mb-2" style={{ color: TEXT }}>Pre-Season Camp Mode</h2>
+        <p className="text-lg mb-2" style={{ color: ACCENT }}>Build fitness. Shape tactics. Start strong.</p>
+        <p className="text-sm max-w-lg mx-auto mb-8" style={{ color: MUTED }}>Activate pre-season and Lumio tracks every session, fitness test, tactical drill, and squad readiness metric — all the way to your opening fixture.</p>
+        <button onClick={() => setShowModal(true)} className="px-8 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: ACCENT, color: '#FFFFFF' }}>Activate Pre-Season</button>
+      </div>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={cardStyle}>
+            <h3 className="text-lg font-bold" style={{ color: TEXT }}>Activate Pre-Season</h3>
+            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Season opener date</label><input type="date" value={form.opener} onChange={e => setForm(f => ({ ...f, opener: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Opposition</label><input value={form.opposition} onChange={e => setForm(f => ({ ...f, opposition: e.target.value }))} placeholder="e.g. Manchester City" className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Squad size</label><input type="number" value={form.squad} onChange={e => setForm(f => ({ ...f, squad: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Formation</label><select value={form.formation} onChange={e => setForm(f => ({ ...f, formation: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}><option value="4-4-2">4-4-2</option><option value="4-3-3">4-3-3</option><option value="3-5-2">3-5-2</option><option value="4-2-3-1">4-2-3-1</option><option value="3-4-3">3-4-3</option></select></div>
+            <button onClick={activate} disabled={!form.opener || !form.opposition} className="w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: form.opener && form.opposition ? ACCENT : BORDER, color: form.opener && form.opposition ? '#FFFFFF' : DIM }}>Activate Pre-Season ⚽</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Active banner */}
+      <div className="flex items-center justify-between px-5 py-3 rounded-xl" style={{ backgroundColor: ACCENT_DIM, border: `1px solid ${ACCENT}40` }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span>⚽</span>
+          <span className="text-sm font-bold" style={{ color: TEXT }}>Pre-Season Active</span>
+          <span className="text-sm" style={{ color: ACCENT }}>vs {camp.opposition} | {daysTo} days | {camp.formation}</span>
+        </div>
+        <button onClick={deactivate} className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: CARD_ALT, color: MUTED }}>Deactivate</button>
+      </div>
+
+      {/* Readiness Score */}
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-bold" style={{ color: TEXT }}>Pre-Season Readiness Score</div>
+          <div className="text-3xl font-black" style={{ color: scoreColor(overallScore) }}>{overallScore}<span className="text-sm" style={{ color: DIM }}>/100</span></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {readinessScores.map(s => (
+            <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs" style={{ color: TEXT }}>{s.label}</span>
+                <span className="text-sm font-black" style={{ color: scoreColor(s.score) }}>{s.score}{s.score < 55 && ' \u26A0\uFE0F'}</span>
+              </div>
+              <div className="w-full rounded-full h-1.5" style={{ background: BORDER }}><div className="h-1.5 rounded-full" style={{ width: `${s.score}%`, backgroundColor: scoreColor(s.score) }} /></div>
+              {s.score < 60 && <div className="text-[9px] mt-1" style={{ color: RED }}>Needs attention</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily Checklist */}
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-bold" style={{ color: TEXT }}>Today&apos;s Session Checklist</div>
+          <div className="text-xs" style={{ color: scoreColor(completedChecklist >= 6 ? 80 : completedChecklist >= 4 ? 65 : 40) }}>{completedChecklist}/8</div>
+        </div>
+        <div className="space-y-2">
+          {checklistItems.map((item, i) => (
+            <button key={i} onClick={() => setChecklist(ck => ck.map((v, j) => j === i ? !v : v))} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left" style={{ backgroundColor: checklist[i] ? `${GREEN}15` : 'transparent', border: checklist[i] ? `1px solid ${GREEN}33` : `1px solid ${BORDER}` }}>
+              <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: checklist[i] ? GREEN : BORDER, backgroundColor: checklist[i] ? `${GREEN}33` : 'transparent' }}>{checklist[i] && <span className="text-[10px]" style={{ color: GREEN }}>✓</span>}</div>
+              <span className="text-xs" style={{ color: checklist[i] ? GREEN : TEXT, textDecoration: checklist[i] ? 'line-through' : 'none' }}>{item}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Training Camp ── */}
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <div className="text-sm font-bold mb-1" style={{ color: TEXT }}>Training Camp</div>
+        <div className="text-xs mb-4" style={{ color: MUTED }}>Plan your pre-season training camp end-to-end</div>
+        <div className="space-y-3">
+
+          {/* 1. Venue Finder AI */}
+          {sectionHeader('Venue Finder AI', 'venue', '\uD83C\uDFDF\uFE0F')}
+          {campSections.venue && (
+            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Destination</label><input value={venueQuery.destination} onChange={e => setVenueQuery(q => ({ ...q, destination: e.target.value }))} placeholder="e.g. Marbella, Spain" className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Squad size</label><input value={venueQuery.squad} onChange={e => setVenueQuery(q => ({ ...q, squad: e.target.value }))} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Requirements</label><input value={venueQuery.requirements} onChange={e => setVenueQuery(q => ({ ...q, requirements: e.target.value }))} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
+              </div>
+              <button onClick={searchVenues} disabled={venueLoading || !venueQuery.destination} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: ACCENT, color: '#FFF' }}>{venueLoading ? 'Searching...' : 'Search Venues'}</button>
+              {venueResults && <div className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-lg" style={{ backgroundColor: CARD, color: TEXT }}>{venueResults}</div>}
+            </div>
+          )}
+
+          {/* 2. Camp Schedule */}
+          {sectionHeader('Camp Schedule', 'schedule', '\uD83D\uDCC5')}
+          {campSections.schedule && (
+            <div className="rounded-xl p-4 overflow-x-auto" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <table className="w-full text-xs" style={{ color: TEXT }}>
+                <thead><tr style={{ color: DIM }}><th className="text-left p-2">Day</th><th className="text-left p-2">AM</th><th className="text-left p-2">PM</th><th className="text-left p-2">Evening</th></tr></thead>
+                <tbody>
+                  {DAYS.map((day, i) => (
+                    <tr key={day} style={{ borderTop: `1px solid ${BORDER}` }}>
+                      <td className="p-2 font-bold" style={{ color: ACCENT }}>{day}</td>
+                      <td className="p-2"><select value={schedule[i]?.am || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, am: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
+                        {['Fitness testing', 'Tactical shape', 'Set pieces', 'Double session', 'Match simulation'].map(o => <option key={o} value={o}>{o}</option>)}
+                      </select></td>
+                      <td className="p-2"><select value={schedule[i]?.pm || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, pm: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
+                        {['Recovery & gym', 'Video analysis', 'Small-sided games', 'Rest', 'Friendly match'].map(o => <option key={o} value={o}>{o}</option>)}
+                      </select></td>
+                      <td className="p-2"><input value={schedule[i]?.eve || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, eve: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* 3. Kit & Equipment */}
+          {sectionHeader('Kit & Equipment', 'kit', '\uD83D\uDC55')}
+          {campSections.kit && (
+            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs" style={{ color: MUTED }}>Packed: {kitChecked.filter(Boolean).length}/16</span>
+                <span className="text-xs font-bold" style={{ color: kitProgress === 100 ? GREEN : kitProgress >= 50 ? AMBER : RED }}>{kitProgress}%</span>
+              </div>
+              <div className="w-full rounded-full h-2" style={{ background: BORDER }}><div className="h-2 rounded-full transition-all" style={{ width: `${kitProgress}%`, backgroundColor: kitProgress === 100 ? GREEN : kitProgress >= 50 ? AMBER : RED }} /></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div><div className="text-[10px] font-bold uppercase mb-2" style={{ color: DIM }}>Kit</div>{KIT_ITEMS.map((item, i) => (
+                  <button key={i} onClick={() => setKitChecked(k => k.map((v, j) => j === i ? !v : v))} className="w-full flex items-center gap-2 px-2 py-1.5 text-left rounded" style={{ color: kitChecked[i] ? GREEN : TEXT }}>
+                    <span className="text-[10px]">{kitChecked[i] ? '✅' : '⬜'}</span><span className="text-xs" style={{ textDecoration: kitChecked[i] ? 'line-through' : 'none' }}>{item}</span>
+                  </button>
+                ))}</div>
+                <div><div className="text-[10px] font-bold uppercase mb-2" style={{ color: DIM }}>Medical</div>{MEDICAL_ITEMS.map((item, i) => (
+                  <button key={i + 8} onClick={() => setKitChecked(k => k.map((v, j) => j === i + 8 ? !v : v))} className="w-full flex items-center gap-2 px-2 py-1.5 text-left rounded" style={{ color: kitChecked[i + 8] ? GREEN : TEXT }}>
+                    <span className="text-[10px]">{kitChecked[i + 8] ? '✅' : '⬜'}</span><span className="text-xs" style={{ textDecoration: kitChecked[i + 8] ? 'line-through' : 'none' }}>{item}</span>
+                  </button>
+                ))}</div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Camp Budget */}
+          {sectionHeader('Camp Budget', 'budget', '\uD83D\uDCB0')}
+          {campSections.budget && (
+            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs" style={{ color: MUTED }}>Spent: {'\u00A3'}{budgetSpent.toLocaleString()}</span>
+                <span className="text-xs font-bold" style={{ color: budgetPct > 100 ? RED : budgetPct > 80 ? AMBER : GREEN }}>of {'\u00A3'}{budget.total.toLocaleString()} ({budgetPct}%)</span>
+              </div>
+              <div className="w-full rounded-full h-2" style={{ background: BORDER }}><div className="h-2 rounded-full" style={{ width: `${Math.min(100, budgetPct)}%`, backgroundColor: budgetPct > 100 ? RED : budgetPct > 80 ? AMBER : GREEN }} /></div>
+              <div className="space-y-2 mt-3">
+                {([['Flights', 'flights'], ['Accommodation', 'accommodation'], ['Meals', 'meals'], ['Facility hire', 'facility'], ['Miscellaneous', 'misc']] as const).map(([label, key]) => (
+                  <div key={key} className="flex items-center justify-between gap-3">
+                    <span className="text-xs w-28" style={{ color: TEXT }}>{label}</span>
+                    <input type="number" value={budget[key]} onChange={e => setBudget(b => ({ ...b, [key]: parseInt(e.target.value) || 0 }))} className="flex-1 px-2 py-1 rounded text-xs text-right" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} />
+                  </div>
+                ))}
+                <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${BORDER}` }}>
+                  <span className="text-xs font-bold" style={{ color: TEXT }}>Budget cap</span>
+                  <input type="number" value={budget.total} onChange={e => setBudget(b => ({ ...b, total: parseInt(e.target.value) || 0 }))} className="w-32 px-2 py-1 rounded text-xs text-right" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: ACCENT }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 5. Content & Sponsor Planner */}
+          {sectionHeader('Content & Sponsor Planner', 'content', '\uD83C\uDFA5')}
+          {campSections.content && (
+            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="space-y-2">
+                {contentSlots.map((slot, i) => (
+                  <div key={i} className="grid grid-cols-3 gap-2">
+                    <input value={slot.title} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, title: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Content title" />
+                    <select value={slot.type} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, type: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
+                      {['Video', 'Reel', 'Story', 'Photo', 'Blog'].map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <input value={slot.sponsor} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, sponsor: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Sponsor (optional)" />
+                  </div>
+                ))}
+              </div>
+              <button onClick={generateContentIdeas} disabled={contentLoading} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: ACCENT, color: '#FFF' }}>{contentLoading ? 'Generating...' : 'AI Content Ideas'}</button>
+              {contentIdeas && <div className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-lg" style={{ backgroundColor: CARD, color: TEXT }}>{contentIdeas}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const FOOTBALL_ROLES = [
   { id: 'ceo',        label: 'CEO / Chairman',        icon: '🏛️' },
   { id: 'dof',        label: 'Director of Football',  icon: '📋' },
@@ -6311,6 +6611,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'psr' && <PSRView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
+            {isFootballDemo && activeDept === 'preseason' && <PreSeasonCampView />}
             {activeDept === 'wyscout' && <WyscoutView />}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
