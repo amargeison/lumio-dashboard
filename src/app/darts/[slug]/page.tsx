@@ -54,7 +54,9 @@ const isPro = (plan: string) =>
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',       label: 'Dashboard',          icon: '🏠', group: 'OVERVIEW'     },
   { id: 'morning',         label: 'Morning Briefing',   icon: '🌅', group: 'OVERVIEW'     },
-  { id: 'performance',     label: 'Performance',        icon: '🎯', group: 'PERFORMANCE'  },
+  { id: 'performance',     label: 'Performance',        icon: '📈', group: 'PERFORMANCE'  },
+  { id: 'dartcam',         label: 'Dart Cam & Analytics', icon: '🎯', group: 'PERFORMANCE'  },
+  { id: 'practice',        label: 'Practice',           icon: '📋', group: 'PERFORMANCE'  },
   { id: 'schedule',        label: 'Tournament Sched',   icon: '🗓️', group: 'MATCH'        },
   { id: 'live-scores',     label: 'Live Scores',        icon: '🔴', group: 'MATCH'        },
   { id: 'draw-bracket',    label: 'Draw & Bracket',     icon: '🏆', group: 'MATCH'        },
@@ -3901,27 +3903,50 @@ function AdvancedStatsView({ player, session }: { player: DartsPlayer; session: 
 
 // ─── MATCH PREP VIEW ──────────────────────────────────────────────────────────
 function MatchPrepView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
-  const routes = [
-    { score: 170, route: 'T20 T20 Bull', note: 'Max checkout — only if confident' },
-    { score: 164, route: 'T20 T18 Bull', note: 'Keep bull as fallback' },
-    { score: 158, route: 'T20 T20 D19', note: 'Practise D19 setup' },
-    { score: 132, route: 'T20 T16 D12', note: 'Standard — no surprises' },
-    { score: 121, route: 'T20 11 D25', note: 'Bull setup' },
-    { score: 100, route: 'T20 D20', note: 'Cleanest finish' },
-    { score: 81, route: 'T19 D12', note: 'Price leaves 81 often' },
-    { score: 60, route: 'S20 D20', note: 'D20 — your best double' },
-    { score: 40, route: 'D20', note: 'Standard' },
-    { score: 36, route: 'D18', note: 'Avoid S18 leaving 18' },
-    { score: 32, route: 'D16', note: 'Solid double' },
-    { score: 16, route: 'D8', note: 'D8 52% — your best' },
-  ];
-  const mentalChecklist = [
-    'Arrive venue 19:15 — dressing room warm-up',
-    'Headphones in during warm-up — no distractions',
-    '18-second throwing routine between throws',
-    'Breathe deeply between visits',
-    'Walk calmly between boards — match Price\'s slow tempo',
-  ];
+  const [step, setStep] = useState(1)
+  const [opponent, setOpponent] = useState('Gerwyn Price')
+  const [recentForm, setRecentForm] = useState<string[]>(['W','L','W'])
+  const [oppAvg, setOppAvg] = useState('96.2')
+  const [format, setFormat] = useState('Best of 11 legs')
+  const [stage, setStage] = useState('R1')
+  const [venue, setVenue] = useState('Westfalenhalle, Dortmund')
+  const [aiPlan, setAiPlan] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const formChips = ['W','L','W','W','L','W','L']
+  const formatOptions = ['Best of 11 legs','Best of 19 legs','Best of 35 legs','Sets (Best of 5)','Sets (Best of 7)']
+  const stageOptions = ['R1','R2','QF','SF','Final','Group Stage','League Night']
+
+  const generateAnalysis = async () => {
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `You are the AI tactical analyst for ${session.userName || player.name} "${player.nickname}", PDC #${player.pdcRank} professional darts player.
+
+Generate a detailed match preparation game plan.
+
+My player: ${session.userName || player.name} — 3-dart avg ${player.threeDartAverage}, checkout ${player.checkoutPercent}%, first-9 avg ${player.firstNineAverage}, 180s/leg ${player.oneEightiesPerLeg}.
+Opponent: ${opponent} — avg ${oppAvg}, recent form ${recentForm.join(',')}.
+Format: ${format}. Stage: ${stage}. Venue: ${venue}.
+
+Include:
+1. Opening strategy (first 3 legs)
+2. Key tactical notes for this opponent
+3. Checkout route priorities
+4. Mental cues for pressure moments
+5. One sentence prediction
+
+Write concisely. Max 250 words. No markdown formatting. Plain text only. Start each section on a new line with a label.` }] })
+      })
+      const data = await res.json()
+      const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
+      setAiPlan(cleanResponse(text))
+    } catch { setAiPlan('Unable to generate analysis. Check API connection.') }
+    setAiLoading(false)
+    setStep(4)
+  }
+
   return (
     <div className="p-6 space-y-6 match-prep-content">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -3929,87 +3954,108 @@ function MatchPrepView({ player, session }: { player: DartsPlayer; session: Spor
   body { background: white !important; color: black !important; }
   aside, nav, .quick-actions, .print\\:hidden { display: none !important; }
   .match-prep-content { max-width: 100% !important; padding: 0 !important; }
-  .bg-gray-900\\/60, .bg-gray-800\\/40 { background: #f5f5f5 !important; border: 1px solid #ddd !important; }
   .text-white { color: black !important; }
   .text-gray-400, .text-gray-300, .text-gray-500 { color: #555 !important; }
   .text-red-400, .text-red-300 { color: #c41e3a !important; }
-  .text-green-400 { color: #166534 !important; }
-  .border-white\\/5 { border-color: #ddd !important; }
   h1 { font-size: 18pt !important; }
-  h2 { font-size: 13pt !important; }
-  p, span { font-size: 10pt !important; }
 }
       ` }} />
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-medium text-white">Match Prep</h1>
-          <p className="text-gray-400 text-sm mt-1">Tonight&apos;s tactical plan — PDC European Championship R1</p>
+          <h1 className="text-2xl font-medium text-white">Match Prep Wizard</h1>
+          <p className="text-gray-400 text-sm mt-1">4-step darts-specific match preparation</p>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="px-3 py-1.5 bg-gray-800/60 border border-white/5 text-gray-400 text-xs rounded-lg hover:text-gray-200 flex items-center gap-1.5 print:hidden"
-        >
-          <FileText className="w-3 h-3" />
-          Print briefing
+        <button onClick={() => window.print()} className="px-3 py-1.5 bg-gray-800/60 border border-white/5 text-gray-400 text-xs rounded-lg hover:text-gray-200 flex items-center gap-1.5 print:hidden">
+          <FileText className="w-3 h-3" /> Print briefing
         </button>
       </div>
-      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
-        <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">TONIGHT'S MATCH</div>
-        <div className="text-white font-bold text-xl mb-1">Jake Morrison vs Gerwyn Price</div>
-        <div className="text-sm text-gray-300">20:00 · Westfalenhalle, Dortmund · First round · Win = £110,000</div>
-        <div className="text-xs text-gray-500 mt-2">H2H lifetime: <strong className="text-white">W8 L3</strong> · Last 3: W, L, W</div>
-      </div>
-      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
-        <h2 className="text-white font-medium mb-3">Opponent intel — Gerwyn Price (#7)</h2>
-        <div className="grid grid-cols-4 gap-3 text-sm">
-          <div><p className="text-xs text-gray-500">Average</p><p className="text-white font-medium">96.2</p></div>
-          <div><p className="text-xs text-gray-500">Checkout %</p><p className="text-white font-medium">40.1%</p></div>
-          <div><p className="text-xs text-gray-500">180s/leg</p><p className="text-white font-medium">0.79</p></div>
-          <div><p className="text-xs text-gray-500">Best double</p><p className="text-white font-medium">D16 (52%)</p></div>
-        </div>
-        <p className="text-xs text-amber-400 mt-3">⚠ Price starts slow — attack first 3 legs aggressively. His scoring drops 6% when behind early.</p>
-      </div>
-      <div>
-        <h2 className="text-white font-medium mb-3">3-phase game plan</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { phase: 'Opening (legs 1–3)', color: 'from-red-900/40 to-red-900/10 border-red-600/30', note: 'Attack aggressively. Target 100+ legs. Disrupt Price\'s rhythm before he settles.' },
-            { phase: 'Mid-match (legs 4–8)', color: 'from-amber-900/40 to-amber-900/10 border-amber-600/30', note: 'Maintain routine. Capitalise on his scoring dips. Don\'t force 180s — play percentages.' },
-            { phase: 'Closing (legs 9+)', color: 'from-teal-900/40 to-teal-900/10 border-teal-600/30', note: 'Stay calm. Trust D20 / D16. If ahead, hold the trigger. If behind, T20–T20 Bull finishes.' },
-          ].map((p, i) => (
-            <div key={i} className={`bg-gradient-to-br ${p.color} border rounded-xl p-4`}>
-              <div className="text-xs font-semibold uppercase tracking-wider text-white mb-2">{p.phase}</div>
-              <p className="text-xs text-gray-300 leading-relaxed">{p.note}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div>
-        <h2 className="text-white font-medium mb-3">Checkout routes — tonight's plan</h2>
-        <div className="rounded-xl border border-white/5 overflow-hidden">
-          <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
-            <span className="col-span-1">Score</span><span className="col-span-3">Route</span><span className="col-span-8">Tonight's note</span>
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-2">
+        {(['Opponent','Format','AI Analysis','Game Plan'] as const).map((s, i) => (
+          <div key={s} className="flex items-center gap-1">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${step > i+1 ? 'bg-green-600 text-white' : step === i+1 ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-500'}`}>{step > i+1 ? '✓' : i+1}</div>
+            <span className={`text-[10px] ${step === i+1 ? 'text-white font-semibold' : 'text-gray-600'}`}>{s}</span>
+            {i < 3 && <div className="w-8 h-px bg-gray-700 mx-1" />}
           </div>
-          {routes.map((r, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
-              <span className="col-span-1 text-red-400 font-medium">{r.score}</span>
-              <span className="col-span-3 text-white">{r.route}</span>
-              <span className="col-span-8 text-gray-400 text-xs">{r.note}</span>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
-      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
-        <h2 className="text-white font-medium mb-3">Mental prep — from Sarah (mental coach)</h2>
-        <div className="space-y-2">
-          {mentalChecklist.map((item, i) => (
-            <div key={i} className="flex items-start gap-2.5 text-sm">
-              <div className="mt-0.5 w-4 h-4 rounded border border-white/20 flex-shrink-0" />
-              <span className="text-gray-300">{item}</span>
+
+      {/* Step 1: Opponent */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 space-y-4">
+            <div><label className="text-xs text-gray-400 block mb-1">Opponent Name</label><input value={opponent} onChange={e => setOpponent(e.target.value)} placeholder="e.g. Gerwyn Price" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Opponent Recent Form (click to toggle)</label>
+              <div className="flex gap-2">
+                {formChips.map((r, i) => {
+                  const selected = recentForm[i]
+                  return <button key={i} onClick={() => { const nf = [...recentForm]; if (nf[i]) { nf.splice(i, 1) } else { nf.splice(i, 0, r) }; setRecentForm(nf) }} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${recentForm.includes(r) && i < recentForm.length ? (r === 'W' ? 'bg-teal-600/40 text-teal-400 border border-teal-600/50' : 'bg-red-600/30 text-red-400 border border-red-600/50') : 'bg-gray-800 text-gray-600 border border-gray-700'}`}>{r}</button>
+                })}
+              </div>
             </div>
-          ))}
+            <div><label className="text-xs text-gray-400 block mb-1">Opponent 3-Dart Average</label><input value={oppAvg} onChange={e => setOppAvg(e.target.value)} placeholder="e.g. 96.2" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          </div>
+          <button onClick={() => setStep(2)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Next: Format &amp; Venue &rarr;</button>
         </div>
-      </div>
+      )}
+
+      {/* Step 2: Format */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 space-y-4">
+            <div><label className="text-xs text-gray-400 block mb-1">Match Format</label>
+              <div className="flex flex-wrap gap-2">{formatOptions.map(f => (<button key={f} onClick={() => setFormat(f)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${format === f ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{f}</button>))}</div>
+            </div>
+            <div><label className="text-xs text-gray-400 block mb-1">Stage</label>
+              <div className="flex flex-wrap gap-2">{stageOptions.map(s => (<button key={s} onClick={() => setStage(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${stage === s ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{s}</button>))}</div>
+            </div>
+            <div><label className="text-xs text-gray-400 block mb-1">Venue</label><input value={venue} onChange={e => setVenue(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep(1)} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 border border-gray-700">&larr; Back</button>
+            <button onClick={generateAnalysis} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Generate AI Analysis &rarr;</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: AI Generating */}
+      {step === 3 && aiLoading && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="animate-spin w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full mb-4" />
+          <p className="text-sm text-gray-400">AI is analysing {opponent}&apos;s data and building your game plan...</p>
+          <p className="text-xs text-gray-600 mt-2">Powered by /api/ai/darts</p>
+        </div>
+      )}
+
+      {/* Step 4: Game Plan */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
+            <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">MATCH PLAN</div>
+            <div className="text-white font-bold text-xl mb-1">{session.userName || player.name} vs {opponent}</div>
+            <div className="text-sm text-gray-300">{format} · {stage} · {venue}</div>
+            <div className="text-xs text-gray-500 mt-1">Opponent avg: {oppAvg} · Form: {recentForm.join(' ')}</div>
+          </div>
+
+          {aiPlan && (
+            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Game Plan</span></div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Generated by Claude</span>
+              </div>
+              <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiPlan}</div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button onClick={() => { if (aiPlan) { try { localStorage.setItem('lumio_darts_match_prep_' + Date.now(), JSON.stringify({ opponent, format, stage, venue, oppAvg, recentForm, plan: aiPlan })) } catch {} } alert('Game plan saved!') }} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Save Game Plan</button>
+            <button onClick={() => setStep(1)} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Start Practice</button>
+          </div>
+          <button onClick={() => setStep(1)} className="w-full py-2.5 rounded-xl text-sm text-gray-400 border border-gray-700">&larr; New Match Prep</button>
+        </div>
+      )}
+
       <DartsAISection context="default" player={player} session={session} />
     </div>
   );
@@ -6520,6 +6566,343 @@ function AccreditationsView({ player, session }: { player: DartsPlayer; session:
 }
 
 // ─── County Darts ─────────────────────────────────────────────────────────────
+// ─── DART CAM & ANALYTICS VIEW ───────────────────────────────────────────────
+function DartCamView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const [aiBrief, setAiBrief] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const sessionStats = [
+    { label: '3-Dart Avg', value: '98.4', color: '#dc2626' },
+    { label: 'Checkout %', value: '44.1%', color: '#22C55E' },
+    { label: 'First 9', value: '102.3', color: '#F59E0B' },
+    { label: 'Doubles Hit', value: '18/41', color: '#8B5CF6' },
+    { label: '180s', value: '6', color: '#F97316' },
+  ]
+
+  const doublesData = [
+    { d:'D20', pct:54, fav:true }, { d:'D1', pct:22 }, { d:'D18', pct:35 },
+    { d:'D4', pct:38 }, { d:'D13', pct:29 }, { d:'D6', pct:31 },
+    { d:'D10', pct:42 }, { d:'D15', pct:33 }, { d:'D2', pct:18 },
+    { d:'D17', pct:36 }, { d:'D3', pct:34 }, { d:'D19', pct:40 },
+    { d:'D7', pct:27 }, { d:'D16', pct:67, fav:true }, { d:'D8', pct:58, fav:true },
+    { d:'D11', pct:30 }, { d:'D14', pct:32 }, { d:'D9', pct:25 },
+    { d:'D12', pct:28 }, { d:'D5', pct:15 },
+  ] as { d: string; pct: number; fav?: boolean }[]
+
+  const favDoubles = [
+    { d: 'D16', pct: 67, attempts: 142, trend: '+3%' },
+    { d: 'D8', pct: 58, attempts: 98, trend: '+1%' },
+    { d: 'D20', pct: 54, attempts: 187, trend: '-2%' },
+  ]
+
+  const legData = [
+    { leg: 'Leg 1', avg: 101.2 },
+    { leg: 'Leg 2', avg: 94.8 },
+    { leg: 'Leg 3', avg: 99.4 },
+    { leg: 'Leg 4', avg: 103.1 },
+    { leg: 'Leg 5', avg: 97.6 },
+  ]
+  const legMax = 110
+
+  const sessionHistory = [
+    { date: 'Apr 9', type: 'Match Sim', avg: '99.4', checkout: '46%', e180s: '5', duration: '90 min' },
+    { date: 'Apr 8', type: 'Doubles Drill', avg: '—', checkout: '51%', e180s: '—', duration: '45 min' },
+    { date: 'Apr 7', type: 'Scoring', avg: '101.2', checkout: '—', e180s: '8', duration: '60 min' },
+    { date: 'Apr 6', type: 'Match Sim', avg: '96.8', checkout: '39%', e180s: '4', duration: '120 min' },
+    { date: 'Apr 5', type: 'Checkout Clinic', avg: '—', checkout: '48%', e180s: '—', duration: '75 min' },
+  ]
+
+  useEffect(() => {
+    setAiLoading(true)
+    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the AI dart cam analyst for ${session.userName || player.name} "${player.nickname}" (PDC #${player.pdcRank}). Analyse this practice session: 3-dart avg 98.4, checkout 44.1%, first 9 avg 102.3, 18/41 doubles hit, 6 x 180s. Favourite doubles: D16 (67%), D8 (58%), D20 (54%). Give a concise post-session brief: 3 positives, 2 areas to work on, 1 recommendation for next session. Max 150 words. Plain text. No markdown.` }] }) })
+      .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiBrief(t ? cleanResponse(t) : 'Unable to generate brief.') }).catch(() => setAiBrief('Unable to generate brief.')).finally(() => setAiLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎯" title="Dart Cam & Analytics" subtitle="Live throw analysis, checkout heatmap, and session intelligence." />
+
+      {/* Device Status */}
+      <div className="flex gap-3">
+        {[
+          { label: 'Dart Cam', status: 'Connected', color: '#22C55E', icon: '📹' },
+          { label: 'PDC Stats Feed', status: 'Live', color: '#22C55E', icon: '📡' },
+        ].map((d, i) => (
+          <div key={i} className="flex items-center gap-2 bg-[#0d1117] border border-gray-800 rounded-xl px-4 py-2.5">
+            <span>{d.icon}</span>
+            <span className="text-xs text-gray-400">{d.label}</span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+            <span className="text-xs font-semibold" style={{ color: d.color }}>{d.status}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Session Stats Strip */}
+      <div className="grid grid-cols-5 gap-3">
+        {sessionStats.map((s, i) => (
+          <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
+            <div className="text-xl font-black text-white">{s.value}</div>
+            <div className="text-[10px] font-medium mt-0.5" style={{ color: s.color }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Checkout Heatmap */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Checkout Heatmap — Doubles Hit Rate</div>
+        <div className="grid grid-cols-5 gap-2">
+          {doublesData.map(d => (
+            <div key={d.d} className="rounded-lg p-2 text-center" style={{
+              backgroundColor: d.pct > 55 ? 'rgba(16,185,129,0.15)' : d.pct > 35 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${d.pct > 55 ? '#10b98140' : d.pct > 35 ? '#f59e0b30' : '#ef444420'}`,
+            }}>
+              <div className="text-xs font-bold" style={{ color: d.pct > 55 ? '#10b981' : d.pct > 35 ? '#f59e0b' : '#ef4444' }}>
+                {d.fav && '\u2B50 '}{d.d}
+              </div>
+              <div className="text-sm font-black text-white">{d.pct}%</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-500">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(16,185,129,0.3)' }} /> Hot (&gt;55%)</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(245,158,11,0.2)' }} /> Medium (35-55%)</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }} /> Cold (&lt;35%)</span>
+        </div>
+      </div>
+
+      {/* Favourite Doubles */}
+      <div className="grid grid-cols-3 gap-4">
+        {favDoubles.map((d, i) => (
+          <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-lg font-black text-white">{d.d}</span>
+              <span className="text-xs" style={{ color: d.trend.startsWith('+') ? '#22C55E' : '#EF4444' }}>{d.trend}</span>
+            </div>
+            <div className="text-2xl font-black" style={{ color: '#10b981' }}>{d.pct}%</div>
+            <div className="text-[10px] text-gray-500 mt-1">{d.attempts} attempts this season</div>
+            <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2"><div className="h-1.5 rounded-full bg-green-500" style={{ width: `${d.pct}%` }} /></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Throw Analysis */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Throw Analysis</div>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Throw Speed', value: '6.2 m/s', sub: 'Optimal: 5.8–6.5', ok: true },
+            { label: 'Release Angle', value: '18.4\u00B0', sub: 'Consistent (\u00B10.3\u00B0)', ok: true },
+            { label: 'Grouping Score', value: '87/100', sub: 'Above average', ok: true },
+          ].map((t, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+              <div className="text-white font-bold text-lg">{t.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{t.label}</div>
+              <div className="text-[10px] mt-1" style={{ color: t.ok ? '#22C55E' : '#F59E0B' }}>{t.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Leg-by-Leg bar chart */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Leg-by-Leg Average</div>
+        <div className="flex items-end gap-3 h-32">
+          {legData.map((l, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center">
+              <div className="text-[10px] text-amber-400 font-bold mb-1">{l.avg}</div>
+              <div className="w-full rounded-t-md" style={{ height: `${(l.avg / legMax) * 100}%`, backgroundColor: '#F59E0B', opacity: 0.7 }} />
+              <div className="text-[9px] text-gray-500 mt-1">{l.leg}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Post-Session Brief */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-3"><span>🤖</span><span className="text-sm font-bold text-white">AI Post-Session Brief</span></div>
+        {aiLoading && <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{ width: `${60+i*10}%` }} />)}</div>}
+        {aiBrief && !aiLoading && <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiBrief}</div>}
+      </div>
+
+      {/* Session History */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Session History</div></div>
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Date</th><th className="text-left p-3">Type</th><th className="text-left p-3">Avg</th><th className="text-left p-3">CO%</th><th className="text-left p-3">180s</th><th className="text-left p-3">Duration</th></tr></thead>
+          <tbody>
+            {sessionHistory.map((s, i) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-400">{s.date}</td>
+                <td className="p-3 text-gray-200">{s.type}</td>
+                <td className="p-3 text-gray-300">{s.avg}</td>
+                <td className="p-3 text-gray-300">{s.checkout}</td>
+                <td className="p-3 text-gray-300">{s.e180s}</td>
+                <td className="p-3 text-gray-500">{s.duration}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <DartsAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
+// ─── PRACTICE SESSION TRACKER VIEW ───────────────────────────────────────────
+function DartsPracticeView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const [sessionType, setSessionType] = useState('Doubles Finishing')
+  const [duration, setDuration] = useState(60)
+  const [target, setTarget] = useState('45')
+  const [isRunning, setIsRunning] = useState(false)
+  const [doublesTracker, setDoublesTracker] = useState<Record<string, 'hit'|'miss'|null>>({})
+  const [practiceHistory, setPracticeHistory] = useState<Record<string, string>[]>([])
+
+  const sessionTypes = ['Doubles Finishing', 'Scoring Practice', 'Checkout Routes', 'Match Simulation', 'Pressure Darts', 'Full Practice']
+
+  const allDoubles = ['D1','D2','D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20']
+
+  useEffect(() => {
+    try { const stored = localStorage.getItem('lumio_darts_practice_sessions'); if (stored) setPracticeHistory(JSON.parse(stored)) } catch {}
+  }, [])
+
+  const toggleDouble = (d: string) => {
+    setDoublesTracker(prev => {
+      const current = prev[d]
+      if (!current) return { ...prev, [d]: 'hit' }
+      if (current === 'hit') return { ...prev, [d]: 'miss' }
+      const next = { ...prev }
+      delete next[d]
+      return next
+    })
+  }
+
+  const hits = Object.values(doublesTracker).filter(v => v === 'hit').length
+  const misses = Object.values(doublesTracker).filter(v => v === 'miss').length
+  const total = hits + misses
+
+  const saveSession = () => {
+    const newSession = { date: new Date().toISOString().slice(0, 10), type: sessionType, duration: String(duration), target, hits: String(hits), misses: String(misses), pct: total > 0 ? `${Math.round((hits/total)*100)}%` : '—' }
+    const updated = [newSession, ...practiceHistory].slice(0, 20)
+    localStorage.setItem('lumio_darts_practice_sessions', JSON.stringify(updated))
+    setPracticeHistory(updated)
+    setDoublesTracker({})
+    setIsRunning(false)
+    alert('Practice session saved!')
+  }
+
+  const checkoutHistory = [
+    { session: 'Apr 9', pct: 46 },
+    { session: 'Apr 8', pct: 51 },
+    { session: 'Apr 7', pct: 39 },
+    { session: 'Apr 6', pct: 44 },
+    { session: 'Apr 5', pct: 48 },
+    { session: 'Apr 4', pct: 42 },
+    { session: 'Apr 3', pct: 38 },
+  ]
+  const coMax = 60
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📋" title="Practice Session Tracker" subtitle="Plan, track, and review your practice sessions." />
+
+      {/* Today's Practice Plan */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Today&apos;s Practice Plan</div>
+        <div className="space-y-4">
+          <div><label className="text-xs text-gray-400 block mb-1">Session Type</label>
+            <select value={sessionType} onChange={e => setSessionType(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white">
+              {sessionTypes.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="text-xs text-gray-400">Duration (min)</label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setDuration(Math.max(15, duration - 15))} className="w-8 h-8 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold hover:bg-gray-700">-</button>
+              <span className="text-white font-bold text-lg w-12 text-center">{duration}</span>
+              <button onClick={() => setDuration(Math.min(180, duration + 15))} className="w-8 h-8 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold hover:bg-gray-700">+</button>
+            </div>
+          </div>
+          <div><label className="text-xs text-gray-400 block mb-1">Checkout % Target</label><input value={target} onChange={e => setTarget(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" placeholder="e.g. 45" /></div>
+          <button onClick={() => setIsRunning(!isRunning)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: isRunning ? '#EF4444' : '#dc2626' }}>
+            {isRunning ? 'Stop Session' : 'Start Session'}
+          </button>
+        </div>
+      </div>
+
+      {/* Doubles Tracker Grid */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">Doubles Tracker</div>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="text-teal-400 font-bold">{hits} Hits</span>
+            <span className="text-red-400 font-bold">{misses} Misses</span>
+            {total > 0 && <span className="text-amber-400 font-bold">{Math.round((hits/total)*100)}%</span>}
+          </div>
+        </div>
+        <div className="text-[10px] text-gray-500 mb-3">Click: Hit (green) &rarr; Miss (red) &rarr; Reset</div>
+        <div className="grid grid-cols-5 gap-2">
+          {allDoubles.map(d => {
+            const state = doublesTracker[d]
+            return (
+              <button key={d} onClick={() => toggleDouble(d)} className="rounded-lg p-2.5 text-center transition-all" style={{
+                backgroundColor: state === 'hit' ? 'rgba(16,185,129,0.15)' : state === 'miss' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${state === 'hit' ? '#10b98140' : state === 'miss' ? '#ef444440' : '#1F2937'}`,
+              }}>
+                <div className="text-xs font-bold" style={{ color: state === 'hit' ? '#10b981' : state === 'miss' ? '#ef4444' : '#6B7280' }}>{d}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: state === 'hit' ? '#10b981' : state === 'miss' ? '#ef4444' : '#4B5563' }}>
+                  {state === 'hit' ? 'HIT' : state === 'miss' ? 'MISS' : '—'}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        {total > 0 && <button onClick={saveSession} className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Save Session ({hits}/{total} — {Math.round((hits/total)*100)}%)</button>}
+      </div>
+
+      {/* Checkout % Chart */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Checkout % — Last 7 Sessions</div>
+        <div className="flex items-end gap-3 h-32">
+          {checkoutHistory.map((c, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center">
+              <div className="text-[10px] text-amber-400 font-bold mb-1">{c.pct}%</div>
+              <div className="w-full rounded-t-md" style={{ height: `${(c.pct / coMax) * 100}%`, backgroundColor: '#F59E0B', opacity: 0.7 }} />
+              <div className="text-[9px] text-gray-500 mt-1">{c.session}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Session History */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Session History</div></div>
+        {practiceHistory.length === 0 ? (
+          <div className="p-6 text-center text-xs text-gray-600">No sessions recorded yet. Start a practice session above.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Date</th><th className="text-left p-3">Type</th><th className="text-left p-3">Duration</th><th className="text-left p-3">Hits</th><th className="text-left p-3">CO%</th></tr></thead>
+            <tbody>
+              {practiceHistory.slice(0, 5).map((s, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-400">{s.date}</td>
+                  <td className="p-3 text-gray-200">{s.type}</td>
+                  <td className="p-3 text-gray-300">{s.duration} min</td>
+                  <td className="p-3 text-gray-300">{s.hits}/{Number(s.hits) + Number(s.misses)}</td>
+                  <td className="p-3 text-amber-400 font-bold">{s.pct}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <DartsAISection context="practicelog" player={player} session={session} />
+    </div>
+  )
+}
+
 function CountyDartsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const results = [
     { date: 'Mar 2025', opponent: 'Lancashire', result: 'W', score: '8-4', avg: 101.4, competition: 'Yorkshire vs Lancashire' },
@@ -6804,11 +7187,12 @@ function DartsHotelFinder({ onClose }: { onClose: () => void }) {
   const preferences = ['Near venue', 'Gym', 'Late checkout', 'Quiet room', 'Restaurant', 'Parking']
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>(['Near venue'])
   const tournamentChips = [
-    { label: 'World Championship (Ally Pally)', dest: 'Alexandra Palace, London' },
-    { label: 'Premier League venues', dest: 'Various UK' },
-    { label: 'European Championship', dest: 'Dortmund' },
-    { label: 'Prague Open', dest: 'Prague' },
-    { label: 'German Masters', dest: 'Berlin' },
+    { label: 'PDC World Championship — 19 Dec (Alexandra Palace)', dest: 'Alexandra Palace, London' },
+    { label: 'Premier League Darts — Feb–May (various)', dest: 'Various UK' },
+    { label: 'Masters — Feb (Marshall Arena, MK)', dest: 'Marshall Arena, Milton Keynes' },
+    { label: 'UK Open — Mar (Butlins Minehead)', dest: 'Butlins, Minehead' },
+    { label: 'World Matchplay — Jul (Winter Gardens, Blackpool)', dest: 'Winter Gardens, Blackpool' },
+    { label: 'Grand Prix — Oct (Citywest, Dublin)', dest: 'Citywest Hotel, Dublin' },
   ]
 
   const search = async () => {
@@ -7439,6 +7823,8 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
       case 'board-booking':      return <BoardBookingView player={player} session={session} />;
       case 'accreditations':     return <AccreditationsView player={player} session={session} />;
       case 'county-darts':       return <CountyDartsView player={player} session={session} />;
+      case 'dartcam':            return <DartCamView player={player} session={session} />;
+      case 'practice':           return <DartsPracticeView player={player} session={session} />;
       default:              return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
     }
   };
@@ -7590,6 +7976,12 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
                   {(session.userName || player.name).split(' ').slice(1).join(' ')}
                 </div>
                 <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{player.nickname}&quot;</div>
+                {/* PDC Ranking badge */}
+                <div className="flex justify-center mb-2">
+                  <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>
+                    <span style={{ color:'#f59e0b', fontSize:'12px', fontWeight:'700' }}>PDC #{player.pdcRank}</span>
+                  </div>
+                </div>
                 {/* Stat bars */}
                 <div className="space-y-1.5 mb-2">
                   {[{ label:'Doubles %', pct:38.2, max:60, color:'bg-amber-500' },{ label:'TV avg', pct:((99.1-90)/15)*100, max:100, color:'bg-red-500' },{ label:'Floor avg', pct:((97.3-90)/15)*100, max:100, color:'bg-orange-500' },{ label:'180s/match', pct:(4.2/8)*100, max:100, color:'bg-purple-500' }].map((s, i) => (
