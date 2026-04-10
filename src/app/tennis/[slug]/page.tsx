@@ -979,37 +979,37 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [replyToast, setReplyToast] = useState(false)
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
-    { id:'agent', label:'Agent Messages', icon:'📞', count:2, urgent:false, color:'#8B5CF6', messages: [
+    { id:'agent', label:'Agent Messages', icon:'📞', count:2, urgent:false, color:'#a855f7', messages: [
       { id:'a1', from:'James Wright', text:'Rolex renewal — they want a response by end of week. Call me.', time:'8:14am' },
       { id:'a2', from:'James Wright', text:'Paddy Power inquiry — new ambassador deal. £85k/yr. Interested?', time:'7:52am' },
     ]},
-    { id:'tournament', label:'Tournament Desk', icon:'🏆', count:3, urgent:true, color:'#0ea5e9', messages: [
+    { id:'tournament', label:'Tournament Desk', icon:'🏆', count:3, urgent:true, color:'#f59e0b', messages: [
       { id:'t1', from:'Monte-Carlo Masters', text:'URGENT: Court 4 time moved to 13:30 (30 min delay). Confirm receipt.', time:'9:01am' },
       { id:'t2', from:'Monte-Carlo Masters', text:'Media accreditation for your coach confirmed — collect at gate B.', time:'8:45am' },
       { id:'t3', from:'Hamburg 500', text:'Wildcard confirmation for Hamburg 500 — deadline today 5pm.', time:'7:30am' },
     ]},
-    { id:'sponsor', label:'Media & Sponsor', icon:'📱', count:4, urgent:false, color:'#F59E0B', messages: [
+    { id:'sponsor', label:'Media & Sponsor', icon:'📱', count:4, urgent:false, color:'#3b82f6', messages: [
       { id:'s1', from:'Lululemon', text:'Lululemon post due TODAY — Carlos needs kit photo before 12:00.', time:'8:30am' },
       { id:'s2', from:'Nike', text:'Nike obligation: 1 post outstanding from March. Please prioritise.', time:'Yesterday' },
       { id:'s3', from:"L'Equipe", text:'Interview request: L\'Equipe — 15 min post-match. Yes/no?', time:'8:05am' },
       { id:'s4', from:'Rolex', text:'Rolex content calendar attached — next shoot: Paris May 20.', time:'7:48am' },
     ]},
-    { id:'physio', label:'Physio & Medical', icon:'⚕️', count:1, urgent:true, color:'#EF4444', messages: [
+    { id:'physio', label:'Physio & Medical', icon:'⚕️', count:1, urgent:true, color:'#ef4444', messages: [
       { id:'p1', from:'Dr Sarah Lee', text:'URGENT: Shoulder inflammation — recommend ice 20 min pre-match. See me at 12:30.', time:'9:15am' },
     ]},
-    { id:'coach', label:'Coach Messages', icon:'🎾', count:2, urgent:false, color:'#10B981', messages: [
+    { id:'coach', label:'Coach Messages', icon:'🎾', count:2, urgent:false, color:'#10b981', messages: [
       { id:'c1', from:'Carlos', text:'Match notes ready on the app. Key: kick serve to his backhand on deuce court.', time:'8:55am' },
       { id:'c2', from:'Carlos', text:'Warm-up plan updated — 45 min. See you at 11:45 for stringing check.', time:'8:20am' },
     ]},
-    { id:'prize', label:'Prize Money', icon:'💰', count:1, urgent:false, color:'#D97706', messages: [
+    { id:'prize', label:'Prize Money', icon:'💰', count:1, urgent:false, color:'#f97316', messages: [
       { id:'pm1', from:'ATP Tour Finance', text:'QF prize of EUR 47,500 banked — confirmation attached.', time:'Yesterday' },
     ]},
-    { id:'travel', label:'Travel & Logistics', icon:'✈️', count:3, urgent:false, color:'#6B7280', messages: [
+    { id:'travel', label:'Travel & Logistics', icon:'✈️', count:3, urgent:false, color:'#06b6d4', messages: [
       { id:'tr1', from:'Travel desk', text:'Madrid hotel confirmed — NH Eurobuilding, arriving Mon 26 Apr.', time:'8:00am' },
       { id:'tr2', from:'Travel desk', text:'Halle camp flights — Tue 10 Jun, LHR→HAJ. Confirm passenger details.', time:'Yesterday' },
       { id:'tr3', from:'Travel desk', text:'Roland-Garros apartment: owner requests deposit by 1 May.', time:'2 days ago' },
     ]},
-    { id:'wildcard', label:'Wildcard & Entries', icon:'📋', count:2, urgent:false, color:'#EC4899', messages: [
+    { id:'wildcard', label:'Wildcard & Entries', icon:'📋', count:2, urgent:false, color:'#ec4899', messages: [
       { id:'w1', from:'ATP Entry', text:'Hamburg 500 wildcard — tournament director needs answer today.', time:'7:30am' },
       { id:'w2', from:'ATP Entry', text:'Winston-Salem: application submitted. Decision by 15 Aug.', time:'3 days ago' },
     ]},
@@ -1321,7 +1321,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                         }
                         setDragIdx(null); setDragOverIdx(null)
                       }}
-                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
+                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', borderLeft: `3px solid ${ch.color}`, backgroundColor: `${ch.color}18`, opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
                       <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                         className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                         <div className="flex items-center gap-3">
