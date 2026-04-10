@@ -7179,20 +7179,6 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             To see your own data — sign up for 6 months free →
           </a>
         </div>
-        {/* Top Bar */}
-        <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between"
-          style={{ background: '#0a0c14' }}>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-500 font-medium capitalize">
-              {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon} {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.label}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-            <div className="text-xs text-gray-500">ATP Monte-Carlo Masters</div>
-          </div>
-        </div>
-
         {/* Content + Card Row */}
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
