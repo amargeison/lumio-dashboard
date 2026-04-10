@@ -1437,9 +1437,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="text-center">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
                         style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
-                        {session.photoDataUrl
-                          ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
-                          : firstName.slice(0,2).toUpperCase()}
+                        {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase() })()}
                       </div>
                       <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
@@ -1998,9 +1996,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
-                      {session.photoDataUrl
-                        ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
-                        : (session.userName || firstName || 'AL').slice(0,2).toUpperCase()}
+                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : (session.userName || firstName || 'AL').slice(0,2).toUpperCase() })()}
                     </div>
                     <div className="text-sm font-semibold text-white">{session.userName || 'Big Al'}</div>
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>

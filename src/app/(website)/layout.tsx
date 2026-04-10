@@ -73,6 +73,7 @@ function Nav() {
   const pathname = usePathname()
   const isSchools = pathname?.startsWith('/schools') ?? false
   const isFootball = pathname?.startsWith('/football') ?? false
+  const isTennis = pathname?.startsWith('/tennis') ?? false
   const isSports = useIsSports()
   const showBetaBanner = !isSports && betaBannerVisible
 
@@ -194,7 +195,7 @@ function Nav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+          <img src={isTennis ? '/tennis_logo.png' : isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
             style={{ height: isSports ? '112px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {!isSports && !isSchools && (
             <span style={{
@@ -273,7 +274,7 @@ function Nav() {
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0D9488' }}>
               Free School Trial
             </Link>
-          ) : (
+          ) : !isTennis ? (
             <button onClick={() => setShowTypeModal(true)}
               className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
@@ -281,7 +282,7 @@ function Nav() {
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0D9488' }}>
               Free 14 day trial
             </button>
-          )}
+          ) : null}
           {isFootball ? (
             <Link href="/book-demo"
               className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
@@ -334,11 +335,11 @@ function Nav() {
                 className="text-sm font-semibold py-2 text-center rounded-lg"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
                 onClick={() => setMobileOpen(false)}>Free School Trial</Link>
-            ) : (
+            ) : !isTennis ? (
               <button onClick={() => { setMobileOpen(false); setShowTypeModal(true) }}
                 className="text-sm font-semibold py-2 text-center rounded-lg"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14 day trial</button>
-            )}
+            ) : null}
             {isFootball && (
               <Link href="/book-demo"
                 className="text-sm font-semibold py-2 text-center rounded-lg"

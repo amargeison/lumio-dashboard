@@ -696,10 +696,10 @@ export default function TennisLandingPage() {
             Be one of the first players on Lumio Tour.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            We&apos;re working with a small number of professional players and their teams to shape the product. 6 months free. No commitment. All we ask for at the end is an honest case study.
+            We&apos;re working with a small number of professional players and their teams to shape the product. 3 months free. No commitment. All we ask for at the end is an honest case study.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
+            {['3 months free', 'We build what you ask for', 'No lock-in'].map(p => (
               <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
           </div>
