@@ -5,6 +5,17 @@ import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star,
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
+// ─── UTILITIES ───────────────────────────────────────────────────────────────
+const cleanResponse = (text: string) => text
+  .replace(/#{1,6}\s*/g, '')
+  .replace(/\*\*(.*?)\*\*/g, '$1')
+  .replace(/\*(.*?)\*/g, '$1')
+  .replace(/^\s*[-•·–—]\s*/gm, '')
+  .replace(/^\s*[\u2022\u2023\u25E6\u2043\u2219]\s*/gm, '')
+  .replace(/^\s*\d+\.\s*/gm, '')
+  .replace(/\n{3,}/g, '\n\n')
+  .trim()
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface GolfPlayer {
   id: string;
@@ -362,12 +373,12 @@ Generate a concise AI department summary for the "${context}" section. Focus: ${
 
 Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos} (${player.race_to_dubai_points} pts), career high #${player.career_high_owgr}, SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Current event: BMW International Open, Munich. Coach: ${player.coach}, Caddie: ${player.caddie}.
 
-Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No headers.`
+Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No headers. Respond in plain text only — no markdown, no bullet characters, no bold or italic formatting.`
           }]
         })
       })
       const data = await res.json()
-      setSummary(data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || '')
+      setSummary(cleanResponse(data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''))
       setGenerated(true)
     } catch { setSummary('Unable to generate summary.') }
     setLoading(false)
@@ -678,6 +689,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             { id:'injury', label:'Log Injury', icon:'💊', color:'#EF4444', hot:false },
             { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
             { id:'mentalprep', label:'Mental Prep', icon:'🧠', color:'#8B5CF6', hot:true },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
             { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
@@ -757,18 +769,18 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               {ROUNDUP_ITEMS.map((ch) => {
                 const isOpen = expandedChannel === ch.id
                 return (
-                  <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
+                  <div key={ch.id} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}0d`, borderRadius: 8, marginBottom: 6 }}>
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">
                         <span className="text-base">{ch.icon}</span>
-                        <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                        <span className="text-sm" style={{ color: ch.color, fontWeight: 600, fontSize: 15 }}>{ch.label}</span>
                         {ch.urgent && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                        <span className="text-sm" style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
                         <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
                       </div>
                     </button>
@@ -1000,7 +1012,16 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             ))}
           </div>
 
-          {teamSubTab === 'today' && (
+          {teamSubTab === 'today' && (() => {
+            const demoStaffPhotos: Record<string, string> = {
+              'Carlos Mendez': '/Carlos_Mendez.jpg',
+              'Mick Sullivan': '/Marcus_Webb.jpg',
+              'James Crawford': '/Rick_Dalton.jpg',
+              'Dr Anna Price': '/Sarah_Lee.jpg',
+              'Sarah Chen': '/Elena_Russo.jpg',
+              'Dave Morton': '/James_Okafor.jpg',
+            }
+            return (
             <div className="space-y-2">
               {[
                 { name: 'Mick Sullivan', role: 'Caddie', status: 'Updated hole 7 yardage — 9-iron not 8', dot: '#22C55E' },
@@ -1011,9 +1032,13 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 { name: 'Dave Morton', role: 'Mental Coach', status: 'Pre-round call 08:30', dot: '#22C55E' },
               ].map((m, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  {demoStaffPhotos[m.name] ? (
+                    <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-9 h-9 rounded-full object-cover object-center flex-shrink-0 border" style={{ borderColor: `${m.dot}40` }} />
+                  ) : (
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.dot}20`, border: `1px solid ${m.dot}40`, color: m.dot }}>
                     {m.name.split(' ').map(w => w[0]).join('')}
                   </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-white">{m.name}</div>
                     <div className="text-[10px]" style={{ color: '#15803D' }}>{m.role}</div>
@@ -1023,7 +1048,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 </div>
               ))}
             </div>
-          )}
+            )
+          })()}
 
           {teamSubTab === 'org' && (
             <div className="flex flex-col items-center gap-3 py-6">
@@ -1065,7 +1091,14 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             </div>
           )}
 
-          {teamSubTab === 'info' && (
+          {teamSubTab === 'info' && (() => {
+            const demoStaffPhotosInfo: Record<string, string> = {
+              'Carlos Mendez': '/Carlos_Mendez.jpg',
+              'Mick Sullivan': '/Marcus_Webb.jpg',
+              'James Crawford': '/Rick_Dalton.jpg',
+              'Dr Anna Price': '/Sarah_Lee.jpg',
+            }
+            return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { name: 'Carlos Mendez', role: 'Head Coach', overall: 93, stats: [{ k: 'TAC', v: 94 }, { k: 'MOT', v: 91 }, { k: 'TCH', v: 95 }, { k: 'ANA', v: 92 }, { k: 'EXP', v: 90 }, { k: 'COM', v: 93 }], color: '#22C55E' },
@@ -1075,7 +1108,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               ].map((card, i) => (
                 <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                   <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                    {demoStaffPhotosInfo[card.name] ? (
+                      <img src={demoStaffPhotosInfo[card.name]} alt={card.name} className="w-12 h-12 rounded-xl object-cover object-center" style={{ border: `2px solid ${card.color}40` }} />
+                    ) : (
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: `${card.color}20`, border: `2px solid ${card.color}40`, color: card.color }}>{card.overall}</div>
+                    )}
                     <div>
                       <div className="text-sm font-bold text-white">{card.name}</div>
                       <div className="text-[10px]" style={{ color: card.color }}>{card.role}</div>
@@ -1092,7 +1129,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 </div>
               ))}
             </div>
-          )}
+            )
+          })()}
 
           {teamSubTab === 'tour' && (
             <div className="rounded-xl p-5 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -3006,6 +3044,12 @@ function PracticeLogView({ player, session }: { player: GolfPlayer; session: Spo
 function GolfSettingsView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const ACCENT = '#15803D'
   const ACCENT_LIGHT = '#16a34a'
+  const [currentPhoto, setCurrentPhoto] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') || '' : '')
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(session?.userName || player.name || '')
+  const [editingNickname, setEditingNickname] = useState(false)
+  const [nicknameValue, setNicknameValue] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_nickname') || '' : '')
+  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>(() => typeof window !== 'undefined' ? (localStorage.getItem('lumio_golf_photo_fit') as 'cover' | 'contain') || 'cover' : 'cover')
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState<{ label: string; tz: string }[]>(() => {
@@ -3068,7 +3112,78 @@ function GolfSettingsView({ player, session }: { player: GolfPlayer; session: Sp
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Profile</p>
         </div>
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{session?.userName || player.name}</span></div>
+          <div className="flex items-center justify-between px-5 py-4">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Profile Photo</span>
+            <div className="flex items-center gap-3">
+              {currentPhoto || session.photoDataUrl ? (
+                <img src={currentPhoto || session.photoDataUrl || ''} alt="Profile" className="w-11 h-11 rounded-full" style={{ border: `2px solid ${ACCENT}`, objectFit: photoFit }} />
+              ) : (
+                <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}20`, border: `2px solid ${ACCENT}`, color: ACCENT, fontWeight: 700, fontSize: 16 }}>
+                  {(session.userName || 'J')[0]}
+                </div>
+              )}
+              <input type="file" id="golf-settings-photo-upload" accept="image/*" style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = (ev) => {
+                    const img = new window.Image()
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas')
+                      canvas.width = 400; canvas.height = 400
+                      const ctx = canvas.getContext('2d')
+                      if (!ctx) return
+                      ctx.drawImage(img, 0, 0, 400, 400)
+                      const compressed = canvas.toDataURL('image/jpeg', 0.7)
+                      try { localStorage.setItem('lumio_golf_profile_photo', compressed) } catch {}
+                      setCurrentPhoto(compressed)
+                    }
+                    img.src = ev.target?.result as string
+                  }
+                  reader.readAsDataURL(file)
+                  e.target.value = ''
+                }} />
+              <button onClick={() => document.getElementById('golf-settings-photo-upload')?.click()}
+                className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ background: `${ACCENT}20`, border: `1px solid ${ACCENT}`, color: ACCENT }}>
+                Change Photo
+              </button>
+              <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_golf_photo_fit', next) }}
+                className="text-xs px-3 py-2 rounded-lg" style={{ background: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>
+                {photoFit === 'cover' ? 'Fit: Fill' : 'Fit: Contain'}
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span>
+            {editingName ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={nameValue} onChange={e => setNameValue(e.target.value)} autoFocus style={{ background: '#ffffff10', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 160 }} />
+                <button onClick={() => { localStorage.setItem('lumio_golf_name', nameValue); setEditingName(false) }} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setEditingName(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #ffffff20', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{nameValue}</span>
+                <button onClick={() => setEditingName(true)} style={{ background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}30`, borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>Edit</button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Nickname</span>
+            {editingNickname ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={nicknameValue} onChange={e => setNicknameValue(e.target.value)} placeholder={'"The Bomber"'} autoFocus style={{ background: '#ffffff10', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 160 }} />
+                <button onClick={() => { localStorage.setItem('lumio_golf_nickname', nicknameValue); setEditingNickname(false) }} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setEditingNickname(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #ffffff20', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="text-sm" style={{ color: nicknameValue ? '#F9FAFB' : '#475569', fontStyle: nicknameValue ? 'normal' : 'italic' }}>{nicknameValue || 'Not set'}</span>
+                <button onClick={() => setEditingNickname(true)} style={{ background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}30`, borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>Edit</button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Tour / Circuit</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.tour}</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Ranking</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>OWGR #{player.owgr}</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Coach</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.coach}</span></div>
@@ -4636,6 +4751,61 @@ function GolfCourseNotes({ onClose, session }: { onClose: () => void; session: S
   )
 }
 
+function GolfSocialMediaAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [topic, setTopic] = useState('')
+  const [platforms, setPlatforms] = useState<string[]>(['Instagram'])
+  const [tone, setTone] = useState('Professional')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  const togglePlatform = (p: string) => setPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `You are the social media manager for ${session.userName || player.name}, a professional golfer on the ${player.tour} (OWGR #${player.owgr}). Current event: BMW International Open, Munich. Generate social media content about: "${topic || 'tournament prep day'}". Platforms: ${platforms.join(', ')}. Tone: ${tone}. Include hashtags, emojis, and platform-specific formatting. For Instagram include a caption. For Twitter/X keep under 280 chars. For LinkedIn be more professional. Respond in plain text only — no markdown formatting.` }]
+        })
+      })
+      const data = await res.json()
+      setResult(cleanResponse(data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''))
+    } catch { setResult('Unable to generate. Try again.') }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="📲" title="Social Media AI" subtitle="Generate golf-specific social media content" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!result && !loading && (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Topic / Context</label><input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Range session, tournament prep, sponsor shoutout..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Platforms</label>
+          <div className="flex flex-wrap gap-2">{['Instagram', 'Twitter/X', 'LinkedIn', 'TikTok'].map(p => (
+            <button key={p} onClick={() => togglePlatform(p)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: platforms.includes(p) ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: platforms.includes(p) ? '1px solid #15803D' : '1px solid #1F2937', color: platforms.includes(p) ? '#15803D' : '#9CA3AF' }}>{p}</button>
+          ))}</div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Tone</label>
+          <div className="flex flex-wrap gap-2">{['Professional', 'Casual', 'Motivational', 'Behind-the-scenes', 'Sponsor-friendly'].map(t => (
+            <button key={t} onClick={() => setTone(t)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: tone === t ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: tone === t ? '1px solid #15803D' : '1px solid #1F2937', color: tone === t ? '#15803D' : '#9CA3AF' }}>{t}</button>
+          ))}</div>
+        </div>
+        <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Content →</button>
+      </>)}
+      {loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-pulse">📲</div><div className="text-sm font-bold text-white">Generating social media content...</div></div>}
+      {result && (<>
+        <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{result}</div>
+        <div className="flex gap-3">
+          <button onClick={() => setResult(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+          <button onClick={() => navigator.clipboard.writeText(result)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy</button>
+        </div>
+      </>)}
+    </div>
+  </>)
+}
+
 function GolfVisaCheck({ onClose }: { onClose: () => void }) {
   const COUNTRIES = [
     { country: '🇩🇪 Germany (BMW International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free', urgent: false },
@@ -4668,6 +4838,7 @@ function GolfVisaCheck({ onClose }: { onClose: () => void }) {
 // ─── NEW MODAL COMPONENTS ────────────────────────────────────────────────────
 
 function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [step, setStep] = useState(1)
   const [destination, setDestination] = useState('Munich, Germany')
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
@@ -4676,8 +4847,17 @@ function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: S
   const [prefs, setPrefs] = useState<string[]>([])
   const togglePref = (p: string) => setPrefs(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
 
+  const TOURNAMENT_CHIPS: Array<{label: string; destination: string}> = [
+    { label: 'Masters (Augusta)', destination: 'Augusta, Georgia, USA' },
+    { label: 'The Open (Royal Liverpool)', destination: 'Royal Liverpool, Hoylake, UK' },
+    { label: 'US Open (Pinehurst)', destination: 'Pinehurst, North Carolina, USA' },
+    { label: 'Ryder Cup (Bethpage)', destination: 'Bethpage, New York, USA' },
+    { label: 'BMW International (Munich)', destination: 'Munich, Germany' },
+  ]
+
   const search = async () => {
     setLoading(true)
+    setStep(4)
     try {
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
@@ -4685,7 +4865,7 @@ function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: S
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 800,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
-          messages: [{ role: 'user', content: `Find best hotels near ${destination} for a touring golf professional, ${checkIn || 'next week'} to ${checkOut || 'next week + 3 days'}. Priority: ${prefs.length ? prefs.join(', ') : 'proximity to course, quality gym'}. Top 3 with name, distance to course, price, facilities, booking URL. Return ONLY JSON array: [{"name":"","stars":5,"price":0,"distance":"","score":0,"badge":""}]. Score 0-100. Badge: "Best overall", "Best value", or null.` }]
+          messages: [{ role: 'user', content: `Find best hotels near ${destination} for a touring golf professional, ${checkIn || 'next week'} to ${checkOut || 'next week + 3 days'}. Priority: ${prefs.length ? prefs.join(', ') : 'proximity to course, quality gym'}. Top 3 with name, distance to course, price, facilities, booking URL. Return ONLY JSON array: [{"name":"","stars":5,"price":0,"distance":"","score":0,"badge":""}]. Score 0-100. Badge: "Best overall", "Best value", or null. Respond in plain text only — no markdown.` }]
         })
       })
       const data = await res.json()
@@ -4707,32 +4887,69 @@ function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: S
   }
 
   return (<>
-    <ModalHeader icon="🏨" title="Find Hotel AI" subtitle="AI searches for golf-friendly hotels near your event" onClose={onClose} />
+    <ModalHeader icon="🏨" title="Smart Hotel Finder" subtitle="4-step AI hotel search for touring golf professionals" onClose={onClose} />
     <div className="p-6 space-y-4">
-      {!results && !loading && (<>
-        <div><label className="text-xs text-gray-500 mb-1 block">Destination / Course</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+      {/* Step indicators */}
+      <div className="flex items-center gap-2 mb-2">
+        {[1,2,3,4].map(s => (
+          <div key={s} className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: step >= s ? '#15803D' : '#1F2937', color: step >= s ? '#fff' : '#6B7280' }}>{s}</div>
+            {s < 4 && <div className="w-6 h-0.5 rounded" style={{ backgroundColor: step > s ? '#15803D' : '#1F2937' }} />}
+          </div>
+        ))}
+        <span className="text-xs text-gray-500 ml-2">{step === 1 ? 'Tournament' : step === 2 ? 'Dates' : step === 3 ? 'Preferences' : 'Results'}</span>
+      </div>
+
+      {/* Step 1: Tournament / Destination */}
+      {step === 1 && (<>
+        <div><label className="text-xs text-gray-500 mb-2 block">Quick pick — tournament</label>
+          <div className="flex flex-wrap gap-2">{TOURNAMENT_CHIPS.map(t => (
+            <button key={t.label} onClick={() => { setDestination(t.destination); setStep(2) }} className="text-xs px-3 py-2 rounded-xl transition-all" style={{ backgroundColor: destination === t.destination ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: destination === t.destination ? '1px solid #15803D' : '1px solid #1F2937', color: destination === t.destination ? '#15803D' : '#9CA3AF' }}>{t.label}</button>
+          ))}</div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Or enter destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={() => setStep(2)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Next: Dates →</button>
+      </>)}
+
+      {/* Step 2: Dates */}
+      {step === 2 && (<>
+        <div className="text-xs text-gray-400 mb-1">Destination: <span className="text-white font-medium">{destination}</span></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="text-xs text-gray-500 mb-1 block">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
         </div>
-        <div><label className="text-xs text-gray-500 mb-2 block">Preferences</label>
-          <div className="flex flex-wrap gap-2">{['Near course','Quiet for sleep/prep','Gym','Course views','Airport transfer'].map(p => (
+        <div className="flex gap-3">
+          <button onClick={() => setStep(1)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+          <button onClick={() => setStep(3)} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Next: Preferences →</button>
+        </div>
+      </>)}
+
+      {/* Step 3: Preferences */}
+      {step === 3 && (<>
+        <div className="text-xs text-gray-400 mb-1">{destination} · {checkIn || 'TBD'} to {checkOut || 'TBD'}</div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Preferences (select any)</label>
+          <div className="flex flex-wrap gap-2">{['Near course','Quiet for sleep/prep','Gym','Course views','Airport transfer','Restaurant on-site','Spa/recovery'].map(p => (
             <button key={p} onClick={() => togglePref(p)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: prefs.includes(p) ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: prefs.includes(p) ? '1px solid #15803D' : '1px solid #1F2937', color: prefs.includes(p) ? '#15803D' : '#9CA3AF' }}>{p}</button>
           ))}</div>
         </div>
-        <button onClick={search} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Search Hotels →</button>
+        <div className="flex gap-3">
+          <button onClick={() => setStep(2)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+          <button onClick={search} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Search Hotels →</button>
+        </div>
       </>)}
-      {loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-bounce">🏨</div><div className="text-sm font-bold text-white">Finding best hotels...</div></div>}
-      {results && (<div className="space-y-3">
+
+      {/* Step 4: Results */}
+      {step === 4 && loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-bounce">🏨</div><div className="text-sm font-bold text-white">Finding best hotels...</div></div>}
+      {step === 4 && results && (<div className="space-y-3">
         {results.map((h,i) => (
           <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{h.name}</span>{h.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>{h.badge}</span>}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{'⭐'.repeat(h.stars)} · {h.distance}</div></div><div className="text-right"><div className="text-lg font-black text-white">£{h.price}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>per night</div></div></div>
           </div>
         ))}
         <div className="flex gap-3">
-          <button onClick={() => setResults(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Again</button>
+          <button onClick={() => { setResults(null); setStep(1) }} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Start over</button>
           <button onClick={() => { const h=results[0]; window.open(`mailto:james.crawford@agent.com?subject=${encodeURIComponent(`Hotel — ${h.name}`)}&body=${encodeURIComponent(`Book ${h.name}, ${destination}. ${checkIn} to ${checkOut}. ~£${h.price}/night.\n\nThanks, ${session.userName || 'James'}`)}`) }}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📧 Send to agent →</button>
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Send to agent →</button>
         </div>
       </div>)}
     </div>
@@ -4760,7 +4977,7 @@ function GolfCourseStrategyAI({ onClose, session }: { onClose: () => void; sessi
         })
       })
       const data = await res.json()
-      setStrategy(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || 'Unable to generate strategy.')
+      setStrategy(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || 'Unable to generate strategy.'))
     } catch { setStrategy('Unable to generate strategy. Try again.') }
     setLoading(false)
   }
@@ -4951,7 +5168,30 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
         <div className="flex gap-3">
           <button onClick={() => setBrief(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
           <button onClick={() => navigator.clipboard.writeText(brief)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy brief</button>
-          <button onClick={() => { if (typeof window !== 'undefined' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(brief); u.rate = 0.9; window.speechSynthesis.speak(u) } }} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔊</button>
+          <button onClick={async () => {
+            if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+            window.speechSynthesis.cancel()
+            const getVoicesReady = (): Promise<SpeechSynthesisVoice[]> => new Promise(resolve => {
+              const v = window.speechSynthesis.getVoices()
+              if (v.length > 0) return resolve(v)
+              window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
+            })
+            const allVoices = await getVoicesReady()
+            const savedVoiceName = localStorage.getItem('lumio_golf_voice_name') || 'Sarah'
+            const voiceMap: Record<string, string[]> = {
+              'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
+              'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
+              'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
+            }
+            const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
+            const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
+              || allVoices.find(v => savedVoiceName === 'George' ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male') : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
+            const utterance = new SpeechSynthesisUtterance(brief)
+            if (match) utterance.voice = match
+            utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
+            utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95
+            window.speechSynthesis.speak(utterance)
+          }} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔊</button>
         </div>
       </>)}
     </div>
@@ -5368,6 +5608,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
             {activeModal === 'coursenotes' && <GolfCourseNotes onClose={closeModal} session={session} />}
             {activeModal === 'mentalprep' && <GolfMentalPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'visa' && <GolfVisaCheck onClose={closeModal} />}
+            {activeModal === 'socialmedia' && <GolfSocialMediaAI onClose={closeModal} session={session} player={player} />}
           </div>
         </div>
       )}

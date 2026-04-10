@@ -5,6 +5,12 @@ import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Setting
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
+// ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
+const cleanResponse = (text: string) => text
+  .replace(/#{1,6}\s*/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
+  .replace(/^\s*[-•·–—]\s*/gm, '').replace(/^\s*[\u2022\u2023\u25E6\u2043\u2219]\s*/gm, '')
+  .replace(/^\s*\d+\.\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface DartsPlayer {
   name: string;
@@ -229,13 +235,14 @@ Player context:
 - Checkout %: ${player.checkoutPercent}%
 
 Write 4-5 bullet points covering the most important insight for ${context}.
-Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
+Start each line with a relevant emoji. Be specific. Max 180 words. No headers. Plain text only. No markdown. No bullet points.`
           }]
         })
       })
       const data = await res.json()
-      setSummary(data.content?.map((b: {type:string;text?:string}) =>
-        b.type === 'text' ? b.text : '').join('') || '')
+      const raw = data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : '').join('') || ''
+      setSummary(cleanResponse(raw))
       setGenerated(true)
     } catch { setSummary('Unable to generate summary.') }
     setLoading(false)
@@ -310,13 +317,28 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const [dartsSummary, setDartsSummary] = useState<string | null>(null)
   const [dartsSummaryLoading, setDartsSummaryLoading] = useState(false)
 
-  // TTS
-  const speakBriefing = () => {
+  // TTS with async voice loading
+  const getVoicesReady = (): Promise<SpeechSynthesisVoice[]> => new Promise((resolve) => {
+    if (typeof window === 'undefined') { resolve([]); return }
+    const voices = window.speechSynthesis.getVoices()
+    if (voices.length > 0) { resolve(voices); return }
+    window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
+  })
+  const voiceMap: Record<string, { pitch: number; rate: number }> = {
+    'Sarah': { pitch: 1.05, rate: 0.92 },
+    'Charlotte': { pitch: 1.1, rate: 0.9 },
+    'George': { pitch: 0.9, rate: 0.95 },
+  }
+  const speakBriefing = async () => {
     if (typeof window === 'undefined') return
     if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    const voices = await getVoicesReady()
     const text = dartsSummary || `Good morning ${firstName}. Tonight you face Gerwyn Price at the European Championship in Dortmund. Your 3-dart average is 97.8 this season. Focus on D16 under pressure. Red Dragon content shoot at 12. Good luck.`
-    const u = new SpeechSynthesisUtterance(text); u.rate = 0.95
-    const voices = window.speechSynthesis.getVoices()
+    const u = new SpeechSynthesisUtterance(text)
+    const savedVoice = (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_voice_name')) || 'Sarah'
+    const settings = voiceMap[savedVoice] || voiceMap['Sarah']
+    u.rate = settings.rate; u.pitch = settings.pitch
+    if (!localStorage.getItem('lumio_darts_voice_name')) localStorage.setItem('lumio_darts_voice_name', 'Sarah')
     const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
     if (pref) u.voice = pref
     u.onstart = () => setIsSpeaking(true); u.onend = () => setIsSpeaking(false); u.onerror = () => setIsSpeaking(false)
@@ -329,7 +351,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     if (dartsSummary || dartsSummaryLoading) return
     setDartsSummaryLoading(true)
     fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for Jake Morrison, professional darts player ranked #${player.pdcRank} on the PDC tour, known as "The Hammer". Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Gerwyn Price (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Price leads 3-4) and the key tactical note (Price's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
-      .then(r => r.json()).then(d => setDartsSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setDartsSummaryLoading(false))
+      .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Jake'
@@ -339,6 +361,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
     try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_photo_frame') : null } catch { return null }
+  })
+  const [photoFit, setPhotoFit] = useState<'cover'|'contain'>(() => {
+    try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   })
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
@@ -480,6 +505,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             { id:'physio', label:'Physio Log', icon:'💊', color:'#EF4444', hot:false },
             { id:'expense', label:'Log Expense', icon:'🧾', color:'#6B7280', hot:false },
             { id:'exhibition', label:'Exhibitions', icon:'🎪', color:'#D97706', hot:false },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
@@ -570,15 +596,15 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             </div>
             <div className="space-y-2">
               {ROUNDUP_CHANNELS.map((ch, i) => (
-                <div key={i} className="rounded-xl border border-gray-800/50 hover:border-gray-700 transition-all bg-[#0a0c14]">
+                <div key={i} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px' }} className="hover:border-gray-700 transition-all">
                   <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
                     <div className="flex items-center gap-2.5">
                       <span className="text-base" style={{ color: ch.color }}>{ch.icon}</span>
-                      <span className="text-sm" style={{ color: ch.color }}>{ch.label}</span>
+                      <span style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
                       {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                      <span style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
                       <span className={`text-gray-700 text-xs transition-transform ${expandedChannel === ch.label ? 'rotate-180' : ''}`}>▾</span>
                     </div>
                   </button>
@@ -679,6 +705,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-white">📸 Photo Frame</span>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_darts_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
                   {photoSrc && <button onClick={() => { setPhotoSrc(null); localStorage.removeItem('lumio_darts_photo_frame') }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
@@ -687,9 +714,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
                 {photoSrc
-                  ? <img src={photoSrc} alt="" className="w-full h-full object-cover" />
+                  ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
                   : session.photoDataUrl
-                    ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                    ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${photoFit}`} />
                     : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
@@ -841,6 +868,14 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
+        const demoStaffPhotos: Record<string, string> = {
+          'Dave Askew': '/staff_photos/Marcus_Webb.jpg',
+          'Steve Morris': '/staff_photos/Carlos_Mendez.jpg',
+          'Dr Paul Reid': '/staff_photos/Sarah_Lee.jpg',
+          'James Wright': '/staff_photos/Marcus_Webb.jpg',
+          'Red Dragon': '/staff_photos/Rick_Dalton.jpg',
+          'Marcos Silva': '/staff_photos/Elena_Russo.jpg',
+        }
         const TEAM_MEMBERS = [
           { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA', phone:'+44 7700 900123', email:'dave@dhsports.com', since:'2021', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'42 events managed', stat2:'98% satisfaction' },
           { name:'Steve Morris',    role:'Coach',              status:'Pre-match briefing at 16:30',     available:true,  initials:'SM', phone:'+44 7700 900456', email:'steve@dartscoach.com', since:'2022', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'PDC Level 3 Coach', stat2:'+4.2 avg improvement' },
@@ -870,7 +905,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {TEAM_MEMBERS.map((m, i) => (
                   <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-                    <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
+                    <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0 overflow-hidden">
+                      {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover" /> : m.initials}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-white">{m.name}</div>
                       <div className="text-[10px] text-red-400">{m.role}</div>
@@ -932,7 +969,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4 relative overflow-hidden">
                     <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-r from-red-900/30 to-gray-900/30" />
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-600/30 flex items-center justify-center text-lg font-bold text-red-400 mx-auto mb-2">{m.initials}</div>
+                      <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-600/30 flex items-center justify-center text-lg font-bold text-red-400 mx-auto mb-2 overflow-hidden">
+                        {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover" /> : m.initials}
+                      </div>
                       <div className="text-center mb-3">
                         <div className="text-sm font-bold text-white">{m.name}</div>
                         <div className="text-[10px] text-red-400 font-semibold">{m.role}</div>
@@ -2852,6 +2891,10 @@ function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; on
   const [devResponse, setDevResponse] = useState('');
   const [devRoute, setDevRoute] = useState('/api/ai/darts');
   const [devTesting, setDevTesting] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_name')) || player.name);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameValue, setNicknameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_nickname')) || player.nickname);
 
   const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true');
 
@@ -2897,8 +2940,41 @@ function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; on
       <Card>
         <SectionHead title="🎯 Profile" />
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm text-gray-300">Name</span>
+            <div className="flex items-center gap-2">
+              {editingName ? (
+                <>
+                  <input value={nameValue} onChange={e => setNameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
+                  <button onClick={() => { localStorage.setItem('lumio_darts_name', nameValue); setEditingName(false) }} className="text-xs text-green-400">Save</button>
+                  <button onClick={() => setEditingName(false)} className="text-xs text-gray-500">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-white">{nameValue}</span>
+                  <button onClick={() => setEditingName(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm text-gray-300">Nickname</span>
+            <div className="flex items-center gap-2">
+              {editingNickname ? (
+                <>
+                  <input value={nicknameValue} onChange={e => setNicknameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
+                  <button onClick={() => { localStorage.setItem('lumio_darts_nickname', nicknameValue); setEditingNickname(false) }} className="text-xs text-green-400">Save</button>
+                  <button onClick={() => setEditingNickname(false)} className="text-xs text-gray-500">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-white">&quot;{nicknameValue}&quot;</span>
+                  <button onClick={() => setEditingNickname(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
+                </>
+              )}
+            </div>
+          </div>
           {[
-            { label: 'Name', value: player.name },
             { label: 'Tour', value: 'PDC Professional' },
             { label: 'Ranking', value: `#${player.pdcRank}` },
             { label: 'Coach', value: player.coach },
@@ -6717,40 +6793,71 @@ function DartsFlightFinder({ onClose, player, session }: { onClose: () => void; 
 
 // ─── MODAL: HOTEL FINDER ─────────────────────────────────────────────────────
 function DartsHotelFinder({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<1|2|3|4>(1)
   const [destination, setDestination] = useState('Prague')
+  const [checkin, setCheckin] = useState('')
+  const [checkout, setCheckout] = useState('')
   const [budget, setBudget] = useState('mid')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<{name:string;price:string;rating:string;distance:string}[]>([])
-  const preferences = ['Near venue', 'Gym', 'Late checkout', 'Quiet room']
+  const [selectedHotel, setSelectedHotel] = useState<string|null>(null)
+  const preferences = ['Near venue', 'Gym', 'Late checkout', 'Quiet room', 'Restaurant', 'Parking']
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>(['Near venue'])
+  const tournamentChips = [
+    { label: 'World Championship (Ally Pally)', dest: 'Alexandra Palace, London' },
+    { label: 'Premier League venues', dest: 'Various UK' },
+    { label: 'European Championship', dest: 'Dortmund' },
+    { label: 'Prague Open', dest: 'Prague' },
+    { label: 'German Masters', dest: 'Berlin' },
+  ]
 
   const search = async () => {
-    setLoading(true)
+    setLoading(true); setStep(2)
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 hotels in ${destination} for a darts player. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 4 hotels in ${destination} for a professional darts player. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation. Plain text only. No markdown. No bullet points.` }] })
       })
       const data = await res.json()
       const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
-      try { setResults(JSON.parse(text)) } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' }]) }
-    } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' }]) }
-    setLoading(false)
+      try { setResults(JSON.parse(text)) } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' },{ name:'NH Prague City', price:'£98/night', rating:'4*', distance:'1.5km' }]) }
+    } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' },{ name:'NH Prague City', price:'£98/night', rating:'4*', distance:'1.5km' }]) }
+    setLoading(false); setStep(3)
   }
 
   return (
     <div>
-      <DartsModalHeader icon="🏨" title="Hotel Finder" subtitle="Find accommodation near tournament venues" onClose={onClose} />
-      <div className="p-6 space-y-4">
-        <div><label className="text-xs text-gray-400 block mb-1">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs text-gray-400 block mb-1">Check-in</label><input type="date" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
-          <div><label className="text-xs text-gray-400 block mb-1">Check-out</label><input type="date" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+      <DartsModalHeader icon="🏨" title="Smart Hotel Finder" subtitle="4-step wizard for tournament accommodation" onClose={onClose} />
+      <div className="px-6 pt-4 pb-2">
+        <div className="flex items-center gap-2 mb-4">
+          {(['Configure','Search','Results','Book'] as const).map((s, i) => (
+            <div key={s} className="flex items-center gap-1">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${step > i+1 ? 'bg-green-600 text-white' : step === i+1 ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-500'}`}>{step > i+1 ? '✓' : i+1}</div>
+              <span className={`text-[10px] ${step === i+1 ? 'text-white font-semibold' : 'text-gray-600'}`}>{s}</span>
+              {i < 3 && <div className="w-6 h-px bg-gray-700 mx-1" />}
+            </div>
+          ))}
         </div>
-        <div><label className="text-xs text-gray-400 block mb-1">Budget</label><select value={budget} onChange={e => setBudget(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option value="budget">Budget (under £70)</option><option value="mid">Mid-range (£70-£150)</option><option value="premium">Premium (£150+)</option></select></div>
-        <div><label className="text-xs text-gray-400 block mb-1">Preferences</label><div className="flex flex-wrap gap-2">{preferences.map(p => (<button key={p} onClick={() => setSelectedPrefs(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPrefs.includes(p) ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
-        <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Searching...' : 'Search Hotels'}</button>
-        {results.length > 0 && (<div className="space-y-3 pt-2">{results.map((r, i) => (<div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><div><div className="text-sm font-semibold text-white">{r.name}</div><div className="text-[10px] text-gray-500">{r.rating} · {r.distance} from venue</div></div><div className="text-right"><div className="text-lg font-bold text-red-400">{r.price}</div><button className="text-[10px] text-red-400 hover:underline">Book &rarr;</button></div></div>))}</div>)}
+      </div>
+      <div className="p-6 pt-0 space-y-4">
+        {step === 1 && (<>
+          <div><label className="text-xs text-gray-400 block mb-1">Tournament Quick Select</label><div className="flex flex-wrap gap-2">{tournamentChips.map(t => (<button key={t.label} onClick={() => setDestination(t.dest)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${destination === t.dest ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{t.label}</button>))}</div></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-400 block mb-1">Check-in</label><input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Check-out</label><input type="date" value={checkout} onChange={e => setCheckout(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          </div>
+          <div><label className="text-xs text-gray-400 block mb-1">Budget</label><select value={budget} onChange={e => setBudget(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option value="budget">Budget (under £70)</option><option value="mid">Mid-range (£70-£150)</option><option value="premium">Premium (£150+)</option></select></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Preferences</label><div className="flex flex-wrap gap-2">{preferences.map(p => (<button key={p} onClick={() => setSelectedPrefs(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPrefs.includes(p) ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
+          <button onClick={search} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Search Hotels →</button>
+        </>)}
+        {step === 2 && (<div className="flex flex-col items-center justify-center py-12"><div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full mb-4" /><p className="text-sm text-gray-400">Searching hotels in {destination}...</p></div>)}
+        {step === 3 && (<>
+          <div className="text-xs text-gray-500 mb-2">{results.length} hotels found in {destination}</div>
+          <div className="space-y-3">{results.map((r, i) => (<div key={i} onClick={() => setSelectedHotel(r.name)} className={`flex items-center justify-between bg-[#0a0c14] border rounded-xl p-4 cursor-pointer transition-all ${selectedHotel === r.name ? 'border-red-500' : 'border-gray-800 hover:border-gray-700'}`}><div><div className="text-sm font-semibold text-white">{r.name}</div><div className="text-[10px] text-gray-500">{r.rating} · {r.distance} from venue</div></div><div className="text-right"><div className="text-lg font-bold text-red-400">{r.price}</div></div></div>))}</div>
+          <div className="flex gap-3"><button onClick={() => setStep(1)} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 border border-gray-700">← Back</button><button onClick={() => { if (selectedHotel) setStep(4) }} disabled={!selectedHotel} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ backgroundColor: '#dc2626' }}>Select & Book →</button></div>
+        </>)}
+        {step === 4 && (<div className="text-center py-8"><div className="text-4xl mb-3">✅</div><div className="text-lg font-bold text-white mb-1">{selectedHotel}</div><div className="text-sm text-gray-400 mb-1">{destination}{checkin && checkout ? ` · ${checkin} → ${checkout}` : ''}</div><div className="text-xs text-gray-500 mb-6">Budget: {budget} · Prefs: {selectedPrefs.join(', ')}</div><div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4 text-left space-y-2"><div className="text-xs text-gray-400">Next steps:</div><div className="text-xs text-gray-300">1. Confirm dates with tournament schedule</div><div className="text-xs text-gray-300">2. Check cancellation policy</div><div className="text-xs text-gray-300">3. Book via partner link for best rate</div></div><button onClick={onClose} className="mt-4 px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Done</button></div>)}
       </div>
     </div>
   )
@@ -7108,6 +7215,43 @@ function DartsExpenseLogger({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ─── MODAL: SOCIAL MEDIA AI ─────────────────────────────────────────────────
+function DartsSocialMediaAI({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+  const [topic, setTopic] = useState('')
+  const [platforms, setPlatforms] = useState<Record<string, boolean>>({ Twitter: true, Instagram: true, LinkedIn: false, Facebook: false, TikTok: false })
+  const [tone, setTone] = useState('Motivational')
+  const [result, setResult] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const selectedPlatforms = Object.entries(platforms).filter(([,v]) => v).map(([k]) => k).join(', ')
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a social media manager for ${player.name}, professional darts player ranked #${player.pdcRank} on the PDC tour, nicknamed "${player.nickname}". Generate social media posts for: ${selectedPlatforms}. Topic: ${topic || 'match day hype'}. Tone: ${tone}. Write one post per platform, labelled. Include relevant hashtags. Keep each post under 280 chars for Twitter, slightly longer for others. Plain text only. No markdown. No bullet points.` }] })
+      })
+      const data = await res.json()
+      const raw = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate.'
+      setResult(cleanResponse(raw))
+    } catch { setResult('Unable to generate posts.') }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="📲" title="Social Media AI" subtitle="Generate platform-specific posts" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-xs text-gray-400 block mb-1">Topic / Context</label><input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Match win, sponsor shoutout, training day" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Platforms</label><div className="flex flex-wrap gap-2">{Object.keys(platforms).map(p => (<button key={p} onClick={() => setPlatforms(prev => ({...prev, [p]: !prev[p]}))} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${platforms[p] ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Tone</label><select value={tone} onChange={e => setTone(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Motivational</option><option>Professional</option><option>Casual</option><option>Hype</option><option>Grateful</option></select></div>
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Generating...' : 'Generate Posts'}</button>
+        {result && (<div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{result}</p><button onClick={() => navigator.clipboard.writeText(result)} className="mt-3 text-xs text-red-400 hover:underline">Copy to clipboard</button></div>)}
+      </div>
+    </div>
+  )
+}
+
 // ─── MODAL: EXHIBITION BOOKER ────────────────────────────────────────────────
 function DartsExhibitionBooker({ onClose }: { onClose: () => void }) {
   const [exhibitions, setExhibitions] = useState([
@@ -7181,6 +7325,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
   const sidebarExpanded = sidebarPinned || sidebarHovered;
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null } catch { return null } })
 
   useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_darts_sidebar_pinned') === 'true') }, [])
   function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_darts_sidebar_pinned', String(next)); return next }) }
@@ -7433,9 +7578,9 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
                 {/* Player photo */}
                 <label className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden cursor-pointer relative group"
                   style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.2), rgba(249,115,22,0.2))', border: '1px solid rgba(220,38,38,0.3)' }}>
-                  {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="Player" className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <span className="text-5xl">🎯</span> })()}
+                  {currentPhoto ? <img src={currentPhoto} alt="Player" className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <span className="text-5xl">🎯</span>}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg"><span className="text-white text-xs font-bold">📷 Change photo</span></div>
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { localStorage.setItem('lumio_darts_profile_photo', r.result as string); window.location.reload() }; r.readAsDataURL(f) }} />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const compressed = r.result as string; localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed) }; r.readAsDataURL(f) }} />
                 </label>
                 {/* Name */}
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
@@ -7551,6 +7696,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
             {activeModal === 'physio' && <DartsPhysioLog onClose={closeModal} />}
             {activeModal === 'expense' && <DartsExpenseLogger onClose={closeModal} />}
             {activeModal === 'exhibition' && <DartsExhibitionBooker onClose={closeModal} />}
+            {activeModal === 'socialmedia' && <DartsSocialMediaAI onClose={closeModal} player={player} />}
           </div>
         </div>
       )}
