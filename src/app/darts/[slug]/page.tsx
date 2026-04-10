@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
-import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList } from 'lucide-react';
+import { use, useState, useEffect, useRef } from 'react';
+import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
@@ -209,14 +209,9 @@ function DartsAISection({ context, player, session }: DartsAISectionProps) {
   const generateSummary = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/darts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -744,7 +739,7 @@ function OrderOfMeritView({ onNavigate, player, session }: { onNavigate: (id: st
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📊" title="PDC Order of Merit & Race to Grand Champions" subtitle="Rolling 2-year prize money rankings and race standings." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -849,7 +844,7 @@ function TournamentScheduleView({ onNavigate, player, session }: { onNavigate: (
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🗓️" title="Tournament Schedule 2025" subtitle="PDC calendar with entry status, prize funds, and deadlines." />
 
       <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-3 text-xs text-red-400 font-medium">
@@ -907,7 +902,7 @@ function ThreeDartAverageView({ player, onNavigate, session }: { player: DartsPl
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🎯" title="Three-Dart Average Analysis" subtitle="Career averages, event breakdowns, and match-by-match trends." />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -988,7 +983,7 @@ function CheckoutAnalysisView({ onNavigate, player, session }: { onNavigate: (id
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="✅" title="Checkout & Finishing Analysis" subtitle="Double hit rates, checkout routes, and pressure finishing data." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1080,7 +1075,7 @@ function CheckoutAnalysisView({ onNavigate, player, session }: { onNavigate: (id
 function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🔍" title="Opponent Intelligence" subtitle="Scouting, H2H records, and tactical briefings." />
 
       {/* Tonight's Opponent */}
@@ -1185,9 +1180,9 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
     setAiAnalysis(prev => ({ ...prev, [idx]: { loading: true, result: null } }));
     const s = sessions[idx];
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/darts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for Jake Morrison (PDC #19, 97.8 avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
       });
       const data = await res.json();
@@ -1197,7 +1192,7 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📋" title="Practice Log" subtitle="Session tracking, metrics, and training goals." />
 
       <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
@@ -1300,9 +1295,9 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
   const handleGenerate = async (m: typeof matches[0]) => {
     setGeneratingReport(m.id);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/darts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for Jake 'The Hammer' Morrison (PDC #19) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
       });
       const data = await res.json();
@@ -1314,7 +1309,7 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📄" title="Match Reports & AI Summaries" subtitle="Post-match analysis and AI-generated reports." />
       <div className="space-y-3">
         {matches.map(m => (
@@ -1361,7 +1356,7 @@ function VideoLibraryView({ onNavigate, player, session }: { onNavigate: (id: st
   const [expandedAnalysis, setExpandedAnalysis] = useState<number | null>(null);
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🎬" title="Video Library" subtitle="Match footage, practice clips, analysis, and walk-ons." />
 
       <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
@@ -1467,7 +1462,7 @@ function TeamHubView({ onNavigate, player, session }: { onNavigate: (id: string)
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="👥" title="Team Hub" subtitle="Team members and communication feed." />
       <div className="space-y-3">
         {team.map((t, i) => (
@@ -1498,7 +1493,7 @@ function TeamHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🧠" title="Mental Performance" subtitle="Pre-match routines, pressure data, and psychology sessions." />
 
       <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5 text-center">
@@ -1565,7 +1560,7 @@ function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (i
 function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🤝" title="Sponsorship & Commercial" subtitle="Active deals, obligations, pipeline, and content calendar." />
 
       {/* Active Sponsors */}
@@ -1631,7 +1626,7 @@ function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: str
 function ExhibitionManagerView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🎪" title="Exhibition Manager" subtitle="Bookings, fees, and exhibition performance." />
 
       <div className="grid grid-cols-3 gap-4">
@@ -1711,7 +1706,7 @@ function ExhibitionManagerView({ onNavigate, player, session }: { onNavigate: (i
 function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📱" title="Media & Content" subtitle="Obligations, social stats, content pipeline, and press coverage." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
@@ -1781,7 +1776,7 @@ function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: st
 function FinancialDashboardView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="💰" title="Financial Dashboard" subtitle="Earnings, expenses, and career financial summary." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1856,7 +1851,7 @@ function FinancialDashboardView({ onNavigate, player, session }: { onNavigate: (
 function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📬" title="Agent Pipeline" subtitle="Deal flow, negotiations, and agent activity." />
 
       <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
@@ -1909,7 +1904,7 @@ function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: s
 function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="✈️" title="Travel & Logistics" subtitle="Flights, hotels, and travel planning." />
 
       <div className="bg-gradient-to-r from-blue-900/30 to-teal-900/20 border border-blue-600/30 rounded-xl p-5">
@@ -1962,7 +1957,7 @@ function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id:
 function TourCardQSchoolView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🏛️" title="Tour Card & Q-School Status" subtitle="PDC Tour Card, Q-School history, and European Tour status." />
 
       <div className="bg-gradient-to-r from-teal-900/30 to-green-900/20 border border-teal-600/30 rounded-xl p-5">
@@ -2348,7 +2343,7 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
 function CareerPlanningView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="🚀" title="Career Planning" subtitle="Short-term goals, medium-term strategy, and career timeline." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
@@ -2428,7 +2423,7 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="📡" title="Data & Analytics Hub" subtitle="Your connected data sources — powering your performance insights." />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2492,7 +2487,7 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, notifications, and preferences." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
@@ -2550,7 +2545,7 @@ function DartConnectView({ onNavigate, player, session }: { onNavigate: (id: str
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">🔌 DartConnect</h1>
         <p className="text-xs text-gray-500">Sync match averages, checkout data and practice sessions automatically.</p>
@@ -2643,7 +2638,7 @@ function PDCLiveView({ onNavigate, player, session }: { onNavigate: (id: string)
   const maxAmount = Math.max(...somGraph.map(g => g.amount));
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">📡 PDC Live Data</h1>
         <p className="text-xs text-gray-500">Live tournament ticker, defending money calculator and Order of Merit tracker.</p>
@@ -2784,7 +2779,7 @@ function WomensDartsView({ onNavigate, player, session }: { onNavigate: (id: str
   const maxPrize = Math.max(...prizePairs.map(p => p.men));
   return (
     <div className="space-y-6">
-      <QuickActionsBar onNavigate={onNavigate} />
+
       <div>
         <h1 className="text-2xl font-bold text-white mb-1">⭐ Women&apos;s Darts</h1>
         <p className="text-xs text-gray-500">Women&apos;s Series, Order of Merit, Matchplay qualification and partnership planning.</p>
@@ -5990,9 +5985,19 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
 
 function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarExpanded = sidebarPinned || sidebarHovered;
+
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_darts_sidebar_pinned') === 'true') }, [])
+  function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_darts_sidebar_pinned', String(next)); return next }) }
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
+
   const [livePlayer, setLivePlayer] = useState<DartsPlayer | null>(null);
-  const activeRole = session.role;
+  const [roleOverride, setRoleOverride] = useState(session.role || 'player');
+  const activeRole = roleOverride;
 
   useEffect(() => {
     let cancelled = false;
@@ -6096,45 +6101,61 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
-      {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`} style={{ background: '#0a0c14' }}>
-        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ background: 'linear-gradient(90deg, #DC2626, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>LUMIO TOUR</div>
-              <div className="text-[10px] text-gray-600">Darts</div>
-            </div>
+      {/* Sidebar — floating when unpinned, pushes content when pinned */}
+      {sidebarPinned && <div style={{ width: 220, flexShrink: 0 }} />}
+      <aside
+        className="hidden md:flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: '#0a0c14',
+          borderRight: '1px solid #1F2937',
+          transition: 'width 250ms ease',
+          position: sidebarPinned ? 'relative' : 'fixed',
+          top: 0, left: 0, height: '100vh',
+          zIndex: sidebarPinned ? 'auto' : 40,
+          marginLeft: sidebarPinned ? -220 : 0,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+
+        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
+            {session.logoDataUrl
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>🎯</div>
+            }
+            {sidebarExpanded && (
+              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>Lumio Darts</span>
+            )}
+          </div>
+          {sidebarExpanded && (
+            <button onClick={toggleSidebarPin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#dc2626' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
           )}
-          {sidebarCollapsed && <span className="text-lg mx-auto">🎯</span>}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600 hover:text-gray-400 text-xs ml-auto flex-shrink-0">
-            {sidebarCollapsed ? '>' : '<'}
-          </button>
         </div>
 
-        {!sidebarCollapsed && (
-          <div className="p-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-red-500/40" style={{ background: 'linear-gradient(135deg, rgba(185,28,28,0.3), rgba(234,88,12,0.3))' }}>{player.nationalityFlag}</div>
-              <div>
-                <div className="text-xs font-semibold text-white">{player.name}</div>
-                <div className="text-[10px] text-gray-500">#{player.pdcRank} PDC · {player.nationality}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <nav className="flex-1 overflow-y-auto py-2 px-2">
+        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
             const items = SIDEBAR_ITEMS.filter(i => i.group === group);
             return (
               <div key={group} className="mb-3">
-                {!sidebarCollapsed && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
+                {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
                 {items.map(item => (
-                  <button key={item.id} onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg mb-0.5 transition-all text-left ${activeSection === item.id ? 'bg-red-600/20 text-red-300 border border-red-600/30' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}`}
-                    title={sidebarCollapsed ? item.label : undefined}>
+                  <button key={item.id}
+                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    style={{
+                      backgroundColor: activeSection === item.id ? 'rgba(220,38,38,0.12)' : 'transparent',
+                      color: activeSection === item.id ? '#fca5a5' : '#6B7280',
+                      borderLeft: activeSection === item.id ? '2px solid #dc2626' : '2px solid transparent',
+                      paddingLeft: sidebarExpanded ? 10 : 0,
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    }}
+                    title={sidebarExpanded ? undefined : item.label}>
                     <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
               </div>
@@ -6147,6 +6168,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
           roles={DARTS_ROLES}
           accentColor="#dc2626"
           onRoleChange={(role) => {
+            setRoleOverride(role)
             const key = 'lumio_darts_demo_session'
             const stored = localStorage.getItem(key)
             if (stored) {
@@ -6154,28 +6176,28 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
               localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
             }
           }}
-          sidebarCollapsed={sidebarCollapsed}
+          sidebarCollapsed={!sidebarExpanded}
         />
 
-        {!sidebarCollapsed && (
+        {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-red-400 font-semibold mt-0.5">{player.plan}</div>
           </div>
         )}
-      </div>
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
+          {sidebarExpanded
+            ? <span className="text-xs font-bold tracking-widest" style={{ color: '#4B5563' }}>LUMIO DARTS</span>
+            : <span className="text-lg">🎯</span>}
+        </div>
+      </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0a0c14' }}>
-          <div className="text-xs text-gray-500 font-medium capitalize">
-            {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon} {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.label}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-600">PDC European Championship · Dortmund</div>
-            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            <div className="text-xs text-gray-500">Week 16 · 2025</div>
-          </div>
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
