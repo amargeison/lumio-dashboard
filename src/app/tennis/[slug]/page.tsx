@@ -922,15 +922,15 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     const voices = window.speechSynthesis.getVoices()
     // Map settings voice selection to browser voice preferences
     const storedVoiceId = typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '' : ''
-    const VOICE_PREFS: Record<string, { match: string[]; pitch: number }> = {
-      'EXAVITQu4vr4xnSDxMaL': { match: ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Samantha'], pitch: 1.05 },
-      'XB0fDUnXU5powFXDhCwa': { match: ['Microsoft Mia', 'Moira', 'Tessa', 'Fiona'], pitch: 1.0 },
-      'JBFqnCBsd6RMkjVDRZzb': { match: ['Google UK English Male', 'Microsoft George', 'Daniel', 'Arthur'], pitch: 0.85 },
+    const VOICE_PREFS: Record<string, { match: string[]; rate: number; pitch: number }> = {
+      'EXAVITQu4vr4xnSDxMaL': { match: ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'], rate: 0.95, pitch: 1.1 },
+      'XB0fDUnXU5powFXDhCwa': { match: ['Microsoft Hazel', 'Fiona', 'Google UK English Female', 'Samantha'], rate: 0.90, pitch: 1.25 },
+      'JBFqnCBsd6RMkjVDRZzb': { match: ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'], rate: 0.92, pitch: 0.75 },
     }
     const prefs = VOICE_PREFS[storedVoiceId] || VOICE_PREFS['EXAVITQu4vr4xnSDxMaL']
     const preferred = voices.find(v => prefs.match.some(m => v.name.includes(m))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
     if (preferred) utterance.voice = preferred
-    utterance.rate = 0.95; utterance.pitch = prefs.pitch; utterance.volume = 1.0
+    utterance.rate = prefs.rate; utterance.pitch = prefs.pitch; utterance.volume = 1.0
     utterance.onstart = () => setIsSpeaking(true)
     utterance.onend = () => setIsSpeaking(false)
     utterance.onerror = () => setIsSpeaking(false)
@@ -956,7 +956,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
   // Photo frame state
   const [photoIndex, setPhotoIndex] = useState(0)
-  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>('cover')
+  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>(() => {
+    try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_photo_fit') as 'cover' | 'contain' : null) || 'cover' } catch { return 'cover' }
+  })
   const [isPaused, setIsPaused] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -1528,7 +1530,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="flex items-center gap-3">
                     {photos.length > 1 && <button onClick={() => setIsPaused(!isPaused)} className="text-[10px]" style={{ color: '#6B7280' }}>{isPaused ? '▶ Play' : '⏸ Pause'}</button>}
                     {photos.length > 0 && <button onClick={() => { setPhotos(prev => prev.filter((_, i) => i !== photoIndex)); setPhotoIndex(0) }} className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>}
-                    {photos.length > 0 && <button onClick={() => setPhotoFit(photoFit === 'cover' ? 'contain' : 'cover')} style={{ background: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', border: 'none' }}>⤢ Fit</button>}
+                    {photos.length > 0 && <button onClick={() => { const v = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(v); localStorage.setItem('lumio_tennis_photo_fit', v) }} style={{ background: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', border: 'none' }}>⤢ Fit</button>}
                     <button onClick={() => photoInputRef.current?.click()} disabled={photos.length >= 3} className="text-[10px] font-semibold" style={{ color: photos.length >= 3 ? '#374151' : '#0ea5e9' }} title={photos.length >= 3 ? '3 max' : 'Add photo'}>+ Add</button>
                     <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={addPhoto} />
                   </div>
@@ -6153,6 +6155,10 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
   const ACCENT = '#0ea5e9'
   const ACCENT_LIGHT = '#38bdf8'
   const [currentPhoto, setCurrentPhoto] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') || '' : '')
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(session?.userName || player.name || '')
+  const [editingNickname, setEditingNickname] = useState(false)
+  const [nicknameValue, setNicknameValue] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') || '' : '')
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState<{ label: string; tz: string }[]>(() => {
@@ -6169,10 +6175,11 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance("Good morning. Here's your daily tennis briefing. You have a match today at 13:00 on Court 4.")
     const voices = window.speechSynthesis.getVoices()
-    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Samantha'], 'Charlotte': ['Microsoft Mia','Moira','Tessa','Fiona'], 'George': ['Google UK English Male','Microsoft George','Daniel','Arthur'] }
+    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Veena'], 'Charlotte': ['Microsoft Hazel','Fiona','Google UK English Female','Samantha'], 'George': ['Google UK English Male','Microsoft George','Daniel','Alex'] }
+    const vs: Record<string, { rate: number; pitch: number }> = { 'Sarah': { rate: 0.95, pitch: 1.1 }, 'Charlotte': { rate: 0.90, pitch: 1.25 }, 'George': { rate: 0.92, pitch: 0.75 } }
     const match = voices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
     if (match) utterance.voice = match
-    utterance.rate = 0.95; utterance.pitch = voiceName === 'George' ? 0.85 : 1.05
+    utterance.rate = vs[voiceName]?.rate || 0.95; utterance.pitch = vs[voiceName]?.pitch || 1.0
     utterance.onend = () => setPreviewingVoice(null); utterance.onerror = () => setPreviewingVoice(null)
     setPreviewingVoice(voiceName); window.speechSynthesis.speak(utterance)
   }
@@ -6266,7 +6273,36 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{session?.userName || player.name}</span></div>
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span>
+            {editingName ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={nameValue} onChange={e => setNameValue(e.target.value)} autoFocus style={{ background: '#ffffff10', border: '1px solid #a855f7', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 160 }} />
+                <button onClick={() => { localStorage.setItem('lumio_tennis_name', nameValue); setEditingName(false) }} style={{ background: '#a855f7', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setEditingName(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #ffffff20', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{nameValue}</span>
+                <button onClick={() => setEditingName(true)} style={{ background: 'transparent', color: '#a855f7', border: '1px solid #a855f730', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>✏️ Edit</button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Nickname</span>
+            {editingNickname ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={nicknameValue} onChange={e => setNicknameValue(e.target.value)} placeholder={'"The Hammer"'} autoFocus style={{ background: '#ffffff10', border: '1px solid #a855f7', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 160 }} />
+                <button onClick={() => { localStorage.setItem('lumio_tennis_nickname', nicknameValue); setEditingNickname(false) }} style={{ background: '#a855f7', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setEditingNickname(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #ffffff20', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="text-sm" style={{ color: nicknameValue ? '#F9FAFB' : '#475569', fontStyle: nicknameValue ? 'normal' : 'italic' }}>{nicknameValue || 'Not set'}</span>
+                <button onClick={() => setEditingNickname(true)} style={{ background: 'transparent', color: '#a855f7', border: '1px solid #a855f730', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>✏️ Edit</button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Tour / Circuit</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.tour} Tour</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Ranking</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>#{player.ranking}</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Coach</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.coach}</span></div>
@@ -9845,11 +9881,9 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '16px', width: '100%' }}>
           {sidebarExpanded ? (
             <>
-              <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ width: 140, height: 'auto', display: 'block', margin: '0 auto', objectFit: 'contain', opacity: 0.7, transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = '0.7' }}
+              <img src="/Lumio_Sports_logo.png" alt="Lumio Sports" style={{ width: 100, height: 'auto', display: 'block', margin: '0 auto' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
-              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
+              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO SPORTS</span>
             </>
           ) : (
             <span className="text-lg">🎾</span>
