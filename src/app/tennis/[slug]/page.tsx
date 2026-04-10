@@ -5,6 +5,14 @@ import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
+// ─── UTILITIES ───────────────────────────────────────────────────────────────
+const cleanResponse = (text: string) => text
+  .replace(/#{1,6}\s*/g, '')
+  .replace(/\*\*(.*?)\*\*/g, '$1')
+  .replace(/\*(.*?)\*/g, '$1')
+  .replace(/^\s*[-•]\s*/gm, '')
+  .trim()
+
 // ─── TENNIS API ──────────────────────────────────────────────────────────────
 const TENNIS_API_KEY = process.env.NEXT_PUBLIC_TENNIS_API_KEY ?? '';
 const TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -387,9 +395,9 @@ Max 200 words.`
       if (data.error) {
         setSummary(`⚠️ ${data.error}`)
       } else {
-        const text = data.content?.map((b: {type:string;text?:string}) =>
+        const text = cleanResponse(data.content?.map((b: {type:string;text?:string}) =>
           b.type === 'text' ? b.text : ''
-        ).join('') || ''
+        ).join('') || '')
         setSummary(text || '⚠️ No response from AI. Check API key in Settings → Developer Tools.')
       }
       setGenerated(true)
@@ -2231,7 +2239,7 @@ Be direct, specific, professional. Around 250 words.`
         })
       });
       const data = await res.json();
-      setBriefing(data.content?.[0]?.text || 'Error generating briefing.');
+      setBriefing(cleanResponse(data.content?.[0]?.text || 'Error generating briefing.'));
     } catch {
       setBriefing('Connection error — check API configuration.');
     } finally {
@@ -3504,7 +3512,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
         }),
       });
       const data = await response.json();
-      const text = data.content?.[0]?.text || 'Analysis unavailable.';
+      const text = cleanResponse(data.content?.[0]?.text || 'Analysis unavailable.');
       setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: text } }));
     } catch {
       setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: 'Failed to generate analysis. Check API key configuration.' } }));
@@ -7673,7 +7681,7 @@ function TennisSendMessage({ onClose, session, player }: { onClose: () => void; 
         }] })
       })
       const data = await res.json()
-      setAiDraft(data.content?.[0]?.text || messageText)
+      setAiDraft(cleanResponse(data.content?.[0]?.text || messageText))
     } catch { setAiDraft(urgent ? `[URGENT] ${messageText}` : messageText) }
     setLoading(false)
     setStep('preview')
@@ -7917,7 +7925,7 @@ function TennisFlightFinder({ onClose, session, player }: { onClose: () => void;
         })
       })
       const data = await res.json()
-      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const text = cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || '')
       const match = text.match(/\[[\s\S]*\]/)
       setResults(match ? JSON.parse(match[0]) : FALLBACK_RESULTS)
     } catch { setResults(FALLBACK_RESULTS) }
@@ -8036,7 +8044,7 @@ function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; 
         })
       })
       const data = await res.json()
-      setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+      setBrief(cleanResponse(data.content?.[0]?.text || 'Unable to generate brief.'))
     } catch { setBrief('Unable to generate brief.') }
     setLoading(false)
   }
@@ -8083,7 +8091,7 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
       })
       const data = await res.json()
-      setPost(data.content?.[0]?.text || 'Unable to generate.')
+      setPost(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
     } catch { setPost('Unable to generate.') }
     setLoading(false)
   }
@@ -8126,7 +8134,7 @@ function TennisPressStatement({ onClose, session, player }: { onClose: () => voi
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. 4-5 talking points. Genuine, not corporate. ~150 words.` }] })
       })
       const data = await res.json()
-      setStatement(data.content?.[0]?.text || 'Unable to generate.')
+      setStatement(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
     } catch { setStatement('Unable to generate.') }
     setLoading(false)
   }
@@ -8632,7 +8640,7 @@ function TennisWildcardRequest({ onClose, session, player }: { onClose: () => vo
     setLoading(true)
     try {
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a professional wildcard request letter for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) to the tournament director of ${tournament}.\n\nReason for request: ${reason}\nPlayer nationality: British\nCurrent ranking: #${player.ranking ?? 67}\nCareer high: #${player.career_high ?? 44}\nRecent results: Monte-Carlo QF (this week), solid clay season\n\nWrite a concise, professional letter (150-200 words) that opens addressing the tournament director, clearly states the wildcard request, gives 2-3 compelling reasons, mentions British market appeal if relevant, and closes professionally.\n\nWrite ONLY the letter, no commentary.` }] }) })
-      const data = await res.json(); setLetter(data.content?.[0]?.text || 'Unable to generate letter.')
+      const data = await res.json(); setLetter(cleanResponse(data.content?.[0]?.text || 'Unable to generate letter.'))
     } catch { setLetter('Unable to generate letter.') }
     setLoading(false)
   }
@@ -8666,7 +8674,7 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
     setLoading(true)
     try {
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 700, messages: [{ role: 'user', content: `Generate a weekly agent briefing for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}).\n\nWrite a concise weekly brief covering:\n1. RANKING UPDATE — current position, points at risk, trajectory\n2. THIS WEEK — tournament result/status, prize money earned\n3. UPCOMING — next 3 tournaments, entry status, travel confirmed\n4. SPONSOR STATUS — obligations due, any outstanding content\n5. FINANCIAL — prize money YTD, expenses flag if any\n6. ACTION ITEMS — 3 things agent needs to action this week\n\nFormat with clear numbered sections, bullet points within each.\nTone: professional, direct, information-dense. Max 300 words.\nWrite ONLY the brief, addressed to "James" (agent name).` }] }) })
-      const data = await res.json(); setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+      const data = await res.json(); setBrief(cleanResponse(data.content?.[0]?.text || 'Unable to generate brief.'))
     } catch { setBrief('Unable to generate brief.') }
     setLoading(false)
   }
@@ -8854,7 +8862,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
         }),
       });
       const data = await res.json();
-      const text = data.content?.[0]?.text ?? 'No response';
+      const text = cleanResponse(data.content?.[0]?.text ?? 'No response');
       setReportContent(prev => ({ ...prev, [match.id]: text }));
       setActiveReport(match.id);
     } catch {
