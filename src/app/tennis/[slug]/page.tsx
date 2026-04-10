@@ -919,18 +919,22 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       `By the way — on a paid plan, you can choose from 20 natural voices that sound nothing like this one.`,
     ].join(' ')
     const utterance = new SpeechSynthesisUtterance(briefingText)
-    const voices = window.speechSynthesis.getVoices()
-    // Map settings voice selection to browser voice preferences
-    const storedVoiceId = typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '' : ''
-    const VOICE_PREFS: Record<string, { match: string[]; rate: number; pitch: number }> = {
-      'EXAVITQu4vr4xnSDxMaL': { match: ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'], rate: 0.95, pitch: 1.1 },
-      'XB0fDUnXU5powFXDhCwa': { match: ['Microsoft Hazel', 'Fiona', 'Google UK English Female', 'Samantha'], rate: 0.90, pitch: 1.25 },
-      'JBFqnCBsd6RMkjVDRZzb': { match: ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'], rate: 0.92, pitch: 0.75 },
+    const allVoices = window.speechSynthesis.getVoices()
+    const savedVoiceName = typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice_name') || 'Sarah' : 'Sarah'
+    const voiceMap: Record<string, string[]> = {
+      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena', 'en-GB'],
+      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'en-AU'],
+      'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
     }
-    const prefs = VOICE_PREFS[storedVoiceId] || VOICE_PREFS['EXAVITQu4vr4xnSDxMaL']
-    const preferred = voices.find(v => prefs.match.some(m => v.name.includes(m))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
-    if (preferred) utterance.voice = preferred
-    utterance.rate = prefs.rate; utterance.pitch = prefs.pitch; utterance.volume = 1.0
+    const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
+    const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
+      || allVoices.find(v => savedVoiceName === 'George'
+        ? v.name.toLowerCase().includes('male') || v.lang === 'en-GB'
+        : v.name.toLowerCase().includes('female') || v.lang === 'en-GB')
+    utterance.voice = match || null
+    utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
+    utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95
+    utterance.volume = 1.0
     utterance.onstart = () => setIsSpeaking(true)
     utterance.onend = () => setIsSpeaking(false)
     utterance.onerror = () => setIsSpeaking(false)
@@ -6176,11 +6180,12 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance("Good morning. Here's your daily tennis briefing. You have a match today at 13:00 on Court 4.")
     const voices = window.speechSynthesis.getVoices()
-    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Veena'], 'Charlotte': ['Microsoft Hazel','Fiona','Google UK English Female','Samantha'], 'George': ['Google UK English Male','Microsoft George','Daniel','Alex'] }
-    const vs: Record<string, { rate: number; pitch: number }> = { 'Sarah': { rate: 0.95, pitch: 1.1 }, 'Charlotte': { rate: 0.90, pitch: 1.25 }, 'George': { rate: 0.92, pitch: 0.75 } }
-    const match = voices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
-    if (match) utterance.voice = match
-    utterance.rate = vs[voiceName]?.rate || 0.95; utterance.pitch = vs[voiceName]?.pitch || 1.0
+    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Veena','en-GB'], 'Charlotte': ['Microsoft Hazel','Fiona','Samantha','en-AU'], 'George': ['Google UK English Male','Microsoft George','Daniel','Alex'] }
+    const match = voices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p)))
+      || voices.find(v => voiceName === 'George' ? v.name.toLowerCase().includes('male') || v.lang === 'en-GB' : v.name.toLowerCase().includes('female') || v.lang === 'en-GB')
+    utterance.voice = match || null
+    utterance.pitch = voiceName === 'George' ? 0.75 : voiceName === 'Charlotte' ? 1.25 : 1.1
+    utterance.rate = voiceName === 'George' ? 0.92 : 0.95
     utterance.onend = () => setPreviewingVoice(null); utterance.onerror = () => setPreviewingVoice(null)
     setPreviewingVoice(voiceName); window.speechSynthesis.speak(utterance)
   }
@@ -6449,7 +6454,7 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
               {TENNIS_VOICES.map(voice => {
                 const isActive = activeVoice === voice.id
                 return (
-                  <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
+                  <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id); localStorage.setItem('lumio_tts_voice_name', voice.name) }}
                     className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? `1px solid ${ACCENT}` : '1px solid #1F2937' }}>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
