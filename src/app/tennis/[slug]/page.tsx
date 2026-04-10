@@ -341,14 +341,9 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
   const generateSummary = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -1960,14 +1955,9 @@ function MorningBriefingView({ player, session }: { player: TennisPlayer; sessio
     setLoading(true);
     try {
       const todayGPS = GPS_SESSIONS_TENNIS[GPS_SESSIONS_TENNIS.length - 1];
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 800,
@@ -2160,9 +2150,9 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
     try {
       const totalNewPts = rankScenarios.reduce((a,s)=>a+s.pts,0);
       const projectedPts = player.ranking_points + totalNewPts;
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 400,
@@ -3249,14 +3239,9 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
     setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: true, result: null } }));
     const practiceSession = sessions[sessionIdx];
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 500,
@@ -4951,9 +4936,9 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
   const generatePress = async () => {
     setPressLoading(true);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 500,
           messages: [{ role: 'user', content: `Generate post-match quotes for Alex Rivera, British ATP tennis player ranked #67. Result: ${matchResult}. Key moments: 1) ${moment1} 2) ${moment2} 3) ${moment3}. Alex is professional, humble, determined, with dry British wit. Generate platform-specific content. Respond ONLY in JSON: {"press_quote":"150 word formal press conference quote, 3rd person refs acceptable","social_instagram":"engaging 80-word instagram caption with 3 hashtags","social_x":"punchy 240-character max X/Twitter post"}` }]
@@ -5090,13 +5075,13 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
       setSearchPhase('✈️ Searching flights from '+trOrigin+' to '+trDest+'...')
       await new Promise(r=>setTimeout(r,800))
       setSearchPhase('💰 Comparing fares...')
-      const fr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic. Sort by score desc.`}]})})
+      const fr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic. Sort by score desc.`}]})})
       const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
       try{setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))}
       catch{setFlightResults([{airline:'British Airways',flightNo:'BA0459',departure:'07:15 LHR',arrival:'10:30 MAD',duration:'2h 15m',stops:'Direct',price:189,class:trCabin,bookingUrl:'https://www.britishairways.com',score:94},{airline:'Iberia',flightNo:'IB3167',departure:'06:45 LHR',arrival:'10:05 MAD',duration:'2h 20m',stops:'Direct',price:142,class:trCabin,bookingUrl:'https://www.iberia.com',score:88},{airline:'Vueling',flightNo:'VY7822',departure:'11:30 LHR',arrival:'14:55 MAD',duration:'2h 25m',stops:'Direct',price:98,class:trCabin,bookingUrl:'https://www.vueling.com',score:81},{airline:'easyJet',flightNo:'EZY8821',departure:'13:00 LGW',arrival:'16:20 MAD',duration:'2h 20m',stops:'Direct',price:74,class:trCabin,bookingUrl:'https://www.easyjet.com',score:72},{airline:'Ryanair',flightNo:'FR1234',departure:'06:00 STN',arrival:'09:25 MAD',duration:'2h 25m',stops:'Direct',price:52,class:trCabin,bookingUrl:'https://www.ryanair.com',score:61}])}
       setSearchPhase('🏨 Searching hotels...')
       await new Promise(r=>setTimeout(r,700))
-      const hr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value.'} Need: ${[trGym&&'Gym',trCourts&&'Courts',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+      const hr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value.'} Need: ${[trGym&&'Gym',trCourts&&'Courts',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
       const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
       try{setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))}
       catch{setHotelResults([{name:'AC Hotel Cuzco',stars:4,area:'Cuzco/IFEMA',distanceToVenue:'8 min taxi',pricePerNight:189,totalPrice:1323,rating:8.6,amenities:['Gym','Restaurant','Bar','WiFi'],bookingUrl:'https://www.booking.com',score:91},{name:'Eurostars Madrid Tower',stars:5,area:'IFEMA',distanceToVenue:'5 min taxi',pricePerNight:240,totalPrice:1680,rating:9.1,amenities:['Gym','Pool','Spa','Restaurant'],bookingUrl:'https://www.booking.com',score:88},{name:'Hotel Puerta de América',stars:5,area:'Av. de América',distanceToVenue:'12 min taxi',pricePerNight:210,totalPrice:1470,rating:8.9,amenities:['Gym','Pool','Tennis courts'],bookingUrl:'https://www.booking.com',score:85},{name:'Ibis Madrid Alcalá',stars:3,area:'East Madrid',distanceToVenue:'15 min taxi',pricePerNight:89,totalPrice:623,rating:8.1,amenities:['WiFi','Restaurant'],bookingUrl:'https://www.booking.com',score:71}])}
@@ -7206,9 +7191,9 @@ function TennisFlightFinder({ onClose, session, player }: { onClose: () => void;
   const searchFlights = async () => {
     setStep('searching')
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Fastest", or null. Realistic prices.` }]
@@ -7325,9 +7310,9 @@ function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; 
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a top tennis analyst. Generate a tactical match prep brief for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) vs ${opponent} at ${tournament} on ${surface}. Cover: OPPONENT PROFILE, SERVE PATTERNS, RETURN GAME, TACTICAL RECOMMENDATIONS (3-4 specific), H2H CONTEXT, MENTAL EDGE. Use emoji headers. Max 400 words.` }]
@@ -7375,9 +7360,9 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
       })
       const data = await res.json()
@@ -7418,9 +7403,9 @@ function TennisPressStatement({ onClose, session, player }: { onClose: () => voi
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. 4-5 talking points. Genuine, not corporate. ~150 words.` }] })
       })
       const data = await res.json()
@@ -7940,9 +7925,9 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
   const generateDebrief = async () => {
     setDebriefLoading(true);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 700,
           messages: [{ role: 'user', content: `Post-match debrief for Alex Rivera (ATP #67, clay specialist, right-handed, two-handed backhand). Match: ${selectedMatch}. GPS: 11.2km / 142min / ACWR 1.17. Serve: 62% 1st serve, 6 aces, 3 DFs. Court heatmap shows heavy baseline positioning (65%), limited net approaches. Analyse the match from data perspective. Respond ONLY in JSON: {"headline":"one sentence performance summary","serve_analysis":"2 sentences","return_analysis":"2 sentences","gps_fatigue":"1 sentence on what GPS load tells us about performance in 3rd set","pattern_insight":"1 sentence on tactical pattern from court positioning data","next_week":"1 sentence on what to prioritise in practice"}` }]
@@ -7975,14 +7960,9 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
   const handleGenerateReport = async (match: typeof matches[0]) => {
     setGeneratingReport(match.id);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/tennis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
