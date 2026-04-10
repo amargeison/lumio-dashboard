@@ -1923,34 +1923,224 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   const fmtMeta = FORMAT_META[format] || FORMAT_META.ch;
   const pitch = getPitchReport(matchDay);
 
+  // Dashboard state
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('cricket_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  })
+  const [tourStep, setTourStep] = useState(0)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+
+  // TTS speaker
+  const speakBriefing = () => {
+    if (typeof window === 'undefined') return
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    const text = aiSummary || 'Good morning. Championship opener in 3 days. Brook passed his final fitness check. Coad bowled 12 overs in nets. Lancashire opener Jennings flagged as vulnerable to the nip-backer early. Weather looks good. Ticket sales at 94% capacity.'
+    const u = new SpeechSynthesisUtterance(text)
+    const voices = window.speechSynthesis.getVoices()
+    const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
+    if (pref) u.voice = pref; u.rate = 0.95
+    u.onstart = () => setIsSpeaking(true); u.onend = () => setIsSpeaking(false); u.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(u)
+  }
+  useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+
+  // Auto-generate AI summary on mount
+  useEffect(() => {
+    setAiLoading(true)
+    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Yorkshire CCC director. Cover: Division One position (2nd), upcoming fixture vs Lancashire, squad availability (16/18 fit), Brook batting form, Coad bowling workload, one pitch/weather watch-out. 4-5 sentences, director tone. No intro, just the briefing.' }] }) })
+      .then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setAiLoading(false))
+  }, [])
+
+  const CRICKET_QUOTES = [
+    { text: "Cricket is a game which the English, not being a spiritual people, have invented in order to give themselves some conception of eternity.", author: "Lord Mancroft" },
+    { text: "In cricket, as in no other game, a great master may be judged as much by his technique as by his record.", author: "Neville Cardus" },
+    { text: "Cricket civilizes people and creates good gentlemen. I want everyone to play cricket.", author: "Robert Mugabe" },
+    { text: "The only time an Australian ever walks is when his car breaks down.", author: "Barry Richards" },
+  ]
+  const cricketQuote = CRICKET_QUOTES[new Date().getDay() % CRICKET_QUOTES.length]
+
   const Dashboard=()=>(
-    <div>
-      <SectionHead title="Yorkshire CCC — Director's Dashboard" sub={fmtMeta.sub}/>
+    <div className="space-y-6">
+      {/* Morning Banner — all in one card */}
+      <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(7,8,15,0.95) 60%)', border: `1px solid ${C.purple}33` }}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: C.text }}>Good morning, Director. 🏏</h1>
+            <p className="text-sm mt-1" style={{ color: C.muted }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+            <p className="text-xs italic mt-2" style={{ color: C.amber }}>&ldquo;{cricketQuote.text}&rdquo; &mdash; {cricketQuote.author}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* TTS speaker */}
+            <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+              style={{ background: isSpeaking ? `${C.purple}40` : 'rgba(255,255,255,0.08)', border: isSpeaking ? `1px solid ${C.purple}80` : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? C.purple : C.muted, fontSize: 14 }}>
+              {isSpeaking ? '⏹' : '🔊'}
+            </button>
+            {/* World clock */}
+            <div className="hidden md:flex items-center gap-5 text-xs text-right">
+              {[{ city:'London', tz:'Europe/London' },{ city:'Mumbai', tz:'Asia/Kolkata' },{ city:'Sydney', tz:'Australia/Sydney' },{ city:'Cape Town', tz:'Africa/Johannesburg' }].map(({ city, tz }) => (
+                <div key={city}><div className="font-bold" style={{ color: C.text }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</div><div style={{ color: C.dim }}>{city}</div></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Stat boxes inside banner */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
+            <div className="text-2xl font-black" style={{ color: C.text }}>2nd</div>
+            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Division One</div>
+            <div className="text-[10px] mt-1" style={{ color: C.teal }}>Championship</div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
+            <div className="text-2xl font-black" style={{ color: C.text }}>Fri 11 Apr</div>
+            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Next Match</div>
+            <div className="text-[10px] mt-1" style={{ color: C.purple }}>vs Lancashire</div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
+            <div className="text-2xl font-black" style={{ color: C.text }}>16/18</div>
+            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Squad Available</div>
+            <div className="text-[10px] mt-1" style={{ color: C.green }}>1 injury · 1 monitoring</div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
+            <div className="text-2xl font-black" style={{ color: C.text }}>£3.2m</div>
+            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Budget Remaining</div>
+            <div className="text-[10px] mt-1" style={{ color: C.amber }}>of £9.8m annual</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions — 2-row grid */}
+      <div className="mb-5">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: C.dim }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label:'Book Flight',        icon:'✈️', color:'#0ea5e9' },
+            { label:'Team Selection AI',  icon:'👥', color:C.purple, hot:true },
+            { label:'Toss Advisor',       icon:'🌤️', color:C.teal, hot:true },
+            { label:'Sponsor Post',       icon:'📱', color:C.amber },
+            { label:'Log Injury',         icon:'🏥', color:C.red },
+            { label:'Add Expense',        icon:'💰', color:C.dim },
+            { label:'Match Report',       icon:'📋', color:C.purple },
+            { label:'Visa Check',         icon:'🌍', color:C.dim },
+          ].map((a, i) => (
+            <button key={i} className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: (a as {hot?:boolean}).hot ? `${a.color}18` : '#111318', border: (a as {hot?:boolean}).hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: (a as {hot?:boolean}).hot ? a.color : C.muted }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = (a as {hot?:boolean}).hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = (a as {hot?:boolean}).hot ? a.color : C.muted }}>
+              <span>{a.icon}</span>{a.label}
+              {(a as {hot?:boolean}).hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b overflow-x-auto" style={{ borderColor: C.border }}>
+        <button onClick={() => setDashTab('gettingstarted')}
+          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderColor: dashTab === 'gettingstarted' ? C.purple : 'transparent', color: dashTab === 'gettingstarted' ? C.purple : C.dim }}>
+          🚀 Getting Started
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: C.purple }}>10</span>
+        </button>
+        {([
+          { id:'today' as const, label:'Today', icon:'🏠' },{ id:'quickwins' as const, label:'Quick Wins', icon:'⚡' },
+          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },{ id:'insights' as const, label:'Insights', icon:'📊' },
+          { id:'dontmiss' as const, label:"Don't Miss", icon:'🔴' },{ id:'team' as const, label:'Team', icon:'👥' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderColor: dashTab === t.id ? C.purple : 'transparent', color: dashTab === t.id ? C.text : C.dim }}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* GETTING STARTED */}
+      {dashTab === 'gettingstarted' && (() => {
+        const STEPS = [
+          { n:1, label:'Connect your ECB/county profile' },{ n:2, label:'Add your coaching team' },{ n:3, label:'Set your fixture schedule' },{ n:4, label:'Upload sponsor agreements' },{ n:5, label:'Set your budget target' },{ n:6, label:'Configure squad availability' },{ n:7, label:'Set up GPS tracking' },{ n:8, label:'Add your analyst' },{ n:9, label:'Connect opposition scouting' },{ n:10, label:"You're ready — good luck out there" },
+        ]
+        const step = STEPS[tourStep]
+        return (
+          <div className="pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1 mr-4">
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: C.purple }}>STEP {tourStep + 1} OF {STEPS.length}</div>
+                <div className="w-full rounded-full h-1" style={{ background: C.border }}><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: C.purple }} /></div>
+              </div>
+              <button onClick={() => { localStorage.setItem('cricket_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: C.dim }}>Skip tour →</button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="space-y-1">
+                {STEPS.map((s, i) => (
+                  <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                    style={{ backgroundColor: tourStep === i ? C.purpleDim : 'transparent', border: tourStep === i ? `1px solid ${C.purple}50` : '1px solid transparent' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: i < tourStep ? C.green : tourStep === i ? C.purple : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : C.dim }}>
+                      {i < tourStep ? '✓' : s.n}
+                    </div>
+                    <span className="text-sm" style={{ color: tourStep === i ? C.text : C.dim }}>{s.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="lg:col-span-2">
+                <div className="rounded-2xl p-8" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 400 }}>
+                  <div className="text-5xl mb-4">🏏</div>
+                  <h2 className="text-2xl font-black mb-3" style={{ color: C.text }}>{step.label}</h2>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: C.muted }}>Set up your Lumio Cricket portal step by step. Each item connects a key part of Yorkshire CCC to your director&apos;s dashboard.</p>
+                  <div className="rounded-xl p-4 mb-6" style={{ background: C.purpleDim, border: `1px solid ${C.purple}33` }}>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[{ icon:'🏆', v:'2nd', label:'Div One', c:C.teal },{ icon:'🏏', v:'Fri 11', label:'Next Match', c:C.purple },{ icon:'👥', v:'16/18', label:'Squad', c:C.green },{ icon:'💰', v:'£3.2m', label:'Budget', c:C.amber }].map((s, i) => (
+                        <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: C.bg }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: C.dim }}>{s.label}</div></div>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('cricket_getting_started_seen', 'true'); setDashTab('today') } }}
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: C.purple }}>
+                    {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go 🏏"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* TODAY tab — existing dashboard content */}
+      {dashTab === 'today' && (<div>
+      {/* AI Summary Card */}
+      <div className="rounded-xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${C.card}, ${C.cardAlt})`, border: `1px solid ${C.purple}33` }}>
+        <div className="flex items-center gap-2 mb-3">
+          <div style={{width:28,height:28,borderRadius:'50%',background:C.purpleDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
+          <span className="text-xs font-bold" style={{ color: C.purple }}>Lumio AI — Morning Summary</span>
+          {aiLoading && <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{ background: C.purpleDim, color: C.purple }}>Generating...</span>}
+        </div>
+        {aiLoading ? (
+          <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded animate-pulse" style={{width:`${80+i*5}%`, background: C.border}}/>)}</div>
+        ) : aiSummary ? (
+          <div className="text-sm leading-relaxed" style={{ color: C.text, fontStyle:'italic', borderLeft:`3px solid ${C.purple}`, paddingLeft:14 }}>{aiSummary}</div>
+        ) : (
+          <div className="text-sm leading-relaxed" style={{ color: C.text, fontStyle:'italic', borderLeft:`3px solid ${C.purple}`, paddingLeft:14 }}>
+            Good morning. Championship opener in 3 days. Brook passed his final fitness check — full availability confirmed. Coad bowled 12 overs unbroken in nets. Lancashire&apos;s opener Jennings flagged as vulnerable to the nip-backer early. Weather looks good. Ticket sales at 94% capacity.
+          </div>
+        )}
+      </div>
+
+      {/* Format tabs */}
       <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
         {FORMAT_TABS.map(t => {
           const active = format === t.id;
           return (
-            <button key={t.id}
-              type="button"
-              onClick={() => setFormat(t.id)}
-              style={{
-                padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600,
-                cursor:'pointer',
-                border:`1px solid ${active ? C.teal : C.border}`,
-                background: active ? C.tealDim : 'transparent',
-                color: active ? C.teal : C.muted,
-                transition:'all 0.15s ease',
-              }}>
+            <button key={t.id} type="button" onClick={() => setFormat(t.id)}
+              style={{ padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
+                border:`1px solid ${active ? C.teal : C.border}`, background: active ? C.tealDim : 'transparent',
+                color: active ? C.teal : C.muted, transition:'all 0.15s ease' }}>
               {t.label}
             </button>
           );
         })}
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
-        <Stat label={fmtMeta.pos.label} value={fmtMeta.pos.value} color={C.teal} sub={fmtMeta.pos.sub}/>
-        <Stat label={fmtMeta.next.label} value={fmtMeta.next.value} color={C.purple} sub={fmtMeta.next.sub}/>
-        <Stat label="Squad Available" value="16 / 18" color={C.green} sub="1 injury · 1 monitoring"/>
-        <Stat label="Budget Remaining" value="£3.2m" color={C.amber} sub="of £9.8m annual"/>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
         <Card>
@@ -2114,14 +2304,14 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
           <div style={{fontSize:11,color:C.dim,fontStyle:'italic'}}>Enter match conditions above and click Get Toss Advice.</div>
         )}
       </Card>
-      <Card>
-        <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Quick Actions</div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          {['Log Injury','Team Sheet','Opposition Report','Book Nets','Raise Invoice','ECB Submission','Board Report'].map(a=>(
-            <button key={a} style={{padding:'8px 14px',borderRadius:8,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.muted,fontSize:12,cursor:'pointer'}}>{a}</button>
-          ))}
-        </div>
-      </Card>
+      </div>)}
+
+      {/* Other tabs — placeholder content */}
+      {dashTab === 'quickwins' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Quick win suggestions will appear here based on your upcoming fixtures and squad availability.</div>}
+      {dashTab === 'dailytasks' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Your daily tasks for today — team selection, media sessions, net bookings, and admin.</div>}
+      {dashTab === 'insights' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Performance insights, squad analytics, and competition trends across all formats.</div>}
+      {dashTab === 'dontmiss' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Time-sensitive items — ECB deadlines, contract renewals, overseas player visa status.</div>}
+      {dashTab === 'team' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Your coaching and support staff — availability, recent notes, and contact details.</div>}
     </div>
   );
 
