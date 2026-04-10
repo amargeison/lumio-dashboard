@@ -3973,76 +3973,88 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
 
   return(
     <div style={{display:'flex',minHeight:'100vh',background:C.bg,fontFamily:'"DM Sans","Inter",system-ui,sans-serif',color:C.text}}>
-      {/* Sidebar */}
-      <div style={{width:220,background:C.sidebar,borderRight:`1px solid ${C.border}`,display:'flex',flexDirection:'column',flexShrink:0,position:'sticky',top:0,height:'100vh',overflowY:'auto'}}>
-        <div style={{padding:'18px 16px 14px',borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${C.purple},${C.teal})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>🏏</div>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:C.text,letterSpacing:'-0.01em'}}>Lumio Cricket</div>
-              <div style={{fontSize:10,color:C.dim}}>Northbrook CC</div>
-            </div>
+      {/* Sidebar — floating when unpinned */}
+      <aside
+        className="hidden md:flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: C.sidebar,
+          borderRight: `1px solid ${C.border}`,
+          transition: 'width 250ms ease',
+          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+
+        <div className="flex items-center shrink-0" style={{ borderBottom: `1px solid ${C.border}`, minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
+            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${C.purple},${C.teal})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🏏</div>
+            {sidebarExpanded && <div><div style={{fontSize:13,fontWeight:700,color:C.text}}>Lumio Cricket</div><div style={{fontSize:10,color:C.dim}}>Yorkshire CCC</div></div>}
           </div>
-          <div style={{padding:'6px 10px',background:C.purpleDim,borderRadius:6,display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:6}}>
-            <span style={{fontSize:11,color:C.purple}}>Division One · 2026</span>
-            <span style={{width:6,height:6,borderRadius:'50%',background:C.green,display:'inline-block'}}/>
-          </div>
+          {sidebarExpanded && (
+            <button onClick={toggleSidebarPin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? C.purple : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
+          )}
         </div>
-        <nav style={{flex:1,padding:'10px 8px'}}>
+
+        <nav style={{flex:1,overflowY:'auto',padding:'10px 6px'}}>
           {SECTIONED_NAV.map((sec,si)=>(
             <div key={sec.section}>
-              <div style={{fontSize:10,color:C.dim,letterSpacing:'0.1em',padding:'10px 10px 6px',textTransform:'uppercase',marginTop:si===0?0:6}}>{sec.section}</div>
+              {sidebarExpanded && <div style={{fontSize:10,color:C.dim,letterSpacing:'0.1em',padding:'10px 10px 6px',textTransform:'uppercase',marginTop:si===0?0:6}}>{sec.section}</div>}
               {sec.items.map(item=>(
-                <button key={item.id} onClick={()=>setPage(item.id)} style={{
-                  width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,
-                  border:'none',cursor:'pointer',marginBottom:2,textAlign:'left',
-                  transition:'all 0.12s',
-                  background:page===item.id?C.purpleDim:'transparent',
-                  color:page===item.id?C.purple:C.muted,
-                }}>
-                  <span style={{fontSize:14,width:18,textAlign:'center'}}>{item.icon}</span>
-                  <span style={{fontSize:13,fontWeight:page===item.id?500:400}}>{item.label}</span>
-                  {item.badge&&<span style={{marginLeft:'auto',fontSize:9,padding:'1px 6px',borderRadius:10,background:C.tealDim,color:C.teal}}>{item.badge}</span>}
+                <button key={item.id} onClick={()=>{setPage(item.id); if (!sidebarPinned) setSidebarHovered(false)}}
+                  className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                  style={{
+                    backgroundColor: page===item.id ? C.purpleDim : 'transparent',
+                    color: page===item.id ? C.purple : C.muted,
+                    borderLeft: page===item.id ? `2px solid ${C.purple}` : '2px solid transparent',
+                    paddingLeft: sidebarExpanded ? 10 : 0,
+                    justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    border: 'none', cursor: 'pointer',
+                  }}
+                  title={sidebarExpanded ? undefined : item.label}>
+                  <span style={{fontSize:14,width:18,textAlign:'center',flexShrink:0}}>{item.icon}</span>
+                  {sidebarExpanded && <span style={{fontSize:13,fontWeight:page===item.id?600:400}}>{item.label}</span>}
+                  {sidebarExpanded && item.badge && <span style={{marginLeft:'auto',fontSize:9,padding:'1px 6px',borderRadius:10,background:C.tealDim,color:C.teal}}>{item.badge}</span>}
                 </button>
               ))}
             </div>
           ))}
         </nav>
+
         {session && (
           <RoleSwitcher
             session={session}
             roles={CRICKET_ROLES}
             accentColor="#b45309"
             onRoleChange={(role) => {
+              setRoleOverride(role)
               const key = 'lumio_cricket_demo_session'
               const stored = localStorage.getItem(key)
-              if (stored) {
-                const parsed = JSON.parse(stored)
-                localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
-              }
+              if (stored) { const parsed = JSON.parse(stored); localStorage.setItem(key, JSON.stringify({ ...parsed, role })) }
             }}
-            sidebarCollapsed={false}
+            sidebarCollapsed={!sidebarExpanded}
           />
         )}
-        <button
-          type="button"
-          onClick={() => setPage('gps')}
-          title="Go to GPS Tracking"
-          style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`,cursor:'pointer',background:'transparent',border:'none',borderBottom:'none',borderLeft:'none',borderRight:'none',textAlign:'left',width:'100%',display:'block',transition:'background 0.15s ease'}}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-        >
-          <div style={{fontSize:11,color:C.dim,marginBottom:4}}>GPS System</div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <div style={{width:6,height:6,borderRadius:'50%',background:C.green}}/>
-            <span style={{fontSize:11,color:C.green}}>Lumio Vest · 7 active</span>
-          </div>
-          <div style={{fontSize:10,color:C.dim,marginTop:2}}>Last sync: 08:12 today</div>
-        </button>
-      </div>
+
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: C.border }}>
+          {sidebarExpanded
+            ? <img src="/cricket_logo.png" alt="Lumio Cricket" style={{ maxHeight: 32, objectFit: 'contain' }} className="opacity-70 hover:opacity-100 transition-opacity" />
+            : <span className="text-lg">🏏</span>}
+        </div>
+      </aside>
+
       {/* Content */}
-      <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
-        {(pages as Record<string,React.ReactNode>)[page]||<Dashboard/>}
+      <div style={{flex:1,overflowY:'auto',marginLeft: sidebarPinned ? 220 : 72, transition:'margin-left 250ms ease'}}>
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
+        </div>
+        <div style={{padding:'24px 28px'}}>
+          {(pages as Record<string,React.ReactNode>)[page]||<Dashboard/>}
+        </div>
       </div>
     </div>
   );
