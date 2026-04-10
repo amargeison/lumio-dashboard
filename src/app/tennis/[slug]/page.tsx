@@ -9822,10 +9822,10 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             <div className="text-xs text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
           </div>
         )}
-        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
+        <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '16px', width: '100%' }}>
           {sidebarExpanded ? (
             <>
-              <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ height: 48, width: 'auto', objectFit: 'contain', opacity: 0.7, transition: 'opacity 0.2s' }}
+              <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ width: 140, height: 'auto', display: 'block', margin: '0 auto', objectFit: 'contain', opacity: 0.7, transition: 'opacity 0.2s' }}
                 onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
                 onMouseLeave={e => { e.currentTarget.style.opacity = '0.7' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
