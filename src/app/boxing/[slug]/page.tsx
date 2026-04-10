@@ -495,55 +495,53 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   return (
     <div className="space-y-6">
 
-      {/* Greeting banner */}
-      <div className="bg-gradient-to-r from-red-900/20 to-[#0d1117] border border-red-600/20 rounded-2xl p-6">
-        <div className="flex items-start justify-between mb-4">
+      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
+        style={{ background: 'linear-gradient(135deg, #450a0a 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(220,38,38,0.2)' }}>
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">{greeting}, {firstName}. 🥊</h1>
-            <p className="text-gray-400 text-sm mt-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🥊</h1>
+            </div>
+            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
-            <p className="text-xs text-gray-600 italic mt-2">
-              &quot;Everyone has a plan until they get punched in the mouth.&quot; — Mike Tyson
+            <p className="text-xs italic" style={{ color: '#dc2626' }}>
+              &ldquo;Everyone has a plan until they get punched in the mouth.&rdquo; &mdash; Mike Tyson
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-xs text-right">
+          <div className="hidden md:flex items-center gap-3 ml-4">
             {[
-              { city:'London',    tz:'Europe/London'    },
-              { city:'New York',  tz:'America/New_York' },
-              { city:'Las Vegas', tz:'America/Los_Angeles' },
-              { city:'Dubai',     tz:'Asia/Dubai'       },
-            ].map(({ city, tz }) => (
-              <div key={city}>
-                <div className="text-white font-bold">
-                  {new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}
-                </div>
-                <div className="text-gray-500">{city}</div>
+              { icon:'🥊', value:`#${fighter.rankings.wbc}`, label:'WBC', color:'#dc2626' },
+              { icon:'🏆', value:`#${fighter.rankings.ibf}`, label:'IBF', color:'#F97316' },
+              { icon:'⚖️', value:`${fighter.current_weight}kg`, label:'Weight', color:'#0ea5e9' },
+              { icon:'📅', value:`${fighter.next_fight.days_away}d`, label:'Fight', color:'#EF4444' },
+            ].map((s, i) => (
+              <div key={i} className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
+                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
+                <div className="text-xl mb-0.5">{s.icon}</div>
+                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
               </div>
             ))}
-          </div>
-        </div>
-        {/* KPI cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{fighter.rankings.wbc}</div>
-            <div className="text-xs text-gray-400 mt-0.5">WBC Ranking</div>
-            <div className="text-[10px] text-green-400 mt-1">Up 1 this month</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{fighter.rankings.ibf}</div>
-            <div className="text-xs text-gray-400 mt-0.5">IBF Ranking</div>
-            <div className="text-[10px] text-gray-500 mt-1">Mandatory approaching</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">{fighter.current_weight}kg</div>
-            <div className="text-xs text-gray-400 mt-0.5">Current Weight</div>
-            <div className="text-[10px] text-teal-400 mt-1">Target: {fighter.target_weight}kg</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">{fighter.next_fight.days_away}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Days to Fight</div>
-            <div className="text-[10px] text-red-400 mt-1">{fighter.next_fight.date}</div>
+            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="text-xl">🌤️</div>
+              <div className="text-sm font-bold text-white">18°C</div>
+              <div className="text-[9px]" style={{ color: '#6B7280' }}>London</div>
+            </div>
+            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Las Vegas', tz:'America/Los_Angeles', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
+                  <div key={city} className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#dc2626' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#dc2626' : '#6B7280' }}>{city}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
+            </div>
           </div>
         </div>
       </div>

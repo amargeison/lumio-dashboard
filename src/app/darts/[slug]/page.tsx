@@ -315,54 +315,53 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
 
   return (
     <div className="space-y-6">
-      {/* Greeting banner */}
-      <div className="bg-gradient-to-r from-red-900/20 to-[#0d1117] border border-red-600/20 rounded-2xl p-6">
-        <div className="flex items-start justify-between mb-4">
+      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
+        style={{ background: 'linear-gradient(135deg, #450a0a 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(220,38,38,0.2)' }}>
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">{greeting}, {firstName}. 🎯</h1>
-            <p className="text-gray-400 text-sm mt-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🎯</h1>
+            </div>
+            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
-            <p className="text-xs text-gray-600 italic mt-2">
-              &quot;The harder you work, the luckier you get.&quot; — Gary Player
+            <p className="text-xs italic" style={{ color: '#dc2626' }}>
+              &ldquo;The harder you work, the luckier you get.&rdquo; &mdash; Gary Player
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-xs text-right">
+          <div className="hidden md:flex items-center gap-3 ml-4">
             {[
-              { city:'London',   tz:'Europe/London'       },
-              { city:'New York', tz:'America/New_York'    },
-              { city:'Dortmund', tz:'Europe/Berlin'       },
-              { city:'Dubai',    tz:'Asia/Dubai'          },
-            ].map(({ city, tz }) => (
-              <div key={city}>
-                <div className="text-white font-bold">
-                  {new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}
-                </div>
-                <div className="text-gray-500">{city}</div>
+              { icon:'📊', value:`#${player.pdcRank}`, label:'PDC Rank', color:'#dc2626' },
+              { icon:'🎯', value:String(player.threeDartAverage), label:'3-Dart Avg', color:'#F97316' },
+              { icon:'✅', value:`${player.checkoutPercent}%`, label:'Checkout', color:'#22C55E' },
+              { icon:'🏆', value:'#12', label:'Career High', color:'#8B5CF6' },
+            ].map((s, i) => (
+              <div key={i} className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
+                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
+                <div className="text-xl mb-0.5">{s.icon}</div>
+                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
               </div>
             ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#{player.pdcRank}</div>
-            <div className="text-xs text-gray-400 mt-0.5">PDC Ranking</div>
-            <div className="text-[10px] text-green-400 mt-1">↑2 this week</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">{player.threeDartAverage}</div>
-            <div className="text-xs text-gray-400 mt-0.5">3-Dart Average</div>
-            <div className="text-[10px] text-gray-500 mt-1">2025 season</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">{player.checkoutPercent}%</div>
-            <div className="text-xs text-gray-400 mt-0.5">Checkout %</div>
-            <div className="text-[10px] text-gray-500 mt-1">Season avg</div>
-          </div>
-          <div className="bg-[#0d1117]/60 border border-red-600/20 rounded-xl p-4">
-            <div className="text-2xl font-black text-white">#12</div>
-            <div className="text-xs text-gray-400 mt-0.5">Career High</div>
-            <div className="text-[10px] text-gray-500 mt-1">Mar 2024</div>
+            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="text-xl">🌧️</div>
+              <div className="text-sm font-bold text-white">14°C</div>
+              <div className="text-[9px]" style={{ color: '#6B7280' }}>Dortmund</div>
+            </div>
+            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Dortmund', tz:'Europe/Berlin', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
+                  <div key={city} className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#dc2626' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#dc2626' : '#6B7280' }}>{city}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
+            </div>
           </div>
         </div>
       </div>
