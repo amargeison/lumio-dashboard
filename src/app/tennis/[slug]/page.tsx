@@ -9829,29 +9829,30 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
+        <nav className="flex-1 overflow-y-auto py-1 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems.filter(i => i.group === group);
             return (
-              <div key={group} className="mb-3">
+              <div key={group} className="mb-1.5">
                 {sidebarExpanded && (
-                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
+                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mt-2 mb-0.5">{group}</div>
                 )}
                 {items.map(item => (
                   <button
                     key={item.id}
                     onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    className="w-full flex items-center gap-2 py-1.5 rounded-md mb-px transition-all text-left"
                     style={{
                       backgroundColor: activeSection === item.id ? 'rgba(139,92,246,0.12)' : 'transparent',
                       color: activeSection === item.id ? '#c084fc' : '#6B7280',
                       borderLeft: activeSection === item.id ? '2px solid #a855f7' : '2px solid transparent',
                       paddingLeft: sidebarExpanded ? 10 : 0,
                       justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                      fontSize: 13,
                     }}
                     title={sidebarExpanded ? undefined : item.label}
                   >
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
+                    <span className="text-sm flex-shrink-0">{item.icon}</span>
                     {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
@@ -9878,12 +9879,12 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
         {/* Sidebar Footer */}
         {sidebarExpanded && (
-          <div className="p-3 border-t border-gray-800">
+          <div className="px-3 py-2 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
-            <div className="text-xs text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
+            <div className="text-[10px] text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
           </div>
         )}
-        <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '16px', width: '100%' }}>
+        <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '8px 12px', width: '100%' }}>
           {sidebarExpanded ? (
             <>
               <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ width: 100, height: 'auto', display: 'block', margin: '0 auto' }}
