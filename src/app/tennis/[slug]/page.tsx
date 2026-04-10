@@ -384,10 +384,14 @@ Max 200 words.`
         })
       })
       const data = await res.json()
-      const text = data.content?.map((b: {type:string;text?:string}) =>
-        b.type === 'text' ? b.text : ''
-      ).join('') || ''
-      setSummary(text)
+      if (data.error) {
+        setSummary(`⚠️ ${data.error}`)
+      } else {
+        const text = data.content?.map((b: {type:string;text?:string}) =>
+          b.type === 'text' ? b.text : ''
+        ).join('') || ''
+        setSummary(text || '⚠️ No response from AI. Check API key in Settings → Developer Tools.')
+      }
       setGenerated(true)
     } catch {
       setSummary('Unable to generate summary. Check API connection.')
@@ -7452,6 +7456,57 @@ function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; 
           <span className="text-red-400">■ High load</span>
         </div>
       </div>
+      {/* Lumio GPS Tracker Dashboard */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span>🛰️</span>
+            <span className="text-sm font-semibold text-white">Lumio GPS — {gpsSession.date}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-green-400">Connected</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-5 gap-0 border-b border-gray-800">
+          {[
+            { label:'Court Coverage', value:'4.2 km', color:'#0ea5e9' },
+            { label:'Sprint Distance', value:'1.8 km', color:'#8B5CF6' },
+            { label:'Top Speed', value:'28.4 km/h', color:'#F59E0B' },
+            { label:'Load Score', value:'74 / 100', color: 74 > 80 ? '#EF4444' : 74 > 60 ? '#F59E0B' : '#22C55E' },
+            { label:'Recovery Index', value:'Good', color:'#22C55E' },
+          ].map((s, i) => (
+            <div key={i} className="px-4 py-3 text-center" style={{ borderRight: i < 4 ? '1px solid #1F2937' : 'none' }}>
+              <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="p-5">
+          <div className="text-xs font-semibold text-white mb-3">Session Timeline</div>
+          <div className="grid grid-cols-3 gap-4">
+            {[{ set:'Set 1', km:'2.1km', load:38 },{ set:'Set 2', km:'1.4km', load:26 },{ set:'Set 3', km:'0.7km', load:10 }].map((s, i) => (
+              <div key={i} className="text-center">
+                <div className="text-xs font-bold text-white mb-1">{s.set}</div>
+                <div className="mx-auto rounded bg-cyan-500/30 mb-1" style={{ height: `${Math.max(16, (s.load / 40) * 48)}px`, width: '100%', background: `linear-gradient(to top, rgba(6,182,212,0.6), rgba(6,182,212,0.2))` }} />
+                <div className="text-xs text-cyan-400 font-bold">{s.km}</div>
+                <div className="text-[10px] text-gray-500">Load: {s.load}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="px-5 py-3 space-y-2" style={{ borderTop: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2"><span>🛰️</span><span className="text-white">Lumio GPS Tracker</span></div>
+            <div className="flex items-center gap-3"><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /><span className="text-green-400">Connected</span></span><span className="text-gray-500">Battery: 87%</span><span className="text-gray-500">Sync: 2 min ago</span></div>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2"><span>🎾</span><span className="text-white">SwingVision</span></div>
+            <div className="flex items-center gap-3"><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /><span className="text-green-400">Connected</span></span><span className="text-gray-500">127 shots logged</span></div>
+          </div>
+        </div>
+      </div>
+
       <TennisAISection context="default" player={player} session={demoSession} />
     </div>
   );
