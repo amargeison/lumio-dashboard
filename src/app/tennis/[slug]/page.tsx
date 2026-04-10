@@ -1926,9 +1926,11 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               <div className="space-y-6">
                 <div className="flex justify-center">
                   <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
-                    <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2"
-                      style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>AR</div>
-                    <div className="text-sm font-semibold text-white">{player.name}</div>
+                    <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
+                      style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
+                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : (session.userName || 'Big Al').slice(0,2).toUpperCase() })()}
+                    </div>
+                    <div className="text-sm font-semibold text-white">{session.userName || 'Big Al'}</div>
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
                   </div>
                 </div>
@@ -2020,7 +2022,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Player Details</h4>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
                     {[
-                      ['Full Name', player.name], ['Nationality', `${player.flag} ${player.nationality}`],
+                      ['Full Name', session.userName || 'Big Al'], ['Nationality', `${player.flag} ${player.nationality}`],
                       ['DOB', player.dateOfBirth], ['Age', `${player.age}`],
                       ['Height', player.height], ['Weight', player.weight],
                       ['Plays', player.plays], ['Backhand', player.backhand],
