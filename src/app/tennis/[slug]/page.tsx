@@ -318,25 +318,76 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
   const [generated, setGenerated] = useState(false)
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard:    ['Match vs Martinez today — H2H 3–1 in your favour', 'Rolex renewal due in 47 days — agent follow-up needed', '312 pts drop off after Monte-Carlo — win tonight critical', 'Roland-Garros direct acceptance confirmed', 'New coach debrief requested for 17:00'],
-    morning:      ['Morning briefing generated for player and coaching staff', 'Key focus: clay serve adjustment needed before match', 'Physio clearance confirmed — shoulder green-lit', 'Weather update: 22°C, light wind — no rain expected', 'Opponent intel summary ready for review'],
-    rankings:     ['↑2 places this week — momentum building on clay', '312 pts drop off after Monte-Carlo — must defend', 'Race to Turin: currently 8th — top 8 qualifies', 'Career high at #44 — achievable by Wimbledon with current form', 'Madrid M1000 next — 500 pts available'],
-    forecaster:   ['Win Monte-Carlo final: projected #58 (+9 places)', 'QF exit this week: holds at #67 (0 change)', 'R1 loss: drops to #71 (−4 places)', 'Roland-Garros run critical for top-50 push', 'Grass season historically weak — plan schedule carefully'],
-    entries:      ['Roland-Garros direct acceptance confirmed', 'Wimbledon: ranked 61st — inside direct acceptance', 'US Open: entry deadline 14 Jul — confirm with agent', 'Hamburg 500 clashes with Eastbourne — decision needed', 'Winston-Salem wildcard application submitted'],
-    schedule:     ['Monte-Carlo QF tonight — biggest match of clay season', 'Madrid M1000 starts 26 Apr — direct flight needed', 'Roland-Garros 25 May — hotel booking not confirmed', 'Halle grass camp 8–14 Jun — physio travel confirmed', '3 back-to-back weeks in Jun — load management critical'],
-    scout:        ['Martinez: 71% first serve on clay — pressure his second', 'Martinez: weak backhand under high kick serve', 'Martinez: 4 double faults avg vs top-70 opponents', 'Set play: Martinez breaks serve in 3rd set 62% of time', 'Net approach: Martinez rarely comes to net — use drop shots'],
-    surface:      ['Clay win rate 68% — above ATP tour average', 'Hard court serve % 4% higher than clay — adjust strategy', 'Grass: historically weakest surface — 41% win rate', 'Indoor hard: 82% win rate — strongest surface', 'Monte-Carlo clay slower than Roland-Garros — heavier topspin needed'],
-    performance:  ['Season record: 24W–11L — on pace for best year', 'Serve % improving: 64% first serve last 5 matches', 'Return points won: 44% — top-50 level', 'Break point conversion: 38% — needs improvement', '3-set matches: 7W–4L — stamina strong'],
-    matchprep:    ['Martinez H2H: 3–1 — mental edge confirmed', 'Clay kick serve to backhand: primary tactic', 'Neutralise Martinez net approach with lob', 'Target: 70%+ first serve to hold easily', 'Return game: attack his second serve early'],
-    matchreports: ['Last 5: W W L W W — strong form coming in', 'Saracens QF match: 6-3 6-4 — dominant display', 'Loss to Ruud: serve let us down (54% first serve)', 'Average match duration this clay season: 98 min', 'Double fault count trending down — good sign'],
-    practice:     ['Serve patterns session today 10:00 — focus kick to backhand', 'Carlos recommends 90-min session max — match tonight', 'Upcoming grass prep starts Halle camp 8 Jun', 'Forehand cross-court consistency improving (+8% last week)', 'Mental performance session Thursday — Marcos confirmed'],
-    video:        ['Martinez full match from Barcelona uploaded', '5 new practice clips tagged by Carlos', 'Shot heatmap update available after today\'s match', 'Barcelona semi-final review — tactical notes ready', 'Serve motion analysis: pronation timing improved'],
-    travel:       ['Monte-Carlo hotel confirmed — checkout Sunday', 'Madrid: flights needed Mon 26 Apr — book today', 'Roland-Garros: apartment booking pending — deadline 1 May', 'Halle camp: Carlos and physio travel confirmed', 'Bahrain Masters: visa application submitted'],
-    sponsorship:  ['Rolex renewal due in 47 days — priority action', 'Red Dragon content shoot today 16:00', 'Nike kit obligation: 4 posts due this season (2 remaining)', 'New inquiry from Paddy Power — agent reviewing', 'Lululemon post due this week — check brief'],
-    financial:    ['Prize money YTD: £387,420 — ahead of projection', 'Monte-Carlo QF prize: £47,500 banked', 'Tax instalment due 31 Jul — accountant briefed', 'Agent commission: 15% of gross prize money', 'Equipment budget: £8,200 remaining for season'],
-    team:         ['Carlos (coach): debrief requested 17:00 today', 'Dr. Lee: shoulder treatment 08:30 complete', 'Nutritionist plan updated for clay season', 'Physio travel confirmed for Madrid and Paris', 'Agent: 3 sponsor inquiries pending response'],
-    mental:       ['Pre-match routine completed — focus levels good', 'Martinez mental game: tends to lose focus in 3rd set', 'Pressure training this week: tiebreak scenarios', 'Marcos (psychologist) session Thursday 14:00', 'Breathing protocol review — Carlos recommends update'],
-    default:      ['Match vs Martinez today — prepare well', 'Rolex renewal due in 47 days', '312 pts drop off after Monte-Carlo', 'Roland-Garros direct acceptance confirmed', 'Coach debrief requested for 17:00'],
+    dashboard: [
+      'Serve % last 5 matches: 64% — up 6% from season avg (58%)',
+      '312 ranking points expiring after Monte-Carlo — win = hold #67',
+      'Clay win rate: 68% this season — above ATP tour avg (61%)',
+      'Break point conversion: 38% — below top-50 avg (44%)',
+      'Race to Turin: #54 — top 8 qualifies for year-end finals',
+    ],
+    performance: [
+      'First serve %: 64% (last 5) — best run of season',
+      'Double faults per match: 2.1 — down from 3.4 in March',
+      'Return points won: 44% — above tour avg (42%)',
+      'Winners-to-errors ratio: 1.8 on clay — strong',
+      'Average rally length: 6.2 shots — up 1.1 this month',
+    ],
+    rankings: [
+      'ATP Ranking: #67 — up 4 places this clay swing',
+      'Race to Turin: #54 — 3 places outside qualification zone',
+      'Career high: #44 ATP — achievable by Wimbledon at current rate',
+      'Points defending Roland-Garros: 45pts — minimal pressure',
+      'Prize money YTD: £387,420 — 12% ahead of this point last year',
+    ],
+    forecaster: [
+      'Win title: projected #58 (+9 places)',
+      'QF exit: holds at #67 (0 change)',
+      'R1 loss: drops to #71 (−4 places)',
+      'Points available at Madrid M1000: 500',
+      'Roland-Garros points available: 2000 (Grand Slam)',
+    ],
+    scout: [
+      'Martinez first serve: 68% wide on deuce court (clay)',
+      'Martinez return: 71% forehand-dominant — exploit BH side',
+      'H2H: 3–1 in your favour — last 3 on clay all won',
+      'Martinez break point conversion: 41% — below average',
+      'Martinez ATP ranking: #34 — career high #28',
+    ],
+    matchprep: [
+      'Martinez H2H: 3W–1L — you lead',
+      'Martinez 1st serve wide on deuce: 68% — predictable',
+      'Your clay kick serve win rate: 74% — exploit',
+      'Martinez 3rd set break rate: 62% — stay sharp late',
+      'Net points won vs Martinez: 71% — approach more',
+    ],
+    sponsorship: [
+      'Rolex deal value: £240,000/yr — renewal in 47 days',
+      'Lululemon: 2 posts outstanding (March + today)',
+      'Nike: 0/2 posts completed this month',
+      'Estimated sponsor reach YTD: 14.2M across all platforms',
+      'Total commercial income YTD: £84,200',
+    ],
+    travel: [
+      'Flights booked: 4 of 7 remaining tournaments',
+      'Travel budget used: £18,400 of £36,000 season allocation',
+      'Hotels confirmed: Monte-Carlo, Madrid, Paris',
+      'Unconfirmed: Halle, Wimbledon, US Open, Cincinnati',
+      'Roland-Garros apartment deposit outstanding: €800',
+    ],
+    financial: [
+      'Prize money YTD: £387,420',
+      'Season expenses to date: £42,800',
+      'Net earnings YTD: £344,620 (before tax/agent)',
+      'Agent commission (15%): £58,113 YTD',
+      'Tax instalment due: 31 Jul — accountant briefed',
+    ],
+    default: [
+      'ATP Ranking: #67 — up 4 this clay swing',
+      'Clay win rate: 68% — above tour avg (61%)',
+      'Serve %: 64% (last 5 matches)',
+      'Prize money YTD: £387,420',
+      'Race to Turin: #54 of 8 qualification spots',
+    ],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -352,25 +403,26 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `You are the AI performance analyst for ${session.userName || player.name}, ATP #${player.ranking} professional tennis player.
+            content: `You are a personal assistant for ${session.userName || player.name}, ATP #${player.ranking ?? 67} professional tennis player.
 
-Generate a concise AI department summary for the "${context}" section of their management platform.
+Generate an AI MORNING SUMMARY for the "${context}" section.
+This is NOT about statistics — it is about what is happening TODAY
+and what the player needs to know RIGHT NOW.
 
-Player context:
-- Ranking: #${player.ranking} ATP
-- Current tournament: Monte-Carlo Masters (clay)
-- Today's match: vs C. Martinez (#34) at 13:00, Court 4
-- Season record: 24W-11L
-- Next tournaments: Madrid M1000, Roland-Garros
+Cover these areas (pick the most relevant 4-5 for "${context}"):
+- Today's schedule and timing
+- Urgent messages or communications needing a response
+- Sponsor obligations or commercial deadlines today
+- Upcoming travel or logistics to confirm
+- Team availability and appointments
+- Match or training context for today
 
-Write 4-5 bullet points covering:
-- Most important insight or action for this specific section (${context})
-- Any risks or opportunities relevant to ${context}
-- One data-backed observation
-- One recommended action
-
-Format: Start each line with a relevant emoji then the insight. Be specific and concise.
-No headers. Plain bullet points only. Max 180 words total.`
+Write as flowing bullet points starting with an emoji.
+Each point should be a complete sentence with context.
+Be specific — mention times, names, amounts where relevant.
+Do NOT mention ranking stats, serve percentages, or performance data.
+Those go in Key Highlights, not here.
+Max 5 points. Max 200 words total.`
           }]
         })
       })
@@ -403,9 +455,12 @@ No headers. Plain bullet points only. Max 180 words total.`
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span>✨</span>
-              <span className="text-sm font-bold text-white">AI Summary</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span>✨</span>
+                <span className="text-sm font-bold text-white">AI Summary</span>
+              </div>
+              <div className="text-[10px] mt-0.5" style={{ color: '#4B5563' }}>Today&apos;s briefing — operational</div>
             </div>
             <div className="flex items-center gap-2">
               {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
@@ -448,9 +503,9 @@ No headers. Plain bullet points only. Max 180 words total.`
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span>⚡</span>
-              <span className="text-sm font-bold text-white">AI Key Highlights</span>
+              <span className="text-sm font-bold text-white">Performance Intelligence</span>
             </div>
-            <span className="text-[10px] text-[#0ea5e9] cursor-pointer hover:underline">Performance</span>
+            <span className="text-[10px] text-[#0ea5e9] cursor-pointer hover:underline">Data</span>
           </div>
           <div className="space-y-2">
             {highlights.map((h, i) => (
@@ -1064,18 +1119,29 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         ))}
       </div>
 
-      {/* ── GETTING STARTED TAB ── */}
-      {dashTab === 'gettingstarted' && (
+      {/* ── GETTING STARTED TAB — Interactive 10-step tour ── */}
+      {dashTab === 'gettingstarted' && (() => {
+        const TOUR_STEPS = [
+          { n:1, label:'Your tennis OS, fully connected', icon:'🎾', title:'Your tennis OS, fully connected', description:'One portal that replaces the 6 tools you probably use right now. Rankings, GPS, sponsors, travel, match prep, and your team — all here, all connected, all talking to each other.', preview:'dashboard_overview' },
+          { n:2, label:'Start every day knowing everything', icon:'🌅', title:'Start every day knowing everything', description:'Your AI morning briefing reads your headlines aloud — messages, schedule, match prep, sponsor deadlines, ranking updates. Ready in 60 seconds. Press play.', preview:'morning_briefing' },
+          { n:3, label:'Every action, one click away', icon:'⚡', title:'Every action, one click away', description:'16 quick actions on your dashboard — book a flight, order strings, file an injury, generate a press statement, send your agent a weekly brief. All in under 60 seconds.', preview:'quick_actions' },
+          { n:4, label:'GPS, rankings, and performance', icon:'📊', title:'Data that actually makes sense', description:'Your ATP ranking, Race to Turin, serve percentages, break point conversion, clay win rate — all in one place. Connect Catapult or STATSports for live GPS load data.', preview:'performance' },
+          { n:5, label:'Your team, front and centre', icon:'👥', title:'Your team, front and centre', description:"Coach, physio, agent, nutritionist, stringer — all in one hub. See who's available today, what they're working on, and contact them directly.", preview:'team' },
+          { n:6, label:'AI that actually helps you win', icon:'🤖', title:'AI that actually helps you win', description:"Match Prep AI searches the web for your opponent's recent stats, tendencies and weaknesses — then generates a tactical brief in 30 seconds. Real data, real insights.", preview:'match_prep' },
+          { n:7, label:'Travel sorted in 60 seconds', icon:'✈️', title:'Travel sorted in 60 seconds', description:'Smart Flight Finder searches BA, easyJet, Ryanair, Air France and more simultaneously — scores each flight and sends a booking email to your agent in one tap.', preview:'travel' },
+          { n:8, label:'Sponsors managed automatically', icon:'🤝', title:'Sponsors managed automatically', description:"AI generates authentic sponsor posts in your voice — right tone, right platform, right hashtags. Tracks obligations, content calendar and renewal dates so nothing slips.", preview:'sponsor' },
+          { n:9, label:'Nothing falls through the cracks', icon:'🔴', title:'Nothing falls through the cracks', description:"Don't Miss flags your most critical items — wildcard deadlines, medical flags, contract renewals, sponsor obligations. Sorted by urgency. Dismissable when done.", preview:'dontmiss' },
+          { n:10, label:"You've seen enough — let's go", icon:'🚀', title:"You've seen enough. Let's go.", description:'Your portal is ready. Every section is live with demo data. Explore freely — or sign up for your 3-month free trial to connect your real ATP data, Gmail, calendar and GPS.', preview:'cta' },
+        ]
+        const step = TOUR_STEPS[tourStep]
+        return (
         <div className="pt-4">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#0ea5e9' }}>STEP 1 OF 10</div>
-              <div className="w-64 bg-gray-800 rounded-full h-1 mb-4">
-                <div className="h-1 rounded-full" style={{ width: '10%', backgroundColor: '#0ea5e9' }} />
-              </div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1 mr-4">
+              <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#0ea5e9' }}>STEP {tourStep + 1} OF {TOUR_STEPS.length}</div>
+              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`, backgroundColor: '#0ea5e9' }} /></div>
             </div>
-            <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }}
-              className="text-sm" style={{ color: '#6B7280' }}>Skip tour →</button>
+            <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
