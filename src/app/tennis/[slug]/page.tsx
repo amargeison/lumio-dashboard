@@ -892,16 +892,23 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [tourStep, setTourStep] = useState(0)
   const [showGpsModal, setShowGpsModal] = useState(false)
   const [gpsRequested, setGpsRequested] = useState(false)
-  const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
+  const firstName = (typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null)?.split(' ')[0] || session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   // Speech state
   const [isSpeaking, setIsSpeaking] = useState(false)
 
-  const speakBriefing = () => {
+  const getVoicesReady = (): Promise<SpeechSynthesisVoice[]> => new Promise(resolve => {
+    const v = window.speechSynthesis.getVoices()
+    if (v.length > 0) return resolve(v)
+    window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
+  })
+
+  const speakBriefing = async () => {
     if (typeof window === 'undefined') return
     if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    window.speechSynthesis.cancel()
     const briefingText = [
       `Good morning ${firstName}.`,
       `Today is ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}.`,
@@ -918,20 +925,20 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       `That's your morning briefing.`,
       `By the way — on a paid plan, you can choose from 20 natural voices that sound nothing like this one.`,
     ].join(' ')
-    const utterance = new SpeechSynthesisUtterance(briefingText)
-    const allVoices = window.speechSynthesis.getVoices()
-    const savedVoiceName = typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice_name') || 'Sarah' : 'Sarah'
+    const allVoices = await getVoicesReady()
+    const savedVoiceName = localStorage.getItem('lumio_tts_voice_name') || 'Sarah'
     const voiceMap: Record<string, string[]> = {
-      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena', 'en-GB'],
-      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'en-AU'],
+      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
+      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
       'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
     }
     const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
     const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
       || allVoices.find(v => savedVoiceName === 'George'
-        ? v.name.toLowerCase().includes('male') || v.lang === 'en-GB'
-        : v.name.toLowerCase().includes('female') || v.lang === 'en-GB')
-    utterance.voice = match || null
+        ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male')
+        : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
+    const utterance = new SpeechSynthesisUtterance(briefingText)
+    if (match) utterance.voice = match
     utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
     utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95
     utterance.volume = 1.0
@@ -6175,15 +6182,20 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
   const [devResponse, setDevResponse] = useState('')
   const [lsKeys, setLsKeys] = useState<{ key: string; value: string }[]>([])
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null)
-  const previewVoice = (voiceName: string) => {
+  const getVoicesReadySettings = (): Promise<SpeechSynthesisVoice[]> => new Promise(resolve => {
+    const v = window.speechSynthesis.getVoices()
+    if (v.length > 0) return resolve(v)
+    window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
+  })
+  const previewVoice = async (voiceName: string) => {
     if (previewingVoice === voiceName) { window.speechSynthesis.cancel(); setPreviewingVoice(null); return }
     window.speechSynthesis.cancel()
+    const allVoices = await getVoicesReadySettings()
+    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Veena'], 'Charlotte': ['Microsoft Hazel','Fiona','Samantha','Google UK English Female'], 'George': ['Google UK English Male','Microsoft George','Daniel','Alex'] }
+    const match = allVoices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p)))
+      || allVoices.find(v => voiceName === 'George' ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male') : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
     const utterance = new SpeechSynthesisUtterance("Good morning. Here's your daily tennis briefing. You have a match today at 13:00 on Court 4.")
-    const voices = window.speechSynthesis.getVoices()
-    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Veena','en-GB'], 'Charlotte': ['Microsoft Hazel','Fiona','Samantha','en-AU'], 'George': ['Google UK English Male','Microsoft George','Daniel','Alex'] }
-    const match = voices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p)))
-      || voices.find(v => voiceName === 'George' ? v.name.toLowerCase().includes('male') || v.lang === 'en-GB' : v.name.toLowerCase().includes('female') || v.lang === 'en-GB')
-    utterance.voice = match || null
+    if (match) utterance.voice = match
     utterance.pitch = voiceName === 'George' ? 0.75 : voiceName === 'Charlotte' ? 1.25 : 1.1
     utterance.rate = voiceName === 'George' ? 0.92 : 0.95
     utterance.onend = () => setPreviewingVoice(null); utterance.onerror = () => setPreviewingVoice(null)
