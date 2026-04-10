@@ -15,9 +15,11 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 
 // ─── NONLEAGUE ROLES ──────────────────────────────────────────────────────────
 const NONLEAGUE_ROLES = [
-  { id: 'chairman',  label: 'Chairman',       icon: '🏛️', description: 'Board & strategy'   },
-  { id: 'manager',   label: 'First Team Mgr', icon: '⚽', description: 'Squad & tactics'     },
-  { id: 'secretary', label: 'Club Secretary', icon: '📋', description: 'Admin & compliance'  },
+  { id: 'manager',   label: 'Manager',         icon: '⚽', description: 'Squad & tactics'     },
+  { id: 'assistant', label: 'Asst Manager',    icon: '📋', description: 'Match prep & squad'  },
+  { id: 'secretary', label: 'Club Secretary',  icon: '📋', description: 'Admin & compliance'  },
+  { id: 'treasurer', label: 'Treasurer',       icon: '💰', description: 'Finance & subs'      },
+  { id: 'sponsor',   label: 'Sponsor',         icon: '🤝', description: 'Sponsorship & events'},
 ]
 
 // ─── Theme Colors (Amber) ──────────────────────────────────────────────────
@@ -198,10 +200,9 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
       `}</style>
 
       {/* Demo workspace banner */}
-      <div className="shrink-0 flex items-center justify-center gap-2 py-1.5 px-4 text-xs font-semibold" style={{ background: 'linear-gradient(90deg, #F59E0B 0%, #D97706 100%)', color: '#fff' }}>
-        <span>Non-League Demo Workspace</span>
-        <span style={{ opacity: 0.7 }}>|</span>
-        <span style={{ opacity: 0.8 }}>{clubName}</span>
+      <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+        <span>Demo workspace · sample data</span>
+        <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up free →</a>
       </div>
 
       {/* Top-right avatar + notifications */}
@@ -225,7 +226,7 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} onPinChange={setSidebarPinned} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
+        <div className="flex-1 flex flex-col overflow-y-auto min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>

@@ -2572,7 +2572,9 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [sidebarPinned, setSidebarPinned] = useState(false)
-  const [activeTab, setActiveTab] = useState<'getting-started' | 'today'>('today')
+  const [activeTab, setActiveTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('grassroots_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  })
   const activeRole = session.role
   const clubName = session.clubName || 'Sunday Rovers FC'
 
@@ -2639,16 +2641,69 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
               {/* Getting Started / Today tabs for overview */}
               {activeDept === 'overview' && (
                 <>
-                  <div className="flex gap-1 p-1 rounded-lg mb-4" style={{ backgroundColor: CARD_BG }}>
-                    {(['getting-started', 'today'] as const).map(t => (
-                      <button key={t} onClick={() => setActiveTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-                        style={{ backgroundColor: activeTab === t ? PRIMARY : 'transparent', color: activeTab === t ? '#fff' : TEXT_SEC }}>
-                        {t === 'getting-started' ? 'Getting Started' : 'Today'}
-                      </button>
+                  {/* Morning Banner — stat boxes + world clock inside */}
+                  <div className="relative rounded-2xl overflow-hidden mb-4 p-6" style={{ background: 'linear-gradient(135deg, #052e16 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1"><h1 className="text-2xl font-bold text-white">Good morning, Dave ⚽</h1></div>
+                        <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+                        <p className="text-xs italic" style={{ color: '#16A34A' }}>&ldquo;The best teams have the most fun.&rdquo; &mdash; Grassroots wisdom</p>
+                      </div>
+                      <div className="hidden md:flex items-center gap-3 ml-4">
+                        {[{ icon:'🏆', value:'8th', label:'League', color:'#16A34A' },{ icon:'📅', value:'Sun 5', label:'Next Match', color:'#F59E0B' },{ icon:'✅', value:'13/18', label:'Confirmed', color:'#22C55E' },{ icon:'💰', value:'£340', label:'Balance', color:'#0ea5e9' }].map((s,i) => (
+                          <div key={i} className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl" style={{ background:`${s.color}22`, border:`1px solid ${s.color}44` }}>
+                            <div className="text-xl mb-0.5">{s.icon}</div><div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div><div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
+                          </div>
+                        ))}
+                        <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div className="text-xl">🌧️</div><div className="text-sm font-bold text-white">9°C</div><div className="text-[9px]" style={{ color: '#6B7280' }}>Sunday</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tab bar */}
+                  <div className="flex gap-0 border-b mb-0" style={{ borderColor: BORDER, overflowX: 'hidden' }}>
+                    <button onClick={() => setActiveTab('gettingstarted')} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === 'gettingstarted' ? PRIMARY : 'transparent', color: activeTab === 'gettingstarted' ? PRIMARY : TEXT_SEC }}>🚀 Getting Started <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: PRIMARY }}>10</span></button>
+                    {([{ id:'today' as const,label:'Today',icon:'🏠' },{ id:'quickwins' as const,label:'Quick Wins',icon:'⚡' },{ id:'dailytasks' as const,label:'Daily Tasks',icon:'✅' },{ id:'insights' as const,label:'Insights',icon:'📊' },{ id:'dontmiss' as const,label:"Don't Miss",icon:'🔴' },{ id:'team' as const,label:'Squad',icon:'👥' }]).map(t => (
+                      <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? PRIMARY : 'transparent', color: activeTab === t.id ? TEXT : TEXT_SEC }}><span>{t.icon}</span>{t.label}</button>
                     ))}
                   </div>
-                  {activeTab === 'getting-started' && <GettingStartedView onToast={fireToast} />}
+
+                  {/* Quick Actions — below tab bar */}
+                  <div className="mb-5 mt-4">
+                    <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label:'WhatsApp Availability', icon:'📱', color:'#16A34A', hot:false },
+                        { label:'Subs Dashboard', icon:'💰', color:'#F59E0B', hot:false },
+                        { label:'Post-Match Brief', icon:'📝', color:'#16A34A', hot:true },
+                        { label:'Referee Booker', icon:'👁️', color:'#0ea5e9', hot:false },
+                        { label:'DBS Tracker', icon:'🛡️', color:'#EF4444', hot:false },
+                        { label:'Pitch Checker', icon:'🌧️', color:'#0ea5e9', hot:true },
+                        { label:'Halftime Talk', icon:'🎤', color:'#8B5CF6', hot:true },
+                        { label:'Kit Manager', icon:'👕', color:'#6B7280', hot:false },
+                        { label:'FA FULL-TIME', icon:'📋', color:'#6B7280', hot:false },
+                        { label:'Match Report', icon:'📊', color:'#16A34A', hot:true },
+                        { label:'Player Dev', icon:'📈', color:'#6B7280', hot:false },
+                        { label:'Season Plan', icon:'🏆', color:'#F59E0B', hot:true },
+                      ].map((a, i) => (
+                        <button key={i} className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+                          style={{ background: a.hot ? `${a.color}18` : CARD_BG, border: a.hot ? `1px solid ${a.color}50` : `1px solid ${BORDER}`, color: a.hot ? a.color : TEXT_SEC }}>
+                          <span>{a.icon}</span>{a.label}
+                          {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {activeTab === 'gettingstarted' && <GettingStartedView onToast={fireToast} />}
                   {activeTab === 'today' && <OverviewView clubName={clubName} onAction={handleQuickAction} session={session} />}
+                  {activeTab === 'quickwins' && <div className="pt-4 space-y-3">{[{p:1,a:'3 players haven\'t replied to availability — deadline Thursday 20:00',i:'Critical',c:'Squad',cta:'Chase now →'},{p:2,a:'Dave Nolan DBS OVERDUE — safeguarding risk',i:'Critical',c:'Safeguarding',cta:'Renew now →'},{p:3,a:'4 players owe subs — £110 outstanding',i:'High',c:'Finance',cta:'Chase subs →'},{p:4,a:'Last result not submitted to FA FULL-TIME',i:'High',c:'Admin',cta:'Submit now →'},{p:5,a:'Referee not yet booked for 20 Apr home match',i:'Medium',c:'Admin',cta:'Book referee →'}].map((w,i)=>(<div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0" style={{background:`${PRIMARY}22`,color:PRIMARY}}>{w.p}</div><div className="flex-1"><p className="text-sm" style={{color:TEXT}}>{w.a}</p><span className="text-[10px]" style={{color:TEXT_SEC}}>{w.c}</span></div><button className="text-[10px] font-semibold flex-shrink-0" style={{color:PRIMARY}}>{w.cta}</button><span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0" style={{background:w.i==='Critical'?'rgba(239,68,68,0.12)':w.i==='High'?'rgba(245,158,11,0.12)':'rgba(107,114,128,0.12)',color:w.i==='Critical'?'#EF4444':w.i==='High'?'#F59E0B':'#6B7280'}}>{w.i}</span></div>))}</div>}
+                  {activeTab === 'dailytasks' && <div className="pt-4 space-y-2">{[{time:'Tue',task:'Send availability request — WhatsApp',done:false,cat:'Squad',hl:true},{time:'NOW',task:'DBS renewal — Dave Nolan OVERDUE',done:false,cat:'Safeguarding',hl:true},{time:'Wed',task:'Subs chase — 4 outstanding',done:false,cat:'Finance',hl:false},{time:'Thu',task:'Confirm pitch booking — council',done:false,cat:'Admin',hl:false},{time:'Sat',task:'Submit 15 Mar result to FA FULL-TIME',done:false,cat:'Admin',hl:false}].map((t,i)=>(<div key={i} className="flex items-center gap-4 rounded-xl p-4 border transition-all" style={{backgroundColor:t.hl?`${PRIMARY}08`:CARD_BG,borderColor:t.hl?`${PRIMARY}50`:BORDER,opacity:t.done?0.6:1}}><div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{borderColor:t.done?'#22C55E':t.hl?PRIMARY:BORDER}}>{t.done&&<span className="text-[9px] font-bold" style={{color:'#22C55E'}}>✓</span>}</div><span className="text-[10px] w-8 flex-shrink-0" style={{color:TEXT_SEC}}>{t.time}</span><div className="flex-1"><span className="text-sm" style={{color:t.hl?PRIMARY:TEXT}}>{t.task}</span></div><span className="text-[10px] px-2 py-0.5 rounded" style={{background:CARD_BG,color:TEXT_SEC}}>{t.cat}</span></div>))}</div>}
+                  {activeTab === 'insights' && <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">{[{title:'League Position',value:'8th',sub:'Westshire Sunday League Div 2',color:PRIMARY,icon:'🏆'},{title:'Form (Last 5)',value:'WDLWL',sub:'5 pts from last 15 available',color:'#F59E0B',icon:'📊'},{title:'Top Scorer',value:'Jake Nolan (7)',sub:"Manager's son — 7 goals in 15 apps",color:'#22C55E',icon:'⚽'},{title:'Subs Status',value:'£620 / £720',sub:'86% collected — 4 outstanding',color:'#0ea5e9',icon:'💰'},{title:'DBS Status',value:'2 OVERDUE',sub:'Dave Nolan + Bob Turner',color:'#EF4444',icon:'🛡️'},{title:'Squad Available',value:'13/18',sub:'3 not responded for Sunday',color:'#8B5CF6',icon:'👥'}].map((ins,i)=>(<div key={i} className="flex items-start gap-4 rounded-xl p-5" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><div className="text-2xl flex-shrink-0">{ins.icon}</div><div className="flex-1"><div className="text-xs mb-1" style={{color:TEXT_SEC}}>{ins.title}</div><div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div><div className="text-[11px] mt-1" style={{color:TEXT_SEC}}>{ins.sub}</div></div></div>))}</div>}
+                  {activeTab === 'dontmiss' && <div className="pt-4 space-y-3">{[{u:'CRITICAL',item:'Dave Nolan + Bob Turner DBS OVERDUE. If missed: safeguarding breach.',action:'Renew now →',color:'#EF4444'},{u:'CRITICAL',item:'Availability deadline Thursday 20:00 — 3 not responded. If missed: can\'t name squad.',action:'Chase now →',color:'#EF4444'},{u:'TODAY',item:'FA FULL-TIME result submission — 3 weeks overdue. If missed: league fine.',action:'Submit now →',color:'#F59E0B'},{u:'THIS WEEK',item:'Subs — collect from 4 players outstanding. If missed: £110 lost.',action:'Chase →',color:'#F59E0B'},{u:'THIS WEEK',item:'Referee not booked for 20 Apr home match. If missed: match abandoned.',action:'Book now →',color:'#6B7280'}].map((d,i)=>(<div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{background:d.u==='CRITICAL'?'rgba(239,68,68,0.12)':d.u==='TODAY'?'rgba(245,158,11,0.12)':'rgba(107,114,128,0.12)',color:d.u==='CRITICAL'?'#EF4444':d.u==='TODAY'?'#F59E0B':'#6B7280'}}>{d.u}</span><div className="flex-1"><p className="text-sm mb-1" style={{color:TEXT}}>{d.item}</p><button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action}</button></div></div>))}</div>}
+                  {activeTab === 'team' && <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">{[{name:'Dave Nolan',role:'Manager',status:'Availability sent — 13/18 confirmed',available:true,initials:'DN',color:'#16A34A'},{name:'Bob Turner',role:'Treasurer',status:'£110 subs outstanding — chasing',available:true,initials:'BT',color:'#F59E0B'},{name:'Phil Rees',role:'Coach',status:'Training plan ready for Thursday',available:true,initials:'PR',color:'#0ea5e9'},{name:'Sarah Nolan',role:'Welfare Officer',status:'DBS checks reviewed — 2 overdue flagged',available:true,initials:'SN',color:'#8B5CF6'},{name:'Terry Walsh',role:'Groundsman',status:'Pitch marked — lines done Saturday',available:true,initials:'TW',color:'#6B7280'},{name:'Mike Jenkins',role:'Referee (Sunday)',status:'Confirmed for vs The Crown FC',available:true,initials:'MJ',color:'#22C55E'}].map((m,i)=>(<div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{background:`${m.color}20`,border:`1px solid ${m.color}40`,color:m.color}}>{m.initials}</div><div className="flex-1 min-w-0"><div className="text-sm font-semibold" style={{color:TEXT}}>{m.name}</div><div className="text-[10px]" style={{color:m.color}}>{m.role}</div><div className="text-[10px] truncate" style={{color:TEXT_SEC}}>{m.status}</div></div><div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:m.available?'#22C55E':'#374151'}}/></div>))}</div>}
                 </>
               )}
               {activeDept === 'club-profile' && <ClubProfileView />}
