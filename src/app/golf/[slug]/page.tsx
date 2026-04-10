@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -308,18 +308,31 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
   const [summary, setSummary] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState(false)
+  const hasGenerated = useRef(false)
+
+  const SECTION_PROMPTS: Record<string, string> = {
+    dashboard: 'Overview of today\'s priorities: tee time, OWGR movement, key obligations, and any alerts.',
+    owgr: 'OWGR ranking analysis: current position, points defending, trajectory to top 50, and Race to Dubai status.',
+    strokes: 'Strokes Gained breakdown: identify strengths and weaknesses, compare to tour average, and recommend practice focus.',
+    coursefit: 'Course fit analysis: how the player\'s SG profile matches the current event course demands.',
+    practicelog: 'Practice session review: recent focus areas, TrackMan data trends, and recommended next session.',
+    sponsorship: 'Sponsorship overview: upcoming obligations, renewal deadlines, and commercial opportunities.',
+    travel: 'Travel logistics: upcoming flights, hotel bookings, caddie arrangements, and visa requirements.',
+    financial: 'Financial summary: prize money YTD, expense tracking, tax jurisdiction updates, and budget status.',
+    mental: 'Mental performance: pre-round routine adherence, pressure management, and Dr. Reed\'s recommendations.',
+  }
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard:    ['Tee time: 09:24 tomorrow — Augusta National, Hole 1', 'OWGR at risk: 285pts defending this week', 'SG: Putting +0.8 this tournament — above average', 'Caddie confirmed: course notes ready for review', 'Rolex renewal due in 30 days — agent follow-up needed'],
-    owgr:         ['Current OWGR: #42 — up 3 this week', '285 pts defending this week — must finish T20 or better to hold', 'Career high #31 achievable by end of FedEx Cup swing', 'Top-50 OWGR locks Masters invitation for 2027', 'European Ryder Cup points: currently 8th in standings'],
-    strokes:      ['SG: Approach +1.2 this season — top-30 on tour', 'SG: Putting −0.4 this week — needs work', 'SG: Off the tee −0.1 — consistent but not a strength', 'SG: Around green +0.8 — chipping has improved significantly', 'Short game gains offsetting driver inconsistency'],
-    coursefit:     ['Augusta: historically +2.1 SG vs field — good fit', 'Bermuda greens: putting avg −0.6 — prepare for slower roll', 'Par 5 scoring: −0.8 below field avg — birdie opportunity', 'Wind conditions forecast: 15mph — club down approach', 'Course notes from caddie: favour left side holes 10–12'],
-    practicelog:  ['12 range sessions this week — focus on 7-iron consistency', 'Putting green: 200 3-footers logged — 96% success rate', 'Bunker practice: 3 sessions — splash shot improving', 'TrackMan session Tuesday: carry distance +4yds vs last month', 'Pre-round routine: 45 min confirmed for tomorrow'],
-    sponsorship:  ['Rolex renewal: 30-day deadline — agent briefed', 'Callaway content obligation: 2 posts this month (0 done)', 'BMW Pro-Am partner: hospitality day confirmed 2 May', 'New inquiry: luxury watch brand — £120k/yr offer pending', 'Nike apparel: wearing obligation confirmed for this event'],
-    travel:       ['Augusta hotel: confirmed 3 nights (Mon–Thu)', 'Private jet: booked departure Thu post-round', 'Next event: Zurich Classic — New Orleans, 24–27 Apr', 'Caddie flights: confirmed and reimbursed', 'European Tour leg: 4 events confirmed Jun–Jul'],
-    financial:    ['Prize money YTD: £412,800', 'This week\'s purse: $20M — cut = $28,000, win = $3.6M', 'Agent commission: 15% of gross prize money', 'Tax instalment due Jul 31 — accountant briefed', 'Equipment budget: Callaway covered — save £12k this season'],
-    mental:       ['Pre-round routine complete — focus on process not result', 'Last 3 final rounds: 67, 72, 69 — solid closing ability', 'Crowd management: Augusta is loud — noise-cancelling earbuds in bag', 'Breathing protocol: 3-breath reset between shots confirmed', 'Psychologist session next Monday — post-tournament review'],
-    default:      ['Tee time 09:24 tomorrow — Augusta National', 'OWGR 285pts defending this week', 'SG: Putting needs attention this round', 'Rolex renewal due in 30 days', 'Caddie course notes ready for review'],
+    dashboard:    [`Tee time: 09:42 tomorrow — BMW International, Hole 1`, `OWGR #${player.owgr} — ${player.owgr_points} pts avg, 285pts defending this week`, `SG: Putting -1.18 — critical focus for today's session`, `Caddie Mick confirmed: course strategy notes updated`, `Callaway renewal due in 18 days — agent Sarah has proposal`],
+    owgr:         [`Current OWGR: #${player.owgr} — up 3 this week`, `285 pts defending this week — need T20+ to hold position`, `Career high #${player.career_high_owgr} achievable with strong summer swing`, `Top-50 OWGR locks Masters 2027 invitation`, `Race to Dubai #${player.race_to_dubai_pos} — need +260pts to reach cut line`],
+    strokes:      [`SG: Off the Tee +0.41 — consistent strength this season`, `SG: Putting -1.18 — critical weakness from 8-15ft`, `SG: Approach -0.28 — 7-iron carry 4yd shorter than assumed`, `SG: Around Green +0.15 — bunker technique improving`, `Tee-to-green strong (+0.28) but putting cancels gains`],
+    coursefit:     [`Eichenried: 8.1/10 course fit — approach game suits layout`, `Wentworth: 9.0/10 — best course fit on tour for this profile`, `Royal Birkdale: 6.8/10 — links putting historically weak`, `Crans-sur-Sierre: 8.8/10 — altitude approach play is elite`, `Course fit weighted by SG profile vs historical demands`],
+    practicelog:  [`Today: 120 min putting session — 8-15ft focus with Pete`, `Short game with Dave yesterday: bunker technique improved`, `TrackMan: 7-iron carry 168yd — corrected to 6-iron from 172yd`, `Course walk with Mick: holes 7 and 15 identified as scoring holes`, `Pre-round routine: 45 min confirmed for tomorrow AM`],
+    sponsorship:  [`Callaway renewal: 18-day deadline — Sarah has proposal ready`, `Callaway content: 2 posts this month (0 done) — post due today`, `BMW Pro-Am: hospitality partner confirmed for tomorrow`, `TaylorMade call at 16:00 — equipment review discussion`, `Puma apparel obligation confirmed for this event`],
+    travel:       [`Munich hotel: confirmed 3 nights (Mon-Thu)`, `Next event: Scottish Open — Edinburgh, 10-13 Jul`, `Caddie Mick: flights confirmed and reimbursed`, `European leg: 4 events confirmed Jul-Sep`, `BMW PGA: Wentworth accommodation via BMW partner deal`],
+    financial:    [`Prize money YTD: £367,000`, `This week's purse: $4.5M — cut = £18k, win = £1.32M`, `Agent commission: 10% of endorsement income`, `Multi-jurisdiction tax: 20+ countries, accountant briefed`, `Equipment: TaylorMade + Callaway cover most costs`],
+    mental:       [`Pre-round routine: focus word "committed" — Dr. Reed`, `Putting anxiety cycle identified — tension is the problem, not the putts`, `Last 3 final rounds: 67, 72, 69 — solid closing ability`, `3-breath reset between shots — part of on-course protocol`, `Video call with Dr. Reed tonight at 20:00 — pre-tournament check-in`],
+    default:      [`BMW International Open — Munich — R1 tomorrow 09:42`, `OWGR #${player.owgr} — 285pts defending this week`, `SG: Putting -1.18 — today's primary practice focus`, `Callaway renewal due in 18 days`, `Caddie course notes ready for review`],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -327,24 +340,20 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
   const generateSummary = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const sectionContext = SECTION_PROMPTS[context] || 'General overview of the player\'s current status.'
+      const res = await fetch('/api/ai/golf', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `You are the AI performance analyst for ${session.userName || player.name}, a professional golfer.
+            content: `You are the AI performance analyst for ${session.userName || player.name}, a professional golfer on the ${player.tour}.
 
-Generate a concise AI department summary for the "${context}" section.
+Generate a concise AI department summary for the "${context}" section. Focus: ${sectionContext}
 
-Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos}, career high #${player.career_high_owgr}, tour: ${player.tour}.
+Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos} (${player.race_to_dubai_points} pts), career high #${player.career_high_owgr}, SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Current event: BMW International Open, Munich. Coach: ${player.coach}, Caddie: ${player.caddie}.
 
 Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No headers.`
           }]
@@ -356,6 +365,14 @@ Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No hea
     } catch { setSummary('Unable to generate summary.') }
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!hasGenerated.current) {
+      hasGenerated.current = true
+      generateSummary()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -496,7 +513,7 @@ function SeasonIntelligenceStrip() {
   );
 }
 
-function DashboardView({ player, session, setActiveSection }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void }) {
+function DashboardView({ player, session, setActiveSection, setActiveModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; setActiveModal?: (m: string) => void }) {
   const [dashTab, setDashTab] = useState<'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>('today');
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
@@ -517,16 +534,16 @@ function DashboardView({ player, session, setActiveSection }: { player: GolfPlay
   ];
 
   const quickActions = [
-    { icon: '✈️', label: 'Book Flight', target: 'travel' },
-    { icon: '📋', label: 'Log Round', target: 'matchprep' },
-    { icon: '🗺️', label: 'Course Notes', target: 'coursefit' },
-    { icon: '🏌️', label: 'Caddie Briefing', target: 'caddie' },
-    { icon: '⚕️', label: 'Log Injury', target: 'physio' },
-    { icon: '🤝', label: 'Sponsor Post', target: 'sponsorship' },
-    { icon: '🎯', label: 'TrackMan Session', target: 'trackman' },
-    { icon: '📋', label: 'Practice Log', target: 'practicelog' },
-    { icon: '💰', label: 'Add Expense', target: 'financial' },
-    { icon: '📱', label: 'Media Request', target: 'media' },
+    { icon: '✈️', label: 'Book Flight', target: 'travel', modal: 'flight' },
+    { icon: '📋', label: 'Log Round', target: 'matchprep', modal: '' },
+    { icon: '🗺️', label: 'Course Notes', target: 'coursefit', modal: 'coursenotes' },
+    { icon: '🏌️', label: 'Caddie Briefing', target: 'caddie', modal: 'matchprep' },
+    { icon: '⚕️', label: 'Log Injury', target: 'physio', modal: 'injury' },
+    { icon: '🤝', label: 'Sponsor Post', target: 'sponsorship', modal: 'sponsorpost' },
+    { icon: '🎯', label: 'TrackMan Session', target: 'trackman', modal: '' },
+    { icon: '📋', label: 'Practice Log', target: 'practicelog', modal: '' },
+    { icon: '💰', label: 'Add Expense', target: 'financial', modal: 'expense' },
+    { icon: '📱', label: 'Media Request', target: 'media', modal: '' },
   ];
 
   const morningChannels = [
@@ -561,7 +578,7 @@ function DashboardView({ player, session, setActiveSection }: { player: GolfPlay
         <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Quick Actions</span>
         <div className="flex items-center gap-2 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {quickActions.map((a, i) => (
-            <button key={i} onClick={() => setActiveSection(a.target)}
+            <button key={i} onClick={() => a.modal && setActiveModal ? setActiveModal(a.modal) : setActiveSection(a.target)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 text-gray-50" style={{ background: '#15803D' }}>
               <span>{a.icon}</span>{a.label}
             </button>
@@ -832,9 +849,9 @@ function RoundPrepView({ player, session }: { player: GolfPlayer; session: Sport
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/golf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 800,
@@ -1182,9 +1199,9 @@ function MorningBriefingView({ player, session }: { player: GolfPlayer; session:
     setError(null);
     try {
       const prompt = `You are Lumio AI, the golf performance assistant for ${player.name}. Generate four morning briefings (player, caddie, coach, agent) for today. Context: OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos}, current event BMW International Open Munich, tee time 09:42 Thursday, SG Putting -1.18 (critical weakness from 8-15ft), Callaway post due today, TaylorMade call 16:00, sponsor renewal in 18 days. Respond ONLY with valid JSON: { "player": "...", "caddie": "...", "coach": "...", "agent": "..." } — each value is a 2-3 sentence briefing, no markdown.`;
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/golf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -1495,9 +1512,9 @@ function ScheduleOptimiser() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/golf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -3384,9 +3401,9 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
     setError(null);
     try {
       const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Harrington. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: TaylorMade (clubs), Callaway (wedges/ball), Rolex (watch), BMW (vehicle), Puma (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/golf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -3519,14 +3536,605 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 // ─── GOLF ROLES ───────────────────────────────────────────────────────────────
 const GOLF_ROLES = [
-  { id: 'player',     label: 'Player',            icon: '⛳', description: 'My performance & stats' },
-  { id: 'chairman',   label: 'Club Chairman',    icon: '🏛️', description: 'Board & strategy'     },
-  { id: 'manager',    label: 'Club Manager',      icon: '⛳', description: 'Full club view'        },
-  { id: 'captain',    label: 'Club Captain',      icon: '🏆', description: 'Competitions & teams'  },
-  { id: 'commercial', label: 'Commercial',        icon: '💼', description: 'Sponsorship & events'  },
-  { id: 'head_pro',   label: 'Head Professional', icon: '🎯', description: 'Coaching & lessons'    },
-  { id: 'secretary',  label: 'Club Secretary',    icon: '📋', description: 'Admin & compliance'    },
+  { id: 'player',  label: 'Player',          icon: '⛳', description: 'Full access — your complete golf OS' },
+  { id: 'agent',   label: 'Agent / Manager', icon: '💼', description: 'Commercial, schedule and financial view' },
+  { id: 'coach',   label: 'Coach',           icon: '📋', description: 'Performance, swing and course strategy' },
+  { id: 'caddie',  label: 'Caddie',          icon: '🏌️', description: 'Course notes, yardages and round prep' },
+  { id: 'sponsor', label: 'Sponsor / Partner', icon: '🤝', description: 'Brand presence, obligations and ROI' },
 ]
+
+// ─── ROLE CONFIG ─────────────────────────────────────────────────────────────
+const GOLF_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
+  player: { label: 'Player', icon: '⛳', accent: '#15803D', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
+  agent: { label: 'Agent / Manager', icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','morning','sponsorship','financial','agent','travel','schedule','media','settings'], hiddenTabs: ['team','dailytasks'], roundupChannels: ['agent','tournament','sponsor','prize','travel'], message: 'Commercial and schedule view.' },
+  coach: { label: 'Coach', icon: '📋', accent: '#22C55E', sidebar: ['dashboard','morning','owgr','schedule','strokes','coursefit','practicelog','video','team','physio','mental','settings'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['coach','tournament','physio'], message: 'Performance and strategy view.' },
+  caddie: { label: 'Caddie', icon: '🏌️', accent: '#0ea5e9', sidebar: ['dashboard','morning','caddie','coursefit','matchprep','schedule','equipment','settings'], hiddenTabs: ['quickwins','dontmiss','team'], roundupChannels: ['caddie','coach'], message: 'Course notes and round prep view.' },
+  sponsor: { label: 'Sponsor / Partner', icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','media','settings'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
+}
+
+// ─── MODAL HELPERS ───────────────────────────────────────────────────────────
+function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <div className="text-base font-bold text-white">{title}</div>
+          <div className="text-xs" style={{ color: '#6B7280' }}>{subtitle}</div>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+    </div>
+  )
+}
+
+function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
+  return (
+    <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={s}>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ backgroundColor: i < current ? '#22C55E' : i === current ? '#15803D' : 'rgba(255,255,255,0.05)', color: i <= current ? '#fff' : '#4B5563' }}>
+              {i < current ? '✓' : i + 1}
+            </div>
+            <span className="text-xs font-semibold" style={{ color: i === current ? '#15803D' : i < current ? '#22C55E' : '#4B5563' }}>{s}</span>
+          </div>
+          {i < steps.length - 1 && <div className="flex-1 h-px" style={{ backgroundColor: i < current ? '#22C55E' : '#1F2937' }} />}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
+// ─── GOLF MODAL COMPONENTS ───────────────────────────────────────────────────
+function GolfFlightFinder({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
+  const [from, setFrom] = useState('London Heathrow (LHR)')
+  const [to, setTo] = useState('Munich (MUC) — BMW International')
+  const [depart, setDepart] = useState('')
+  const [returnDate, setReturnDate] = useState('')
+  const [cabinClass, setCabinClass] = useState('Business')
+  const [passengers, setPassengers] = useState(2)
+  const [results, setResults] = useState<Array<{airline:string;flightNo:string;departs:string;arrives:string;duration:string;stops:string;price:number;currency:string;score:number;badge?:string}>>([])
+  const [selectedFlight, setSelectedFlight] = useState<typeof results[0] | null>(null)
+
+  const UPCOMING = [
+    { label: 'BMW International — 3 Jul', to: 'Munich (MUC)', date: '2026-07-02' },
+    { label: 'Scottish Open — 10 Jul', to: 'Edinburgh (EDI)', date: '2026-07-09' },
+    { label: 'The Open — 17 Jul', to: 'Liverpool (LPL)', date: '2026-07-16' },
+    { label: 'British Masters — 28 Aug', to: 'Birmingham (BHX)', date: '2026-08-27' },
+    { label: 'BMW PGA — 17 Sep', to: 'London Heathrow (LHR)', date: '2026-09-16' },
+  ]
+
+  const FALLBACK_RESULTS = [
+    { airline:'British Airways', flightNo:'BA960', departs:'07:20', arrives:'10:35', duration:'2h15m', stops:'Direct', price:312, currency:'GBP', score:96, badge:'Best value' },
+    { airline:'easyJet', flightNo:'EZY7832', departs:'06:05', arrives:'09:20', duration:'2h15m', stops:'Direct', price:187, currency:'GBP', score:88, badge:'Cheapest' },
+    { airline:'Lufthansa', flightNo:'LH2487', departs:'09:45', arrives:'12:50', duration:'2h05m', stops:'Direct', price:298, currency:'GBP', score:92, badge:'Fastest' },
+    { airline:'Eurowings', flightNo:'EW9803', departs:'11:30', arrives:'14:45', duration:'2h15m', stops:'Direct', price:224, currency:'GBP', score:85 },
+  ]
+
+  const searchFlights = async () => {
+    setStep('searching')
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Fastest", or null. Realistic prices.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : FALLBACK_RESULTS)
+    } catch { setResults(FALLBACK_RESULTS) }
+    setStep('results')
+  }
+
+  return (
+    <>
+      <ModalHeader icon="✈️" title="Smart Flight Finder" subtitle="AI searches multiple airlines for the best deal" onClose={onClose} />
+      {step !== 'searching' && <StepIndicator steps={['Configure','Search','Results','Book']} current={['configure','searching','results','book'].indexOf(step)} />}
+      <div className="p-6">
+        {step === 'configure' && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider mb-2 block" style={{ color: '#6B7280' }}>Upcoming tournaments</label>
+              <div className="flex flex-wrap gap-2">
+                {UPCOMING.map(t => (
+                  <button key={t.label} onClick={() => { setTo(t.to); setDepart(t.date) }}
+                    className="text-xs px-3 py-1.5 rounded-full transition-all"
+                    style={{ backgroundColor: to === t.to ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: to === t.to ? '1px solid #15803D' : '1px solid #1F2937', color: to === t.to ? '#15803D' : '#9CA3AF' }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">From</label><input value={from} onChange={e => setFrom(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">To</label><input value={to} onChange={e => setTo(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Depart</label><input type="date" value={depart} onChange={e => setDepart(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Return</label><input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Cabin</label><select value={cabinClass} onChange={e => setCabinClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option></select></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Passengers</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setPassengers(Math.max(1,passengers-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white w-4 text-center">{passengers}</span><button onClick={() => setPassengers(Math.min(6,passengers+1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
+            </div>
+            <button onClick={searchFlights} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Search Flights →</button>
+          </div>
+        )}
+        {step === 'searching' && (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 animate-bounce">✈️</div>
+            <div className="text-base font-bold text-white mb-2">Searching all airlines...</div>
+            <div className="text-xs mb-6" style={{ color: '#6B7280' }}>Checking BA, easyJet, Lufthansa, Ryanair + more</div>
+          </div>
+        )}
+        {step === 'results' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2"><div className="text-sm font-bold text-white">{results.length} flights found</div><div className="text-xs" style={{ color: '#6B7280' }}>{from} → {to} · {cabinClass} · {passengers} pax</div></div>
+            {results.map((f, i) => (
+              <div key={i} onClick={() => setSelectedFlight(f)} className="rounded-xl p-4 cursor-pointer transition-all"
+                style={{ backgroundColor: selectedFlight?.flightNo === f.flightNo ? 'rgba(21,128,61,0.1)' : '#111318', border: selectedFlight?.flightNo === f.flightNo ? '1px solid #15803D' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{f.airline}</span>
+                      <span className="text-xs" style={{ color: '#4B5563' }}>{f.flightNo}</span>
+                      {f.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badge === 'Best value' ? '#15803D' : f.badge === 'Cheapest' ? '#22C55E' : '#8B5CF6' }}>{f.badge}</span>}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{f.departs} → {f.arrives} · {f.duration} · {f.stops}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-white">{f.currency} {(f.price*passengers).toLocaleString()}</div>
+                    <div className="text-[10px]" style={{ color: '#22C55E' }}>Score: {f.score}/100</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setStep('configure')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Search again</button>
+              <button onClick={() => selectedFlight && setStep('book')} disabled={!selectedFlight} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: selectedFlight ? '#15803D' : '#374151' }}>Book selected →</button>
+            </div>
+          </div>
+        )}
+        {step === 'book' && selectedFlight && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.2)' }}>
+              <div className="text-sm font-bold text-white mb-2">Booking summary</div>
+              <div className="space-y-1 text-xs" style={{ color: '#9CA3AF' }}>
+                {[['Route',`${from} → ${to}`],['Flight',`${selectedFlight.airline} ${selectedFlight.flightNo}`],['Departs',`${depart} at ${selectedFlight.departs}`],['Class',cabinClass],['Passengers',String(passengers)],['Total',`${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}`]].map(([l,v]) => (
+                  <div key={l} className="flex justify-between"><span>{l}</span><span className="text-white">{v}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('results')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => { const s = encodeURIComponent(`Flight booking — ${from} to ${to}`); const b = encodeURIComponent(`Please book: ${selectedFlight.airline} ${selectedFlight.flightNo}, ${depart}, ${cabinClass}, ${passengers} pax, ${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}\n\nThanks, ${session.userName || 'James'}`); window.open(`mailto:sarah.mitchell@ism.com?subject=${s}&body=${b}`) }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📧 Send to agent →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function GolfMatchPrepAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [course, setCourse] = useState('Golfclub München Eichenried')
+  const [round, setRound] = useState('R1')
+  const [conditions, setConditions] = useState('22°C, 8mph W, Soft greens')
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are a tour caddie and performance analyst. Generate a round prep brief for ${session.userName || player.name} (OWGR #${player.owgr}, SG Putting -1.18, SG OTT +0.41) playing ${round} at ${course}. Conditions: ${conditions}. Cover: COURSE OVERVIEW, KEY HOLES (3-4 specific), SCORING STRATEGY, WEATHER ADJUSTMENTS, PUTTING FOCUS, MENTAL NOTE. Use emoji headers. Max 400 words.` }]
+        })
+      })
+      const data = await res.json()
+      setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+    } catch { setBrief('Unable to generate brief.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🎯" title="Round Prep AI" subtitle="AI tactical brief for your next round" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!brief && !loading && (<>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Course</label><input value={course} onChange={e => setCourse(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Round</label><select value={round} onChange={e => setRound(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['R1','R2','R3','R4'].map(r => <option key={r}>{r}</option>)}</select></div>
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Conditions</label><input value={conditions} onChange={e => setConditions(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Round Prep →</button>
+        </>)}
+        {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">🎯</div><div className="text-sm font-bold text-white">Generating round prep...</div></div>)}
+        {brief && (<>
+          <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 350, overflowY: 'auto' }}>{brief}</div>
+          <div className="flex gap-3">
+            <button onClick={() => setBrief(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+            <button onClick={() => navigator.clipboard.writeText(brief)} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: '#374151', color: '#9CA3AF' }}>📋 Copy</button>
+          </div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [sponsor, setSponsor] = useState('Callaway')
+  const [platform, setPlatform] = useState('Instagram')
+  const [context, setContext] = useState('Pre-tournament practice day')
+  const [loading, setLoading] = useState(false)
+  const [post, setPost] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 500,
+          messages: [{ role: 'user', content: `Write a ${platform} post for professional golfer ${session.userName || player.name} (OWGR #${player.owgr}, DP World Tour) promoting ${sponsor}. Context: ${context}. Make it authentic, not salesy. Include 3-5 relevant hashtags. Max 200 words.` }]
+        })
+      })
+      const data = await res.json()
+      setPost(data.content?.[0]?.text || 'Unable to generate post.')
+    } catch { setPost('Unable to generate post.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🤝" title="Sponsor Post Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!post && !loading && (<>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><input value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Instagram</option><option>Twitter</option><option>LinkedIn</option><option>TikTok</option></select></div>
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Context</label><input value={context} onChange={e => setContext(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Post →</button>
+        </>)}
+        {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">📱</div><div className="text-sm font-bold text-white">Generating post...</div></div>)}
+        {post && (<>
+          <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{post}</div>
+          <div className="flex gap-3">
+            <button onClick={() => setPost(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+            <button onClick={() => navigator.clipboard.writeText(post)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy post</button>
+          </div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player: GolfPlayer }) {
+  const [result, setResult] = useState('Win')
+  const [event, setEvent] = useState('BMW International Open')
+  const scenarios: Record<string, { owgr: number; change: string }> = {
+    'Win': { owgr: 71, change: '+16' },
+    'T2-T5': { owgr: 79, change: '+8' },
+    'T6-T10': { owgr: 83, change: '+4' },
+    'T11-T20': { owgr: 86, change: '+1' },
+    'T21-T40': { owgr: 88, change: '-1' },
+    'MC': { owgr: 92, change: '-5' },
+  }
+  const sc = scenarios[result] || scenarios['Win']
+  return (
+    <>
+      <ModalHeader icon="📊" title="Ranking Simulator" subtitle="What-if OWGR calculator" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-xs text-gray-500 mb-1 block">Event</label><input value={event} onChange={e => setEvent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Result</label>
+          <div className="flex flex-wrap gap-2">{Object.keys(scenarios).map(r => (
+            <button key={r} onClick={() => setResult(r)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: result === r ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: result === r ? '1px solid #15803D' : '1px solid #1F2937', color: result === r ? '#15803D' : '#9CA3AF' }}>{r}</button>
+          ))}</div>
+        </div>
+        <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-xs text-gray-500 mb-2">Projected OWGR after {result} at {event}</div>
+          <div className="text-4xl font-black text-white mb-1">#{sc.owgr}</div>
+          <div className="text-sm font-bold" style={{ color: sc.change.startsWith('+') ? '#22C55E' : '#EF4444' }}>{sc.change} places</div>
+          <div className="text-xs text-gray-500 mt-2">Current: #{player.owgr} · Career high: #{player.career_high_owgr}</div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function GolfInjuryLogger({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [area, setArea] = useState('Lower Back')
+  const [severity, setSeverity] = useState('Mild')
+  const [notes, setNotes] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  return (
+    <>
+      <ModalHeader icon="💊" title="Log Injury" subtitle="Log and auto-notify your physio" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!submitted ? (<>
+          <div><label className="text-xs text-gray-500 mb-2 block">Area</label><div className="flex flex-wrap gap-2">{['Lower Back','Left Wrist','Right Shoulder','Left Knee','Right Hip','Neck'].map(a => (<button key={a} onClick={() => setArea(a)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: area === a ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: area === a ? '1px solid #EF4444' : '1px solid #1F2937', color: area === a ? '#EF4444' : '#9CA3AF' }}>{a}</button>))}</div></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Severity</label><div className="flex gap-2">{['Mild','Moderate','Severe'].map(s => (<button key={s} onClick={() => setSeverity(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: severity === s ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: severity === s ? '1px solid #EF4444' : '1px solid #1F2937', color: severity === s ? '#EF4444' : '#9CA3AF' }}>{s}</button>))}</div></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <button onClick={() => setSubmitted(true)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#EF4444' }}>Log injury & notify Tom Walsh →</button>
+        </>) : (
+          <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{area} ({severity}) logged. Tom Walsh notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function GolfExpenseLogger({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [category, setCategory] = useState('Travel')
+  const [amount, setAmount] = useState('')
+  const [note, setNote] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  return (
+    <>
+      <ModalHeader icon="🧾" title="Log Expense" subtitle="Quick expense logging" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!submitted ? (<>
+          <div><label className="text-xs text-gray-500 mb-2 block">Category</label><div className="flex flex-wrap gap-2">{['Travel','Hotel','Meals','Caddie','Equipment','Physio','Other'].map(c => (<button key={c} onClick={() => setCategory(c)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: category === c ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: category === c ? '1px solid #15803D' : '1px solid #1F2937', color: category === c ? '#15803D' : '#9CA3AF' }}>{c}</button>))}</div></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Amount (£)</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Note</label><input value={note} onChange={e => setNote(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          </div>
+          <button onClick={() => setSubmitted(true)} disabled={!amount} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: amount ? '#15803D' : '#374151' }}>Log expense →</button>
+        </>) : (
+          <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Expense logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>£{amount} ({category}) saved to your financial dashboard.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function GolfCourseNotes({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [notes, setNotes] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  return (
+    <>
+      <ModalHeader icon="🗺️" title="Course Notes" subtitle="Quick notes saved to your caddie workflow" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!submitted ? (<>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={6} placeholder="e.g. Hole 7 — aim left of pin, bunker right is punishing..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+          <button onClick={() => setSubmitted(true)} disabled={!notes.trim()} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: notes.trim() ? '#15803D' : '#374151' }}>Save notes →</button>
+        </>) : (
+          <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Notes saved</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>Course notes saved to your Caddie Workflow.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function GolfVisaCheck({ onClose }: { onClose: () => void }) {
+  const COUNTRIES = [
+    { country: '🇩🇪 Germany (BMW International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free' },
+    { country: '🇬🇧 UK (British Masters, BMW PGA)', visa: 'Home', note: 'No requirements — home country' },
+    { country: '🇨🇭 Switzerland (Omega Euro Masters)', visa: 'Not required', note: 'Schengen zone — 90-day visa-free' },
+    { country: '🇦🇪 UAE (Abu Dhabi, Dubai)', visa: 'Visa on arrival', note: '30-day tourist visa on arrival for UK passport holders' },
+    { country: '🇺🇸 USA (US Open)', visa: 'ESTA required', note: 'Apply 72h before travel — $21 fee, valid 2 years' },
+  ]
+  return (
+    <>
+      <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for upcoming tournaments" onClose={onClose} />
+      <div className="p-6 space-y-3">
+        {COUNTRIES.map((c, i) => (
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-bold text-white">{c.country}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.visa === 'Home' ? 'rgba(34,197,94,0.2)' : c.visa === 'Not required' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.2)', color: c.visa === 'Home' || c.visa === 'Not required' ? '#22C55E' : '#F59E0B', border: '1px solid' }}>{c.visa}</span>
+            </div>
+            <div className="text-xs" style={{ color: '#6B7280' }}>{c.note}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// ─── GOLF SPONSOR DASHBOARD ─────────────────────────────────────────────────
+function GolfSponsorDashboard({ session, player }: { session: SportsDemoSession; player: GolfPlayer }) {
+  const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const sponsorName = session.clubName || 'Callaway'
+  const sponsorColor = '#D4AF37'
+  const sponsorLogo = session.logoDataUrl
+
+  const OBLIGATIONS = [
+    { id:'o1', title:'Instagram post — Callaway Chrome Tour X', due:'Today', status:'pending', platform:'Instagram', reach:'95k' },
+    { id:'o2', title:'Twitter round recap with equipment mention', due:'Today', status:'pending', platform:'Twitter', reach:'62k' },
+    { id:'o3', title:'The Open pre-tournament Callaway post', due:'14 Jul', status:'scheduled', platform:'Instagram', reach:'120k' },
+    { id:'o4', title:'BMW PGA brand activation shoot', due:'15 Sep', status:'upcoming', platform:'Multi', reach:'200k' },
+    { id:'o5', title:'Ryder Cup selection campaign content', due:'Oct', status:'upcoming', platform:'Multi', reach:'350k' },
+    { id:'o6', title:'Year-end highlights reel', due:'30 Nov', status:'upcoming', platform:'Multi', reach:'180k' },
+  ]
+
+  const CONTENT = [
+    { title:'Practice range session with Jaws Raw wedges', date:'1 Jul', type:'Photo', platform:'Instagram', likes:'3.8k', reach:'88k' },
+    { title:'BMW International Pro-Am hospitality', date:'2 Jul', type:'Story', platform:'Instagram', likes:'1.9k', reach:'52k' },
+    { title:'Pre-round warm-up with Chrome Tour X', date:'Today', type:'Video', platform:'TikTok', likes:'6.2k', reach:'180k' },
+  ]
+
+  const EVENTS = [
+    { event:'BMW International Open R1', date:'Today', venue:'Golfclub München Eichenried', broadcast:'Sky Sports Golf, DP World Tour+', exposure:'Est. 1.8M viewers' },
+    { event:'Genesis Scottish Open', date:'10 Jul', venue:'The Renaissance Club', broadcast:'Sky Sports, NBC', exposure:'Est. 3.2M viewers' },
+    { event:'The 154th Open Championship', date:'17 Jul', venue:'Royal Birkdale', broadcast:'Sky Sports, BBC, NBC', exposure:'Est. 12.4M viewers' },
+    { event:'BMW PGA Championship', date:'17 Sep', venue:'Wentworth Club', broadcast:'Sky Sports, DP World Tour+', exposure:'Est. 4.8M viewers' },
+  ]
+
+  return (
+    <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Hero banner */}
+      <div className="relative px-8 py-6" style={{ background: `linear-gradient(135deg, ${sponsorColor}25 0%, rgba(0,0,0,0.8) 60%, #0d1117 100%)`, borderBottom: `1px solid ${sponsorColor}30` }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
+              {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
+              <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
+              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name} · OWGR #{player.owgr}</div>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            {[{ label:'Obligations', value:'6 total', sub:'2 due today', color:'#EF4444' }, { label:'Est. reach', value:'8.4M', sub:'this season', color:sponsorColor }, { label:'Deal value', value:'£55k/yr', sub:'renewal 18d', color:'#22C55E' }, { label:'OWGR', value:`#${player.owgr}`, sub:'current', color:'#15803D' }].map((s,i) => (
+              <div key={i} className="text-center px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px] text-white font-semibold">{s.label}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+        {([{ id:'overview' as const, label:'Overview', icon:'🏠' }, { id:'obligations' as const, label:'Obligations', icon:'📋' }, { id:'content' as const, label:'Content', icon:'📸' }, { id:'events' as const, label:'Events', icon:'⛳' }, { id:'roi' as const, label:'ROI & Reach', icon:'📊' }]).map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#F1C40F' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {OBLIGATIONS.filter(o => o.status === 'pending').length > 0 && (
+              <div className="rounded-xl p-5" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <div className="flex items-center gap-2 mb-3"><span>🔴</span><span className="text-sm font-bold text-white">{OBLIGATIONS.filter(o => o.status === 'pending').length} obligations due today</span></div>
+                {OBLIGATIONS.filter(o => o.status === 'pending').map(o => (
+                  <div key={o.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+                    <div><div className="text-sm text-white">{o.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{o.platform} · Est. reach {o.reach}</div></div>
+                    <span className="text-xs px-2 py-1 rounded font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>Due {o.due}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || player.name} is competing at BMW International Open R1</p></div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[{ label:'Expected TV viewers', value:'1.8M', icon:'📺', color:sponsorColor }, { label:'Social following', value:'142k', icon:'📱', color:'#15803D' }, { label:'Press accredited', value:'68', icon:'📰', color:'#8B5CF6' }].map((s,i) => (
+                  <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}><div className="text-2xl mb-1">{s.icon}</div><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Season obligations</p>
+                <div className="flex items-center gap-3 mb-2"><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width:'0%', backgroundColor: sponsorColor }} /></div><span className="text-xs font-bold" style={{ color: sponsorColor }}>0/{OBLIGATIONS.length}</span></div>
+                <div className="space-y-1 text-xs">
+                  {[['Pending',OBLIGATIONS.filter(o=>o.status==='pending').length,'#EF4444'],['Scheduled',OBLIGATIONS.filter(o=>o.status==='scheduled').length,'#15803D'],['Upcoming',OBLIGATIONS.filter(o=>o.status==='upcoming').length,'#6B7280']].map(([l,v,c]) => (
+                    <div key={l as string} className="flex justify-between" style={{ color: '#6B7280' }}><span>{l as string}</span><span style={{ color: c as string }}>{v as number}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Deal summary</p>
+                {[['Partner since','January 2024'],['Deal value','£55,000/yr'],['Renewal date','Jul 26 2026 (18d)'],['Obligations','6 posts / season'],['Events','2 appearances/yr']].map(([l,v]) => (
+                  <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #1F2937' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-bold text-white">{v}</span></div>
+                ))}
+                <div className="mt-3 pt-2"><button className="w-full py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: sponsorColor }}>Discuss renewal →</button></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OBLIGATIONS */}
+        {activeTab === 'obligations' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Obligations</h2>
+            {OBLIGATIONS.map(o => (
+              <div key={o.id} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: `1px solid ${o.status==='pending'?'rgba(239,68,68,0.3)':'#1F2937'}` }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1"><span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: o.status==='pending'?'rgba(239,68,68,0.15)':o.status==='scheduled'?'rgba(21,128,61,0.15)':'rgba(107,114,128,0.15)', color: o.status==='pending'?'#EF4444':o.status==='scheduled'?'#15803D':'#6B7280' }}>{o.status==='pending'?'⏰ Due today':o.status==='scheduled'?'📅 Scheduled':'⏳ Upcoming'}</span><span className="text-xs" style={{ color: '#6B7280' }}>{o.platform}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{o.title}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>Due: {o.due} · Est. reach: {o.reach}</div>
+                  </div>
+                  {o.status === 'pending' && <button className="text-xs px-3 py-1.5 rounded-lg font-bold text-white flex-shrink-0" style={{ backgroundColor: '#EF4444' }}>Chase player →</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        {activeTab === 'content' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Gallery</h2>
+            {CONTENT.map((c,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${sponsorColor}15`, border: `1px solid ${sponsorColor}30` }}>{c.type==='Photo'?'📸':c.type==='Story'?'📱':'🎬'}</div>
+                    <div><div className="text-sm font-bold text-white">{c.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{c.platform} · {c.date} · {c.type}</div></div>
+                  </div>
+                  <div className="text-right"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{c.reach} reach</div><div className="text-xs" style={{ color: '#6B7280' }}>{c.likes} likes</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EVENTS */}
+        {activeTab === 'events' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Tournament Calendar</h2>
+            {EVENTS.map((e,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">{i===0 && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#EF4444' }}>LIVE TODAY</span>}<span className="text-xs" style={{ color: '#6B7280' }}>{e.date}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{e.event}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>📍 {e.venue}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6B7280' }}>📺 {e.broadcast}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{e.exposure}</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ROI */}
+        {activeTab === 'roi' && (
+          <div className="space-y-5 max-w-3xl">
+            <h2 className="text-xl font-black text-white">ROI &amp; Reach</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[{ label:'Total reach YTD', value:'8.4M', color:sponsorColor }, { label:'Media impressions', value:'2.1M', color:'#15803D' }, { label:'Social engagements', value:'89k', color:'#22C55E' }, { label:'Press mentions', value:'31', color:'#8B5CF6' }].map((s,i) => (
+                <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold text-white mb-4">Estimated brand value breakdown</p>
+              {[{ label:'TV / broadcast exposure', value:'£92,000', pct:72, color:sponsorColor }, { label:'Social media reach', value:'£22,000', pct:17, color:'#15803D' }, { label:'Press & editorial', value:'£8,000', pct:6, color:'#8B5CF6' }, { label:'On-course branding', value:'£6,000', pct:5, color:'#22C55E' }].map((r,i) => (
+                <div key={i} className="mb-4"><div className="flex justify-between mb-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{r.label}</span><span className="text-xs font-bold" style={{ color: r.color }}>{r.value}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.color }} /></div></div>
+              ))}
+              <div className="flex justify-between pt-3 mt-2" style={{ borderTop: '1px solid #1F2937' }}><span className="text-sm font-bold text-white">Total estimated value</span><span className="text-sm font-black" style={{ color: sponsorColor }}>£128,000</span></div>
+            </div>
+            <div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${sponsorColor}20, rgba(0,0,0,0.4))`, border: `1px solid ${sponsorColor}40` }}>
+              <div className="text-2xl mb-2">🤝</div>
+              <div className="text-base font-bold text-white mb-1">Renewal in 18 days</div>
+              <div className="text-xs mb-4" style={{ color: '#6B7280' }}>Current deal expires Jul 26 2026. ROI tracking positively — value exceeds deal cost.</div>
+              <button className="px-8 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: sponsorColor }}>Start renewal discussion →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function GolfTourPage() {
@@ -3554,6 +4162,51 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const player = DEMO_PLAYER;
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
 
+  // Sidebar pin state
+  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const sidebarExpanded = sidebarPinned || sidebarHovered
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_golf_sidebar_pinned') === 'true') }, [])
+  const togglePin = () => setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_golf_sidebar_pinned', String(next)); return next })
+
+  // Modal state
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const closeModal = () => setActiveModal(null)
+
+  // Role config
+  const currentRole = (session.role || 'player') as keyof typeof GOLF_ROLE_CONFIG
+  const roleConfig = GOLF_ROLE_CONFIG[currentRole] ?? GOLF_ROLE_CONFIG.player
+  const isPlayer = currentRole === 'player'
+  const isSponsor = currentRole === 'sponsor'
+  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+
+  // Quick Wins dismissed state
+  const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
+    try { const s = localStorage.getItem('golf_dismissed_wins'); return s ? new Set(JSON.parse(s)) : new Set() } catch { return new Set() }
+  })
+  const dismissWin = (id: string) => {
+    setDismissedWins(prev => { const next = new Set(prev); next.add(id); try { localStorage.setItem('golf_dismissed_wins', JSON.stringify([...next])) } catch {} return next })
+  }
+
+  // Daily Tasks state
+  const [taskChecked, setTaskChecked] = useState<Record<string, boolean>>(() => {
+    try { const s = localStorage.getItem('golf_tasks_checked'); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+  const toggleTask = (id: string) => {
+    setTaskChecked(prev => { const next = { ...prev, [id]: !prev[id] }; try { localStorage.setItem('golf_tasks_checked', JSON.stringify(next)) } catch {} return next })
+  }
+
+  // Don't Miss dismissed state
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(() => {
+    try { const s = localStorage.getItem('golf_dismissed_alerts'); return s ? new Set(JSON.parse(s)) : new Set() } catch { return new Set() }
+  })
+  const dismissAlert = (id: string) => {
+    setDismissedAlerts(prev => { const next = new Set(prev); next.add(id); try { localStorage.setItem('golf_dismissed_alerts', JSON.stringify([...next])) } catch {} return next })
+  }
+
+  // Team sub-tab
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'>('today')
+
   // Sponsor obligation toast — fires once on mount if it's past 09:00 and not dismissed.
   useEffect(() => {
     if (toastDismissed) return;
@@ -3575,7 +4228,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} />;
+      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} setActiveModal={setActiveModal} />;
       case 'morning':     return <MorningBriefingView player={player} session={session} />;
       case 'owgr':        return <OWGRView player={player} session={session} />;
       case 'schedule':    return <ScheduleView player={player} session={session} />;
@@ -3605,12 +4258,37 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
       case 'shotlink':    return <ShotLinkView player={player} session={session} />;
       case 'lpga':        return <LPGAView player={player} session={session} />;
       case 'mobileapp':   return <MobileAppView player={player} session={session} />;
-      default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} />;
+      default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} setActiveModal={setActiveModal} />;
     }
   };
 
+  // Render sponsor dashboard if sponsor role
+  if (isSponsor) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+        <GolfSponsorDashboard session={session} player={player} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+      {/* Modal overlay */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeModal}>
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            {activeModal === 'flight' && <GolfFlightFinder onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'matchprep' && <GolfMatchPrepAI onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'sponsorpost' && <GolfSponsorPost onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'ranking' && <GolfRankingSimulator onClose={closeModal} player={player} />}
+            {activeModal === 'injury' && <GolfInjuryLogger onClose={closeModal} session={session} />}
+            {activeModal === 'expense' && <GolfExpenseLogger onClose={closeModal} session={session} />}
+            {activeModal === 'coursenotes' && <GolfCourseNotes onClose={closeModal} session={session} />}
+            {activeModal === 'visa' && <GolfVisaCheck onClose={closeModal} />}
+          </div>
+        </div>
+      )}
+
       {/* Sponsor obligation toast */}
       {toast && !toastDismissed && (
         <div
@@ -3647,8 +4325,15 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
         </div>
       )}
 
+      {/* Role indicator banner for non-player roles */}
+      {!isPlayer && !isSponsor && roleConfig.message && (
+        <div className="fixed top-0 left-0 right-0 z-30 text-center py-1.5 text-xs font-semibold" style={{ backgroundColor: roleConfig.accent + '20', borderBottom: `1px solid ${roleConfig.accent}40`, color: roleConfig.accent }}>
+          {roleConfig.icon} {roleConfig.label} view — {roleConfig.message}
+        </div>
+      )}
+
       {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`} style={{ background: '#0a0c14' }}>
+      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`} style={{ background: '#0a0c14', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
         <div className="p-3 border-b border-gray-800 flex items-center justify-between">
           {!sidebarCollapsed && (
             <div>
@@ -3673,7 +4358,8 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
         )}
         <nav className="flex-1 overflow-y-auto py-2 px-2">
           {groups.map(group => {
-            const items = SIDEBAR_ITEMS.filter(i => i.group === group);
+            const items = visibleSidebarItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
             return (
               <div key={group} className="mb-3">
                 {!sidebarCollapsed && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
@@ -3713,7 +4399,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
       </div>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
         {/* Top bar */}
         <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0a0c14' }}>
           <div className="text-xs text-gray-500 font-medium capitalize">
