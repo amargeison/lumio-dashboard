@@ -1066,7 +1066,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 </h1>
                 <button
                   onClick={speakBriefing}
-                  title={isSpeaking ? 'Stop reading' : 'Read briefing aloud — upgrade for 20 human-sounding voices'}
+                  title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Tennis will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'}
                   className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
                   style={{
                     background: isSpeaking ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.08)',
@@ -1109,17 +1109,19 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               </>)}
             </div>
 
-            <div className="flex flex-col gap-0.5 ml-1 text-right">
-              {clockCities.map(({ city, tz, isUser }) => {
-                const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
-                return (
-                  <div key={city} className="flex items-center gap-2 justify-end">
-                    <span className="text-xs font-bold" style={{ color: isUser ? '#F1C40F' : '#FFFFFF' }}>{time}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#F1C40F' : '#6B7280' }}>{city}</span>
-                  </div>
-                )
-              })}
-              <div className="text-[9px] mt-0.5 cursor-pointer hover:text-gray-400 text-right" style={{ color: '#4B5563' }}>World Clock</div>
+            <div className="flex flex-col gap-0.5 ml-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+                {clockCities.map(({ city, tz, isUser }) => {
+                  const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
+                  return (
+                    <div key={city} className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F1C40F' : '#FFFFFF' }}>{time}</span>
+                      <span className="text-[10px]" style={{ color: isUser ? '#F1C40F' : '#6B7280' }}>{city}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>World Clock</div>
             </div>
           </div>
         </div>
