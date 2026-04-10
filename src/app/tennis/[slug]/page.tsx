@@ -1231,7 +1231,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
                   <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.description}</p>
 
-                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
+                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
                   {/* Brand Colours — only in step 1 detail */}
                   <div className="mt-4 space-y-3">
                     <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div>
@@ -1461,7 +1461,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                         style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
                         {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase() })()}
                       </div>
-                      <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
+                      <div className="text-xs font-bold text-white">{(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()}</div>
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
                     </div>
                     <div className="text-center px-3">
@@ -9841,31 +9841,37 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-1 px-1.5">
+        <nav className="flex-1 overflow-y-auto py-0.5 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems.filter(i => i.group === group);
             return (
-              <div key={group} className="mb-1.5">
+              <div key={group} className="mb-0.5">
                 {sidebarExpanded && (
-                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mt-2 mb-0.5">{group}</div>
+                  <div className="font-bold text-gray-600 uppercase tracking-widest px-2" style={{ fontSize: 9, marginTop: 8, marginBottom: 2, lineHeight: '1.2' }}>{group}</div>
                 )}
                 {items.map(item => (
                   <button
                     key={item.id}
                     onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2 py-1.5 rounded-md mb-px transition-all text-left"
+                    className="w-full flex items-center rounded-md transition-all text-left"
                     style={{
                       backgroundColor: activeSection === item.id ? 'rgba(139,92,246,0.12)' : 'transparent',
                       color: activeSection === item.id ? '#c084fc' : '#6B7280',
                       borderLeft: activeSection === item.id ? '2px solid #a855f7' : '2px solid transparent',
                       paddingLeft: sidebarExpanded ? 10 : 0,
+                      paddingTop: 5,
+                      paddingBottom: 5,
+                      paddingRight: 12,
                       justifyContent: sidebarExpanded ? 'flex-start' : 'center',
-                      fontSize: 13,
+                      fontSize: 12,
+                      lineHeight: '1.2',
+                      gap: 8,
+                      marginBottom: 1,
                     }}
                     title={sidebarExpanded ? undefined : item.label}
                   >
-                    <span className="text-sm flex-shrink-0">{item.icon}</span>
-                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    <span style={{ fontSize: 14 }} className="flex-shrink-0">{item.icon}</span>
+                    {sidebarExpanded && <span className="font-medium truncate" style={{ fontSize: 12 }}>{item.label}</span>}
                   </button>
                 ))}
               </div>
