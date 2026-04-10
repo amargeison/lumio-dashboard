@@ -874,6 +874,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   })
   const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
   const [tourStep, setTourStep] = useState(0)
+  const [showGpsModal, setShowGpsModal] = useState(false)
+  const [gpsRequested, setGpsRequested] = useState(false)
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -1161,7 +1163,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           { n:7, label:'Travel sorted in 60 seconds', icon:'✈️', title:'Travel sorted in 60 seconds', description:'Smart Flight Finder searches BA, easyJet, Ryanair, Air France and more simultaneously — scores each flight and sends a booking email to your agent in one tap.', preview:'travel' },
           { n:8, label:'Sponsors managed automatically', icon:'🤝', title:'Sponsors managed automatically', description:"AI generates authentic sponsor posts in your voice — right tone, right platform, right hashtags. Tracks obligations, content calendar and renewal dates so nothing slips.", preview:'sponsor' },
           { n:9, label:'Nothing falls through the cracks', icon:'🔴', title:'Nothing falls through the cracks', description:"Don't Miss flags your most critical items — wildcard deadlines, medical flags, contract renewals, sponsor obligations. Sorted by urgency. Dismissable when done.", preview:'dontmiss' },
-          { n:10, label:"You've seen enough — let's go", icon:'🚀', title:"You've seen enough. Let's go.", description:'Your portal is ready. Every section is live with demo data. Explore freely — or sign up for your 3-month free trial to connect your real ATP data, Gmail, calendar and GPS.', preview:'cta' },
+          { n:10, label:'Unlock GPS & Video Intelligence', icon:'🛰️', title:'Unlock GPS & Video Intelligence', description:'Connect SwingVision for shot tracking and AI video clips. Pair with your Lumio GPS Tracker to get court heatmaps, movement load scores and an AI coaching brief generated automatically at the end of every session and set.', preview:'gps_video' },
+          { n:11, label:"You've seen enough — let's go", icon:'🚀', title:"You've seen enough. Let's go.", description:'Your portal is ready. Every section is live with demo data. Explore freely — or sign up for your 3-month free trial to connect your real ATP data, Gmail, calendar and GPS.', preview:'cta' },
         ]
         const step = TOUR_STEPS[tourStep]
         return (
@@ -1232,6 +1235,30 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Rolex · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Rolex. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#RolexAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Rolex', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Lululemon', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Nike', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
 
                   {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Martinez — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Lululemon kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Rolex sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
+
+                  {step.preview === 'gps_video' && (<div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.2)' }}>
+                        <div className="text-2xl mb-2">🎾</div>
+                        <div className="text-sm font-bold text-white mb-1">SwingVision</div>
+                        <div className="text-[10px] mb-3" style={{ color: '#6B7280' }}>AI shot tracking · video clips · serve analysis</div>
+                        <button className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }}>Connect SwingVision</button>
+                      </div>
+                      <div className="rounded-xl p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.2)' }}>
+                        <div className="text-2xl mb-2">📡</div>
+                        <div className="text-sm font-bold text-white mb-1">Lumio GPS Tracker</div>
+                        <div className="text-[10px] mb-3" style={{ color: '#6B7280' }}>Court heatmaps · sprint load · AI coaching brief</div>
+                        <button onClick={() => setShowGpsModal(true)} className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>Order Lumio GPS Tracker →</button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{ icon:'🗺️', label:'Court heatmaps' },{ icon:'🏃', label:'Sprint load data' },{ icon:'🤖', label:'AI session brief' },{ icon:'📹', label:'Shot-by-shot clips' },{ icon:'📊', label:'Serve speed tracking' },{ icon:'💚', label:'Recovery scores' }].map((f, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-[10px] rounded-lg p-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                          <span>{f.icon}</span><span style={{ color: '#9CA3AF' }}>{f.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>)}
 
                   {step.preview === 'cta' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{[{ icon:'🎾', label:'Live ATP rankings', color:'#0ea5e9' },{ icon:'📬', label:'Gmail + Outlook sync', color:'#22C55E' },{ icon:'📡', label:'GPS load tracking', color:'#F59E0B' },{ icon:'🤖', label:'AI for every workflow', color:'#8B5CF6' },{ icon:'✈️', label:'Smart travel booking', color:'#0ea5e9' },{ icon:'🤝', label:'Sponsor management', color:'#F59E0B' }].map((f, i) => (<div key={i} className="flex items-center gap-2 text-xs rounded-xl p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base">{f.icon}</span><span style={{ color: f.color }}>{f.label}</span></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.2), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.4)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-xs mb-3" style={{ color: '#6B7280' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><a href="/pricing-sports" className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Start free trial →</a></div></div>)}
                 </div>
@@ -2116,6 +2143,50 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           </div>
         )
       })()}
+
+      {/* GPS Tracker Modal */}
+      {showGpsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowGpsModal(false) }}>
+          <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🛰️</span>
+                <div className="text-base font-bold text-white">Lumio GPS Tracker</div>
+              </div>
+              <button onClick={() => setShowGpsModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10">✕</button>
+            </div>
+            <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>The only GPS tracker built specifically for tennis players. Lightweight vest or clip-on. Real-time court coverage, sprint load, and recovery data — all inside your Lumio portal.</p>
+            <div className="space-y-2 mb-5">
+              {[
+                { icon: '📦', text: '£299 one-off hardware + included in your plan' },
+                { icon: '📡', text: 'Pairs automatically with your portal' },
+                { icon: '🎾', text: 'Combines with SwingVision for AI post-session briefs' },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs" style={{ color: '#D1D5DB' }}><span>{f.icon}</span>{f.text}</div>
+              ))}
+            </div>
+            {gpsRequested ? (
+              <div className="text-center py-4">
+                <div className="text-3xl mb-2">✅</div>
+                <div className="text-sm font-bold text-white mb-1">You&apos;re on the list!</div>
+                <div className="text-xs" style={{ color: '#6B7280' }}>We&apos;ll be in touch shortly.</div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button onClick={() => setGpsRequested(true)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>
+                  Request Early Access
+                </button>
+                <button onClick={() => setShowGpsModal(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
+                  Learn More
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   )

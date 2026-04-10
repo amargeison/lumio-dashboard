@@ -606,6 +606,44 @@ export default function TennisLandingPage() {
         </div>
       </section>
 
+      {/* ── GPS INTELLIGENCE — WORLD FIRST ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', display: 'inline-block', padding: '6px 16px', borderRadius: 999, backgroundColor: `${PURPLE}22`, border: `1px solid ${PURPLE}44`, marginBottom: 16 }}>WORLD FIRST</span>
+            <h2 style={{ fontSize: 42, fontWeight: 900, color: TEXT, lineHeight: 1.15, marginBottom: 16 }}>
+              GPS Intelligence built for tennis — and powered by Lumio
+            </h2>
+            <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.7, maxWidth: 700, margin: '0 auto' }}>
+              Most GPS trackers are built for team sports. Lumio GPS Tracker is the first wearable built specifically for tennis players — tracking court coverage, sprint load, and recovery between points, all feeding directly into your Lumio portal.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
+            {[
+              { icon: '📡', title: 'Lumio GPS Tracker', desc: 'Lightweight clip-on device. Automatic sync. Court heatmaps after every session.' },
+              { icon: '🎾', title: 'SwingVision Integration', desc: 'Connect SwingVision for shot tracking and AI video clips combined with your GPS data.' },
+              { icon: '🤖', title: 'AI Coaching Briefs', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data.' },
+            ].map((f, i) => (
+              <div key={i} style={{ backgroundColor: CARD, border: `1px solid ${BORDER_ALT}`, borderRadius: 16, padding: 28 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+            {['🛰️ Lumio Hardware', '🎾 SwingVision Partner', '🤖 AI Powered'].map(badge => (
+              <span key={badge} style={{ padding: '8px 16px', borderRadius: 999, backgroundColor: `${PURPLE}15`, border: `1px solid ${PURPLE}40`, color: PURPLE_LIGHT, fontSize: 12, fontWeight: 700 }}>{badge}</span>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <a href="mailto:hello@lumiosports.com?subject=Lumio%20GPS%20Tracker%20Order" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+              Order Your Lumio GPS Tracker →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── EARLY ACCESS CTA ── */}
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
