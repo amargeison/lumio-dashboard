@@ -406,7 +406,7 @@ const NL_WEATHER = [
   { day: 'Sun 6 Apr', icon: CloudRain, temp: '10°C', wind: '16mph', rain: '70%', condition: 'Rain' },
 ]
 
-const NL_MORNING_BRIEFING = `Morning gaffer. Squad news: Brennan passed fit after Thursday's training. Fletcher still doubtful — decision Friday. FA Vase 3rd round draw — you're away at Stocksbridge PS if you beat Redbourne. Ground grading inspection in 14 days — floodlights check outstanding. Match fees due to 6 players from last week. Harfield Brewery sponsorship renewal — decision needed by end of month.`
+const NL_MORNING_BRIEFING = `Morning. Squad news: Brennan passed fit after Thursday's training. Fletcher still doubtful — decision Friday. FA Vase 3rd round draw — you're away at Stocksbridge PS if you beat Redbourne. Ground grading inspection in 14 days — floodlights check outstanding. Match fees due to 6 players from last week. Harfield Brewery sponsorship renewal — decision needed by end of month.`
 
 const NL_ACTIVITY_FEED = [
   { name: 'Result logged — W 2-1 vs Hyde United', status: 'completed' as const, ts: '1 Mar, 17:15' },
@@ -500,41 +500,136 @@ function NLPitchFormation({ players }: { players: { name: string; x: number; y: 
 
 // ─── NL Overview View ───────────────────────────────────────────────────────
 
-function NLOverviewView({ onToast }: { onToast: (m: string) => void }) {
+function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; userName?: string }) {
   const { speak, stop, isPlaying } = useSpeech()
   const [briefingExpanded, setBriefingExpanded] = useState(false)
+  const [overviewTab, setOverviewTab] = useState<'getting-started' | 'dashboard'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lumio_nonleague_onboarding')
+      if (stored) { const parsed = JSON.parse(stored); if (parsed.every((v: boolean) => v)) return 'dashboard' }
+    }
+    return 'getting-started'
+  })
+  const [onboardingChecks, setOnboardingChecks] = useState<boolean[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lumio_nonleague_onboarding')
+      if (stored) return JSON.parse(stored)
+    }
+    return Array(10).fill(false)
+  })
   const nextMatch = NL_FIXTURES.find(f => !f.result)
   const daysUntilMatch = 4 // Sat 5 Apr
   const played = NL_FIXTURES.filter(f => f.result)
   const squadFit = NL_SQUAD.filter(p => !p.injured && !p.suspended).length
+  const displayName = userName?.split(' ')[0] || 'Steve'
+
+  const onboardingItems = [
+    'Register with the FA',
+    'Add your first team squad',
+    'Set your league fixtures',
+    'Upload ground grading docs',
+    'Add sponsorship deals',
+    'Configure match day operations',
+    'Set up player contracts',
+    'Add your committee/board',
+    'Connect your social media',
+    "You're ready — kick off!",
+  ]
+
+  function toggleOnboarding(idx: number) {
+    const next = [...onboardingChecks]
+    next[idx] = !next[idx]
+    setOnboardingChecks(next)
+    if (typeof window !== 'undefined') localStorage.setItem('lumio_nonleague_onboarding', JSON.stringify(next))
+  }
 
   return (
     <div className="space-y-4">
-      {/* Good morning panel */}
+      {/* Good morning panel with inline KPIs */}
       <div className="rounded-xl p-4" style={{ background: `linear-gradient(135deg, ${BG} 0%, #78350F 100%)`, border: `1px solid ${PRIMARY}33` }}>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="text-sm font-semibold" style={{ color: ACCENT }}>Good morning, gaffer</div>
+            <div className="text-sm font-semibold" style={{ color: ACCENT }}>Good morning, {displayName}.</div>
             <span className="text-xs" style={{ color: TEXT_SEC }}>Wednesday 2 April 2026</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: `${PRIMARY}33` }}>
-              <span className="text-xs font-bold" style={{ color: ACCENT }}>4th</span>
-              <span className="text-[10px]" style={{ color: TEXT_SEC }}>NPL West</span>
-            </div>
-            <div className="flex gap-0.5">
-              {NL_FORM_LAST5.map((r, i) => (
-                <span key={i} className="w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center"
-                  style={{ backgroundColor: r === 'W' ? '#22C55E' : r === 'D' ? GOLD : '#EF4444', color: '#fff' }}>{r}</span>
-              ))}
-            </div>
+          <div className="flex gap-0.5">
+            {NL_FORM_LAST5.map((r, i) => (
+              <span key={i} className="w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center"
+                style={{ backgroundColor: r === 'W' ? '#22C55E' : r === 'D' ? GOLD : '#EF4444', color: '#fff' }}>{r}</span>
+            ))}
           </div>
         </div>
-        <div className="text-xs" style={{ color: TEXT_SEC }}>
-          Next match: <span style={{ color: TEXT }} className="font-medium">vs Redbourne Town (H) — Saturday 3pm KO — {daysUntilMatch} days</span>
+        {/* Inline KPI boxes */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: `${PRIMARY}22`, border: `1px solid ${PRIMARY}33` }}>
+            <div className="text-lg font-black" style={{ color: ACCENT }}>4th</div>
+            <div className="text-[10px]" style={{ color: TEXT_SEC }}>League Position</div>
+          </div>
+          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#3B82F622', border: '1px solid #3B82F633' }}>
+            <div className="text-lg font-black" style={{ color: '#93C5FD' }}>Sat 15:00</div>
+            <div className="text-[10px]" style={{ color: TEXT_SEC }}>vs Redbourne Town (H)</div>
+          </div>
+          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#22C55E22', border: '1px solid #22C55E33' }}>
+            <div className="text-lg font-black" style={{ color: '#86EFAC' }}>{squadFit}/23</div>
+            <div className="text-[10px]" style={{ color: TEXT_SEC }}>Squad Fit</div>
+          </div>
+          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#EF444422', border: '1px solid #EF444433' }}>
+            <div className="text-lg font-black" style={{ color: '#FCA5A5' }}>1</div>
+            <div className="text-[10px]" style={{ color: TEXT_SEC }}>Suspended (Nash)</div>
+          </div>
         </div>
       </div>
 
+      {/* Quick Actions — 12 pill buttons */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id:'teamselection', label:'Team Selection AI', icon:'\uD83D\uDCCB', hot:true, color:'#F59E0B' },
+          { id:'matchprep',     label:'Match Prep AI',     icon:'\uD83C\uDFAF', hot:true, color:'#F59E0B' },
+          { id:'availability',  label:'Player Availability',icon:'\uD83D\uDCF1', hot:false, color:'#6B7280' },
+          { id:'facheck',       label:'FA Registration',   icon:'\uD83C\uDFDB\uFE0F', hot:false, color:'#6B7280' },
+          { id:'finance',       label:'Finance Logger',    icon:'\uD83D\uDCB0', hot:false, color:'#6B7280' },
+          { id:'opposition',    label:'Opposition Scout AI',icon:'\uD83D\uDD0D', hot:true, color:'#F59E0B' },
+          { id:'ground',        label:'Ground Manager',    icon:'\uD83C\uDFDF\uFE0F', hot:false, color:'#6B7280' },
+          { id:'sponsor',       label:'Sponsor Post AI',   icon:'\uD83D\uDCF1', hot:true, color:'#F59E0B' },
+          { id:'cupdraw',       label:'Cup Draw Tracker',  icon:'\uD83C\uDFC6', hot:false, color:'#6B7280' },
+          { id:'fundraising',   label:'Fundraising AI',    icon:'\uD83D\uDCA1', hot:true, color:'#F59E0B' },
+          { id:'discipline',    label:'Discipline Log',    icon:'\uD83D\uDFE5', hot:false, color:'#6B7280' },
+          { id:'matchreport',   label:'Match Report AI',   icon:'\uD83D\uDCCA', hot:true, color:'#F59E0B' },
+        ].map(a => (
+          <button key={a.id} className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+            style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
+            <span>{a.icon}</span>{a.label}
+            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview Tabs: Getting Started | Dashboard */}
+      <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
+        {(['getting-started', 'dashboard'] as const).map(t => (
+          <button key={t} onClick={() => setOverviewTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+            style={{ backgroundColor: overviewTab === t ? PRIMARY : 'transparent', color: overviewTab === t ? '#fff' : TEXT_SEC }}>
+            {t === 'getting-started' ? 'Getting Started' : 'Dashboard'}
+          </button>
+        ))}
+      </div>
+
+      {overviewTab === 'getting-started' && (
+        <SectionCard title={`Getting Started — ${onboardingChecks.filter(Boolean).length}/10`}>
+          <div className="space-y-1">
+            {onboardingItems.map((item, i) => (
+              <button key={i} onClick={() => toggleOnboarding(i)} className="flex items-center gap-3 w-full text-left py-2 px-2 rounded-lg transition-all" style={{ backgroundColor: onboardingChecks[i] ? `${PRIMARY}12` : 'transparent' }}>
+                <div className="flex items-center justify-center w-5 h-5 rounded-full shrink-0 text-[10px] font-bold" style={{ backgroundColor: onboardingChecks[i] ? '#22C55E' : BORDER, color: onboardingChecks[i] ? '#fff' : TEXT_SEC }}>
+                  {onboardingChecks[i] ? <Check size={12} /> : i + 1}
+                </div>
+                <span className="text-sm" style={{ color: onboardingChecks[i] ? TEXT_SEC : TEXT, textDecoration: onboardingChecks[i] ? 'line-through' : 'none' }}>{item}</span>
+              </button>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {overviewTab === 'dashboard' && <>
       {/* AI Briefing */}
       <div className="rounded-xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${BG} 0%, #78350F 100%)`, border: `1px solid ${BORDER}` }}>
         <div className="px-4 py-3">
@@ -668,6 +763,7 @@ function NLOverviewView({ onToast }: { onToast: (m: string) => void }) {
           </SectionCard>
         </div>
       </div>
+      </>}
     </div>
   )
 }
@@ -2605,7 +2701,7 @@ function NLClubProfileView() {
 
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
-export default function NonLeagueContent({ activeDept, onToast }: { activeDept: NLDeptId; onToast: (m: string) => void }) {
+export default function NonLeagueContent({ activeDept, onToast, userName }: { activeDept: NLDeptId; onToast: (m: string) => void; userName?: string }) {
   const deptLabel = NL_SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
 
   return (
@@ -2617,7 +2713,7 @@ export default function NonLeagueContent({ activeDept, onToast }: { activeDept: 
         </div>
       </div>
 
-      {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} />}
+      {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-club-profile' && <NLClubProfileView />}
       {activeDept === 'nl-squad' && <NLSquadView />}
       {activeDept === 'nl-fixtures' && <NLFixturesView />}

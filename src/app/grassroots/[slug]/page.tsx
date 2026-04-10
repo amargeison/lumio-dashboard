@@ -406,16 +406,18 @@ function WFStatusBadge({ status }: { status: string }) {
 
 // ─── Sidebar ���────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, session }: { activeDept: string; onSelect: (d: string) => void; open: boolean; onClose: () => void; session?: SportsDemoSession }) {
+function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: { activeDept: string; onSelect: (d: string) => void; open: boolean; onClose: () => void; session?: SportsDemoSession; onPinChange?: (pinned: boolean) => void }) {
   const tierColor = '#16A34A'
   const items = SIDEBAR_ITEMS
   const sectionLabels = [...new Set(items.map(i => i.section))]
 
-  const [pinned, setPinned] = useState(() => { if (typeof window !== 'undefined') return localStorage.getItem('lumio_football_sidebar_pinned') === '1'; return false })
+  const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expanded = pinned || hovered
-  const togglePin = () => { const next = !pinned; setPinned(next); if (typeof window !== 'undefined') localStorage.setItem('lumio_football_sidebar_pinned', String(next)) }
+
+  useEffect(() => { setPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_grassroots_sidebar_pinned') === 'true') }, [])
+  const togglePin = () => setPinned(p => { const next = !p; localStorage.setItem('lumio_grassroots_sidebar_pinned', String(next)); onPinChange?.(next); return next })
   const handleMouseEnter = () => { if (timerRef.current) clearTimeout(timerRef.current); setHovered(true) }
   const handleMouseLeave = () => { timerRef.current = setTimeout(() => setHovered(false), 200) }
 
@@ -423,11 +425,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, session }: { activeDept:
 
   return (
     <>
-      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 200 : 52, backgroundColor: BG, borderRight: `1px solid ${BORDER}` }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 z-30 transition-all duration-200" style={{ width: expanded ? 220 : 72, backgroundColor: BG, borderRight: `1px solid ${BORDER}` }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: `1px solid ${BORDER}`, minHeight: 52 }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: tierColor, color: '#fff' }}>SR</div>
           {expanded && (<><div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: TEXT }}>Sunday Rovers FC</p><p className="text-[10px] truncate" style={{ color: TEXT_SEC }}>Grassroots Portal</p></div>
-            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? tierColor : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)' }} title={pinned ? 'Unpin' : 'Pin open'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg></button></>)}
+            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? tierColor : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg></button></>)}
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto amateur-sidebar-scroll">
           {sections.map((sec, si) => (<div key={si}>{sec.label && expanded && <p className="text-[10px] font-semibold uppercase tracking-wider px-3 pt-3 pb-1.5" style={{ color: '#4B5563' }}>{sec.label}</p>}
@@ -454,7 +456,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, session }: { activeDept:
             sidebarCollapsed={!expanded}
           />
         )}
-        <div className="mt-auto shrink-0" style={{ borderTop: `1px solid ${BORDER}` }}>{expanded && <div className="pb-3"><a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}><Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} /></a></div>}</div>
+        <div className="mt-auto shrink-0 flex items-center justify-center py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+          {expanded
+            ? <img src="/football_logo.png" alt="Lumio Football" style={{ maxHeight: 32, objectFit: 'contain' }} />
+            : <img src="/football_logo.png" alt="Lumio Football" style={{ maxHeight: 24, objectFit: 'contain' }} />
+          }
+        </div>
       </aside>
       {open && (<div className="md:hidden fixed inset-0 z-40 flex"><div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
         <aside className="relative z-50 w-56 flex flex-col" style={{ backgroundColor: BG, borderRight: `1px solid ${BORDER}` }}>
@@ -547,21 +554,69 @@ const FORMATION_442: { name: string; x: number; y: number }[] = [
 
 // ─── Overview View ──────────────────────────────────────────��────────────────
 
-function OverviewView({ clubName, onAction }: { clubName: string; onAction: (msg: string) => void }) {
+function OverviewView({ clubName, onAction, session }: { clubName: string; onAction: (msg: string) => void; session?: SportsDemoSession }) {
   const availCount = SQUAD.filter(p => p.availability === 'available').length
   const subsOwed = SQUAD.reduce((sum, p) => sum + p.subsOwed, 0)
   const nextMatch = FIXTURES.find(f => !f.result)
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const userName = (session?.userName) || 'Dave'
 
   return (
     <div className="space-y-4">
-      <BriefingBanner clubName={clubName} />
-      <QuickActionsBar onAction={onAction} />
+      {/* Greeting banner with inline KPIs */}
+      <div className="rounded-xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${BG} 0%, #064E3B 100%)`, border: `1px solid ${BORDER}` }}>
+        <div className="px-5 pt-4 pb-2">
+          <h2 className="text-lg font-bold" style={{ color: TEXT }}>{greeting}, {userName}.</h2>
+          <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} · Westshire Sunday League Div 2</p>
+        </div>
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 px-5 pb-4 pt-2">
+          <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Squad</p>
+            <p className="text-xl font-bold mt-0.5" style={{ color: TEXT }}>{SQUAD.length}</p>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Available</p>
+            <p className="text-xl font-bold mt-0.5" style={{ color: '#22C55E' }}>{availCount}</p>
+            <p className="text-[10px]" style={{ color: TEXT_SEC }}>{SQUAD.filter(p => p.availability === 'maybe').length} maybe</p>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Subs Owed</p>
+            <p className="text-xl font-bold mt-0.5" style={{ color: '#EF4444' }}>&pound;{subsOwed}</p>
+            <p className="text-[10px]" style={{ color: TEXT_SEC }}>{SQUAD.filter(p => p.subsOwed > 0).length} players</p>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Next Match</p>
+            <p className="text-xl font-bold mt-0.5" style={{ color: '#3B82F6' }}>Sat 5 Apr</p>
+            <p className="text-[10px]" style={{ color: TEXT_SEC }}>vs The Crown FC (A)</p>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color={PRIMARY} />
-        <StatCard label="Available Saturday" value={String(availCount)} icon={CheckCircle2} color="#22C55E" sub={`${SQUAD.filter(p => p.availability === 'maybe').length} maybe`} />
-        <StatCard label="Subs Outstanding" value={`£${subsOwed}`} icon={DollarSign} color="#EF4444" sub={`${SQUAD.filter(p => p.subsOwed > 0).length} players`} />
-        <StatCard label="Next Match" value="Sat 5 Apr" icon={Calendar} color="#3B82F6" sub="vs The Crown FC (A)" />
+      <BriefingBanner clubName={clubName} />
+
+      {/* Quick actions — 12 pill buttons */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id:'availability', label:'WhatsApp Availability', icon:'\uD83D\uDCF1', hot:true, color:'#22C55E' },
+          { id:'teamsheet',    label:'Team Sheet AI',         icon:'\uD83D\uDCCB', hot:true, color:'#22C55E' },
+          { id:'referee',      label:'Referee Booker',        icon:'\uD83D\uDFE8', hot:false, color:'#6B7280' },
+          { id:'pitch',        label:'Pitch Checker AI',      icon:'\uD83C\uDFDF\uFE0F', hot:true, color:'#22C55E' },
+          { id:'kit',          label:'Kit Manager',           icon:'\uD83D\uDC55', hot:false, color:'#6B7280' },
+          { id:'finance',      label:'Finance Tracker',       icon:'\uD83D\uDCB0', hot:false, color:'#6B7280' },
+          { id:'matchreport',  label:'Match Report AI',       icon:'\uD83D\uDCCA', hot:true, color:'#22C55E' },
+          { id:'development',  label:'Player Development',    icon:'\uD83D\uDCC8', hot:false, color:'#6B7280' },
+          { id:'safeguarding', label:'Safeguarding Check',    icon:'\uD83D\uDEE1\uFE0F', hot:false, color:'#EF4444' },
+          { id:'subs',         label:'Subs Tracker',          icon:'\uD83D\uDCB7', hot:false, color:'#6B7280' },
+          { id:'discipline',   label:'Discipline Log',        icon:'\uD83D\uDFE5', hot:false, color:'#6B7280' },
+          { id:'planner',      label:'Season Planner AI',     icon:'\uD83D\uDCC5', hot:true, color:'#22C55E' },
+        ].map(a => (
+          <button key={a.id} onClick={() => onAction(a.label)} className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+            style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
+            <span>{a.icon}</span>{a.label}
+            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -2428,12 +2483,83 @@ export default function GrassrootsPortal({ params }: { params: Promise<{ slug: s
   )
 }
 
+// ─── Getting Started Tab ────────────────────────────────────────────────────
+
+const ONBOARDING_ITEMS = [
+  { id: 'club-profile', label: 'Set up your club profile' },
+  { id: 'add-squad', label: 'Add your squad (18 players)' },
+  { id: 'whatsapp', label: 'Connect WhatsApp availability' },
+  { id: 'league', label: 'Set your league and fixtures' },
+  { id: 'safeguarding', label: 'Upload safeguarding certificates' },
+  { id: 'kit', label: 'Add your kit inventory' },
+  { id: 'subs', label: 'Set up subs collection' },
+  { id: 'pitch', label: 'Add your pitch/venue details' },
+  { id: 'committee', label: 'Invite your committee members' },
+  { id: 'ready', label: 'You\u2019re ready \u2014 kick off!' },
+]
+
+function GettingStartedView({ onToast }: { onToast: (m: string) => void }) {
+  const [completed, setCompleted] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('lumio_grassroots_onboarding')
+        if (stored) setCompleted(JSON.parse(stored))
+      } catch { /* ignore */ }
+    }
+  }, [])
+
+  const toggle = (id: string) => {
+    setCompleted(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      localStorage.setItem('lumio_grassroots_onboarding', JSON.stringify(next))
+      return next
+    })
+    onToast(completed[id] ? `Unmarked: ${ONBOARDING_ITEMS.find(i => i.id === id)?.label}` : `Completed: ${ONBOARDING_ITEMS.find(i => i.id === id)?.label}`)
+  }
+
+  const doneCount = Object.values(completed).filter(Boolean).length
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Getting Started Checklist" action={<span className="text-xs font-semibold" style={{ color: PRIMARY }}>{doneCount}/{ONBOARDING_ITEMS.length} done</span>}>
+        <div className="space-y-1">
+          {ONBOARDING_ITEMS.map((item, i) => {
+            const done = !!completed[item.id]
+            return (
+              <button key={item.id} onClick={() => toggle(item.id)} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-all"
+                style={{ backgroundColor: done ? `${PRIMARY}0d` : 'transparent', border: `1px solid ${done ? `${PRIMARY}33` : BORDER}` }}>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                  style={{ backgroundColor: done ? PRIMARY : 'transparent', border: done ? 'none' : `2px solid ${BORDER}`, color: done ? '#fff' : TEXT_SEC }}>
+                  {done ? <Check size={14} /> : i + 1}
+                </div>
+                <span className="text-sm font-medium" style={{ color: done ? TEXT_SEC : TEXT, textDecoration: done ? 'line-through' : 'none' }}>{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </SectionCard>
+      {doneCount === ONBOARDING_ITEMS.length && (
+        <div className="rounded-xl p-4 text-center" style={{ background: `linear-gradient(135deg, ${BG} 0%, #064E3B 100%)`, border: `1px solid ${PRIMARY}33` }}>
+          <p className="text-lg font-bold" style={{ color: PRIMARY }}>All set! Your club is ready to go.</p>
+          <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>Head to the Overview tab to start managing your club.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [activeTab, setActiveTab] = useState<'getting-started' | 'today'>('today')
   const activeRole = session.role
   const clubName = session.clubName || 'Sunday Rovers FC'
+
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_grassroots_sidebar_pinned') === 'true') }, [])
 
   function fireToast(msg: string) {
     setToast(msg)
@@ -2475,35 +2601,58 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d as DeptId)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} />
+        <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d as DeptId)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} onPinChange={setSidebarPinned} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} · Westshire Sunday League Div 2</p>
+        <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+          {/* Demo workspace banner */}
+          <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#F97316', color: '#ffffff' }}>
+            <span>Demo workspace &middot; sample data</span>
+            <a href="/pricing-sports" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data &mdash; sign up for 3 months free &rarr;</a>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <main className="flex-1 p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-lg font-bold">{deptLabel}</h1>
+                  <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} · Westshire Sunday League Div 2</p>
+                </div>
               </div>
-            </div>
-            {activeDept === 'overview' && <OverviewView clubName={clubName} onAction={handleQuickAction} />}
-            {activeDept === 'club-profile' && <ClubProfileView />}
-            {activeDept === 'squad' && <SquadView />}
-            {activeDept === 'matchday' && <MatchDayView onToast={fireToast} />}
-            {activeDept === 'fixtures' && <FixturesView />}
-            {activeDept === 'tactics' && <GrassrootsTacticsView />}
-            {activeDept === 'set-pieces' && <GrassrootsSetPiecesView />}
-            {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
-            {activeDept === 'welfare' && <WelfareView />}
-            {activeDept === 'communications' && <CommsView onToast={fireToast} />}
-            {activeDept === 'referee' && <RefereeView onToast={fireToast} />}
-            {activeDept === 'pitch' && <PitchView onToast={fireToast} />}
-            {activeDept === 'kit' && <KitView />}
-            {activeDept === 'volunteers' && <VolunteersView onToast={fireToast} />}
-            {activeDept === 'travel' && <TravelView onToast={fireToast} />}
-            {activeDept === 'documents' && <DocumentsView />}
-            {activeDept === 'history' && <HistoryView />}
-            {activeDept === 'settings' && <SettingsView />}
-          </main>
+
+              {/* Getting Started / Today tabs for overview */}
+              {activeDept === 'overview' && (
+                <>
+                  <div className="flex gap-1 p-1 rounded-lg mb-4" style={{ backgroundColor: CARD_BG }}>
+                    {(['getting-started', 'today'] as const).map(t => (
+                      <button key={t} onClick={() => setActiveTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                        style={{ backgroundColor: activeTab === t ? PRIMARY : 'transparent', color: activeTab === t ? '#fff' : TEXT_SEC }}>
+                        {t === 'getting-started' ? 'Getting Started' : 'Today'}
+                      </button>
+                    ))}
+                  </div>
+                  {activeTab === 'getting-started' && <GettingStartedView onToast={fireToast} />}
+                  {activeTab === 'today' && <OverviewView clubName={clubName} onAction={handleQuickAction} session={session} />}
+                </>
+              )}
+              {activeDept === 'club-profile' && <ClubProfileView />}
+              {activeDept === 'squad' && <SquadView />}
+              {activeDept === 'matchday' && <MatchDayView onToast={fireToast} />}
+              {activeDept === 'fixtures' && <FixturesView />}
+              {activeDept === 'tactics' && <GrassrootsTacticsView />}
+              {activeDept === 'set-pieces' && <GrassrootsSetPiecesView />}
+              {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
+              {activeDept === 'welfare' && <WelfareView />}
+              {activeDept === 'communications' && <CommsView onToast={fireToast} />}
+              {activeDept === 'referee' && <RefereeView onToast={fireToast} />}
+              {activeDept === 'pitch' && <PitchView onToast={fireToast} />}
+              {activeDept === 'kit' && <KitView />}
+              {activeDept === 'volunteers' && <VolunteersView onToast={fireToast} />}
+              {activeDept === 'travel' && <TravelView onToast={fireToast} />}
+              {activeDept === 'documents' && <DocumentsView />}
+              {activeDept === 'history' && <HistoryView />}
+              {activeDept === 'settings' && <SettingsView />}
+            </main>
+          </div>
         </div>
       </div>
     </div>

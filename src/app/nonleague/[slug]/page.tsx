@@ -40,16 +40,16 @@ function Toast({ message }: { message: string | null }) {
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, session }: { activeDept: string; onSelect: (d: string) => void; open: boolean; onClose: () => void; session?: SportsDemoSession }) {
+function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: { activeDept: string; onSelect: (d: string) => void; open: boolean; onClose: () => void; session?: SportsDemoSession; onPinChange?: (pinned: boolean) => void }) {
   const items = NL_SIDEBAR_ITEMS
   const sectionLabels = [...new Set(items.map(i => i.section))]
   const sections = sectionLabels.map(label => ({ label, items: items.filter(i => i.section === label) }))
 
-  const [pinned, setPinned] = useState(() => { if (typeof window !== 'undefined') return localStorage.getItem('lumio_nl_sidebar_pinned') === '1'; return false })
+  const [pinned, setPinned] = useState(() => { if (typeof window !== 'undefined') return localStorage.getItem('lumio_nonleague_sidebar_pinned') === '1'; return false })
   const [hovered, setHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expanded = pinned || hovered
-  const togglePin = () => { const next = !pinned; setPinned(next); if (typeof window !== 'undefined') localStorage.setItem('lumio_nl_sidebar_pinned', String(next)) }
+  const togglePin = () => { const next = !pinned; setPinned(next); if (typeof window !== 'undefined') localStorage.setItem('lumio_nonleague_sidebar_pinned', next ? '1' : '0'); onPinChange?.(next) }
   const handleMouseEnter = () => { if (timerRef.current) clearTimeout(timerRef.current); setHovered(true) }
   const handleMouseLeave = () => { timerRef.current = setTimeout(() => setHovered(false), 200) }
 
@@ -111,9 +111,10 @@ function Sidebar({ activeDept, onSelect, open, onClose, session }: { activeDept:
         {/* Footer logo */}
         <div className="mt-auto shrink-0" style={{ borderTop: `1px solid ${BORDER}` }}>
           {expanded && (
-            <div className="pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
+            <div className="pb-3 pt-2 flex flex-col items-center gap-2">
+              <Image src="/football_logo.png" alt="Football" width={80} height={80} style={{ width: 60, height: 'auto', objectFit: 'contain', opacity: 0.7 }} />
+              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
+                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 100, height: 'auto', objectFit: 'contain' }} />
               </a>
             </div>
           )}
@@ -171,6 +172,7 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
   const [activeDept, setActiveDept] = useState<string>('nl-overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [sidebarPinned, setSidebarPinned] = useState(() => { if (typeof window !== 'undefined') return localStorage.getItem('lumio_nonleague_sidebar_pinned') === '1'; return false })
   const activeRole = session.role
   const clubName = session.clubName || 'Harfield FC'
 
@@ -195,14 +197,21 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
         .amateur-quickactions-hide-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
+      {/* Demo workspace banner */}
+      <div className="shrink-0 flex items-center justify-center gap-2 py-1.5 px-4 text-xs font-semibold" style={{ background: 'linear-gradient(90deg, #F59E0B 0%, #D97706 100%)', color: '#fff' }}>
+        <span>Non-League Demo Workspace</span>
+        <span style={{ opacity: 0.7 }}>|</span>
+        <span style={{ opacity: 0.8 }}>{clubName}</span>
+      </div>
+
       {/* Top-right avatar + notifications */}
-      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'fixed', top: 40, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: `1px solid ${BORDER}`, color: TEXT_SEC, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</span>
         </button>
         <button style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: PRIMARY, border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          MH
+          {(session.userName || 'Steve').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
         </button>
       </div>
 
@@ -214,7 +223,7 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} />
+        <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} onPinChange={setSidebarPinned} />
 
         <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <main className="flex-1 p-4 sm:p-5">
@@ -225,7 +234,7 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
               </div>
             </div>
 
-            <NonLeagueContent activeDept={activeDept as NLDeptId} onToast={fireToast} />
+            <NonLeagueContent activeDept={activeDept as NLDeptId} onToast={fireToast} userName={session.userName} />
           </main>
         </div>
       </div>

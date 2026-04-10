@@ -638,47 +638,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       </div>
 
-      {/* Quick Actions — 12 AI-powered pill buttons */}
-      <div className="mb-5">
-        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id:'flight',       label:'Smart Flights',      icon:'✈️', color:'#0ea5e9', hot:true  },
-            { id:'hotel',        label:'Find Hotel',          icon:'🏨', color:'#0ea5e9', hot:true  },
-            { id:'coursestrategy', label:'Course Notes AI',  icon:'🗺️', color:'#15803D', hot:true  },
-            { id:'loground',     label:'Log Round',           icon:'📋', color:'#15803D', hot:false },
-            { id:'trackman',     label:'TrackMan Session',    icon:'📡', color:'#0ea5e9', hot:true  },
-            { id:'caddiebriefai', label:'Caddie Brief',      icon:'🏌️', color:'#F59E0B', hot:true  },
-            { id:'sponsorpost',  label:'Sponsor Post',        icon:'📱', color:'#F59E0B', hot:true  },
-            { id:'ranking',      label:'Ranking Sim',         icon:'📊', color:'#0ea5e9', hot:true  },
-            { id:'injury',       label:'Log Injury',          icon:'💊', color:'#EF4444', hot:false },
-            { id:'expense',      label:'Add Expense',         icon:'💰', color:'#6B7280', hot:false },
-            { id:'mentalprep',   label:'Mental Prep',         icon:'🧠', color:'#8B5CF6', hot:true  },
-            { id:'visa',         label:'Visa Check',          icon:'🌍', color:'#6B7280', hot:true  },
-          ].map((a) => (
-            <button key={a.id}
-              onClick={() => onOpenModal(a.id)}
-              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{
-                background: a.hot ? `${a.color}18` : '#111318',
-                border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
-                color: a.hot ? a.color : '#9CA3AF',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
-              <span>{a.icon}</span>
-              {a.label}
-              {a.hot && (
-                <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none"
-                  style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-gray-800/50 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex items-center gap-1 border-b border-gray-800/50" style={{ scrollbarWidth: 'none', overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
           className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${dashTab === 'gettingstarted' ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
           🚀 Getting Started
@@ -981,25 +942,135 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       )}
 
       {dashTab === 'team' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { name: player.coach, role: 'Lead Coach', status: 'On-site Munich', color: 'green' },
-            { name: player.caddie, role: 'Caddie', status: 'On-site Munich', color: 'green' },
-            { name: player.physio, role: 'Physio', status: 'Treatment 13:00', color: 'yellow' },
-            { name: player.agent, role: 'Agent', status: 'Callaway renewal!', color: 'red' },
-            { name: player.short_game_coach, role: 'Short Game', status: 'Remote (video)', color: 'blue' },
-            { name: player.fitness_trainer, role: 'Fitness', status: 'London (remote)', color: 'blue' },
-            { name: player.mental_coach, role: 'Mental Coach', status: 'Video call 20:00', color: 'purple' },
-          ].map((m, i) => {
-            const statusColors: Record<string, string> = { green: 'text-green-400', yellow: 'text-yellow-400', red: 'text-red-400', blue: 'text-blue-400', purple: 'text-purple-400' };
-            return (
-              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
-                <div className="text-xs text-white font-semibold">{m.name}</div>
-                <div className="text-[10px] text-green-400 mt-0.5">{m.role}</div>
-                <div className={`text-[10px] mt-1 ${statusColors[m.color]}`}>{m.status}</div>
+        <div className="space-y-4">
+          <div className="flex gap-1 border-b border-gray-800">
+            {([
+              { id: 'today' as const, label: 'Team Today', icon: '👥' },
+              { id: 'org' as const, label: 'Org Chart', icon: '🏗️' },
+              { id: 'info' as const, label: 'Team Info', icon: '🃏' },
+              { id: 'tour' as const, label: 'Tour Info', icon: '⛳' },
+            ]).map(t => (
+              <button key={t.id} onClick={() => setTeamSubTab(t.id)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
+                  teamSubTab === t.id ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'
+                }`}>
+                <span>{t.icon}</span>{t.label}
+              </button>
+            ))}
+          </div>
+
+          {teamSubTab === 'today' && (
+            <div className="space-y-2">
+              {[
+                { name: 'Mick Sullivan', role: 'Caddie', status: 'Updated hole 7 yardage — 9-iron not 8', dot: '#22C55E' },
+                { name: 'James Crawford', role: 'Agent', status: 'Scottish Open sponsor call 14:00', dot: '#F59E0B' },
+                { name: 'Dr Anna Price', role: 'Physiotherapist', status: 'Back treatment 13:00 confirmed', dot: '#22C55E' },
+                { name: 'Carlos Mendez', role: 'Head Coach', status: 'Range session notes sent', dot: '#22C55E' },
+                { name: 'Sarah Chen', role: 'Sponsor Manager', status: 'Callaway post due 18:00 — caption ready', dot: '#F59E0B' },
+                { name: 'Dave Morton', role: 'Mental Coach', status: 'Pre-round call 08:30', dot: '#22C55E' },
+              ].map((m, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.dot}20`, border: `1px solid ${m.dot}40`, color: m.dot }}>
+                    {m.name.split(' ').map(w => w[0]).join('')}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white">{m.name}</div>
+                    <div className="text-[10px]" style={{ color: '#15803D' }}>{m.role}</div>
+                    <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{m.status}</div>
+                  </div>
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: m.dot }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {teamSubTab === 'org' && (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(21,128,61,0.1)', border: '1px solid rgba(21,128,61,0.3)', minWidth: 200 }}>
+                <div className="text-lg">⛳</div>
+                <div className="text-sm font-bold text-white">{player.name}</div>
+                <div className="text-[10px]" style={{ color: '#15803D' }}>Player · OWGR #{player.owgr}</div>
               </div>
-            );
-          })}
+              <div className="w-px h-4 bg-gray-700" />
+              <div className="flex gap-4">
+                {[{ name: 'James Crawford', role: 'Agent', color: '#F59E0B' }, { name: 'Callaway', role: 'Equipment Sponsor', color: '#8B5CF6' }].map((p, i) => (
+                  <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 160 }}>
+                    <div className="text-xs font-bold text-white">{p.name}</div>
+                    <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="w-px h-4 bg-gray-700" />
+              <div className="flex gap-4">
+                {[{ name: 'Carlos Mendez', role: 'Head Coach', color: '#22C55E' }, { name: 'Mick Sullivan', role: 'Caddie', color: '#15803D' }].map((p, i) => (
+                  <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 160 }}>
+                    <div className="text-xs font-bold text-white">{p.name}</div>
+                    <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="w-px h-4 bg-gray-700" />
+              <div className="flex flex-wrap justify-center gap-3">
+                {[{ name: 'Dr Anna Price', role: 'Physio', color: '#EF4444' }, { name: 'Dave Morton', role: 'Mental Coach', color: '#8B5CF6' }, { name: 'Sarah Chen', role: 'Sponsor Mgr', color: '#F59E0B' }].map((p, i) => (
+                  <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 140 }}>
+                    <div className="text-xs font-bold text-white">{p.name}</div>
+                    <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {teamSubTab === 'info' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { name: 'Carlos Mendez', role: 'Head Coach', overall: 93, stats: [{ k: 'TAC', v: 94 }, { k: 'MOT', v: 91 }, { k: 'TCH', v: 95 }, { k: 'ANA', v: 92 }, { k: 'EXP', v: 90 }, { k: 'COM', v: 93 }], color: '#22C55E' },
+                { name: 'Mick Sullivan', role: 'Caddie', overall: 91, stats: [{ k: 'KNO', v: 94 }, { k: 'CAL', v: 92 }, { k: 'COM', v: 95 }, { k: 'EXP', v: 91 }, { k: 'PRE', v: 89 }, { k: 'LOY', v: 96 }], color: '#15803D' },
+                { name: 'James Crawford', role: 'Agent', overall: 90, stats: [{ k: 'NEG', v: 93 }, { k: 'NET', v: 91 }, { k: 'DEA', v: 94 }, { k: 'COM', v: 89 }, { k: 'EXP', v: 92 }, { k: 'REL', v: 88 }], color: '#F59E0B' },
+                { name: 'Dr Anna Price', role: 'Physio', overall: 94, stats: [{ k: 'DIA', v: 95 }, { k: 'TRT', v: 96 }, { k: 'PRE', v: 93 }, { k: 'CON', v: 92 }, { k: 'EXP', v: 94 }, { k: 'KNO', v: 95 }], color: '#EF4444' },
+              ].map((card, i) => (
+                <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid #1F2937' }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: `${card.color}20`, border: `2px solid ${card.color}40`, color: card.color }}>{card.overall}</div>
+                    <div>
+                      <div className="text-sm font-bold text-white">{card.name}</div>
+                      <div className="text-[10px]" style={{ color: card.color }}>{card.role}</div>
+                    </div>
+                  </div>
+                  <div className="p-4 grid grid-cols-3 gap-2">
+                    {card.stats.map(s => (
+                      <div key={s.k} className="text-center">
+                        <div className="text-sm font-black" style={{ color: s.v >= 93 ? '#22C55E' : s.v >= 90 ? '#F59E0B' : '#6B7280' }}>{s.v}</div>
+                        <div className="text-[9px] text-gray-500 uppercase">{s.k}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {teamSubTab === 'tour' && (
+            <div className="rounded-xl p-5 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              {[
+                ['DP World Tour card', 'Active ✅'],
+                ['OWGR', `#${player.owgr}`],
+                ['Race to Dubai', `#${player.race_to_dubai_pos} (${player.race_to_dubai_points.toLocaleString()} pts)`],
+                ['Season earnings', '£367,000 (target £450k)'],
+                ['Wins this season', '0 (2 top 5s)'],
+                ['Majors played', '3 (best: T22 The Open 2024)'],
+                ['Equipment', 'Callaway (full bag)'],
+                ['Coach', 'Carlos Mendez (since 2022)'],
+                ['Caddie', 'Mick Sullivan (since 2020)'],
+                ['Home club', 'Wentworth Golf Club'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>{label}</span>
+                  <span className="text-xs font-bold text-white">{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -3959,8 +4030,9 @@ function GolfMatchPrepAI({ onClose, session, player }: { onClose: () => void; se
 
 function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
   const [sponsor, setSponsor] = useState('Callaway')
+  const [postType, setPostType] = useState('Tournament arrival')
   const [platform, setPlatform] = useState('Instagram')
-  const [context, setContext] = useState('Pre-tournament practice day')
+  const [scorePos, setScorePos] = useState('')
   const [loading, setLoading] = useState(false)
   const [post, setPost] = useState<string | null>(null)
 
@@ -3972,7 +4044,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 500,
-          messages: [{ role: 'user', content: `Write a ${platform} post for professional golfer ${session.userName || player.name} (OWGR #${player.owgr}, DP World Tour) promoting ${sponsor}. Context: ${context}. Make it authentic, not salesy. Include 3-5 relevant hashtags. Max 200 words.` }]
+          messages: [{ role: 'user', content: `Generate a social media post for James Harrington (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at BMW International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
         })
       })
       const data = await res.json()
@@ -3983,15 +4055,24 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
 
   return (
     <>
-      <ModalHeader icon="🤝" title="Sponsor Post Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
+      <ModalHeader icon="🤝" title="Sponsor Content Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
       <div className="p-6 space-y-4">
         {!post && !loading && (<>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><input value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-            <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Instagram</option><option>Twitter</option><option>LinkedIn</option><option>TikTok</option></select></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Sponsor</label>
+            <div className="flex flex-wrap gap-2">{['Callaway','Rolex','Other'].map(s => (
+              <button key={s} onClick={() => setSponsor(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: sponsor === s ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: sponsor === s ? '1px solid #15803D' : '1px solid #1F2937', color: sponsor === s ? '#15803D' : '#9CA3AF' }}>{s}</button>
+            ))}</div>
           </div>
-          <div><label className="text-xs text-gray-500 mb-1 block">Context</label><input value={context} onChange={e => setContext(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-          <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Post →</button>
+          <div><label className="text-xs text-gray-500 mb-2 block">Post type</label>
+            <div className="flex flex-wrap gap-2">{['Tournament arrival','Post-round','Sponsor product feature','Course photo','Leaderboard update'].map(t => (
+              <button key={t} onClick={() => setPostType(t)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: postType === t ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: postType === t ? '1px solid #15803D' : '1px solid #1F2937', color: postType === t ? '#15803D' : '#9CA3AF' }}>{t}</button>
+            ))}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Instagram</option><option>Twitter/X</option><option>TikTok</option></select></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Score/position (optional)</label><input value={scorePos} onChange={e => setScorePos(e.target.value)} placeholder="T8, -4" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          </div>
+          <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate →</button>
         </>)}
         {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">📱</div><div className="text-sm font-bold text-white">Generating post...</div></div>)}
         {post && (<>
@@ -4009,31 +4090,64 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
 function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player: GolfPlayer }) {
   const [result, setResult] = useState('Win')
   const [event, setEvent] = useState('BMW International Open')
-  const scenarios: Record<string, { owgr: number; change: string }> = {
-    'Win': { owgr: 71, change: '+16' },
-    'T2-T5': { owgr: 79, change: '+8' },
-    'T6-T10': { owgr: 83, change: '+4' },
-    'T11-T20': { owgr: 86, change: '+1' },
-    'T21-T40': { owgr: 88, change: '-1' },
-    'MC': { owgr: 92, change: '-5' },
+  const [loading, setLoading] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const scenarios: Record<string, { owgr: number; change: string; r2d: number; r2dPts: number; prize: string }> = {
+    'Win':     { owgr: 71, change: '+16', r2d: 28, r2dPts: 2575, prize: '£1,320,000' },
+    'Top 5':   { owgr: 79, change: '+8',  r2d: 35, r2dPts: 1840, prize: '£380,000' },
+    'Top 10':  { owgr: 83, change: '+4',  r2d: 39, r2dPts: 1540, prize: '£142,000' },
+    'Top 20':  { owgr: 86, change: '+1',  r2d: 42, r2dPts: 1340, prize: '£62,000' },
+    'Miss Cut': { owgr: 92, change: '-5', r2d: 47, r2dPts: 1240, prize: '£0' },
   }
   const sc = scenarios[result] || scenarios['Win']
+
+  const simulate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 600,
+          messages: [{ role: 'user', content: `Simulate the OWGR and Race to Dubai ranking impact for James Harrington (OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points}pts) if he ${result} at the ${event} (DP World Tour event). Explain: new projected OWGR, new Race to Dubai position and points, prize money earned, impact on season target (£450k), Ryder Cup points implications if relevant. Max 200 words. Be specific with numbers.` }]
+        })
+      })
+      const data = await res.json()
+      setAiAnalysis(data.content?.[0]?.text || null)
+    } catch { /* fallback to static */ }
+    setLoading(false)
+  }
+
   return (
     <>
-      <ModalHeader icon="📊" title="Ranking Simulator" subtitle="What-if OWGR calculator" onClose={onClose} />
+      <ModalHeader icon="📊" title="OWGR & Race to Dubai Simulator" subtitle="What-if ranking calculator with AI analysis" onClose={onClose} />
       <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-xs"><span className="text-gray-500">Current:</span> <span className="text-white font-bold">OWGR #{player.owgr}</span> · <span className="text-white font-bold">Race to Dubai #{player.race_to_dubai_pos}</span> <span className="text-gray-500">({player.race_to_dubai_points} pts)</span></div>
+        </div>
         <div><label className="text-xs text-gray-500 mb-1 block">Event</label><input value={event} onChange={e => setEvent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-        <div><label className="text-xs text-gray-500 mb-2 block">Result</label>
+        <div><label className="text-xs text-gray-500 mb-2 block">Scenario</label>
           <div className="flex flex-wrap gap-2">{Object.keys(scenarios).map(r => (
-            <button key={r} onClick={() => setResult(r)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: result === r ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: result === r ? '1px solid #15803D' : '1px solid #1F2937', color: result === r ? '#15803D' : '#9CA3AF' }}>{r}</button>
+            <button key={r} onClick={() => { setResult(r); setAiAnalysis(null) }} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: result === r ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: result === r ? '1px solid #15803D' : '1px solid #1F2937', color: result === r ? '#15803D' : '#9CA3AF' }}>{r}</button>
           ))}</div>
         </div>
-        <div className="rounded-xl p-5 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="text-xs text-gray-500 mb-2">Projected OWGR after {result} at {event}</div>
-          <div className="text-4xl font-black text-white mb-1">#{sc.owgr}</div>
-          <div className="text-sm font-bold" style={{ color: sc.change.startsWith('+') ? '#22C55E' : '#EF4444' }}>{sc.change} places</div>
-          <div className="text-xs text-gray-500 mt-2">Current: #{player.owgr} · Career high: #{player.career_high_owgr}</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-xs text-gray-500 mb-1">Projected OWGR</div>
+            <div className="text-3xl font-black text-white">#{sc.owgr}</div>
+            <div className="text-xs font-bold mt-1" style={{ color: sc.change.startsWith('+') ? '#22C55E' : '#EF4444' }}>{sc.change} places</div>
+          </div>
+          <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-xs text-gray-500 mb-1">Race to Dubai</div>
+            <div className="text-3xl font-black text-white">#{sc.r2d}</div>
+            <div className="text-xs font-bold mt-1" style={{ color: '#0ea5e9' }}>{sc.r2dPts.toLocaleString()} pts</div>
+          </div>
         </div>
+        <div className="text-xs text-center" style={{ color: '#6B7280' }}>Prize money: <span className="text-white font-bold">{sc.prize}</span></div>
+        {!aiAnalysis && <button onClick={simulate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>{loading ? '⏳ Simulating...' : 'Simulate with AI →'}</button>}
+        {aiAnalysis && (
+          <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid rgba(21,128,61,0.3)', color: '#D1D5DB' }}>{aiAnalysis}</div>
+        )}
       </div>
     </>
   )
@@ -4041,20 +4155,29 @@ function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player
 
 function GolfInjuryLogger({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
   const [area, setArea] = useState('Lower Back')
-  const [severity, setSeverity] = useState('Mild')
+  const [painLevel, setPainLevel] = useState(3)
+  const [type, setType] = useState('Stiffness')
+  const [affectsSwing, setAffectsSwing] = useState('Slightly')
   const [notes, setNotes] = useState('')
   const [submitted, setSubmitted] = useState(false)
   return (
     <>
-      <ModalHeader icon="💊" title="Log Injury" subtitle="Log and auto-notify your physio" onClose={onClose} />
+      <ModalHeader icon="💊" title="Injury & Medical Log" subtitle="Log and auto-notify your physio" onClose={onClose} />
       <div className="p-6 space-y-4">
         {!submitted ? (<>
-          <div><label className="text-xs text-gray-500 mb-2 block">Area</label><div className="flex flex-wrap gap-2">{['Lower Back','Left Wrist','Right Shoulder','Left Knee','Right Hip','Neck'].map(a => (<button key={a} onClick={() => setArea(a)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: area === a ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: area === a ? '1px solid #EF4444' : '1px solid #1F2937', color: area === a ? '#EF4444' : '#9CA3AF' }}>{a}</button>))}</div></div>
-          <div><label className="text-xs text-gray-500 mb-2 block">Severity</label><div className="flex gap-2">{['Mild','Moderate','Severe'].map(s => (<button key={s} onClick={() => setSeverity(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: severity === s ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: severity === s ? '1px solid #EF4444' : '1px solid #1F2937', color: severity === s ? '#EF4444' : '#9CA3AF' }}>{s}</button>))}</div></div>
-          <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-          <button onClick={() => setSubmitted(true)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#EF4444' }}>Log injury & notify Tom Walsh →</button>
+          <div><label className="text-xs text-gray-500 mb-2 block">Area</label><div className="flex flex-wrap gap-2">{['Lower Back','Left Wrist','Right Wrist','Left Elbow','Right Elbow','Shoulder','Hip','Knee'].map(a => (<button key={a} onClick={() => setArea(a)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: area === a ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: area === a ? '1px solid #EF4444' : '1px solid #1F2937', color: area === a ? '#EF4444' : '#9CA3AF' }}>{a}</button>))}</div></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Pain level ({painLevel}/10)</label><input type="range" min="1" max="10" value={painLevel} onChange={e => setPainLevel(parseInt(e.target.value))} className="w-full" /><div className="flex justify-between text-[10px] text-gray-600"><span>Mild</span><span>Severe</span></div></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Type</label><div className="flex flex-wrap gap-2">{['Stiffness','Soreness','Strain','Sharp pain','Swelling'].map(t => (<button key={t} onClick={() => setType(t)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: type === t ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: type === t ? '1px solid #EF4444' : '1px solid #1F2937', color: type === t ? '#EF4444' : '#9CA3AF' }}>{t}</button>))}</div></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Affecting swing?</label><div className="flex gap-2">{['Yes','No','Slightly'].map(s => (<button key={s} onClick={() => setAffectsSwing(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: affectsSwing === s ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)', border: affectsSwing === s ? '1px solid #EF4444' : '1px solid #1F2937', color: affectsSwing === s ? '#EF4444' : '#9CA3AF' }}>{s}</button>))}</div></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="text-xs text-gray-400">Current flag: <span className="text-red-400 font-bold">Lower back — mild — cleared for play, treatment 13:00</span></div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => { try { const prev = JSON.parse(localStorage.getItem('lumio_golf_injuries') || '[]'); localStorage.setItem('lumio_golf_injuries', JSON.stringify([{ area, painLevel, type, affectsSwing, notes, date: new Date().toISOString() }, ...prev].slice(0, 20))) } catch {} setSubmitted(true) }} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#EF4444' }}>Log & notify Dr Anna Price →</button>
+          </div>
         </>) : (
-          <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{area} ({severity}) logged. Tom Walsh notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
+          <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{area} — {type} (pain {painLevel}/10, swing: {affectsSwing}). Dr Anna Price notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
         )}
       </div>
     </>
@@ -4062,16 +4185,25 @@ function GolfInjuryLogger({ onClose, session }: { onClose: () => void; session: 
 }
 
 function GolfExpenseLogger({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
-  const [category, setCategory] = useState('Travel')
+  const [category, setCategory] = useState('Flights')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [monthTotal, setMonthTotal] = useState(4820)
+
   return (
     <>
-      <ModalHeader icon="🧾" title="Log Expense" subtitle="Quick expense logging" onClose={onClose} />
+      <ModalHeader icon="🧾" title="Log Expense" subtitle="Quick expense logging with tax tracking" onClose={onClose} />
       <div className="p-6 space-y-4">
         {!submitted ? (<>
-          <div><label className="text-xs text-gray-500 mb-2 block">Category</label><div className="flex flex-wrap gap-2">{['Travel','Hotel','Meals','Caddie','Equipment','Physio','Other'].map(c => (<button key={c} onClick={() => setCategory(c)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: category === c ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: category === c ? '1px solid #15803D' : '1px solid #1F2937', color: category === c ? '#15803D' : '#9CA3AF' }}>{c}</button>))}</div></div>
+          <div className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-xs text-gray-500">This month</div>
+            <div className="text-sm font-bold text-white">£{monthTotal.toLocaleString()}</div>
+          </div>
+          {monthTotal + (parseFloat(amount) || 0) > 50000 && (
+            <div className="p-2 rounded-lg text-xs font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}>⚠ Approaching £50k tax milestone — notify accountant</div>
+          )}
+          <div><label className="text-xs text-gray-500 mb-2 block">Category</label><div className="flex flex-wrap gap-2">{['Flights','Hotel','Caddie fees','Entry fees','Equipment','Meals','Ground transport','Other'].map(c => (<button key={c} onClick={() => setCategory(c)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: category === c ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: category === c ? '1px solid #15803D' : '1px solid #1F2937', color: category === c ? '#15803D' : '#9CA3AF' }}>{c}</button>))}</div></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-gray-500 mb-1 block">Amount (£)</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
             <div><label className="text-xs text-gray-500 mb-1 block">Note</label><input value={note} onChange={e => setNote(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
@@ -4105,21 +4237,24 @@ function GolfCourseNotes({ onClose, session }: { onClose: () => void; session: S
 
 function GolfVisaCheck({ onClose }: { onClose: () => void }) {
   const COUNTRIES = [
-    { country: '🇩🇪 Germany (BMW International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free' },
-    { country: '🇬🇧 UK (British Masters, BMW PGA)', visa: 'Home', note: 'No requirements — home country' },
-    { country: '🇨🇭 Switzerland (Omega Euro Masters)', visa: 'Not required', note: 'Schengen zone — 90-day visa-free' },
-    { country: '🇦🇪 UAE (Abu Dhabi, Dubai)', visa: 'Visa on arrival', note: '30-day tourist visa on arrival for UK passport holders' },
-    { country: '🇺🇸 USA (US Open)', visa: 'ESTA required', note: 'Apply 72h before travel — $21 fee, valid 2 years' },
+    { country: '🇩🇪 Germany (BMW International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free', urgent: false },
+    { country: '🇬🇧 UK (British Masters, BMW PGA)', visa: 'Home', note: 'No requirements — home country', urgent: false },
+    { country: '🇨🇭 Switzerland (Omega Euro Masters)', visa: 'Not required', note: 'Schengen zone — 90-day visa-free', urgent: false },
+    { country: '🇦🇪 UAE (Abu Dhabi, Dubai)', visa: 'Visa on arrival', note: '30-day tourist visa on arrival for UK passport holders', urgent: false },
+    { country: '🇺🇸 USA (US Open, Masters)', visa: '⚠️ ESTA required', note: 'Apply 72h before travel — $21 fee, valid 2 years', urgent: true },
+    { country: '🇯🇵 Japan (Zozo Championship)', visa: '⚠️ eVisa required', note: 'Online application, processing 5 business days, $25 fee', urgent: true },
+    { country: '🇰🇷 South Korea (Korean Open)', visa: 'K-ETA required', note: 'Apply 72h before — $10 fee. Exempt if transit only.', urgent: false },
+    { country: '🇦🇺 Australia (Australian Open)', visa: '⚠️ ETA required', note: 'Apply online, usually instant — AUD $20', urgent: true },
   ]
   return (
     <>
-      <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for upcoming tournaments" onClose={onClose} />
+      <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for upcoming golf destinations" onClose={onClose} />
       <div className="p-6 space-y-3">
         {COUNTRIES.map((c, i) => (
-          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${c.urgent ? 'rgba(245,158,11,0.3)' : '#1F2937'}` }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-bold text-white">{c.country}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: c.visa === 'Home' ? 'rgba(34,197,94,0.2)' : c.visa === 'Not required' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.2)', color: c.visa === 'Home' || c.visa === 'Not required' ? '#22C55E' : '#F59E0B', border: '1px solid' }}>{c.visa}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: c.visa.includes('Home') || c.visa === 'Not required' ? 'rgba(34,197,94,0.15)' : c.visa.includes('⚠️') ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)', color: c.visa.includes('Home') || c.visa === 'Not required' ? '#22C55E' : c.visa.includes('⚠️') ? '#F59E0B' : '#60A5FA' }}>{c.visa}</span>
             </div>
             <div className="text-xs" style={{ color: '#6B7280' }}>{c.note}</div>
           </div>
@@ -4127,6 +4262,358 @@ function GolfVisaCheck({ onClose }: { onClose: () => void }) {
       </div>
     </>
   )
+}
+
+// ─── NEW MODAL COMPONENTS ────────────────────────────────────────────────────
+
+function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [destination, setDestination] = useState('Munich, Germany')
+  const [checkIn, setCheckIn] = useState('')
+  const [checkOut, setCheckOut] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<null | Array<{name:string;stars:number;price:number;distance:string;score:number;badge?:string}>>(null)
+  const [prefs, setPrefs] = useState<string[]>([])
+  const togglePref = (p: string) => setPrefs(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
+
+  const search = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+          messages: [{ role: 'user', content: `Find best hotels near ${destination} for a touring golf professional, ${checkIn || 'next week'} to ${checkOut || 'next week + 3 days'}. Priority: ${prefs.length ? prefs.join(', ') : 'proximity to course, quality gym'}. Top 3 with name, distance to course, price, facilities, booking URL. Return ONLY JSON array: [{"name":"","stars":5,"price":0,"distance":"","score":0,"badge":""}]. Score 0-100. Badge: "Best overall", "Best value", or null.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : [
+        {name:'Marriott München',stars:4,price:195,distance:'3.2km to course',score:92,badge:'Best value'},
+        {name:'Hotel Kranzbach',stars:5,price:320,distance:'8km to course',score:88,badge:'Best overall'},
+        {name:'NH München Ost',stars:4,price:145,distance:'5.1km to course',score:84},
+      ])
+    } catch {
+      setResults([
+        {name:'Marriott München',stars:4,price:195,distance:'3.2km to course',score:92,badge:'Best value'},
+        {name:'Hotel Kranzbach',stars:5,price:320,distance:'8km to course',score:88,badge:'Best overall'},
+        {name:'NH München Ost',stars:4,price:145,distance:'5.1km to course',score:84},
+      ])
+    }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="🏨" title="Find Hotel AI" subtitle="AI searches for golf-friendly hotels near your event" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!results && !loading && (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Destination / Course</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Preferences</label>
+          <div className="flex flex-wrap gap-2">{['Near course','Quiet for sleep/prep','Gym','Course views','Airport transfer'].map(p => (
+            <button key={p} onClick={() => togglePref(p)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: prefs.includes(p) ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: prefs.includes(p) ? '1px solid #15803D' : '1px solid #1F2937', color: prefs.includes(p) ? '#15803D' : '#9CA3AF' }}>{p}</button>
+          ))}</div>
+        </div>
+        <button onClick={search} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Search Hotels →</button>
+      </>)}
+      {loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-bounce">🏨</div><div className="text-sm font-bold text-white">Finding best hotels...</div></div>}
+      {results && (<div className="space-y-3">
+        {results.map((h,i) => (
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{h.name}</span>{h.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>{h.badge}</span>}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{'⭐'.repeat(h.stars)} · {h.distance}</div></div><div className="text-right"><div className="text-lg font-black text-white">£{h.price}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>per night</div></div></div>
+          </div>
+        ))}
+        <div className="flex gap-3">
+          <button onClick={() => setResults(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Again</button>
+          <button onClick={() => { const h=results[0]; window.open(`mailto:james.crawford@agent.com?subject=${encodeURIComponent(`Hotel — ${h.name}`)}&body=${encodeURIComponent(`Book ${h.name}, ${destination}. ${checkIn} to ${checkOut}. ~£${h.price}/night.\n\nThanks, ${session.userName || 'James'}`)}`) }}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📧 Send to agent →</button>
+        </div>
+      </div>)}
+    </div>
+  </>)
+}
+
+function GolfCourseStrategyAI({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [course, setCourse] = useState('Golfclub München Eichenried')
+  const [round, setRound] = useState('R1')
+  const [weather, setWeather] = useState('Calm')
+  const [yardage, setYardage] = useState('7,545')
+  const [loading, setLoading] = useState(false)
+  const [strategy, setStrategy] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+          messages: [{ role: 'user', content: `Search for course information about ${course} and generate a hole-by-hole strategy guide for a touring professional golfer (OWGR #87, scoring average 70.2). Round: ${round}. Conditions: ${weather}. Yardage: ${yardage}. Cover: tee shot strategy, approach play, scoring holes, danger holes, putting notes, caddie briefing points. Format with hole numbers as headers.` }]
+        })
+      })
+      const data = await res.json()
+      setStrategy(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || 'Unable to generate strategy.')
+    } catch { setStrategy('Unable to generate strategy. Try again.') }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="🗺️" title="Course Strategy AI" subtitle="AI hole-by-hole strategy with web search" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!strategy && !loading && (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Course</label><input value={course} onChange={e => setCourse(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div className="grid grid-cols-3 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Round</label><select value={round} onChange={e => setRound(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['R1','R2','R3','R4'].map(r => <option key={r}>{r}</option>)}</select></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Weather</label><select value={weather} onChange={e => setWeather(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Calm</option><option>Windy</option><option>Wet</option><option>Mixed</option></select></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Yardage</label><input value={yardage} onChange={e => setYardage(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Strategy →</button>
+      </>)}
+      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">🗺️</div><div className="text-sm font-bold text-white">Generating hole-by-hole strategy...</div><div className="text-xs mt-2" style={{ color: '#6B7280' }}>Searching course data with AI...</div></div>)}
+      {strategy && (<>
+        <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{strategy}</div>
+        <div className="flex gap-3">
+          <button onClick={() => setStrategy(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+          <button onClick={() => navigator.clipboard.writeText(strategy)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy strategy</button>
+        </div>
+      </>)}
+    </div>
+  </>)
+}
+
+function GolfRoundLogger({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ tournament: 'BMW International Open', round: 'R2', course: 'Golfclub München Eichenried', score: '', fairways: '', gir: '', putts: '', drivingDist: '', sgOtt: '', sgApp: '', sgArg: '', sgPutt: '', bestHole: '', worstHole: '', notes: '' })
+  const [saved, setSaved] = useState(false)
+  const [rounds, setRounds] = useState<Array<{tournament:string;round:string;score:string;putts:string;date:string}>>([])
+  const upd = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  useEffect(() => { try { const s = localStorage.getItem('lumio_golf_rounds'); if (s) setRounds(JSON.parse(s).slice(0, 5)) } catch {} }, [])
+
+  const save = () => {
+    const entry = { ...form, date: new Date().toLocaleDateString('en-GB') }
+    try { const prev = JSON.parse(localStorage.getItem('lumio_golf_rounds') || '[]'); localStorage.setItem('lumio_golf_rounds', JSON.stringify([entry, ...prev].slice(0, 20))) } catch {}
+    setRounds(prev => [{ tournament: form.tournament, round: form.round, score: form.score, putts: form.putts, date: entry.date }, ...prev].slice(0, 5))
+    setSaved(true)
+  }
+
+  const inp = 'w-full px-3 py-2.5 rounded-xl text-sm text-white'
+  const sty = { backgroundColor: '#111318', border: '1px solid #374151' }
+
+  return (<>
+    <ModalHeader icon="📋" title="Round Logger" subtitle="Log your round stats and strokes gained" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!saved ? (<>
+        <div className="grid grid-cols-3 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Tournament</label><input value={form.tournament} onChange={e => upd('tournament', e.target.value)} className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Round</label><select value={form.round} onChange={e => upd('round', e.target.value)} className={inp} style={sty}>{['R1','R2','R3','R4'].map(r => <option key={r}>{r}</option>)}</select></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Score (par 72)</label><input type="number" value={form.score} onChange={e => upd('score', e.target.value)} placeholder="68" className={inp} style={sty} /></div>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Fairways</label><input value={form.fairways} onChange={e => upd('fairways', e.target.value)} placeholder="10/14" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">GIR</label><input value={form.gir} onChange={e => upd('gir', e.target.value)} placeholder="12/18" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Putts</label><input type="number" value={form.putts} onChange={e => upd('putts', e.target.value)} placeholder="28" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Driving (yds)</label><input type="number" value={form.drivingDist} onChange={e => upd('drivingDist', e.target.value)} placeholder="298" className={inp} style={sty} /></div>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">SG: OTT</label><input type="number" step="0.01" value={form.sgOtt} onChange={e => upd('sgOtt', e.target.value)} placeholder="+0.4" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">SG: APP</label><input type="number" step="0.01" value={form.sgApp} onChange={e => upd('sgApp', e.target.value)} placeholder="-0.3" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">SG: ARG</label><input type="number" step="0.01" value={form.sgArg} onChange={e => upd('sgArg', e.target.value)} placeholder="+0.2" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">SG: PUTT</label><input type="number" step="0.01" value={form.sgPutt} onChange={e => upd('sgPutt', e.target.value)} placeholder="-1.2" className={inp} style={sty} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Best hole</label><input value={form.bestHole} onChange={e => upd('bestHole', e.target.value)} placeholder="e.g. Eagle on 15" className={inp} style={sty} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Worst hole</label><input value={form.worstHole} onChange={e => upd('worstHole', e.target.value)} placeholder="e.g. Double on 7" className={inp} style={sty} /></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={form.notes} onChange={e => upd('notes', e.target.value)} rows={2} placeholder="Key takeaways..." className={inp} style={sty} /></div>
+        <button onClick={save} disabled={!form.score} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: form.score ? '#15803D' : '#374151' }}>Save Round →</button>
+        {rounds.length > 0 && (
+          <div className="mt-4"><div className="text-xs text-gray-500 font-bold uppercase mb-2">Last {rounds.length} rounds</div>
+            <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500">{['Date','Event','Rnd','Score','Putts'].map(h => <th key={h} className="text-left py-1 pr-3 font-medium">{h}</th>)}</tr></thead><tbody>{rounds.map((r,i) => <tr key={i} className="text-gray-300 border-t border-gray-800/40"><td className="py-1.5 pr-3">{r.date}</td><td className="pr-3">{r.tournament}</td><td className="pr-3">{r.round}</td><td className="pr-3 font-bold">{r.score}</td><td>{r.putts}</td></tr>)}</tbody></table></div>
+          </div>
+        )}
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Round saved</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{form.round} — {form.score} at {form.tournament}</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [club, setClub] = useState('7i')
+  const [ballSpeed, setBallSpeed] = useState('')
+  const [launchAngle, setLaunchAngle] = useState('')
+  const [spinRate, setSpinRate] = useState('')
+  const [carry, setCarry] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [analysis, setAnalysis] = useState<string | null>(null)
+
+  const smash = ballSpeed && carry ? (parseFloat(carry) / parseFloat(ballSpeed) * 1.5).toFixed(2) : '—'
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `Analyse these TrackMan numbers for a touring professional golfer: Club ${club}, Ball speed ${ballSpeed}mph, Launch ${launchAngle}°, Spin ${spinRate}rpm, Carry ${carry}yds. Compare to PGA Tour averages for this club. Identify: what's working, what needs adjustment, specific drill or setup change to improve. Technical, coaching tone. Max 300 words.` }]
+        })
+      })
+      const data = await res.json()
+      setAnalysis(data.content?.[0]?.text || 'Unable to generate analysis.')
+    } catch { setAnalysis('Unable to generate analysis.') }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="📡" title="TrackMan Analysis" subtitle="AI analysis of your launch monitor data" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!analysis && !loading && (<>
+        <div><label className="text-xs text-gray-500 mb-2 block">Club</label>
+          <div className="flex flex-wrap gap-2">{['Driver','3W','5i','7i','PW','SW'].map(c => (
+            <button key={c} onClick={() => setClub(c)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: club === c ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: club === c ? '1px solid #15803D' : '1px solid #1F2937', color: club === c ? '#15803D' : '#9CA3AF' }}>{c}</button>
+          ))}</div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Ball speed (mph)</label><input type="number" value={ballSpeed} onChange={e => setBallSpeed(e.target.value)} placeholder="152" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Launch angle (°)</label><input type="number" step="0.1" value={launchAngle} onChange={e => setLaunchAngle(e.target.value)} placeholder="16.3" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Spin rate (rpm)</label><input type="number" value={spinRate} onChange={e => setSpinRate(e.target.value)} placeholder="6800" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Carry (yards)</label><input type="number" value={carry} onChange={e => setCarry(e.target.value)} placeholder="172" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        {ballSpeed && carry && <div className="text-xs text-center" style={{ color: '#15803D' }}>Smash factor: {smash}</div>}
+        <button onClick={generate} disabled={!ballSpeed || !carry} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: ballSpeed && carry ? '#15803D' : '#374151' }}>Analyse →</button>
+      </>)}
+      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">📡</div><div className="text-sm font-bold text-white">Analysing TrackMan data...</div></div>)}
+      {analysis && (<>
+        <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 350, overflowY: 'auto' }}>{analysis}</div>
+        <div className="flex gap-3">
+          <button onClick={() => setAnalysis(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← New data</button>
+          <button onClick={() => navigator.clipboard.writeText(analysis)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy analysis</button>
+        </div>
+      </>)}
+    </div>
+  </>)
+}
+
+function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [tournament, setTournament] = useState('BMW International Open')
+  const [round, setRound] = useState('R2')
+  const [teeTime, setTeeTime] = useState('09:24')
+  const [partners, setPartners] = useState('R. McIlroy, S. Scheffler')
+  const [weather, setWeather] = useState('22°C, 8mph W, partly cloudy')
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Generate a pre-round caddie briefing for James Harrington (#87 OWGR, scoring avg 70.2) for ${tournament} Round ${round}, tee time ${teeTime}, playing with ${partners}. Weather: ${weather}. Cover: course management priorities for today, club selection notes, pin positions to target/avoid, playing partner awareness, focus cues, one key stat to beat today. Max 400 words. Use emoji headers.` }]
+        })
+      })
+      const data = await res.json()
+      setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+    } catch { setBrief('Unable to generate brief.') }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="🏌️" title="Caddie Briefing Generator" subtitle="AI pre-round brief for you and your caddie" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!brief && !loading && (<>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Tournament</label><input value={tournament} onChange={e => setTournament(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Round</label><select value={round} onChange={e => setRound(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['R1','R2','R3','R4'].map(r => <option key={r}>{r}</option>)}</select></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Tee time</label><input value={teeTime} onChange={e => setTeeTime(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Playing partners</label><input value={partners} onChange={e => setPartners(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Weather</label><input value={weather} onChange={e => setWeather(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Generate Brief →</button>
+      </>)}
+      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">🏌️</div><div className="text-sm font-bold text-white">Generating caddie briefing...</div></div>)}
+      {brief && (<>
+        <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{brief}</div>
+        <div className="flex gap-3">
+          <button onClick={() => setBrief(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+          <button onClick={() => navigator.clipboard.writeText(brief)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>📋 Copy brief</button>
+          <button onClick={() => { if (typeof window !== 'undefined' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(brief); u.rate = 0.9; window.speechSynthesis.speak(u) } }} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔊</button>
+        </div>
+      </>)}
+    </div>
+  </>)
+}
+
+function GolfMentalPrepAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+  const [tournament, setTournament] = useState('BMW International Open')
+  const [round, setRound] = useState('R2')
+  const [teeTime, setTeeTime] = useState('09:24')
+  const [position, setPosition] = useState('')
+  const [feeling, setFeeling] = useState(7)
+  const [concern, setConcern] = useState('Putting')
+  const [loading, setLoading] = useState(false)
+  const [routine, setRoutine] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `Generate a pre-round mental preparation routine for James Harrington, DP World Tour professional golfer. Round ${round} of ${tournament}, tee time ${teeTime}, currently ${position || 'T12'} on leaderboard. Feeling: ${feeling}/10. Main concern: ${concern}. Include: warm-up range routine, putting green focus, first tee ritual, between-shot process, bogey recovery mindset. Practical, 4-5 minutes to read. Max 400 words. Use emoji headers.` }]
+        })
+      })
+      const data = await res.json()
+      setRoutine(data.content?.[0]?.text || 'Unable to generate routine.')
+    } catch { setRoutine('Unable to generate routine.') }
+    setLoading(false)
+  }
+
+  return (<>
+    <ModalHeader icon="🧠" title="Pre-Round Mental Prep" subtitle="AI mental preparation routine" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!routine && !loading && (<>
+        <div className="grid grid-cols-3 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Round</label><select value={round} onChange={e => setRound(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['R1','R2','R3','R4'].map(r => <option key={r}>{r}</option>)}</select></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Tee time</label><input value={teeTime} onChange={e => setTeeTime(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Position</label><input value={position} onChange={e => setPosition(e.target.value)} placeholder="T12" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Feeling ({feeling}/10)</label>
+          <input type="range" min="1" max="10" value={feeling} onChange={e => setFeeling(parseInt(e.target.value))} className="w-full" />
+          <div className="flex justify-between text-[10px] text-gray-600"><span>Low</span><span>Great</span></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Main concern</label>
+          <div className="flex flex-wrap gap-2">{['Putting','Driver','Nerves','Leaderboard pressure','Playing partners','Weather'].map(c => (
+            <button key={c} onClick={() => setConcern(c)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: concern === c ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)', border: concern === c ? '1px solid #8B5CF6' : '1px solid #1F2937', color: concern === c ? '#8B5CF6' : '#9CA3AF' }}>{c}</button>
+          ))}</div>
+        </div>
+        <button onClick={generate} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#8B5CF6' }}>Generate Routine →</button>
+      </>)}
+      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">🧠</div><div className="text-sm font-bold text-white">Generating mental prep routine...</div></div>)}
+      {routine && (<>
+        <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{routine}</div>
+        <div className="flex gap-3">
+          <button onClick={() => setRoutine(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+          <button onClick={() => navigator.clipboard.writeText(routine)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#8B5CF6' }}>📋 Copy routine</button>
+        </div>
+      </>)}
+    </div>
+  </>)
 }
 
 // ─── GOLF SPONSOR DASHBOARD ─────────────────────────────────────────────────
@@ -4467,12 +4954,18 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeModal}>
           <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
             {activeModal === 'flight' && <GolfFlightFinder onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'hotel' && <GolfHotelFinder onClose={closeModal} session={session} />}
+            {activeModal === 'coursestrategy' && <GolfCourseStrategyAI onClose={closeModal} session={session} />}
+            {activeModal === 'loground' && <GolfRoundLogger onClose={closeModal} />}
+            {activeModal === 'trackman' && <GolfTrackManAnalysis onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'caddiebriefai' && <GolfCaddieBriefAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'matchprep' && <GolfMatchPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'sponsorpost' && <GolfSponsorPost onClose={closeModal} session={session} player={player} />}
             {activeModal === 'ranking' && <GolfRankingSimulator onClose={closeModal} player={player} />}
             {activeModal === 'injury' && <GolfInjuryLogger onClose={closeModal} session={session} />}
             {activeModal === 'expense' && <GolfExpenseLogger onClose={closeModal} session={session} />}
             {activeModal === 'coursenotes' && <GolfCourseNotes onClose={closeModal} session={session} />}
+            {activeModal === 'mentalprep' && <GolfMentalPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'visa' && <GolfVisaCheck onClose={closeModal} />}
           </div>
         </div>
