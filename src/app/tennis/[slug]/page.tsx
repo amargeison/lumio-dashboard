@@ -1299,6 +1299,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             <span className="text-xs font-semibold shrink-0 mr-1 w-full mb-1" style={{ color: '#4B5563' }}>Quick actions</span>
             {[
               { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
+              { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
               { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
               { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
               { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
@@ -7849,6 +7850,187 @@ function TennisSendMessage({ onClose, session, player }: { onClose: () => void; 
   )
 }
 
+// ─── SOCIAL MEDIA MODAL ──────────────────────────────────────────────────────
+function TennisSocialMedia({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [step, setStep] = useState(1)
+  const [topic, setTopic] = useState('')
+  const [details, setDetails] = useState('')
+  const [platforms, setPlatforms] = useState<string[]>([])
+  const [tone, setTone] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [posts, setPosts] = useState<Record<string, string>>({})
+  const [activePreview, setActivePreview] = useState('')
+  const [posted, setPosted] = useState(false)
+
+  const TOPICS = [
+    { id:'match', label:'🎾 Match Result', example:'Won 6-4, 7-5 vs Martinez in Monte-Carlo QF. Great match on clay.' },
+    { id:'training', label:'🏋️ Training Day', example:'Solid session today — serve practice and movement drills on clay.' },
+    { id:'travel', label:'✈️ Tournament Travel', example:'Heading to Madrid for the next Masters event. Clay season continues.' },
+    { id:'achievement', label:'🏆 Achievement', example:'Career-high ranking reached — climbing the ATP ladder.' },
+    { id:'sponsor', label:'🙏 Sponsor Shoutout', example:'Grateful for the support from my sponsors this season.' },
+    { id:'personal', label:'💬 Personal Note', example:'Rest day today. Grateful for the team and the journey so far.' },
+  ]
+  const PLATFORMS = [
+    { id:'twitter', label:'𝕏 Twitter/X', icon:'𝕏' },
+    { id:'instagram', label:'📸 Instagram', icon:'📸' },
+    { id:'linkedin', label:'💼 LinkedIn', icon:'💼' },
+    { id:'facebook', label:'📘 Facebook', icon:'📘' },
+    { id:'tiktok', label:'🎵 TikTok Caption', icon:'🎵' },
+  ]
+  const TONES = [
+    { id:'fired', label:'🔥 Fired Up' },{ id:'casual', label:'😎 Casual' },{ id:'grateful', label:'🙏 Grateful' },
+    { id:'professional', label:'💼 Professional' },{ id:'humorous', label:'😂 Humorous' },{ id:'motivational', label:'💪 Motivational' },
+  ]
+
+  const togglePlatform = (id: string) => setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const platNames = platforms.map(p => PLATFORMS.find(pl => pl.id === p)?.label || p).join(', ')
+      const toneLabel = TONES.find(t => t.id === tone)?.label || tone
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 800,
+        messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Format as:\n${platforms.includes('twitter') ? 'TWITTER: (max 280 chars, include relevant hashtags)\n' : ''}${platforms.includes('instagram') ? 'INSTAGRAM: (engaging caption, 3-5 hashtags on new line)\n' : ''}${platforms.includes('linkedin') ? 'LINKEDIN: (professional, 2-3 short paragraphs)\n' : ''}${platforms.includes('facebook') ? 'FACEBOOK: (conversational, shareable)\n' : ''}${platforms.includes('tiktok') ? 'TIKTOK: (punchy caption, trending hashtag style)\n' : ''}Only include platforms that were selected. Respond in plain text only. No markdown or bold.` }]
+      }) })
+      const data = await res.json()
+      const raw = cleanResponse(data.content?.[0]?.text || '')
+      const parsed: Record<string, string> = {}
+      const sections = raw.split(/\n(?=TWITTER:|INSTAGRAM:|LINKEDIN:|FACEBOOK:|TIKTOK:)/i)
+      for (const sec of sections) {
+        const m = sec.match(/^(TWITTER|INSTAGRAM|LINKEDIN|FACEBOOK|TIKTOK):\s*([\s\S]*)/i)
+        if (m) parsed[m[1].toLowerCase()] = m[2].trim()
+      }
+      setPosts(parsed)
+      setActivePreview(platforms[0] || '')
+      setStep(4)
+    } catch { /* ignore */ }
+    setLoading(false)
+  }
+
+  const postAll = () => {
+    const connected = ['twitter', 'instagram']
+    const results: string[] = []
+    for (const p of platforms) {
+      if (connected.includes(p) && posts[p]) results.push(`✅ ${PLATFORMS.find(pl => pl.id === p)?.label} — Posted`)
+      else if (posts[p]) { navigator.clipboard.writeText(posts[p]); results.push(`📋 ${PLATFORMS.find(pl => pl.id === p)?.label} — Copied to clipboard`) }
+    }
+    setPosted(true)
+  }
+
+  const progress = (step / 5) * 100
+
+  return (
+    <>
+      <ModalHeader icon="📱" title="Social Media" subtitle="AI-powered multi-platform content engine" onClose={onClose} />
+      <div className="px-5 py-2"><div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: '#0ea5e9' }} /></div><div className="text-[10px] mt-1" style={{ color: '#6B7280' }}>Step {step} of 5</div></div>
+
+      <div className="p-5">
+        {/* STEP 1: Content */}
+        {step === 1 && (<div className="space-y-4">
+          <p className="text-sm font-semibold text-white">What do you want to post about?</p>
+          <div className="flex flex-wrap gap-2">
+            {TOPICS.map(t => (
+              <button key={t.id} onClick={() => { setTopic(t.label); setDetails(t.example) }}
+                className="text-xs px-3 py-2 rounded-xl transition-all"
+                style={{ backgroundColor: topic === t.label ? 'rgba(14,165,233,0.2)' : '#111318', border: topic === t.label ? '1px solid #0ea5e9' : '1px solid #1F2937', color: topic === t.label ? '#0ea5e9' : '#9CA3AF' }}>{t.label}</button>
+            ))}
+          </div>
+          <textarea value={details} onChange={e => setDetails(e.target.value)} rows={3} placeholder="Add any extra details or paste a result, stat, or moment..."
+            className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+          <button onClick={() => setStep(2)} disabled={!topic || !details}
+            className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: topic && details ? '#0ea5e9' : '#374151' }}>Next →</button>
+        </div>)}
+
+        {/* STEP 2: Platforms */}
+        {step === 2 && (<div className="space-y-4">
+          <p className="text-sm font-semibold text-white">Which platforms? <span className="text-xs font-normal" style={{ color: '#6B7280' }}>(multi-select)</span></p>
+          <div className="flex flex-wrap gap-2">
+            {PLATFORMS.map(p => (
+              <button key={p.id} onClick={() => togglePlatform(p.id)}
+                className="text-xs px-4 py-2.5 rounded-xl transition-all"
+                style={{ backgroundColor: platforms.includes(p.id) ? 'rgba(14,165,233,0.2)' : '#111318', border: platforms.includes(p.id) ? '1px solid #0ea5e9' : '1px solid #1F2937', color: platforms.includes(p.id) ? '#0ea5e9' : '#9CA3AF' }}>{p.label}</button>
+            ))}
+          </div>
+          <p className="text-[10px]" style={{ color: '#6B7280' }}>Each platform gets a tailored version of the post</p>
+          <div className="flex gap-3">
+            <button onClick={() => setStep(1)} className="flex-1 py-3 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={() => setStep(3)} disabled={platforms.length === 0}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: platforms.length > 0 ? '#0ea5e9' : '#374151' }}>Next →</button>
+          </div>
+        </div>)}
+
+        {/* STEP 3: Tone */}
+        {step === 3 && (<div className="space-y-4">
+          <p className="text-sm font-semibold text-white">What&apos;s the tone?</p>
+          <div className="flex flex-wrap gap-2">
+            {TONES.map(t => (
+              <button key={t.id} onClick={() => setTone(t.id)}
+                className="text-xs px-4 py-2.5 rounded-xl transition-all"
+                style={{ backgroundColor: tone === t.id ? 'rgba(14,165,233,0.2)' : '#111318', border: tone === t.id ? '1px solid #0ea5e9' : '1px solid #1F2937', color: tone === t.id ? '#0ea5e9' : '#9CA3AF' }}>{t.label}</button>
+            ))}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep(2)} className="flex-1 py-3 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={generate} disabled={!tone || loading}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: tone && !loading ? '#0ea5e9' : '#374151' }}>{loading ? '⏳ Generating...' : '✨ Generate Posts →'}</button>
+          </div>
+        </div>)}
+
+        {/* STEP 4: Preview */}
+        {step === 4 && (<div className="space-y-4">
+          <div className="flex gap-1 border-b" style={{ borderColor: '#1F2937' }}>
+            {platforms.map(p => {
+              const pl = PLATFORMS.find(x => x.id === p)
+              return (<button key={p} onClick={() => setActivePreview(p)}
+                className="px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-all"
+                style={{ borderColor: activePreview === p ? '#0ea5e9' : 'transparent', color: activePreview === p ? '#0ea5e9' : '#6B7280' }}>{pl?.icon} {pl?.label.split(' ')[1]}</button>)
+            })}
+          </div>
+          <textarea value={posts[activePreview] || ''} onChange={e => setPosts(prev => ({ ...prev, [activePreview]: e.target.value }))} rows={6}
+            className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+          {activePreview === 'twitter' && <div className="text-[10px] text-right" style={{ color: (posts.twitter?.length || 0) > 280 ? '#EF4444' : '#6B7280' }}>{posts.twitter?.length || 0}/280</div>}
+          <div className="flex gap-3">
+            <button onClick={() => setStep(3)} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={() => { setStep(3); setPosts({}) }} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>↻ Regenerate</button>
+            <button onClick={() => setStep(5)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Approve &amp; Next →</button>
+          </div>
+        </div>)}
+
+        {/* STEP 5: Post */}
+        {step === 5 && !posted && (<div className="space-y-4">
+          <p className="text-sm font-semibold text-white">Ready to post to:</p>
+          <div className="space-y-2">
+            {platforms.map(p => {
+              const pl = PLATFORMS.find(x => x.id === p)
+              const connected = ['twitter', 'instagram'].includes(p)
+              return (<div key={p} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <span className="text-sm text-white">{pl?.label}</span>
+                {connected ? <span className="text-xs text-green-400">✅ Connected</span> : <span className="text-xs text-amber-400">⚠️ Not connected</span>}
+              </div>)
+            })}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep(4)} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={postAll} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>🚀 Post Now</button>
+          </div>
+        </div>)}
+
+        {step === 5 && posted && (<div className="text-center py-6 space-y-3">
+          <div className="text-4xl mb-2">✅</div>
+          <div className="text-base font-bold text-white">Posts sent!</div>
+          {platforms.map(p => {
+            const pl = PLATFORMS.find(x => x.id === p)
+            const connected = ['twitter', 'instagram'].includes(p)
+            return <div key={p} className="text-xs" style={{ color: connected ? '#22C55E' : '#F59E0B' }}>{connected ? '✅' : '📋'} {pl?.label} — {connected ? 'Posted' : 'Copied to clipboard'}</div>
+          })}
+          <button onClick={onClose} className="mt-4 px-8 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Done</button>
+        </div>)}
+      </div>
+    </>
+  )
+}
+
 // ─── MODAL HELPER COMPONENTS ──────────────────────────────────────────────────
 
 function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
@@ -9549,6 +9731,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
             style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
             {activeModal === 'sendmessage' && <TennisSendMessage onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'socialmedia' && <TennisSocialMedia onClose={closeModal} session={session} player={player} />}
             {activeModal === 'flights' && <TennisFlightFinder onClose={closeModal} session={session} player={player} />}
             {activeModal === 'hotel' && <TennisHotelFinder onClose={closeModal} session={session} />}
             {activeModal === 'matchprep' && <TennisMatchPrepAI onClose={closeModal} session={session} player={player} />}
