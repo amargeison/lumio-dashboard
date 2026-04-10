@@ -956,6 +956,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
   // Photo frame state
   const [photoIndex, setPhotoIndex] = useState(0)
+  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>('cover')
   const [isPaused, setIsPaused] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -1527,6 +1528,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="flex items-center gap-3">
                     {photos.length > 1 && <button onClick={() => setIsPaused(!isPaused)} className="text-[10px]" style={{ color: '#6B7280' }}>{isPaused ? '▶ Play' : '⏸ Pause'}</button>}
                     {photos.length > 0 && <button onClick={() => { setPhotos(prev => prev.filter((_, i) => i !== photoIndex)); setPhotoIndex(0) }} className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>}
+                    {photos.length > 0 && <button onClick={() => setPhotoFit(photoFit === 'cover' ? 'contain' : 'cover')} style={{ background: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', border: 'none' }}>⤢ Fit</button>}
                     <button onClick={() => photoInputRef.current?.click()} disabled={photos.length >= 3} className="text-[10px] font-semibold" style={{ color: photos.length >= 3 ? '#374151' : '#0ea5e9' }} title={photos.length >= 3 ? '3 max' : 'Add photo'}>+ Add</button>
                     <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={addPhoto} />
                   </div>
@@ -1534,7 +1536,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <div className="relative h-40 overflow-hidden" style={{ background: '#0a0c14' }}>
                   {photos.length > 0 ? (
                     <>
-                      <img src={photos[photoIndex]} alt="Photo frame" className="w-full h-full object-cover" draggable={false} />
+                      <img src={photos[photoIndex]} alt="Photo frame" draggable={false} style={{ width: '100%', height: '100%', objectFit: photoFit, objectPosition: 'center' }} />
                       {photos.length > 1 && (
                         <>
                           <button onClick={() => setPhotoIndex(i => (i - 1 + photos.length) % photos.length)}
@@ -6161,6 +6163,19 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
   const [devPrompt, setDevPrompt] = useState('')
   const [devResponse, setDevResponse] = useState('')
   const [lsKeys, setLsKeys] = useState<{ key: string; value: string }[]>([])
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null)
+  const previewVoice = (voiceName: string) => {
+    if (previewingVoice === voiceName) { window.speechSynthesis.cancel(); setPreviewingVoice(null); return }
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance("Good morning. Here's your daily tennis briefing. You have a match today at 13:00 on Court 4.")
+    const voices = window.speechSynthesis.getVoices()
+    const vm: Record<string, string[]> = { 'Sarah': ['Google UK English Female','Microsoft Libby','Karen','Samantha'], 'Charlotte': ['Microsoft Mia','Moira','Tessa','Fiona'], 'George': ['Google UK English Male','Microsoft George','Daniel','Arthur'] }
+    const match = voices.find(v => (vm[voiceName]||[]).some(p => v.name.includes(p))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
+    if (match) utterance.voice = match
+    utterance.rate = 0.95; utterance.pitch = voiceName === 'George' ? 0.85 : 1.05
+    utterance.onend = () => setPreviewingVoice(null); utterance.onerror = () => setPreviewingVoice(null)
+    setPreviewingVoice(voiceName); window.speechSynthesis.speak(utterance)
+  }
 
   const TENNIS_VOICES = [
     { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Warm, confident British female — ideal for morning briefings' },
@@ -6404,6 +6419,11 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
                       {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT }}>Active</span>}
                     </div>
                     <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
+                    <button onClick={(e) => { e.stopPropagation(); previewVoice(voice.name) }}
+                      className="w-full mt-2.5 rounded-md py-1 text-xs font-semibold transition-colors"
+                      style={{ background: 'transparent', border: '1px solid rgba(6,182,212,0.2)', color: previewingVoice === voice.name ? '#ef4444' : '#06b6d4' }}>
+                      {previewingVoice === voice.name ? '⏹ Stop' : '▶ Preview'}
+                    </button>
                   </button>
                 )
               })}
