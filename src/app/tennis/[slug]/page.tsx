@@ -316,78 +316,27 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
   const [summary, setSummary]   = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
   const [generated, setGenerated] = useState(false)
+  const hasGenerated = useRef(false)
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard: [
-      'Serve % last 5 matches: 64% — up 6% from season avg (58%)',
-      '312 ranking points expiring after Monte-Carlo — win = hold #67',
-      'Clay win rate: 68% this season — above ATP tour avg (61%)',
-      'Break point conversion: 38% — below top-50 avg (44%)',
-      'Race to Turin: #54 — top 8 qualifies for year-end finals',
-    ],
-    performance: [
-      'First serve %: 64% (last 5) — best run of season',
-      'Double faults per match: 2.1 — down from 3.4 in March',
-      'Return points won: 44% — above tour avg (42%)',
-      'Winners-to-errors ratio: 1.8 on clay — strong',
-      'Average rally length: 6.2 shots — up 1.1 this month',
-    ],
-    rankings: [
-      'ATP Ranking: #67 — up 4 places this clay swing',
-      'Race to Turin: #54 — 3 places outside qualification zone',
-      'Career high: #44 ATP — achievable by Wimbledon at current rate',
-      'Points defending Roland-Garros: 45pts — minimal pressure',
-      'Prize money YTD: £387,420 — 12% ahead of this point last year',
-    ],
-    forecaster: [
-      'Win title: projected #58 (+9 places)',
-      'QF exit: holds at #67 (0 change)',
-      'R1 loss: drops to #71 (−4 places)',
-      'Points available at Madrid M1000: 500',
-      'Roland-Garros points available: 2000 (Grand Slam)',
-    ],
-    scout: [
-      'Martinez first serve: 68% wide on deuce court (clay)',
-      'Martinez return: 71% forehand-dominant — exploit BH side',
-      'H2H: 3–1 in your favour — last 3 on clay all won',
-      'Martinez break point conversion: 41% — below average',
-      'Martinez ATP ranking: #34 — career high #28',
-    ],
-    matchprep: [
-      'Martinez H2H: 3W–1L — you lead',
-      'Martinez 1st serve wide on deuce: 68% — predictable',
-      'Your clay kick serve win rate: 74% — exploit',
-      'Martinez 3rd set break rate: 62% — stay sharp late',
-      'Net points won vs Martinez: 71% — approach more',
-    ],
-    sponsorship: [
-      'Rolex deal value: £240,000/yr — renewal in 47 days',
-      'Lululemon: 2 posts outstanding (March + today)',
-      'Nike: 0/2 posts completed this month',
-      'Estimated sponsor reach YTD: 14.2M across all platforms',
-      'Total commercial income YTD: £84,200',
-    ],
-    travel: [
-      'Flights booked: 4 of 7 remaining tournaments',
-      'Travel budget used: £18,400 of £36,000 season allocation',
-      'Hotels confirmed: Monte-Carlo, Madrid, Paris',
-      'Unconfirmed: Halle, Wimbledon, US Open, Cincinnati',
-      'Roland-Garros apartment deposit outstanding: €800',
-    ],
-    financial: [
-      'Prize money YTD: £387,420',
-      'Season expenses to date: £42,800',
-      'Net earnings YTD: £344,620 (before tax/agent)',
-      'Agent commission (15%): £58,113 YTD',
-      'Tax instalment due: 31 Jul — accountant briefed',
-    ],
-    default: [
-      'ATP Ranking: #67 — up 4 this clay swing',
-      'Clay win rate: 68% — above tour avg (61%)',
-      'Serve %: 64% (last 5 matches)',
-      'Prize money YTD: £387,420',
-      'Race to Turin: #54 of 8 qualification spots',
-    ],
+    dashboard: ['ATP Ranking: #67 — up 4 this clay swing', 'Clay win rate: 68% — above ATP tour avg (61%)', 'Serve %: 64% last 5 matches — up 6% from season avg', '312 ranking points expiring after Monte-Carlo', 'Race to Turin: #54 — top 8 qualifies'],
+    performance: ['First serve %: 64% (last 5) — best run of season', 'Double faults per match: 2.1 — down from 3.4 in March', 'Return points won: 44% — above tour avg (42%)', 'Winners-to-errors ratio: 1.8 on clay — strong', 'Average rally length: 6.2 shots — up 1.1 this month'],
+    rankings: ['ATP Ranking: #67 — up 4 places this clay swing', 'Race to Turin: #54 — 3 places outside qualification zone', 'Career high: #44 ATP — achievable by Wimbledon', 'Points defending Roland-Garros: 45pts — minimal pressure', 'Prize money YTD: £387,420 — 12% ahead of last year'],
+    forecaster: ['Win title: projected #58 (+9 places)', 'QF exit: holds at #67 (0 change)', 'R1 loss: drops to #71 (−4 places)', 'Points available at Madrid M1000: 500', 'Roland-Garros points available: 2000 (Grand Slam)'],
+    physiorecovery: ['Shoulder inflammation flagged — see Dr Lee 12:30 today', 'GPS load this week: 4,820 AU — within optimal range', 'ACWR: 1.12 — green zone (ideal 0.8–1.3)', 'Recovery score today: 81/100 — good baseline for match', 'Last deep tissue session: Tuesday — 5 days ago'],
+    mental: ['Pre-match routine: 45 min protocol confirmed with Marcos', 'Pressure darts score last session: 8.4/10 — improving', 'Deciding-set win rate: 67% on clay this season', 'Average between-point routine: 22 seconds — on target', 'Visualisation sessions this week: 4 of 5 completed'],
+    matchprep: ['Martinez H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez first serve wide on deuce: 68% tendency', 'His BH breakdown rate under pressure: 61%', 'Your winning shot vs Martinez: inside-out FH (42% of winners)', 'His double fault rate on clay: 3.1/match — above average'],
+    opponentintel: ['Martinez first serve: 68% wide on deuce court (clay)', 'Martinez return: 71% forehand-dominant — exploit BH side', 'H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez break point conversion: 41% — below average', 'Martinez ATP ranking: #34 — career high #28'],
+    practicelog: ['Sessions this week: 4 of 5 planned — on track', 'Serve speed peak in practice: 124mph — 3mph above match avg', 'Average practice 3DA: 99.4 — above match average', 'Footwork drills completed this month: 18 of 20 target', 'Forehand cross-court consistency: +8% last week'],
+    sponsorship: ['Rolex deal value: £240,000/yr — renewal in 47 days', 'Lululemon: 2 posts outstanding (March + today)', 'Nike: 0/2 posts completed this month', 'Estimated sponsor reach YTD: 14.2M across all platforms', 'Total commercial income YTD: £84,200'],
+    financial: ['Prize money YTD: £387,420', 'Season expenses to date: £42,800', 'Net earnings YTD: £344,620 (before tax/agent)', 'Agent commission (15%): £58,113 YTD', 'Tax instalment due: 31 Jul — accountant briefed'],
+    travel: ['Flights booked: 4 of 7 remaining tournaments', 'Travel budget used: £18,400 of £36,000 season allocation', 'Hotels confirmed: Monte-Carlo, Madrid, Paris', 'Roland-Garros apartment deposit outstanding: €800', 'Next unbooked: Halle Open — depart 13 Jun'],
+    agent: ['Paddy Power ambassador inquiry: £85k/yr offer pending', 'Hamburg wildcard: decision deadline today 5pm', 'Rolex renewal: 47 days — agent has draft terms', 'Madrid wild card: accepted (no action needed)', 'Wimbledon entry: not yet submitted — deadline 26 May'],
+    teamhub: ['Team today: 5 of 6 confirmed present in Monte-Carlo', 'Marcos Silva (psychologist): remote — call at 15:00', 'Coach session: 10:00 serve patterns — 90 min', 'Dr Lee: 12:30 shoulder treatment — confirmed', 'Tom Ellis (stringer): 11:45 — Wilson Luxilon ALU ready'],
+    schedule: ['Next 5: MC QF today, Madrid, Roland-Garros, Halle, Wimbledon', 'Points available next 4 weeks: 1,800 pts (SF+) across all', 'Hard deadline next: Roland-Garros entries — 3 May', 'Hamburg vs Eastbourne clash: decision needed today', 'Race to Turin impact: need 2 SF results to break top-20'],
+    video: ['Unreviewed match clips this week: 3', 'Martinez clay footage: 2 matches tagged and ready', 'Coach added 4 tactical notes to Barcelona SF clip', 'Serve analysis session: booked Thursday with Carlos', 'Season highlight reel: 67% complete'],
+    media: ['Press conference today: post-match (win or lose)', 'L\'Equipe interview request: 15 min — awaiting response', 'Social following: 207k total (IG: 142k, TW: 65k)', 'Engagement rate this week: 4.2% — above 3.1% avg', 'Press mentions this month: 23 articles'],
+    default: ['ATP Ranking: #67 — up 4 this clay swing', 'Clay win rate: 68% — above tour avg (61%)', 'Serve %: 64% (last 5 matches)', 'Prize money YTD: £387,420', 'Race to Turin: #54 of 8 qualification spots'],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -405,24 +354,32 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
             role: 'user',
             content: `You are a personal assistant for ${session.userName || player.name}, ATP #${player.ranking ?? 67} professional tennis player.
 
-Generate an AI MORNING SUMMARY for the "${context}" section.
-This is NOT about statistics — it is about what is happening TODAY
-and what the player needs to know RIGHT NOW.
+Generate an AI OPERATIONAL SUMMARY for the "${context}" section.
 
-Cover these areas (pick the most relevant 4-5 for "${context}"):
-- Today's schedule and timing
-- Urgent messages or communications needing a response
-- Sponsor obligations or commercial deadlines today
-- Upcoming travel or logistics to confirm
-- Team availability and appointments
-- Match or training context for today
+IMPORTANT: This summary must be specifically about "${context}".
+Do NOT give generic tennis advice. Be specific to this section.
 
-Write as flowing bullet points starting with an emoji.
-Each point should be a complete sentence with context.
-Be specific — mention times, names, amounts where relevant.
-Do NOT mention ranking stats, serve percentages, or performance data.
-Those go in Key Highlights, not here.
-Max 5 points. Max 200 words total.`
+Context guide:
+- "physiorecovery" → shoulder status, GPS load, ACWR, recovery protocols, injury flags
+- "mental" → mindset, pressure handling, pre-match routine, recent mental performance
+- "matchprep" → opponent tactics, serve patterns, H2H stats, court conditions
+- "sponsorship" → obligations due, content deadlines, renewal status, commercial actions
+- "financial" → prize money, expenses, tax, agent fees, budget status
+- "travel" → upcoming flights, hotels, logistics, visa status
+- "teamhub" → team availability, appointments today, who is where
+- "schedule" → upcoming tournaments, entry deadlines, ranking implications
+- "performance" → recent match stats, serve %, return data, trends
+- "video" → footage to review, analyst notes, session bookings
+- "agent" → deals pending, wildcard decisions, contract renewals
+- "media" → press obligations, interview requests, social media
+- "dashboard" → today's schedule, urgent messages, key priorities
+
+Write 4-5 bullet points. Each starts with a relevant emoji.
+Each point is a complete sentence with specific details.
+Do NOT repeat what is in the Performance Intelligence panel.
+Performance Intelligence shows numbers/stats.
+This panel shows actions, context, and operational detail.
+Max 200 words.`
           }]
         })
       })
@@ -437,6 +394,13 @@ Max 5 points. Max 200 words total.`
     }
     setLoading(false)
   }
+
+  // Auto-generate on mount
+  useEffect(() => {
+    if (hasGenerated.current) return
+    hasGenerated.current = true
+    generateSummary()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -3889,7 +3853,7 @@ function TeamHubView({ player, session }: { player: TennisPlayer; session: Sport
           </div>
         ))}
       </div>
-      <TennisAISection context="team" player={player} session={session} />
+      <TennisAISection context="teamhub" player={player} session={session} />
     </div>
   );
 }
@@ -4030,7 +3994,7 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
           ))}
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
+      <TennisAISection context="physiorecovery" player={player} session={session} />
     </div>
   );
 }
@@ -5048,7 +5012,7 @@ function AgentPipelineView({ player, session }: { player: TennisPlayer; session:
           ))}
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
+      <TennisAISection context="agent" player={player} session={session} />
     </div>
   );
 }
@@ -5163,7 +5127,7 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
           ))}
         </div>
       </div>
-      <TennisAISection context="default" player={player} session={session} />
+      <TennisAISection context="media" player={player} session={session} />
     </div>
   );
 }
@@ -6321,7 +6285,7 @@ const OpponentScoutView = ({ h2hData, player, session }: { h2hData: any[]; playe
           ))}
         </ul>
       </div>
-      <TennisAISection context="scout" player={player} session={session} />
+      <TennisAISection context="opponentintel" player={player} session={session} />
     </div>
   );
 };
