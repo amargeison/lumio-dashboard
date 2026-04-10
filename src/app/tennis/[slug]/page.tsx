@@ -1041,7 +1041,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 </button>
               </div>
               <p className="text-sm mb-2" style={{ color: '#0ea5e9' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
-              <p style={{ color: '#0ea5e9' }} className="text-sm italic">&ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King</p>
+              <p style={{ color: '#F59E0B' }} className="text-sm italic">&ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
@@ -1071,8 +1071,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
                     return (
                       <div key={city} className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#0ea5e9' : '#FFFFFF' }}>{time}</span>
-                        <span className="text-[10px]" style={{ color: isUser ? '#0ea5e9' : '#6B7280' }}>{city}</span>
+                        <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F59E0B' : '#FFFFFF' }}>{time}</span>
+                        <span className="text-[10px]" style={{ color: isUser ? '#F59E0B' : '#6B7280' }}>{city}</span>
                       </div>
                     )
                   })}
@@ -1218,8 +1218,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {dashTab === 'today' && (
         <div className="pt-4 space-y-6">
           {/* Quick Actions — football pro bar style */}
-          <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-            <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3 mb-3" style={{ backgroundColor: '#0D0E14' }}>
+            <span className="text-xs font-semibold shrink-0 mr-1 w-full mb-1" style={{ color: '#4B5563' }}>Quick actions</span>
             {[
               { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
               { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
