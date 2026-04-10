@@ -209,13 +209,264 @@ const QuickActionsBar = () => {
 };
 
 // ─── CLUB DASHBOARD VIEW ──────────────────────────────────────────────────────
-function ClubDashboardView({club}:{club:RugbyClub}) {
+function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyClub; session?: SportsDemoSession; onOpenModal?: (id: string) => void; rugbyCode?: RugbyCode}) {
   const available = SQUAD.filter((p:{status:string})=>p.status==='available').length;
   const headroom = club.capCeiling - club.currentSpend;
   const floorBuffer = club.currentSpend - club.capFloor;
+  const code = rugbyCode || 'union';
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today');
+  const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_rugby_checklist') : null; return s ? JSON.parse(s) : {} } catch { return {} }
+  });
+  const toggleCheck = (id: string) => setChecklist(prev => { const next = { ...prev, [id]: !prev[id] }; try { localStorage.setItem('lumio_rugby_checklist', JSON.stringify(next)) } catch {} return next });
+
+  // World clocks
+  const now = new Date();
+  const clocks = [
+    { city: 'London', tz: 'Europe/London' },
+    { city: 'Auckland', tz: 'Pacific/Auckland' },
+    { city: 'Sydney', tz: 'Australia/Sydney' },
+    { city: 'Cape Town', tz: 'Africa/Johannesburg' },
+  ];
+
+  const GETTING_STARTED = [
+    { id: 'gs1', label: 'Upload your club badge', desc: 'Personalise your portal' },
+    { id: 'gs2', label: 'Set your club name and league', desc: 'Appears throughout the portal' },
+    { id: 'gs3', label: code === 'union' ? 'Enter salary cap figures' : 'Enter salary cap details', desc: 'Enables cap dashboard and compliance tracking' },
+    { id: 'gs4', label: 'Add your squad (player list)', desc: 'Unlocks availability, GPS, medical and selection views' },
+    { id: 'gs5', label: 'Connect GPS provider (Catapult / STATSports)', desc: 'Live load data feed' },
+    { id: 'gs6', label: code === 'union' ? 'Enter franchise readiness data' : 'Enter club compliance data', desc: 'Tracks your progress against governing body criteria' },
+    { id: 'gs7', label: 'Add sponsor details', desc: 'Commercial CRM and obligation tracking' },
+    { id: 'gs8', label: 'Set up AI briefing preferences', desc: 'Configure role-specific daily intelligence' },
+    { id: 'gs9', label: code === 'union' ? 'Add international duty players' : 'Add representative duty players', desc: 'Club-to-country data handoff' },
+    { id: 'gs10', label: 'Invite your coaching and medical staff', desc: 'Role-based access control' },
+  ];
+
+  const QUICK_ACTIONS = [
+    { icon: '📋', label: 'Match Prep', modal: 'matchprep' },
+    { icon: '✈️', label: 'Flights', modal: 'flights' },
+    { icon: '📱', label: 'Sponsor Post', modal: 'sponsorpost' },
+    { icon: '⚕️', label: 'Log Injury', modal: 'injury' },
+    { icon: '🧾', label: 'Expense', modal: 'expense' },
+    { icon: '🎬', label: 'Video', modal: 'video' },
+    { icon: '📋', label: 'Contracts', modal: 'contracts' },
+    { icon: '🌍', label: 'Visa Check', modal: 'visa' },
+  ];
+
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+      {/* Greeting Banner */}
+      <div className="bg-gradient-to-r from-purple-900/30 to-gray-900/20 border border-purple-600/30 rounded-xl p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white mb-1">
+              Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}{session?.userName ? `, ${session.userName}` : ''}
+            </h1>
+            <p className="text-xs text-gray-400">{club.name} · {club.league} · Match Week</p>
+          </div>
+          <div className="flex gap-4">
+            {clocks.map(c => {
+              const t = now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' });
+              return (
+                <div key={c.city} className="text-center">
+                  <div className="text-xs text-white font-mono">{t}</div>
+                  <div className="text-[10px] text-gray-600">{c.city}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Stat Boxes */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <StatCard label="Cap Headroom" value={fmt(headroom)} sub="To ceiling — compliant" color="green" />
+        <StatCard label="Floor Buffer" value={`+${fmt(floorBuffer)}`} sub="Above minimum" color="green" />
+        <StatCard label="Franchise Score" value={`${club.franchiseScore}%`} sub="Target: 85%" color="orange" />
+        <StatCard label="Squad Available" value={`${available}/${club.squadSize}`} sub={`${club.squadSize - available} unavailable`} color={available >= 30 ? 'teal' : 'orange'} />
+        {code === 'union'
+          ? <StatCard label="Lineout %" value="85%" sub="Above league avg" color="purple" />
+          : <StatCard label="Tackle Busts" value="14.2" sub="Per game — 3rd in league" color="purple" />
+        }
+      </div>
+
+      {/* Quick Actions */}
+      {onOpenModal && (
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+          {QUICK_ACTIONS.map((a, i) => (
+            <button key={i} onClick={() => onOpenModal(a.modal)}
+              className="bg-[#0d1117] border border-gray-800 hover:border-purple-500/50 rounded-xl p-3 text-center transition-all hover:scale-105">
+              <div className="text-xl mb-1">{a.icon}</div>
+              <div className="text-[10px] text-gray-400">{a.label}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tab Bar */}
+      <div className="flex gap-1 border-b border-gray-800 overflow-x-auto">
+        {([
+          { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
+          { id: 'today' as const, label: 'Today', icon: '📅' },
+          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
+          { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
+          { id: 'insights' as const, label: 'Insights', icon: '📊' },
+          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔔' },
+          { id: 'team' as const, label: 'Team', icon: '👥' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab === t.id ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Getting Started Tab */}
+      {dashTab === 'gettingstarted' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-4">Getting Started — {GETTING_STARTED.filter(g => checklist[g.id]).length}/{GETTING_STARTED.length} complete</div>
+          <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+            <div className="h-2 rounded-full bg-purple-500 transition-all" style={{ width: `${(GETTING_STARTED.filter(g => checklist[g.id]).length / GETTING_STARTED.length) * 100}%` }} />
+          </div>
+          <div className="space-y-2">
+            {GETTING_STARTED.map(g => (
+              <button key={g.id} onClick={() => toggleCheck(g.id)}
+                className={`w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-lg border transition-all ${checklist[g.id] ? 'border-green-600/30 bg-green-600/5' : 'border-gray-800 hover:border-gray-700'}`}>
+                <span className={`text-xs ${checklist[g.id] ? 'text-green-400' : 'text-gray-600'}`}>{checklist[g.id] ? '✓' : '○'}</span>
+                <div>
+                  <div className={`text-xs font-medium ${checklist[g.id] ? 'text-gray-500 line-through' : 'text-white'}`}>{g.label}</div>
+                  <div className="text-[10px] text-gray-600">{g.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Today Tab */}
+      {dashTab === 'today' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Morning Roundup */}
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Morning Roundup</div>
+            <div className="space-y-2 text-xs">
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">🔴</span><span className="text-gray-300">HIA: Danny Foster Day 8 — monitor</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-amber-400">🟡</span><span className="text-gray-300">Cap return due in 34 days</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-amber-400">🟡</span><span className="text-gray-300">2 sponsor renewals approaching</span></div>
+              <div className="flex gap-2 py-1.5"><span className="text-purple-400">🟣</span><span className="text-gray-300">Jersey Reds match prep — Thu AM</span></div>
+            </div>
+          </Card>
+
+          {/* Match Card */}
+          <Card className="border-purple-600/30">
+            <div className="text-sm font-semibold text-white mb-3">Next Match</div>
+            <div className="text-center py-4">
+              <div className="text-3xl mb-2">🏉</div>
+              <div className="text-lg font-bold text-white">{club.nextFixture}</div>
+              <div className="text-xs text-gray-400 mt-1">{club.nextFixtureDate} · KO 3:00pm</div>
+              <div className="text-xs text-gray-500 mt-1">{club.stadium}</div>
+              <div className="text-xs text-purple-400 font-medium mt-2">4 days to go</div>
+            </div>
+          </Card>
+
+          {/* Photo Frame */}
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Photo Frame</div>
+            <div className="aspect-video bg-gray-900/50 rounded-lg border border-gray-800 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-3xl mb-2">📸</div>
+                <div className="text-xs text-gray-500">Upload a team photo</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Wins */}
+      {dashTab === 'quickwins' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Quick Wins</div>
+          <div className="space-y-2">
+            {[
+              { icon: '📋', text: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start' },
+              { icon: '🤝', text: 'Schedule Hartfield Building Society renewal meeting', action: 'Book' },
+              { icon: '📡', text: 'Review GPS overload flags before Thursday session', action: 'View' },
+            ].map((w, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
+                <div className="flex items-center gap-2 text-xs"><span>{w.icon}</span><span className="text-gray-300">{w.text}</span></div>
+                <button className="text-[10px] px-3 py-1 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">{w.action}</button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Daily Tasks */}
+      {dashTab === 'dailytasks' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Daily Tasks — Thursday</div>
+          <div className="space-y-2">
+            {[
+              { time: '10:00', task: 'Team meeting — game plan finalised' },
+              { time: '11:00', task: 'Pre-match press conference' },
+              { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole' },
+              { time: '16:00', task: 'Sponsor call — Hartfield Building Society' },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50 text-xs">
+                <span className="text-purple-400 font-bold w-12">{t.time}</span>
+                <span className="text-gray-300">{t.task}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Insights */}
+      {dashTab === 'insights' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Key Insights</div>
+          <div className="space-y-2 text-xs">
+            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Tackle success rate improved 4% over last 3 games</span></div>
+            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">↓</span><span className="text-gray-300">Scrum penalty rate increasing — 3 in last match</span></div>
+            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Matchday revenue up 8% vs same fixture last season</span></div>
+            <div className="flex gap-2 py-1.5"><span className="text-amber-400">→</span><span className="text-gray-300">Franchise score static at 71% — needs Investment Capacity action</span></div>
+          </div>
+        </Card>
+      )}
+
+      {/* Don't Miss */}
+      {dashTab === 'dontmiss' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Don&apos;t Miss</div>
+          <div className="space-y-2 text-xs">
+            <div className="bg-red-600/5 border border-red-600/30 rounded-lg p-3"><span className="text-red-400 font-bold">URGENT:</span> Women&apos;s PWR registration deadline — 30 April (24 days)</div>
+            <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">DUE SOON:</span> Salary cap return — 10 May (34 days)</div>
+            <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">RENEWAL:</span> Hartfield Building Society sponsorship — June 2026</div>
+          </div>
+        </Card>
+      )}
+
+      {/* Team */}
+      {dashTab === 'team' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Club Leadership</div>
+          <div className="space-y-2">
+            {[
+              { name: club.dor, role: 'Director of Rugby', icon: '🏉' },
+              { name: club.headCoach, role: 'Head Coach', icon: '🎽' },
+              { name: club.ceo, role: 'CEO', icon: '🏛️' },
+              { name: club.headMedical, role: 'Head of Medical', icon: '🏥' },
+              { name: club.headWomens, role: "Head of Women's Rugby", icon: '⭐' },
+            ].map((p, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+                <span className="text-lg">{p.icon}</span>
+                <div><div className="text-xs text-white font-medium">{p.name}</div><div className="text-[10px] text-gray-500">{p.role}</div></div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Alert Banner */}
       <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4 text-sm text-amber-400">
         <span className="font-bold">FRANCHISE READINESS: {club.franchiseScore}%</span> — 2 criteria require attention. Cap audit window: 34 days. Next fixture: {club.nextFixture} {club.nextFixtureDate}.
@@ -338,6 +589,11 @@ function ClubDashboardView({club}:{club:RugbyClub}) {
           </Card>
         </div>
       </div>
+
+      {/* AI Section */}
+      {session && rugbyCode && (
+        <RugbyAISection context="dashboard" club={club} session={session} rugbyCode={rugbyCode} />
+      )}
     </div>
   );
 }
@@ -374,7 +630,7 @@ function DoRBriefingView({club}:{club:RugbyClub}) {
   const generate = async () => {
     setLoading(true);setBrief(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are the Club Intelligence AI for ${club.name}. Generate a 400-word DoR morning briefing for ${club.dor}. Today: ${CONTEXT.date} — ${CONTEXT.matchWeek}. Cap: ceiling £${(CONTEXT.cap.ceiling/1e6).toFixed(2)}M, spend £${(CONTEXT.cap.spend/1e6).toFixed(2)}M, headroom £${(CONTEXT.cap.headroom/1000).toFixed(0)}k. Franchise: ${CONTEXT.franchise.score}% (target 85%), gaps: ${CONTEXT.franchise.criticalGaps.join(', ')}. GPS: avg ACWR ${CONTEXT.gps.avgACWR}, overload: ${CONTEXT.gps.overloaded.join(', ')}, manage: ${CONTEXT.gps.managing.join(', ')}. Welfare: HIA ${CONTEXT.welfare.hiaActive}, doubtful: ${CONTEXT.welfare.doubtful.join(', ')}. Recruitment: ${CONTEXT.recruitment.targets} targets, priority: ${CONTEXT.recruitment.priorityAction}. Commercial: next event ${CONTEXT.commercial.nextMeeting}, renewal ${CONTEXT.commercial.renewalDue}. Format: ## Good morning, ${club.dor} | ## 🏟️ MATCH WEEK | ## 📡 SQUAD HEALTH | ## ⚖️ CAP | ## 🏆 FRANCHISE | ## 💼 COMMERCIAL | ## ✅ YOUR 3 PRIORITIES TODAY. Under 400 words.`}]})});
+      const res = await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are the Club Intelligence AI for ${club.name}. Generate a 400-word DoR morning briefing for ${club.dor}. Today: ${CONTEXT.date} — ${CONTEXT.matchWeek}. Cap: ceiling £${(CONTEXT.cap.ceiling/1e6).toFixed(2)}M, spend £${(CONTEXT.cap.spend/1e6).toFixed(2)}M, headroom £${(CONTEXT.cap.headroom/1000).toFixed(0)}k. Franchise: ${CONTEXT.franchise.score}% (target 85%), gaps: ${CONTEXT.franchise.criticalGaps.join(', ')}. GPS: avg ACWR ${CONTEXT.gps.avgACWR}, overload: ${CONTEXT.gps.overloaded.join(', ')}, manage: ${CONTEXT.gps.managing.join(', ')}. Welfare: HIA ${CONTEXT.welfare.hiaActive}, doubtful: ${CONTEXT.welfare.doubtful.join(', ')}. Recruitment: ${CONTEXT.recruitment.targets} targets, priority: ${CONTEXT.recruitment.priorityAction}. Commercial: next event ${CONTEXT.commercial.nextMeeting}, renewal ${CONTEXT.commercial.renewalDue}. Format: ## Good morning, ${club.dor} | ## 🏟️ MATCH WEEK | ## 📡 SQUAD HEALTH | ## ⚖️ CAP | ## 🏆 FRANCHISE | ## 💼 COMMERCIAL | ## ✅ YOUR 3 PRIORITIES TODAY. Under 400 words.`}]})});
       const data=await res.json();setBrief(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
     } catch { setBrief('Connection error.'); }
     setLoading(false);
@@ -1559,9 +1815,9 @@ function AIBriefingView({club}:{club:RugbyClub}) {
       medical:'Head of Medical briefing — welfare, HIA, RTP, medical screening focus',
     };
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
+      const res = await fetch('/api/ai/rugby',{
         method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY||'','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`Generate a ${rolePrompts[role]} for ${club.name} (${club.league}). Squad: 31/38 available, 1 HIA active, next match vs Jersey Reds Saturday. Cap: £2.34M of £2.8M. Franchise: 71%. Be concise and professional.`}]}),
       });
       const data = await res.json();
@@ -1745,7 +2001,7 @@ function PeriodisationView() {
   const generateRotation = async () => {
     setPerLoading(true);setRotation(null);
     try {
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Bath (18 Apr) and Saracens (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
+      const res=await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Bath (18 Apr) and Saracens (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
       const data=await res.json();setRotation(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
     } catch { setRotation('Connection error.'); }
     setPerLoading(false);
@@ -2439,7 +2695,7 @@ function AIHalftimeBriefView({ club }: { club: RugbyClub }) {
   const generate = async () => {
     setLoading(true); setBrief(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/rugby', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
@@ -3271,16 +3527,63 @@ export default function RugbyPortalPage() {
 
 function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection,setActiveSection]=useState('dashboard');
-  const [sidebarCollapsed,setSidebarCollapsed]=useState(false);
   const club = DEMO_CLUB;
-  const activeRole = session.role;
   const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','PERFORMANCE','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
+
+  // Rugby code picker
+  const [rugbyCode, setRugbyCode] = useState<RugbyCode | null>(() => {
+    try { return (localStorage.getItem('lumio_rugby_code') as RugbyCode) || null } catch { return null }
+  })
+
+  // ALL hooks must be declared before any early return
+  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sidebarExpanded = sidebarPinned || sidebarHovered
+
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_rugby_sidebar_pinned') === 'true') }, [])
+  const togglePin = () => setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_rugby_sidebar_pinned', String(next)); return next })
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
+
+  // Modal state
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const closeModal = () => setActiveModal(null)
+
+  // Role config
+  const [roleOverride, setRoleOverride] = useState<string | null>(null)
+  const currentRole = (roleOverride || session.role || 'player') as keyof typeof RUGBY_ROLE_CONFIG
+  const roleConfig = RUGBY_ROLE_CONFIG[currentRole] ?? RUGBY_ROLE_CONFIG.player
+  const isPlayer = currentRole === 'player'
+  const isSponsor = currentRole === 'sponsor'
+  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+
+  // If code not chosen, show picker
+  if (!rugbyCode) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#07080F' }}>
+      <div className="text-center max-w-lg">
+        <div className="text-6xl mb-4">🏉</div>
+        <h1 className="text-3xl font-black text-white mb-2">Which code do you play?</h1>
+        <p className="text-sm mb-8" style={{ color: '#6B7280' }}>We&apos;ll personalise your portal for your game.</p>
+        <div className="grid grid-cols-2 gap-4">
+          {[{ code: 'union' as const, label: 'Rugby Union', sub: 'Premiership · Championship · European' }, { code: 'league' as const, label: 'Rugby League', sub: 'Super League · Championship · Challenge Cup' }].map(c => (
+            <button key={c.code} onClick={() => { localStorage.setItem('lumio_rugby_code', c.code); setRugbyCode(c.code) }}
+              className="rounded-2xl p-6 text-center transition-all hover:scale-105" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-4xl mb-3">🏉</div>
+              <div className="text-lg font-bold text-white">{c.label}</div>
+              <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{c.sub}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 
   const renderView = () => {
     switch(activeSection) {
-      case 'dashboard':       return <ClubDashboardView club={club}/>;
+      case 'dashboard':       return <ClubDashboardView club={club} session={session} onOpenModal={setActiveModal} rugbyCode={rugbyCode}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
-      case 'insights':        return <InsightsView club={club} activeRole={activeRole}/>;
+      case 'insights':        return <InsightsView club={club} activeRole={session.role}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
       case 'calendar':        return <ClubCalendarView/>;
       case 'capdashboard':    return <CapDashboardView club={club}/>;
@@ -3328,41 +3631,78 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
-      default:                return <ClubDashboardView club={club}/>;
+      default:                return <ClubDashboardView club={club} session={session} onOpenModal={setActiveModal} rugbyCode={rugbyCode}/>;
     }
   };
 
   return (
-    <div className="min-h-screen flex" style={{background:'#07080F',fontFamily:'DM Sans, sans-serif',color:'#e5e7eb'}}>
-      {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed?'w-14':'w-56'}`} style={{background:'#0a0c14'}}>
-        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-          {!sidebarCollapsed&&(<div><div className="text-xs font-bold uppercase tracking-widest" style={{background:'linear-gradient(90deg, #8B5CF6, #7C3AED)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>LUMIO RUGBY</div><div className="text-[10px] text-gray-600">Club OS</div></div>)}
-          {sidebarCollapsed&&<span className="text-lg mx-auto">🏉</span>}
-          <button onClick={()=>setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600 hover:text-gray-400 text-xs ml-auto flex-shrink-0">{sidebarCollapsed?'>':'<'}</button>
+    <div className="min-h-screen" style={{background:'#07080F',fontFamily:'DM Sans, sans-serif',color:'#e5e7eb'}}>
+      {/* Floating/Pinned Sidebar */}
+      <aside className="flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: '#0a0c14',
+          borderRight: '1px solid #1F2937',
+          transition: 'width 250ms ease',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          zIndex: 40,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+
+        {/* Sidebar Header */}
+        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
+            {session.logoDataUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)' }}>
+                  🏉
+                </div>
+            }
+            {sidebarExpanded && (
+              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>
+                Lumio Rugby
+              </span>
+            )}
+          </div>
+          {sidebarExpanded && (
+            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#7C3AED' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
+          )}
         </div>
 
-        {!sidebarCollapsed&&(
-          <div className="p-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-purple-500/40" style={{background:'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(124,58,237,0.3))'}}>{club.leaguePosition}</div>
-              <div><div className="text-xs font-semibold text-white">{session.clubName || club.name}</div><div className="text-[10px] text-gray-500">{club.league} · #{club.leaguePosition}</div></div>
-            </div>
-          </div>
-        )}
-
-        <nav className="flex-1 overflow-y-auto py-2 px-2">
-          {groups.map((group:string)=>{
-            const items=SIDEBAR_ITEMS.filter((i:{group:string})=>i.group===group);
+        {/* Nav Items */}
+        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
+          {groups.map(group => {
+            const items = visibleSidebarItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
             return (
               <div key={group} className="mb-3">
-                {!sidebarCollapsed&&<div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
-                {items.map((item:{id:string;label:string;icon:string})=>(
-                  <button key={item.id} onClick={()=>setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg mb-0.5 transition-all text-left ${activeSection===item.id?'bg-purple-600/20 text-purple-300 border border-purple-600/30':'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}`}
-                    title={sidebarCollapsed?item.label:undefined}>
+                {sidebarExpanded && (
+                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
+                )}
+                {items.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    style={{
+                      backgroundColor: activeSection === item.id ? 'rgba(139,92,246,0.12)' : 'transparent',
+                      color: activeSection === item.id ? '#c084fc' : '#6B7280',
+                      borderLeft: activeSection === item.id ? '2px solid #a855f7' : '2px solid transparent',
+                      paddingLeft: sidebarExpanded ? 10 : 0,
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    }}
+                    title={sidebarExpanded ? undefined : item.label}
+                  >
                     <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed&&<span className="text-xs font-medium truncate">{item.label}</span>}
+                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
               </div>
@@ -3375,39 +3715,67 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           roles={RUGBY_ROLES}
           accentColor="#7C3AED"
           onRoleChange={(role) => {
+            setRoleOverride(role)
             const key = 'lumio_rugby_demo_session'
             const stored = localStorage.getItem(key)
             if (stored) {
               const parsed = JSON.parse(stored)
               localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
             }
-            setActiveSection(activeSection)
           }}
-          sidebarCollapsed={sidebarCollapsed}
+          sidebarCollapsed={!sidebarExpanded}
         />
 
-        {!sidebarCollapsed&&(
+        {/* Sidebar Footer */}
+        {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-purple-400 font-semibold mt-0.5">{club.plan}</div>
           </div>
         )}
-      </div>
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
+          {sidebarExpanded ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/rugby_logo.png" alt="Lumio Rugby" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
+                onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
+              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO RUGBY</span>
+            </>
+          ) : (
+            <span className="text-lg">🏉</span>
+          )}
+        </div>
+      </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{background:'#0a0c14'}}>
-          <div className="text-xs text-gray-500 font-medium capitalize">
-            {SIDEBAR_ITEMS.find((i:{id:string})=>i.id===activeSection)?.icon} {SIDEBAR_ITEMS.find((i:{id:string})=>i.id===activeSection)?.label}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-600">{club.league} · Round 18</div>
-            <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></div>
-            <div className="text-xs text-gray-500">Match Week</div>
-          </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+          style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+            To see your own data — sign up for 3 months free →
+          </a>
         </div>
 
+        {/* Role indicator banner */}
+        {!isPlayer && !isSponsor && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
+            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <div className="flex items-center gap-2">
+              <span>{roleConfig.icon}</span>
+              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong>{roleConfig.message ? ` — ${roleConfig.message}` : ''}</span>
+            </div>
+            <span style={{ color: `${roleConfig.accent}80` }}>Player controls full access →</span>
+          </div>
+        )}
+
+        {/* Content + Card Row */}
+        {isSponsor ? (
+          <RugbySponsorDashboard session={session} club={club} />
+        ) : (
         <div className="flex-1 flex overflow-hidden">
+          {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
 
           {/* Right Sidebar */}
@@ -3443,7 +3811,27 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
             </div>
           </div>
         </div>
+        )}
       </div>
+
+      {/* Modal Overlay */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+            style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            {activeModal === 'flights' && <RugbyFlightFinder onClose={closeModal} session={session} club={club} />}
+            {activeModal === 'matchprep' && <RugbyMatchPrepAI onClose={closeModal} club={club} />}
+            {activeModal === 'sponsorpost' && <RugbySponsorPost onClose={closeModal} session={session} club={club} />}
+            {activeModal === 'injury' && <RugbyInjuryLogger onClose={closeModal} />}
+            {activeModal === 'expense' && <RugbyExpenseLogger onClose={closeModal} />}
+            {activeModal === 'video' && <RugbyVideoAnalysis onClose={closeModal} />}
+            {activeModal === 'contracts' && <RugbyContractCheck onClose={closeModal} club={club} />}
+            {activeModal === 'visa' && <RugbyVisaCheck onClose={closeModal} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

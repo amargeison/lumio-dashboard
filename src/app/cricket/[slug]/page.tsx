@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line, ReferenceLine, Cell } from 'recharts';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -350,6 +350,19 @@ const SIGNING_PIPELINE = [
 
 function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   const[page,setPage]=useState('dashboard');
+
+  // Floating sidebar state
+  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sidebarExpanded = sidebarPinned || sidebarHovered
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_cricket_sidebar_pinned') === 'true') }, [])
+  function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_cricket_sidebar_pinned', String(next)); return next }) }
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
+
+  // Role override
+  const [roleOverride, setRoleOverride] = useState(session?.role || 'chairman')
   const[battingFmt,setBattingFmt]=useState('All');
   const[bowlingFmt,setBowlingFmt]=useState('All');
   const[videoFilter,setVideoFilter]=useState('All');
@@ -389,9 +402,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
     setOptLoading(true); setOptError(null);
     try {
       const fit = (SQUAD as Array<Record<string,unknown>>).filter(p=>p.st==='fit').map(p=>({name:p.n,role:p.r,formats:{ch:p.ch,t2:p.t2,od:p.od}}));
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `Yorkshire CCC squad for this week. Available players (fit only): ${JSON.stringify(fit)}. This week: Championship vs Lancashire (4-day, Fri), plus T20 Blast planning. Suggest the optimal XI for each format, considering format eligibility and player roles. Chris Dawson should have capped overs in Championship. Rajan Nortje available Championship + OD only. Respond ONLY in JSON (no markdown): { "championship": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" }, "t20": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" } }` }],
@@ -451,9 +464,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   async function getTossAdvice() {
     setTossLoading(true); setTossError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 600,
@@ -478,9 +491,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
     setContractAiLoading(true); setContractAiError(null);
     try {
       const expiring2026 = CRICKET_CONTRACTS.filter(c => c.expiry.includes('2026'));
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 800,
@@ -510,9 +523,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
     setEcbQuestion(question);
     setEcbLoading(true); setEcbAnswer('');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 600,
           system: 'You are an ECB compliance expert helping a County Championship club. Be direct and specific. The club is Yorkshire CCC, CPA completion 73%, 3 DBS issues, safeguarding incidents pending. Answer questions about County Partnership Agreement requirements, ECB standards, and deadlines.',
@@ -532,9 +545,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   async function askDeclarationAdvice() {
     setDeclAiLoading(true); setDeclAiResult('');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 400,
           messages: [{ role: 'user', content: `County Championship 4-day match. Current score: ${declState.currentScore}/${declState.wickets}. Planning to declare at ${declState.targetScore}. ${declState.overs} overs left in the match. Should we declare now or bat on? Give a direct 2-3 sentence recommendation.` }],
@@ -553,9 +566,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   async function generateOppDossier() {
     setOppLoading(true); setOppError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `Generate a cricket opposition dossier for Yorkshire CCC vs ${oppTarget} in the ${oppFormat === 'Championship' ? 'County Championship 2026' : oppFormat === 'T20' ? 'Vitality Blast 2026' : 'Metro Bank One Day Cup 2026'}. Include realistic insights. Respond ONLY in JSON (no markdown): { "batting_threats": "2-3 sentence analysis", "bowling_threats": "2-3 sentence analysis", "weaknesses": "2-3 sentence analysis", "game_plan": "3-4 sentence tactical recommendation", "key_matchup": "one specific player vs player matchup to target" }` }],
@@ -577,9 +590,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   async function generatePressConference() {
     setPcLoading(true); setPcError(null);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/cricket', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a cricket media officer preparing a Yorkshire CCC head coach for a press conference. Based on: Recent result: ${pcRecent}. Upcoming: ${pcUpcoming}. Team news: ${pcNews}. Generate 5 likely journalist questions with suggested answers. Respond ONLY in JSON (no markdown): { "questions": [ { "q": "question text", "a": "suggested answer 2-3 sentences" }, ... ] }` }],
@@ -3701,9 +3714,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
     async function runAiReview() {
       setNetAiLoading(true); setNetAiError(null);
       try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const res = await fetch('/api/ai/cricket', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
             max_tokens: 400,
@@ -3814,9 +3827,9 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
     async function generateReport() {
       setReportLoading(true); setReportError(null); setReportText(null);
       try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const res = await fetch('/api/ai/cricket', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
             max_tokens: 600,
