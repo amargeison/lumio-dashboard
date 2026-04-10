@@ -7844,8 +7844,9 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
     try { const stored = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_photos') : null; return stored ? JSON.parse(stored) : [] } catch { return [] }
   });
   useEffect(() => { localStorage.setItem('lumio_tennis_photos', JSON.stringify(photos)) }, [photos]);
-  const activeRole = session.role;
-  const currentRole = (session.role || 'player') as keyof typeof TENNIS_ROLE_CONFIG
+  const [roleOverride, setRoleOverride] = useState(session.role || 'player');
+  const activeRole = roleOverride;
+  const currentRole = (roleOverride || 'player') as keyof typeof TENNIS_ROLE_CONFIG
   const roleConfig = TENNIS_ROLE_CONFIG[currentRole] ?? TENNIS_ROLE_CONFIG.player
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
@@ -8424,6 +8425,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           roles={TENNIS_ROLES}
           accentColor="#0ea5e9"
           onRoleChange={(role) => {
+            setRoleOverride(role)
             const key = 'lumio_tennis_demo_session'
             const stored = localStorage.getItem(key)
             if (stored) {
