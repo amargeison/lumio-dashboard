@@ -2838,47 +2838,290 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
 function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
+  const ACCENT = '#dc2626';
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [voiceId, setVoiceId] = useState('nova');
+  const [boardSetup, setBoardSetup] = useState('Winmau');
+  const [dartWeight, setDartWeight] = useState(player.dartSetup?.barrelWeight || '23g');
+  const [devPrompt, setDevPrompt] = useState('');
+  const [devResponse, setDevResponse] = useState('');
+  const [devRoute, setDevRoute] = useState('/api/ai/darts');
+  const [devTesting, setDevTesting] = useState(false);
+
+  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true');
+
+  const toggleStyle = (on: boolean) => ({
+    width: 44, height: 24, borderRadius: 12,
+    backgroundColor: on ? ACCENT : '#374151',
+    position: 'relative' as const, cursor: 'pointer', transition: 'background-color 0.2s',
+  });
+  const toggleKnob = (on: boolean) => ({
+    width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff',
+    position: 'absolute' as const, top: 3, left: on ? 23 : 3, transition: 'left 0.2s',
+  });
+
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>{children}</div>
+  );
+  const SectionHead = ({ title }: { title: string }) => (
+    <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+      <p className="text-sm font-semibold text-white">{title}</p>
+    </div>
+  );
+  const Row = ({ label, right }: { label: string; right: React.ReactNode }) => (
+    <div className="flex items-center justify-between px-5 py-3">
+      <span className="text-sm text-gray-300">{label}</span>
+      <div>{right}</div>
+    </div>
+  );
+  const ConnectBtn = ({ connected }: { connected?: boolean }) => (
+    <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{
+      backgroundColor: connected ? 'rgba(16,185,129,0.15)' : `${ACCENT}22`,
+      color: connected ? '#10b981' : ACCENT,
+    }}>{connected ? 'Connected' : 'Connect'}</button>
+  );
+  const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
+    <div style={toggleStyle(on)} onClick={onToggle}><div style={toggleKnob(on)} /></div>
+  );
+
   return (
     <div className="space-y-6">
+      <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, integrations, team access, appearance, and developer tools." />
 
-      <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, notifications, and preferences." />
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-semibold text-white">Player Profile</div>
-          <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30">Edit</button>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-xs">
+      {/* 1 — Profile */}
+      <Card>
+        <SectionHead title="🎯 Profile" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
           {[
-            { label: 'Name', value: player.name }, { label: 'Nickname', value: player.nickname },
-            { label: 'PDC Rank', value: `#${player.pdcRank}` }, { label: 'Tour', value: 'PDC Professional' },
-            { label: 'Plan', value: player.plan }, { label: 'Manager', value: player.manager },
-            { label: 'Sponsor 1', value: player.sponsor1 }, { label: 'Sponsor 2', value: player.sponsor2 },
+            { label: 'Name', value: player.name },
+            { label: 'Tour', value: 'PDC Professional' },
+            { label: 'Ranking', value: `#${player.pdcRank}` },
+            { label: 'Coach', value: player.coach },
+            { label: 'Manager', value: player.manager },
+            { label: 'Season', value: '2025/26' },
           ].map((f, i) => (
-            <div key={i} className="py-2 border-b border-gray-800/50">
-              <div className="text-gray-500 text-[10px] uppercase tracking-wider">{f.label}</div>
-              <div className="text-gray-200 mt-0.5">{f.value}</div>
-            </div>
+            <Row key={i} label={f.label} right={<span className="text-sm text-white">{f.value}</span>} />
           ))}
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Notification Preferences</div>
-        <div className="space-y-3">
-          {['Exhibition enquiries', 'Entry deadlines', 'Ranking changes', 'Match draws', 'Sponsor obligations'].map((n, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-              <span className="text-sm text-gray-300">{n}</span>
-              <div className="w-10 h-5 bg-teal-600/30 rounded-full relative cursor-pointer"><div className="w-4 h-4 bg-teal-400 rounded-full absolute top-0.5 right-0.5"></div></div>
-            </div>
+      {/* 2 — Sport-Specific Configuration */}
+      <Card>
+        <SectionHead title="🎯 Darts Configuration" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <Row label="PDC Player ID" right={<span className="text-sm text-white font-mono">PDC-{player.pdcRank.toString().padStart(4, '0')}</span>} />
+          <Row label="Board Setup" right={
+            <select value={boardSetup} onChange={e => setBoardSetup(e.target.value)}
+              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
+              {['Winmau', 'Target', 'Unicorn'].map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          } />
+          <Row label="Dart Weight Preference" right={
+            <select value={dartWeight} onChange={e => setDartWeight(e.target.value)}
+              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
+              {['21g', '22g', '23g', '24g', '25g', '26g'].map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+          } />
+        </div>
+      </Card>
+
+      {/* 3 — Integrations: Data Providers */}
+      <Card>
+        <SectionHead title="🔌 Integrations — Data Providers" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { name: 'PDC Profile', icon: '🎯', connected: true },
+            { name: 'WDF Profile', icon: '🌍', connected: false },
+            { name: 'STATSports', icon: '📡', connected: false },
+            { name: 'Softronic', icon: '💻', connected: false },
+            { name: 'Dartfish', icon: '📹', connected: false },
+            { name: 'DartConnect', icon: '🔌', connected: true },
+          ].map((p, i) => (
+            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
           ))}
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-5">
-        <div className="text-sm font-semibold text-red-400 mb-2">Danger Zone</div>
-        <button className="px-4 py-2 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30">Reset to demo data</button>
-      </div>
+      {/* 4 — Integrations: Communication */}
+      <Card>
+        <SectionHead title="💬 Integrations — Communication" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { name: 'Slack', icon: '💬', connected: true },
+            { name: 'Microsoft Teams', icon: '👥', connected: false },
+            { name: 'Google Workspace', icon: '📧', connected: false },
+            { name: 'WhatsApp Business', icon: '📱', connected: false },
+          ].map((p, i) => (
+            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
+          ))}
+        </div>
+      </Card>
+
+      {/* 5 — Team & Staff */}
+      <Card>
+        <SectionHead title="👥 Team & Staff" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { name: player.coach, role: 'Coach', access: 'Full' },
+            { name: player.manager, role: 'Manager', access: 'Commercial' },
+            { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-center justify-between px-5 py-3">
+              <div>
+                <div className="text-sm text-white">{s.name}</div>
+                <div className="text-xs text-gray-500">{s.role}</div>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded ${s.access === 'Full' ? 'bg-teal-600/20 text-teal-400' : s.access === 'Commercial' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400'}`}>{s.access}</span>
+            </div>
+          ))}
+          <div className="px-5 py-3 italic text-xs text-gray-500">No pending invites</div>
+          <div className="px-5 py-3">
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>+ Invite Team Member</button>
+          </div>
+        </div>
+      </Card>
+
+      {/* 6 — Voice Assistant */}
+      <Card>
+        <SectionHead title="🎙️ Voice Assistant" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <Row label="Text-to-Speech" right={<Toggle on={ttsEnabled} onToggle={() => setTtsEnabled(!ttsEnabled)} />} />
+          <Row label="Voice" right={
+            <select value={voiceId} onChange={e => setVoiceId(e.target.value)}
+              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
+              {['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'].map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          } />
+        </div>
+      </Card>
+
+      {/* 7 — World Clock */}
+      <Card>
+        <SectionHead title="🕐 World Clock" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          {[
+            { city: 'London', tz: 'Europe/London' },
+            { city: 'Amsterdam', tz: 'Europe/Amsterdam' },
+            { city: 'Berlin', tz: 'Europe/Berlin' },
+            { city: 'Las Vegas', tz: 'America/Los_Angeles' },
+          ].map((c, i) => (
+            <Row key={i} label={c.city} right={
+              <span className="text-sm text-white font-mono">
+                {new Date().toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' })}
+              </span>
+            } />
+          ))}
+        </div>
+      </Card>
+
+      {/* 8 — Appearance */}
+      <Card>
+        <SectionHead title="🎨 Appearance" />
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <Row label="Theme" right={<span className="text-sm text-white">Dark</span>} />
+          <Row label="Accent Colour" right={
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full" style={{ backgroundColor: ACCENT }} />
+              <span className="text-xs text-gray-400 font-mono">{ACCENT}</span>
+            </div>
+          } />
+        </div>
+      </Card>
+
+      {/* 9 — DEV SECTION (conditional) */}
+      {isDev && (
+        <Card>
+          <SectionHead title="🛠️ Developer Tools" />
+          <div className="p-5">
+            <div className="grid grid-cols-2 gap-4">
+              {/* 1 — Demo Data */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">Demo Data</div>
+                <div className="text-[10px] text-gray-500 mb-3">Status: <span className="text-teal-400">Loaded</span></div>
+                <button onClick={() => { localStorage.removeItem('lumio_darts_data'); window.location.reload(); }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>Reset Demo Data</button>
+              </div>
+
+              {/* 2 — API Route Tester */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">API Route Tester</div>
+                <select value={devRoute} onChange={e => setDevRoute(e.target.value)}
+                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white mb-2">
+                  <option value="/api/ai/darts">/api/ai/darts</option>
+                </select>
+                <textarea value={devPrompt} onChange={e => setDevPrompt(e.target.value)} placeholder="Enter prompt..."
+                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 mb-2 resize-none" rows={2} />
+                <button onClick={async () => {
+                  setDevTesting(true); setDevResponse('');
+                  try {
+                    const res = await fetch(devRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: devPrompt }) });
+                    const data = await res.json();
+                    setDevResponse(JSON.stringify(data, null, 2));
+                  } catch (err) { setDevResponse(String(err)); }
+                  setDevTesting(false);
+                }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>
+                  {devTesting ? 'Testing...' : 'Test'}
+                </button>
+                {devResponse && <pre className="mt-2 text-[10px] text-gray-400 max-h-24 overflow-auto whitespace-pre-wrap">{devResponse}</pre>}
+              </div>
+
+              {/* 3 — LocalStorage Inspector */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">LocalStorage Inspector</div>
+                <div className="space-y-1 max-h-28 overflow-auto mb-2">
+                  {typeof window !== 'undefined' && Object.keys(localStorage).filter(k => k.startsWith('lumio_')).map(k => (
+                    <div key={k} className="flex items-center justify-between text-[10px]">
+                      <span className="text-gray-400 font-mono truncate mr-2">{k}</span>
+                      <button onClick={() => { localStorage.removeItem(k); window.location.reload(); }} className="text-red-400 hover:text-red-300 shrink-0">✕</button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => localStorage.removeItem(k)); window.location.reload(); }}
+                    className="text-[10px] text-red-400 hover:text-red-300">Clear All</button>
+                  <button onClick={() => {
+                    const data: Record<string,string> = {};
+                    Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => { data[k] = localStorage.getItem(k) || ''; });
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lumio_localstorage.json'; a.click();
+                  }} className="text-[10px] text-blue-400 hover:text-blue-300">Export JSON</button>
+                </div>
+              </div>
+
+              {/* 4 — Environment */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">Environment</div>
+                <div className="space-y-1 text-[10px]">
+                  <div><span className="text-gray-500">NODE_ENV:</span> <span className="text-gray-300">{process.env.NODE_ENV}</span></div>
+                  <div><span className="text-gray-500">Branch:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || 'local'}</span></div>
+                  <div><span className="text-gray-500">Deploy:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev'}</span></div>
+                  <div><span className="text-gray-500">Next.js:</span> <span className="text-gray-300">{require('next/package.json').version}</span></div>
+                </div>
+              </div>
+
+              {/* 5 — TypeScript Check */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">TypeScript Check</div>
+                <div className="text-[10px] text-gray-500 mb-2">Run in terminal:</div>
+                <code className="block text-[10px] text-yellow-400 bg-black/40 rounded px-2 py-1 mb-2 select-all">npx tsc --noEmit --skipLibCheck</code>
+                <textarea placeholder="Paste output here..." className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-[10px] text-white placeholder-gray-600 resize-none" rows={3} />
+              </div>
+
+              {/* 6 — Portal Info */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-semibold text-white mb-2">Portal Info</div>
+                <div className="space-y-1 text-[10px]">
+                  <div><span className="text-gray-500">Sport:</span> <span className="text-gray-300">Darts</span></div>
+                  <div><span className="text-gray-500">Slug:</span> <span className="text-gray-300 font-mono">{typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''}</span></div>
+                  <div><span className="text-gray-500">File:</span> <span className="text-gray-300 font-mono">src/app/darts/[slug]/page.tsx</span></div>
+                  <div><span className="text-gray-500">LocalStorage keys:</span> <span className="text-gray-300">{typeof window !== 'undefined' ? Object.keys(localStorage).filter(k => k.startsWith('lumio_')).length : 0}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <DartsAISection context="default" player={player} session={session} />
     </div>
   );

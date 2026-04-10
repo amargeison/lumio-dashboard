@@ -3000,6 +3000,363 @@ function PracticeLogView({ player, session }: { player: GolfPlayer; session: Spo
 }
 
 // Generic placeholder for remaining views
+function GolfSettingsView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const ACCENT = '#15803D'
+  const ACCENT_LIGHT = '#16a34a'
+  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
+  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
+  const [zones, setZones] = useState<{ label: string; tz: string }[]>(() => {
+    if (typeof window === 'undefined') return [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Augusta', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }]
+    try { const s = localStorage.getItem('lumio_world_zones'); return s ? JSON.parse(s) : [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Augusta', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }] } catch { return [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Augusta', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' }] }
+  })
+  const [devApiRoute, setDevApiRoute] = useState('/api/ai/golf')
+  const [devPrompt, setDevPrompt] = useState('')
+  const [devResponse, setDevResponse] = useState('')
+  const [lsKeys, setLsKeys] = useState<{ key: string; value: string }[]>([])
+
+  const GOLF_VOICES = [
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Warm, confident British female — ideal for morning briefings' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — clear and composed' },
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'Professional British male — steady round narration' },
+  ]
+
+  const ALL_TZ = [
+    { label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Augusta', tz: 'America/New_York' }, { label: 'Dubai', tz: 'Asia/Dubai' },
+    { label: 'St Andrews', tz: 'Europe/London' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }, { label: 'Los Angeles', tz: 'America/Los_Angeles' }, { label: 'Doha', tz: 'Asia/Qatar' },
+    { label: 'Sydney', tz: 'Australia/Sydney' }, { label: 'Scottsdale', tz: 'America/Phoenix' }, { label: 'Paris', tz: 'Europe/Paris' }, { label: 'Shanghai', tz: 'Asia/Shanghai' },
+  ]
+
+  function toggleZone(zone: { label: string; tz: string }) {
+    const exists = zones.some(z => z.tz === zone.tz && z.label === zone.label)
+    let next: { label: string; tz: string }[]
+    if (exists) { next = zones.filter(z => !(z.tz === zone.tz && z.label === zone.label)) } else { if (zones.length >= 4) return; next = [...zones, zone] }
+    setZones(next)
+    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
+  }
+
+  function ToggleBtn({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+    return (
+      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? ACCENT : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+        <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+      </button>
+    )
+  }
+
+  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true')
+
+  function refreshLsKeys() {
+    if (typeof window === 'undefined') return
+    const keys: { key: string; value: string }[] = []
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('lumio_')) keys.push({ key: k, value: localStorage.getItem(k) || '' }) }
+    setLsKeys(keys)
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your golf portal preferences.</p>
+      </div>
+
+      {/* ── Profile ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Profile</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{session?.userName || player.name}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Tour / Circuit</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.tour}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Ranking</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>OWGR #{player.owgr}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Coach</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.coach}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Agent</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.agent}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Season</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Golf Pro</span></div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Manage billing</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Golf Configuration ──────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Golf Configuration</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>OWGR Player ID</p><p className="text-xs" style={{ color: '#6B7280' }}>For live ranking and tournament data</p></div>
+            <input type="text" placeholder="e.g. 12345" className="text-sm rounded-lg px-3 py-1.5 outline-none w-32 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
+            <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+              <option>None</option><option>PlayerData EDGE Air (recommended)</option><option>PlayerData EDGE Pro (with live data)</option><option>STATSports APEX (legacy — manual sync)</option><option>Catapult One (legacy — manual sync)</option><option>CSV Upload (manual)</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Kit — primary colour</p></div>
+            <input type="color" defaultValue="#15803D" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Kit — secondary colour</p></div>
+            <input type="color" defaultValue="#ffffff" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Integrations ──────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA PROVIDERS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'OWGR Profile', desc: 'World ranking & points data' },
+                { name: 'TrackMan', desc: 'Launch monitor & ball flight data' },
+                { name: 'Arccos', desc: 'Shot tracking & strokes gained' },
+                { name: 'PGA/DP World Tour', desc: 'Tournament stats & leaderboards' },
+                { name: 'Veo', desc: 'Video capture & swing analysis' },
+                { name: 'STATSports', desc: 'GPS load & movement data' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>COMMUNICATION</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'Slack', desc: 'Team messaging & alerts' },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Player & agent messaging' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team & Staff ──────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team & Staff</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Staff members</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span></div>
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE STAFF MEMBER</p>
+            <div className="flex gap-2">
+              <input placeholder="colleague@team.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+              <select className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                <option>Coach</option><option>Short Game Coach</option><option>Caddie</option><option>Physio</option><option>Agent</option><option>Fitness Trainer</option><option>Mental Coach</option><option>Admin</option>
+              </select>
+              <button className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: ACCENT, color: '#fff' }}>Send Invite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Voice Assistant ────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎙️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Text to Speech</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</p>
+            </div>
+            <ToggleBtn on={ttsOn} onToggle={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280' }}>Voice Selection</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {GOLF_VOICES.map(voice => {
+                const isActive = activeVoice === voice.id
+                return (
+                  <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
+                    className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? `1px solid ${ACCENT}` : '1px solid #1F2937' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
+                      {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT }}>Active</span>}
+                    </div>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── World Clock Timezones ──────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🕐</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>World Clock Timezones</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Choose up to 4 timezones for your dashboard</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 space-y-3">
+          <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto">
+            {ALL_TZ.map(zone => {
+              const isSelected = zones.some(z => z.tz === zone.tz && z.label === zone.label)
+              return (
+                <button key={zone.label} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
+                  style={{
+                    backgroundColor: isSelected ? `${ACCENT}14` : '#0A0B10',
+                    border: isSelected ? `1px solid ${ACCENT}4d` : '1px solid #1F2937',
+                    opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
+                    cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
+                  }}>
+                  <span className="text-sm" style={{ color: isSelected ? ACCENT : '#9CA3AF' }}>{zone.label}</span>
+                  {isSelected && <span style={{ color: ACCENT }}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
+        </div>
+      </div>
+
+      {/* ── Appearance ─────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Appearance</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Theme</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Dark</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Accent colour</span><div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: ACCENT }} /><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{ACCENT}</span></div></div>
+        </div>
+      </div>
+
+      {/* ── DEV SECTION ────────────────────────────────────────────── */}
+      {isDev && (
+        <>
+          <div className="pt-4">
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#EF4444' }}>Developer Tools</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 1. Demo Data */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Demo Data</p></div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Demo active</span><span className="text-xs" style={{ color: '#22C55E' }}>✅</span></div>
+                <button onClick={() => { localStorage.removeItem('lumio_golf_demo_active'); window.location.reload() }} className="w-full rounded-lg py-2 text-xs font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>Reset demo</button>
+              </div>
+            </div>
+            {/* 2. API Route Tester */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>API Route Tester</p></div>
+              <div className="p-4 space-y-2">
+                <select value={devApiRoute} onChange={e => setDevApiRoute(e.target.value)} className="w-full text-xs rounded-lg px-2 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                  <option>/api/ai/golf</option>
+                </select>
+                <textarea value={devPrompt} onChange={e => setDevPrompt(e.target.value)} placeholder="Enter prompt..." rows={2} className="w-full text-xs rounded-lg px-2 py-1.5 outline-none resize-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+                <button onClick={async () => { try { const r = await fetch(devApiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: devPrompt }) }); setDevResponse(await r.text()) } catch (e: unknown) { setDevResponse(String(e)) } }} className="w-full rounded-lg py-1.5 text-xs font-semibold" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Test</button>
+                {devResponse && <pre className="text-[10px] p-2 rounded-lg overflow-auto max-h-32" style={{ backgroundColor: '#0A0B10', color: '#9CA3AF' }}>{devResponse}</pre>}
+              </div>
+            </div>
+            {/* 3. LocalStorage Inspector */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>LocalStorage Inspector</p>
+                <button onClick={refreshLsKeys} className="text-[10px] font-semibold" style={{ color: ACCENT }}>Refresh</button>
+              </div>
+              <div className="p-4 space-y-1 max-h-48 overflow-y-auto">
+                {lsKeys.length === 0 && <p className="text-xs" style={{ color: '#6B7280' }}>Click Refresh to load keys</p>}
+                {lsKeys.map(kv => (
+                  <div key={kv.key} className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] truncate" style={{ color: '#9CA3AF' }}>{kv.key}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] truncate max-w-[100px]" style={{ color: '#F9FAFB' }}>{kv.value}</span>
+                      <button onClick={() => { localStorage.removeItem(kv.key); refreshLsKeys() }} className="text-[10px]" style={{ color: '#EF4444' }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+                {lsKeys.length > 0 && (
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => { lsKeys.forEach(kv => localStorage.removeItem(kv.key)); refreshLsKeys() }} className="text-[10px] font-semibold" style={{ color: '#EF4444' }}>Clear All</button>
+                    <button onClick={() => { const blob = new Blob([JSON.stringify(Object.fromEntries(lsKeys.map(kv => [kv.key, kv.value])), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lumio-ls-export.json'; a.click() }} className="text-[10px] font-semibold" style={{ color: ACCENT }}>Export JSON</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* 4. Environment */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Environment</p></div>
+              <div className="p-4 space-y-1">
+                {[
+                  { label: 'NODE_ENV', value: process.env.NODE_ENV || 'unknown' },
+                  { label: 'Branch', value: typeof window !== 'undefined' ? localStorage.getItem('lumio_branch') || 'dev' : 'dev' },
+                  { label: 'Deploy timestamp', value: new Date().toISOString().slice(0, 10) },
+                  { label: 'Next.js version', value: '15.x' },
+                ].map(row => (
+                  <div key={row.label} className="flex items-center justify-between">
+                    <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{row.label}</span>
+                    <span className="text-[10px] font-medium" style={{ color: '#F9FAFB' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* 5. TypeScript Check */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>TypeScript Check</p></div>
+              <div className="p-4 space-y-2">
+                <p className="text-[10px]" style={{ color: '#6B7280' }}>Run <code className="text-[10px]" style={{ color: ACCENT }}>npx tsc --noEmit</code> in terminal</p>
+                <textarea placeholder="Paste tsc output here..." rows={3} className="w-full text-[10px] rounded-lg px-2 py-1.5 outline-none resize-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+              </div>
+            </div>
+            {/* 6. Portal Info */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Portal Info</p></div>
+              <div className="p-4 space-y-1">
+                {[
+                  { label: 'Sport', value: 'golf' },
+                  { label: 'Slug', value: typeof window !== 'undefined' ? window.location.pathname.split('/').pop() || '' : '' },
+                  { label: 'File', value: 'src/app/golf/[slug]/page.tsx' },
+                  { label: 'LS keys used', value: 'lumio_tts_enabled, lumio_tts_voice, lumio_world_zones, lumio_dev_mode, lumio_branch' },
+                ].map(row => (
+                  <div key={row.label} className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] shrink-0" style={{ color: '#9CA3AF' }}>{row.label}</span>
+                    <span className="text-[10px] font-medium text-right" style={{ color: '#F9FAFB' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function PlaceholderView({ title, icon, description, player, session }: { title: string; icon: string; description: string; player: GolfPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
@@ -4968,7 +5325,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." player={player} session={session} />;
       case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." player={player} session={session} />;
-      case 'settings':    return <PlaceholderView icon="⚙️" title="Settings" description="Profile, notifications, team access, data integrations (Arccos, WHOOP, TrackMan), and billing." player={player} session={session} />;
+      case 'settings':    return <GolfSettingsView player={player} session={session} />;
       case 'arccos':      return <ArccosView player={player} session={session} />;
       case 'datagolf':    return <DataGolfView player={player} session={session} />;
       case 'trackman':    return <TrackManView player={player} session={session} />;

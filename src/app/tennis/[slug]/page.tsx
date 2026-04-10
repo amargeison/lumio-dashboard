@@ -5869,188 +5869,358 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
   );
 }
 function SettingsView({ player, session, photos, setPhotos }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void }) {
-  const [tourMode, setTourMode] = useState<'ATP' | 'WTA'>(player.tour || 'ATP');
+  const ACCENT = '#0ea5e9'
+  const ACCENT_LIGHT = '#38bdf8'
+  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
+  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
+  const [zones, setZones] = useState<{ label: string; tz: string }[]>(() => {
+    if (typeof window === 'undefined') return [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Melbourne', tz: 'Australia/Melbourne' }, { label: 'Dubai', tz: 'Asia/Dubai' }]
+    try { const s = localStorage.getItem('lumio_world_zones'); return s ? JSON.parse(s) : [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Melbourne', tz: 'Australia/Melbourne' }, { label: 'Dubai', tz: 'Asia/Dubai' }] } catch { return [{ label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Melbourne', tz: 'Australia/Melbourne' }, { label: 'Dubai', tz: 'Asia/Dubai' }] }
+  })
+  const [devApiRoute, setDevApiRoute] = useState('/api/ai/tennis')
+  const [devPrompt, setDevPrompt] = useState('')
+  const [devResponse, setDevResponse] = useState('')
+  const [lsKeys, setLsKeys] = useState<{ key: string; value: string }[]>([])
+
+  const TENNIS_VOICES = [
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Warm, confident British female — ideal for morning briefings' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — clear and composed' },
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'Professional British male — steady matchday narration' },
+  ]
+
+  const ALL_TZ = [
+    { label: 'London', tz: 'Europe/London' }, { label: 'New York', tz: 'America/New_York' }, { label: 'Melbourne', tz: 'Australia/Melbourne' }, { label: 'Dubai', tz: 'Asia/Dubai' },
+    { label: 'Paris', tz: 'Europe/Paris' }, { label: 'Tokyo', tz: 'Asia/Tokyo' }, { label: 'Los Angeles', tz: 'America/Los_Angeles' }, { label: 'Shanghai', tz: 'Asia/Shanghai' },
+    { label: 'Madrid', tz: 'Europe/Madrid' }, { label: 'Rome', tz: 'Europe/Rome' }, { label: 'Miami', tz: 'America/New_York' }, { label: 'Indian Wells', tz: 'America/Los_Angeles' },
+  ]
+
+  function toggleZone(zone: { label: string; tz: string }) {
+    const exists = zones.some(z => z.tz === zone.tz)
+    let next: { label: string; tz: string }[]
+    if (exists) { next = zones.filter(z => z.tz !== zone.tz) } else { if (zones.length >= 4) return; next = [...zones, zone] }
+    setZones(next)
+    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
+  }
+
+  function ToggleBtn({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+    return (
+      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? ACCENT : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
+        <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
+      </button>
+    )
+  }
+
+  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true')
+
+  function refreshLsKeys() {
+    if (typeof window === 'undefined') return
+    const keys: { key: string; value: string }[] = []
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('lumio_')) keys.push({ key: k, value: localStorage.getItem(k) || '' }) }
+    setLsKeys(keys)
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your tennis portal preferences.</p>
+      </div>
 
-      <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, notifications, team access, integrations, and billing." />
-
-      {/* Photo Frame Management */}
-      <div className="rounded-xl overflow-hidden mb-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4 border-b" style={{ borderColor: '#1F2937' }}>
-          <p className="text-sm font-semibold text-white">📸 Photo Frame</p>
-          <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Add up to 3 photos to your dashboard photo frame</p>
+      {/* ── Profile ──────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Profile</p>
         </div>
-        <div className="p-5">
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {[0,1,2].map(i => (
-              <div key={i} className="relative aspect-video rounded-lg overflow-hidden" style={{ background: '#0a0c14', border: '1px dashed #374151' }}>
-                {photos[i] ? (
-                  <>
-                    <img src={photos[i]} alt="" className="w-full h-full object-cover" />
-                    <button onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center">✕</button>
-                  </>
-                ) : (
-                  <label htmlFor={`tennis-photo-${i}`} className="w-full h-full flex items-center justify-center cursor-pointer text-gray-600 hover:text-gray-400 transition-colors">
-                    <span className="text-xl">+</span>
-                    <input type="file" accept="image/*" id={`tennis-photo-${i}`} className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        const reader = new FileReader()
-                        reader.onload = () => setPhotos(prev => { const next = [...prev]; next[i] = reader.result as string; return next })
-                        reader.readAsDataURL(file)
-                      }} />
-                  </label>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{session?.userName || player.name}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Tour / Circuit</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.tour} Tour</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Ranking</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>#{player.ranking}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Coach</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.coach}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Agent</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.agent}</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Season</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Tennis Pro</span></div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Manage billing</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tennis Configuration ──────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Tennis Configuration</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>ATP/WTA Player ID</p><p className="text-xs" style={{ color: '#6B7280' }}>For live ranking and draw data</p></div>
+            <input type="text" placeholder="e.g. atpR123" className="text-sm rounded-lg px-3 py-1.5 outline-none w-32 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
+            <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+              <option>None</option><option>PlayerData EDGE Air (recommended)</option><option>PlayerData EDGE Pro (with live data)</option><option>STATSports APEX (legacy — manual sync)</option><option>Catapult One (legacy — manual sync)</option><option>CSV Upload (manual)</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — primary colour</p></div>
+            <input type="color" defaultValue="#0ea5e9" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — secondary colour</p></div>
+            <input type="color" defaultValue="#ffffff" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Integrations ──────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA PROVIDERS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'ATP/WTA Profile', desc: 'Rankings, results & draw data' },
+                { name: 'Hawk-Eye', desc: 'Ball tracking & court analytics' },
+                { name: 'TrackMan Tennis', desc: 'Serve speed, spin & shot data' },
+                { name: 'Tennis Abstract', desc: 'Historical stats & match records' },
+                { name: 'IBM SlamTracker', desc: 'Grand Slam live analytics' },
+                { name: 'STATSports', desc: 'GPS load & movement data' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>COMMUNICATION</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'Slack', desc: 'Team messaging & alerts' },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Player & agent messaging' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Team & Staff ──────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team & Staff</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Staff members</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span></div>
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE STAFF MEMBER</p>
+            <div className="flex gap-2">
+              <input placeholder="colleague@team.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+              <select className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                <option>Coach</option><option>Physio</option><option>Agent</option><option>Fitness Trainer</option><option>Mental Coach</option><option>Admin</option>
+              </select>
+              <button className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: ACCENT, color: '#fff' }}>Send Invite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Voice Assistant ────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎙️</span>
+            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Text to Speech</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</p>
+            </div>
+            <ToggleBtn on={ttsOn} onToggle={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280' }}>Voice Selection</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {TENNIS_VOICES.map(voice => {
+                const isActive = activeVoice === voice.id
+                return (
+                  <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
+                    className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? `1px solid ${ACCENT}` : '1px solid #1F2937' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
+                      {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT }}>Active</span>}
+                    </div>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── World Clock Timezones ──────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🕐</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>World Clock Timezones</p>
+              <p className="text-xs" style={{ color: '#6B7280' }}>Choose up to 4 timezones for your dashboard</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5 space-y-3">
+          <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto">
+            {ALL_TZ.map(zone => {
+              const isSelected = zones.some(z => z.tz === zone.tz && z.label === zone.label)
+              return (
+                <button key={zone.label} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
+                  style={{
+                    backgroundColor: isSelected ? `${ACCENT}14` : '#0A0B10',
+                    border: isSelected ? `1px solid ${ACCENT}4d` : '1px solid #1F2937',
+                    opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
+                    cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
+                  }}>
+                  <span className="text-sm" style={{ color: isSelected ? ACCENT : '#9CA3AF' }}>{zone.label}</span>
+                  {isSelected && <span style={{ color: ACCENT }}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
+        </div>
+      </div>
+
+      {/* ── Appearance ─────────────────────────────────────────────── */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Appearance</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Theme</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Dark</span></div>
+          <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Accent colour</span><div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: ACCENT }} /><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{ACCENT}</span></div></div>
+        </div>
+      </div>
+
+      {/* ── DEV SECTION ────────────────────────────────────────────── */}
+      {isDev && (
+        <>
+          <div className="pt-4">
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#EF4444' }}>Developer Tools</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 1. Demo Data */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Demo Data</p></div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Demo active</span><span className="text-xs" style={{ color: '#22C55E' }}>✅</span></div>
+                <button onClick={() => { localStorage.removeItem('lumio_tennis_demo_active'); window.location.reload() }} className="w-full rounded-lg py-2 text-xs font-semibold" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>Reset demo</button>
+              </div>
+            </div>
+            {/* 2. API Route Tester */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>API Route Tester</p></div>
+              <div className="p-4 space-y-2">
+                <select value={devApiRoute} onChange={e => setDevApiRoute(e.target.value)} className="w-full text-xs rounded-lg px-2 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
+                  <option>/api/ai/tennis</option>
+                </select>
+                <textarea value={devPrompt} onChange={e => setDevPrompt(e.target.value)} placeholder="Enter prompt..." rows={2} className="w-full text-xs rounded-lg px-2 py-1.5 outline-none resize-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
+                <button onClick={async () => { try { const r = await fetch(devApiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: devPrompt }) }); setDevResponse(await r.text()) } catch (e: unknown) { setDevResponse(String(e)) } }} className="w-full rounded-lg py-1.5 text-xs font-semibold" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Test</button>
+                {devResponse && <pre className="text-[10px] p-2 rounded-lg overflow-auto max-h-32" style={{ backgroundColor: '#0A0B10', color: '#9CA3AF' }}>{devResponse}</pre>}
+              </div>
+            </div>
+            {/* 3. LocalStorage Inspector */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>LocalStorage Inspector</p>
+                <button onClick={refreshLsKeys} className="text-[10px] font-semibold" style={{ color: ACCENT }}>Refresh</button>
+              </div>
+              <div className="p-4 space-y-1 max-h-48 overflow-y-auto">
+                {lsKeys.length === 0 && <p className="text-xs" style={{ color: '#6B7280' }}>Click Refresh to load keys</p>}
+                {lsKeys.map(kv => (
+                  <div key={kv.key} className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] truncate" style={{ color: '#9CA3AF' }}>{kv.key}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] truncate max-w-[100px]" style={{ color: '#F9FAFB' }}>{kv.value}</span>
+                      <button onClick={() => { localStorage.removeItem(kv.key); refreshLsKeys() }} className="text-[10px]" style={{ color: '#EF4444' }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+                {lsKeys.length > 0 && (
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => { lsKeys.forEach(kv => localStorage.removeItem(kv.key)); refreshLsKeys() }} className="text-[10px] font-semibold" style={{ color: '#EF4444' }}>Clear All</button>
+                    <button onClick={() => { const blob = new Blob([JSON.stringify(Object.fromEntries(lsKeys.map(kv => [kv.key, kv.value])), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lumio-ls-export.json'; a.click() }} className="text-[10px] font-semibold" style={{ color: ACCENT }}>Export JSON</button>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-          <p className="text-[10px]" style={{ color: '#6B7280' }}>Photos auto-advance every 5 seconds on your dashboard. Drag to reorder not yet supported.</p>
-        </div>
-      </div>
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
-        <div className="text-sm font-semibold text-white mb-4">Tour Mode</div>
-        <div className="text-xs text-gray-400 mb-4">Switch between ATP and WTA modes. Changes Race name, Finals city, category labels, and federation rules throughout the portal.</div>
-        <div className="flex gap-3">
-          {(['ATP', 'WTA'] as const).map(mode=>(
-            <button key={mode} onClick={() => setTourMode(mode)}
-              className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-all ${tourMode===mode?'bg-purple-600/20 border-purple-600/40 text-purple-300':'bg-[#0a0c14] border-gray-700 text-gray-400 hover:text-gray-200'}`}>
-              {mode === 'ATP' ? '🎾 ATP Tour' : '🎾 WTA Tour'}
-              <div className="text-[10px] font-normal mt-1 text-gray-500">
-                {mode === 'ATP' ? 'Race to Turin · ATP Finals · ATP rankings' : 'Race to Fort Worth · WTA Finals · WTA rankings'}
-              </div>
-            </button>
-          ))}
-        </div>
-        {tourMode === 'WTA' && (
-          <div className="mt-4 p-3 bg-purple-900/20 border border-purple-600/20 rounded-lg">
-            <div className="text-xs text-purple-400 font-medium mb-1">WTA Mode active</div>
-            <div className="text-[10px] text-gray-400 space-y-0.5">
-              <div>✓ Race name: Race to Fort Worth</div>
-              <div>✓ Finals: WTA Finals (Fort Worth, Texas)</div>
-              <div>✓ Categories: WTA 1000 / WTA 500 / WTA 250 / WTA 125</div>
-              <div>✓ Federation: WTA Tour rules and regulations</div>
-              <div>✓ Points system: WTA ranking points table</div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Profile Settings */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Profile Settings</div>
-        <div className="space-y-4">
-          {[
-            { label: 'Full Name', value: player.name },
-            { label: 'Email', value: 'alex.rivera@gmail.com' },
-            { label: 'Timezone', value: 'Europe/London (BST)' },
-            { label: 'Nationality', value: player.nationality },
-            { label: 'Tour', value: player.tour },
-            { label: 'Coach', value: player.coach },
-          ].map((field, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
-              <div className="text-sm text-gray-400">{field.label}</div>
-              <div className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white min-w-[200px] text-right">{field.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Notification Preferences */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Notification Preferences</div>
-        <div className="space-y-3">
-          {[
-            { label: 'Morning Briefing', desc: 'Daily AI briefing at configured time', enabled: true },
-            { label: 'Match Alerts', desc: 'Draw updates, court assignments, schedule changes', enabled: true },
-            { label: 'Sponsor Obligations', desc: 'Content deadlines, appearance reminders', enabled: true },
-            { label: 'Points Expiry Warnings', desc: '7-day advance warning on expiring points', enabled: true },
-            { label: 'Travel Reminders', desc: 'Flight, hotel, and court booking notifications', enabled: false },
-            { label: 'Team Messages', desc: 'Notes from coach, physio, agent', enabled: true },
-            { label: 'Financial Alerts', desc: 'Prize money received, expense thresholds', enabled: false },
-          ].map((n, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
-              <div>
-                <div className="text-sm text-gray-200">{n.label}</div>
-                <div className="text-xs text-gray-500">{n.desc}</div>
-              </div>
-              <div className={`w-10 h-5 rounded-full cursor-pointer transition-colors ${n.enabled ? 'bg-purple-600' : 'bg-gray-700'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white mt-0.5 transition-transform ${n.enabled ? 'ml-5.5' : 'ml-0.5'}`} style={{ marginLeft: n.enabled ? '22px' : '2px', marginTop: '2px' }}></div>
+            {/* 4. Environment */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Environment</p></div>
+              <div className="p-4 space-y-1">
+                {[
+                  { label: 'NODE_ENV', value: process.env.NODE_ENV || 'unknown' },
+                  { label: 'Branch', value: typeof window !== 'undefined' ? localStorage.getItem('lumio_branch') || 'dev' : 'dev' },
+                  { label: 'Deploy timestamp', value: new Date().toISOString().slice(0, 10) },
+                  { label: 'Next.js version', value: '15.x' },
+                ].map(row => (
+                  <div key={row.label} className="flex items-center justify-between">
+                    <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{row.label}</span>
+                    <span className="text-[10px] font-medium" style={{ color: '#F9FAFB' }}>{row.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Team Access */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Team Access Permissions</div>
-        <div className="space-y-2">
-          {[
-            { name: 'Marco Bianchi (Coach)', access: 'Full', sections: 'All sections' },
-            { name: 'Sarah Okafor (Physio)', access: 'Limited', sections: 'Physio, Schedule, Team Hub' },
-            { name: 'James Whitfield (Agent)', access: 'Commercial', sections: 'Sponsorship, Media, Financial, Pipeline' },
-            { name: 'Luis Santos (Fitness)', access: 'Limited', sections: 'Physio, Practice Log, Schedule' },
-            { name: 'Dr. Kate Sterling (Mental)', access: 'Limited', sections: 'Mental Performance, Schedule' },
-          ].map((t, i) => (
-            <div key={i} className="flex items-center gap-4 py-2 border-b border-gray-800/50 text-sm">
-              <div className="flex-1 text-gray-200">{t.name}</div>
-              <span className={`text-xs px-2 py-0.5 rounded ${t.access === 'Full' ? 'bg-teal-600/20 text-teal-400' : t.access === 'Commercial' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400'}`}>{t.access}</span>
-              <div className="text-xs text-gray-500">{t.sections}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Data Integrations */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Data Integrations</div>
-        <div className="space-y-3">
-          {[
-            { name: 'WHOOP', desc: 'Recovery, HRV, sleep data', status: 'Connected', icon: '⌚' },
-            { name: 'Hawkeye / ATP Stats', desc: 'Match stats, serve data, rally length', status: 'Connected', icon: '📊' },
-            { name: 'ElevenLabs', desc: 'AI voice for morning briefings', status: 'Connected', icon: '🎙️' },
-            { name: 'Google Calendar', desc: 'Tournament & travel sync', status: 'Connected', icon: '📅' },
-            { name: 'Xero (Accounting)', desc: 'Financial data export', status: 'Not connected', icon: '💰' },
-          ].map((int, i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
-              <span className="text-lg">{int.icon}</span>
-              <div className="flex-1">
-                <div className="text-sm text-gray-200">{int.name}</div>
-                <div className="text-xs text-gray-500">{int.desc}</div>
+            {/* 5. TypeScript Check */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>TypeScript Check</p></div>
+              <div className="p-4 space-y-2">
+                <p className="text-[10px]" style={{ color: '#6B7280' }}>Run <code className="text-[10px]" style={{ color: ACCENT }}>npx tsc --noEmit</code> in terminal</p>
+                <textarea placeholder="Paste tsc output here..." rows={3} className="w-full text-[10px] rounded-lg px-2 py-1.5 outline-none resize-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${int.status === 'Connected' ? 'bg-teal-600/20 text-teal-400' : 'bg-gray-700 text-gray-400'}`}>{int.status}</span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Billing */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Billing</div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-gray-800/50">
-            <div className="text-sm text-gray-200">Current Plan</div>
-            <div className="text-sm text-purple-400 font-semibold">Pro+ (GBP 299/mo)</div>
+            {/* 6. Portal Info */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Portal Info</p></div>
+              <div className="p-4 space-y-1">
+                {[
+                  { label: 'Sport', value: 'tennis' },
+                  { label: 'Slug', value: typeof window !== 'undefined' ? window.location.pathname.split('/').pop() || '' : '' },
+                  { label: 'File', value: 'src/app/tennis/[slug]/page.tsx' },
+                  { label: 'LS keys used', value: 'lumio_tts_enabled, lumio_tts_voice, lumio_world_zones, lumio_dev_mode, lumio_branch' },
+                ].map(row => (
+                  <div key={row.label} className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] shrink-0" style={{ color: '#9CA3AF' }}>{row.label}</span>
+                    <span className="text-[10px] font-medium text-right" style={{ color: '#F9FAFB' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between py-2 border-b border-gray-800/50">
-            <div className="text-sm text-gray-200">Next Payment</div>
-            <div className="text-sm text-gray-300">1 May 2026</div>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-gray-800/50">
-            <div className="text-sm text-gray-200">Payment Method</div>
-            <div className="text-sm text-gray-300">Visa ending 4821</div>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="text-sm text-gray-200">Annual Cost</div>
-            <div className="text-sm text-gray-300">GBP 3,588 (GBP 299 x 12)</div>
-          </div>
-        </div>
-        <button className="mt-4 text-xs text-purple-400 hover:text-purple-300">Upgrade to Elite plan &rarr;</button>
-      </div>
+        </>
+      )}
     </div>
   );
 }
