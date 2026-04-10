@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 
@@ -48,10 +48,11 @@ interface BoxingFighter {
 
 // ─── BOXING ROLES ─────────────────────────────────────────────────────────────
 const BOXING_ROLES = [
-  { id: 'fighter',  label: 'Fighter',          icon: '🥊', description: 'My camp & performance'  },
-  { id: 'trainer',  label: 'Trainer / Coach',   icon: '🎽', description: 'Training & preparation' },
-  { id: 'manager',  label: 'Manager',           icon: '💼', description: 'Fights & contracts'     },
-  { id: 'promoter', label: 'Promoter',          icon: '🏟️', description: 'Events & purse bids'   },
+  { id: 'fighter',  label: 'Fighter',          icon: '🥊', description: 'Full access — camp, performance & career' },
+  { id: 'trainer',  label: 'Trainer / Coach',   icon: '🎽', description: 'Training, sparring & camp preparation' },
+  { id: 'manager',  label: 'Manager',           icon: '💼', description: 'Fights, contracts & commercial' },
+  { id: 'promoter', label: 'Promoter',          icon: '🏟️', description: 'Events, purse bids & broadcast' },
+  { id: 'sponsor',  label: 'Sponsor / Partner', icon: '🤝', description: 'Brand presence, obligations & ROI' },
 ]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
@@ -350,17 +351,18 @@ function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
   const [summary, setSummary]     = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [generated, setGenerated] = useState(false)
+  const hasGenerated = useRef(false)
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard:    ['Fight Night in 21 days — Demetrius Johnson (WBC #3)', 'Weight on track: 169.2 lbs — cut to 160 by weigh-in manageable', 'Sparring this week: 8 rounds logged — no incidents', 'Purse bid deadline: IBF mandatory — 30 Apr', 'GPS load: ACWR 1.12 — optimal zone, maintain intensity'],
+    dashboard:    [`Fight Night in ${fighter.next_fight.days_away} days — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking})`, `Weight on track: ${fighter.current_weight}kg — cut to ${fighter.target_weight}kg manageable`, 'Sparring this week: 8 rounds logged — no incidents', 'Purse bid deadline: IBF mandatory — 30 Apr', 'GPS load: ACWR 1.25 — manage carefully, near upper limit'],
     training:     ['Session load this week: 4,820 AU — on plan', 'Sparring quality: coach rated 8.2/10 last session', 'Jab speed improving: +0.04s vs last camp avg', 'Right hand power: 94% of peak — near fight-ready', 'Conditioning: VO2 max 58.4 — top 5% for weight class'],
-    weight:       ['Current: 169.2 lbs → target 160 lbs at weigh-in', '9.2 lbs to cut — 21 days — on schedule', 'Water cut phase starts 5 days before — plan confirmed with Dr Lee', 'Last camp cut: 8.8 lbs in 18 days — comparable', 'Nutrition plan updated for cut phase: -400 cal/day from next week'],
-    rankings:     ['WBC #8 — up 1 this month', 'IBF #6 — mandatory position approaching', 'Win vs Johnson: projected WBC #5 / IBF mandatory confirmed', 'Top-5 all major belts = world title shot by end of year', 'Promoter pipeline: 2 world title offers pending Johnson result'],
-    sponsorship:  ['Everlast: glove deal — 2 posts due this month', 'BoXer Media: fight night appearance confirmed', 'New inquiry: sports nutrition brand — £45k/yr offer', 'Manager reviewing Under Armour camp partnership', 'Prize money media allocation: confirm with promoter'],
-    travel:       ['Fight venue: MGM Grand Garden Arena, Las Vegas', 'Camp departs: 14 Apr — 7 days before weigh-in', 'Hotel: MGM Grand — 7 nights confirmed', 'Corner team flights: 4 booked, 1 pending (cutman)', 'Media day: 19 Apr — arrivals press conference'],
+    weight:       [`Current: ${fighter.current_weight}kg → target ${fighter.target_weight}kg at weigh-in`, `${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to cut — ${fighter.next_fight.days_away} days — on schedule`, 'Water cut phase starts 5 days before — plan confirmed with nutritionist', 'Nutrition plan updated for cut phase: -400 cal/day from next week', 'Last camp cut was comparable — no concerns'],
+    rankings:     [`WBC #${fighter.rankings.wbc} — up 1 this month`, `IBF #${fighter.rankings.ibf} — mandatory position approaching`, `Win vs ${fighter.next_fight.opponent}: projected WBC #${Math.max(1, fighter.rankings.wbc - 2)} / IBF mandatory confirmed`, 'Top-5 all major belts = world title shot by end of year', 'Promoter pipeline: 2 world title offers pending fight result'],
+    sponsorship:  ['Under Armour: camp partnership — 2 posts due this month', 'DAZN: fight night promo shoot confirmed', 'New inquiry: sports nutrition brand — £45k/yr offer', 'Manager reviewing Under Armour camp partnership', 'Prize money media allocation: confirm with promoter'],
+    travel:       [`Fight venue: ${fighter.next_fight.venue}`, 'Camp departs: 14 days before fight — logistics in progress', 'Corner team flights: 4 booked, 1 pending (cutman)', 'Media day — arrivals press conference scheduled', `Broadcast: ${fighter.next_fight.broadcast}`],
     financial:    ['Purse (guaranteed): £380,000', 'PPV upside: estimated £120k–£280k additional', 'Camp costs this cycle: £42,800 — on budget', 'Agent commission: 15% of gross purse', 'Tax instalment due Jul — accountant briefed'],
-    mental:       ['Mindset: coach rates 9.1/10 this camp — best in career', 'Visualisation sessions: daily at 07:00 — 14 completed', 'Johnson mental game: known to intimidate pre-fight — stay composed', 'Cut stress protocol: start breathing practice at -10 lbs', 'Post-fight plan confirmed — reduces anxiety about outcome'],
-    default:      ['Fight Night in 21 days — Johnson (WBC #3)', 'Weight on track: 169.2 lbs — cut manageable', 'Purse bid deadline: 30 Apr — agent actioning', 'GPS load: ACWR 1.12 — optimal', 'Sparring: 8 rounds this week — good sessions'],
+    mental:       ['Mindset: coach rates 9.1/10 this camp — best in career', 'Visualisation sessions: daily at 07:00 — 14 completed', `${fighter.next_fight.opponent} mental game: known to intimidate pre-fight — stay composed`, 'Cut stress protocol: start breathing practice at final weight cut', 'Post-fight plan confirmed — reduces anxiety about outcome'],
+    default:      [`Fight Night in ${fighter.next_fight.days_away} days — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking})`, `Weight on track: ${fighter.current_weight}kg — cut manageable`, 'Purse bid deadline: 30 Apr — agent actioning', 'GPS load: ACWR 1.25 — manage carefully', 'Sparring: 8 rounds this week — good sessions'],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -368,14 +370,9 @@ function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
   const generateSummary = async () => {
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai/boxing', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
@@ -405,6 +402,14 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
     } catch { setSummary('Unable to generate summary.') }
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!hasGenerated.current) {
+      hasGenerated.current = true
+      generateSummary()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -461,7 +466,7 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CampDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingFighter; session: SportsDemoSession; onOpenModal?: (id: string) => void }) {
   const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   const firstName = session.userName?.split(' ')[0] || fighter.name?.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
@@ -486,18 +491,19 @@ function CampDashboardView({ fighter, session }: { fighter: BoxingFighter; sessi
       <div className="overflow-x-auto pb-2 -mx-1">
         <div className="flex gap-2 px-1 min-w-max">
           {[
-            { label: 'Log Sparring',      icon: '🥊' },
-            { label: 'Weight Check',       icon: '⚖️' },
-            { label: 'Camp Report',        icon: '📋' },
-            { label: 'Book Flight',        icon: '✈️' },
-            { label: 'Sponsor Post',       icon: '📱' },
-            { label: 'Medical Check',      icon: '🏥' },
-            { label: 'Purse Bid Alert',    icon: '🔔' },
-            { label: 'Press Statement',    icon: '🎤' },
-            { label: 'Add Expense',        icon: '💰' },
-            { label: 'Video Upload',       icon: '🎬' },
+            { label: 'Log Sparring',      icon: '🥊', modal: undefined },
+            { label: 'Weight Check',       icon: '⚖️', modal: 'weight' },
+            { label: 'Fight Prep AI',      icon: '🧠', modal: 'matchprep' },
+            { label: 'Book Flight',        icon: '✈️', modal: 'flights' },
+            { label: 'Sponsor Post',       icon: '📱', modal: 'sponsor' },
+            { label: 'Log Injury',         icon: '🏥', modal: 'injury' },
+            { label: 'Ranking Sim',        icon: '📊', modal: 'ranking' },
+            { label: 'Visa Check',         icon: '🌍', modal: 'visa' },
+            { label: 'Add Expense',        icon: '💰', modal: 'expense' },
+            { label: 'Video Upload',       icon: '🎬', modal: undefined },
           ].map((a, i) => (
             <button key={i}
+              onClick={() => a.modal && onOpenModal?.(a.modal)}
               className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-red-500/40 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
               <span>{a.icon}</span>{a.label}
             </button>
@@ -1358,7 +1364,7 @@ function CutPlannerView({ fighter, session }: { fighter: BoxingFighter; session:
     try {
       const recentLoad = GPS_SESSIONS.slice(-4).reduce((a,s)=>a+s.load,0)/4;
       const currentACWR = GPS_SESSIONS[GPS_SESSIONS.length-1].acwr;
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/boxing', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -3238,7 +3244,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
   const generateDebrief = async () => {
     setDebriefLoading(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/boxing', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           model:'claude-sonnet-4-20250514', max_tokens:600,
@@ -3558,7 +3564,7 @@ function AIMorningBriefingView({ fighter, session }: { fighter: BoxingFighter; s
     setLoading(true);
     try {
       const todayGPS = GPS_SESSIONS[GPS_SESSIONS.length - 1];
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/boxing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3668,7 +3674,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
   const generateScoutReport = async () => {
     setScoutLoading(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/boxing', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           model:'claude-sonnet-4-20250514', max_tokens:500,
@@ -3896,7 +3902,7 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
       const avgCentre = Math.round(ringData.reduce((a,s)=>a+s.ring.centre,0)/ringData.length);
       const avgRopes = Math.round(ringData.reduce((a,s)=>a+s.ring.ropes,0)/ringData.length);
       const avgCorners = Math.round(ringData.reduce((a,s)=>a+s.ring.corners,0)/ringData.length);
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/boxing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4608,6 +4614,594 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
   )
 }
 
+// ─── ROLE CONFIG ─────────────────────────────────────────────────────────────
+const BOXING_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
+  fighter: { label: 'Fighter', icon: '🥊', accent: '#dc2626', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
+  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','gpsvest','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
+  manager: { label: 'Manager', icon: '💼', accent: '#F59E0B', sidebar: ['camp','rankings','mandatory','pathtotitle','pursebid','pursesim','earnings','campcosts','tax','contracts','sponsorships','media','appearances','managerdash','agentintel','promoterpipeline'], hiddenTabs: ['dailytasks'], roundupChannels: ['manager','promoter','sponsor'], message: 'Fights, contracts and commercial view.' },
+  promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcast','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
+  sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['camp','sponsorships','media'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
+}
+
+// ─── MODAL HELPER COMPONENTS ──────────────────────────────────────────────────
+
+function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <div className="text-base font-bold text-white">{title}</div>
+          <div className="text-xs" style={{ color: '#6B7280' }}>{subtitle}</div>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+    </div>
+  )
+}
+
+function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
+  return (
+    <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={s}>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ backgroundColor: i < current ? '#22C55E' : i === current ? '#dc2626' : 'rgba(255,255,255,0.05)', color: i <= current ? '#fff' : '#4B5563' }}>
+              {i < current ? '✓' : i + 1}
+            </div>
+            <span className="text-xs font-semibold" style={{ color: i === current ? '#dc2626' : i < current ? '#22C55E' : '#4B5563' }}>{s}</span>
+          </div>
+          {i < steps.length - 1 && <div className="flex-1 h-px" style={{ backgroundColor: i < current ? '#22C55E' : '#1F2937' }} />}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
+// ─── MODAL COMPONENTS ─────────────────────────────────────────────────────────
+
+function BoxingFlightFinder({ onClose, session, fighter }: { onClose: () => void; session: SportsDemoSession; fighter: BoxingFighter }) {
+  const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
+  const [from, setFrom] = useState('London Heathrow (LHR)')
+  const [to, setTo] = useState('London City (LCY) — O2 Arena')
+  const [depart, setDepart] = useState('')
+  const [returnDate, setReturnDate] = useState('')
+  const [cabinClass, setCabinClass] = useState('Business')
+  const [passengers, setPassengers] = useState(4)
+  const [results, setResults] = useState<Array<{airline:string;flightNo:string;departs:string;arrives:string;duration:string;stops:string;price:number;currency:string;score:number;badge?:string}>>([])
+  const [selectedFlight, setSelectedFlight] = useState<typeof results[0] | null>(null)
+
+  const UPCOMING = [
+    { label: `vs ${fighter.next_fight.opponent} — ${fighter.next_fight.date}`, to: `${fighter.next_fight.venue.split(',')[1]?.trim() || 'London'}`, date: fighter.next_fight.date },
+    { label: 'WBC Convention — Jun 15', to: 'Cancun (CUN)', date: '2026-06-14' },
+    { label: 'Sparring Camp — Jul', to: 'Las Vegas (LAS)', date: '2026-07-01' },
+  ]
+
+  const FALLBACK_RESULTS = [
+    { airline:'British Airways', flightNo:'BA2760', departs:'07:20', arrives:'10:35', duration:'2h15m', stops:'Direct', price:312, currency:'GBP', score:96, badge:'Best value' },
+    { airline:'easyJet', flightNo:'EZY8832', departs:'06:05', arrives:'09:20', duration:'2h15m', stops:'Direct', price:187, currency:'GBP', score:88, badge:'Cheapest' },
+    { airline:'Virgin Atlantic', flightNo:'VS402', departs:'09:45', arrives:'13:10', duration:'3h25m', stops:'1 stop', price:298, currency:'GBP', score:82, badge:'Best schedule' },
+    { airline:'Ryanair', flightNo:'FR7803', departs:'11:30', arrives:'14:45', duration:'2h15m', stops:'Direct', price:124, currency:'GBP', score:75 },
+  ]
+
+  const searchFlights = async () => {
+    setStep('searching')
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Best schedule", or null. Realistic prices.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : FALLBACK_RESULTS)
+    } catch { setResults(FALLBACK_RESULTS) }
+    setStep('results')
+  }
+
+  return (
+    <>
+      <ModalHeader icon="✈️" title="Smart Flight Finder" subtitle="AI searches multiple airlines for the best deal" onClose={onClose} />
+      {step !== 'searching' && <StepIndicator steps={['Configure','Search','Results','Book']} current={['configure','searching','results','book'].indexOf(step)} />}
+      <div className="p-6">
+        {step === 'configure' && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider mb-2 block" style={{ color: '#6B7280' }}>Upcoming fights &amp; events</label>
+              <div className="flex flex-wrap gap-2">
+                {UPCOMING.map(t => (
+                  <button key={t.label} onClick={() => { setTo(t.to); setDepart(t.date) }}
+                    className="text-xs px-3 py-1.5 rounded-full transition-all"
+                    style={{ backgroundColor: to === t.to ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.05)', border: to === t.to ? '1px solid #dc2626' : '1px solid #1F2937', color: to === t.to ? '#dc2626' : '#9CA3AF' }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">From</label><input value={from} onChange={e => setFrom(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">To</label><input value={to} onChange={e => setTo(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Depart</label><input type="date" value={depart} onChange={e => setDepart(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Return</label><input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Cabin</label><select value={cabinClass} onChange={e => setCabinClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option></select></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Passengers (corner team)</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setPassengers(Math.max(1,passengers-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white w-4 text-center">{passengers}</span><button onClick={() => setPassengers(Math.min(10,passengers+1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
+            </div>
+            <div className="flex items-start gap-2 p-3 rounded-xl" style={{ backgroundColor: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
+              <span className="text-base flex-shrink-0">🤖</span>
+              <p className="text-xs" style={{ color: '#FCA5A5' }}>Lumio AI searches BA, easyJet, Ryanair, Virgin, Emirates and more — scoring on price, duration, and quality for the full corner team.</p>
+            </div>
+            <button onClick={searchFlights} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Search Flights →</button>
+          </div>
+        )}
+        {step === 'searching' && (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 animate-bounce">✈️</div>
+            <div className="text-base font-bold text-white mb-2">Searching all airlines...</div>
+            <div className="text-xs mb-6" style={{ color: '#6B7280' }}>Checking BA, easyJet, Ryanair, Virgin, Emirates + more</div>
+          </div>
+        )}
+        {step === 'results' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2"><div className="text-sm font-bold text-white">{results.length} flights found</div><div className="text-xs" style={{ color: '#6B7280' }}>{from} → {to} · {cabinClass} · {passengers} pax</div></div>
+            {results.map((f, i) => (
+              <div key={i} onClick={() => setSelectedFlight(f)} className="rounded-xl p-4 cursor-pointer transition-all"
+                style={{ backgroundColor: selectedFlight?.flightNo === f.flightNo ? 'rgba(220,38,38,0.1)' : '#111318', border: selectedFlight?.flightNo === f.flightNo ? '1px solid #dc2626' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{f.airline}</span>
+                      <span className="text-xs" style={{ color: '#4B5563' }}>{f.flightNo}</span>
+                      {f.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badge === 'Best value' ? '#dc2626' : f.badge === 'Cheapest' ? '#22C55E' : '#8B5CF6' }}>{f.badge}</span>}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{f.departs} → {f.arrives} · {f.duration} · {f.stops}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-white">{f.currency} {(f.price*passengers).toLocaleString()}</div>
+                    <div className="text-[10px]" style={{ color: '#22C55E' }}>Score: {f.score}/100</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setStep('configure')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Search again</button>
+              <button onClick={() => selectedFlight && setStep('book')} disabled={!selectedFlight} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: selectedFlight ? '#dc2626' : '#374151' }}>Book selected →</button>
+            </div>
+          </div>
+        )}
+        {step === 'book' && selectedFlight && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
+              <div className="text-sm font-bold text-white mb-2">Booking summary</div>
+              <div className="space-y-1 text-xs" style={{ color: '#9CA3AF' }}>
+                {[['Route',`${from} → ${to}`],['Flight',`${selectedFlight.airline} ${selectedFlight.flightNo}`],['Departs',`${depart} at ${selectedFlight.departs}`],['Class',cabinClass],['Passengers',String(passengers)],['Total',`${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}`]].map(([l,v]) => (
+                  <div key={l} className="flex justify-between"><span>{l}</span><span className="text-white">{v}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('results')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => { const s = encodeURIComponent(`Flight booking — ${from} to ${to}`); const b = encodeURIComponent(`Please book: ${selectedFlight.airline} ${selectedFlight.flightNo}, ${depart}, ${cabinClass}, ${passengers} pax, ${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}\n\nThanks, ${session.userName || 'Marcus'}`); window.open(`mailto:danny.walsh@manager.com?subject=${s}&body=${b}`) }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📧 Send to manager →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function BoxingMatchPrepAI({ onClose, session, fighter }: { onClose: () => void; session: SportsDemoSession; fighter: BoxingFighter }) {
+  const [opponent, setOpponent] = useState(fighter.next_fight.opponent)
+  const [venue, setVenue] = useState(fighter.next_fight.venue)
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are an elite boxing analyst. Generate a tactical fight prep brief for ${session.userName || fighter.name} "${fighter.nickname}" (${fighter.record.wins}-${fighter.record.losses}, ${fighter.record.ko} KO, ${fighter.stance}, WBC #${fighter.rankings.wbc}) vs ${opponent} (${fighter.next_fight.opponent_record}, ${fighter.next_fight.opponent_ranking}) at ${venue}. Cover: OPPONENT PROFILE, OFFENSIVE THREATS, DEFENSIVE WEAKNESSES, TACTICAL GAME PLAN (4-5 specific round-by-round strategies), CLINCH & INSIDE WORK, CONDITIONING TARGET, MENTAL EDGE. Use emoji headers. Max 400 words.` }]
+        })
+      })
+      const data = await res.json()
+      setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+    } catch { setBrief('Unable to generate brief.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🥊" title="Fight Prep AI" subtitle="AI tactical brief for your next opponent" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!brief ? (<>
+          <div className="grid grid-cols-1 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Venue</label><input value={venue} onChange={e => setVenue(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          </div>
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Generating...' : '🧠 Generate Fight Prep Brief →'}</button>
+        </>) : (<>
+          <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{brief}</div>
+          <div className="flex gap-3">
+            <button onClick={() => setBrief(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+            <button onClick={() => navigator.clipboard.writeText(brief)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy brief</button>
+          </div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function BoxingSponsorPost({ onClose, session, fighter }: { onClose: () => void; session: SportsDemoSession; fighter: BoxingFighter }) {
+  const [sponsor, setSponsor] = useState('Under Armour')
+  const [platform, setPlatform] = useState('Instagram')
+  const [context, setContext] = useState(`Camp day ${fighter.camp_day} — fight prep`)
+  const [tone, setTone] = useState('Professional')
+  const [loading, setLoading] = useState(false)
+  const [post, setPost] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || fighter.name} "${fighter.nickname}" (${fighter.weight_class} boxer, ${fighter.record.wins}-${fighter.record.losses}) featuring ${sponsor}. Context: ${context}. Next fight: vs ${fighter.next_fight.opponent} in ${fighter.next_fight.days_away} days. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
+      })
+      const data = await res.json()
+      setPost(data.content?.[0]?.text || 'Unable to generate.')
+    } catch { setPost('Unable to generate.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="📱" title="Sponsor Post Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!post ? (<>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Under Armour','DAZN','Everlast','Huel','Sky Sports','BoXer'].map(s => <option key={s}>{s}</option>)}</select></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Instagram','Twitter/X','Facebook','LinkedIn','TikTok'].map(p => <option key={p}>{p}</option>)}</select></div>
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Context</label><textarea value={context} onChange={e => setContext(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Tone</label><div className="flex flex-wrap gap-2">{['Professional','Casual','Motivational','Humorous','Grateful'].map(t => (<button key={t} onClick={() => setTone(t)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: tone===t?'rgba(220,38,38,0.2)':'rgba(255,255,255,0.05)', border: tone===t?'1px solid #dc2626':'1px solid #1F2937', color: tone===t?'#dc2626':'#9CA3AF' }}>{t}</button>))}</div></div>
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Writing...' : '✍️ Generate Post →'}</button>
+        </>) : (<>
+          <div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{post}</div>
+          <div className="flex gap-3"><button onClick={() => setPost(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button><button onClick={() => navigator.clipboard.writeText(post)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy post</button></div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function BoxingRankingSimulator({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+  return (
+    <>
+      <ModalHeader icon="📊" title="Ranking Simulator" subtitle="WBC/IBF what-if ranking calculator" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div><div className="text-2xl font-black" style={{ color: '#dc2626' }}>#{fighter.rankings.wbc}</div><div className="text-xs" style={{ color: '#6B7280' }}>WBC</div></div>
+            <div><div className="text-2xl font-black" style={{ color: '#EF4444' }}>#{fighter.rankings.wba}</div><div className="text-xs" style={{ color: '#6B7280' }}>WBA</div></div>
+            <div><div className="text-2xl font-black" style={{ color: '#F59E0B' }}>#{fighter.rankings.wbo}</div><div className="text-xs" style={{ color: '#6B7280' }}>WBO</div></div>
+            <div><div className="text-2xl font-black text-white">#{fighter.rankings.ibf}</div><div className="text-xs" style={{ color: '#6B7280' }}>IBF</div></div>
+          </div>
+        </div>
+        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">If you beat {fighter.next_fight.opponent} ({fighter.next_fight.opponent_ranking}):</div>
+        {[
+          { label:'🥊 KO/TKO Win', wcbDelta:-2, ibfDelta:-3, color:'#22C55E' },
+          { label:'📋 Unanimous Decision', wcbDelta:-1, ibfDelta:-2, color:'#0ea5e9' },
+          { label:'🤝 Split Decision', wcbDelta:-1, ibfDelta:-1, color:'#F59E0B' },
+          { label:'❌ Loss (any method)', wcbDelta:+2, ibfDelta:+1, color:'#EF4444' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div><div className="text-sm font-bold text-white">{s.label}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>vs {fighter.next_fight.opponent} at {fighter.next_fight.venue}</div></div>
+            <div className="text-right">
+              <div className="text-lg font-black" style={{ color: s.color }}>WBC #{Math.max(1,fighter.rankings.wbc+s.wcbDelta)}</div>
+              <div className="text-xs" style={{ color: s.color }}>IBF #{Math.max(1,fighter.rankings.ibf+s.ibfDelta)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function BoxingInjuryLogger({ onClose }: { onClose: () => void }) {
+  const [bodyPart, setBodyPart] = useState('')
+  const [severity, setSeverity] = useState<'mild'|'moderate'|'severe'>('mild')
+  const [notes, setNotes] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const PARTS = ['Right Hand','Left Hand','Right Shoulder','Left Shoulder','Ribs','Nose','Eye (cut)','Knee','Back','Ankle','Other']
+  return (<>
+    <ModalHeader icon="🏥" title="Log Injury" subtitle="Log and auto-notify your medical team" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Body part</label><div className="flex flex-wrap gap-2">{PARTS.map(p => (<button key={p} onClick={() => setBodyPart(p)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: bodyPart===p?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.05)', border: bodyPart===p?'1px solid #EF4444':'1px solid #1F2937', color: bodyPart===p?'#EF4444':'#9CA3AF' }}>{p}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Severity</label><div className="flex gap-2">{(['mild','moderate','severe'] as const).map(s => (<button key={s} onClick={() => setSeverity(s)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: severity===s?(s==='mild'?'#22C55E':s==='moderate'?'#F59E0B':'#EF4444'):'rgba(255,255,255,0.05)', color: severity===s?'#fff':'#9CA3AF' }}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="When did it happen? During sparring?" className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={() => setSubmitted(true)} disabled={!bodyPart} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: bodyPart?'#EF4444':'#374151' }}>Log Injury & Notify Team →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Injury logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>Dr. Sarah Mitchell and physio Liam Brennan notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function BoxingExpenseLogger({ onClose }: { onClose: () => void }) {
+  const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState('GBP')
+  const [category, setCategory] = useState('Travel')
+  const [description, setDescription] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const CATS = ['Travel','Hotel','Equipment','Sparring Partners','Medical','Nutrition','Camp Rent','Cornerman','Other']
+  return (<>
+    <ModalHeader icon="🧾" title="Log Camp Expense" subtitle="Quick expense logging" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 block">Amount</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Currency</label><select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['GBP','EUR','USD','AED'].map(c => <option key={c}>{c}</option>)}</select></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Category</label><div className="flex flex-wrap gap-2">{CATS.map(c => (<button key={c} onClick={() => setCategory(c)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: category===c?'rgba(220,38,38,0.2)':'rgba(255,255,255,0.05)', border: category===c?'1px solid #dc2626':'1px solid #1F2937', color: category===c?'#dc2626':'#9CA3AF' }}>{c}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Description</label><input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Sparring partner day rate — Darnell Hughes" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={() => setSubmitted(true)} disabled={!amount} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: amount?'#dc2626':'#374151' }}>Log Expense →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">{currency} {amount} logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{category} — forwarded to accountant.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function BoxingWeightCheck({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+  const [weight, setWeight] = useState('')
+  const [time, setTime] = useState<'morning'|'post-training'|'evening'>('morning')
+  const [submitted, setSubmitted] = useState(false)
+  return (<>
+    <ModalHeader icon="⚖️" title="Quick Weight Log" subtitle="Record weight and sync to tracker" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-xs" style={{ color: '#6B7280' }}>Current</div>
+          <div className="text-3xl font-black text-white">{fighter.current_weight}kg</div>
+          <div className="text-xs mt-1" style={{ color: '#6B7280' }}>Target: {fighter.target_weight}kg · {(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to go</div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-1 block">New weight (kg)</label><input type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder={String(fighter.current_weight)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white text-center text-2xl font-bold" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Time of weigh-in</label><div className="flex gap-2">{(['morning','post-training','evening'] as const).map(t => (<button key={t} onClick={() => setTime(t)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: time===t?'rgba(220,38,38,0.2)':'rgba(255,255,255,0.05)', border: time===t?'1px solid #dc2626':'1px solid #1F2937', color: time===t?'#dc2626':'#9CA3AF' }}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>))}</div></div>
+        <button onClick={() => setSubmitted(true)} disabled={!weight} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: weight?'#dc2626':'#374151' }}>Log Weight →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">⚖️</div><div className="text-base font-bold text-white mb-2">{weight}kg logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{time} weigh-in · Synced to weight tracker · Nutritionist notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function BoxingVisaCheck({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+  const venueCountry = fighter.next_fight.venue.split(',').pop()?.trim() || 'UK'
+  const UPCOMING = [
+    { event:`vs ${fighter.next_fight.opponent}`, country: venueCountry, flag:'🇬🇧', date: fighter.next_fight.date, visa:'✅ Home nation', detail:'No requirements' },
+    { event:'WBC Convention', country:'Mexico', flag:'🇲🇽', date:'Jun 2026', visa:'✅ No visa required', detail:'Tourist visa waiver for UK citizens' },
+    { event:'Potential fight — Las Vegas', country:'USA', flag:'🇺🇸', date:'Sep 2026', visa:'⚠️ P-1 Visa required', detail:'Athlete visa — apply 60 days in advance. Manager to action.' },
+    { event:'Training camp — Dubai', country:'UAE', flag:'🇦🇪', date:'Oct 2026', visa:'✅ Visa on arrival', detail:'30-day tourist visa for UK citizens' },
+  ]
+  return (<>
+    <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for upcoming fight locations" onClose={onClose} />
+    <div className="p-6 space-y-3">
+      {UPCOMING.map(t => (
+        <div key={t.event} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${t.visa.includes('⚠️')?'rgba(245,158,11,0.3)':'#1F2937'}` }}>
+          <div className="flex items-start justify-between"><div className="flex items-center gap-3"><span className="text-2xl">{t.flag}</span><div><div className="text-sm font-bold text-white">{t.event}</div><div className="text-xs" style={{ color: '#6B7280' }}>{t.country} · {t.date}</div></div></div><div className="text-xs font-bold">{t.visa}</div></div>
+          <div className="text-xs mt-2" style={{ color: '#6B7280' }}>{t.detail}</div>
+        </div>
+      ))}
+    </div>
+  </>)
+}
+
+// ─── SPONSOR DASHBOARD ────────────────────────────────────────────────────────
+
+function BoxingSponsorDashboard({ session, fighter }: { session: SportsDemoSession; fighter: BoxingFighter }) {
+  const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const sponsorName = session.clubName || 'Under Armour'
+  const sponsorColor = '#D4AF37'
+  const sponsorLogo = session.logoDataUrl
+
+  const OBLIGATIONS = [
+    { id:'o1', title:'Instagram post — camp kit photo', due:'Today', status:'pending', platform:'Instagram', reach:'180k' },
+    { id:'o2', title:'DAZN promo shoot — confirm logistics', due:'Today', status:'pending', platform:'Multi', reach:'2.4M' },
+    { id:'o3', title:'Pre-fight press conference — wear sponsor kit', due:`${fighter.next_fight.days_away - 2}d`, status:'scheduled', platform:'TV/Press', reach:'3.2M' },
+    { id:'o4', title:'Fight night walkout — branded robe', due:`${fighter.next_fight.days_away}d`, status:'upcoming', platform:'PPV', reach:'4.8M' },
+    { id:'o5', title:'Post-fight interview — branded cap', due:`${fighter.next_fight.days_away}d`, status:'upcoming', platform:'TV/Social', reach:'6.1M' },
+    { id:'o6', title:'Victory celebration social post', due:`${fighter.next_fight.days_away + 1}d`, status:'upcoming', platform:'Instagram', reach:'280k' },
+  ]
+
+  const CONTENT = [
+    { title:'Camp training montage — Under Armour kit', date:'2 Apr', type:'Video', platform:'Instagram', likes:'12.4k', reach:'340k' },
+    { title:'Weigh-in countdown — DAZN promo', date:'28 Mar', type:'Story', platform:'Instagram', likes:'8.1k', reach:'210k' },
+    { title:'Sparring highlight reel', date:'25 Mar', type:'Video', platform:'TikTok', likes:'24.7k', reach:'680k' },
+  ]
+
+  const EVENTS = [
+    { event:`vs ${fighter.next_fight.opponent} — ${fighter.next_fight.venue}`, date:fighter.next_fight.date, venue:fighter.next_fight.venue, broadcast:`${fighter.next_fight.broadcast}`, exposure:'Est. 4.8M PPV buys' },
+    { event:'Weigh-in — Press Conference', date:`${fighter.next_fight.days_away - 1}d`, venue:fighter.next_fight.venue, broadcast:'DAZN, Sky Sports News', exposure:'Est. 1.2M viewers' },
+    { event:'Pre-fight press tour', date:`${fighter.next_fight.days_away - 7}d`, venue:'Multiple cities', broadcast:'Social / YouTube', exposure:'Est. 2.1M impressions' },
+    { event:'Post-fight media obligations', date:`${fighter.next_fight.days_away + 1}d`, venue:fighter.next_fight.venue, broadcast:'DAZN, BBC', exposure:'Est. 3.5M viewers' },
+  ]
+
+  return (
+    <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Hero banner */}
+      <div className="relative px-8 py-6" style={{ background: `linear-gradient(135deg, ${sponsorColor}25 0%, rgba(0,0,0,0.8) 60%, #0d1117 100%)`, borderBottom: `1px solid ${sponsorColor}30` }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
+              {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
+              <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
+              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || fighter.name} &quot;{fighter.nickname}&quot; · WBC #{fighter.rankings.wbc}</div>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            {[{ label:'Obligations', value:'6 total', sub:'2 due today', color:'#EF4444' }, { label:'PPV exposure', value:'4.8M', sub:'fight night est.', color:sponsorColor }, { label:'Deal value', value:'£180k/yr', sub:'renewal 90d', color:'#22C55E' }, { label:'WBC ranking', value:`#${fighter.rankings.wbc}`, sub:'current', color:'#dc2626' }].map((s,i) => (
+              <div key={i} className="text-center px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px] text-white font-semibold">{s.label}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+        {([{ id:'overview' as const, label:'Overview', icon:'🏠' }, { id:'obligations' as const, label:'Obligations', icon:'📋' }, { id:'content' as const, label:'Content', icon:'📸' }, { id:'events' as const, label:'Events', icon:'🥊' }, { id:'roi' as const, label:'ROI & Reach', icon:'📊' }]).map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#F1C40F' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {OBLIGATIONS.filter(o => o.status === 'pending').length > 0 && (
+              <div className="rounded-xl p-5" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <div className="flex items-center gap-2 mb-3"><span>🔴</span><span className="text-sm font-bold text-white">{OBLIGATIONS.filter(o => o.status === 'pending').length} obligations due today</span></div>
+                {OBLIGATIONS.filter(o => o.status === 'pending').map(o => (
+                  <div key={o.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+                    <div><div className="text-sm text-white">{o.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{o.platform} · Est. reach {o.reach}</div></div>
+                    <span className="text-xs px-2 py-1 rounded font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>Due {o.due}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility — next fight</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{fighter.name} vs {fighter.next_fight.opponent} at {fighter.next_fight.venue} — {fighter.next_fight.broadcast}</p></div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[{ label:'Expected PPV viewers', value:'4.8M', icon:'📺', color:sponsorColor }, { label:'Social following', value:'1.2M', icon:'📱', color:'#dc2626' }, { label:'Press accredited', value:'200+', icon:'📰', color:'#8B5CF6' }].map((s,i) => (
+                  <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}><div className="text-2xl mb-1">{s.icon}</div><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Season obligations</p>
+                <div className="flex items-center gap-3 mb-2"><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width:'0%', backgroundColor: sponsorColor }} /></div><span className="text-xs font-bold" style={{ color: sponsorColor }}>0/{OBLIGATIONS.length}</span></div>
+                <div className="space-y-1 text-xs">
+                  {[['Pending',OBLIGATIONS.filter(o=>o.status==='pending').length,'#EF4444'],['Scheduled',OBLIGATIONS.filter(o=>o.status==='scheduled').length,'#0ea5e9'],['Upcoming',OBLIGATIONS.filter(o=>o.status==='upcoming').length,'#6B7280']].map(([l,v,c]) => (
+                    <div key={l as string} className="flex justify-between" style={{ color: '#6B7280' }}><span>{l as string}</span><span style={{ color: c as string }}>{v as number}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Deal summary</p>
+                {[['Partner since','January 2025'],['Deal value','£180,000/yr'],['Renewal date','July 2026 (90d)'],['Obligations','6 activations / fight cycle'],['Events','Walkout + press conference']].map(([l,v]) => (
+                  <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #1F2937' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-bold text-white">{v}</span></div>
+                ))}
+                <div className="mt-3 pt-2"><button className="w-full py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: sponsorColor }}>Discuss renewal →</button></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OBLIGATIONS */}
+        {activeTab === 'obligations' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Obligations</h2>
+            {OBLIGATIONS.map(o => (
+              <div key={o.id} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: `1px solid ${o.status==='pending'?'rgba(239,68,68,0.3)':'#1F2937'}` }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1"><span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: o.status==='pending'?'rgba(239,68,68,0.15)':o.status==='scheduled'?'rgba(14,165,233,0.15)':'rgba(107,114,128,0.15)', color: o.status==='pending'?'#EF4444':o.status==='scheduled'?'#0ea5e9':'#6B7280' }}>{o.status==='pending'?'⏰ Due today':o.status==='scheduled'?'📅 Scheduled':'⏳ Upcoming'}</span><span className="text-xs" style={{ color: '#6B7280' }}>{o.platform}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{o.title}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>Due: {o.due} · Est. reach: {o.reach}</div>
+                  </div>
+                  {o.status === 'pending' && <button className="text-xs px-3 py-1.5 rounded-lg font-bold text-white flex-shrink-0" style={{ backgroundColor: '#EF4444' }}>Chase fighter →</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        {activeTab === 'content' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Gallery</h2>
+            {CONTENT.map((c,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${sponsorColor}15`, border: `1px solid ${sponsorColor}30` }}>{c.type==='Photo'?'📸':c.type==='Story'?'📱':'🎬'}</div>
+                    <div><div className="text-sm font-bold text-white">{c.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{c.platform} · {c.date} · {c.type}</div></div>
+                  </div>
+                  <div className="text-right"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{c.reach} reach</div><div className="text-xs" style={{ color: '#6B7280' }}>{c.likes} likes</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EVENTS */}
+        {activeTab === 'events' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Fight Calendar &amp; Exposure</h2>
+            {EVENTS.map((e,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">{i===0 && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#EF4444' }}>NEXT FIGHT</span>}<span className="text-xs" style={{ color: '#6B7280' }}>{e.date}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{e.event}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>📍 {e.venue}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6B7280' }}>📺 {e.broadcast}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{e.exposure}</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ROI */}
+        {activeTab === 'roi' && (
+          <div className="space-y-5 max-w-3xl">
+            <h2 className="text-xl font-black text-white">ROI &amp; Reach</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[{ label:'Total reach YTD', value:'18.4M', color:sponsorColor }, { label:'PPV impressions', value:'4.8M', color:'#dc2626' }, { label:'Social engagements', value:'342k', color:'#22C55E' }, { label:'Press mentions', value:'87', color:'#8B5CF6' }].map((s,i) => (
+                <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold text-white mb-4">Estimated brand value breakdown</p>
+              {[{ label:'PPV / broadcast exposure', value:'£120,000', pct:67, color:sponsorColor }, { label:'Walkout robe & kit', value:'£28,000', pct:16, color:'#dc2626' }, { label:'Social media reach', value:'£18,000', pct:10, color:'#0ea5e9' }, { label:'Press conference branding', value:'£14,000', pct:7, color:'#8B5CF6' }].map((r,i) => (
+                <div key={i} className="mb-4"><div className="flex justify-between mb-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{r.label}</span><span className="text-xs font-bold" style={{ color: r.color }}>{r.value}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.color }} /></div></div>
+              ))}
+              <div className="flex justify-between pt-3 mt-2" style={{ borderTop: '1px solid #1F2937' }}><span className="text-sm font-bold text-white">Total estimated value</span><span className="text-sm font-black" style={{ color: sponsorColor }}>£180,000</span></div>
+            </div>
+            <div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${sponsorColor}20, rgba(0,0,0,0.4))`, border: `1px solid ${sponsorColor}40` }}>
+              <div className="text-2xl mb-2">🤝</div>
+              <div className="text-base font-bold text-white mb-1">Renewal in 90 days</div>
+              <div className="text-xs mb-4" style={{ color: '#6B7280' }}>Current deal expires July 2026. ROI tracking positively.</div>
+              <button className="px-8 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: sponsorColor }}>Start renewal discussion →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function BoxingPortalPage() {
@@ -4628,10 +5222,31 @@ export default function BoxingPortalPage() {
 
 function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   const fighter = DEMO_FIGHTER;
+
+  // Sidebar pin
+  const [sidebarPinned, setSidebarPinned] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sidebarExpanded = sidebarPinned || sidebarHovered
+  useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_sidebar_pinned') === 'true') }, [])
+  const togglePin = () => setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_boxing_sidebar_pinned', String(next)); return next })
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
+
+  // Modal state
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const closeModal = () => setActiveModal(null)
+
+  // Role config
+  const [roleOverride, setRoleOverride] = useState(session.role || 'fighter')
+  const currentRole = (roleOverride || 'fighter') as keyof typeof BOXING_ROLE_CONFIG
+  const roleConfig = BOXING_ROLE_CONFIG[currentRole] ?? BOXING_ROLE_CONFIG.fighter
+  const isFighter = currentRole === 'fighter'
+  const isSponsor = currentRole === 'sponsor'
+  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -4649,7 +5264,7 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'camp':             return <CampDashboardView fighter={fighter} session={session} />;
+      case 'camp':             return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;
       case 'training':        return <TrainingLogView fighter={fighter} session={session} />;
       case 'sparring':        return <SparringPlannerView fighter={fighter} session={session} />;
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
@@ -4685,7 +5300,7 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
       case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
       case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
-      default:                return <CampDashboardView fighter={fighter} session={session} />;
+      default:                return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;
     }
   };
 
@@ -4703,66 +5318,71 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         </div>
       )}
       {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`}
-        style={{ background: '#0a0c14' }}>
+      <aside
+        className="hidden md:flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: '#0a0c14',
+          borderRight: '1px solid #1F2937',
+          transition: 'width 250ms ease',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          zIndex: 40,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+
         {/* Sidebar Header */}
-        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                LUMIO FIGHT
-              </div>
-              <div className="text-[10px] text-gray-600">Boxing</div>
-            </div>
+        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
+            {session.logoDataUrl
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                  🥊
+                </div>
+            }
+            {sidebarExpanded && (
+              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Lumio Fight
+              </span>
+            )}
+          </div>
+          {sidebarExpanded && (
+            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#dc2626' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
           )}
-          {sidebarCollapsed && <span className="text-lg mx-auto">🥊</span>}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600 hover:text-gray-400 text-xs ml-auto flex-shrink-0">
-            {sidebarCollapsed ? '>' : '<'}
-          </button>
         </div>
 
-        {/* Fighter Mini Card */}
-        {!sidebarCollapsed && (
-          <div className="p-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              {session.logoDataUrl ? (
-                <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-red-500/40" />
-              ) : (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-red-500/40"
-                  style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(234,88,12,0.3))' }}>
-                  {fighter.flag}
-                </div>
-              )}
-              <div>
-                <div className="text-xs font-semibold text-white">{session.clubName || fighter.name}</div>
-                <div className="text-[10px] text-gray-500">{fighter.record.wins}-{fighter.record.losses} ({fighter.record.ko} KO) . {fighter.nationality}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2 px-2">
+        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
-            const items = SIDEBAR_ITEMS.filter(i => i.group === group);
+            const items = visibleSidebarItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
             return (
               <div key={group} className="mb-3">
-                {!sidebarCollapsed && (
+                {sidebarExpanded && (
                   <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
                 )}
                 {items.map(item => (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg mb-0.5 transition-all text-left ${
-                      activeSection === item.id
-                        ? 'bg-red-600/20 text-red-300 border border-red-600/30'
-                        : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
-                    }`}
-                    title={sidebarCollapsed ? item.label : undefined}
+                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    style={{
+                      backgroundColor: activeSection === item.id ? 'rgba(220,38,38,0.12)' : 'transparent',
+                      color: activeSection === item.id ? '#FCA5A5' : '#6B7280',
+                      borderLeft: activeSection === item.id ? '2px solid #dc2626' : '2px solid transparent',
+                      paddingLeft: sidebarExpanded ? 10 : 0,
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    }}
+                    title={sidebarExpanded ? undefined : item.label}
                   >
                     <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
               </div>
@@ -4775,41 +5395,51 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
           session={session}
           roles={BOXING_ROLES}
           accentColor="#dc2626"
-          onRoleChange={() => {}}
-          sidebarCollapsed={sidebarCollapsed}
+          onRoleChange={(role) => {
+            setRoleOverride(role)
+            const key = 'lumio_boxing_demo_session'
+            const stored = localStorage.getItem(key)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+            }
+          }}
+          sidebarCollapsed={!sidebarExpanded}
         />
 
         {/* Sidebar Footer */}
-        {!sidebarCollapsed && (
+        {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-red-400 font-semibold mt-0.5">Elite . GBP 499/mo</div>
           </div>
         )}
-      </div>
+      </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar */}
-        <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between"
-          style={{ background: '#0a0c14' }}>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-500 font-medium capitalize">
-              {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon} {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.label}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-600">Camp Day {fighter.camp_day}/{fighter.camp_total} . {fighter.next_fight.days_away}d to fight</div>
-            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            <div className="text-xs text-gray-500">vs {fighter.next_fight.opponent}</div>
-            {session.photoDataUrl && (
-              <img src={session.photoDataUrl} alt="" className="w-6 h-6 rounded-full object-cover border border-red-500/40" />
-            )}
-            <span className="text-[10px] text-gray-600">Demo</span>
-          </div>
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+          style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+            To see your own data — sign up for 3 months free →
+          </a>
         </div>
-
+        {!isFighter && !isSponsor && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
+            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <div className="flex items-center gap-2">
+              <span>{roleConfig.icon}</span>
+              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong>{roleConfig.message ? ` — ${roleConfig.message}` : ''}</span>
+            </div>
+            <span style={{ color: `${roleConfig.accent}80` }}>Fighter controls full access →</span>
+          </div>
+        )}
         {/* Content + Card Row */}
+        {isSponsor ? (
+          <BoxingSponsorDashboard session={session} fighter={fighter} />
+        ) : (
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">
@@ -4854,7 +5484,26 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
             </div>
           </div>
         </div>
+        )}
+
       </div>
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+            style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            {activeModal === 'flights' && <BoxingFlightFinder onClose={closeModal} session={session} fighter={fighter} />}
+            {activeModal === 'matchprep' && <BoxingMatchPrepAI onClose={closeModal} session={session} fighter={fighter} />}
+            {activeModal === 'sponsor' && <BoxingSponsorPost onClose={closeModal} session={session} fighter={fighter} />}
+            {activeModal === 'ranking' && <BoxingRankingSimulator onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'injury' && <BoxingInjuryLogger onClose={closeModal} />}
+            {activeModal === 'expense' && <BoxingExpenseLogger onClose={closeModal} />}
+            {activeModal === 'weight' && <BoxingWeightCheck onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'visa' && <BoxingVisaCheck onClose={closeModal} fighter={fighter} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

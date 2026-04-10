@@ -514,7 +514,10 @@ function SeasonIntelligenceStrip() {
 }
 
 function DashboardView({ player, session, setActiveSection, setActiveModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; setActiveModal?: (m: string) => void }) {
-  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>('today');
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  });
+  const [tourStep, setTourStep] = useState(0);
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
@@ -573,19 +576,6 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions Bar */}
-      <div className="flex items-center gap-3 border-b border-gray-800/50 bg-[#0a0c14] -mx-6 -mt-6 px-6">
-        <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Quick Actions</span>
-        <div className="flex items-center gap-2 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {quickActions.map((a, i) => (
-            <button key={i} onClick={() => a.modal && setActiveModal ? setActiveModal(a.modal) : setActiveSection(a.target)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 text-gray-50" style={{ background: '#15803D' }}>
-              <span>{a.icon}</span>{a.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Greeting Banner */}
       <div className="bg-gradient-to-r from-[#15803D]/20 to-teal-900/20 border border-[#15803D]/30 rounded-xl p-5">
         <div className="flex items-center justify-between">
@@ -4165,9 +4155,12 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   // Sidebar pin state
   const [sidebarPinned, setSidebarPinned] = useState(false)
   const [sidebarHovered, setSidebarHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sidebarExpanded = sidebarPinned || sidebarHovered
   useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_golf_sidebar_pinned') === 'true') }, [])
-  const togglePin = () => setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_golf_sidebar_pinned', String(next)); return next })
+  function togglePin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_golf_sidebar_pinned', String(next)); return next }) }
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
 
   // Modal state
   const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -4332,43 +4325,53 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
         </div>
       )}
 
-      {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`} style={{ background: '#0a0c14', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
-        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ background: 'linear-gradient(90deg, #16a34a, #0D9488)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>LUMIO TOUR</div>
-              <div className="text-[10px] text-gray-600">⛳ Golf</div>
-            </div>
-          )}
-          {sidebarCollapsed && <span className="text-lg mx-auto">⛳</span>}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600 hover:text-gray-400 text-xs ml-auto flex-shrink-0">{sidebarCollapsed ? '→' : '←'}</button>
-        </div>
-        {!sidebarCollapsed && (
-          <div className="p-3 border-b border-gray-800">
-            <button
-              onClick={() => setActiveSection('owgr')}
-              className="w-full text-left hover:bg-gray-800/50 rounded-lg p-1 -m-1 transition-all cursor-pointer flex items-center gap-2"
-              title="Go to OWGR & Race to Dubai"
-            >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border border-green-500/40" style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.3), rgba(13,148,136,0.3))' }}>{player.flag}</div>
-              <div><div className="text-xs font-semibold text-white">{player.name}</div><div className="text-[10px] text-gray-500">#{player.owgr} OWGR · {player.nationality}</div></div>
-            </button>
+      {/* Sidebar — floating when unpinned, pushes content when pinned */}
+      <aside
+        className="hidden md:flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: '#0a0c14',
+          borderRight: '1px solid #1F2937',
+          transition: 'width 250ms ease',
+          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
+            {session.logoDataUrl
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(21,128,61,0.15)', border: '1px solid rgba(21,128,61,0.3)' }}>⛳</div>
+            }
+            {sidebarExpanded && <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>Lumio Golf</span>}
           </div>
-        )}
-        <nav className="flex-1 overflow-y-auto py-2 px-2">
+          {sidebarExpanded && (
+            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#15803D' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
+          )}
+        </div>
+        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
               <div key={group} className="mb-3">
-                {!sidebarCollapsed && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
+                {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
                 {items.map(item => (
-                  <button key={item.id} onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg mb-0.5 transition-all text-left ${activeSection === item.id ? 'bg-green-600/20 text-green-300 border border-green-600/30' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}`}
-                    title={sidebarCollapsed ? item.label : undefined}>
+                  <button key={item.id}
+                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    style={{
+                      backgroundColor: activeSection === item.id ? 'rgba(21,128,61,0.12)' : 'transparent',
+                      color: activeSection === item.id ? '#86efac' : '#6B7280',
+                      borderLeft: activeSection === item.id ? '2px solid #15803D' : '2px solid transparent',
+                      paddingLeft: sidebarExpanded ? 10 : 0,
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    }}
+                    title={sidebarExpanded ? undefined : item.label}>
                     <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
               </div>
@@ -4382,24 +4385,23 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           onRoleChange={(role) => {
             const key = 'lumio_golf_demo_session'
             const stored = localStorage.getItem(key)
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
-            }
+            if (stored) { const parsed = JSON.parse(stored); localStorage.setItem(key, JSON.stringify({ ...parsed, role })) }
           }}
-          sidebarCollapsed={sidebarCollapsed}
+          sidebarCollapsed={!sidebarExpanded}
         />
-
-        {!sidebarCollapsed && (
+        {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-green-400 font-semibold mt-0.5">Pro+ · £349/mo</div>
           </div>
         )}
-      </div>
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
+          {sidebarExpanded ? <span className="text-xs font-bold tracking-widest" style={{ color: '#4B5563' }}>LUMIO GOLF</span> : <span className="text-lg">⛳</span>}
+        </div>
+      </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
         {/* Top bar */}
         <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0a0c14' }}>
           <div className="text-xs text-gray-500 font-medium capitalize">
