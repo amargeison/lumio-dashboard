@@ -315,6 +315,8 @@ export default function SportsDemoGate({
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [selectedRole, setSelectedRole] = useState(roles[0]?.id ?? '')
+  const [userName, setUserName] = useState('')
+  const [clubName, setClubName] = useState(defaultClubName)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -366,8 +368,8 @@ export default function SportsDemoGate({
   }
 
   const finaliseSession = () => {
-    const resolvedUserName = userNameRef.current?.value?.trim() || 'Demo User'
-    const resolvedClubName = clubNameRef.current?.value?.trim() || defaultClubName
+    const resolvedUserName = userName.trim() || userNameRef.current?.value?.trim() || ''
+    const resolvedClubName = clubName.trim() || clubNameRef.current?.value?.trim() || defaultClubName
     console.log('finaliseSession called', { email, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, logoDataUrl })
 
     const newSession: SportsDemoSession = {
@@ -481,7 +483,10 @@ export default function SportsDemoGate({
         selectedRole={selectedRole}
         setSelectedRole={setSelectedRole}
         accentColor={accentColor}
-        onContinue={() => setStep('profile')}
+        onContinue={() => {
+          setClubName(clubNameRef.current?.value?.trim() || defaultClubName)
+          setStep('profile')
+        }}
       />
     </Overlay>
   )
@@ -499,9 +504,15 @@ export default function SportsDemoGate({
         sportLabel={sportLabel}
         roles={roles}
         selectedRole={selectedRole}
-        defaultUserName={userNameRef.current?.value ?? ''}
-        onContinue={() => setStep('earlyaccess')}
-        onSkip={() => setStep('earlyaccess')}
+        defaultUserName={userName}
+        onContinue={() => {
+          setUserName(userNameRef.current?.value?.trim() || '')
+          setStep('earlyaccess')
+        }}
+        onSkip={() => {
+          setUserName(userNameRef.current?.value?.trim() || '')
+          setStep('earlyaccess')
+        }}
       />
     </Overlay>
   )
@@ -512,7 +523,7 @@ export default function SportsDemoGate({
       <EarlyAccessStep
         accentColor={accentColor}
         email={email}
-        clubName={clubNameRef.current?.value?.trim() || defaultClubName}
+        clubName={clubName}
         sport={sport}
         onApply={() => setStep('invite')}
         onContinue={() => setStep('invite')}

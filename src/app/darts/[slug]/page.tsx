@@ -59,6 +59,8 @@ const SIDEBAR_ITEMS = [
   { id: 'mental',          label: 'Mental Performance', icon: '🧠', group: 'TEAM'         },
   { id: 'walk-on-music',   label: 'Walk-on Music',      icon: '🎤', group: 'TEAM'         },
   { id: 'nutrition-log',   label: 'Nutrition',          icon: '🥗', group: 'TEAM'         },
+  { id: 'team-comms',     label: 'Team Comms',         icon: '💬', group: 'TEAM'         },
+  { id: 'fan-engagement', label: 'Fan Engagement',     icon: '💜', group: 'TEAM'         },
   { id: 'sponsorship',     label: 'Sponsorship',        icon: '🤝', group: 'COMMERCIAL'   },
   { id: 'exhibitions',     label: 'Exhibitions',        icon: '🎪', group: 'COMMERCIAL'   },
   { id: 'media',           label: 'Media & Content',    icon: '📱', group: 'COMMERCIAL'   },
