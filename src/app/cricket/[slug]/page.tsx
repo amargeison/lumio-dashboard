@@ -4451,7 +4451,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
   };
 
   return(
-    <div style={{display:'flex',minHeight:'100vh',background:C.bg,fontFamily:'"DM Sans","Inter",system-ui,sans-serif',color:C.text}}>
+    <div style={{display:'flex',minHeight:'100vh',background:C.bg,color:C.text}}>
       {/* Sidebar — floating when unpinned */}
       <aside
         className="hidden md:flex flex-col overflow-hidden"

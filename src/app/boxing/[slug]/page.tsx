@@ -164,7 +164,7 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
   <div className="mb-6">
     <div className="flex items-center gap-2">
       {icon && <span className="text-xl">{icon}</span>}
-      <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
+      <h2 className="text-xl font-bold text-white" style={{  }}>{title}</h2>
     </div>
     {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
   </div>
@@ -6184,7 +6184,7 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
       {toast && !toastDismissed && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
           <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>

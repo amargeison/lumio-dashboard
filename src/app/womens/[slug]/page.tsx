@@ -4409,7 +4409,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   ]
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">

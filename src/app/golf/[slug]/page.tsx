@@ -124,7 +124,7 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
   <div className="mb-6">
     <div className="flex items-center gap-2">
       {icon && <span className="text-xl">{icon}</span>}
-      <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
+      <h2 className="text-xl font-bold text-white" style={{  }}>{title}</h2>
     </div>
     {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
   </div>
@@ -5339,14 +5339,14 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   // Render sponsor dashboard if sponsor role
   if (isSponsor) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+      <div className="min-h-screen flex flex-col" style={{ background: '#07080F', color: '#F9FAFB' }}>
         <GolfSponsorDashboard session={session} player={player} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
       {/* Modal overlay */}
       {activeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeModal}>

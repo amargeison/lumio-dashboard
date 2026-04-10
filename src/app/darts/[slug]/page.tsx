@@ -125,7 +125,7 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
   <div className="mb-6">
     <div className="flex items-center gap-2">
       {icon && <span className="text-xl">{icon}</span>}
-      <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
+      <h2 className="text-xl font-bold text-white" style={{  }}>{title}</h2>
     </div>
     {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
   </div>
@@ -7294,7 +7294,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
       {/* Sidebar — floating when unpinned, pushes content when pinned */}
       {/* sidebar spacer removed — main content uses marginLeft */}
       <aside
