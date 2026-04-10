@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -845,7 +845,7 @@ const IncomeExpenseChart = () => {
 };
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
-function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void }) {
+function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate, activeModal, onOpenModal, onCloseModal }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void; activeModal: string | null; onOpenModal: (id: string) => void; onCloseModal: () => void }) {
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
@@ -1171,31 +1171,42 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* ── TODAY TAB ── */}
       {dashTab === 'today' && (
         <div className="pt-4 space-y-6">
-          {/* Quick Actions Bar */}
-          <div className="overflow-x-auto pb-2 -mx-1">
-            <div className="flex gap-2 px-1 min-w-max">
-              {[
-                { label:'Book Flight',       icon:'✈️' },
-                { label:'Log Practice',      icon:'🎾' },
-                { label:'Book Stringing',    icon:'🔧' },
-                { label:'Log Injury',        icon:'⚕️' },
-                { label:'View Draw',         icon:'🏆' },
-                { label:'Match Notes',       icon:'📝' },
-                { label:'Wildcard Request',  icon:'🎯' },
-                { label:'Sponsor Post',      icon:'📱' },
-                { label:'Press Statement',   icon:'📣' },
-                { label:'Add Expense',       icon:'💰' },
-                { label:'Flight Search',     icon:'🔍' },
-                { label:'Video Upload',      icon:'🎬' },
-              ].map((a, i) => (
-                <button key={i}
-                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs transition-all whitespace-nowrap"
-                  style={{ background: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(14,165,233,0.4)'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
-                  <span>{a.icon}</span>{a.label}
-                </button>
-              ))}
+          {/* Quick Actions */}
+          <div className="mb-4">
+            <div className="text-xs font-bold uppercase tracking-wider mb-2 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+            <div className="overflow-x-auto pb-2 -mx-1">
+              <div className="flex gap-2 px-1 min-w-max">
+                {[
+                  { id:'flights',    label:'Smart Flights',      icon:'✈️', color:'#0ea5e9', hot:true  },
+                  { id:'hotel',      label:'Find Hotel',         icon:'🏨', color:'#0ea5e9', hot:false },
+                  { id:'matchprep',  label:'Match Prep AI',      icon:'🎾', color:'#22C55E', hot:true  },
+                  { id:'sponsor',    label:'Sponsor Post',       icon:'📱', color:'#F59E0B', hot:false },
+                  { id:'press',      label:'Press Statement',    icon:'📣', color:'#8B5CF6', hot:false },
+                  { id:'ranking',    label:'Ranking Simulator',  icon:'📊', color:'#0ea5e9', hot:false },
+                  { id:'entries',    label:'Entry Manager',      icon:'🏆', color:'#F59E0B', hot:false },
+                  { id:'injury',     label:'Log Injury',         icon:'💊', color:'#EF4444', hot:false },
+                  { id:'expense',    label:'Log Expense',        icon:'🧾', color:'#6B7280', hot:false },
+                  { id:'strings',    label:'String Order',       icon:'🎵', color:'#10B981', hot:false },
+                  { id:'visa',       label:'Visa Check',         icon:'🌍', color:'#6B7280', hot:false },
+                  { id:'notes',      label:'Match Notes',        icon:'📝', color:'#6B7280', hot:false },
+                ].map((a) => (
+                  <button key={a.id}
+                    onClick={() => onOpenModal(a.id)}
+                    className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+                    style={{
+                      background: a.hot ? `${a.color}18` : '#111318',
+                      border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
+                      color: a.hot ? a.color : '#9CA3AF',
+                    }}>
+                    <span>{a.icon}</span>
+                    {a.label}
+                    {a.hot && (
+                      <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black"
+                        style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -7130,9 +7141,517 @@ export default function TennisTourPage() {
   )
 }
 
+// ─── MODAL HELPER COMPONENTS ──────────────────────────────────────────────────
+
+function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <div className="text-base font-bold text-white">{title}</div>
+          <div className="text-xs" style={{ color: '#6B7280' }}>{subtitle}</div>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+    </div>
+  )
+}
+
+function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
+  return (
+    <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={s}>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ backgroundColor: i < current ? '#22C55E' : i === current ? '#0ea5e9' : 'rgba(255,255,255,0.05)', color: i <= current ? '#fff' : '#4B5563' }}>
+              {i < current ? '✓' : i + 1}
+            </div>
+            <span className="text-xs font-semibold" style={{ color: i === current ? '#0ea5e9' : i < current ? '#22C55E' : '#4B5563' }}>{s}</span>
+          </div>
+          {i < steps.length - 1 && <div className="flex-1 h-px" style={{ backgroundColor: i < current ? '#22C55E' : '#1F2937' }} />}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
+// ─── MODAL COMPONENTS ─────────────────────────────────────────────────────────
+
+function TennisFlightFinder({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
+  const [from, setFrom] = useState('London Heathrow (LHR)')
+  const [to, setTo] = useState('Nice (NCE) — Monte-Carlo')
+  const [depart, setDepart] = useState('')
+  const [returnDate, setReturnDate] = useState('')
+  const [cabinClass, setCabinClass] = useState('Business')
+  const [passengers, setPassengers] = useState(2)
+  const [results, setResults] = useState<Array<{airline:string;flightNo:string;departs:string;arrives:string;duration:string;stops:string;price:number;currency:string;score:number;badge?:string}>>([])
+  const [selectedFlight, setSelectedFlight] = useState<typeof results[0] | null>(null)
+
+  const UPCOMING = [
+    { label: 'Madrid Open — 26 Apr', to: 'Madrid (MAD)', date: '2026-04-25' },
+    { label: 'Roland-Garros — 25 May', to: 'Paris CDG (CDG)', date: '2026-05-24' },
+    { label: 'Halle Open — 14 Jun', to: 'Hanover (HAJ)', date: '2026-06-13' },
+    { label: 'Wimbledon — 29 Jun', to: 'London (LHR)', date: '2026-06-28' },
+    { label: 'US Open — 24 Aug', to: 'New York JFK (JFK)', date: '2026-08-22' },
+  ]
+
+  const FALLBACK_RESULTS = [
+    { airline:'British Airways', flightNo:'BA2760', departs:'07:20', arrives:'10:35', duration:'2h15m', stops:'Direct', price:312, currency:'GBP', score:96, badge:'Best value' },
+    { airline:'easyJet', flightNo:'EZY8832', departs:'06:05', arrives:'09:20', duration:'2h15m', stops:'Direct', price:187, currency:'GBP', score:88, badge:'Cheapest' },
+    { airline:'Air France', flightNo:'AF1680', departs:'09:45', arrives:'13:10', duration:'3h25m', stops:'1 stop', price:298, currency:'GBP', score:82, badge:'Fastest' },
+    { airline:'Vueling', flightNo:'VY7803', departs:'11:30', arrives:'14:45', duration:'2h15m', stops:'Direct', price:224, currency:'GBP', score:85 },
+  ]
+
+  const searchFlights = async () => {
+    setStep('searching')
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Fastest", or null. Realistic prices.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : FALLBACK_RESULTS)
+    } catch { setResults(FALLBACK_RESULTS) }
+    setStep('results')
+  }
+
+  return (
+    <>
+      <ModalHeader icon="✈️" title="Smart Flight Finder" subtitle="AI searches multiple airlines for the best deal" onClose={onClose} />
+      {step !== 'searching' && <StepIndicator steps={['Configure','Search','Results','Book']} current={['configure','searching','results','book'].indexOf(step)} />}
+      <div className="p-6">
+        {step === 'configure' && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider mb-2 block" style={{ color: '#6B7280' }}>Upcoming tournaments</label>
+              <div className="flex flex-wrap gap-2">
+                {UPCOMING.map(t => (
+                  <button key={t.label} onClick={() => { setTo(t.to); setDepart(t.date) }}
+                    className="text-xs px-3 py-1.5 rounded-full transition-all"
+                    style={{ backgroundColor: to === t.to ? 'rgba(14,165,233,0.2)' : 'rgba(255,255,255,0.05)', border: to === t.to ? '1px solid #0ea5e9' : '1px solid #1F2937', color: to === t.to ? '#0ea5e9' : '#9CA3AF' }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">From</label><input value={from} onChange={e => setFrom(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">To</label><input value={to} onChange={e => setTo(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Depart</label><input type="date" value={depart} onChange={e => setDepart(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Return</label><input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Cabin</label><select value={cabinClass} onChange={e => setCabinClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option></select></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Passengers</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setPassengers(Math.max(1,passengers-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white w-4 text-center">{passengers}</span><button onClick={() => setPassengers(Math.min(6,passengers+1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
+            </div>
+            <div className="flex items-start gap-2 p-3 rounded-xl" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
+              <span className="text-base flex-shrink-0">🤖</span>
+              <p className="text-xs" style={{ color: '#93C5FD' }}>Lumio AI searches BA, easyJet, Ryanair, Vueling, Iberia, Air France and more — scoring on price, duration, and quality.</p>
+            </div>
+            <button onClick={searchFlights} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Search Flights →</button>
+          </div>
+        )}
+        {step === 'searching' && (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 animate-bounce">✈️</div>
+            <div className="text-base font-bold text-white mb-2">Searching all airlines...</div>
+            <div className="text-xs mb-6" style={{ color: '#6B7280' }}>Checking BA, easyJet, Ryanair, Vueling, Air France + more</div>
+          </div>
+        )}
+        {step === 'results' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2"><div className="text-sm font-bold text-white">{results.length} flights found</div><div className="text-xs" style={{ color: '#6B7280' }}>{from} → {to} · {cabinClass} · {passengers} pax</div></div>
+            {results.map((f, i) => (
+              <div key={i} onClick={() => setSelectedFlight(f)} className="rounded-xl p-4 cursor-pointer transition-all"
+                style={{ backgroundColor: selectedFlight?.flightNo === f.flightNo ? 'rgba(14,165,233,0.1)' : '#111318', border: selectedFlight?.flightNo === f.flightNo ? '1px solid #0ea5e9' : '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{f.airline}</span>
+                      <span className="text-xs" style={{ color: '#4B5563' }}>{f.flightNo}</span>
+                      {f.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badge === 'Best value' ? '#0ea5e9' : f.badge === 'Cheapest' ? '#22C55E' : '#8B5CF6' }}>{f.badge}</span>}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{f.departs} → {f.arrives} · {f.duration} · {f.stops}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-white">{f.currency} {(f.price*passengers).toLocaleString()}</div>
+                    <div className="text-[10px]" style={{ color: '#22C55E' }}>Score: {f.score}/100</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setStep('configure')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Search again</button>
+              <button onClick={() => selectedFlight && setStep('book')} disabled={!selectedFlight} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: selectedFlight ? '#0ea5e9' : '#374151' }}>Book selected →</button>
+            </div>
+          </div>
+        )}
+        {step === 'book' && selectedFlight && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
+              <div className="text-sm font-bold text-white mb-2">Booking summary</div>
+              <div className="space-y-1 text-xs" style={{ color: '#9CA3AF' }}>
+                {[['Route',`${from} → ${to}`],['Flight',`${selectedFlight.airline} ${selectedFlight.flightNo}`],['Departs',`${depart} at ${selectedFlight.departs}`],['Class',cabinClass],['Passengers',String(passengers)],['Total',`${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}`]].map(([l,v]) => (
+                  <div key={l} className="flex justify-between"><span>{l}</span><span className="text-white">{v}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('results')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => { const s = encodeURIComponent(`Flight booking — ${from} to ${to}`); const b = encodeURIComponent(`Please book: ${selectedFlight.airline} ${selectedFlight.flightNo}, ${depart}, ${cabinClass}, ${passengers} pax, ${selectedFlight.currency} ${(selectedFlight.price*passengers).toLocaleString()}\n\nThanks, ${session.userName || 'Alex'}`); window.open(`mailto:james.wright@agent.com?subject=${s}&body=${b}`) }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>📧 Send to agent →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [opponent, setOpponent] = useState('C. Martinez')
+  const [surface, setSurface] = useState('Clay')
+  const [tournament, setTournament] = useState('Monte-Carlo Masters')
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `You are a top tennis analyst. Generate a tactical match prep brief for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) vs ${opponent} at ${tournament} on ${surface}. Cover: OPPONENT PROFILE, SERVE PATTERNS, RETURN GAME, TACTICAL RECOMMENDATIONS (3-4 specific), H2H CONTEXT, MENTAL EDGE. Use emoji headers. Max 400 words.` }]
+        })
+      })
+      const data = await res.json()
+      setBrief(data.content?.[0]?.text || 'Unable to generate brief.')
+    } catch { setBrief('Unable to generate brief.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🎾" title="Match Prep AI" subtitle="AI tactical brief for your next opponent" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!brief ? (<>
+          <div className="grid grid-cols-1 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Surface</label><select value={surface} onChange={e => setSurface(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Clay</option><option>Hard</option><option>Grass</option><option>Indoor</option></select></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Tournament</label><input value={tournament} onChange={e => setTournament(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            </div>
+          </div>
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>{loading ? '⏳ Generating...' : '🧠 Generate Match Prep Brief →'}</button>
+        </>) : (<>
+          <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{brief}</div>
+          <div className="flex gap-3">
+            <button onClick={() => setBrief(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+            <button onClick={() => navigator.clipboard.writeText(brief)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>📋 Copy brief</button>
+          </div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [sponsor, setSponsor] = useState('Rolex')
+  const [platform, setPlatform] = useState('Instagram')
+  const [context, setContext] = useState('Monte-Carlo Masters QF day')
+  const [tone, setTone] = useState('Professional')
+  const [loading, setLoading] = useState(false)
+  const [post, setPost] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
+      })
+      const data = await res.json()
+      setPost(data.content?.[0]?.text || 'Unable to generate.')
+    } catch { setPost('Unable to generate.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="📱" title="Sponsor Post Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!post ? (<>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Rolex','Lululemon','Nike','Wilson','Red Bull'].map(s => <option key={s}>{s}</option>)}</select></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Instagram','Twitter/X','Facebook','LinkedIn','TikTok'].map(p => <option key={p}>{p}</option>)}</select></div>
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Context</label><textarea value={context} onChange={e => setContext(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-2 block">Tone</label><div className="flex flex-wrap gap-2">{['Professional','Casual','Motivational','Humorous','Grateful'].map(t => (<button key={t} onClick={() => setTone(t)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: tone===t?'rgba(245,158,11,0.2)':'rgba(255,255,255,0.05)', border: tone===t?'1px solid #F59E0B':'1px solid #1F2937', color: tone===t?'#F59E0B':'#9CA3AF' }}>{t}</button>))}</div></div>
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#F59E0B' }}>{loading ? '⏳ Writing...' : '✍️ Generate Post →'}</button>
+        </>) : (<>
+          <div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{post}</div>
+          <div className="flex gap-3"><button onClick={() => setPost(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button><button onClick={() => navigator.clipboard.writeText(post)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#F59E0B' }}>📋 Copy post</button></div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function TennisPressStatement({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [result, setResult] = useState<'win'|'loss'>('win')
+  const [opponent, setOpponent] = useState('C. Martinez')
+  const [score, setScore] = useState('6-4, 6-3')
+  const [ctx, setCtx] = useState('Monte-Carlo Masters QF')
+  const [loading, setLoading] = useState(false)
+  const [statement, setStatement] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. 4-5 talking points. Genuine, not corporate. ~150 words.` }] })
+      })
+      const data = await res.json()
+      setStatement(data.content?.[0]?.text || 'Unable to generate.')
+    } catch { setStatement('Unable to generate.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="📣" title="Press Statement" subtitle="Post-match talking points in your voice" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!statement ? (<>
+          <div className="flex gap-2">{(['win','loss'] as const).map(r => (<button key={r} onClick={() => setResult(r)} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ backgroundColor: result===r?(r==='win'?'#22C55E':'#EF4444'):'rgba(255,255,255,0.05)', color: result===r?'#fff':'#9CA3AF' }}>{r==='win'?'🏆 Win':'❌ Loss'}</button>))}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Score</label><input value={score} onChange={e => setScore(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Tournament / Round</label><input value={ctx} onChange={e => setCtx(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#8B5CF6' }}>{loading ? '⏳ Writing...' : '🎤 Generate Statement →'}</button>
+        </>) : (<>
+          <div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{statement}</div>
+          <div className="flex gap-3"><button onClick={() => setStatement(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button><button onClick={() => navigator.clipboard.writeText(statement)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#8B5CF6' }}>📋 Copy</button></div>
+        </>)}
+      </div>
+    </>
+  )
+}
+
+function TennisRankingSimulator({ onClose, player }: { onClose: () => void; player: TennisPlayer }) {
+  const currentPts = player.ranking_points ?? 1847
+  const ptsAtRisk = 312
+  const currentRank = player.ranking ?? 67
+
+  return (
+    <>
+      <ModalHeader icon="📊" title="Ranking Simulator" subtitle="What-if ranking calculator" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div><div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>#{currentRank}</div><div className="text-xs" style={{ color: '#6B7280' }}>Current</div></div>
+            <div><div className="text-2xl font-black text-white">{currentPts.toLocaleString()}</div><div className="text-xs" style={{ color: '#6B7280' }}>Points</div></div>
+            <div><div className="text-2xl font-black" style={{ color: '#EF4444' }}>−{ptsAtRisk}</div><div className="text-xs" style={{ color: '#6B7280' }}>At risk</div></div>
+          </div>
+        </div>
+        {[
+          { label:'🏆 Win the title', pts:360, color:'#22C55E', rankDelta:-4 },
+          { label:'🥈 Runner-up', pts:180, color:'#0ea5e9', rankDelta:-2 },
+          { label:'✅ SF exit', pts:90, color:'#F59E0B', rankDelta:0 },
+          { label:'❌ QF exit (today)', pts:45, color:'#EF4444', rankDelta:+4 },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div><div className="text-sm font-bold text-white">{s.label}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>+{s.pts} pts · net {(currentPts-ptsAtRisk+s.pts).toLocaleString()}</div></div>
+            <div className="text-right"><div className="text-xl font-black" style={{ color: s.color }}>#{currentRank+s.rankDelta}</div><div className="text-xs" style={{ color: s.rankDelta<0?'#22C55E':s.rankDelta>0?'#EF4444':'#6B7280' }}>{s.rankDelta<0?`↑${Math.abs(s.rankDelta)}`:s.rankDelta>0?`↓${s.rankDelta}`:'→ holds'}</div></div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function TennisInjuryLogger({ onClose }: { onClose: () => void }) {
+  const [bodyPart, setBodyPart] = useState('')
+  const [severity, setSeverity] = useState<'mild'|'moderate'|'severe'>('mild')
+  const [notes, setNotes] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const PARTS = ['Shoulder (right)','Elbow (right)','Knee (right)','Knee (left)','Wrist','Back','Ankle','Hip','Other']
+  return (<>
+    <ModalHeader icon="💊" title="Log Injury" subtitle="Log and auto-notify your physio" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Body part</label><div className="flex flex-wrap gap-2">{PARTS.map(p => (<button key={p} onClick={() => setBodyPart(p)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: bodyPart===p?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.05)', border: bodyPart===p?'1px solid #EF4444':'1px solid #1F2937', color: bodyPart===p?'#EF4444':'#9CA3AF' }}>{p}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Severity</label><div className="flex gap-2">{(['mild','moderate','severe'] as const).map(s => (<button key={s} onClick={() => setSeverity(s)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: severity===s?(s==='mild'?'#22C55E':s==='moderate'?'#F59E0B':'#EF4444'):'rgba(255,255,255,0.05)', color: severity===s?'#fff':'#9CA3AF' }}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="When did it start?" className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={() => setSubmitted(true)} disabled={!bodyPart} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: bodyPart?'#EF4444':'#374151' }}>Log Injury & Notify Team →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Injury logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>Dr Sarah Lee notified.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function TennisExpenseLogger({ onClose }: { onClose: () => void }) {
+  const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState('GBP')
+  const [category, setCategory] = useState('Travel')
+  const [description, setDescription] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const CATS = ['Travel','Hotel','Equipment','Coaching','Medical','Food','Sponsor','Other']
+  return (<>
+    <ModalHeader icon="🧾" title="Log Expense" subtitle="Quick expense logging" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 block">Amount</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Currency</label><select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['GBP','EUR','USD','AUD'].map(c => <option key={c}>{c}</option>)}</select></div>
+        </div>
+        <div><label className="text-xs text-gray-500 mb-2 block">Category</label><div className="flex flex-wrap gap-2">{CATS.map(c => (<button key={c} onClick={() => setCategory(c)} className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: category===c?'rgba(14,165,233,0.2)':'rgba(255,255,255,0.05)', border: category===c?'1px solid #0ea5e9':'1px solid #1F2937', color: category===c?'#0ea5e9':'#9CA3AF' }}>{c}</button>))}</div></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Description</label><input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Flight LHR-NCE" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <button onClick={() => setSubmitted(true)} disabled={!amount} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: amount?'#0ea5e9':'#374151' }}>Log Expense →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">{currency} {amount} logged</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{category} — forwarded to accountant.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function TennisStringOrder({ onClose }: { onClose: () => void }) {
+  const [stringType, setStringType] = useState('Wilson Luxilon ALU Power')
+  const [tension, setTension] = useState('24kg')
+  const [quantity, setQuantity] = useState(4)
+  const [submitted, setSubmitted] = useState(false)
+  return (<>
+    <ModalHeader icon="🎵" title="String Order" subtitle="Order strings for your next tournament" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!submitted ? (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">String</label><select value={stringType} onChange={e => setStringType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Wilson Luxilon ALU Power','Babolat RPM Blast','Head Hawk Touch','Tecnifibre Black Code'].map(s => <option key={s}>{s}</option>)}</select></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Tension</label><input value={tension} onChange={e => setTension(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Packs</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setQuantity(Math.max(1,quantity-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white">{quantity}</span><button onClick={() => setQuantity(quantity+1)} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
+        </div>
+        <button onClick={() => setSubmitted(true)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#10B981' }}>Send Order to Tom Ellis →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Order sent</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>{quantity}x {stringType} at {tension}</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#10B981' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function TennisVisaCheck({ onClose }: { onClose: () => void }) {
+  const UPCOMING = [
+    { tournament:'Madrid Open', country:'Spain', flag:'🇪🇸', date:'26 Apr', visa:'✅ No visa required', detail:'Schengen area' },
+    { tournament:'Roland-Garros', country:'France', flag:'🇫🇷', date:'25 May', visa:'✅ No visa required', detail:'Schengen area' },
+    { tournament:'Wimbledon', country:'UK', flag:'🇬🇧', date:'29 Jun', visa:'✅ Home nation', detail:'No requirements' },
+    { tournament:'US Open', country:'USA', flag:'🇺🇸', date:'24 Aug', visa:'⚠️ ESTA required', detail:'Apply 72hrs before — $21 USD' },
+  ]
+  return (<>
+    <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for upcoming tournaments" onClose={onClose} />
+    <div className="p-6 space-y-3">
+      {UPCOMING.map(t => (
+        <div key={t.tournament} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${t.visa.includes('⚠️')?'rgba(245,158,11,0.3)':'#1F2937'}` }}>
+          <div className="flex items-start justify-between"><div className="flex items-center gap-3"><span className="text-2xl">{t.flag}</span><div><div className="text-sm font-bold text-white">{t.tournament}</div><div className="text-xs" style={{ color: '#6B7280' }}>{t.country} · {t.date}</div></div></div><div className="text-xs font-bold">{t.visa}</div></div>
+          <div className="text-xs mt-2" style={{ color: '#6B7280' }}>{t.detail}</div>
+        </div>
+      ))}
+    </div>
+  </>)
+}
+
+function TennisMatchNotes({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [note, setNote] = useState('')
+  const [opponent, setOpponent] = useState('C. Martinez')
+  const [saved, setSaved] = useState(false)
+  return (<>
+    <ModalHeader icon="📝" title="Match Notes" subtitle="Quick notes saved to your match log" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!saved ? (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">Note</label><textarea value={note} onChange={e => setNote(e.target.value)} rows={5} placeholder="His second serve to BH is attackable..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} autoFocus /></div>
+        <button onClick={() => { try { const prev = JSON.parse(localStorage.getItem('tennis_match_notes') || '[]'); localStorage.setItem('tennis_match_notes', JSON.stringify([`[${opponent}] ${note}`, ...prev].slice(0,20))) } catch {} setSaved(true) }} disabled={!note.trim()} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: note.trim()?'#0ea5e9':'#374151' }}>💾 Save Note →</button>
+      </>) : (
+        <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Note saved</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>Added to match log for {opponent}.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Done</button></div>
+      )}
+    </div>
+  </>)
+}
+
+function TennisEntryManager({ onClose }: { onClose: () => void }) {
+  const ENTRIES = [
+    { tournament:'Hamburg Open 500', deadline:'TODAY 5pm', status:'⚠️ Decision needed', urgent:true },
+    { tournament:'Roland-Garros', deadline:'3 May', status:'✅ Accepted', urgent:false },
+    { tournament:'Halle Open', deadline:'2 May', status:'⏳ Pending', urgent:false },
+    { tournament:'Wimbledon', deadline:'26 May', status:'📋 Not submitted', urgent:false },
+    { tournament:'Eastbourne 250', deadline:'20 May', status:'⚠️ Clashes Hamburg', urgent:true },
+  ]
+  return (<>
+    <ModalHeader icon="🏆" title="Entry Manager" subtitle="Tournament entries and deadlines" onClose={onClose} />
+    <div className="p-6 space-y-3">
+      {ENTRIES.map(e => (
+        <div key={e.tournament} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${e.urgent?'rgba(245,158,11,0.3)':'#1F2937'}` }}>
+          <div className="flex items-center justify-between"><div><div className="text-sm font-bold text-white">{e.tournament}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Deadline: {e.deadline}</div><div className="text-xs mt-1" style={{ color: e.urgent?'#F59E0B':'#6B7280' }}>{e.status}</div></div>
+          {e.urgent && <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#F59E0B' }}>ACTION</span>}</div>
+        </div>
+      ))}
+    </div>
+  </>)
+}
+
+function TennisHotelFinder({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [destination, setDestination] = useState('Monte-Carlo, Monaco')
+  const [checkIn, setCheckIn] = useState('')
+  const [checkOut, setCheckOut] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<null | Array<{name:string;stars:number;price:number;distance:string;score:number;badge?:string}>>(null)
+
+  return (<>
+    <ModalHeader icon="🏨" title="Hotel Finder" subtitle="Best hotels near your tournament" onClose={onClose} />
+    <div className="p-6 space-y-4">
+      {!results && !loading && (<>
+        <div><label className="text-xs text-gray-500 mb-1 block">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <button onClick={async () => { setLoading(true); await new Promise(r => setTimeout(r, 2000)); setResults([{name:'Hôtel Hermitage',stars:5,price:380,distance:'0.4km',score:97,badge:'Best overall'},{name:'Novotel Monte-Carlo',stars:4,price:195,distance:'0.8km',score:89,badge:'Best value'},{name:'Columbus Monte-Carlo',stars:4,price:220,distance:'0.6km',score:85},{name:'Port Palace',stars:4,price:260,distance:'0.5km',score:83}]); setLoading(false) }}
+          className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Search Hotels →</button>
+      </>)}
+      {loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-bounce">🏨</div><div className="text-sm font-bold text-white">Finding best hotels...</div></div>}
+      {results && (<div className="space-y-3">
+        {results.map((h,i) => (
+          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{h.name}</span>{h.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>{h.badge}</span>}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{'⭐'.repeat(h.stars)} · {h.distance}</div></div><div className="text-right"><div className="text-lg font-black text-white">£{h.price}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>per night</div></div></div>
+          </div>
+        ))}
+        <div className="flex gap-3">
+          <button onClick={() => setResults(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Again</button>
+          <button onClick={() => { const h=results[0]; window.open(`mailto:james.wright@agent.com?subject=${encodeURIComponent(`Hotel — ${h.name}`)}&body=${encodeURIComponent(`Book ${h.name}, ${destination}. ${checkIn} to ${checkOut}. ~£${h.price}/night.\n\nThanks, ${session.userName || 'Alex'}`)}`) }}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>📧 Send to agent →</button>
+        </div>
+      </div>)}
+    </div>
+  </>)
+}
+
 function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const closeModal = () => setActiveModal(null)
   const player = DEMO_PLAYER;
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [h2hData, setH2hData] = useState<any[]>([]);
@@ -7602,7 +8121,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
@@ -7644,7 +8163,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
       case 'gps':         return <GPSCourtView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
-      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} />;
+      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} />;
     }
   };
 
@@ -7788,6 +8307,27 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           </div>
         </div>
       </div>
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+            style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            {activeModal === 'flights' && <TennisFlightFinder onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'hotel' && <TennisHotelFinder onClose={closeModal} session={session} />}
+            {activeModal === 'matchprep' && <TennisMatchPrepAI onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'sponsor' && <TennisSponsorPost onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'press' && <TennisPressStatement onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'ranking' && <TennisRankingSimulator onClose={closeModal} player={player} />}
+            {activeModal === 'entries' && <TennisEntryManager onClose={closeModal} />}
+            {activeModal === 'injury' && <TennisInjuryLogger onClose={closeModal} />}
+            {activeModal === 'expense' && <TennisExpenseLogger onClose={closeModal} />}
+            {activeModal === 'strings' && <TennisStringOrder onClose={closeModal} />}
+            {activeModal === 'visa' && <TennisVisaCheck onClose={closeModal} />}
+            {activeModal === 'notes' && <TennisMatchNotes onClose={closeModal} session={session} player={player} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
