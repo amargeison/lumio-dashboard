@@ -490,7 +490,7 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
   <div className="mb-6">
     <div className="flex items-center gap-2">
       {icon && <span className="text-xl">{icon}</span>}
-      <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
+      <h2 className="text-xl font-bold text-white" style={{  }}>{title}</h2>
     </div>
     {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
   </div>
@@ -622,10 +622,10 @@ const ServePercentChart = () => {
           const barWidth = (d.pct / 100) * maxBarWidth;
           return (
             <g key={i}>
-              <text x="0" y={y + barHeight / 2 + 4} fill="#9ca3af" fontSize="11" fontFamily="DM Sans, sans-serif">{d.surface}</text>
+              <text x="0" y={y + barHeight / 2 + 4} fill="#9ca3af" fontSize="11">{d.surface}</text>
               <rect x={labelWidth} y={y} width={maxBarWidth} height={barHeight} rx="4" fill="#1f2937" />
               <rect x={labelWidth} y={y} width={barWidth} height={barHeight} rx="4" fill={d.color} opacity="0.8" />
-              <text x={labelWidth + barWidth + 8} y={y + barHeight / 2 + 4} fill="#e5e7eb" fontSize="12" fontWeight="bold" fontFamily="DM Sans, sans-serif">{d.pct}%</text>
+              <text x={labelWidth + barWidth + 8} y={y + barHeight / 2 + 4} fill="#e5e7eb" fontSize="12" fontWeight="bold">{d.pct}%</text>
             </g>
           );
         })}
@@ -668,7 +668,7 @@ const WinRateTrendChart = () => {
           return (
             <g key={v}>
               <line x1={padX} y1={y} x2={w - padX} y2={y} stroke="#1f2937" strokeWidth="1" />
-              <text x={padX - 8} y={y + 4} fill="#6b7280" fontSize="9" textAnchor="end" fontFamily="DM Sans, sans-serif">{v}%</text>
+              <text x={padX - 8} y={y + 4} fill="#6b7280" fontSize="9" textAnchor="end">{v}%</text>
             </g>
           );
         })}
@@ -678,7 +678,7 @@ const WinRateTrendChart = () => {
           <circle key={i} cx={p.x} cy={p.y} r="3" fill="#8B5CF6" stroke="#07080F" strokeWidth="1.5" />
         ))}
         {months.map((m, i) => (
-          <text key={i} x={padX + i * xStep} y={h - 6} fill="#6b7280" fontSize="9" textAnchor="middle" fontFamily="DM Sans, sans-serif">{m}</text>
+          <text key={i} x={padX + i * xStep} y={h - 6} fill="#6b7280" fontSize="9" textAnchor="middle">{m}</text>
         ))}
       </svg>
     </div>
@@ -732,7 +732,7 @@ const PrizeMoneyChart = () => {
                 cumY += segH;
                 return <rect key={ci} x={cx - barWidth / 2} y={yPos} width={barWidth} height={segH} fill={categories[ci].color} rx="2" opacity="0.85" />;
               })}
-              <text x={cx} y={h - 10} fill="#9ca3af" fontSize="10" textAnchor="middle" fontFamily="DM Sans, sans-serif">{year}</text>
+              <text x={cx} y={h - 10} fill="#9ca3af" fontSize="10" textAnchor="middle">{year}</text>
             </g>
           );
         })}
@@ -776,7 +776,7 @@ const RecoveryChart = () => {
           <circle key={i} cx={p.x} cy={p.y} r="3" fill="#14b8a6" stroke="#07080F" strokeWidth="1.5" />
         ))}
         {days.map((d, i) => (
-          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle" fontFamily="DM Sans, sans-serif">{d}</text>
+          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">{d}</text>
         ))}
       </svg>
     </div>
@@ -807,15 +807,15 @@ const RankingTrajectoryChart = () => {
       <div className="text-sm font-semibold text-white mb-4">Ranking Trajectory (24 Months)</div>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <line x1={padX} y1={chY} x2={w - padX} y2={chY} stroke="#eab308" strokeWidth="1" strokeDasharray="5,5" opacity="0.5" />
-        <text x={w - padX + 5} y={chY + 3} fill="#eab308" fontSize="9" fontFamily="DM Sans, sans-serif">#{careerHigh} CH</text>
+        <text x={w - padX + 5} y={chY + 3} fill="#eab308" fontSize="9">#{careerHigh} CH</text>
         <path d={linePath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r="2" fill="#8B5CF6" stroke="#07080F" strokeWidth="1" />
         ))}
-        <text x={padX - 5} y={padY + 4} fill="#6b7280" fontSize="9" textAnchor="end" fontFamily="DM Sans, sans-serif">#30</text>
-        <text x={padX - 5} y={padY + chartH + 4} fill="#6b7280" fontSize="9" textAnchor="end" fontFamily="DM Sans, sans-serif">#100</text>
-        <text x={padX} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle" fontFamily="DM Sans, sans-serif">-24m</text>
-        <text x={w - padX} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle" fontFamily="DM Sans, sans-serif">Now</text>
+        <text x={padX - 5} y={padY + 4} fill="#6b7280" fontSize="9" textAnchor="end">#30</text>
+        <text x={padX - 5} y={padY + chartH + 4} fill="#6b7280" fontSize="9" textAnchor="end">#100</text>
+        <text x={padX} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">-24m</text>
+        <text x={w - padX} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">Now</text>
       </svg>
     </div>
   );
@@ -852,7 +852,7 @@ const IncomeExpenseChart = () => {
             <g key={yi}>
               <rect x={cx - barW - 2} y={h - padBottom - incH} width={barW} height={incH} fill="#22c55e" rx="3" opacity="0.8" />
               <rect x={cx + 2} y={h - padBottom - expH} width={barW} height={expH} fill="#ef4444" rx="3" opacity="0.8" />
-              <text x={cx} y={h - 10} fill="#9ca3af" fontSize="10" textAnchor="middle" fontFamily="DM Sans, sans-serif">{year}</text>
+              <text x={cx} y={h - 10} fill="#9ca3af" fontSize="10" textAnchor="middle">{year}</text>
             </g>
           );
         })}
@@ -913,6 +913,21 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
   useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
 
+  // Schedule state
+  const [completedItems, setCompletedItems] = useState<Set<string>>(() => {
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_schedule_done') : null; return saved ? new Set(JSON.parse(saved)) : new Set() } catch { return new Set() }
+  })
+  const [cancelledItems, setCancelledItems] = useState<Set<string>>(new Set())
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  const toggleScheduleItem = (id: string) => {
+    setCompletedItems(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); localStorage.setItem('lumio_tennis_schedule_done', JSON.stringify([...next])); return next })
+  }
+  const cancelScheduleItem = (id: string, label: string) => {
+    const person = label.includes('with ') ? label.split('with ')[1] : label.includes('—') ? label.split('—')[0].trim() : label
+    navigator.clipboard.writeText(`Hi ${person} — I need to cancel my ${label.toLowerCase()} scheduled for today. Apologies for short notice. — ${firstName}`)
+    setCancelledItems(prev => new Set(prev).add(id)); setCancelConfirm(null)
+  }
+
   // Photo frame state
   const [photoIndex, setPhotoIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -927,14 +942,24 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || photos.length >= 3) return
-    const reader = new FileReader()
-    reader.onload = () => setPhotos(prev => [...prev, reader.result as string])
-    reader.readAsDataURL(file)
+    try {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string
+        if (base64) setPhotos(prev => [...prev, base64])
+      }
+      reader.readAsDataURL(file)
+    } catch (err) { console.error('Photo upload error:', err) }
     e.target.value = ''
   }
 
   // Morning Roundup state
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [repliedTo, setRepliedTo] = useState<string[]>([])
@@ -1259,16 +1284,35 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <span>🌅</span>
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p>
                 </div>
-                <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => { setRoundupOrder([]); localStorage.removeItem('lumio_tennis_roundup_order') }} className="text-[10px] hover:underline" style={{ color: '#4B5563' }}>Reset order</button>
+                  <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
+                </div>
               </div>
               <div>
-                {(roleConfig.roundupChannels === 'all' ? ROUNDUP_ITEMS : ROUNDUP_ITEMS.filter(ch => (roleConfig.roundupChannels as string[]).includes(ch.id))).map((ch) => {
+                {(() => {
+                  const filtered = roleConfig.roundupChannels === 'all' ? ROUNDUP_ITEMS : ROUNDUP_ITEMS.filter(ch => (roleConfig.roundupChannels as string[]).includes(ch.id))
+                  const sorted = roundupOrder.length > 0 ? [...filtered].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : filtered
+                  return sorted.map((ch, idx) => {
                   const isOpen = expandedChannel === ch.id
                   return (
-                    <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
+                    <div key={ch.id}
+                      draggable
+                      onDragStart={() => setDragIdx(idx)}
+                      onDragEnter={() => setDragOverIdx(idx)}
+                      onDragOver={e => e.preventDefault()}
+                      onDragEnd={() => {
+                        if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                          const reordered = [...sorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
+                          const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_tennis_roundup_order', JSON.stringify(newOrder))
+                        }
+                        setDragIdx(null); setDragOverIdx(null)
+                      }}
+                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
                       <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                         className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                         <div className="flex items-center gap-3">
+                          <span className="text-gray-600 text-sm cursor-grab opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity" style={{ opacity: 0.3 }}>⠿</span>
                           <span className="text-base">{ch.icon}</span>
                           <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
                           {ch.urgent && (
@@ -1319,7 +1363,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       )}
                     </div>
                   )
-                })}
+                })})()}
               </div>
               {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
             </div>
@@ -1363,35 +1407,46 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Schedule</p>
                 </div>
-                <div className="px-5 py-3 space-y-2">
+                <div className="px-5 py-3 space-y-1">
                   {[
-                    { time:'07:30', label:'AI Morning Briefing',        done:true,  highlight:false },
-                    { time:'08:30', label:'Physio — right shoulder',    done:true,  highlight:false },
-                    { time:'10:00', label:'Practice — serve patterns',  done:false, highlight:false },
-                    { time:'11:45', label:'Stringing with Carlos',      done:false, highlight:false },
-                    { time:'13:00', label:'Match vs C. Martinez',       done:false, highlight:true  },
-                    { time:'15:30', label:'Post-match physio',          done:false, highlight:false },
-                    { time:'17:00', label:'Coach debrief',              done:false, highlight:false },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center gap-3 py-1">
-                      <div className="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                    { id:'s1', time:'07:30', label:'AI Morning Briefing',        highlight:false },
+                    { id:'s2', time:'08:30', label:'Physio — right shoulder',    highlight:false },
+                    { id:'s3', time:'10:00', label:'Practice — serve patterns',  highlight:false },
+                    { id:'s4', time:'11:45', label:'Stringing with Carlos',      highlight:false },
+                    { id:'s5', time:'13:00', label:'Match vs C. Martinez',       highlight:true  },
+                    { id:'s6', time:'15:30', label:'Post-match physio',          highlight:false },
+                    { id:'s7', time:'17:00', label:'Coach debrief',              highlight:false },
+                  ].map((s) => {
+                    const done = completedItems.has(s.id)
+                    const cancelled = cancelledItems.has(s.id)
+                    return (
+                    <div key={s.id} className="group flex items-center gap-3 py-1.5 rounded-lg px-1 -mx-1 transition-colors hover:bg-white/[0.02]">
+                      <button onClick={() => !cancelled && toggleScheduleItem(s.id)} className="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-all"
                         style={{
-                          borderColor: s.done ? '#22C55E' : s.highlight ? '#0ea5e9' : '#374151',
-                          background: s.done ? 'rgba(34,197,94,0.15)' : s.highlight ? 'rgba(14,165,233,0.1)' : 'transparent',
+                          borderColor: cancelled ? '#EF4444' : done ? '#22C55E' : s.highlight ? '#0ea5e9' : '#374151',
+                          background: cancelled ? 'rgba(239,68,68,0.15)' : done ? 'rgba(34,197,94,0.15)' : s.highlight ? 'rgba(14,165,233,0.1)' : 'transparent',
                         }}>
-                        {s.done && <span className="text-[8px]" style={{ color: '#22C55E' }}>✓</span>}
-                      </div>
+                        {cancelled ? <span className="text-[8px]" style={{ color: '#EF4444' }}>✕</span> : done ? <span className="text-[8px]" style={{ color: '#22C55E' }}>✓</span> : null}
+                      </button>
                       <span className="text-[10px] w-9 flex-shrink-0" style={{ color: '#6B7280' }}>{s.time}</span>
-                      <span className="text-xs"
-                        style={{
-                          color: s.done ? '#4B5563' : s.highlight ? '#0ea5e9' : '#D1D5DB',
-                          textDecoration: s.done ? 'line-through' : 'none',
-                          fontWeight: s.highlight ? 600 : 400,
-                        }}>
-                        {s.label}
-                      </span>
+                      <span className="text-xs flex-1" style={{
+                        color: cancelled ? '#EF4444' : done ? '#4B5563' : s.highlight ? '#0ea5e9' : '#D1D5DB',
+                        textDecoration: cancelled || done ? 'line-through' : 'none',
+                        fontWeight: s.highlight ? 600 : 400,
+                      }}>{s.label}</span>
+                      {!s.highlight && !done && !cancelled && cancelConfirm !== s.id && (
+                        <button onClick={() => setCancelConfirm(s.id)} className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#6B7280' }}>Cancel →</button>
+                      )}
+                      {cancelConfirm === s.id && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px]" style={{ color: '#6B7280' }}>Cancel?</span>
+                          <button onClick={() => cancelScheduleItem(s.id, s.label)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Send</button>
+                          <button onClick={() => setCancelConfirm(null)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>Dismiss</button>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -8783,7 +8838,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
       {sponsorToast && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
           <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
