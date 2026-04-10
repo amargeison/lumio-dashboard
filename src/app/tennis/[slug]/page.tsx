@@ -1090,9 +1090,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           {/* Getting Started tab with badge */}
           <button onClick={() => setDashTab('gettingstarted')}
             className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === 'gettingstarted' ? brandPrimary : 'transparent', color: dashTab === 'gettingstarted' ? brandPrimary : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? `${brandPrimary}0d` : 'transparent' }}>
+            style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#7C3AED' : 'transparent', color: dashTab === 'gettingstarted' ? '#7C3AED' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
             <span className="text-base">🚀</span>Getting Started
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: brandPrimary }}>10</span>
+            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#EF4444', color: '#fff' }}>10</span>
           </button>
           {([
             { id:'today' as const,      label:'Today',       icon:'🏠' },
@@ -1104,7 +1104,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
             <button key={t.id} onClick={() => setDashTab(t.id)}
               className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-              style={{ borderBottomColor: dashTab === t.id ? brandPrimary : 'transparent', color: dashTab === t.id ? brandPrimary : '#6B7280', backgroundColor: dashTab === t.id ? `${brandPrimary}0d` : 'transparent' }}>
+              style={{ borderBottomColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#7C3AED' : '#6B7280', backgroundColor: dashTab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
               <span className="text-base">{t.icon}</span>{t.label}
             </button>
           ))}
@@ -1217,41 +1217,36 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* ── TODAY TAB ── */}
       {dashTab === 'today' && (
         <div className="pt-4 space-y-6">
-          {/* Quick Actions — 2-row wrapped grid */}
-          <div className="mb-5">
-            <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { id:'flights',       label:'Smart Flights',      icon:'✈️', color:'#0ea5e9', hot:true  },
-                { id:'hotel',         label:'Find Hotel',         icon:'🏨', color:'#0ea5e9', hot:false },
-                { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', color:'#22C55E', hot:true  },
-                { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', color:'#22C55E', hot:false },
-                { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', color:'#F59E0B', hot:false },
-                { id:'sponsor',       label:'Sponsor Post',       icon:'📱', color:'#F59E0B', hot:false },
-                { id:'press',         label:'Press Statement',    icon:'📣', color:'#8B5CF6', hot:false },
-                { id:'ranking',       label:'Ranking Simulator',  icon:'📊', color:'#0ea5e9', hot:false },
-                { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', color:'#EF4444', hot:false },
-                { id:'agentbrief',    label:'Agent Brief',        icon:'💼', color:'#F59E0B', hot:true  },
-                { id:'entries',       label:'Entry Manager',      icon:'🏆', color:'#F59E0B', hot:false },
-                { id:'injury',        label:'Log Injury',         icon:'💊', color:'#EF4444', hot:false },
-                { id:'expense',       label:'Log Expense',        icon:'🧾', color:'#6B7280', hot:false },
-                { id:'strings',       label:'String Order',       icon:'🎵', color:'#10B981', hot:false },
-                { id:'visa',          label:'Visa Check',         icon:'🌍', color:'#6B7280', hot:false },
-                { id:'notes',         label:'Match Notes',        icon:'📝', color:'#6B7280', hot:false },
-              ].map((a) => (
-                <button key={a.id}
-                  onClick={() => onOpenModal(a.id)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-                  style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}>
-                  <span>{a.icon}</span>
-                  {a.label}
-                  {a.hot && (
-                    <span className="absolute -top-1 -right-1 text-[8px] px-1.5 py-0.5 rounded-full font-black"
-                      style={{ backgroundColor: brandSecondary, color: brandPrimary }}>AI</span>
-                  )}
-                </button>
-              ))}
-            </div>
+          {/* Quick Actions — football pro bar style */}
+          <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
+            <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
+            {[
+              { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
+              { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
+              { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
+              { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
+              { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
+              { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
+              { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
+              { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
+              { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
+              { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
+              { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
+              { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
+              { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
+              { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
+              { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
+              { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
+            ].map((a) => (
+              <button key={a.id}
+                onClick={() => onOpenModal(a.id)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
+                style={a.hot ? { backgroundColor: '#7C3AED', color: '#FFFFFF' } : { backgroundColor: '#1a2332', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <span>{a.icon}</span>
+                {a.label}
+                {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>AI</span>}
+              </button>
+            ))}
           </div>
 
           {/* 3-column grid */}

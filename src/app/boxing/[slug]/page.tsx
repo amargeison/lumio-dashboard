@@ -616,7 +616,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal?.(a.id)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={a.hot ? { backgroundColor: '#DC2626', color: '#F9FAFB' } : { backgroundColor: '#1a2332', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}>
               <span>{a.icon}</span>{a.label}
               {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: '#fff', color: '#DC2626' }}>AI</span>}
             </button>
