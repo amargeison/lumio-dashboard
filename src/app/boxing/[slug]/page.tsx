@@ -471,6 +471,10 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  // Getting Started checklist state — must be at component top level, not inside conditional
+  const [gsChecked, setGsChecked] = useState<Record<string, boolean>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started') : null; return s ? JSON.parse(s) : {} } catch { return {} }
+  })
   const firstName = session.userName?.split(' ')[0] || fighter.name?.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -608,15 +612,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           { id:'gs9', label:'Add your promoter', desc:'Link your promoter for purse bids and fight night logistics', icon:'🏟️' },
           { id:'gs10', label:'You\'re ready — fight!', desc:'Your camp dashboard is set up. Time to train.', icon:'🏆' },
         ]
-        const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-          try { const s = localStorage.getItem('boxing_getting_started'); return s ? JSON.parse(s) : {} } catch { return {} }
-        })
+        const checked = gsChecked
         const toggle = (id: string) => {
-          setChecked(prev => {
+          setGsChecked(prev => {
             const next = { ...prev, [id]: !prev[id] }
             try { localStorage.setItem('boxing_getting_started', JSON.stringify(next)) } catch {}
-            const doneCount = Object.values(next).filter(Boolean).length
-            if (doneCount >= CHECKLIST.length) { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} }
+            const doneCount2 = Object.values(next).filter(Boolean).length
+            if (doneCount2 >= CHECKLIST.length) { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} }
             return next
           })
         }
