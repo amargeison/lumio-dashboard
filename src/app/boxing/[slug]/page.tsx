@@ -997,8 +997,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="flex justify-center gap-8">
                 {[{name:'Danny Walsh',role:'Manager'},{name:'Matchroom',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
               </div>
+              <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-lg font-bold overflow-hidden"
+                style={{background:'rgba(220,38,38,0.2)',border:'2px solid #dc2626',color:'#dc2626'}}>
+                {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : 'MC' })()}
+              </div>
               <div className="text-lg font-black text-white">{session.userName || fighter.name}</div>
-              <div className="text-xs" style={{color:'#dc2626'}}>Fighter</div>
+              <div className="text-[10px] text-gray-500 italic">&quot;The Machine&quot;</div>
+              <div className="text-xs" style={{color:'#dc2626'}}>Fighter — WBC #{fighter.rankings.wbc} Heavyweight</div>
               <div className="flex justify-center gap-6 flex-wrap">
                 {[{name:'Jim Bevan',role:'Trainer'},{name:'Dr Mitchell',role:'Doctor'},{name:'Ricky Dunn',role:'Conditioning'},{name:'Tony Malone',role:'Cutman'},{name:'Marcos Silva',role:'Psych'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-bold" style={{background:'rgba(255,255,255,0.05)',border:'1px solid #1F2937',color:'#6B7280'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-[10px] text-white">{p.name}</div><div className="text-[9px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
               </div>

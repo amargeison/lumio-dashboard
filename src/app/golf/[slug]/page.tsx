@@ -1028,8 +1028,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           {teamSubTab === 'org' && (
             <div className="flex flex-col items-center gap-3 py-6">
               <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(21,128,61,0.1)', border: '1px solid rgba(21,128,61,0.3)', minWidth: 200 }}>
-                <div className="text-lg">⛳</div>
-                <div className="text-sm font-bold text-white">{player.name}</div>
+                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
+                  style={{ background: 'rgba(21,128,61,0.2)', border: '2px solid #15803D', color: '#15803D' }}>
+                  {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : 'JH' })()}
+                </div>
+                <div className="text-sm font-bold text-white">{session.userName || player.name}</div>
                 <div className="text-[10px]" style={{ color: '#15803D' }}>Player · OWGR #{player.owgr}</div>
               </div>
               <div className="w-px h-4 bg-gray-700" />

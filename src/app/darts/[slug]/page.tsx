@@ -682,7 +682,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
                   {photoSrc && <button onClick={() => { setPhotoSrc(null); localStorage.removeItem('lumio_darts_photo_frame') }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
-                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const src = r.result as string; setPhotoSrc(src); localStorage.setItem('lumio_darts_photo_frame', src) }; r.readAsDataURL(f); e.target.value = '' }} />
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_darts_photo_frame', compressed); setPhotoSrc(compressed) } catch { try { const lq = c.toDataURL('image/jpeg', 0.4); localStorage.setItem('lumio_darts_photo_frame', lq); setPhotoSrc(lq) } catch { /* too large */ } } }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
@@ -886,8 +886,13 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="space-y-4">
                 <div className="flex flex-col items-center">
                   <div className="bg-red-600/15 border border-red-600/30 rounded-xl px-6 py-3 text-center">
-                    <div className="text-sm font-bold text-white">{firstName}</div>
-                    <div className="text-[10px] text-red-400">Player</div>
+                    <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
+                      style={{ background: 'rgba(220,38,38,0.2)', border: '2px solid #dc2626', color: '#dc2626' }}>
+                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : 'JM' })()}
+                    </div>
+                    <div className="text-sm font-bold text-white">{session.userName || player.name}</div>
+                    <div className="text-[10px] text-gray-500 italic">&quot;{player.nickname}&quot;</div>
+                    <div className="text-[10px] text-red-400">Player — #{player.pdcRank} PDC</div>
                   </div>
                   <div className="w-px h-6 bg-gray-700" />
                   <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
