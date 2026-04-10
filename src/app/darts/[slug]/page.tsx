@@ -189,6 +189,7 @@ function DartsAISection({ context, player, session }: DartsAISectionProps) {
   const [summary, setSummary]     = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [generated, setGenerated] = useState(false)
+  const hasGenerated = useRef(false)
 
   const HIGHLIGHTS: Record<string, string[]> = {
     dashboard:      ['Match tonight — European Championship R1. Win = £110,000 + ranking points', 'Red Dragon sponsor post due before tonight — agent chasing', '3-dart average up 0.8 this week — form trending well', 'Dortmund venue: 14°C overcast — travel confirmed', 'Practice session at 10:00 — focus on D16 checkout'],
@@ -239,6 +240,13 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
     } catch { setSummary('Unable to generate summary.') }
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (hasGenerated.current || summary || loading) return
+    hasGenerated.current = true
+    generateSummary()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -328,36 +336,44 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
+    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_photo_frame') : null } catch { return null }
+  })
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [repliedTo, setRepliedTo] = useState<Set<string>>(new Set())
+  const [dismissedMessages, setDismissedMessages] = useState<Set<string>>(new Set())
   const ROUNDUP_CHANNELS = [
-    { label: 'Agent Messages',     icon: '📞', count: 2, color: '#dc2626', urgent: false, messages: [
+    { label: 'Agent Messages',     icon: '📞', count: 2, color: '#0D9488', urgent: false, messages: [
       { from: 'James Wright', text: 'Paddy Power want an answer by Friday — shall I push for better terms?', time: '08:12' },
       { from: 'James Wright', text: 'Red Dragon renewal call confirmed Thursday 14:00', time: '07:45' },
     ]},
-    { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#F97316', urgent: true, messages: [
+    { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#D97706', urgent: true, messages: [
       { from: 'PDC Entry Desk', text: 'Prague Open entry deadline: Apr 19. Please confirm.', time: '09:00' },
       { from: 'PDC Entry Desk', text: 'German Masters entry opens May 1.', time: '08:30' },
       { from: 'PDC Scheduling', text: 'European Ch. R1 board assignment: Board 4, 20:00', time: '07:00' },
     ]},
-    { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#F59E0B', urgent: false, messages: [
+    { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#7C3AED', urgent: false, messages: [
       { from: 'Betway', text: '2 social posts outstanding — please submit by Thursday', time: '10:15' },
       { from: 'Ladbrokes', text: 'Quarter promo asset approved. Going live Friday.', time: '09:30' },
     ]},
-    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#dc2626', urgent: true, messages: [
+    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#EA580C', urgent: true, messages: [
       { from: 'Red Dragon Team', text: 'Content shoot today 12:00 — barrel review video. Bring backup set.', time: '08:00' },
     ]},
-    { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#10B981', urgent: false, messages: [
+    { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#EA580C', urgent: false, messages: [
       { from: 'Steve Morris', text: 'Pre-match brief at 16:30. Focus: D16 under pressure.', time: '07:30' },
       { from: 'Dave Askew', text: 'Travel to Dortmund confirmed. Car at 17:00.', time: '06:50' },
     ]},
-    { label: 'Prize Money',        icon: '💰', count: 1, color: '#D97706', urgent: false, messages: [
+    { label: 'Prize Money',        icon: '💰', count: 1, color: '#16A34A', urgent: false, messages: [
       { from: 'PDC Finance', text: 'Players Ch. 8 prize money (£8,000) processed. ETA 5 working days.', time: '09:45' },
     ]},
-    { label: 'Travel & Hotels',    icon: '✈️', count: 2, color: '#6B7280', urgent: false, messages: [
+    { label: 'Travel & Hotels',    icon: '✈️', count: 2, color: '#2563EB', urgent: false, messages: [
       { from: 'Travel Desk', text: 'Prague flights: BA Mon 14 Apr from £189. Book soon — prices rising.', time: '10:00' },
       { from: 'Booking.com', text: 'Madrid Premier League hotel hold expires May 1.', time: '08:20' },
     ]},
-    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false, messages: [
+    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#DB2777', urgent: false, messages: [
       { from: 'Fan - Tom S.', text: 'Great performance last week! Can you sign my shirt at Prague?', time: '11:00' },
       { from: 'Fan - Emma K.', text: 'My son loves watching you play. Any chance of a video message?', time: '10:30' },
       { from: 'Darts Forum', text: 'Thread: Jake Morrison form analysis — 47 replies', time: '09:15' },
@@ -374,7 +390,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🎯</h1>
-              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
+              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Darts will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
                 style={{ background: isSpeaking ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(249,115,22,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#F97316' : '#9CA3AF' }}>
                 <Volume2 size={14} />
@@ -405,7 +421,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="text-xl">🌧️</div>
               <div className="text-sm font-bold text-white">14°C</div>
-              <div className="text-[9px]" style={{ color: '#6B7280' }}>Dortmund</div>
+              <div className="text-[9px]" style={{ color: '#6B7280' }}>London</div>
             </div>
             <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
@@ -545,17 +561,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* TODAY */}
       {dashTab === 'today' && (
         <div className="space-y-4">
-        {/* AI Morning Summary */}
-        <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #111318, #1a1a2e)', border: '1px solid rgba(249,115,22,0.2)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full flex items-center justify-center text-sm" style={{background:'rgba(249,115,22,0.15)'}}>🤖</div><span className="text-xs font-bold" style={{color:'#F97316'}}>AI Morning Summary</span>{dartsSummaryLoading && <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{background:'rgba(249,115,22,0.15)',color:'#F97316'}}>Generating...</span>}</div>
-            <button onClick={() => { setDartsSummary(null); setDartsSummaryLoading(false) }} className="text-[10px]" style={{color:'#4B5563'}} title="Regenerate">🔄</button>
-          </div>
-          {dartsSummaryLoading ? (<div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded animate-pulse" style={{width:`${80+i*5}%`,background:'#1F2937'}}/>)}</div>)
-           : dartsSummary ? (<div className="text-sm leading-relaxed" style={{color:'#F9FAFB',fontStyle:'italic',borderLeft:'3px solid #F97316',paddingLeft:14}}>{dartsSummary}</div>)
-           : (<div className="text-sm leading-relaxed" style={{color:'#F9FAFB',fontStyle:'italic',borderLeft:'3px solid #F97316',paddingLeft:14}}>Good morning. European Championship tonight — Gerwyn Price in R1. Your checkout percentage is trending up. Focus on D16 under pressure. Red Dragon content shoot at 12. Travel to Dortmund confirmed.</div>)}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT: Morning Roundup */}
           <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
@@ -568,8 +573,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div key={i} className="rounded-xl border border-gray-800/50 hover:border-gray-700 transition-all bg-[#0a0c14]">
                   <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">{ch.icon}</span>
-                      <span className="text-sm text-gray-300">{ch.label}</span>
+                      <span className="text-base" style={{ color: ch.color }}>{ch.icon}</span>
+                      <span className="text-sm" style={{ color: ch.color }}>{ch.label}</span>
                       {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
                     </div>
                     <div className="flex items-center gap-2">
@@ -579,21 +584,37 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   </button>
                   {expandedChannel === ch.label && (
                     <div className="px-3 pb-2 space-y-1.5 border-t border-gray-800/40 pt-2">
-                      {ch.messages.map((msg, j) => (
-                        <div key={j} className="flex items-start gap-2 py-1.5 px-2 rounded-lg bg-[#070810]">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-semibold text-gray-300">{msg.from}</span>
-                              <span className="text-[9px] text-gray-600">{msg.time}</span>
+                      {ch.messages.map((msg, j) => {
+                        const msgKey = `${ch.label}-${j}`
+                        if (dismissedMessages.has(msgKey)) return null
+                        return (
+                        <div key={j}>
+                          <div className="flex items-start gap-2 py-1.5 px-2 rounded-lg bg-[#070810]">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-semibold text-gray-300">{msg.from}</span>
+                                <span className="text-[9px] text-gray-600">{msg.time}</span>
+                                {repliedTo.has(msgKey) && <span className="text-[9px] text-green-400 font-bold">✓ Replied</span>}
+                              </div>
+                              <p className="text-[11px] text-gray-400 mt-0.5">{msg.text}</p>
                             </div>
-                            <p className="text-[11px] text-gray-400 mt-0.5">{msg.text}</p>
+                            <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+                              {!repliedTo.has(msgKey) && <button onClick={() => { setReplyingTo(replyingTo === msgKey ? null : msgKey); setReplyText('') }} className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/15 text-red-400 hover:bg-red-600/25 transition-all">Reply</button>}
+                              <button onClick={() => setDismissedMessages(prev => new Set([...prev, msgKey]))} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300 transition-all">Dismiss</button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
-                            <button className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/15 text-red-400 hover:bg-red-600/25 transition-all">Reply</button>
-                            <button className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300 transition-all">Dismiss</button>
-                          </div>
+                          {replyingTo === msgKey && (
+                            <div className="mt-1 ml-2 mr-2 mb-1 rounded-lg p-2 bg-[#0a0c14] border border-gray-800">
+                              <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Type your reply..." rows={2} className="w-full bg-transparent text-xs text-gray-300 placeholder-gray-600 resize-none outline-none" />
+                              <div className="flex items-center justify-end gap-2 mt-1">
+                                <button onClick={() => { setReplyingTo(null); setReplyText('') }} className="text-[9px] px-2 py-1 rounded text-gray-500 hover:text-gray-300">Cancel</button>
+                                <button onClick={() => { setRepliedTo(prev => new Set([...prev, msgKey])); setReplyingTo(null); setReplyText('') }} className="text-[9px] px-2.5 py-1 rounded bg-red-600/20 text-red-400 font-semibold hover:bg-red-600/30 transition-all">Send</button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -659,14 +680,17 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <span className="text-sm font-bold text-white">📸 Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                  <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
-                  <button className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                  {photoSrc && <button onClick={() => { setPhotoSrc(null); localStorage.removeItem('lumio_darts_photo_frame') }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const src = r.result as string; setPhotoSrc(src); localStorage.setItem('lumio_darts_photo_frame', src) }; r.readAsDataURL(f); e.target.value = '' }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
-                {session.photoDataUrl
-                  ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
-                  : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+                {photoSrc
+                  ? <img src={photoSrc} alt="" className="w-full h-full object-cover" />
+                  : session.photoDataUrl
+                    ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                    : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (
@@ -6234,6 +6258,71 @@ const DARTS_ROLES = [
   { id: 'secretary',  label: 'Secretary',           icon: '📋', description: 'Admin & compliance'  },
 ]
 
+const DARTS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
+  player:     { label: 'Player',              icon: '🎯', accent: '#dc2626', sidebar: 'all', message: null },
+  chairman:   { label: 'Organisation Chair',  icon: '🏛️', accent: '#F59E0B', sidebar: ['dashboard','morning','financial','sponsorship','exhibitions','media','agent','settings'], message: 'Board & strategy view — player controls full access.' },
+  manager:    { label: 'Tour Manager',        icon: '🎯', accent: '#22C55E', sidebar: ['dashboard','morning','schedule','live-scores','draw-bracket','match-prep','travel','teamhub','equipment','settings'], message: 'Full tour management view.' },
+  director:   { label: 'Player Director',     icon: '⭐', accent: '#8B5CF6', sidebar: ['dashboard','morning','performance','schedule','live-scores','opponentintel','practicelog','teamhub','mental','physio-recovery','career','settings'], message: 'Player development and performance view.' },
+  commercial: { label: 'Commercial',          icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','morning','sponsorship','exhibitions','media','financial','agent','settings'], message: 'Sponsors, exhibitions and commercial view.' },
+  secretary:  { label: 'Secretary',           icon: '📋', accent: '#6B7280', sidebar: ['dashboard','morning','schedule','travel','tourcard','settings'], message: 'Admin and compliance view.' },
+  sponsor:    { label: 'Sponsor / Partner',   icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','media','settings'], message: null },
+}
+
+function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession; player: DartsPlayer }) {
+  const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const sponsorName = session.clubName || 'Red Dragon'
+  const sponsorColor = '#dc2626'
+  const sponsorLogo = session.logoDataUrl
+  const tabs = [
+    { id: 'overview' as const, label: 'Overview', icon: '📊' },
+    { id: 'obligations' as const, label: 'Obligations', icon: '📋' },
+    { id: 'content' as const, label: 'Content', icon: '📱' },
+    { id: 'events' as const, label: 'Events', icon: '🏆' },
+    { id: 'roi' as const, label: 'ROI', icon: '💰' },
+  ]
+  return (
+    <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="relative px-8 py-6" style={{ background: `linear-gradient(135deg, ${sponsorColor}25 0%, rgba(0,0,0,0.8) 60%, #0d1117 100%)`, borderBottom: `1px solid ${sponsorColor}30` }}>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
+            {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
+            <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
+            <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name} · PDC #{player.pdcRank}</div>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-1 px-6 pt-4 border-b border-gray-800">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${activeTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+      <div className="p-6">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[{ label:'Obligations', value:'4 total', sub:'1 due today', color:'#EF4444' },{ label:'Est. reach', value:'8.2M', sub:'this season', color:sponsorColor },{ label:'Deal value', value:'£45k/yr', sub:'renewal Jun 2026', color:'#22C55E' },{ label:'PDC ranking', value:`#${player.pdcRank}`, sub:'current', color:'#dc2626' }].map((s,i) => (
+              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-xs text-white font-semibold mt-1">{s.label}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {activeTab === 'obligations' && <div className="text-sm text-gray-400">Sponsor obligations tracking — content shoots, social posts, renewals.</div>}
+        {activeTab === 'content' && <div className="text-sm text-gray-400">Content calendar and performance metrics for sponsored posts.</div>}
+        {activeTab === 'events' && <div className="text-sm text-gray-400">Tournament schedule with broadcast exposure and viewer estimates.</div>}
+        {activeTab === 'roi' && <div className="text-sm text-gray-400">Return on investment analytics — reach, engagement, brand value.</div>}
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function DartsPortalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -6853,6 +6942,13 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
   const [livePlayer, setLivePlayer] = useState<DartsPlayer | null>(null);
   const [roleOverride, setRoleOverride] = useState(session.role || 'player');
   const activeRole = roleOverride;
+  const currentRole = (roleOverride || 'player') as keyof typeof DARTS_ROLE_CONFIG
+  const roleConfig = DARTS_ROLE_CONFIG[currentRole] ?? DARTS_ROLE_CONFIG.player
+  const isSponsor = currentRole === 'sponsor'
+
+  const visibleSidebarItems = roleConfig.sidebar === 'all'
+    ? SIDEBAR_ITEMS
+    : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
 
   useEffect(() => {
     let cancelled = false;
@@ -6992,7 +7088,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
 
         <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
-            const items = SIDEBAR_ITEMS.filter(i => i.group === group);
+            const items = visibleSidebarItems.filter(i => i.group === group);
             return (
               <div key={group} className="mb-3">
                 {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
@@ -7053,7 +7149,19 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
           <span>Demo workspace · sample data</span>
           <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
         </div>
+        {currentRole !== 'player' && !isSponsor && roleConfig.message && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
+            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <div className="flex items-center gap-2">
+              <span>{roleConfig.icon}</span>
+              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong> — {roleConfig.message}</span>
+            </div>
+          </div>
+        )}
 
+        {isSponsor ? (
+          <DartsSponsorDashboard session={session} player={player} />
+        ) : (
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 pb-16 md:pb-0">{renderView()}</div>
 
@@ -7119,6 +7227,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Mobile bottom navigation */}
