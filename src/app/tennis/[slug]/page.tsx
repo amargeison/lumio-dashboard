@@ -1259,6 +1259,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           <div className="flex flex-wrap items-center gap-2 px-4 py-3 mb-3" style={{ backgroundColor: '#0D0E14' }}>
             <span className="text-xs font-semibold shrink-0 mr-1 w-full mb-1" style={{ color: '#4B5563' }}>Quick actions</span>
             {[
+              { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
               { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
               { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
               { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
@@ -7497,6 +7498,219 @@ export default function TennisTourPage() {
   )
 }
 
+// ─── SEND MESSAGE MODAL ──────────────────────────────────────────────────────
+
+function TennisSendMessage({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
+  const [step, setStep] = useState<'who'|'how'|'message'|'preview'|'sent'>('who')
+  const [selectedPeople, setSelectedPeople] = useState<string[]>([])
+  const [customPerson, setCustomPerson] = useState('')
+  const [channels, setChannels] = useState<string[]>(['email'])
+  const [messageText, setMessageText] = useState('')
+  const [isUrgent, setIsUrgent] = useState(false)
+  const [aiDraft, setAiDraft] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const TEAM = [
+    { name: 'Carlos Mendez', role: 'Head Coach', icon: '📋' },
+    { name: 'Dr Sarah Lee', role: 'Physiotherapist', icon: '⚕️' },
+    { name: 'James Wright', role: 'Agent (IMG)', icon: '💼' },
+    { name: 'Petra Novak', role: 'Nutritionist', icon: '🥗' },
+    { name: 'Marcos Silva', role: 'Sports Psychologist', icon: '🧠' },
+    { name: 'Tom Ellis', role: 'Stringer', icon: '🎵' },
+  ]
+
+  const CHANNELS = [
+    { id: 'sms', label: 'Text / SMS', icon: '💬' },
+    { id: 'whatsapp', label: 'WhatsApp', icon: '🟢' },
+    { id: 'email', label: 'Email', icon: '📧' },
+    { id: 'internal', label: 'Internal Message', icon: '🔔' },
+  ]
+
+  const togglePerson = (name: string) => setSelectedPeople(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  const toggleChannel = (id: string) => setChannels(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
+
+  const allRecipients = [...selectedPeople, ...(customPerson.trim() ? [customPerson.trim()] : [])]
+
+  const handleSend = async (urgent: boolean) => {
+    setIsUrgent(urgent)
+    setLoading(true)
+    try {
+      const usedChannels = urgent ? CHANNELS.map(c => c.label) : channels.map(id => CHANNELS.find(c => c.id === id)?.label || id)
+      const res = await fetch('/api/ai/tennis', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+          content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional tennis player (ATP #${player.ranking ?? 67}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble.`
+        }] })
+      })
+      const data = await res.json()
+      setAiDraft(data.content?.[0]?.text || messageText)
+    } catch { setAiDraft(urgent ? `[URGENT] ${messageText}` : messageText) }
+    setLoading(false)
+    setStep('preview')
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📨</span>
+          <div>
+            <div className="text-base font-bold text-white">Send Message</div>
+            <div className="text-xs" style={{ color: '#6B7280' }}>
+              {step === 'who' ? 'Step 1 — Who are you messaging?' : step === 'how' ? 'Step 2 — How do you want to send it?' : step === 'message' ? 'Step 3 — Write your message' : step === 'preview' ? 'Preview — Confirm & send' : 'Sent!'}
+            </div>
+          </div>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+        {['Who', 'How', 'Message', 'Preview'].map((s, i) => {
+          const stepIdx = ['who','how','message','preview'].indexOf(step)
+          return (
+            <React.Fragment key={s}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                  style={{ backgroundColor: i < stepIdx ? '#22C55E' : i === stepIdx ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: i <= stepIdx ? '#fff' : '#4B5563' }}>
+                  {i < stepIdx ? '✓' : i + 1}
+                </div>
+                <span className="text-xs font-semibold" style={{ color: i === stepIdx ? '#7C3AED' : i < stepIdx ? '#22C55E' : '#4B5563' }}>{s}</span>
+              </div>
+              {i < 3 && <div className="flex-1 h-px" style={{ backgroundColor: i < stepIdx ? '#22C55E' : '#1F2937' }} />}
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      <div className="p-6">
+        {/* STEP 1: Who */}
+        {step === 'who' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {TEAM.map(m => (
+                <button key={m.name} onClick={() => togglePerson(m.name)}
+                  className="flex items-center gap-3 rounded-xl p-3 text-left transition-all"
+                  style={{ backgroundColor: selectedPeople.includes(m.name) ? 'rgba(124,58,237,0.15)' : '#111318', border: selectedPeople.includes(m.name) ? '1px solid rgba(124,58,237,0.5)' : '1px solid #1F2937' }}>
+                  <span className="text-lg">{m.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">{m.name}</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</div>
+                  </div>
+                  {selectedPeople.includes(m.name) && <span style={{ color: '#7C3AED' }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <div>
+              <input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name..."
+                className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+            </div>
+            {allRecipients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {allRecipients.map(n => (
+                  <span key={n} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: 'rgba(124,58,237,0.2)', color: '#A78BFA' }}>{n}</span>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setStep('how')} disabled={allRecipients.length === 0}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ backgroundColor: allRecipients.length > 0 ? '#7C3AED' : '#374151' }}>
+              Next — choose channels →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: How */}
+        {step === 'how' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {CHANNELS.map(ch => (
+                <button key={ch.id} onClick={() => toggleChannel(ch.id)}
+                  className="flex items-center gap-3 rounded-xl p-4 text-left transition-all"
+                  style={{ backgroundColor: channels.includes(ch.id) ? 'rgba(124,58,237,0.15)' : '#111318', border: channels.includes(ch.id) ? '1px solid rgba(124,58,237,0.5)' : '1px solid #1F2937' }}>
+                  <span className="text-2xl">{ch.icon}</span>
+                  <span className="text-sm font-semibold text-white">{ch.label}</span>
+                  {channels.includes(ch.id) && <span className="ml-auto" style={{ color: '#7C3AED' }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('who')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => setStep('message')} disabled={channels.length === 0}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: channels.length > 0 ? '#7C3AED' : '#374151' }}>
+                Next — write message →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Message */}
+        {step === 'message' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <span className="text-xs" style={{ color: '#6B7280' }}>To:</span>
+              {allRecipients.map(n => <span key={n} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#A78BFA' }}>{n}</span>)}
+              <span className="text-xs" style={{ color: '#6B7280' }}>via</span>
+              {channels.map(id => <span key={id} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{CHANNELS.find(c => c.id === id)?.label}</span>)}
+            </div>
+            <textarea value={messageText} onChange={e => setMessageText(e.target.value)} rows={5} placeholder="Type your message..."
+              className="w-full px-4 py-3 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} autoFocus />
+            <div className="flex gap-3">
+              <button onClick={() => setStep('how')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => handleSend(false)} disabled={!messageText.trim() || loading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: messageText.trim() ? '#7C3AED' : '#374151' }}>
+                {loading ? '⏳ Drafting...' : 'Send →'}
+              </button>
+              <button onClick={() => handleSend(true)} disabled={!messageText.trim() || loading}
+                className="py-2.5 px-4 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: messageText.trim() ? '#EF4444' : '#374151' }}>
+                🚨 URGENT
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Preview */}
+        {step === 'preview' && (
+          <div className="space-y-4">
+            {isUrgent && (
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <span>🚨</span>
+                <span className="text-xs font-bold" style={{ color: '#EF4444' }}>URGENT — sending to ALL channels simultaneously</span>
+              </div>
+            )}
+            <div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>
+              {aiDraft}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setStep('message'); setAiDraft('') }} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Edit</button>
+              <button onClick={() => setStep('sent')}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: isUrgent ? '#EF4444' : '#7C3AED' }}>
+                ✓ Confirm Send
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SENT */}
+        {step === 'sent' && (
+          <div className="text-center py-8">
+            <div className="text-5xl mb-3">✅</div>
+            <div className="text-base font-bold text-white mb-2">Message sent!</div>
+            <div className="text-sm mb-4" style={{ color: '#6B7280' }}>
+              Sent via {isUrgent ? 'all channels' : channels.map(id => CHANNELS.find(c => c.id === id)?.label).join(', ')} to {allRecipients.join(', ')}
+            </div>
+            <button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>Done</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ─── MODAL HELPER COMPONENTS ──────────────────────────────────────────────────
 
 function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
@@ -9076,6 +9290,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}>
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
             style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            {activeModal === 'sendmessage' && <TennisSendMessage onClose={closeModal} session={session} player={player} />}
             {activeModal === 'flights' && <TennisFlightFinder onClose={closeModal} session={session} player={player} />}
             {activeModal === 'hotel' && <TennisHotelFinder onClose={closeModal} session={session} />}
             {activeModal === 'matchprep' && <TennisMatchPrepAI onClose={closeModal} session={session} player={player} />}
