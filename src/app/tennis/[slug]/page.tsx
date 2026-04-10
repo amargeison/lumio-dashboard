@@ -1241,7 +1241,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               <button key={a.id}
                 onClick={() => onOpenModal(a.id)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-                style={a.hot ? { backgroundColor: '#7C3AED', color: '#FFFFFF' } : { backgroundColor: '#1a2332', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}>
                 <span>{a.icon}</span>
                 {a.label}
                 {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>AI</span>}
