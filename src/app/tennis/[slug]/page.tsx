@@ -9881,9 +9881,9 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '16px', width: '100%' }}>
           {sidebarExpanded ? (
             <>
-              <img src="/Lumio_Sports_logo.png" alt="Lumio Sports" style={{ width: 100, height: 'auto', display: 'block', margin: '0 auto' }}
+              <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ width: 100, height: 'auto', display: 'block', margin: '0 auto' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
-              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO SPORTS</span>
+              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
             </>
           ) : (
             <span className="text-lg">🎾</span>
