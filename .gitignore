@@ -52,3 +52,16 @@ next-env.d.ts
 !public/NELI*
 !public/images.png
 !public/telted*
+!public/Carlos_Mendez.jpg
+!public/Sarah_Lee.jpg
+!public/Marcus_Webb.jpg
+!public/Elena_Russo.jpg
+!public/James_Okafor.jpg
+!public/Rick_Dalton.jpg
+!public/Priya_Sharma.jpg
+!public/Tomáš_Novák.jpg
+!public/business_man_avatar.png
+!public/business_woman_avatar.png
+!public/*_logo.png
+!public/Lumio_Sports_logo.png
+!public/badges/*
