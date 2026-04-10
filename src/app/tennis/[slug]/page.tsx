@@ -1030,24 +1030,26 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     ].filter(c => c.tz !== userTimezone).slice(0, 3).map(c => ({ ...c, isUser: false }))),
   ]
 
-  // Live weather via Open-Meteo (free, no key)
-  const [weather, setWeather] = useState<{ temp:number; icon:string; city:string } | null>(null)
+  // Live weather via Open-Meteo — derived from timezone (no permission popup)
+  const [weather, setWeather] = useState<{ temp:number; condition:string; icon:string; city:string } | null>(null)
   useEffect(() => {
-    if (typeof window === 'undefined' || !navigator.geolocation) { setWeather({ temp:10, icon:'⛅', city:userCity }); return }
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m,weather_code&timezone=auto`)
-          const d = await r.json()
-          const t = Math.round(d.current?.temperature_2m ?? 10)
-          const wc = d.current?.weather_code ?? 0
-          const icon = wc===0?'☀️':wc<=2?'⛅':wc===3?'☁️':wc<=49?'🌫️':wc<=69?'🌧️':wc<=79?'❄️':'⛈️'
-          setWeather({ temp:t, icon, city:userCity })
-        } catch { setWeather({ temp:10, icon:'⛅', city:userCity }) }
-      },
-      () => setWeather({ temp:10, icon:'⛅', city:userCity }),
-      { timeout: 5000 }
-    )
+    const TZ_COORDS: Record<string,{lat:number;lon:number;city:string}> = {
+      'Europe/London':{lat:51.51,lon:-0.13,city:'London'},'Europe/Paris':{lat:48.85,lon:2.35,city:'Paris'},'Europe/Berlin':{lat:52.52,lon:13.41,city:'Berlin'},'Europe/Madrid':{lat:40.42,lon:-3.70,city:'Madrid'},'Europe/Rome':{lat:41.90,lon:12.50,city:'Rome'},'Europe/Amsterdam':{lat:52.37,lon:4.90,city:'Amsterdam'},'Europe/Stockholm':{lat:59.33,lon:18.07,city:'Stockholm'},'Europe/Zurich':{lat:47.38,lon:8.54,city:'Zurich'},'Europe/Moscow':{lat:55.75,lon:37.62,city:'Moscow'},
+      'America/New_York':{lat:40.71,lon:-74.01,city:'New York'},'America/Chicago':{lat:41.88,lon:-87.63,city:'Chicago'},'America/Los_Angeles':{lat:34.05,lon:-118.24,city:'Los Angeles'},'America/Toronto':{lat:43.65,lon:-79.38,city:'Toronto'},'America/Vancouver':{lat:49.25,lon:-123.12,city:'Vancouver'},'America/Sao_Paulo':{lat:-23.55,lon:-46.63,city:'São Paulo'},
+      'Asia/Dubai':{lat:25.20,lon:55.27,city:'Dubai'},'Asia/Tokyo':{lat:35.68,lon:139.69,city:'Tokyo'},'Asia/Shanghai':{lat:31.23,lon:121.47,city:'Shanghai'},'Asia/Singapore':{lat:1.35,lon:103.82,city:'Singapore'},'Asia/Hong_Kong':{lat:22.32,lon:114.17,city:'Hong Kong'},'Asia/Seoul':{lat:37.57,lon:126.98,city:'Seoul'},'Asia/Mumbai':{lat:19.08,lon:72.88,city:'Mumbai'},
+      'Australia/Sydney':{lat:-33.87,lon:151.21,city:'Sydney'},'Australia/Melbourne':{lat:-37.81,lon:144.96,city:'Melbourne'},'Pacific/Auckland':{lat:-36.85,lon:174.76,city:'Auckland'},
+    }
+    const coords = TZ_COORDS[userTimezone] || {lat:51.51,lon:-0.13,city:'London'}
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=auto`)
+      .then(r => r.json())
+      .then(data => {
+        const temp = Math.round(data.current?.temperature_2m ?? 10)
+        const wc = data.current?.weather_code ?? 0
+        const getC = (c:number) => { if(c===0) return {label:'Clear',icon:'☀️'}; if(c<=2) return {label:'Partly cloudy',icon:'⛅'}; if(c===3) return {label:'Overcast',icon:'☁️'}; if(c<=49) return {label:'Foggy',icon:'🌫️'}; if(c<=59) return {label:'Drizzle',icon:'🌦️'}; if(c<=69) return {label:'Rainy',icon:'🌧️'}; if(c<=79) return {label:'Snowy',icon:'❄️'}; return {label:'Stormy',icon:'⛈️'} }
+        const {label,icon} = getC(wc)
+        setWeather({temp,condition:label,icon,city:coords.city})
+      })
+      .catch(() => setWeather({temp:10,condition:'Partly cloudy',icon:'⛅',city:coords.city}))
   }, [])
 
   return (
