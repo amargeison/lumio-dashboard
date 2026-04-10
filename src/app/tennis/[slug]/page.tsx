@@ -920,9 +920,17 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     ].join(' ')
     const utterance = new SpeechSynthesisUtterance(briefingText)
     const voices = window.speechSynthesis.getVoices()
-    const preferred = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.name.includes('Arthur') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
+    // Map settings voice selection to browser voice preferences
+    const storedVoiceId = typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || '' : ''
+    const VOICE_PREFS: Record<string, { match: string[]; pitch: number }> = {
+      'EXAVITQu4vr4xnSDxMaL': { match: ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Samantha'], pitch: 1.05 },
+      'XB0fDUnXU5powFXDhCwa': { match: ['Microsoft Mia', 'Moira', 'Tessa', 'Fiona'], pitch: 1.0 },
+      'JBFqnCBsd6RMkjVDRZzb': { match: ['Google UK English Male', 'Microsoft George', 'Daniel', 'Arthur'], pitch: 0.85 },
+    }
+    const prefs = VOICE_PREFS[storedVoiceId] || VOICE_PREFS['EXAVITQu4vr4xnSDxMaL']
+    const preferred = voices.find(v => prefs.match.some(m => v.name.includes(m))) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
     if (preferred) utterance.voice = preferred
-    utterance.rate = 0.95; utterance.pitch = 1.0; utterance.volume = 1.0
+    utterance.rate = 0.95; utterance.pitch = prefs.pitch; utterance.volume = 1.0
     utterance.onstart = () => setIsSpeaking(true)
     utterance.onend = () => setIsSpeaking(false)
     utterance.onerror = () => setIsSpeaking(false)
@@ -6597,12 +6605,7 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         {/* Player photo */}
         <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden"
           style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2) 0%, rgba(13,148,136,0.2) 100%)', border: '1px solid rgba(108,63,197,0.3)' }}>
-          {session?.photoDataUrl
-            ? <img src={session.photoDataUrl} alt={session.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} />
-            : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>
-                {(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}
-              </div>
-          }
+          {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session?.photoDataUrl ? <img src={ph || session?.photoDataUrl || ''} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div> })()}
         </div>
         {/* Name */}
         <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
