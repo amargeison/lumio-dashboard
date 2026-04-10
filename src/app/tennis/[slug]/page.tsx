@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, ChevronUp } from 'lucide-react';
+import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
@@ -863,14 +863,18 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     const briefingText = [
       `Good morning ${firstName}.`,
       `Today is ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}.`,
-      `You have a match today against C. Martinez at 1pm on Court 4.`,
-      `Head to Head: 3 wins to 1 in your favour.`,
-      `Your clay serve average is 4% below your season average — focus on the kick serve to his backhand on the deuce court.`,
-      `2 urgent messages: The tournament desk has moved your court time 30 minutes. Physio Dr Lee wants to see you at 12:30 for your shoulder.`,
-      `Lululemon sponsor post is due today — Carlos needs the kit photo before noon.`,
-      `312 ranking points drop off after Monte-Carlo. A win tonight keeps you at number 67. A loss risks dropping to 71.`,
-      `Good luck today. You've put in the work — trust your game and enjoy the moment.`,
-      `By the way, if you purchase a plan, you can choose from 20 different voices to suit your style.`,
+      `You have a match today against C. Martinez at 1:30pm on Court 4, Monte-Carlo.`,
+      `Head to head, you lead 3 wins to 1.`,
+      `Key tactical note: kick serve wide to his backhand on the deuce court.`,
+      `Two urgent messages. The tournament desk moved your court time 30 minutes — confirm receipt.`,
+      `Dr Lee wants to see you at 12:30 for your shoulder — don't skip it.`,
+      `Lululemon sponsor post is due today. Carlos needs your kit photo before noon.`,
+      `Hamburg wildcard decision deadline is 5pm today — call your agent before responding.`,
+      `312 ranking points drop off after this tournament. Win tonight and you hold at 67. Lose and you risk dropping to 71.`,
+      `On the positive side — your serve percentage is up 6% over your last 5 matches, your clay win rate is 68%, above the tour average, and you're in the best form of your clay season.`,
+      `Today is a big day. You're ready for it.`,
+      `That's your morning briefing.`,
+      `By the way — on a paid plan, you can choose from 20 natural voices that sound nothing like this one.`,
     ].join(' ')
     const utterance = new SpeechSynthesisUtterance(briefingText)
     const voices = window.speechSynthesis.getVoices()
@@ -979,14 +983,14 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 </h1>
                 <button
                   onClick={speakBriefing}
-                  title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-sm"
+                  title={isSpeaking ? 'Stop reading' : 'Read briefing aloud — upgrade for 20 human-sounding voices'}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
                   style={{
-                    background: isSpeaking ? 'rgba(14,165,233,0.3)' : 'rgba(255,255,255,0.08)',
-                    border: isSpeaking ? '1px solid rgba(14,165,233,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                    background: isSpeaking ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.08)',
+                    border: isSpeaking ? '1px solid rgba(14,165,233,0.5)' : '1px solid rgba(255,255,255,0.12)',
                     color: isSpeaking ? '#0ea5e9' : '#9CA3AF',
                   }}>
-                  {isSpeaking ? '⏹' : '🔊'}
+                  <Volume2 size={14} />
                 </button>
               </div>
               <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
@@ -1616,79 +1620,319 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
       {/* INSIGHTS TAB */}
       {dashTab === 'insights' && (
-        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title:'Ranking trajectory',   value:'#67 → #58', sub:'If you win Monte-Carlo',        color:'#0ea5e9', icon:'📈' },
-            { title:'Points expiring soon', value:'312 pts',   sub:'After Monte-Carlo (this week)', color:'#EF4444', icon:'⚠️' },
-            { title:'Clay win rate',        value:'68%',       sub:'Above ATP tour avg (61%)',       color:'#22C55E', icon:'🏟️' },
-            { title:'Season prize money',   value:'£387k',     sub:'Ahead of projection (+12%)',    color:'#F59E0B', icon:'💰' },
-            { title:'Serve % (last 5)',     value:'64%',       sub:'↑ from 58% season avg',         color:'#8B5CF6', icon:'🎾' },
-            { title:'Sponsor obligations',  value:'2 due',     sub:'This week — Lululemon + Nike',  color:'#EC4899', icon:'🤝' },
-          ].map((ins, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
-              <div className="flex-1">
-                <div className="text-xs mb-1" style={{ color: '#6B7280' }}>{ins.title}</div>
-                <div className="text-2xl font-black" style={{ color: ins.color }}>{ins.value}</div>
-                <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>{ins.sub}</div>
+        <div className="pt-4 space-y-6">
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label: 'ATP Ranking', value: `#${player.ranking}`, sub: `Career high: #${player.career_high}`, color: '#8B5CF6', icon: '📊' },
+              { label: 'Race Standing', value: `#${player.race_ranking}`, sub: `${player.ranking_points.toLocaleString()} pts`, color: '#0ea5e9', icon: '🏁' },
+              { label: 'Clay Win Rate', value: '68%', sub: 'Above ATP avg (61%)', color: '#22C55E', icon: '🏟️' },
+              { label: 'Season Earnings', value: '£387k', sub: '+12% vs projection', color: '#F59E0B', icon: '💰' },
+              { label: 'Form', value: `${player.season_wins}W-${player.season_losses}L`, sub: `${Math.round(player.season_wins/(player.season_wins+player.season_losses)*100)}% win rate`, color: '#EC4899', icon: '🔥' },
+            ].map((kpi, i) => (
+              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-lg mb-1">{kpi.icon}</div>
+                <div className="text-[10px] mb-0.5" style={{ color: '#6B7280' }}>{kpi.label}</div>
+                <div className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#4B5563' }}>{kpi.sub}</div>
               </div>
+            ))}
+          </div>
+
+          {/* Insight Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { type: 'ALERT', icon: '⚠️', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', title: '312 ranking points expiring', desc: 'After Monte-Carlo this week. A QF exit loses 180 pts from last year. Win tonight to defend and push to #58.', action: 'View ranking forecast →', section: 'performance' },
+              { type: 'OPPORTUNITY', icon: '💡', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', title: 'Paddy Power ambassador offer', desc: 'New approach via James Wright — £85k/yr. No competing betting sponsor. Decision needed by end of month.', action: 'View pipeline →', section: 'pipeline' },
+              { type: 'TREND', icon: '📈', color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', title: 'First serve % up 6 points', desc: 'Last 5 matches: 64% vs 58% season average. Kick serve improvement on clay is working — continue focus in practice.', action: 'View serve stats →', section: 'performance' },
+              { type: 'ACHIEVEMENT', icon: '🏆', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', title: 'Monte-Carlo QF — best clay result', desc: 'First Masters QF on clay. Beating Shelton (#14) in R3 was a statement win. Media interest is high.', action: 'View match report →', section: 'performance' },
+            ].map((tile, i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">{tile.icon}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: tile.color }}>{tile.type}</span>
+                </div>
+                <p className="text-sm font-semibold text-white mb-1">{tile.title}</p>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{tile.desc}</p>
+                <button onClick={() => onNavigate(tile.section)}
+                  className="text-[11px] font-semibold transition-all" style={{ color: tile.color }}>
+                  {tile.action}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Key Metrics Grid */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Key Metrics</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: '1st Serve %', value: '64%', trend: '↑ 6%', trendColor: '#22C55E' },
+                { label: 'Break Points Saved', value: '71%', trend: '↑ 3%', trendColor: '#22C55E' },
+                { label: 'Aces / Match', value: '8.4', trend: '↑ 1.2', trendColor: '#22C55E' },
+                { label: 'Double Faults', value: '2.1', trend: '↓ 0.8', trendColor: '#22C55E' },
+                { label: 'Return Points Won', value: '42%', trend: '→ 0%', trendColor: '#6B7280' },
+                { label: 'Net Points Won', value: '68%', trend: '↑ 5%', trendColor: '#22C55E' },
+                { label: 'Avg Match Duration', value: '1h42m', trend: '↓ 8min', trendColor: '#22C55E' },
+                { label: 'Tiebreak Record', value: '4-1', trend: '80%', trendColor: '#0ea5e9' },
+              ].map((m, i) => (
+                <div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-[10px] mb-1" style={{ color: '#6B7280' }}>{m.label}</div>
+                  <div className="text-lg font-black text-white">{m.value}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: m.trendColor }}>{m.trend}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* AI Section */}
+          <TennisAISection context="insights" player={player} session={session} />
         </div>
       )}
 
       {/* DON'T MISS TAB */}
-      {dashTab === 'dontmiss' && (
-        <div className="pt-4 space-y-3">
-          {[
-            { urgency:'TODAY',    item:'Match vs C. Martinez — 13:00 Court 4. Monte-Carlo QF.',           action:'View match prep →', color:'#0ea5e9' },
-            { urgency:'TODAY',    item:'Lululemon sponsor post due — Carlos needs kit photo before 12:00.',action:'Open brief →',      color:'#EF4444' },
-            { urgency:'THIS WEEK',item:'Rolex renewal content — 2 posts outstanding. Agent chasing.',     action:'Review obligation →',color:'#F59E0B'},
-            { urgency:'THIS WEEK',item:'Madrid flights — prices increasing daily. Depart 26 Apr.',        action:'Search flights →',   color:'#F59E0B' },
-            { urgency:'47 DAYS',  item:'Rolex sponsorship renewal deadline. Agent meeting needed.',        action:'View contract →',    color:'#8B5CF6' },
-            { urgency:'3 MAY',    item:'Roland-Garros entry deadline. Direct acceptance — admin to submit.',action:'Check entry →',    color:'#6B7280' },
-          ].map((d, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5"
-                style={{
-                  background: d.urgency === 'TODAY' ? 'rgba(239,68,68,0.12)' : d.urgency === 'THIS WEEK' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)',
-                  color: d.urgency === 'TODAY' ? '#EF4444' : d.urgency === 'THIS WEEK' ? '#F59E0B' : '#6B7280',
-                }}>{d.urgency}</span>
-              <div className="flex-1">
-                <p className="text-sm mb-1" style={{ color: '#E5E7EB' }}>{d.item}</p>
-                <button className="text-[10px] font-semibold" style={{ color: d.color }}>{d.action}</button>
+      {dashTab === 'dontmiss' && (() => {
+        const DONT_MISS_ITEMS = [
+          { id: 'dm-1', urgency: 'CRITICAL', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Match', deadline: 'Today 13:30', title: 'Match vs C. Martinez — Court 4', desc: 'Monte-Carlo Masters QF. H2H 3-1. Clay court. Your best Masters result on clay.', consequence: 'Miss this and you drop 180 ranking points.', action: 'View match prep →', section: 'matchprep' },
+          { id: 'dm-2', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Sponsor', deadline: 'Before 12:00', title: 'Lululemon kit photo due', desc: 'Carlos needs the photo for today\'s contractual obligation post.', consequence: 'Breach of sponsor contract — penalty clause.', action: 'Open brief →', section: 'sponsorship' },
+          { id: 'dm-3', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Entries', deadline: 'By 17:00', title: 'Hamburg 500 wildcard — respond today', desc: 'Tournament director needs answer. Clashes with Eastbourne prep week.', consequence: 'Wildcard offer expires. Next opportunity: Winston-Salem (Aug).', action: 'Manage entries →', section: 'entries' },
+          { id: 'dm-4', urgency: '47 DAYS', urgencyColor: '#F59E0B', urgencyBg: 'rgba(245,158,11,0.12)', category: 'Commercial', deadline: '25 May', title: 'Rolex sponsorship renewal deadline', desc: 'Agent James Wright has the brief. 3-year deal worth 120k/yr. Competitor interest from TAG Heuer.', consequence: 'Auto-renewal at current terms if not renegotiated.', action: 'View contract →', section: 'sponsorship' },
+          { id: 'dm-5', urgency: '1 MAY', urgencyColor: '#6B7280', urgencyBg: 'rgba(107,114,128,0.12)', category: 'Travel', deadline: '1 May', title: 'Roland-Garros apartment deposit', desc: 'Owner requesting deposit. Travel desk has the details. 3-bed apartment near Porte d\'Auteuil.', consequence: 'Apartment released to next tenant. Hotel costs 3x more.', action: 'View travel →', section: 'travel' },
+          { id: 'dm-6', urgency: '1 MAY', urgencyColor: '#6B7280', urgencyBg: 'rgba(107,114,128,0.12)', category: 'Commercial', deadline: 'This month', title: '2 Nike posts outstanding from March', desc: 'Nike partnership requires 4 posts per season. 2 overdue. Agent flagged yesterday.', consequence: 'Sponsor satisfaction score drops. Renewal at risk.', action: 'View obligation →', section: 'sponsorship' },
+        ]
+        const visible = DONT_MISS_ITEMS.filter(d => !dismissedAlerts.has(d.id))
+        return (
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Don&apos;t Miss</h3>
+                <p className="text-[11px]" style={{ color: '#6B7280' }}>{visible.length} items need attention</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+            {visible.length === 0 ? (
+              <div className="text-center py-12 rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-3xl mb-3">✅</div>
+                <div className="text-sm font-semibold text-white mb-1">All clear</div>
+                <div className="text-xs" style={{ color: '#6B7280' }}>No urgent items remaining. Check back later.</div>
+              </div>
+            ) : (
+              visible.map(d => (
+                <div key={d.id} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start gap-3">
+                    <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5"
+                      style={{ background: d.urgencyBg, color: d.urgencyColor }}>{d.urgency}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{d.category}</span>
+                        <span className="text-[10px]" style={{ color: '#6B7280' }}>Due: {d.deadline}</span>
+                      </div>
+                      <p className="text-sm font-semibold text-white mb-1">{d.title}</p>
+                      <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{d.desc}</p>
+                      <p className="text-[11px] italic mb-3" style={{ color: '#EF4444' }}>If missed: {d.consequence}</p>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => onNavigate(d.section)}
+                          className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                          style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>
+                          {d.action}
+                        </button>
+                        <button onClick={() => onDismissAlert(d.id)}
+                          className="text-[11px] px-3 py-1.5 rounded-lg transition-all"
+                          style={{ border: '1px solid #374151', color: '#6B7280' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#9CA3AF' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = '#6B7280' }}>
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )
+      })()}
 
       {/* TEAM TAB */}
-      {dashTab === 'team' && (
-        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { name:'Carlos Mendez',   role:'Head Coach',          status:'Debrief requested — 17:00 today',  available:true,  initials:'CM' },
-            { name:'Dr Sarah Lee',    role:'Physiotherapist',     status:'Treatment complete — shoulder OK',  available:true,  initials:'SL' },
-            { name:'James Wright',    role:'Agent',               status:'3 sponsor inquiries pending',       available:true,  initials:'JW' },
-            { name:'Petra Novak',     role:'Nutritionist',        status:'Clay season plan updated',          available:true,  initials:'PN' },
-            { name:'Marcos Silva',    role:'Sports Psychologist', status:'Session Thursday 14:00',            available:false, initials:'MS' },
-            { name:'Tom Ellis',       role:'Stringer',            status:'11:45 appointment confirmed',       available:true,  initials:'TE' },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
-                {m.initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white">{m.name}</div>
-                <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
-                <div className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.status}</div>
-              </div>
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? '#22C55E' : '#374151' }} />
+      {dashTab === 'team' && (() => {
+        const TEAM_MEMBERS = [
+          { name: 'Carlos Mendez', role: 'Head Coach', initials: 'CM', status: 'Debrief requested — 17:00 today', available: true, location: 'Monte-Carlo', phone: '+34 612 xxx xxx', speciality: 'Tactical & match strategy', rating: 92 },
+          { name: 'Dr Sarah Lee', role: 'Physiotherapist', initials: 'SL', status: 'Treatment complete — shoulder OK', available: true, location: 'Monte-Carlo', phone: '+44 7700 xxx xxx', speciality: 'Sports rehabilitation', rating: 95 },
+          { name: 'James Wright', role: 'Agent (IMG)', initials: 'JW', status: '3 sponsor inquiries pending', available: true, location: 'London (remote)', phone: '+44 207 xxx xxxx', speciality: 'Commercial & endorsements', rating: 88 },
+          { name: 'Petra Novak', role: 'Nutritionist', initials: 'PN', status: 'Clay season plan updated', available: true, location: 'Monte-Carlo', phone: '+385 91 xxx xxxx', speciality: 'Sports nutrition & hydration', rating: 90 },
+          { name: 'Marcos Silva', role: 'Sports Psychologist', initials: 'MS', status: 'Session Thursday 14:00', available: false, location: 'Madrid (remote)', phone: '+34 911 xxx xxx', speciality: 'Mental conditioning', rating: 87 },
+          { name: 'Tom Ellis', role: 'Stringer', initials: 'TE', status: '11:45 appointment confirmed', available: true, location: 'Monte-Carlo', phone: '+44 7800 xxx xxx', speciality: 'Racket customisation', rating: 91 },
+        ]
+        return (
+          <div className="pt-4 space-y-4">
+            {/* Sub-tabs */}
+            <div className="flex gap-1 border-b overflow-x-auto pb-0" style={{ borderColor: '#1F2937' }}>
+              {([
+                { id: 'today' as const, label: 'Team Today', icon: '📍' },
+                { id: 'org' as const, label: 'Org Chart', icon: '🏗️' },
+                { id: 'info' as const, label: 'Team Info', icon: '📋' },
+                { id: 'club' as const, label: 'Club Info', icon: '🏛️' },
+              ]).map(t => (
+                <button key={t.id} onClick={() => setTeamSubTab(t.id)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+                  style={{
+                    borderColor: teamSubTab === t.id ? '#0ea5e9' : 'transparent',
+                    color: teamSubTab === t.id ? '#0ea5e9' : '#6B7280',
+                  }}>
+                  <span>{t.icon}</span>{t.label}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Team Today */}
+            {teamSubTab === 'today' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {TEAM_MEMBERS.map((m, i) => (
+                  <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
+                      {m.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-white">{m.name}</span>
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? '#22C55E' : '#374151' }} />
+                      </div>
+                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
+                      <div className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.status}</div>
+                      <div className="text-[10px]" style={{ color: '#4B5563' }}>📍 {m.location}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Org Chart */}
+            {teamSubTab === 'org' && (
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
+                    <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2"
+                      style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>AR</div>
+                    <div className="text-sm font-semibold text-white">{player.name}</div>
+                    <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
+                  </div>
+                </div>
+                <div className="flex justify-center"><div className="w-px h-6" style={{ background: '#374151' }} /></div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {TEAM_MEMBERS.map((m, i) => (
+                    <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5"
+                        style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
+                        {m.initials}
+                      </div>
+                      <div className="text-xs font-semibold text-white">{m.name}</div>
+                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Team Info */}
+            {teamSubTab === 'info' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {TEAM_MEMBERS.map((m, i) => (
+                  <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
+                        {m.initials}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white">{m.name}</div>
+                        <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
+                      </div>
+                      <div className="ml-auto text-2xl font-black" style={{ color: m.rating >= 90 ? '#22C55E' : m.rating >= 85 ? '#F59E0B' : '#6B7280' }}>{m.rating}</div>
+                    </div>
+                    <div className="space-y-1.5 text-[11px]">
+                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Speciality</span><span style={{ color: '#D1D5DB' }}>{m.speciality}</span></div>
+                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Location</span><span style={{ color: '#D1D5DB' }}>{m.location}</span></div>
+                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Contact</span><span style={{ color: '#D1D5DB' }}>{m.phone}</span></div>
+                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Available</span><span style={{ color: m.available ? '#22C55E' : '#EF4444' }}>{m.available ? 'Yes' : 'No'}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Club Info */}
+            {teamSubTab === 'club' && (
+              <div className="space-y-4">
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Documents</h4>
+                  <div className="space-y-2">
+                    {['Player Contract 2024-2027', 'Insurance Certificate', 'Anti-Doping Compliance', 'Visa & Work Permits', 'Tax Residency Certificate'].map((doc, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <span className="text-xs">📄</span>
+                        <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{doc}</span>
+                        <span className="text-[10px]" style={{ color: '#0ea5e9', cursor: 'pointer' }}>View</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Player Details</h4>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
+                    {[
+                      ['Full Name', player.name], ['Nationality', `${player.flag} ${player.nationality}`],
+                      ['DOB', player.dateOfBirth], ['Age', `${player.age}`],
+                      ['Height', player.height], ['Weight', player.weight],
+                      ['Plays', player.plays], ['Backhand', player.backhand],
+                      ['Turned Pro', `${player.turned_pro}`], ['Academy', player.academy],
+                      ['Coach', player.coach], ['Agent', player.agent],
+                    ].map(([label, val], i) => (
+                      <div key={i} className="flex justify-between py-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ color: '#6B7280' }}>{label}</span>
+                        <span style={{ color: '#D1D5DB' }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Key Contacts</h4>
+                  <div className="space-y-2 text-[11px]">
+                    {[
+                      { name: 'LTA Performance', role: 'Federation Liaison', contact: 'performance@lta.org.uk' },
+                      { name: 'ATP Tour Office', role: 'Player Relations', contact: 'players@atptour.com' },
+                      { name: 'IMG London', role: 'Agency HQ', contact: '+44 207 535 xxxx' },
+                    ].map((c, i) => (
+                      <div key={i} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div>
+                          <span style={{ color: '#D1D5DB' }}>{c.name}</span>
+                          <span className="ml-2" style={{ color: '#6B7280' }}>{c.role}</span>
+                        </div>
+                        <span style={{ color: '#0ea5e9' }}>{c.contact}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Upcoming Events</h4>
+                  <div className="space-y-2">
+                    {[
+                      { date: 'Apr 9', event: 'Monte-Carlo Masters QF', surface: 'Clay' },
+                      { date: 'Apr 26', event: 'Madrid Open', surface: 'Clay' },
+                      { date: 'May 11', event: 'Rome Masters', surface: 'Clay' },
+                      { date: 'May 25', event: 'Roland-Garros', surface: 'Clay' },
+                    ].map((ev, i) => (
+                      <div key={i} className="flex items-center gap-3 py-1.5">
+                        <span className="text-[10px] font-bold w-12" style={{ color: '#0ea5e9' }}>{ev.date}</span>
+                        <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{ev.event}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316' }}>{ev.surface}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
     </div>
   )
