@@ -1967,9 +1967,11 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   {TEAM_MEMBERS.map((m, i) => (
                     <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                       {demoStaffPhotos[m.name] ? (
-                        <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-8 h-8 mx-auto rounded-full object-cover object-center mb-1.5 border" style={{ borderColor: 'rgba(14,165,233,0.3)' }} />
+                        <div className="w-10 h-10 mx-auto rounded-full overflow-hidden border border-slate-500 flex-shrink-0 mb-1.5">
+                          <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" />
+                        </div>
                       ) : (
-                        <div className="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5"
+                        <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5"
                           style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
                           {m.initials}
                         </div>
@@ -2006,7 +2008,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       </div>
                       <div className="flex justify-center pb-3">
                         {demoStaffPhotos[m.name] ? (
-                          <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-20 h-20 rounded-full object-cover object-center border-2" style={{ borderColor: `${m.deptColor}60` }} />
+                          <div className="w-20 h-20 rounded-full overflow-hidden border-2 flex-shrink-0" style={{ borderColor: `${m.deptColor}60` }}>
+                            <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" />
+                          </div>
                         ) : (
                           <div className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-black border-2" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>
                         )}
