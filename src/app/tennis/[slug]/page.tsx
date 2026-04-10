@@ -2023,7 +2023,7 @@ Be direct, specific, professional. Around 250 words.`
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🌅" title="AI Morning Briefing" subtitle="Voice-powered daily briefings for the player and full team — delivered before first session." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -2188,7 +2188,7 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📊" title="Rankings & Race Intelligence" subtitle="Live ranking position, points tracker, race standings, and scenario modelling." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2391,7 +2391,7 @@ function ScheduleView({ player, session }: { player: TennisPlayer; session: Spor
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🗓️" title="Tournament Schedule" subtitle="Full season calendar with entry status, surface splits, and category commitment tracker." />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -2466,7 +2466,7 @@ function PerformanceView({ player, session }: { player: TennisPlayer; session: S
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📈" title="Performance Stats" subtitle={`${player.name} . 2026 season statistics by surface, match patterns, and form tracker.`} />
 
       {/* Tabs */}
@@ -2839,7 +2839,7 @@ function ShotHeatmapsView({ player, session }: { player: TennisPlayer; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🔥" title="Court Shot Heatmaps" subtitle="Visual shot placement analysis across serve, return, groundstrokes, and net play." />
 
       {/* Sub-tabs */}
@@ -3000,7 +3000,7 @@ function PerformanceRatingView({ player, session }: { player: TennisPlayer; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="⭐" title="Performance Rating" subtitle="TennisViz-style performance metric combining shot quality, attack rate, and conversion efficiency." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
@@ -3141,7 +3141,7 @@ function MatchPrepView({ player, session }: { player: TennisPlayer; session: Spo
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎯" title="Match Prep" subtitle="Opponent analysis, tactical briefing, H2H history, and coach notes." />
 
       {/* Opponent Card */}
@@ -3261,7 +3261,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📝" title="Practice Log" subtitle="Session tracking, drill targets, ball machine logs, and weekly practice hours." />
 
       {/* Tabs */}
@@ -3606,7 +3606,7 @@ function VideoLibraryView({ player, session }: { player: TennisPlayer; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎬" title="Video Library" subtitle="Match footage, practice clips, highlight reels, and post-match debriefs." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3730,7 +3730,7 @@ function TeamHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="👥" title="Team Hub" subtitle="Full player team — role-specific feeds, shared data, and communication in one place." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {team.map((member, i) => (
@@ -3787,7 +3787,7 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, WHOOP recovery scores, and treatment protocols." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
@@ -3926,7 +3926,7 @@ function NutritionView({ player, session }: { player: TennisPlayer; session: Spo
   const gpsCalories = GPS_SESSIONS_TENNIS[GPS_SESSIONS_TENNIS.length-1].load * 0.8;
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🥗" title="Nutrition & Conditioning" subtitle="Match-day plan, hydration, supplement tracker — Luis Santos programme" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Match Day Calories" value="2,740" sub="Target for today" color="orange" />
@@ -4007,7 +4007,7 @@ function PressureAnalysisView({ player, session }: { player: TennisPlayer; sessi
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🔥" title="Pressure Analysis" subtitle="Performance at critical moments — break points, tiebreaks, deciding sets" />
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard label="Tiebreak Win %" value="61%" sub="Above tour avg (54%)" color="green" />
@@ -4092,7 +4092,7 @@ function AceTrackerView({ player, session }: { player: TennisPlayer; session: Sp
   const acesToNext = nextMilestone ? nextMilestone.milestone - careerAces : 0;
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎯" title="Ace & Signature Shot Tracker" subtitle="Career ace count, milestone tracking, and signature shot analytics" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Career Aces" value={careerAces} sub="All surfaces" color="purple" />
@@ -4195,7 +4195,7 @@ function RacketView({ player, session }: { player: TennisPlayer; session: Sports
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎾" title="Racket & String Management" subtitle="Digital setup sheet, tension log by tournament, stringer contacts, and racket inventory." />
 
       {/* Current Setup */}
@@ -4333,7 +4333,7 @@ function PlayingPartnersView({ player, session }: { player: TennisPlayer; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🤜" title="Playing Partners" subtitle="Hitting partners, sparring logs, and stringer contact database." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4428,7 +4428,7 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎭" title="Doubles" subtitle="Doubles ranking, partner info, schedule, and head-to-head stats." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4570,7 +4570,7 @@ function SponsorshipView({ player, session }: { player: TennisPlayer; session: S
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🤝" title="Sponsorship Manager" subtitle="Every deal, every obligation, every deadline — tracked automatically." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4672,7 +4672,7 @@ function FinancialView({ player, session }: { player: TennisPlayer; session: Spo
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="💰" title="Financial Dashboard" subtitle="Prize money, endorsements, expenses, and multi-jurisdiction tax tracker — exportable for your accountant." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4772,7 +4772,7 @@ function ExhibitionView({ player, session }: { player: TennisPlayer; session: Sp
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎪" title="Exhibitions & Appearances" subtitle="Exhibition match schedule, appearance fees, and total exhibition income." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -4864,7 +4864,7 @@ function AgentPipelineView({ player, session }: { player: TennisPlayer; session:
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📋" title="Agent Pipeline" subtitle="Deals in negotiation, sponsor watchlist, and pipeline stages." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4959,7 +4959,7 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📱" title="Media & Content" subtitle="Social calendar, sponsor content obligations, press log, and media schedule." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
@@ -5116,7 +5116,7 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
 function FederationView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🏛️" title="Federation & National Obligations" subtitle="Davis Cup schedule, national federation commitments, wildcard entries, and ITF obligations." />
 
       <div className="grid grid-cols-3 gap-4">
@@ -5242,7 +5242,7 @@ function CareerView({ player, session }: { player: TennisPlayer; session: Sports
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🚀" title="Career Planning" subtitle="Season goals, ranking projections, development milestones, and long-term planning." />
 
       <div className="grid grid-cols-4 gap-4">
@@ -5351,7 +5351,7 @@ function CareerView({ player, session }: { player: TennisPlayer; session: Sports
 function AcademyView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🎓" title="Academy & Development" subtitle="Academy affiliation, national programme details, and development pathway." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5465,7 +5465,7 @@ function MentalPerformanceView({ player, session }: { player: TennisPlayer; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🧠" title="Mental Performance" subtitle="Mental coach, pre-match routines, pressure debriefs, and mindset tracking." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5645,7 +5645,7 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🏟️" title="Court Booking — Practice Facilities" subtitle="Book courts, manage sessions, and view facility availability." />
 
       <div className="grid grid-cols-3 gap-4">
@@ -5799,7 +5799,7 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
   const [tourMode, setTourMode] = useState<'ATP' | 'WTA'>(player.tour || 'ATP');
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, notifications, team access, integrations, and billing." />
 
       {/* Photo Frame Management */}
@@ -6899,7 +6899,7 @@ function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📡" title="GPS & Court Heatmap" subtitle={`Monte-Carlo 2026 · Lumio GPS Vest · Clay Court Tracking · ${GPS_SESSIONS_TENNIS.length} sessions logged`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -7033,7 +7033,7 @@ function PrizeForecasterView({ player, session }: { player: TennisPlayer; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="💵" title="Prize Money Forecaster" subtitle="Model year-end earnings across 5 scenarios simultaneously — adjust results to project prize money" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -7986,7 +7986,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="📄" title="Match Reports & AI Summaries" subtitle="Post-match analysis, AI-generated reports, and team sharing." />
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
@@ -8143,7 +8143,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
+
       <SectionHeader icon="🗄️" title="Data & Analytics Hub" subtitle="Your connected analytics ecosystem — Lumio pulls from these sources to power your portal." />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
