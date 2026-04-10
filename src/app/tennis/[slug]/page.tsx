@@ -10,7 +10,10 @@ const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '')
   .replace(/\*\*(.*?)\*\*/g, '$1')
   .replace(/\*(.*?)\*/g, '$1')
-  .replace(/^\s*[-•]\s*/gm, '')
+  .replace(/^\s*[-•·–—]\s*/gm, '')
+  .replace(/^\s*[\u2022\u2023\u25E6\u2043\u2219]\s*/gm, '')
+  .replace(/^\s*\d+\.\s*/gm, '')
+  .replace(/\n{3,}/g, '\n\n')
   .trim()
 
 // ─── TENNIS API ──────────────────────────────────────────────────────────────
@@ -2935,14 +2938,97 @@ function PerformanceView({ player, session }: { player: TennisPlayer; session: S
       )}
 
       {perfTab === 'return' && (
-        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-          <div className="text-sm text-gray-400 text-center py-8">Return analysis data — coming soon</div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[{ label:'Return Pts Won', value:'44%', color:'#22C55E' },{ label:'BPs Converted', value:'38%', color:'#F59E0B' },{ label:'Return Rating', value:'71', color:'#0ea5e9' },{ label:'Avg Return Depth', value:'0.82m', color:'#8B5CF6' }].map((s,i) => (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs text-gray-400 mt-0.5">{s.label}</div></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Return by Serve Type</div>
+              {[{ type:'First Serve Return', pct:'31%', avg:'28%', status:'🟢' },{ type:'Second Serve Return', pct:'58%', avg:'54%', status:'🟢' },{ type:'Body Serve Return', pct:'49%', avg:'47%', status:'🟢' }].map((r,i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0">
+                  <span className="text-xs text-gray-300">{r.type}</span>
+                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">Won {r.pct}</span><span className="text-[10px] text-gray-500">(tour avg {r.avg})</span><span>{r.status}</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Return Direction</div>
+              {[{ dir:'Down the line', pct:'34%', note:'' },{ dir:'Crosscourt', pct:'51%', note:'← dominant' },{ dir:'Lob/defensive', pct:'15%', note:'' }].map((r,i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0">
+                  <span className="text-xs text-gray-300">{r.dir}</span>
+                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{r.pct}</span>{r.note && <span className="text-[10px] text-purple-400">{r.note}</span>}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Surface Breakdown</div>
+            <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b border-gray-800"><th className="text-left p-2 text-gray-500"></th><th className="text-center p-2 text-orange-400">Clay</th><th className="text-center p-2 text-blue-400">Hard</th><th className="text-center p-2 text-green-400">Grass</th></tr></thead><tbody><tr className="border-b border-gray-800/50"><td className="p-2 text-gray-400">Return %</td><td className="text-center p-2 text-white font-bold">48%</td><td className="text-center p-2 text-white font-bold">41%</td><td className="text-center p-2 text-white font-bold">38%</td></tr><tr><td className="p-2 text-gray-400">BPs Conv</td><td className="text-center p-2 text-white font-bold">42%</td><td className="text-center p-2 text-white font-bold">35%</td><td className="text-center p-2 text-white font-bold">31%</td></tr></tbody></table></div>
+          </div>
+          <div className="bg-[#0d0f1a] border border-purple-600/20 rounded-xl p-4 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">💡</span>
+            <p className="text-xs text-gray-300 leading-relaxed">Your crosscourt return is a weapon on clay — opponents are avoiding your backhand return side. On hard courts, second serve return aggression drops — consider stepping in earlier.</p>
+          </div>
         </div>
       )}
 
       {perfTab === 'pressure' && (
-        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-          <div className="text-sm text-gray-400 text-center py-8">Under Pressure analysis — coming soon</div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[{ label:'BPs Saved', value:'67%', color:'#22C55E' },{ label:'Tiebreaks Won', value:'71%', color:'#0ea5e9' },{ label:'3rd Set Record', value:'W8 L3', color:'#8B5CF6' },{ label:'Pressure Rating', value:'78', color:'#F59E0B' }].map((s,i) => (
+              <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs text-gray-400 mt-0.5">{s.label}</div></div>
+            ))}
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Pressure Moment Breakdown</div>
+            {[{ n:1, label:'30-40 points won', pct:'54%', status:'🟢', note:'(tour avg 48%)' },{ n:2, label:'Deuce points won', pct:'61%', status:'🟢', note:'' },{ n:3, label:'Ad-out conversion', pct:'58%', status:'🟡', note:'' },{ n:4, label:'1st serve % in pressure', pct:'59%', status:'🟡', note:'(drops 9% vs normal)' },{ n:5, label:'Double faults under pressure', pct:'1.8/match', status:'🔴', note:'(needs work)' }].map(p => (
+              <div key={p.n} className="flex items-center justify-between py-2.5 border-b border-gray-800/50 last:border-0">
+                <div className="flex items-center gap-3"><span className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400">{p.n}</span><span className="text-xs text-gray-300">{p.label}</span></div>
+                <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{p.pct}</span><span>{p.status}</span>{p.note && <span className="text-[10px] text-gray-500">{p.note}</span>}</div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Tiebreak History — Last 7</div>
+            <div className="flex items-center justify-center gap-2">
+              {['W','W','L','W','W','L','W'].map((r,i) => (
+                <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-teal-600/30 text-teal-400' : 'bg-red-600/30 text-red-400'}`}>{r}</div>
+              ))}
+            </div>
+            <div className="text-center text-[10px] text-gray-500 mt-2">71% win rate — top 20 on tour</div>
+          </div>
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Mental Performance Radar</div>
+            <div className="flex justify-center">
+              <svg viewBox="0 0 200 200" className="w-48 h-48">
+                {/* Background pentagons */}
+                {[1, 0.75, 0.5, 0.25].map((scale, si) => {
+                  const pts = [0,1,2,3,4].map(i => { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; return `${100 + Math.cos(a) * 80 * scale},${100 + Math.sin(a) * 80 * scale}` }).join(' ')
+                  return <polygon key={si} points={pts} fill="none" stroke="#374151" strokeWidth="0.5" />
+                })}
+                {[0,1,2,3,4].map(i => { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; return <line key={i} x1="100" y1="100" x2={100 + Math.cos(a) * 80} y2={100 + Math.sin(a) * 80} stroke="#374151" strokeWidth="0.5" /> })}
+                {/* Data polygon */}
+                {(() => {
+                  const scores = [82, 74, 79, 71, 76]
+                  const pts = scores.map((s, i) => { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; const r = (s / 100) * 80; return `${100 + Math.cos(a) * r},${100 + Math.sin(a) * r}` }).join(' ')
+                  return <polygon points={pts} fill="rgba(139,92,246,0.2)" stroke="#8B5CF6" strokeWidth="1.5" />
+                })()}
+                {/* Labels */}
+                {['Composure','Aggression','Consistency','Recovery','Clutch'].map((label, i) => {
+                  const a = (i / 5) * Math.PI * 2 - Math.PI / 2
+                  const scores = [82, 74, 79, 71, 76]
+                  return <g key={i}><text x={100 + Math.cos(a) * 95} y={100 + Math.sin(a) * 95} textAnchor="middle" fill="#9CA3AF" fontSize="8">{label}</text><text x={100 + Math.cos(a) * 95} y={100 + Math.sin(a) * 95 + 10} textAnchor="middle" fill="#8B5CF6" fontSize="8" fontWeight="bold">{scores[i]}</text></g>
+                })}
+              </svg>
+            </div>
+          </div>
+          <div className="bg-[#0d0f1a] border border-purple-600/20 rounded-xl p-4 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">💡</span>
+            <p className="text-xs text-gray-300 leading-relaxed">Your tiebreak record is elite — 71% is top 20 on tour. Biggest pressure leak is first serve percentage dropping under pressure. Coach Martinez has flagged a pre-serve routine reset for next session.</p>
+          </div>
         </div>
       )}
       <TennisAISection context="performance" player={player} session={session} />
@@ -7891,7 +7977,7 @@ function TennisSocialMedia({ onClose, session, player }: { onClose: () => void; 
       const toneLabel = TONES.find(t => t.id === tone)?.label || tone
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 800,
-        messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Format as:\n${platforms.includes('twitter') ? 'TWITTER: (max 280 chars, include relevant hashtags)\n' : ''}${platforms.includes('instagram') ? 'INSTAGRAM: (engaging caption, 3-5 hashtags on new line)\n' : ''}${platforms.includes('linkedin') ? 'LINKEDIN: (professional, 2-3 short paragraphs)\n' : ''}${platforms.includes('facebook') ? 'FACEBOOK: (conversational, shareable)\n' : ''}${platforms.includes('tiktok') ? 'TIKTOK: (punchy caption, trending hashtag style)\n' : ''}Only include platforms that were selected. Respond in plain text only. No markdown or bold.` }]
+        messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Format as:\n${platforms.includes('twitter') ? 'TWITTER: (max 280 chars, include relevant hashtags)\n' : ''}${platforms.includes('instagram') ? 'INSTAGRAM: (engaging caption, 3-5 hashtags on new line)\n' : ''}${platforms.includes('linkedin') ? 'LINKEDIN: (professional, 2-3 short paragraphs)\n' : ''}${platforms.includes('facebook') ? 'FACEBOOK: (conversational, shareable)\n' : ''}${platforms.includes('tiktok') ? 'TIKTOK: (punchy caption, trending hashtag style)\n' : ''}Only include platforms that were selected. Plain text only. No markdown. No bullet points. No dashes. No numbered lists. No bold. No headers. Write in clean flowing paragraphs only.` }]
       }) })
       const data = await res.json()
       const raw = cleanResponse(data.content?.[0]?.text || '')
