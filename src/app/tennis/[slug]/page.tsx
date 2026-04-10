@@ -1020,108 +1020,89 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     <div className="space-y-0">
 
       {/* ── PERSONAL BANNER ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(14,165,233,0.2)' }}>
-
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold text-white">
-                  {greeting}, {firstName} 👋
-                </h1>
-                <button
-                  onClick={speakBriefing}
-                  title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Tennis will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-                  style={{
-                    background: isSpeaking ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.08)',
-                    border: isSpeaking ? '1px solid rgba(14,165,233,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                    color: isSpeaking ? '#0ea5e9' : '#9CA3AF',
-                  }}>
-                  <Volume2 size={14} />
+      <div className={`relative bg-gradient-to-r from-indigo-900/80 via-slate-900 to-cyan-900/40 overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-cyan-400 rounded-full opacity-10 blur-3xl" />
+        <div className="relative z-10 px-6 py-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName} 🎾</h1>
+                <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Tennis will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'} className="flex items-center justify-center rounded-lg transition-all"
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(14,165,233,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#0ea5e9' : '#9CA3AF' }}>
+                  <Volume2 size={15} strokeWidth={1.75} />
                 </button>
               </div>
-              <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-                {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-              </p>
-              <p className="text-xs italic" style={{ color: '#F1C40F' }}>
-                &ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King
-              </p>
+              <p className="text-sm mb-2" style={{ color: '#0ea5e9' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+              <p style={{ color: '#0ea5e9' }} className="text-sm italic">&ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King</p>
             </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {STAT_BOXES.map((s, i) => (
-              <div key={i}
-                className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
-                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
-                <span className="text-base">{s.icon}</span>
-                <span className="text-lg font-black text-white">{s.value}</span>
-                <span className="text-xs opacity-70">{s.label}</span>
-              </div>
-            ))}
-
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
-              {weather ? (<>
-                <div className="text-xl">{weather.icon}</div>
-                <div className="text-sm font-bold text-white">{weather.temp}°C</div>
-                <div className="text-[9px] text-center leading-tight" style={{ color: '#6B7280' }}>{weather.city.split(' ')[0]}</div>
-              </>) : (<>
-                <div className="text-xl">🌤️</div>
-                <div className="text-sm font-bold text-white">--°C</div>
-                <div className="text-[9px]" style={{ color: '#6B7280' }}>Loading</div>
-              </>)}
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {[
+                { label:'ATP Rank', value:`#${player.ranking ?? 67}`, color:'bg-purple-500/20 text-purple-300 border-purple-500/30', icon:'📊' },
+                { label:'Race', value:`#${player.race_ranking ?? 54}`, color:'bg-green-500/20 text-green-300 border-green-500/30', icon:'✅' },
+                { label:'Points', value:(player.ranking_points ?? 1847).toLocaleString(), color:'bg-red-500/20 text-red-300 border-red-500/30', icon:'🔴' },
+                { label:'Career High', value:`#${player.career_high ?? 44}`, color:'bg-blue-500/20 text-blue-300 border-blue-500/30', icon:'📧' },
+              ].map(item => (
+                <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-lg font-black text-white">{item.value}</span>
+                  <span className="text-xs opacity-70">{item.label}</span>
+                </div>
+              ))}
             </div>
-
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {clockCities.map(({ city, tz, isUser }) => {
-                  const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
-                  return (
-                    <div key={city} className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F1C40F' : '#FFFFFF' }}>{time}</span>
-                      <span className="text-[10px]" style={{ color: isUser ? '#F1C40F' : '#6B7280' }}>{city}</span>
-                    </div>
-                  )
-                })}
+            <div className="flex items-start gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                <span className="text-3xl">{weather ? weather.icon : '🌤️'}</span>
+                <div>
+                  <div className="text-xl font-black text-white">{weather ? `${weather.temp}°C` : '--°C'}</div>
+                  <div className="text-xs" style={{ color: '#0ea5e9' }}>{weather ? weather.condition : 'Loading...'}</div>
+                </div>
               </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
+              <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl bg-white/5 border border-white/10" style={{ minWidth: '120px' }}>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                  {clockCities.map(({ city, tz, isUser }) => {
+                    const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
+                    return (
+                      <div key={city} className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#0ea5e9' : '#FFFFFF' }}>{time}</span>
+                        <span className="text-[10px]" style={{ color: isUser ? '#0ea5e9' : '#6B7280' }}>{city}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
 
       {/* ── TAB BAR ── */}
-      <div className="flex gap-0 border-b mb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
-        {/* Getting Started tab with badge */}
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#38bdf8' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#0ea5e90d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>10</span>
-        </button>
-        {([
-          { id:'today' as const,      label:'Today',       icon:'🏠' },
-          { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
-          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
-          { id:'insights' as const,   label:'Insights',    icon:'📊' },
-          { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
-          { id:'team' as const,       label:'Team',        icon:'👥' },
-        ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{
-              borderBottomColor: dashTab === t.id ? '#0ea5e9' : 'transparent',
-              color: dashTab === t.id ? '#38bdf8' : '#6B7280',
-              backgroundColor: dashTab === t.id ? '#0ea5e90d' : 'transparent',
-            }}>
-            <span className="text-base">{t.icon}</span>{t.label}
+      <div className="border-b overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+        <div className="flex items-center gap-0 min-w-max px-2">
+          {/* Getting Started tab with badge */}
+          <button onClick={() => setDashTab('gettingstarted')}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#0ea5e9' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? 'rgba(14,165,233,0.05)' : 'transparent' }}>
+            <span className="text-base">🚀</span>Getting Started
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>10</span>
           </button>
-        ))}
+          {([
+            { id:'today' as const,      label:'Today',       icon:'🏠' },
+            { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
+            { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
+            { id:'insights' as const,   label:'Insights',    icon:'📊' },
+            { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
+            { id:'team' as const,       label:'Team',        icon:'👥' },
+          ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+              style={{ borderBottomColor: dashTab === t.id ? '#0ea5e9' : 'transparent', color: dashTab === t.id ? '#0ea5e9' : '#6B7280', backgroundColor: dashTab === t.id ? 'rgba(14,165,233,0.05)' : 'transparent' }}>
+              <span className="text-base">{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── GETTING STARTED TAB — Interactive 10-step tour ── */}
