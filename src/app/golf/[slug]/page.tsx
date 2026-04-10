@@ -659,16 +659,16 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>10</span>
         </button>
         {([
-          { id: 'today' as const, label: 'Today' },
-          { id: 'quickwins' as const, label: 'Quick Wins' },
-          { id: 'tasks' as const, label: 'Daily Tasks' },
-          { id: 'insights' as const, label: 'Insights' },
-          { id: 'dontmiss' as const, label: "Don't Miss" },
-          { id: 'team' as const, label: 'Team' },
+          { id: 'today' as const, label: 'Today', icon: '🏠' },
+          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
+          { id: 'tasks' as const, label: 'Daily Tasks', icon: '✅' },
+          { id: 'insights' as const, label: 'Insights', icon: '📊' },
+          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
+          { id: 'team' as const, label: 'Team', icon: '👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${dashTab === t.id ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            {t.label}
+            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all -mb-px ${dashTab === t.id ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -4509,16 +4509,13 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
-        {/* Top bar */}
-        <div className="flex-shrink-0 border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0a0c14' }}>
-          <div className="text-xs text-gray-500 font-medium capitalize">
-            {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon} {SIDEBAR_ITEMS.find(i => i.id === activeSection)?.label}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-gray-600">BMW International Open · Munich · DP World Tour</div>
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <div className="text-xs text-gray-500">Week 28 · 2026</div>
-          </div>
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+          style={{ backgroundColor: '#15803D', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+            To see your own data — sign up for 3 months free →
+          </a>
         </div>
 
         {/* Content + card */}

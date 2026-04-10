@@ -546,8 +546,8 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
       </div>
 
-      {/* Quick Actions Grid — 2 rows, no scrollbar */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-2">
         {[
           { id:'flights',   label:'Book Flight',     icon:'✈️', color:'#dc2626', hot:true  },
           { id:'matchprep', label:'Fight Prep AI',   icon:'🧠', color:'#22C55E', hot:true  },
@@ -559,7 +559,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           { id:'visa',      label:'Visa Check',      icon:'🌍', color:'#6B7280', hot:false },
         ].map(a => (
           <button key={a.id} onClick={() => onOpenModal?.(a.id)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all relative"
+            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
             style={{
               background: a.hot ? `${a.color}18` : '#111318',
               border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
@@ -5913,7 +5913,6 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            <WaveBanner fighter={fighter} session={session} />
             {renderView()}
           </div>
 
