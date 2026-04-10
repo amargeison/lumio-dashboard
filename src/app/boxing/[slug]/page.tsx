@@ -571,38 +571,8 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
       </div>
 
-      {/* Quick Actions — 2-row grid, 12 buttons */}
-      <div className="mb-5">
-        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id:'flights',    label:'Smart Flights',    icon:'✈️', color:'#0ea5e9', hot:true  },
-            { id:'hotel',      label:'Find Hotel',       icon:'🏨', color:'#0ea5e9', hot:true  },
-            { id:'matchprep',  label:'Fight Prep AI',    icon:'🧠', color:'#22C55E', hot:true  },
-            { id:'weight',     label:'Weight Tracker',   icon:'⚖️', color:'#F59E0B', hot:false },
-            { id:'sparring',   label:'Sparring Log',     icon:'🥊', color:'#dc2626', hot:false },
-            { id:'ranking',    label:'Ranking Sim',      icon:'📊', color:'#dc2626', hot:true  },
-            { id:'sponsor',    label:'Sponsor Post',     icon:'📱', color:'#F59E0B', hot:true  },
-            { id:'opponent',   label:'Opponent Study',   icon:'🔍', color:'#8B5CF6', hot:true  },
-            { id:'injury',     label:'Medical Log',      icon:'🏥', color:'#EF4444', hot:false },
-            { id:'mental',     label:'Mental Prep',      icon:'🧘', color:'#8B5CF6', hot:true  },
-            { id:'expense',    label:'Add Expense',      icon:'💰', color:'#6B7280', hot:false },
-            { id:'visa',       label:'Visa Check',       icon:'🌍', color:'#6B7280', hot:true  },
-          ].map(a => (
-            <button key={a.id} onClick={() => onOpenModal?.(a.id)}
-              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
-              <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">
+      <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
           className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
           style={{ borderColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#dc2626' : '#6B7280' }}>
@@ -624,6 +594,36 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <span>{t.icon}</span>{t.label}
           </button>
         ))}
+      </div>
+
+      {/* Quick Actions — below tab bar */}
+      <div className="mb-5 mt-4">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
+            { id:'matchprep', label:'Fight Prep AI', icon:'🧠', color:'#22C55E', hot:true },
+            { id:'weight', label:'Weight Tracker', icon:'⚖️', color:'#F59E0B', hot:false },
+            { id:'sparring', label:'Sparring Log', icon:'🥊', color:'#dc2626', hot:false },
+            { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#dc2626', hot:true },
+            { id:'sponsor', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
+            { id:'opponent', label:'Opponent Study', icon:'🔍', color:'#8B5CF6', hot:true },
+            { id:'injury', label:'Medical Log', icon:'🏥', color:'#EF4444', hot:false },
+            { id:'mental', label:'Mental Prep', icon:'🧘', color:'#8B5CF6', hot:true },
+            { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
+            { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
+          ].map(a => (
+            <button key={a.id} onClick={() => onOpenModal?.(a.id)}
+              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
+              <span>{a.icon}</span>{a.label}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* GETTING STARTED */}

@@ -660,6 +660,36 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         ))}
       </div>
 
+      {/* Quick Actions — below tab bar */}
+      <div className="mb-5 mt-4">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id:'flight', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
+            { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
+            { id:'loground', label:'Log Round', icon:'📋', color:'#15803D', hot:false },
+            { id:'trackman', label:'TrackMan Session', icon:'📡', color:'#0ea5e9', hot:true },
+            { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', color:'#F59E0B', hot:true },
+            { id:'sponsorpost', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
+            { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#0ea5e9', hot:true },
+            { id:'injury', label:'Log Injury', icon:'💊', color:'#EF4444', hot:false },
+            { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
+            { id:'mentalprep', label:'Mental Prep', icon:'🧠', color:'#8B5CF6', hot:true },
+            { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
+          ].map(a => (
+            <button key={a.id} onClick={() => onOpenModal(a.id)}
+              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
+              <span>{a.icon}</span>{a.label}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
         const STEPS = [

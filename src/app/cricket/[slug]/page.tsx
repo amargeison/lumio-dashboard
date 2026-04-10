@@ -2269,33 +2269,8 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
         </div>
       </div>
 
-      {/* Quick Actions — 2-row grid */}
-      <div className="mb-5">
-        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: C.dim }}>Quick actions</div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { label:'Book Flight',        icon:'✈️', color:'#0ea5e9' },
-            { label:'Team Selection AI',  icon:'👥', color:C.purple, hot:true },
-            { label:'Toss Advisor',       icon:'🌤️', color:C.teal, hot:true },
-            { label:'Sponsor Post',       icon:'📱', color:C.amber },
-            { label:'Log Injury',         icon:'🏥', color:C.red },
-            { label:'Add Expense',        icon:'💰', color:C.dim },
-            { label:'Match Report',       icon:'📋', color:C.purple },
-            { label:'Visa Check',         icon:'🌍', color:C.dim },
-          ].map((a, i) => (
-            <button key={i} className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{ background: (a as {hot?:boolean}).hot ? `${a.color}18` : '#111318', border: (a as {hot?:boolean}).hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: (a as {hot?:boolean}).hot ? a.color : C.muted }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = (a as {hot?:boolean}).hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = (a as {hot?:boolean}).hot ? a.color : C.muted }}>
-              <span>{a.icon}</span>{a.label}
-              {(a as {hot?:boolean}).hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Tab bar */}
-      <div className="flex gap-0 border-b overflow-x-auto" style={{ borderColor: C.border }}>
+      <div className="flex gap-0 border-b" style={{ borderColor: C.border, overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
           className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
           style={{ borderColor: dashTab === 'gettingstarted' ? C.purple : 'transparent', color: dashTab === 'gettingstarted' ? C.purple : C.dim }}>
@@ -2313,6 +2288,31 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
             <span>{t.icon}</span>{t.label}
           </button>
         ))}
+      </div>
+
+      {/* Quick Actions — below tab bar */}
+      <div className="mb-5 mt-4">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: C.dim }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label:'Book Flight', icon:'✈️', color:'#0ea5e9' },
+            { label:'Team Selection AI', icon:'👥', color:C.purple, hot:true },
+            { label:'Toss Advisor', icon:'🌤️', color:C.teal, hot:true },
+            { label:'Sponsor Post', icon:'📱', color:C.amber },
+            { label:'Log Injury', icon:'🏥', color:C.red },
+            { label:'Add Expense', icon:'💰', color:C.dim },
+            { label:'Match Report', icon:'📋', color:C.purple },
+            { label:'Visa Check', icon:'🌍', color:C.dim },
+          ].map((a, i) => (
+            <button key={i} className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: (a as {hot?:boolean}).hot ? `${a.color}18` : '#111318', border: (a as {hot?:boolean}).hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: (a as {hot?:boolean}).hot ? a.color : C.muted }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = (a as {hot?:boolean}).hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = (a as {hot?:boolean}).hot ? a.color : C.muted }}>
+              <span>{a.icon}</span>{a.label}
+              {(a as {hot?:boolean}).hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* GETTING STARTED */}

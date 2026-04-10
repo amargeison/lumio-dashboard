@@ -392,36 +392,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         </div>
       </div>
 
-      {/* Quick Actions — 2-row wrapped grid */}
-      <div className="mb-5">
-        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id:'flights',    label:'Smart Flights',    icon:'✈️', color:'#dc2626', hot:true },
-            { id:'hotel',      label:'Find Hotel',       icon:'🏨', color:'#dc2626', hot:true },
-            { id:'practice',   label:'Practice Log',     icon:'🎯', color:'#10B981', hot:false },
-            { id:'matchreport',label:'Match Report AI',  icon:'📋', color:'#22C55E', hot:true },
-            { id:'equipment',  label:'Equipment',        icon:'🏹', color:'#6B7280', hot:false },
-            { id:'prizes',     label:'Prize Tracker',    icon:'💰', color:'#F59E0B', hot:false },
-            { id:'sponsor',    label:'Sponsor Post AI',  icon:'📱', color:'#F59E0B', hot:true },
-            { id:'media',      label:'Media Manager',    icon:'📣', color:'#6B7280', hot:false },
-            { id:'mental',     label:'Mental Prep AI',   icon:'🧠', color:'#8B5CF6', hot:true },
-            { id:'physio',     label:'Physio Log',       icon:'💊', color:'#EF4444', hot:false },
-            { id:'expense',    label:'Log Expense',      icon:'🧾', color:'#6B7280', hot:false },
-            { id:'exhibition', label:'Exhibitions',      icon:'🎪', color:'#D97706', hot:false },
-          ].map(a => (
-            <button key={a.id} onClick={() => onOpenModal(a.id)}
-              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
-              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
-              <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">
+      <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
           className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab === 'gettingstarted' ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
           <span>🚀</span>Getting Started
@@ -442,6 +414,34 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             <span>{t.icon}</span>{t.label}
           </button>
         ))}
+      </div>
+
+      {/* Quick Actions — below tab bar */}
+      <div className="mb-5 mt-4">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#dc2626', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#dc2626', hot:true },
+            { id:'practice', label:'Practice Log', icon:'🎯', color:'#10B981', hot:false },
+            { id:'matchreport', label:'Match Report AI', icon:'📋', color:'#22C55E', hot:true },
+            { id:'equipment', label:'Equipment', icon:'🏹', color:'#6B7280', hot:false },
+            { id:'prizes', label:'Prize Tracker', icon:'💰', color:'#F59E0B', hot:false },
+            { id:'sponsor', label:'Sponsor Post AI', icon:'📱', color:'#F59E0B', hot:true },
+            { id:'media', label:'Media Manager', icon:'📣', color:'#6B7280', hot:false },
+            { id:'mental', label:'Mental Prep AI', icon:'🧠', color:'#8B5CF6', hot:true },
+            { id:'physio', label:'Physio Log', icon:'💊', color:'#EF4444', hot:false },
+            { id:'expense', label:'Log Expense', icon:'🧾', color:'#6B7280', hot:false },
+            { id:'exhibition', label:'Exhibitions', icon:'🎪', color:'#D97706', hot:false },
+          ].map(a => (
+            <button key={a.id} onClick={() => onOpenModal(a.id)}
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap relative"
+              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
+              <span>{a.icon}</span>{a.label}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* GETTING STARTED */}

@@ -1096,7 +1096,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       </div>
 
       {/* ── TAB BAR ── */}
-      <div className="flex gap-0 border-b overflow-x-auto mb-0" style={{ borderColor: '#1F2937' }}>
+      <div className="flex gap-0 border-b mb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
         {/* Getting Started tab with badge */}
         <button onClick={() => setDashTab('gettingstarted')}
           className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
