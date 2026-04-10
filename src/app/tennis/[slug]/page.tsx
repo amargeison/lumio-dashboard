@@ -1361,19 +1361,19 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                         }
                         setDragIdx(null); setDragOverIdx(null)
                       }}
-                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', borderLeft: `3px solid ${ch.color}`, backgroundColor: `${ch.color}18`, opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
+                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
                       <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
-                        className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
+                        className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-all hover:bg-white/[0.02]">
                         <div className="flex items-center gap-3">
                           <span className="text-gray-600 text-sm cursor-grab opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity" style={{ opacity: 0.3 }}>⠿</span>
-                          <span className="text-base">{ch.icon}</span>
-                          <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                          <span className="text-base" style={{ filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
+                          <span className="text-sm" style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
                           {ch.urgent && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                          <span className="text-sm" style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
                           <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
                         </div>
                       </button>
