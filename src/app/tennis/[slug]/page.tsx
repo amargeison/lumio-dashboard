@@ -6092,7 +6092,22 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
                 { name: 'TrackMan Tennis', desc: 'Serve speed, spin & shot data' },
                 { name: 'Tennis Abstract', desc: 'Historical stats & match records' },
                 { name: 'IBM SlamTracker', desc: 'Grand Slam live analytics' },
-                { name: 'STATSports', desc: 'GPS load & movement data' },
+              ].map(integ => (
+                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
+                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
+                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: `${ACCENT}1a`, color: ACCENT_LIGHT, border: `1px solid ${ACCENT}4d` }}>Connect</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>VIDEO & TRACKING</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { name: 'SwingVision', desc: 'Shot tracking, video clips & AI coaching' },
+                { name: 'STATSports GPS', desc: 'Movement load & court coverage data' },
+                { name: 'Catapult', desc: 'Elite GPS & athlete monitoring' },
+                { name: 'PlayerTek', desc: 'GPS vest tracking for training sessions' },
               ].map(integ => (
                 <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
                   <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
