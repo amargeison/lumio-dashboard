@@ -63,6 +63,7 @@ const SIDEBAR_ITEMS = [
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
   { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'FIGHT CAMP' },
+  { id: 'fightcamp',       label: 'Fight Camp',          icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
   { id: 'recovery',        label: 'Recovery & HRV',      icon: '💚', group: 'WEIGHT & HEALTH' },
@@ -5303,6 +5304,367 @@ export default function BoxingPortalPage() {
   )
 }
 
+// ─── FIGHT CAMP VIEW ──────────────────────────────────────────────────────────
+function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const CAMP_ACCENT = '#F59E0B'
+
+  // Camp activation
+  const [campActive, setCampActive] = useState(false)
+  const [showActivateModal, setShowActivateModal] = useState(false)
+  const [campConfig, setCampConfig] = useState<{fightDate:string;opponent:string;location:string;targetWeight:number;activatedAt:string}|null>(null)
+
+  // Activation form
+  const [fightDate, setFightDate] = useState('')
+  const [opponent, setOpponent] = useState('')
+  const [fightLocation, setFightLocation] = useState('')
+  const [targetWeight, setTargetWeight] = useState(72.6)
+
+  // Active camp state
+  const [dailyChecklist, setDailyChecklist] = useState<Record<string,boolean>>({})
+  const [opponentStudy, setOpponentStudy] = useState<Record<string,boolean>>({})
+  const [readinessScore, setReadinessScore] = useState(62)
+  const [sparringRounds, setSparringRounds] = useState(24)
+  const [currentWeight, setCurrentWeight] = useState(76.8)
+
+  // AI
+  const [aiSummary, setAiSummary] = useState<string|null>(null)
+  const [aiHighlights, setAiHighlights] = useState<string|null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const hasGenerated = useRef(false)
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lumio_boxing_fight_camp')
+      if (stored) {
+        const config = JSON.parse(stored)
+        setCampConfig(config)
+        setCampActive(true)
+        setCurrentWeight(config.targetWeight + 4.2)
+        const cl = localStorage.getItem('lumio_boxing_camp_checklist')
+        if (cl) setDailyChecklist(JSON.parse(cl))
+        const os = localStorage.getItem('lumio_boxing_opponent_study')
+        if (os) setOpponentStudy(JSON.parse(os))
+        const rs = localStorage.getItem('lumio_boxing_camp_readiness')
+        if (rs) setReadinessScore(parseInt(rs))
+        const sr = localStorage.getItem('lumio_boxing_sparring_rounds')
+        if (sr) setSparringRounds(parseInt(sr))
+      }
+    } catch {}
+  }, [])
+
+  // Derived values
+  const daysToFight = campConfig ? Math.max(0, Math.ceil((new Date(campConfig.fightDate).getTime() - Date.now()) / 86400000)) : 0
+  const campLength = campConfig ? Math.max(1, Math.ceil((new Date(campConfig.fightDate).getTime() - new Date(campConfig.activatedAt).getTime()) / 86400000)) : 1
+  const campProgress = campConfig ? Math.round(((campLength - daysToFight) / campLength) * 100) : 0
+  const phase = campProgress < 33 ? 'Foundation' : campProgress < 66 ? 'Build' : 'Peak & Taper'
+  const phaseColor = phase === 'Foundation' ? '#3B82F6' : phase === 'Build' ? '#F59E0B' : '#EF4444'
+  const weightDiff = currentWeight - (campConfig?.targetWeight ?? 72.6)
+  const weightStatus = weightDiff <= 2 ? 'On Track' : weightDiff <= 5 ? 'Attention Needed' : 'Critical'
+  const weightStatusColor = weightDiff <= 2 ? '#22C55E' : weightDiff <= 5 ? '#F59E0B' : '#EF4444'
+  const campWeeks = Math.ceil(campLength / 7)
+  const sparringTarget = campWeeks * 12
+
+  // AI generation on camp active
+  useEffect(() => {
+    if (!campActive || !campConfig || hasGenerated.current) return
+    hasGenerated.current = true
+    setAiLoading(true)
+    fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Generate a fight camp AI summary for a boxer. Camp details: vs ${campConfig.opponent}, ${daysToFight} days remaining, currently in ${phase} phase at ${campConfig.location}. Format as 6 numbered bullet points covering: overall readiness, strongest areas, areas needing work, weight cut status, sparring progress, one watch-out. Be specific and motivating. Max 200 words.` }] })
+    }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setAiSummary('Unable to generate.')).finally(() => setAiLoading(false))
+    fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent fight camp action items for a boxer preparing to fight ${campConfig.opponent} in ${daysToFight} days during ${phase} phase. Each item should be one line, specific and actionable. Cover: weight trajectory, sparring gaps, conditioning flags, opponent patterns to drill, recovery priority. Start each with an emoji.` }] })
+    }).then(r => r.json()).then(d => setAiHighlights(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setAiHighlights('Unable to generate.'))
+  }, [campActive])
+
+  // Daily checklist items
+  const DAILY_ITEMS = [
+    { id: 'morning_run', label: 'Morning roadwork / cardio' },
+    { id: 'technique', label: 'Technical session (pads / bags)' },
+    { id: 'sparring', label: 'Sparring round completed' },
+    { id: 'strength', label: 'Strength & conditioning' },
+    { id: 'film_study', label: 'Opponent film study (15 min)' },
+    { id: 'nutrition', label: 'Nutrition plan followed' },
+    { id: 'recovery', label: 'Recovery session (ice / stretch)' },
+    { id: 'sleep', label: '8+ hours sleep logged' },
+  ]
+
+  const OPPONENT_ITEMS = [
+    { id: 'stance_movement', label: 'Stance & movement patterns' },
+    { id: 'jab_tendencies', label: 'Jab tendencies & timing' },
+    { id: 'power_combos', label: 'Power combination sequences' },
+    { id: 'defensive_habits', label: 'Defensive habits & openings' },
+    { id: 'body_work', label: 'Body work tendencies' },
+    { id: 'late_round', label: 'Late-round behaviour & gas tank' },
+  ]
+
+  const checkedCount = Object.values(dailyChecklist).filter(Boolean).length
+
+  const toggleDaily = (id: string) => {
+    const next = { ...dailyChecklist, [id]: !dailyChecklist[id] }
+    setDailyChecklist(next)
+    localStorage.setItem('lumio_boxing_camp_checklist', JSON.stringify(next))
+    // Bump readiness
+    const completed = Object.values(next).filter(Boolean).length
+    const newReadiness = Math.min(99, 50 + Math.round((completed / DAILY_ITEMS.length) * 40))
+    setReadinessScore(newReadiness)
+    localStorage.setItem('lumio_boxing_camp_readiness', String(newReadiness))
+  }
+
+  const toggleOpponentStudy = (id: string) => {
+    const next = { ...opponentStudy, [id]: !opponentStudy[id] }
+    setOpponentStudy(next)
+    localStorage.setItem('lumio_boxing_opponent_study', JSON.stringify(next))
+  }
+
+  const adjustSparring = (delta: number) => {
+    const next = Math.max(0, sparringRounds + delta)
+    setSparringRounds(next)
+    localStorage.setItem('lumio_boxing_sparring_rounds', String(next))
+  }
+
+  const deactivateCamp = () => {
+    localStorage.removeItem('lumio_boxing_fight_camp')
+    localStorage.removeItem('lumio_boxing_camp_checklist')
+    localStorage.removeItem('lumio_boxing_opponent_study')
+    localStorage.removeItem('lumio_boxing_camp_readiness')
+    localStorage.removeItem('lumio_boxing_sparring_rounds')
+    setCampActive(false)
+    setCampConfig(null)
+    setDailyChecklist({})
+    setOpponentStudy({})
+    setReadinessScore(62)
+    setSparringRounds(24)
+    hasGenerated.current = false
+    setAiSummary(null)
+    setAiHighlights(null)
+  }
+
+  // INACTIVE STATE
+  if (!campActive) return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+      <div className="text-6xl mb-4">🥊</div>
+      <h1 className="text-3xl font-black text-white mb-2">Fight Camp Mode</h1>
+      <p className="text-lg font-semibold mb-2" style={{ color: '#F59E0B' }}>Lock in. Block out. Win.</p>
+      <p className="text-sm max-w-md mb-8" style={{ color: '#6B7280' }}>
+        Activate fight camp and Lumio will track every session, your weight cut, sparring rounds, opponent study and readiness score — all the way to fight night.
+      </p>
+      <button onClick={() => setShowActivateModal(true)}
+        className="px-8 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#F59E0B' }}>
+        Activate Fight Camp →
+      </button>
+      {showActivateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowActivateModal(false) }}>
+          <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <h2 className="text-lg font-bold text-white mb-4">Activate Fight Camp</h2>
+            <div className="space-y-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Fight date</label><input type="date" value={fightDate} onChange={e => setFightDate(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} placeholder="e.g. Demetrius Johnson" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Fight location</label><input value={fightLocation} onChange={e => setFightLocation(e.target.value)} placeholder="e.g. MGM Grand, Las Vegas" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Target weight (kg)</label><input type="number" step="0.1" value={targetWeight} onChange={e => setTargetWeight(parseFloat(e.target.value) || 72.6)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+              {fightDate && <div className="text-xs p-3 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#F59E0B' }}>Camp length: {Math.max(1,Math.ceil((new Date(fightDate).getTime()-Date.now())/86400000))} days</div>}
+              <button onClick={() => {
+                if (!fightDate || !opponent) return
+                const config = { fightDate, opponent, location: fightLocation, targetWeight, activatedAt: new Date().toISOString() }
+                localStorage.setItem('lumio_boxing_fight_camp', JSON.stringify(config))
+                setCampConfig(config); setCampActive(true); setCurrentWeight(targetWeight + 4.2)
+                setShowActivateModal(false)
+              }} disabled={!fightDate || !opponent}
+                className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: fightDate && opponent ? '#F59E0B' : '#374151' }}>
+                Activate Fight Camp →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // ACTIVE STATE — Camp Dashboard
+  const READINESS_CATEGORIES = [
+    { label: 'Fitness', value: Math.min(99, readinessScore + 5), color: '#22C55E' },
+    { label: 'Technique', value: Math.min(99, readinessScore + 2), color: '#3B82F6' },
+    { label: 'Sparring', value: Math.min(99, Math.round((sparringRounds / Math.max(1, sparringTarget)) * 100)), color: '#F59E0B' },
+    { label: 'Weight', value: weightDiff <= 2 ? 90 : weightDiff <= 5 ? 65 : 35, color: weightStatusColor },
+    { label: 'Recovery', value: Math.min(99, readinessScore - 3), color: '#8B5CF6' },
+    { label: 'Mental', value: Math.min(99, readinessScore + 8), color: '#EC4899' },
+  ]
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-white flex items-center gap-3">
+            🥊 Fight Camp Mode
+            <span className="text-sm px-3 py-1 rounded-full font-bold text-white" style={{ backgroundColor: phaseColor }}>{phase}</span>
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#6B7280' }}>
+            vs {campConfig?.opponent} · {daysToFight} days to fight night · {campConfig?.location}
+          </p>
+        </div>
+        <button onClick={deactivateCamp}
+          className="text-xs px-4 py-2 rounded-lg font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#6B7280', border: '1px solid #374151' }}>
+          Deactivate Camp
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between text-xs mb-2">
+          <span style={{ color: '#6B7280' }}>Camp Progress</span>
+          <span className="font-bold" style={{ color: CAMP_ACCENT }}>{campProgress}%</span>
+        </div>
+        <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, campProgress)}%`, backgroundColor: CAMP_ACCENT }} />
+        </div>
+        <div className="flex justify-between text-[10px] mt-1" style={{ color: '#4B5563' }}>
+          <span>Day {campLength - daysToFight}</span>
+          <span>{campLength} days total</span>
+        </div>
+      </div>
+
+      {/* AI Section — Two columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">🤖</span>
+            <span className="text-xs font-bold text-white">AI Camp Summary</span>
+            {aiLoading && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: CAMP_ACCENT }}>Generating...</span>}
+          </div>
+          <div className="text-xs leading-relaxed whitespace-pre-line" style={{ color: '#9CA3AF' }}>
+            {aiSummary || 'Generating camp analysis...'}
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">⚡</span>
+            <span className="text-xs font-bold text-white">Action Items</span>
+          </div>
+          <div className="text-xs leading-relaxed whitespace-pre-line" style={{ color: '#9CA3AF' }}>
+            {aiHighlights || 'Generating action items...'}
+          </div>
+        </div>
+      </div>
+
+      {/* Camp Readiness Score */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-bold text-white">Camp Readiness Score</span>
+          <div className="text-3xl font-black" style={{ color: readinessScore >= 75 ? '#22C55E' : readinessScore >= 50 ? CAMP_ACCENT : '#EF4444' }}>{readinessScore}<span className="text-sm text-gray-500">/100</span></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {READINESS_CATEGORIES.map(cat => (
+            <div key={cat.label} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+              <div className="text-lg font-black" style={{ color: cat.color }}>{cat.value}</div>
+              <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{cat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily Checklist */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-bold text-white">Daily Checklist</span>
+          <span className="text-xs font-bold" style={{ color: checkedCount === DAILY_ITEMS.length ? '#22C55E' : CAMP_ACCENT }}>{checkedCount}/{DAILY_ITEMS.length} complete</span>
+        </div>
+        <div className="space-y-2">
+          {DAILY_ITEMS.map(item => (
+            <button key={item.id} onClick={() => toggleDaily(item.id)}
+              className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all"
+              style={{ backgroundColor: dailyChecklist[item.id] ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${dailyChecklist[item.id] ? 'rgba(34,197,94,0.2)' : '#1F2937'}` }}>
+              <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-xs"
+                style={{ backgroundColor: dailyChecklist[item.id] ? '#22C55E' : 'transparent', border: dailyChecklist[item.id] ? 'none' : '1px solid #374151', color: '#fff' }}>
+                {dailyChecklist[item.id] ? '✓' : ''}
+              </div>
+              <span className="text-xs" style={{ color: dailyChecklist[item.id] ? '#22C55E' : '#9CA3AF', textDecoration: dailyChecklist[item.id] ? 'line-through' : 'none' }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Weight Tracker */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-white">Weight Cut Tracker</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${weightStatusColor}15`, color: weightStatusColor }}>{weightStatus}</span>
+        </div>
+        <div className="flex items-end gap-4 mb-3">
+          <div>
+            <div className="text-[10px]" style={{ color: '#6B7280' }}>Current</div>
+            <div className="text-xl font-black text-white">{currentWeight.toFixed(1)} kg</div>
+          </div>
+          <div className="text-lg" style={{ color: '#4B5563' }}>→</div>
+          <div>
+            <div className="text-[10px]" style={{ color: '#6B7280' }}>Target</div>
+            <div className="text-xl font-black" style={{ color: '#22C55E' }}>{campConfig?.targetWeight?.toFixed(1) ?? '72.6'} kg</div>
+          </div>
+          <div className="ml-auto text-right">
+            <div className="text-[10px]" style={{ color: '#6B7280' }}>To cut</div>
+            <div className="text-xl font-black" style={{ color: weightStatusColor }}>{weightDiff.toFixed(1)} kg</div>
+          </div>
+        </div>
+        <div className="w-full h-3 rounded-full" style={{ backgroundColor: '#1F2937' }}>
+          <div className="h-full rounded-full transition-all" style={{
+            width: `${Math.min(100, Math.max(0, ((1 - weightDiff / 10) * 100)))}%`,
+            backgroundColor: weightStatusColor
+          }} />
+        </div>
+      </div>
+
+      {/* Sparring Log */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-white">Sparring Log</span>
+          <span className="text-xs" style={{ color: '#6B7280' }}>Target: {sparringTarget} rounds</span>
+        </div>
+        <div className="flex items-center gap-4 mb-3">
+          <button onClick={() => adjustSparring(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: '#1F2937' }}>−</button>
+          <div className="text-3xl font-black" style={{ color: CAMP_ACCENT }}>{sparringRounds}</div>
+          <button onClick={() => adjustSparring(1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: CAMP_ACCENT }}>+</button>
+          <span className="text-xs" style={{ color: '#6B7280' }}>rounds completed</span>
+        </div>
+        <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
+          <div className="h-full rounded-full transition-all" style={{
+            width: `${Math.min(100, Math.round((sparringRounds / Math.max(1, sparringTarget)) * 100))}%`,
+            backgroundColor: CAMP_ACCENT
+          }} />
+        </div>
+        <div className="flex justify-between text-[10px] mt-1" style={{ color: '#4B5563' }}>
+          <span>{sparringRounds} done</span>
+          <span>{Math.max(0, sparringTarget - sparringRounds)} remaining</span>
+        </div>
+      </div>
+
+      {/* Opponent Study Checklist */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-bold text-white">Opponent Study — {campConfig?.opponent}</span>
+          <span className="text-xs font-bold" style={{ color: CAMP_ACCENT }}>
+            {Object.values(opponentStudy).filter(Boolean).length}/{OPPONENT_ITEMS.length} reviewed
+          </span>
+        </div>
+        <div className="space-y-2">
+          {OPPONENT_ITEMS.map(item => (
+            <button key={item.id} onClick={() => toggleOpponentStudy(item.id)}
+              className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all"
+              style={{ backgroundColor: opponentStudy[item.id] ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${opponentStudy[item.id] ? 'rgba(245,158,11,0.2)' : '#1F2937'}` }}>
+              <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-xs"
+                style={{ backgroundColor: opponentStudy[item.id] ? CAMP_ACCENT : 'transparent', border: opponentStudy[item.id] ? 'none' : '1px solid #374151', color: '#fff' }}>
+                {opponentStudy[item.id] ? '✓' : ''}
+              </div>
+              <span className="text-xs" style={{ color: opponentStudy[item.id] ? CAMP_ACCENT : '#9CA3AF', textDecoration: opponentStudy[item.id] ? 'line-through' : 'none' }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
@@ -5353,6 +5715,7 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
       case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
       case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
+      case 'fightcamp':       return <FightCampView fighter={fighter} session={session} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
       case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
       case 'recovery':        return <RecoveryHRVView fighter={fighter} session={session} />;
@@ -5466,6 +5829,7 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
                   >
                     <span className="text-base flex-shrink-0">{item.icon}</span>
                     {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    {item.id === 'fightcamp' && sidebarExpanded && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white ml-auto" style={{ backgroundColor: '#F59E0B' }}>NEW</span>}
                   </button>
                 ))}
               </div>
@@ -5508,6 +5872,30 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
             To see your own data — sign up for 3 months free →
           </a>
         </div>
+        {(() => {
+          try {
+            const stored = localStorage.getItem('lumio_boxing_fight_camp')
+            if (!stored) return null
+            const config = JSON.parse(stored)
+            const days = Math.max(0, Math.ceil((new Date(config.fightDate).getTime() - Date.now()) / 86400000))
+            const len = Math.max(1, Math.ceil((new Date(config.fightDate).getTime() - new Date(config.activatedAt).getTime()) / 86400000))
+            const prog = Math.round(((len - days) / len) * 100)
+            const ph = prog < 33 ? 'Foundation' : prog < 66 ? 'Build' : 'Peak & Taper'
+            const phC = ph === 'Foundation' ? '#3B82F6' : ph === 'Build' ? '#F59E0B' : '#EF4444'
+            return (
+              <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+                style={{ backgroundColor: 'rgba(245,158,11,0.1)', borderBottom: '1px solid rgba(245,158,11,0.2)', color: '#F59E0B' }}>
+                <div className="flex items-center gap-3">
+                  <span>🥊</span>
+                  <span>Fight Camp Active — vs {config.opponent} · {days} days to fight night</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: phC }}>{ph}</span>
+                </div>
+                <button onClick={() => { localStorage.removeItem('lumio_boxing_fight_camp'); window.location.reload() }}
+                  className="text-xs px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#6B7280' }}>Deactivate</button>
+              </div>
+            )
+          } catch { return null }
+        })()}
         {!isFighter && !isSponsor && (
           <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
             style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
