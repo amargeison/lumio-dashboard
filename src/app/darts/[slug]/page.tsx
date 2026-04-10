@@ -7165,53 +7165,78 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 pb-16 md:pb-0">{renderView()}</div>
 
-          {/* Right Sidebar — Player Card */}
+          {/* Right Sidebar — Player Card (matching tennis pattern) */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
-            <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4 text-center">
-              <div className="text-3xl mb-2">{player.nationalityFlag}</div>
-              <div className="text-sm font-bold text-white">{player.name}</div>
-              <div className="text-[10px] text-gray-500">&quot;{player.nickname}&quot;</div>
-              <div className="text-xs text-red-400 font-medium mt-1">#{player.pdcRank} PDC</div>
-              <div className="text-xs text-gray-400 mt-1">{player.threeDartAverage} avg</div>
-              <div className="text-xs text-gray-500">£{(player.careerEarnings / 1000).toFixed(0)}k career</div>
-
-              <div className="border-t border-white/5 pt-3 mt-3 space-y-1.5 text-left">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Doubles %</span>
-                  <span className="text-white font-medium">38.2%</span>
+            <div className="relative w-52 rounded-xl overflow-hidden border-2 border-red-500/40 shadow-2xl shadow-red-900/50 flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #2a0a0a 0%, #0d1929 50%, #1a0a0a 100%)' }}>
+              <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #dc2626, #F97316)' }} />
+              <div className="p-4">
+                {/* Ranking badges */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-white leading-none">{player.pdcRank}</div>
+                    <div className="text-[10px] text-red-300 font-medium uppercase tracking-wider">PDC Rank</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-gray-400 leading-none">£{Math.round(player.careerEarnings/1000)}k</div>
+                    <div className="text-[9px] text-gray-500 font-medium uppercase tracking-wider">Career</div>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">TV avg</span>
-                  <span className="text-white font-medium">99.1</span>
+                {/* Player photo */}
+                <label className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden cursor-pointer relative group"
+                  style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.2), rgba(249,115,22,0.2))', border: '1px solid rgba(220,38,38,0.3)' }}>
+                  {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="Player" className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <span className="text-5xl">🎯</span> })()}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg"><span className="text-white text-xs font-bold">📷 Change photo</span></div>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { localStorage.setItem('lumio_darts_profile_photo', r.result as string); window.location.reload() }; r.readAsDataURL(f) }} />
+                </label>
+                {/* Name */}
+                <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
+                  {(session.userName || player.name).split(' ')[0]}
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Floor avg</span>
-                  <span className="text-white font-medium">97.3</span>
+                <div className="text-red-300 font-bold text-xs uppercase tracking-widest text-center mb-1">
+                  {(session.userName || player.name).split(' ').slice(1).join(' ')}
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">180s/match</span>
-                  <span className="text-white font-medium">4.2</span>
-                </div>
-              </div>
-
-              {/* Recent form mini sparkline */}
-              <div className="border-t border-white/5 pt-3 mt-3 text-left">
-                <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Recent form (avg)</p>
-                <div className="flex items-end gap-1 h-10">
-                  {[94.1, 98.7, 101.4, 99.2, 103.8, 97.6, 102.1, 96.8].map((avg, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                      <div className="w-full rounded-sm bg-red-500/60" style={{ height: `${((avg - 90) / 20) * 100}%` }} />
+                <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{player.nickname}&quot;</div>
+                {/* Stat bars */}
+                <div className="space-y-1.5 mb-2">
+                  {[{ label:'Doubles %', pct:38.2, max:60, color:'bg-amber-500' },{ label:'TV avg', pct:((99.1-90)/15)*100, max:100, color:'bg-red-500' },{ label:'Floor avg', pct:((97.3-90)/15)*100, max:100, color:'bg-orange-500' },{ label:'180s/match', pct:(4.2/8)*100, max:100, color:'bg-purple-500' }].map((s, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div className="text-[8px] text-gray-500 w-16">{s.label}</div>
+                      <div className="flex-1 bg-gray-800 rounded-full h-1.5"><div className={`${s.color} h-1.5 rounded-full`} style={{ width: `${Math.min(100, s.pct)}%` }} /></div>
+                      <div className="text-[9px] text-gray-400 w-8 text-right">{s.label === 'Doubles %' ? '38.2%' : s.label === 'TV avg' ? '99.1' : s.label === 'Floor avg' ? '97.3' : '4.2'}</div>
                     </div>
                   ))}
                 </div>
+                {/* Bottom stats row */}
+                <div className="grid grid-cols-3 gap-1 mb-2">
+                  {[{ val:'42.3', label:'CHKOUT%' },{ val:'97.8', label:'AVG' },{ val:'19', label:'RANK' }].map((s, i) => (
+                    <div key={i} className="text-center bg-black/20 rounded p-1.5">
+                      <div className="text-white font-black text-base leading-none">{s.val}</div>
+                      <div className="text-[9px] text-gray-400 mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Form */}
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  <span className="text-[8px] text-gray-600 mr-1">FORM:</span>
+                  {['W','L','W','W','L'].map((r, i) => (
+                    <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${r === 'W' ? 'bg-teal-600/40 text-teal-400' : 'bg-red-600/30 text-red-400'}`}>{r}</div>
+                  ))}
+                </div>
+                {/* Tour badge */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-gray-500">{player.nationality}</span>
+                  <span className="text-[9px] font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">PDC TOUR</span>
+                </div>
+              </div>
+              <div className="px-3 py-1.5 text-center border-t border-white/5" style={{ background: 'linear-gradient(90deg, rgba(220,38,38,0.3), rgba(249,115,22,0.3))' }}>
+                <div className="text-[9px] font-bold text-white/80 uppercase tracking-widest">LUMIO DARTS</div>
               </div>
             </div>
+            {/* Live Match */}
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="flex items-center gap-1.5 text-xs mb-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                </span>
+                <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>
                 <span className="text-red-400 font-medium text-[10px] uppercase tracking-wide">Live Tonight</span>
               </div>
               <div className="text-xs text-red-400 font-medium">European Ch. R1</div>
@@ -7219,11 +7244,22 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
               <div className="text-xs text-gray-500">20:00 · Dortmund</div>
               <div className="mt-2 text-xs text-yellow-400">Win = £110,000</div>
             </div>
+            {/* Upcoming */}
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Upcoming</div>
               {['Prague Open (Euro Tour)', 'Players Ch. 9', 'German Masters', 'Bahrain Masters'].map((t, i) => (
-                <div key={i} className="text-[10px] text-gray-400 py-0.5">{t}</div>
+                <div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50 last:border-0">{t}</div>
               ))}
+            </div>
+            {/* Alerts */}
+            <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
+              <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Alerts</div>
+              <div className="space-y-1.5">
+                <div className="text-xs text-red-400">Red Dragon shoot — confirm logistics</div>
+                <div className="text-xs text-yellow-400">Prague Open entry — closes Apr 19</div>
+                <div className="text-xs text-yellow-400">Sponsor renewal — agent chasing</div>
+                <div className="text-xs text-red-400">PDC media — confirm tomorrow</div>
+              </div>
             </div>
           </div>
         </div>
