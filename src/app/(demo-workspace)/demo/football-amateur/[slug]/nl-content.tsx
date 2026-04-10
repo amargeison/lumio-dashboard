@@ -12,6 +12,7 @@ import {
   ChevronDown, ChevronUp, Loader2,
   AlertTriangle, CloudRain, Sun,
   CircleDot, Hash, Printer,
+  Handshake, Search, Copy, Zap, BarChart3,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
@@ -34,25 +35,41 @@ export type NLDeptId =
   | 'nl-overview' | 'nl-club-profile' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
   | 'nl-set-pieces' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
+  | 'nl-gps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
+  | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
+  | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance'
+  | 'nl-morningroundup' | 'nl-aihalftime'
 
 type NLSection = null | 'Football' | 'Operations' | 'Club'
 
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
-  { id: 'nl-overview',      label: 'Overview',                icon: Home,           section: null },
-  { id: 'nl-club-profile',  label: 'Club Profile',            icon: MapPin,         section: null },
-  { id: 'nl-squad',         label: 'Squad',                   icon: Shirt,          section: 'Football' },
-  { id: 'nl-fixtures',      label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
-  { id: 'nl-training',      label: 'Training',                icon: Target,         section: 'Football' },
-  { id: 'nl-tactics',       label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
-  { id: 'nl-set-pieces',    label: 'Set Pieces',              icon: Target,         section: 'Football' },
-  { id: 'nl-medical',       label: 'Medical',                 icon: Heart,          section: 'Football' },
-  { id: 'nl-transfers',     label: 'Transfers & Recruitment', icon: UserPlus,       section: 'Football' },
-  { id: 'nl-finance',       label: 'Finance',                 icon: DollarSign,     section: 'Operations' },
-  { id: 'nl-ground',        label: 'Ground & Facilities',     icon: MapPin,         section: 'Operations' },
-  { id: 'nl-safeguarding',  label: 'Safeguarding',            icon: Shield,         section: 'Operations' },
-  { id: 'nl-matchday',      label: 'Matchday',                icon: Trophy,         section: 'Operations' },
-  { id: 'nl-comms',         label: 'Comms',                   icon: MessageSquare,  section: 'Club' },
-  { id: 'nl-committee',     label: 'Committee',               icon: Users,          section: 'Club' },
+  { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
+  { id: 'nl-morningroundup',  label: 'Morning Roundup',         icon: Bell,           section: null },
+  { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: null },
+  { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: null },
+  { id: 'nl-aihalftime',      label: 'AI Halftime Brief',       icon: Target,         section: 'Football' },
+  { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
+  { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
+  { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'Football' },
+  { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
+  { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
+  { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
+  { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'Football' },
+  { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },
+  { id: 'nl-transfers',       label: 'Transfers & Recruitment', icon: UserPlus,       section: 'Football' },
+  { id: 'nl-registration',    label: 'Player Registration',     icon: Shield,         section: 'Operations' },
+  { id: 'nl-discipline',      label: 'Discipline Log',          icon: AlertTriangle,  section: 'Operations' },
+  { id: 'nl-matchfees',       label: 'Match Fee Tracker',       icon: DollarSign,     section: 'Operations' },
+  { id: 'nl-kit',             label: 'Kit & Equipment',         icon: Shirt,          section: 'Operations' },
+  { id: 'nl-finance',         label: 'Finance',                 icon: DollarSign,     section: 'Operations' },
+  { id: 'nl-ground',          label: 'Ground & Facilities',     icon: MapPin,         section: 'Operations' },
+  { id: 'nl-safeguarding',    label: 'Safeguarding',            icon: Shield,         section: 'Operations' },
+  { id: 'nl-matchday',        label: 'Matchday',                icon: Trophy,         section: 'Operations' },
+  { id: 'nl-sponsorship',     label: 'Sponsorship',             icon: Handshake,      section: 'Club' },
+  { id: 'nl-fundraising',     label: 'Fundraising',             icon: Heart,          section: 'Club' },
+  { id: 'nl-insurance',       label: 'Insurance',               icon: Shield,         section: 'Club' },
+  { id: 'nl-comms',           label: 'Comms',                   icon: MessageSquare,  section: 'Club' },
+  { id: 'nl-committee',       label: 'Committee',               icon: Users,          section: 'Club' },
 ]
 
 // ─── Squad Data ─────────────────────────────────────────────────────────────
@@ -503,7 +520,7 @@ function NLPitchFormation({ players }: { players: { name: string; x: number; y: 
 function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; userName?: string }) {
   const { speak, stop, isPlaying } = useSpeech()
   const [briefingExpanded, setBriefingExpanded] = useState(false)
-  const [overviewTab, setOverviewTab] = useState<'getting-started' | 'dashboard'>(() => {
+  const [overviewTab, setOverviewTab] = useState<'getting-started' | 'dashboard' | 'quick-wins' | 'daily-tasks' | 'dont-miss' | 'team' | 'insights'>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('lumio_nonleague_onboarding')
       if (stored) { const parsed = JSON.parse(stored); if (parsed.every((v: boolean) => v)) return 'dashboard' }
@@ -517,8 +534,10 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
     }
     return Array(10).fill(false)
   })
+  const [expandedRoundup, setExpandedRoundup] = useState<string | null>(null)
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const [teamSubTab, setTeamSubTab] = useState<'today' | 'org' | 'info' | 'club'>('today')
   const nextMatch = NL_FIXTURES.find(f => !f.result)
-  const daysUntilMatch = 4 // Sat 5 Apr
   const played = NL_FIXTURES.filter(f => f.result)
   const squadFit = NL_SQUAD.filter(p => !p.injured && !p.suspended).length
   const displayName = userName?.split(' ')[0] || 'Steve'
@@ -543,6 +562,23 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
     if (typeof window !== 'undefined') localStorage.setItem('lumio_nonleague_onboarding', JSON.stringify(next))
   }
 
+  const roundupCategories = [
+    { id: 'player', emoji: '\uD83D\uDCAC', label: 'Player Messages', count: 2, items: [
+      { text: 'Ryan Fletcher: "Knee feels better, think I can make Saturday"', time: '07:45' },
+      { text: 'Declan Nash: "When does my suspension end? Need to know for work"', time: '08:10' },
+    ]},
+    { id: 'match', emoji: '\uD83D\uDCCB', label: 'Match Admin', count: 2, items: [
+      { text: 'Referee confirmed for Saturday: Mr. D. Hargreaves', time: '09:00' },
+      { text: 'Redbourne Town: away kit is white — no clash', time: '08:30' },
+    ]},
+    { id: 'finance', emoji: '\uD83D\uDCB0', label: 'Finance Alerts', count: 1, urgent: true, items: [
+      { text: '6 players owe match fees from last Saturday (total: £240)', time: '08:00' },
+    ]},
+    { id: 'fa', emoji: '\uD83C\uDFDB\uFE0F', label: 'FA Alerts', count: 1, urgent: true, items: [
+      { text: 'Ground grading inspection in 14 days — floodlight lux test OUTSTANDING', time: '07:00' },
+    ]},
+  ]
+
   return (
     <div className="space-y-4">
       {/* Good morning panel with inline KPIs */}
@@ -559,7 +595,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
             ))}
           </div>
         </div>
-        {/* Inline KPI boxes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg px-3 py-2" style={{ backgroundColor: `${PRIMARY}22`, border: `1px solid ${PRIMARY}33` }}>
             <div className="text-lg font-black" style={{ color: ACCENT }}>4th</div>
@@ -580,36 +615,71 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
         </div>
       </div>
 
+      {/* Expandable Morning Roundup */}
+      <SectionCard title="Morning Roundup" action={<Badge color={GOLD}>{roundupCategories.reduce((s, c) => s + c.count, 0)} items</Badge>}>
+        <div className="space-y-1">
+          {roundupCategories.map(cat => (
+            <div key={cat.id}>
+              <button onClick={() => setExpandedRoundup(expandedRoundup === cat.id ? null : cat.id)} className="flex items-center justify-between w-full py-2 px-2 rounded-lg text-left transition-all" style={{ backgroundColor: expandedRoundup === cat.id ? `${PRIMARY}12` : 'transparent' }}>
+                <div className="flex items-center gap-2">
+                  <span>{cat.emoji}</span>
+                  <span className="text-sm font-medium" style={{ color: TEXT }}>{cat.label}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: ('urgent' in cat && cat.urgent) ? '#EF44441a' : `${PRIMARY}1a`, color: ('urgent' in cat && cat.urgent) ? '#EF4444' : PRIMARY }}>{cat.count}</span>
+                </div>
+                {expandedRoundup === cat.id ? <ChevronUp size={14} style={{ color: TEXT_SEC }} /> : <ChevronDown size={14} style={{ color: TEXT_SEC }} />}
+              </button>
+              {expandedRoundup === cat.id && (
+                <div className="pl-8 pb-2 space-y-2">
+                  {cat.items.map((item, j) => (
+                    <div key={j} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: BG }}>
+                      <div>
+                        <p className="text-xs" style={{ color: TEXT }}>{item.text}</p>
+                        <p className="text-[10px]" style={{ color: TEXT_SEC }}>{item.time}</p>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0 ml-2">
+                        <button onClick={() => onToast('Reply sent')} className="px-2 py-1 rounded text-[10px] font-semibold" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>Reply</button>
+                        <button onClick={() => onToast('Dismissed')} className="px-2 py-1 rounded text-[10px] font-semibold" style={{ backgroundColor: `${BORDER}`, color: TEXT_SEC }}>Dismiss</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
       {/* Quick Actions — 12 pill buttons */}
       <div className="flex flex-wrap gap-2">
         {[
-          { id:'teamselection', label:'Team Selection AI', icon:'\uD83D\uDCCB', hot:true, color:'#F59E0B' },
-          { id:'matchprep',     label:'Match Prep AI',     icon:'\uD83C\uDFAF', hot:true, color:'#F59E0B' },
-          { id:'availability',  label:'Player Availability',icon:'\uD83D\uDCF1', hot:false, color:'#6B7280' },
-          { id:'facheck',       label:'FA Registration',   icon:'\uD83C\uDFDB\uFE0F', hot:false, color:'#6B7280' },
-          { id:'finance',       label:'Finance Logger',    icon:'\uD83D\uDCB0', hot:false, color:'#6B7280' },
-          { id:'opposition',    label:'Opposition Scout AI',icon:'\uD83D\uDD0D', hot:true, color:'#F59E0B' },
-          { id:'ground',        label:'Ground Manager',    icon:'\uD83C\uDFDF\uFE0F', hot:false, color:'#6B7280' },
-          { id:'sponsor',       label:'Sponsor Post AI',   icon:'\uD83D\uDCF1', hot:true, color:'#F59E0B' },
-          { id:'cupdraw',       label:'Cup Draw Tracker',  icon:'\uD83C\uDFC6', hot:false, color:'#6B7280' },
-          { id:'fundraising',   label:'Fundraising AI',    icon:'\uD83D\uDCA1', hot:true, color:'#F59E0B' },
-          { id:'discipline',    label:'Discipline Log',    icon:'\uD83D\uDFE5', hot:false, color:'#6B7280' },
-          { id:'matchreport',   label:'Match Report AI',   icon:'\uD83D\uDCCA', hot:true, color:'#F59E0B' },
+          { id:'availability',  label:'WhatsApp Availability', icon: MessageSquare, hot:false },
+          { id:'matchfees',     label:'Match Fee Tracker',     icon: DollarSign,    hot:false },
+          { id:'aihalftime',    label:'AI Halftime Brief',     icon: Target,        hot:true },
+          { id:'teamselection', label:'Team Selection AI',     icon: Clipboard,     hot:true },
+          { id:'matchreport',   label:'Match Report AI',       icon: FileText,      hot:true },
+          { id:'groundgrading', label:'FA Ground Grading',     icon: Shield,        hot:false },
+          { id:'opposition',    label:'Opposition Scout AI',   icon: Search,        hot:true },
+          { id:'sponsor',       label:'Sponsor Post AI',       icon: Handshake,     hot:true },
+          { id:'cupmanager',    label:'Cup Manager',           icon: Trophy,        hot:false },
+          { id:'registration',  label:'Player Registration',   icon: Users,         hot:false },
+          { id:'finance',       label:'Finance Logger',        icon: DollarSign,    hot:false },
+          { id:'discipline',    label:'Discipline Log',        icon: AlertTriangle, hot:false },
         ].map(a => (
-          <button key={a.id} className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
-            style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
-            <span>{a.icon}</span>{a.label}
-            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+          <button key={a.id} onClick={() => setActiveModal(a.id)}
+            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+            style={{ background: a.hot ? '#F59E0B18' : '#111318', border: a.hot ? '1px solid #F59E0B50' : '1px solid #1F2937', color: a.hot ? '#F59E0B' : '#9CA3AF' }}>
+            <a.icon size={12} />{a.label}
+            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: '#F59E0B', color: '#fff' }}>AI</span>}
           </button>
         ))}
       </div>
 
-      {/* Overview Tabs: Getting Started | Dashboard */}
-      <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
-        {(['getting-started', 'dashboard'] as const).map(t => (
+      {/* Overview Tabs */}
+      <div className="flex gap-1 p-1 rounded-lg flex-wrap" style={{ backgroundColor: CARD_BG }}>
+        {(['getting-started', 'dashboard', 'quick-wins', 'daily-tasks', 'dont-miss', 'team', 'insights'] as const).map(t => (
           <button key={t} onClick={() => setOverviewTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
             style={{ backgroundColor: overviewTab === t ? PRIMARY : 'transparent', color: overviewTab === t ? '#fff' : TEXT_SEC }}>
-            {t === 'getting-started' ? 'Getting Started' : 'Dashboard'}
+            {t === 'getting-started' ? 'Getting Started' : t === 'dashboard' ? 'Dashboard' : t === 'quick-wins' ? 'Quick Wins' : t === 'daily-tasks' ? 'Daily Tasks' : t === 'dont-miss' ? "Don't Miss" : t === 'team' ? 'Team' : 'Insights'}
           </button>
         ))}
       </div>
@@ -627,6 +697,221 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
             ))}
           </div>
         </SectionCard>
+      )}
+
+      {/* Quick Wins tab */}
+      {overviewTab === 'quick-wins' && (
+        <SectionCard title="Quick Wins — Do These Now">
+          <div className="space-y-2">
+            {[
+              { task: 'Chase 6 outstanding match fees via WhatsApp', priority: 'High', action: 'Send Reminders', color: '#EF4444' },
+              { task: 'Confirm Fletcher fitness for Saturday', priority: 'High', action: 'Text Fletcher', color: '#EF4444' },
+              { task: 'Post matchday announcement on social media', priority: 'Medium', action: 'Use Template', color: GOLD },
+              { task: 'Book floodlight lux test before inspection', priority: 'High', action: 'Call Northern Electricals', color: '#EF4444' },
+              { task: 'Update squad availability for Redbourne game', priority: 'Medium', action: 'Send Poll', color: GOLD },
+            ].map((qw, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-3 flex-1">
+                  <Badge color={qw.color}>{qw.priority}</Badge>
+                  <span className="text-xs" style={{ color: TEXT }}>{qw.task}</span>
+                </div>
+                <button onClick={() => onToast(`${qw.action} triggered`)} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 ml-2" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>{qw.action}</button>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Daily Tasks tab */}
+      {overviewTab === 'daily-tasks' && (
+        <SectionCard title="Daily Tasks">
+          <div className="space-y-2">
+            {[
+              { task: 'Review training attendance from Thursday', priority: 'Medium', category: 'Football', action: 'Open Training' },
+              { task: 'Approve programme notes for Saturday', priority: 'Low', category: 'Operations', action: 'Edit Notes' },
+              { task: 'Reply to Harfield Brewery sponsorship email', priority: 'High', category: 'Commercial', action: 'Draft Reply' },
+              { task: 'Check pitch condition after overnight rain', priority: 'Medium', category: 'Ground', action: 'Log Inspection' },
+              { task: 'Update FA Vase team sheet if Fletcher is fit', priority: 'Low', category: 'Football', action: 'Update Sheet' },
+            ].map((dt, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-3 flex-1">
+                  <Badge color={dt.priority === 'High' ? '#EF4444' : dt.priority === 'Medium' ? GOLD : TEXT_SEC}>{dt.priority}</Badge>
+                  <div>
+                    <p className="text-xs" style={{ color: TEXT }}>{dt.task}</p>
+                    <p className="text-[10px]" style={{ color: TEXT_SEC }}>{dt.category}</p>
+                  </div>
+                </div>
+                <button onClick={() => onToast(dt.action)} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 ml-2" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>{dt.action}</button>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Don't Miss tab */}
+      {overviewTab === 'dont-miss' && (
+        <SectionCard title="Don't Miss">
+          <div className="space-y-2">
+            {[
+              { item: 'Ground grading inspection', urgency: 'Critical', days: '14 days', consequence: 'Fail = possible ground closure or demotion' },
+              { item: 'Harfield Brewery sponsorship renewal', urgency: 'High', days: 'End of April', consequence: 'Lose £3,000 shirt sponsor if no decision' },
+              { item: 'FA registration deadline', urgency: 'High', days: '15 Apr', consequence: 'New signings ineligible after this date' },
+              { item: 'County Cup semi-final date', urgency: 'Medium', days: 'TBC April', consequence: 'Need to confirm availability with league' },
+              { item: 'DBS renewal — Pete Hargreaves', urgency: 'High', days: 'Overdue', consequence: 'Treasurer DBS expired — compliance issue' },
+            ].map((dm, i) => (
+              <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold" style={{ color: TEXT }}>{dm.item}</span>
+                  <Badge color={dm.urgency === 'Critical' ? '#EF4444' : dm.urgency === 'High' ? GOLD : '#3B82F6'}>{dm.urgency} — {dm.days}</Badge>
+                </div>
+                <p className="text-[10px]" style={{ color: '#EF4444' }}>{dm.consequence}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Team tab */}
+      {overviewTab === 'team' && (
+        <div className="space-y-4">
+          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
+            {(['today', 'org', 'info', 'club'] as const).map(t => (
+              <button key={t} onClick={() => setTeamSubTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                style={{ backgroundColor: teamSubTab === t ? PRIMARY : 'transparent', color: teamSubTab === t ? '#fff' : TEXT_SEC }}>
+                {t === 'today' ? 'Team Today' : t === 'org' ? 'Org Chart' : t === 'info' ? 'Team Info' : 'Club Info'}
+              </button>
+            ))}
+          </div>
+          {teamSubTab === 'today' && (
+            <SectionCard title="Team Today">
+              <div className="space-y-2">
+                {[
+                  { name: 'Mark Houghton', role: 'Manager', status: 'At training ground', since: '07:30' },
+                  { name: 'Gary Fielding', role: 'Assistant Manager', status: 'Scouting Redbourne tonight', since: 'Away' },
+                  { name: 'Sandra Whitmore', role: 'Club Secretary', status: 'Office — processing registrations', since: '09:00' },
+                  { name: 'Keith Mellor', role: 'Groundsman', status: 'Pitch inspection after rain', since: '06:30' },
+                  { name: 'Jess Brennan', role: 'Welfare Officer', status: 'Available on call', since: '' },
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: BG }}>
+                    <div>
+                      <p className="text-xs font-medium" style={{ color: TEXT }}>{s.name}</p>
+                      <p className="text-[10px]" style={{ color: PRIMARY }}>{s.role}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{s.status}</p>
+                      {s.since && <p className="text-[10px]" style={{ color: TEXT_SEC }}>Since {s.since}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+          {teamSubTab === 'org' && (
+            <SectionCard title="Organisation Chart">
+              <div className="text-center space-y-4">
+                <div className="inline-block p-3 rounded-lg" style={{ backgroundColor: `${PRIMARY}1a`, border: `1px solid ${PRIMARY}33` }}>
+                  <p className="text-xs font-bold" style={{ color: PRIMARY }}>Brian Crossley</p>
+                  <p className="text-[10px]" style={{ color: TEXT_SEC }}>Chairman</p>
+                </div>
+                <div className="flex justify-center gap-4 flex-wrap">
+                  {[{ name: 'Mark Houghton', role: 'Manager' }, { name: 'Sandra Whitmore', role: 'Secretary' }, { name: 'Pete Hargreaves', role: 'Treasurer' }].map((p, i) => (
+                    <div key={i} className="p-2 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+                      <p className="text-[10px] font-semibold" style={{ color: TEXT }}>{p.name}</p>
+                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{p.role}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center gap-3 flex-wrap">
+                  {[{ name: 'Gary Fielding', role: 'Asst Manager' }, { name: 'Keith Mellor', role: 'Groundsman' }, { name: 'Jess Brennan', role: 'Welfare' }, { name: 'Mike Thornton', role: 'Commercial' }].map((p, i) => (
+                    <div key={i} className="p-2 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+                      <p className="text-[10px] font-semibold" style={{ color: TEXT }}>{p.name}</p>
+                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{p.role}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+          )}
+          {teamSubTab === 'info' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { name: 'Mark Houghton', role: 'Manager', badges: 'UEFA B Licence', exp: '4 seasons', style: 'Direct, set-piece focused' },
+                { name: 'Gary Fielding', role: 'Assistant', badges: 'FA Level 2', exp: '3 seasons', style: 'Defensive organisation' },
+                { name: 'Sandra Whitmore', role: 'Secretary', badges: 'FA Admin Certified', exp: '6 years', style: 'Registrations, compliance' },
+              ].map((card, i) => (
+                <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                  <div className="p-1" style={{ backgroundColor: PRIMARY }} />
+                  <div className="p-3 space-y-2">
+                    <p className="text-sm font-bold" style={{ color: TEXT }}>{card.name}</p>
+                    <Badge color={PRIMARY}>{card.role}</Badge>
+                    <div className="text-[10px] space-y-1" style={{ color: TEXT_SEC }}>
+                      <p>Qualifications: {card.badges}</p>
+                      <p>Experience: {card.exp}</p>
+                      <p>Focus: {card.style}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {teamSubTab === 'club' && (
+            <SectionCard title="Club Info">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {[
+                  ['Founded', '1887'], ['Ground', 'Harfield Community Stadium'], ['Capacity', '1,200'], ['League', 'NPL West (Step 4)'],
+                  ['Nickname', 'The Amber Army'], ['Colours', 'Amber & Black'], ['Chairman', 'Brian Crossley'], ['Manager', 'Mark Houghton'],
+                ].map(([l, v], i) => (
+                  <div key={i} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <span style={{ color: TEXT_SEC }}>{l}</span>
+                    <span className="font-medium" style={{ color: TEXT }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+        </div>
+      )}
+
+      {/* Insights tab */}
+      {overviewTab === 'insights' && (
+        <div className="space-y-4">
+          <SectionCard title="Role-Based Insights">
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-2 mb-2"><span>&#9917;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Manager View</span></div>
+                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
+                  <p>Form: WDLWW — 3rd best in division over last 5</p>
+                  <p>Squad depth concern at LB if Okonkwo injured — only Rafferty as cover</p>
+                  <p>Grady on 14 goals — needs 4 more in 5 games for 18-goal target</p>
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-2 mb-2"><span>&#127963;&#65039;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Chairman View</span></div>
+                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
+                  <p>Season P&L: +£810 surplus — on track</p>
+                  <p>Attendance trending up: 280 record vs Hyde, avg 213</p>
+                  <p>Sponsorship renewals due: 3 sponsors pending decision</p>
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-2 mb-2"><span>&#128176;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Treasurer View</span></div>
+                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
+                  <p>Outstanding match fees: £240 (6 players)</p>
+                  <p>Ground works needed: £1,400 (floodlights + ramp)</p>
+                  <p>Bar income tracking +£520 vs budget</p>
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+                <div className="flex items-center gap-2 mb-2"><span>&#128203;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Secretary View</span></div>
+                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
+                  <p>FA registration deadline: 15 Apr — all current players registered</p>
+                  <p>DBS expired: Pete Hargreaves — renewal needed immediately</p>
+                  <p>Ground grading inspection: 15 Apr — 2 items outstanding</p>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
       )}
 
       {overviewTab === 'dashboard' && <>
@@ -667,7 +952,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
-          {/* This Week */}
           <SectionCard title="This Week">
             <div className="space-y-2">
               {NL_TRAINING.map((s, i) => (
@@ -691,7 +975,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
             </div>
           </SectionCard>
 
-          {/* Activity Feed */}
           <SectionCard title="Activity Feed" action={<span className="text-xs" style={{ color: PRIMARY }}>Live</span>}>
             <div className="space-y-0">
               {NL_ACTIVITY_FEED.map((run, i) => (
@@ -708,7 +991,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
         </div>
 
         <div className="space-y-4">
-          {/* Weather */}
           <SectionCard title="Weather — Match Week">
             <div className="space-y-2">
               {NL_WEATHER.map((w, i) => (
@@ -726,7 +1008,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
             </div>
           </SectionCard>
 
-          {/* Mini League Table */}
           <SectionCard title="League Position">
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -747,7 +1028,6 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
             </div>
           </SectionCard>
 
-          {/* Alerts */}
           <SectionCard title="Alerts">
             <div className="space-y-2">
               <div className="p-2 rounded-lg text-xs" style={{ backgroundColor: '#EF44441a', color: '#EF4444' }}>
@@ -764,6 +1044,41 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
         </div>
       </div>
       </>}
+
+      {/* ─── Modals ─── */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setActiveModal(null)}>
+          <div className="rounded-xl w-full max-w-lg max-h-[80vh] overflow-y-auto" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <p className="text-sm font-bold" style={{ color: TEXT }}>
+                {activeModal === 'availability' ? 'WhatsApp Availability' :
+                 activeModal === 'matchfees' ? 'Match Fee Tracker' :
+                 activeModal === 'aihalftime' ? 'AI Halftime Brief' :
+                 activeModal === 'matchreport' ? 'Match Report AI' :
+                 activeModal === 'groundgrading' ? 'FA Ground Grading' :
+                 activeModal === 'opposition' ? 'Opposition Scout AI' :
+                 activeModal === 'sponsor' ? 'Sponsor Post AI' : 'Quick Action'}
+              </p>
+              <button onClick={() => setActiveModal(null)} style={{ color: TEXT_SEC }}><X size={16} /></button>
+            </div>
+            <div className="p-4">
+              {activeModal === 'availability' && <NLAvailabilityModal onToast={onToast} />}
+              {activeModal === 'matchfees' && <NLMatchFeeModal onToast={onToast} />}
+              {activeModal === 'aihalftime' && <NLHalftimeModal onToast={onToast} />}
+              {activeModal === 'matchreport' && <NLMatchReportModal onToast={onToast} />}
+              {activeModal === 'groundgrading' && <NLGroundGradingModal onToast={onToast} />}
+              {activeModal === 'opposition' && <NLOppositionScoutModal onToast={onToast} />}
+              {activeModal === 'sponsor' && <NLSponsorPostModal onToast={onToast} />}
+              {!['availability','matchfees','aihalftime','matchreport','groundgrading','opposition','sponsor'].includes(activeModal) && (
+                <div className="text-center py-8">
+                  <p className="text-sm" style={{ color: TEXT_SEC }}>This action opens the full view. Use the sidebar to navigate there.</p>
+                  <button onClick={() => setActiveModal(null)} className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: PRIMARY, color: '#fff' }}>Close</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2699,6 +3014,570 @@ function NLClubProfileView() {
   )
 }
 
+// ─── Modal Components ──────────────────────────────────────────────────────
+
+function NLAvailabilityModal({ onToast }: { onToast: (m: string) => void }) {
+  const available = NL_SQUAD.filter(p => !p.injured && !p.suspended)
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>Generate WhatsApp availability poll for next match. Tap to toggle player responses.</p>
+      <div className="space-y-1">
+        {available.slice(0, 10).map((p, i) => (
+          <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <span style={{ color: TEXT }}>{p.name}</span>
+            <div className="flex gap-1">
+              {['Yes','Maybe','No'].map(s => (
+                <button key={s} className="px-2 py-0.5 rounded text-[10px]" style={{ backgroundColor: s === 'Yes' ? '#22C55E1a' : s === 'No' ? '#EF44441a' : `${GOLD}1a`, color: s === 'Yes' ? '#22C55E' : s === 'No' ? '#EF4444' : GOLD }}>{s}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={() => onToast('WhatsApp message copied')} className="w-full px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#25D366', color: '#fff' }}>
+        <MessageSquare size={12} className="inline mr-1" />Copy WhatsApp Message
+      </button>
+    </div>
+  )
+}
+
+function NLMatchFeeModal({ onToast }: { onToast: (m: string) => void }) {
+  const owing = NL_SQUAD.filter(p => p.matchFee > 0).slice(0, 8)
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>Match fees outstanding from last Saturday vs Hyde United.</p>
+      <div className="space-y-1">
+        {owing.map((p, i) => (
+          <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <span style={{ color: TEXT }}>{p.name}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono" style={{ color: GOLD }}>£{p.matchFee}</span>
+              <Badge color={i < 3 ? '#22C55E' : '#EF4444'}>{i < 3 ? 'Paid' : 'Owing'}</Badge>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => onToast('WhatsApp chase sent')} className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#25D366', color: '#fff' }}>Chase via WhatsApp</button>
+        <button onClick={() => onToast('CSV exported')} className="px-3 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}`, color: TEXT }}>Export CSV</button>
+      </div>
+    </div>
+  )
+}
+
+function NLHalftimeModal({ onToast }: { onToast: (m: string) => void }) {
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState('')
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>Enter first-half details and AI will generate a tactical halftime brief.</p>
+      <div className="space-y-2">
+        <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Score at HT (e.g. 1-0 up)" />
+        <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Key observations: possession, chances, injuries, cards..." />
+      </div>
+      <button onClick={async () => {
+        setLoading(true)
+        try {
+          const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Generate a halftime tactical brief for a non-league manager. Score is 1-0 up. We are dominating possession but they are dangerous on the break. Suggest substitutions and tactical tweaks.', type: 'halftime' }) })
+          const data = await res.json()
+          setBrief(data.result || data.text || 'AI brief generated — keep shape, press high, bring on Rooney for Fletcher at 60 mins if tiring.')
+        } catch { setBrief('Keep shape, don\'t sit back. Press their centre-backs — they panic. Bring Rooney on at 60 if we need more creativity. Prescott to stay tight on their 9.') }
+        setLoading(false)
+      }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
+        {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate AI Brief</>}
+      </button>
+      {brief && <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG, color: TEXT }}>{brief}</div>}
+    </div>
+  )
+}
+
+function NLMatchReportModal({ onToast }: { onToast: (m: string) => void }) {
+  const [loading, setLoading] = useState(false)
+  const [report, setReport] = useState('')
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>Enter the result and AI generates a match report with social media copy.</p>
+      <div className="grid grid-cols-2 gap-2">
+        <input className="px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Harfield score" />
+        <input className="px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Opponent score" />
+      </div>
+      <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Scorers (e.g. Grady 23', Simcox 67')" />
+      <button onClick={async () => {
+        setLoading(true)
+        try {
+          const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Write a 100-word match report for Harfield FC 2-0 Redbourne Town in the Northern Premier League West. Grady and Simcox scored.', type: 'matchreport' }) })
+          const data = await res.json()
+          setReport(data.result || data.text || 'Harfield FC secured a comfortable 2-0 home victory against Redbourne Town. Liam Grady opened the scoring with a clinical finish before Harry Simcox doubled the lead in the second half.')
+        } catch { setReport('Harfield FC secured a comfortable 2-0 home victory against Redbourne Town at Harfield Community Stadium. Liam Grady opened the scoring midway through the first half with a poacher\'s finish, before Harry Simcox doubled the advantage with a well-taken volley after the break. The result keeps the Stags firmly in the promotion picture.') }
+        setLoading(false)
+      }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
+        {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate Report</>}
+      </button>
+      {report && (
+        <div className="space-y-2">
+          <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG, color: TEXT }}>{report}</div>
+          <div className="flex gap-2">
+            <button onClick={() => { navigator.clipboard?.writeText(report); onToast('Report copied') }} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>Copy Report</button>
+            <button onClick={() => { navigator.clipboard?.writeText(`FT | Harfield FC 2-0 Redbourne Town | Grady, Simcox | #HarfieldFC #NPL`); onToast('Social post copied') }} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>Copy Social Post</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NLGroundGradingModal({ onToast }: { onToast: (m: string) => void }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold" style={{ color: GOLD }}>FA Grade H (Step 4) — Inspection: 15 Apr 2026</p>
+      <div className="space-y-1">
+        {NL_GROUND_GRADING.map((g, i) => (
+          <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <span style={{ color: TEXT }}>{g.requirement}</span>
+            <Badge color={g.status === 'pass' ? '#22C55E' : '#EF4444'}>{g.status === 'pass' ? 'PASS' : 'ACTION'}</Badge>
+          </div>
+        ))}
+      </div>
+      <div className="p-2 rounded-lg text-xs" style={{ backgroundColor: '#EF44441a', color: '#EF4444' }}>
+        <AlertTriangle size={12} className="inline mr-1" />2 items must be resolved before inspection: floodlight lux test + disabled ramp.
+      </div>
+    </div>
+  )
+}
+
+function NLOppositionScoutModal({ onToast }: { onToast: (m: string) => void }) {
+  const [loading, setLoading] = useState(false)
+  const [report, setReport] = useState('')
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>AI will search for opponent info and generate a scouting brief.</p>
+      <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} defaultValue="Redbourne Town" placeholder="Opponent name" />
+      <button onClick={async () => {
+        setLoading(true)
+        try {
+          const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Scout report on Redbourne Town FC in the Northern Premier League West. Their form, key players, style of play, and weaknesses.', type: 'scout' }) })
+          const data = await res.json()
+          setReport(data.result || data.text || 'Redbourne Town sit 12th. They play a low block and counter. Key threat: Jordan Ellis (ST, 10 goals). Weak at set pieces. Target their right side — their LB is slow.')
+        } catch { setReport('Redbourne Town (12th, 34pts). Formation: 4-5-1 low block. Key player: Jordan Ellis (10 goals, quick). Weaknesses: set pieces, right-back position, goalkeeper poor on crosses. Recommendation: exploit set pieces via Prescott/Dunne, play wide and deliver crosses, press their centre-backs who panic under pressure.') }
+        setLoading(false)
+      }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
+        {loading ? <><Loader2 size={12} className="animate-spin" />Scouting...</> : <><Search size={12} />Generate Scout Report</>}
+      </button>
+      {report && <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG, color: TEXT }}>{report}</div>}
+    </div>
+  )
+}
+
+function NLSponsorPostModal({ onToast }: { onToast: (m: string) => void }) {
+  const [loading, setLoading] = useState(false)
+  const [post, setPost] = useState('')
+  return (
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: TEXT_SEC }}>AI generates a social media post thanking a sponsor.</p>
+      <select className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }}>
+        {NL_SPONSORS.map((sp, i) => <option key={i}>{sp.name}</option>)}
+      </select>
+      <button onClick={async () => {
+        setLoading(true)
+        try {
+          const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Write a social media post thanking Harfield Brewery for their continued sponsorship of Harfield FC. Keep it warm, community-focused, non-league tone.', type: 'sponsor' }) })
+          const data = await res.json()
+          setPost(data.result || data.text || 'Huge thanks to Harfield Brewery for their continued support of the club!')
+        } catch { setPost('Massive thank you to @HarfieldBrewery for their continued support as our main shirt sponsor! A proper local business backing a proper local football club. If you haven\'t tried their Amber Ale yet, get yourself down there! #HarfieldFC #CommunityClub #NonLeague') }
+        setLoading(false)
+      }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
+        {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate Sponsor Post</>}
+      </button>
+      {post && (
+        <div className="space-y-2">
+          <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG, color: TEXT }}>{post}</div>
+          <button onClick={() => { navigator.clipboard?.writeText(post); onToast('Post copied') }} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>Copy to Clipboard</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── New View Components ────────────────────────────────────────────────────
+
+function NLGPSView() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Avg Distance/Game" value="9.2km" icon={Activity} color={PRIMARY} />
+        <StatCard label="Top Distance" value="11.4km" icon={TrendingUp} color="#22C55E" sub="Tom Brennan" />
+        <StatCard label="Sprint Count Avg" value="42" icon={Zap} color="#3B82F6" />
+        <StatCard label="Return to Play" value="2" icon={Heart} color="#EF4444" sub="Platt, Mellor" />
+      </div>
+
+      <SectionCard title="Squad Fitness — Last Match Distance (km)">
+        <div className="space-y-1.5">
+          {NL_SQUAD.filter(p => !p.injured && !p.suspended).slice(0, 11).map((p, i) => {
+            const dist = [11.4, 10.8, 10.2, 9.8, 9.6, 9.4, 9.2, 9.0, 8.8, 8.5, 8.2][i] || 8.0
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-xs w-24 truncate" style={{ color: TEXT }}>{p.name.split(' ').pop()}</span>
+                <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: `${PRIMARY}1a` }}>
+                  <div className="h-full rounded-full" style={{ backgroundColor: dist > 10 ? '#22C55E' : dist > 9 ? PRIMARY : '#EF4444', width: `${(dist / 12) * 100}%` }} />
+                </div>
+                <span className="text-xs font-mono w-12 text-right" style={{ color: TEXT_SEC }}>{dist}km</span>
+              </div>
+            )
+          })}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Pitch Heatmap">
+        <div className="rounded-lg p-8 text-center" style={{ backgroundColor: '#15803D22', border: `1px solid ${BORDER}` }}>
+          <Activity size={32} style={{ color: TEXT_SEC, margin: '0 auto' }} />
+          <p className="text-xs mt-2" style={{ color: TEXT_SEC }}>GPS heatmap visualisation — connect Veo or GPS tracker to populate</p>
+          <p className="text-[10px] mt-1" style={{ color: PRIMARY }}>Veo integration coming soon</p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Return-to-Play Tracker">
+        <div className="space-y-2">
+          {NL_INJURIES.map((inj, i) => (
+            <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium" style={{ color: TEXT }}>{inj.name}</span>
+                <Badge color={inj.severity === 'Significant' ? '#EF4444' : GOLD}>{inj.severity}</Badge>
+              </div>
+              <p className="text-[10px]" style={{ color: TEXT_SEC }}>{inj.injury} — expected return: {inj.expectedReturn}</p>
+              <div className="h-2 rounded-full overflow-hidden mt-2" style={{ backgroundColor: `${PRIMARY}1a` }}>
+                <div className="h-full rounded-full" style={{ backgroundColor: '#22C55E', width: i === 0 ? '75%' : '40%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+function NLMatchFeesView() {
+  const [tab, setTab] = useState<'match' | 'outstanding' | 'season'>('match')
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+        <StatCard label="This Match" value="£640" icon={DollarSign} color={PRIMARY} sub="16 players" />
+        <StatCard label="Outstanding" value="£240" icon={AlertCircle} color="#EF4444" sub="6 players" />
+        <StatCard label="Season Total" value="£18,200" icon={TrendingUp} color="#22C55E" />
+      </div>
+
+      <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
+        {(['match', 'outstanding', 'season'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all capitalize"
+            style={{ backgroundColor: tab === t ? PRIMARY : 'transparent', color: tab === t ? '#fff' : TEXT_SEC }}>
+            {t === 'match' ? 'This Match' : t === 'outstanding' ? 'Outstanding' : 'Season'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'match' && (
+        <SectionCard title="Match Fees — vs Redbourne Town (H)">
+          <div className="space-y-1">
+            {NL_SQUAD.filter(p => !p.injured && !p.suspended && p.matchFee > 0).slice(0, 16).map((p, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ color: TEXT }}>{p.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono" style={{ color: TEXT_SEC }}>£{p.matchFee}</span>
+                  <Badge color={i % 3 === 0 ? '#22C55E' : GOLD}>{i % 3 === 0 ? 'Paid' : 'Pending'}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {tab === 'outstanding' && (
+        <SectionCard title="Outstanding Fees" action={<button className="text-[10px] px-2 py-1 rounded" style={{ backgroundColor: '#25D366', color: '#fff' }}>Chase All via WhatsApp</button>}>
+          <div className="space-y-1">
+            {NL_SQUAD.filter(p => p.matchFee > 0).slice(3, 9).map((p, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ color: TEXT }}>{p.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono" style={{ color: '#EF4444' }}>£{p.matchFee}</span>
+                  <button className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#25D3661a', color: '#25D366' }}>Chase</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {tab === 'season' && (
+        <SectionCard title="Season Fee Summary">
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_SEC }}>Total paid</span><span className="font-mono" style={{ color: '#22C55E' }}>£17,960</span>
+            </div>
+            <div className="flex justify-between py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_SEC }}>Outstanding</span><span className="font-mono" style={{ color: '#EF4444' }}>£240</span>
+            </div>
+            <div className="flex justify-between py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_SEC }}>Budget</span><span className="font-mono" style={{ color: TEXT }}>£20,000</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span style={{ color: TEXT_SEC }}>Remaining budget</span><span className="font-mono" style={{ color: '#22C55E' }}>£1,800</span>
+            </div>
+          </div>
+        </SectionCard>
+      )}
+    </div>
+  )
+}
+
+function NLCupManagerView() {
+  const [cupRunMode, setCupRunMode] = useState(false)
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+        <StatCard label="Cups Active" value="2" icon={Trophy} color={PRIMARY} sub="FA Vase + County Cup" />
+        <StatCard label="Prize Money Won" value="£1,450" icon={DollarSign} color="#22C55E" />
+        <StatCard label="Cup Games" value={String(NL_CUP_FIXTURES.length)} icon={Calendar} color="#3B82F6" />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="text-xs" style={{ color: TEXT_SEC }}>Cup Run Mode</span>
+        <button onClick={() => setCupRunMode(!cupRunMode)} className="px-3 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: cupRunMode ? '#22C55E' : BORDER, color: cupRunMode ? '#fff' : TEXT_SEC }}>{cupRunMode ? 'ON' : 'OFF'}</button>
+        {cupRunMode && <span className="text-[10px]" style={{ color: '#22C55E' }}>Prioritising cup fixtures in scheduling</span>}
+      </div>
+
+      {['FA Cup', 'FA Vase', 'County Cup'].map(comp => {
+        const fixtures = NL_CUP_FIXTURES.filter(c => c.comp === comp)
+        if (!fixtures.length) return null
+        return (
+          <SectionCard key={comp} title={comp}>
+            <div className="space-y-1">
+              {fixtures.map((c, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <div><span className="font-medium" style={{ color: TEXT }}>{c.round}</span> <span style={{ color: TEXT_SEC }}>vs {c.opponent}</span></div>
+                  <div className="flex items-center gap-2">
+                    {c.result ? <Badge color="#22C55E">{c.result}</Badge> : <Badge color={GOLD}>Upcoming</Badge>}
+                    <span style={{ color: TEXT_SEC }}>{c.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        )
+      })}
+
+      <SectionCard title="FA Cup / Vase Prize Money Guide">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {[['Extra Preliminary', '£900'], ['Preliminary', '£1,125'], ['1st Qualifying', '£1,444'], ['2nd Qualifying', '£1,800'], ['FA Vase 1st Round', '£550'], ['FA Vase 2nd Round', '£725']].map(([r, p], i) => (
+            <div key={i} className="flex justify-between py-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ color: TEXT_SEC }}>{r}</span><span className="font-mono" style={{ color: GOLD }}>{p}</span>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+function NLRegistrationView() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+        <StatCard label="Registered" value={String(NL_SQUAD.filter(p => p.faRegistered).length)} icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Squad Size" value={String(NL_SQUAD.length)} icon={Users} color={PRIMARY} />
+        <StatCard label="Next Deadline" value="15 Apr" icon={Clock} color={GOLD} />
+      </div>
+
+      <SectionCard title="FA Registration Status" action={<Badge color={GOLD}>Deadline: 15 Apr 2026</Badge>}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr style={{ color: TEXT_SEC, borderBottom: `1px solid ${BORDER}` }}>
+              <th className="text-left py-2">#</th><th className="text-left py-2">Player</th><th className="text-left py-2">Pos</th><th className="text-left py-2">Contract</th><th className="text-center py-2">FA Reg</th>
+            </tr></thead>
+            <tbody>
+              {NL_SQUAD.map(p => (
+                <tr key={p.number} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <td className="py-1.5" style={{ color: TEXT_SEC }}>{p.number}</td>
+                  <td className="py-1.5 font-medium" style={{ color: TEXT }}>{p.name}</td>
+                  <td className="py-1.5" style={{ color: TEXT_SEC }}>{p.position}</td>
+                  <td className="py-1.5"><Badge color={p.contractType === 'Seasonal' ? '#22C55E' : p.contractType === 'Loan' ? '#3B82F6' : TEXT_SEC}>{p.contractType}</Badge></td>
+                  <td className="py-1.5 text-center">{p.faRegistered ? <Check size={12} style={{ color: '#22C55E' }} /> : <X size={12} style={{ color: '#EF4444' }} />}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+function NLDisciplineView() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Yellow Cards" value={String(NL_SQUAD.reduce((s, p) => s + p.yc, 0))} icon={AlertTriangle} color={GOLD} />
+        <StatCard label="Red Cards" value={String(NL_SQUAD.reduce((s, p) => s + p.rc, 0))} icon={AlertCircle} color="#EF4444" />
+        <StatCard label="Suspended" value={String(NL_SQUAD.filter(p => p.suspended).length)} icon={Shield} color="#EF4444" />
+        <StatCard label="At Risk (4+ YC)" value={String(NL_SQUAD.filter(p => p.yc >= 4).length)} icon={AlertTriangle} color={GOLD} />
+      </div>
+
+      <SectionCard title="Yellow/Red Card Tracker">
+        <div className="space-y-1">
+          {NL_SQUAD.filter(p => p.yc > 0 || p.rc > 0).sort((a, b) => (b.yc + b.rc * 3) - (a.yc + a.rc * 3)).map((p, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 text-xs" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ color: TEXT }}>{p.name}</span>
+              <div className="flex items-center gap-2">
+                {p.yc > 0 && <span className="flex items-center gap-1"><span className="w-3 h-4 rounded-sm" style={{ backgroundColor: GOLD }} /><span style={{ color: TEXT_SEC }}>{p.yc}</span></span>}
+                {p.rc > 0 && <span className="flex items-center gap-1"><span className="w-3 h-4 rounded-sm" style={{ backgroundColor: '#EF4444' }} /><span style={{ color: TEXT_SEC }}>{p.rc}</span></span>}
+                {p.yc >= 5 && <Badge color="#EF4444">SUSPENSION DUE</Badge>}
+                {p.yc === 4 && <Badge color={GOLD}>AT RISK</Badge>}
+                {p.suspended && <Badge color="#EF4444">SUSPENDED</Badge>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Suspension Calculator">
+        <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG }}>
+          <p style={{ color: TEXT }}>5 yellow cards = 1 match ban (Steps 1-4)</p>
+          <p style={{ color: TEXT_SEC }}>10 yellow cards = 2 match ban</p>
+          <p style={{ color: TEXT_SEC }}>Straight red = minimum 1 match ban (violent conduct = 3 matches)</p>
+          <p className="mt-2" style={{ color: GOLD }}>Declan Nash: Currently serving 1-match ban (5 accumulated yellows)</p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="FA Fine Log">
+        <div className="space-y-1 text-xs">
+          {[
+            { date: '15 Feb', offence: 'Failure to control players (3+ yellows in match)', fine: '£50', status: 'Paid' },
+            { date: '8 Mar', offence: 'Late team sheet submission', fine: '£25', status: 'Paid' },
+          ].map((f, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <div><span style={{ color: TEXT }}>{f.offence}</span><span className="ml-2" style={{ color: TEXT_SEC }}>{f.date}</span></div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono" style={{ color: '#EF4444' }}>{f.fine}</span>
+                <Badge color="#22C55E">{f.status}</Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+function NLAIHalftimeView() {
+  const [phase, setPhase] = useState<'prematch' | 'halftime'>('prematch')
+  const [loading, setLoading] = useState(false)
+  const [brief, setBrief] = useState('')
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
+        {(['prematch', 'halftime'] as const).map(t => (
+          <button key={t} onClick={() => setPhase(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+            style={{ backgroundColor: phase === t ? PRIMARY : 'transparent', color: phase === t ? '#fff' : TEXT_SEC }}>
+            {t === 'prematch' ? 'Pre-Match Setup' : 'Halftime Input'}
+          </button>
+        ))}
+      </div>
+
+      {phase === 'prematch' && (
+        <SectionCard title="Pre-Match Setup">
+          <div className="space-y-3">
+            <div className="text-xs" style={{ color: TEXT_SEC }}>
+              <p>Opponent: <span style={{ color: TEXT }}>Redbourne Town</span></p>
+              <p>Formation: <span style={{ color: TEXT }}>4-4-2</span></p>
+              <p>Key threat: <span style={{ color: TEXT }}>Jordan Ellis (ST, 10 goals)</span></p>
+            </div>
+            <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Pre-match notes: tactical plan, specific instructions..." />
+          </div>
+        </SectionCard>
+      )}
+
+      {phase === 'halftime' && (
+        <SectionCard title="Halftime Input">
+          <div className="space-y-3">
+            <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Score at HT (e.g. 1-0)" />
+            <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={4} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="What happened? Possession, chances, problems, injuries, cards..." />
+            <button onClick={async () => {
+              setLoading(true)
+              try {
+                const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Generate a halftime tactical brief for a Step 4 non-league manager. We are 1-0 up against Redbourne Town. We dominated possession but they look dangerous on the counter through Ellis. Suggest changes.', type: 'halftime' }) })
+                const data = await res.json()
+                setBrief(data.result || data.text || 'Keep shape. Press their CBs — they panic. Consider Rooney for Fletcher at 60 if tiring. Prescott to stay tight on Ellis.')
+              } catch { setBrief('Keep your shape lads, don\'t sit back. We\'re on top but one lapse and Ellis will punish us. Brennan, stay tight to their 10. Webb, keep getting at their right-back — he\'s struggling. If Fletcher tires, Rooney comes on at 60. Set pieces: keep attacking them, Prescott was dominant first half. Let\'s finish this off.') }
+              setLoading(false)
+            }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
+              {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate Halftime Brief</>}
+            </button>
+            {brief && <div className="p-3 rounded-lg text-xs leading-relaxed" style={{ backgroundColor: BG, color: TEXT }}>{brief}</div>}
+          </div>
+        </SectionCard>
+      )}
+    </div>
+  )
+}
+
+function NLPreSeasonView() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+        <StatCard label="Pre-Season Start" value="1 Jul" icon={Calendar} color={PRIMARY} />
+        <StatCard label="Friendlies" value="5 planned" icon={Trophy} color="#3B82F6" />
+        <StatCard label="Season Start" value="9 Aug" icon={Target} color="#22C55E" />
+      </div>
+
+      <SectionCard title="Pre-Season Plan">
+        <div className="space-y-2">
+          {[
+            { week: 'Week 1 (1-6 Jul)', focus: 'Fitness testing, base conditioning, squad bonding', sessions: 4 },
+            { week: 'Week 2 (7-13 Jul)', focus: 'Ball work, shape, tactical basics', sessions: 4 },
+            { week: 'Week 3 (14-20 Jul)', focus: 'Friendly 1 + set piece work', sessions: 3 },
+            { week: 'Week 4 (21-27 Jul)', focus: 'Friendly 2 & 3, match fitness', sessions: 3 },
+            { week: 'Week 5 (28 Jul-3 Aug)', focus: 'Friendly 4 & 5, final prep, squad announcement', sessions: 3 },
+          ].map((w, i) => (
+            <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold" style={{ color: TEXT }}>{w.week}</span>
+                <Badge color={PRIMARY}>{w.sessions} sessions</Badge>
+              </div>
+              <p className="text-[10px]" style={{ color: TEXT_SEC }}>{w.focus}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Friendlies to Arrange">
+        <div className="space-y-1 text-xs">
+          {[
+            { opp: 'Glossop NE', date: 'Sat 19 Jul', status: 'Confirmed' },
+            { opp: 'Stalybridge Celtic Res', date: 'Tue 22 Jul', status: 'Confirmed' },
+            { opp: 'Colne', date: 'Sat 26 Jul', status: 'Pending' },
+            { opp: 'Nantwich Town Res', date: 'Tue 29 Jul', status: 'Pending' },
+            { opp: 'Droylsden', date: 'Sat 2 Aug', status: 'TBC' },
+          ].map((f, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <div><span style={{ color: TEXT }}>vs {f.opp}</span> <span style={{ color: TEXT_SEC }}>— {f.date}</span></div>
+              <Badge color={f.status === 'Confirmed' ? '#22C55E' : f.status === 'Pending' ? GOLD : TEXT_SEC}>{f.status}</Badge>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+// ─── Placeholder View for items without dedicated views ─────────────────────
+
+function NLPlaceholderView({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl p-8 text-center" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+      <Wrench size={32} style={{ color: TEXT_SEC, margin: '0 auto' }} />
+      <p className="text-sm font-semibold mt-3" style={{ color: TEXT }}>{label}</p>
+      <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>This section is being built. Check back soon.</p>
+    </div>
+  )
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function NonLeagueContent({ activeDept, onToast, userName }: { activeDept: NLDeptId; onToast: (m: string) => void; userName?: string }) {
@@ -2714,6 +3593,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       </div>
 
       {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} userName={userName} />}
+      {activeDept === 'nl-morningroundup' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-club-profile' && <NLClubProfileView />}
       {activeDept === 'nl-squad' && <NLSquadView />}
       {activeDept === 'nl-fixtures' && <NLFixturesView />}
@@ -2728,6 +3608,18 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-matchday' && <NLMatchdayView onToast={onToast} />}
       {activeDept === 'nl-comms' && <NLCommsView onToast={onToast} />}
       {activeDept === 'nl-committee' && <NLCommitteeView />}
+      {activeDept === 'nl-gps' && <NLGPSView />}
+      {activeDept === 'nl-matchfees' && <NLMatchFeesView />}
+      {activeDept === 'nl-cupmanager' && <NLCupManagerView />}
+      {activeDept === 'nl-registration' && <NLRegistrationView />}
+      {activeDept === 'nl-discipline' && <NLDisciplineView />}
+      {activeDept === 'nl-aihalftime' && <NLAIHalftimeView />}
+      {activeDept === 'nl-preseason' && <NLPreSeasonView />}
+      {activeDept === 'nl-kit' && <NLPlaceholderView label="Kit & Equipment" />}
+      {activeDept === 'nl-sponsorship' && <NLPlaceholderView label="Sponsorship" />}
+      {activeDept === 'nl-fundraising' && <NLPlaceholderView label="Fundraising" />}
+      {activeDept === 'nl-insurance' && <NLPlaceholderView label="Insurance" />}
+      {activeDept === 'nl-merchandise' && <NLPlaceholderView label="Merchandise" />}
     </div>
   )
 }
