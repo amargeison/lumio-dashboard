@@ -471,6 +471,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  const [teamSub, setTeamSub] = useState<'today'|'org'|'info'|'record'>('today')
   // Getting Started checklist state — must be at component top level, not inside conditional
   const [gsChecked, setGsChecked] = useState<Record<string, boolean>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started') : null; return s ? JSON.parse(s) : {} } catch { return {} }
@@ -481,15 +482,39 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const recoveryScore = 81;
   const campProgress = Math.round((fighter.camp_day / fighter.camp_total) * 100);
 
-  const ROUNDUP_CHANNELS = [
-    { label: 'Manager',            icon: '💼', count: 2, color: '#dc2626', urgent: true  },
-    { label: 'Promoter Messages',  icon: '🏟️', count: 1, color: '#F97316', urgent: true  },
-    { label: 'Sponsor Obligations',icon: '🤝', count: 2, color: '#F59E0B', urgent: false },
-    { label: 'Trainer / Corner',   icon: '🥊', count: 1, color: '#10B981', urgent: false },
-    { label: 'Medical Team',       icon: '🏥', count: 1, color: '#22C55E', urgent: false },
-    { label: 'Agent',              icon: '🕵️', count: 3, color: '#D97706', urgent: false },
-    { label: 'Media Requests',     icon: '📱', count: 2, color: '#6B7280', urgent: false },
-    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false },
+  // Morning Roundup state
+  const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [repliedTo, setRepliedTo] = useState<string[]>([])
+  const [replyToast, setReplyToast] = useState(false)
+
+  const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id:'manager', label:'Manager', icon:'💼', count:2, urgent:true, color:'#dc2626', messages:[
+      { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Matchroom offering 70/30. Need your call at 16:00.', time:'8:14am' },
+      { id:'m2', from:'Danny Walsh', text:'Under Armour camp deal — £85k for fight week branding. Worth taking?', time:'7:52am' },
+    ]},
+    { id:'promoter', label:'Promoter Desk', icon:'🏟️', count:1, urgent:true, color:'#F97316', messages:[
+      { id:'p1', from:'Matchroom Boxing', text:'URGENT: Press conference moved to Thursday 2pm. Eddie needs 20min interview slot.', time:'9:01am' },
+    ]},
+    { id:'sponsor', label:'Media & Sponsor', icon:'🤝', count:2, urgent:false, color:'#F59E0B', messages:[
+      { id:'s1', from:'DAZN', text:'Pre-fight documentary crew arriving Monday. 3 days filming access needed.', time:'8:30am' },
+      { id:'s2', from:'Under Armour', text:'Camp training video — 2 posts outstanding from March obligation.', time:'Yesterday' },
+    ]},
+    { id:'medical', label:'Physio & Medical', icon:'🏥', count:1, urgent:true, color:'#EF4444', messages:[
+      { id:'md1', from:'Dr Sarah Mitchell', text:'URGENT: Right hand X-ray needed — knuckle swelling flagged by Jim. Book today.', time:'9:15am' },
+    ]},
+    { id:'weight', label:'Weight Check', icon:'⚖️', count:1, urgent:false, color:'#0ea5e9', messages:[
+      { id:'w1', from:'Weight Tracker', text:'Morning weigh-in: 97.8kg. Target: 92.7kg. On track — daily cut target: -0.11kg.', time:'7:00am' },
+    ]},
+    { id:'travel', label:'Travel & Camp', icon:'✈️', count:2, urgent:false, color:'#6B7280', messages:[
+      { id:'tr1', from:'Travel desk', text:'O2 Arena fight week hotel confirmed — Canary Wharf Marriott, 4 nights.', time:'8:00am' },
+      { id:'tr2', from:'Travel desk', text:'Corner team flights booked — Jim, Tony, Ricky. BA LHR→LCY.', time:'Yesterday' },
+    ]},
+    { id:'fan', label:'Fan Mail', icon:'💌', count:4, urgent:false, color:'#8B5CF6', messages:[
+      { id:'f1', from:'@BoxingFan92', text:'Marcus you\'re going to destroy Petrov! The Machine! 🥊', time:'Today' },
+      { id:'f2', from:'@HeavyweightWatch', text:'Can you sign a glove for my son? He\'s your biggest fan.', time:'Yesterday' },
+    ]},
   ]
 
   return (
@@ -546,29 +571,34 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { id:'flights',   label:'Book Flight',     icon:'✈️', color:'#dc2626', hot:true  },
-          { id:'matchprep', label:'Fight Prep AI',   icon:'🧠', color:'#22C55E', hot:true  },
-          { id:'sponsor',   label:'Sponsor Post',    icon:'📱', color:'#F59E0B', hot:false },
-          { id:'ranking',   label:'Ranking Sim',     icon:'📊', color:'#dc2626', hot:false },
-          { id:'injury',    label:'Log Injury',      icon:'🏥', color:'#EF4444', hot:false },
-          { id:'expense',   label:'Add Expense',     icon:'💰', color:'#6B7280', hot:false },
-          { id:'weight',    label:'Weight Check',    icon:'⚖️', color:'#0ea5e9', hot:false },
-          { id:'visa',      label:'Visa Check',      icon:'🌍', color:'#6B7280', hot:false },
-        ].map(a => (
-          <button key={a.id} onClick={() => onOpenModal?.(a.id)}
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
-            style={{
-              background: a.hot ? `${a.color}18` : '#111318',
-              border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
-              color: a.hot ? a.color : '#9CA3AF',
-            }}>
-            <span>{a.icon}</span>{a.label}
-            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-          </button>
-        ))}
+      {/* Quick Actions — 2-row grid, 12 buttons */}
+      <div className="mb-5">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id:'flights',    label:'Smart Flights',    icon:'✈️', color:'#0ea5e9', hot:true  },
+            { id:'hotel',      label:'Find Hotel',       icon:'🏨', color:'#0ea5e9', hot:true  },
+            { id:'matchprep',  label:'Fight Prep AI',    icon:'🧠', color:'#22C55E', hot:true  },
+            { id:'weight',     label:'Weight Tracker',   icon:'⚖️', color:'#F59E0B', hot:false },
+            { id:'sparring',   label:'Sparring Log',     icon:'🥊', color:'#dc2626', hot:false },
+            { id:'ranking',    label:'Ranking Sim',      icon:'📊', color:'#dc2626', hot:true  },
+            { id:'sponsor',    label:'Sponsor Post',     icon:'📱', color:'#F59E0B', hot:true  },
+            { id:'opponent',   label:'Opponent Study',   icon:'🔍', color:'#8B5CF6', hot:true  },
+            { id:'injury',     label:'Medical Log',      icon:'🏥', color:'#EF4444', hot:false },
+            { id:'mental',     label:'Mental Prep',      icon:'🧘', color:'#8B5CF6', hot:true  },
+            { id:'expense',    label:'Add Expense',      icon:'💰', color:'#6B7280', hot:false },
+            { id:'visa',       label:'Visa Check',       icon:'🌍', color:'#6B7280', hot:true  },
+          ].map(a => (
+            <button key={a.id} onClick={() => onOpenModal?.(a.id)}
+              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
+              <span>{a.icon}</span>{a.label}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -670,27 +700,69 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {/* TODAY */}
       {dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: Morning Roundup */}
-          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div>
-              <span className="text-[10px] text-gray-600">Since you were last here</span>
+          {/* LEFT: Morning Roundup — expandable like tennis */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2"><span>🌅</span><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p></div>
+              <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
             </div>
-            <div className="space-y-2">
-              {ROUNDUP_CHANNELS.map((ch, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">{ch.icon}</span>
-                    <span className="text-sm text-gray-300">{ch.label}</span>
-                    {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
+            <div>
+              {ROUNDUP_ITEMS.map((ch) => {
+                const isOpen = expandedChannel === ch.id
+                return (
+                  <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
+                    <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
+                      className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-base">{ch.icon}</span>
+                        <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                        {ch.urgent && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-3 space-y-2">
+                        {ch.messages.map(msg => (
+                          <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: ch.color + '22', color: ch.color }}>{msg.from.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
+                                <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              </div>
+                              <span className="text-[10px] flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                            </div>
+                            <p className="text-xs leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{msg.text}</p>
+                            {repliedTo.includes(msg.id) ? (
+                              <span className="text-[10px]" style={{ color: '#dc2626' }}>Replied ✓</span>
+                            ) : replyingTo === msg.id ? (
+                              <div className="mt-2">
+                                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={2}
+                                  className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+                                <div className="flex gap-2 mt-1.5">
+                                  <button onClick={() => { setRepliedTo(prev => [...prev, msg.id]); setReplyingTo(null); setReplyText(''); setReplyToast(true); setTimeout(() => setReplyToast(false), 2000) }}
+                                    className="text-[10px] px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#dc2626', color: '#fff' }}>Send</button>
+                                  <button onClick={() => { setReplyingTo(null); setReplyText('') }}
+                                    className="text-[10px] px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => setReplyingTo(msg.id)} className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(220,38,38,0.15)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.3)' }}>Reply</button>
+                                <button className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
-                    <span className="text-gray-700 text-xs">▾</span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
+            {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
           </div>
 
           {/* MIDDLE: Fight Camp Status + schedule */}
@@ -782,21 +854,28 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* QUICK WINS */}
       {dashTab === 'quickwins' && (
-        <div className="space-y-3">
+        <div className="pt-4 space-y-3">
           {[
-            { p:1, action:'Review Petrov tape — focus on rounds 6-12 fatigue patterns',     impact:'High', cat:'Match Prep',   icon:'🎬' },
-            { p:2, action:'Confirm DAZN promo shoot logistics with Sarah Chen',              impact:'High', cat:'Media',        icon:'📺' },
-            { p:3, action:'Reply to Under Armour camp partnership proposal — agent waiting',  impact:'High', cat:'Commercial',   icon:'🤝' },
-            { p:4, action:'Weight check before 11am sparring session',                        impact:'High', cat:'Weight',       icon:'⚖️' },
-            { p:5, action:'Book cutman flight — 1 pending for corner team',                   impact:'Med',  cat:'Travel',       icon:'✈️' },
-            { p:6, action:'Complete sponsor social post — Under Armour kit photo',             impact:'Med',  cat:'Sponsor',      icon:'📱' },
-            { p:7, action:'Submit camp expense report to accountant',                          impact:'Med',  cat:'Financial',    icon:'🧾' },
+            { p:1, action:'Log today\'s weight — behind daily target by 0.08kg',            impact:'Critical', cat:'Weight',     icon:'⚖️', cta:'Log weight →' },
+            { p:2, action:'DAZN pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm →' },
+            { p:3, action:'Sparring session vs southpaw booked — 10:00',                     impact:'High',     cat:'Camp',       icon:'🥊', cta:'Log sparring →' },
+            { p:4, action:'Petrov\'s last 3 fights uploaded — review footage',                impact:'High',     cat:'Prep',       icon:'🎬', cta:'Open scout →' },
+            { p:5, action:'Matchroom contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review →' },
           ].map((w, i) => (
-            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all">
-              <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{w.p}</div>
+            <div key={i} className="flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all"
+              style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
+                style={{ background: 'rgba(220,38,38,0.15)', color: '#dc2626' }}>{w.p}</div>
               <span className="text-lg flex-shrink-0">{w.icon}</span>
-              <div className="flex-1"><p className="text-sm text-gray-200">{w.action}</p><span className="text-[10px] text-gray-500">{w.cat}</span></div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${w.impact==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
+              <div className="flex-1">
+                <p className="text-sm" style={{ color: '#E5E7EB' }}>{w.action}</p>
+                <span className="text-[10px]" style={{ color: '#6B7280' }}>{w.cat}</span>
+              </div>
+              <button className="text-[10px] font-semibold flex-shrink-0" style={{ color: '#dc2626' }}>{w.cta}</button>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                style={{ background: w.impact==='Critical'?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.12)', color: w.impact==='Critical'?'#EF4444':'#F59E0B' }}>{w.impact}</span>
             </div>
           ))}
         </div>
@@ -804,27 +883,25 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* DAILY TASKS */}
       {dashTab === 'dailytasks' && (
-        <div className="space-y-3">
+        <div className="pt-4 space-y-2">
           {[
-            { time:'06:00', task:'Roadwork — 8km + hill sprints x6',              done:true,  cat:'Training'   },
-            { time:'09:00', task:'Weight check — morning weigh-in',               done:true,  cat:'Weight'     },
-            { time:'11:00', task:'Sparring — 8 rounds w/ Darnell Hughes',         done:false, cat:'Training'   },
-            { time:'13:00', task:'Nutrition — post-sparring meal + supplements',   done:false, cat:'Recovery'   },
-            { time:'15:00', task:'Strength — upper body power session',            done:false, cat:'Training'   },
-            { time:'16:30', task:'Film study — Petrov fight tape analysis',        done:false, cat:'Strategy'   },
-            { time:'18:00', task:'Physio — shoulder mobility + ice bath',          done:false, cat:'Recovery'   },
-            { time:'19:00', task:'Sponsor post — Under Armour kit photo',          done:false, cat:'Commercial' },
-            { time:'20:00', task:'Visualisation session — fight night routine',    done:false, cat:'Mental'     },
+            { time:'07:00', task:'Morning weight log — daily camp requirement',         done:true,  cat:'Weight',     highlight:false },
+            { time:'09:30', task:'Gym session — Jim Bevan',                             done:true,  cat:'Training',   highlight:false },
+            { time:'09:00', task:'Right hand rewrap — tightness flagged yesterday',     done:false, cat:'Medical',    highlight:true  },
+            { time:'14:00', task:'DAZN interview prep — talking points',                done:false, cat:'Media',      highlight:false },
+            { time:'15:00', task:'Review Petrov southpaw footage — 2 hours',            done:false, cat:'Prep',       highlight:false },
+            { time:'EOD',   task:'Nutrition log — camp diet compliance',                 done:false, cat:'Health',     highlight:false },
+            { time:'16:00', task:'Danny Walsh call — purse split discussion',            done:false, cat:'Commercial', highlight:false },
           ].map((t, i) => (
-            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':'border-gray-600'}`}>
-                {t.done && <span className="text-[9px] text-white font-bold">✓</span>}
+            <div key={i} className="flex items-center gap-4 rounded-xl p-4 border transition-all"
+              style={{ backgroundColor: t.highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', borderColor: t.highlight ? 'rgba(220,38,38,0.3)' : '#1F2937', opacity: t.done ? 0.6 : 1 }}>
+              <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                style={{ borderColor: t.done ? '#22C55E' : t.highlight ? '#dc2626' : '#374151', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
               </div>
-              <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{t.time}</span>
-              <div className="flex-1">
-                <span className={`text-sm ${t.done?'line-through text-gray-600':'text-gray-200'}`}>{t.task}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{t.cat}</span>
+              <span className="text-[10px] w-10 flex-shrink-0" style={{ color: '#6B7280' }}>{t.time}</span>
+              <div className="flex-1"><span className="text-sm" style={{ color: t.done ? '#4B5563' : t.highlight ? '#dc2626' : '#D1D5DB', textDecoration: t.done ? 'line-through' : 'none', fontWeight: t.highlight ? 600 : 400 }}>{t.task}</span></div>
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.cat}</span>
             </div>
           ))}
         </div>
@@ -832,7 +909,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* INSIGHTS */}
       {dashTab === 'insights' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { title:'WBC Ranking',         value:`#${fighter.rankings.wbc}`, sub:'Up 1 this month',                         color:'#dc2626', icon:'🥊' },
             { title:'IBF Ranking',          value:`#${fighter.rankings.ibf}`, sub:'Mandatory position approaching',          color:'#EF4444', icon:'🏆' },
@@ -841,12 +918,12 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { title:'ACWR',                 value:'1.12',        sub:'Optimal zone — maintain intensity',            color:'#8B5CF6', icon:'📡' },
             { title:'Sponsor obligations',  value:'2 due',       sub:'Under Armour post + DAZN shoot',              color:'#EC4899', icon:'🤝' },
           ].map((ins, i) => (
-            <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4">
+            <div key={i} className="flex items-start gap-4 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="text-2xl flex-shrink-0">{ins.icon}</div>
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">{ins.title}</div>
+                <div className="text-xs mb-1" style={{ color: '#6B7280' }}>{ins.title}</div>
                 <div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div>
-                <div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div>
+                <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>{ins.sub}</div>
               </div>
             </div>
           ))}
@@ -855,51 +932,94 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* DON'T MISS */}
       {dashTab === 'dontmiss' && (
-        <div className="space-y-3">
+        <div className="pt-4 space-y-3">
           {[
-            { urgency:'TODAY',    item:'DAZN promo shoot — confirm logistics with Sarah Chen today.', action:'View media →', color:'#dc2626' },
-            { urgency:'TODAY',    item:'Under Armour kit photo due — sponsor post outstanding.', action:'Open brief →', color:'#EF4444' },
-            { urgency:'THIS WK',  item:'Cutman flight not booked — 1 corner team member pending.', action:'Book flight →', color:'#F59E0B' },
-            { urgency:'THIS WK',  item:'Agent reviewing Under Armour camp partnership — respond by Friday.', action:'View offer →', color:'#F59E0B' },
-            { urgency:'30 APR',   item:'Purse bid deadline — IBF mandatory. Agent actioning.', action:'View purse bid →', color:'#8B5CF6' },
-            { urgency:'MAY 22',   item:'Fight Night vs {fighter.next_fight.opponent} — {fighter.next_fight.venue}.', action:'Fight Night Ops →', color:'#6B7280' },
+            { urgency:'CRITICAL', item:'Weight cut — 5.1kg to target in 48 days. If missed: dangerous rapid cut fight week.', action:'Log weight →', color:'#dc2626' },
+            { urgency:'CRITICAL', item:'Right hand X-ray — Jim flagged knuckle swelling. If missed: risk fighting injured.', action:'Book appointment →', color:'#EF4444' },
+            { urgency:'TODAY',    item:'DAZN interview — press tour begins today. If missed: contractual breach.', action:'Prep talking points →', color:'#F59E0B' },
+            { urgency:'THIS WEEK',item:'Matchroom contract addendum signature. If missed: fight postponed.', action:'Review contract →', color:'#F59E0B' },
+            { urgency:'THIS WEEK',item:'Mandatory rest day Saturday — physio assessment. If missed: overtraining risk.', action:'Log recovery →', color:'#6B7280' },
           ].map((d, i) => (
-            <div key={i} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-              <span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.urgency==='TODAY'?'bg-red-600/20 text-red-400':d.urgency==='THIS WK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.urgency}</span>
+            <div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5"
+                style={{ background: d.urgency==='CRITICAL' ? 'rgba(239,68,68,0.12)' : d.urgency==='TODAY' ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.12)', color: d.urgency==='CRITICAL' ? '#EF4444' : d.urgency==='TODAY' ? '#F59E0B' : '#6B7280' }}>{d.urgency}</span>
               <div className="flex-1">
-                <p className="text-sm text-gray-200 mb-1">{d.item}</p>
-                <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action}</button>
+                <p className="text-sm mb-1" style={{ color: '#E5E7EB' }}>{d.item}</p>
+                <button className="text-[10px] font-semibold" style={{ color: d.color }}>{d.action}</button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* TEAM */}
-      {dashTab === 'team' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { name: fighter.trainer,           role:'Head Trainer',      status:'Sparring session 11:00 — pad work after',   available:true,  initials:'JB' },
-            { name: fighter.manager,           role:'Manager',           status:'Purse bid deadline 30 Apr — actioning',      available:true,  initials:'DW' },
-            { name: fighter.cutman,            role:'Cutman',            status:'Flight pending — book today',                available:true,  initials:'MW' },
-            { name: fighter.strength_coach,    role:'Strength Coach',    status:'Upper body session 15:00',                   available:true,  initials:'GM' },
-            { name: fighter.nutritionist,      role:'Nutritionist',      status:'Cut phase nutrition plan updated',           available:true,  initials:'PK' },
-            { name: fighter.physio,            role:'Physio',            status:'Shoulder treatment 18:00',                   available:true,  initials:'LB' },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-              <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white">{m.name}</div>
-                <div className="text-[10px] text-red-400">{m.role}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div>
-              </div>
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.available?'bg-green-400':'bg-gray-600'}`} />
+      {/* TEAM — 4 sub-tabs */}
+      {dashTab === 'team' && (() => {
+        const [teamSubTab, setTeamSubTab] = [teamSub, setTeamSub]
+        return (
+        <div className="pt-4 space-y-4">
+          <div className="flex gap-2">
+            {([{id:'today' as const,label:'👥 Team Today'},{id:'org' as const,label:'🏢 Org Chart'},{id:'info' as const,label:'🃏 Team Info'},{id:'record' as const,label:'🏆 Fight Record'}]).map(t=>(
+              <button key={t.id} onClick={()=>setTeamSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
+                style={{ backgroundColor: teamSubTab===t.id ? '#dc2626' : '#111318', color: teamSubTab===t.id ? '#F9FAFB' : '#6B7280', border: teamSubTab===t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+            ))}
+          </div>
+          {teamSubTab === 'today' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { name:'Jim Bevan',       role:'Head Trainer',    status:'Gym session 09:30, pad work focus', available:true,  initials:'JB', color:'#22C55E' },
+                { name:'Danny Walsh',     role:'Manager',         status:'Purse split call 16:00',           available:true,  initials:'DW', color:'#F59E0B' },
+                { name:'Dr Sarah Mitchell',role:'Fight Doctor',   status:'Hand assessment 11:00',            available:true,  initials:'SM', color:'#EF4444' },
+                { name:'Ricky Dunn',      role:'Conditioning',    status:'Morning run completed ✅',          available:true,  initials:'RD', color:'#0ea5e9' },
+                { name:'Tony Malone',     role:'Cutman',          status:'Kit check pre-sparring',           available:true,  initials:'TM', color:'#8B5CF6' },
+                { name:'DAZN',            role:'Broadcast',       status:'Interview 14:00 — press tour',     available:true,  initials:'DZ', color:'#F97316' },
+              ].map((m, i) => (
+                <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div>
+                  <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.status}</div></div>
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? '#22C55E' : '#374151' }} />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          {teamSubTab === 'org' && (
+            <div className="rounded-xl p-6 text-center space-y-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-sm font-bold text-white mb-4">Team Organisation</div>
+              <div className="flex justify-center gap-8">
+                {[{name:'Danny Walsh',role:'Manager'},{name:'Matchroom',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
+              </div>
+              <div className="text-lg font-black text-white">{session.userName || fighter.name}</div>
+              <div className="text-xs" style={{color:'#dc2626'}}>Fighter</div>
+              <div className="flex justify-center gap-6 flex-wrap">
+                {[{name:'Jim Bevan',role:'Trainer'},{name:'Dr Mitchell',role:'Doctor'},{name:'Ricky Dunn',role:'Conditioning'},{name:'Tony Malone',role:'Cutman'},{name:'Marcos Silva',role:'Psych'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-bold" style={{background:'rgba(255,255,255,0.05)',border:'1px solid #1F2937',color:'#6B7280'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-[10px] text-white">{p.name}</div><div className="text-[9px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
+              </div>
+            </div>
+          )}
+          {teamSubTab === 'info' && (
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                {name:'Jim Bevan',role:'Head Trainer',overall:95,stats:[{l:'TAC',v:96},{l:'MOT',v:94},{l:'EXP',v:97},{l:'COM',v:93},{l:'STR',v:91},{l:'PRE',v:95}]},
+                {name:'Danny Walsh',role:'Manager',overall:92,stats:[{l:'NEG',v:95},{l:'NET',v:93},{l:'EXP',v:94},{l:'COM',v:91},{l:'DEA',v:96},{l:'REL',v:90}]},
+                {name:'Dr Mitchell',role:'Fight Doctor',overall:96,stats:[{l:'DIA',v:97},{l:'TRT',v:96},{l:'PRE',v:94},{l:'CON',v:95},{l:'EXP',v:93},{l:'KNO',v:97}]},
+                {name:'Ricky Dunn',role:'Conditioning',overall:90,stats:[{l:'FIT',v:93},{l:'STR',v:91},{l:'SPD',v:92},{l:'END',v:94},{l:'REC',v:89},{l:'PRE',v:88}]},
+              ].map((p,i)=>(
+                <div key={i} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+                  <div className="flex items-center justify-between mb-3"><div><div className="text-sm font-bold text-white">{p.name}</div><div className="text-[10px]" style={{color:'#dc2626'}}>{p.role}</div></div><div className="text-2xl font-black" style={{color:'#22C55E'}}>{p.overall}</div></div>
+                  <div className="grid grid-cols-3 gap-1">{p.stats.map(s=>(<div key={s.l} className="flex items-center justify-between py-0.5 text-[10px]" style={{borderBottom:'1px solid #1F2937'}}><span style={{color:'#6B7280'}}>{s.l}</span><span className="font-bold text-white">{s.v}</span></div>))}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {teamSubTab === 'record' && (
+            <div className="rounded-xl p-5 space-y-3" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
+              <div className="text-sm font-bold text-white mb-3">Fight Record</div>
+              {[
+                {l:'Professional Record',v:'22-1 (18 KOs)'},{l:'WBC Ranking',v:`#${fighter.rankings.wbc}`},{l:'WBA Ranking',v:`#${fighter.rankings.wba}`},{l:'WBO Ranking',v:`#${fighter.rankings.wbo}`},{l:'IBF Ranking',v:`#${fighter.rankings.ibf}`},{l:'Weight Class',v:'Heavyweight (max 200lb / 90.7kg)'},{l:'Promoter',v:'Matchroom Boxing'},{l:'Broadcast',v:'DAZN'},{l:'Trainer',v:'Jim Bevan (since 2021)'},{l:'Pro debut',v:'March 2018'},{l:'Last fight',v:'W — points — 12 rounds'},
+              ].map((r,i)=>(<div key={i} className="flex items-center justify-between py-2 text-xs" style={{borderBottom:i<10?'1px solid #1F2937':'none'}}><span style={{color:'#6B7280'}}>{r.l}</span><span className="font-bold text-white">{r.v}</span></div>))}
+            </div>
+          )}
         </div>
-      )}
-
-      <BoxingAISection context="dashboard" fighter={fighter} session={session} />
+        )
+      })()}
     </div>
   );
 }

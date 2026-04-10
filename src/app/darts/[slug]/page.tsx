@@ -293,7 +293,7 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
 }
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
-function DashboardView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; session: SportsDemoSession; onOpenModal: (id: string) => void }) {
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
@@ -302,15 +302,41 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
+  const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
   const ROUNDUP_CHANNELS = [
-    { label: 'Agent Messages',     icon: '📞', count: 2, color: '#dc2626', urgent: false },
-    { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#F97316', urgent: true  },
-    { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#F59E0B', urgent: false },
-    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#dc2626', urgent: true  },
-    { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#10B981', urgent: false },
-    { label: 'Prize Money',        icon: '💰', count: 1, color: '#D97706', urgent: false },
-    { label: 'Travel & Hotels',    icon: '✈️', count: 2, color: '#6B7280', urgent: false },
-    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false },
+    { label: 'Agent Messages',     icon: '📞', count: 2, color: '#dc2626', urgent: false, messages: [
+      { from: 'James Wright', text: 'Paddy Power want an answer by Friday — shall I push for better terms?', time: '08:12' },
+      { from: 'James Wright', text: 'Red Dragon renewal call confirmed Thursday 14:00', time: '07:45' },
+    ]},
+    { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#F97316', urgent: true, messages: [
+      { from: 'PDC Entry Desk', text: 'Prague Open entry deadline: Apr 19. Please confirm.', time: '09:00' },
+      { from: 'PDC Entry Desk', text: 'German Masters entry opens May 1.', time: '08:30' },
+      { from: 'PDC Scheduling', text: 'European Ch. R1 board assignment: Board 4, 20:00', time: '07:00' },
+    ]},
+    { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#F59E0B', urgent: false, messages: [
+      { from: 'Betway', text: '2 social posts outstanding — please submit by Thursday', time: '10:15' },
+      { from: 'Ladbrokes', text: 'Quarter promo asset approved. Going live Friday.', time: '09:30' },
+    ]},
+    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#dc2626', urgent: true, messages: [
+      { from: 'Red Dragon Team', text: 'Content shoot today 12:00 — barrel review video. Bring backup set.', time: '08:00' },
+    ]},
+    { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#10B981', urgent: false, messages: [
+      { from: 'Steve Morris', text: 'Pre-match brief at 16:30. Focus: D16 under pressure.', time: '07:30' },
+      { from: 'Dave Askew', text: 'Travel to Dortmund confirmed. Car at 17:00.', time: '06:50' },
+    ]},
+    { label: 'Prize Money',        icon: '💰', count: 1, color: '#D97706', urgent: false, messages: [
+      { from: 'PDC Finance', text: 'Players Ch. 8 prize money (£8,000) processed. ETA 5 working days.', time: '09:45' },
+    ]},
+    { label: 'Travel & Hotels',    icon: '✈️', count: 2, color: '#6B7280', urgent: false, messages: [
+      { from: 'Travel Desk', text: 'Prague flights: BA Mon 14 Apr from £189. Book soon — prices rising.', time: '10:00' },
+      { from: 'Booking.com', text: 'Madrid Premier League hotel hold expires May 1.', time: '08:20' },
+    ]},
+    { label: 'Fan Mail',           icon: '💌', count: 4, color: '#8B5CF6', urgent: false, messages: [
+      { from: 'Fan - Tom S.', text: 'Great performance last week! Can you sign my shirt at Prague?', time: '11:00' },
+      { from: 'Fan - Emma K.', text: 'My son loves watching you play. Any chance of a video message?', time: '10:30' },
+      { from: 'Darts Forum', text: 'Thread: Jake Morrison form analysis — 47 replies', time: '09:15' },
+      { from: 'Fan - Mike R.', text: 'Good luck tonight against Price!', time: '08:45' },
+    ]},
   ]
 
   return (
@@ -371,20 +397,24 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
-            { label:'Log Practice',    icon:'🎯', color:'#dc2626' },
-            { label:'Match Report',    icon:'📋', color:'#F97316' },
-            { label:'Equipment Check', icon:'🏹', color:'#F59E0B' },
-            { label:'Sponsor Post',    icon:'📱', color:'#F59E0B' },
-            { label:'Book Flight',     icon:'✈️', color:'#0ea5e9' },
-            { label:'Exhibition Book', icon:'🎪', color:'#8B5CF6' },
-            { label:'Order of Merit',  icon:'📊', color:'#dc2626' },
-            { label:'Add Expense',     icon:'💰', color:'#6B7280' },
-          ].map((a, i) => (
-            <button key={i} className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{ background: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
+            { id:'flights',    label:'Smart Flights',    icon:'✈️', color:'#dc2626', hot:true },
+            { id:'hotel',      label:'Find Hotel',       icon:'🏨', color:'#dc2626', hot:true },
+            { id:'practice',   label:'Practice Log',     icon:'🎯', color:'#10B981', hot:false },
+            { id:'matchreport',label:'Match Report AI',  icon:'📋', color:'#22C55E', hot:true },
+            { id:'equipment',  label:'Equipment',        icon:'🏹', color:'#6B7280', hot:false },
+            { id:'prizes',     label:'Prize Tracker',    icon:'💰', color:'#F59E0B', hot:false },
+            { id:'sponsor',    label:'Sponsor Post AI',  icon:'📱', color:'#F59E0B', hot:true },
+            { id:'media',      label:'Media Manager',    icon:'📣', color:'#6B7280', hot:false },
+            { id:'mental',     label:'Mental Prep AI',   icon:'🧠', color:'#8B5CF6', hot:true },
+            { id:'physio',     label:'Physio Log',       icon:'💊', color:'#EF4444', hot:false },
+            { id:'expense',    label:'Log Expense',      icon:'🧾', color:'#6B7280', hot:false },
+            { id:'exhibition', label:'Exhibitions',      icon:'🎪', color:'#D97706', hot:false },
+          ].map(a => (
+            <button key={a.id} onClick={() => onOpenModal(a.id)}
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+              style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
               <span>{a.icon}</span>{a.label}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
             </button>
           ))}
         </div>
@@ -476,16 +506,37 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
             </div>
             <div className="space-y-2">
               {ROUNDUP_CHANNELS.map((ch, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-xl border border-gray-800/50 hover:border-gray-700 cursor-pointer transition-all bg-[#0a0c14]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">{ch.icon}</span>
-                    <span className="text-sm text-gray-300">{ch.label}</span>
-                    {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
-                    <span className="text-gray-700 text-xs">▾</span>
-                  </div>
+                <div key={i} className="rounded-xl border border-gray-800/50 hover:border-gray-700 transition-all bg-[#0a0c14]">
+                  <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base">{ch.icon}</span>
+                      <span className="text-sm text-gray-300">{ch.label}</span>
+                      {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                      <span className={`text-gray-700 text-xs transition-transform ${expandedChannel === ch.label ? 'rotate-180' : ''}`}>▾</span>
+                    </div>
+                  </button>
+                  {expandedChannel === ch.label && (
+                    <div className="px-3 pb-2 space-y-1.5 border-t border-gray-800/40 pt-2">
+                      {ch.messages.map((msg, j) => (
+                        <div key={j} className="flex items-start gap-2 py-1.5 px-2 rounded-lg bg-[#070810]">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-semibold text-gray-300">{msg.from}</span>
+                              <span className="text-[9px] text-gray-600">{msg.time}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 mt-0.5">{msg.text}</p>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+                            <button className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/15 text-red-400 hover:bg-red-600/25 transition-all">Reply</button>
+                            <button className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300 transition-all">Dismiss</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -580,50 +631,67 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
       )}
 
       {/* QUICK WINS */}
-      {dashTab === 'quickwins' && (
-        <div className="space-y-3">
-          {[
-            { p:1, action:'Practice D16 checkout before 10:00 warm-up',             impact:'High', cat:'Performance', icon:'🎯' },
-            { p:2, action:'Reply to Paddy Power ambassador inquiry — agent waiting', impact:'High', cat:'Commercial',  icon:'🤝' },
-            { p:3, action:'Book Prague Open flights — Mon 14 Apr depart',            impact:'High', cat:'Travel',      icon:'✈️' },
-            { p:4, action:'Red Dragon content shoot prep — 12:00 today',             impact:'High', cat:'Sponsor',     icon:'🐉' },
-            { p:5, action:'Review G. Price checkout patterns before 16:30',          impact:'High', cat:'Match Prep',  icon:'📊' },
-            { p:6, action:'Submit Betway social posts — 2 outstanding',              impact:'Med',  cat:'Commercial',  icon:'📱' },
-            { p:7, action:'Confirm hotel for Madrid Premier League (3 May)',          impact:'Med',  cat:'Travel',      icon:'🏨' },
-          ].map((w, i) => (
-            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 cursor-pointer transition-all">
-              <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{w.p}</div>
-              <span className="text-lg flex-shrink-0">{w.icon}</span>
-              <div className="flex-1"><p className="text-sm text-gray-200">{w.action}</p><span className="text-[10px] text-gray-500">{w.cat}</span></div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${w.impact==='High'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {dashTab === 'quickwins' && (() => {
+        const quickWins = [
+          { id:'qw1', title:'Practice D16 checkout before warm-up', impact:'high' as const, effort:'10min', cat:'Performance', icon:'🎯', action:'Log practice', modal:'practice' as string|undefined },
+          { id:'qw2', title:'Reply to Paddy Power ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined },
+          { id:'qw3', title:'Book Prague Open flights — prices rising', impact:'high' as const, effort:'2min', cat:'Travel', icon:'✈️', action:'Search flights', modal:'flights' as string|undefined },
+          { id:'qw4', title:'Red Dragon content shoot prep — 12:00', impact:'high' as const, effort:'5min', cat:'Sponsor', icon:'🐉', action:'Open brief', modal:'sponsor' as string|undefined },
+          { id:'qw5', title:'Review G. Price checkout patterns', impact:'medium' as const, effort:'15min', cat:'Match Prep', icon:'📊', action:'View scout', modal:'matchreport' as string|undefined },
+          { id:'qw6', title:'Submit Betway social posts — 2 outstanding', impact:'medium' as const, effort:'5min', cat:'Commercial', icon:'📱', action:'View obligation', modal:'sponsor' as string|undefined },
+          { id:'qw7', title:'Confirm hotel for Madrid Premier League', impact:'medium' as const, effort:'5min', cat:'Travel', icon:'🏨', action:'Find hotel', modal:'hotel' as string|undefined },
+        ]
+        return (
+          <div className="space-y-3">
+            {quickWins.map((w, i) => (
+              <div key={w.id} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition-all">
+                <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{i+1}</div>
+                <span className="text-lg flex-shrink-0">{w.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-200">{w.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">{w.cat}</span>
+                    <span className="text-[10px] text-gray-600">~{w.effort}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${w.impact==='high'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
+                  {w.modal && <button onClick={() => onOpenModal(w.modal!)} className="text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#dc2626' }}>{w.action} &rarr;</button>}
+                  <button className="text-[10px] px-2 py-1 rounded-lg text-gray-600 hover:text-green-400 hover:bg-green-600/10 border border-gray-800 transition-all">Done</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* DAILY TASKS */}
       {dashTab === 'dailytasks' && (
         <div className="space-y-3">
           {[
-            { time:'09:00', task:'AI Morning Briefing',             done:true,  cat:'Routine'    },
-            { time:'10:00', task:'Practice — D16 checkout routes',  done:false, cat:'Training'   },
-            { time:'11:00', task:'Physio — elbow treatment',        done:false, cat:'Wellness'   },
-            { time:'12:00', task:'Red Dragon content shoot',        done:false, cat:'Sponsor'    },
-            { time:'14:00', task:'Agent call — Paddy Power inquiry',done:false, cat:'Commercial' },
-            { time:'16:30', task:'Pre-match warm-up routine',       done:false, cat:'Prep'       },
-            { time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', done:false, cat:'Match',  highlight:true },
-            { time:'20:00', task:'Match vs G. Price — EC R1',       done:false, cat:'Match',     highlight:true },
-            { time:'22:30', task:'Post-match media duties',         done:false, cat:'Media'      },
+            { time:'09:00', task:'AI Morning Briefing',             done:true,  cat:'Routine',    priority:'low' as const,  modal:undefined as string|undefined },
+            { time:'10:00', task:'Practice — D16 checkout routes',  done:false, cat:'Training',   priority:'high' as const, modal:'practice' as string|undefined },
+            { time:'11:00', task:'Physio — elbow treatment',        done:false, cat:'Wellness',   priority:'medium' as const, modal:'physio' as string|undefined },
+            { time:'12:00', task:'Red Dragon content shoot',        done:false, cat:'Sponsor',    priority:'high' as const, modal:'sponsor' as string|undefined },
+            { time:'14:00', task:'Agent call — Paddy Power inquiry',done:false, cat:'Commercial', priority:'medium' as const, modal:undefined as string|undefined },
+            { time:'16:30', task:'Pre-match warm-up routine',       done:false, cat:'Prep',       priority:'high' as const, modal:'mental' as string|undefined },
+            { time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', done:false, cat:'Match',  highlight:true, priority:'critical' as const, modal:undefined as string|undefined },
+            { time:'20:00', task:'Match vs G. Price — EC R1',       done:false, cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
+            { time:'22:30', task:'Post-match media duties',         done:false, cat:'Media',      priority:'medium' as const, modal:'media' as string|undefined },
           ].map((t, i) => (
-            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${t.highlight?'bg-red-600/10 border-red-600/30':t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':t.highlight?'border-red-500':'border-gray-600'}`}>
+            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${(t as {highlight?:boolean}).highlight?'bg-red-600/10 border-red-600/30':t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':(t as {highlight?:boolean}).highlight?'border-red-500':'border-gray-600'}`}>
                 {t.done && <span className="text-[9px] text-white font-bold">✓</span>}
               </div>
               <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{t.time}</span>
-              <div className="flex-1">
-                <span className={`text-sm ${t.done?'line-through text-gray-600':t.highlight?'text-red-400 font-semibold':'text-gray-200'}`}>{t.task}</span>
+              <div className="flex-1 min-w-0">
+                <span className={`text-sm ${t.done?'line-through text-gray-600':(t as {highlight?:boolean}).highlight?'text-red-400 font-semibold':'text-gray-200'}`}>{t.task}</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 flex-shrink-0">{t.cat}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${t.priority==='critical'?'bg-red-600/20 text-red-400':t.priority==='high'?'bg-orange-600/20 text-orange-400':t.priority==='medium'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{t.priority}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500">{t.cat}</span>
+                {t.modal && !t.done && <button onClick={() => onOpenModal(t.modal!)} className="text-[10px] px-2 py-0.5 rounded-lg font-semibold" style={{ color: '#dc2626' }}>Open &rarr;</button>}
+              </div>
             </div>
           ))}
         </div>
@@ -656,18 +724,26 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
       {dashTab === 'dontmiss' && (
         <div className="space-y-3">
           {[
-            { urgency:'TONIGHT', item:'Match vs G. Price — European Championship R1. 20:00 Dortmund.', action:'View match prep →', color:'#dc2626' },
-            { urgency:'TODAY',   item:'Red Dragon content shoot at 12:00 — prep kit and backdrop.', action:'Open brief →', color:'#EF4444' },
-            { urgency:'THIS WK', item:'Prague Open flights — depart Mon 14 Apr. Prices rising.', action:'Book flight →', color:'#F59E0B' },
-            { urgency:'THIS WK', item:'2 Betway social posts outstanding — agent chasing.', action:'View obligation →', color:'#F59E0B' },
-            { urgency:'14 DAYS', item:'Paddy Power ambassador decision — respond to agent by 25 Apr.', action:'View inquiry →', color:'#8B5CF6' },
-            { urgency:'MAY 3',   item:'Madrid Premier League hotel not confirmed. Deadline approaching.', action:'Book hotel →', color:'#6B7280' },
+            { urgency:'TONIGHT', item:'Match vs G. Price — European Championship R1. 20:00 Dortmund.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep', color:'#dc2626', modal:undefined as string|undefined },
+            { urgency:'TODAY',   item:'Red Dragon content shoot at 12:00 — prep kit and backdrop.', consequence:'Contract obligation — penalty clause applies', action:'Open brief', color:'#EF4444', modal:'sponsor' as string|undefined },
+            { urgency:'THIS WK', item:'Prague Open flights — depart Mon 14 Apr. Prices rising.', consequence:'Cheapest seats selling fast — save £80+ booking now', action:'Search flights', color:'#F59E0B', modal:'flights' as string|undefined },
+            { urgency:'THIS WK', item:'2 Betway social posts outstanding — agent chasing.', consequence:'Sponsor relationship at risk — James flagged urgency', action:'Create post', color:'#F59E0B', modal:'sponsor' as string|undefined },
+            { urgency:'14 DAYS', item:'Paddy Power ambassador decision — respond to agent by 25 Apr.', consequence:'Estimated £40k/yr deal — competitor also in talks', action:'View inquiry', color:'#8B5CF6', modal:undefined as string|undefined },
+            { urgency:'MAY 3',   item:'Madrid Premier League hotel not confirmed. Deadline approaching.', consequence:'Preferred hotel may sell out — Premier League week', action:'Find hotel', color:'#6B7280', modal:'hotel' as string|undefined },
           ].map((d, i) => (
             <div key={i} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
               <span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.urgency==='TONIGHT'||d.urgency==='TODAY'?'bg-red-600/20 text-red-400':d.urgency==='THIS WK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.urgency}</span>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-200 mb-1">{d.item}</p>
-                <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action}</button>
+                <p className="text-[10px] text-gray-500 italic mb-2">{d.consequence}</p>
+                <div className="flex items-center gap-2">
+                  {d.modal ? (
+                    <button onClick={() => onOpenModal(d.modal!)} className="text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all" style={{ background: `${d.color}15`, border: `1px solid ${d.color}40`, color: d.color }}>{d.action} &rarr;</button>
+                  ) : (
+                    <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action} &rarr;</button>
+                  )}
+                  <button className="text-[10px] px-2 py-1 rounded-lg text-gray-600 hover:text-gray-400 border border-gray-800 transition-all">Dismiss</button>
+                </div>
               </div>
             </div>
           ))}
@@ -675,28 +751,157 @@ function DashboardView({ player, session }: { player: DartsPlayer; session: Spor
       )}
 
       {/* TEAM */}
-      {dashTab === 'team' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA' },
-            { name:'Steve Morris',    role:'Coach',              status:'Pre-match briefing at 16:30',     available:true,  initials:'SM' },
-            { name:'Dr Paul Reid',    role:'Physiotherapist',    status:'Elbow treatment 11:00 today',     available:true,  initials:'PR' },
-            { name:'Red Dragon',      role:'Equipment Sponsor',  status:'Content shoot 12:00 today',       available:true,  initials:'RD' },
-            { name:'James Wright',    role:'Agent',              status:'Paddy Power response pending',    available:true,  initials:'JW' },
-            { name:'Marcos Silva',    role:'Sports Psychologist',status:'Pre-match call 15:00',            available:true,  initials:'MS' },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-              <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white">{m.name}</div>
-                <div className="text-[10px] text-red-400">{m.role}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div>
-              </div>
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.available?'bg-green-400':'bg-gray-600'}`} />
+      {dashTab === 'team' && (() => {
+        const TEAM_MEMBERS = [
+          { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA', phone:'+44 7700 900123', email:'dave@dhsports.com', since:'2021', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'42 events managed', stat2:'98% satisfaction' },
+          { name:'Steve Morris',    role:'Coach',              status:'Pre-match briefing at 16:30',     available:true,  initials:'SM', phone:'+44 7700 900456', email:'steve@dartscoach.com', since:'2022', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'PDC Level 3 Coach', stat2:'+4.2 avg improvement' },
+          { name:'Dr Paul Reid',    role:'Physiotherapist',    status:'Elbow treatment 11:00 today',     available:true,  initials:'PR', phone:'+44 7700 900789', email:'paul@sportsphysio.com', since:'2023', nationality:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', stat1:'BSc Sports Therapy', stat2:'12 athletes' },
+          { name:'Red Dragon',      role:'Equipment Sponsor',  status:'Content shoot 12:00 today',       available:true,  initials:'RD', phone:'N/A', email:'athletes@reddragon.co.uk', since:'2020', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'Primary sponsor', stat2:'£45k/yr deal' },
+          { name:'James Wright',    role:'Agent',              status:'Paddy Power response pending',    available:true,  initials:'JW', phone:'+44 7700 900321', email:'james@sportsmgmt.com', since:'2020', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'15% commission', stat2:'£84k deals YTD' },
+          { name:'Marcos Silva',    role:'Sports Psychologist',status:'Pre-match call 15:00',            available:true,  initials:'MS', phone:'+44 7700 900654', email:'marcos@mindset.com', since:'2024', nationality:'🇧🇷', stat1:'PhD Sports Psychology', stat2:'Pressure specialist' },
+        ]
+        const [teamSubTab, setTeamSubTab] = useState<'today'|'orgchart'|'info'|'tour'>('today')
+        return (
+          <div className="space-y-4">
+            <div className="flex gap-1 border-b border-gray-800 overflow-x-auto pb-px">
+              {([
+                { id:'today' as const, label:'Team Today', icon:'📅' },
+                { id:'orgchart' as const, label:'Org Chart', icon:'🏗️' },
+                { id:'info' as const, label:'Team Info', icon:'🪪' },
+                { id:'tour' as const, label:'Tour Info', icon:'🗺️' },
+              ]).map(t => (
+                <button key={t.id} onClick={() => setTeamSubTab(t.id)}
+                  className={`flex items-center gap-1 px-4 py-2 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${teamSubTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+                  <span>{t.icon}</span>{t.label}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+
+            {teamSubTab === 'today' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {TEAM_MEMBERS.map((m, i) => (
+                  <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+                    <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0">{m.initials}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white">{m.name}</div>
+                      <div className="text-[10px] text-red-400">{m.role}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5 truncate">{m.status}</div>
+                    </div>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${m.available?'bg-green-400':'bg-gray-600'}`} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {teamSubTab === 'orgchart' && (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center">
+                  <div className="bg-red-600/15 border border-red-600/30 rounded-xl px-6 py-3 text-center">
+                    <div className="text-sm font-bold text-white">{firstName}</div>
+                    <div className="text-[10px] text-red-400">Player</div>
+                  </div>
+                  <div className="w-px h-6 bg-gray-700" />
+                  <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
+                    {[
+                      { name:'Dave Askew', role:'Manager', initials:'DA' },
+                      { name:'James Wright', role:'Agent', initials:'JW' },
+                      { name:'Steve Morris', role:'Coach', initials:'SM' },
+                    ].map((m, i) => (
+                      <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
+                        <div className="w-8 h-8 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-[10px] font-bold text-red-400 mx-auto mb-1">{m.initials}</div>
+                        <div className="text-xs font-semibold text-white">{m.name}</div>
+                        <div className="text-[10px] text-gray-500">{m.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="w-px h-4 bg-gray-700" />
+                  <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
+                    {[
+                      { name:'Dr Paul Reid', role:'Physio', initials:'PR' },
+                      { name:'Marcos Silva', role:'Psychologist', initials:'MS' },
+                      { name:'Red Dragon', role:'Sponsor', initials:'RD' },
+                    ].map((m, i) => (
+                      <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-400 mx-auto mb-1">{m.initials}</div>
+                        <div className="text-xs font-semibold text-white">{m.name}</div>
+                        <div className="text-[10px] text-gray-500">{m.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {teamSubTab === 'info' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {TEAM_MEMBERS.map((m, i) => (
+                  <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-r from-red-900/30 to-gray-900/30" />
+                    <div className="relative">
+                      <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-600/30 flex items-center justify-center text-lg font-bold text-red-400 mx-auto mb-2">{m.initials}</div>
+                      <div className="text-center mb-3">
+                        <div className="text-sm font-bold text-white">{m.name}</div>
+                        <div className="text-[10px] text-red-400 font-semibold">{m.role}</div>
+                        <div className="text-[10px] text-gray-500">Since {m.since} {m.nationality}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-[#0a0c14] rounded-lg p-2 text-center"><div className="text-[10px] text-gray-400">{m.stat1}</div></div>
+                        <div className="bg-[#0a0c14] rounded-lg p-2 text-center"><div className="text-[10px] text-gray-400">{m.stat2}</div></div>
+                      </div>
+                      <div className="space-y-1 text-[10px]">
+                        <div className="flex justify-between text-gray-500"><span>Phone</span><span className="text-gray-300">{m.phone}</span></div>
+                        <div className="flex justify-between text-gray-500"><span>Email</span><span className="text-gray-300 truncate ml-2">{m.email}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {teamSubTab === 'tour' && (
+              <div className="space-y-4">
+                <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+                  <div className="text-sm font-bold text-white mb-3">Tour Entourage — European Championship</div>
+                  <div className="space-y-2">
+                    {[
+                      { name:'Dave Askew', role:'Manager', travel:'Travelling — same flight', hotel:'Westfalenhallen Hotel, Dortmund' },
+                      { name:'Steve Morris', role:'Coach', travel:'Travelling — driving', hotel:'Westfalenhallen Hotel, Dortmund' },
+                      { name:'Dr Paul Reid', role:'Physio', travel:'Available remotely', hotel:'N/A' },
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/40 last:border-0">
+                        <div className="flex-1">
+                          <span className="text-xs text-white font-semibold">{t.name}</span>
+                          <span className="text-[10px] text-gray-500 ml-2">{t.role}</span>
+                        </div>
+                        <span className="text-[10px] text-gray-400">{t.travel}</span>
+                        <span className="text-[10px] text-gray-500">{t.hotel}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+                  <div className="text-sm font-bold text-white mb-3">Upcoming Tour Schedule</div>
+                  <div className="space-y-2">
+                    {[
+                      { event:'European Championship', dates:'Apr 8-12', location:'Dortmund', team:'Dave, Steve' },
+                      { event:'Prague Open', dates:'Apr 28-30', location:'Prague', team:'Dave' },
+                      { event:'Players Championship 9/10', dates:'May 3-4', location:'Barnsley', team:'Steve' },
+                      { event:'German Masters', dates:'May 12-14', location:'Berlin', team:'Dave, Steve' },
+                    ].map((e, i) => (
+                      <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/40 last:border-0 text-xs">
+                        <span className="text-gray-200 font-medium">{e.event}</span>
+                        <span className="text-gray-500">{e.dates}</span>
+                        <span className="text-gray-400">{e.location}</span>
+                        <span className="text-gray-600">{e.team}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <DartsAISection context="dashboard" player={player} session={session} />
     </div>
@@ -6042,12 +6247,538 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
   );
 }
 
+// ─── MODAL HELPERS ───────────────────────────────────────────────────────────
+function DartsModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-3"><span className="text-2xl">{icon}</span><div><div className="text-base font-bold text-white">{title}</div><div className="text-xs" style={{ color: '#6B7280' }}>{subtitle}</div></div></div>
+      <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+    </div>
+  )
+}
+
+// ─── MODAL: FLIGHT FINDER ────────────────────────────────────────────────────
+function DartsFlightFinder({ onClose, player, session }: { onClose: () => void; player: DartsPlayer; session: SportsDemoSession }) {
+  const [step, setStep] = useState(0)
+  const [selectedTournament, setSelectedTournament] = useState('Prague Open')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<{airline:string;price:string;time:string;duration:string}[]>([])
+  const tournaments = ['Prague Open', 'Players Ch. 9', 'German Masters', 'Bahrain Masters']
+
+  const searchFlights = async () => {
+    setLoading(true)
+    setStep(2)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Find 3 flight options from London to the ${selectedTournament} darts tournament. For each give airline, price (GBP), departure time, and duration. Return JSON array with keys: airline, price, time, duration. No explanation.` }] })
+      })
+      const data = await res.json()
+      const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
+      try { setResults(JSON.parse(text)) } catch { setResults([{ airline:'British Airways', price:'£189', time:'06:45', duration:'2h 10m' },{ airline:'Ryanair', price:'£67', time:'10:30', duration:'2h 25m' },{ airline:'easyJet', price:'£112', time:'14:15', duration:'2h 15m' }]) }
+    } catch { setResults([{ airline:'British Airways', price:'£189', time:'06:45', duration:'2h 10m' },{ airline:'Ryanair', price:'£67', time:'10:30', duration:'2h 25m' },{ airline:'easyJet', price:'£112', time:'14:15', duration:'2h 15m' }]) }
+    setLoading(false)
+  }
+
+  const steps = ['Configure', 'Search', 'Results', 'Book']
+  return (
+    <div>
+      <DartsModalHeader icon="✈️" title="Smart Flight Finder" subtitle="AI-powered flight search for tournaments" onClose={onClose} />
+      <div className="flex items-center gap-2 px-6 py-3 border-b" style={{ borderColor: '#1F2937' }}>
+        {steps.map((s, i) => (<div key={i} className="flex items-center gap-1"><div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i <= step ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-500'}`}>{i+1}</div><span className={`text-[10px] ${i <= step ? 'text-white' : 'text-gray-600'}`}>{s}</span>{i < 3 && <div className="w-4 h-px bg-gray-700 mx-1" />}</div>))}
+      </div>
+      <div className="p-6 space-y-4">
+        {step === 0 && (<>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select tournament</div>
+          <div className="flex flex-wrap gap-2">
+            {tournaments.map(t => (<button key={t} onClick={() => setSelectedTournament(t)} className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${selectedTournament === t ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{t}</button>))}
+          </div>
+          <button onClick={() => { setStep(1); searchFlights() }} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Search Flights &rarr;</button>
+        </>)}
+        {(step === 1 || step === 2) && loading && (<div className="space-y-3 py-8">{[1,2,3].map(i => <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />)}</div>)}
+        {step === 2 && !loading && (<>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Results for {selectedTournament}</div>
+          <div className="space-y-3">
+            {results.map((r, i) => (
+              <div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-xl p-4">
+                <div><div className="text-sm font-semibold text-white">{r.airline}</div><div className="text-[10px] text-gray-500">{r.time} · {r.duration}</div></div>
+                <div className="text-right"><div className="text-lg font-bold text-red-400">{r.price}</div><button onClick={() => setStep(3)} className="text-[10px] text-red-400 hover:underline">Select &rarr;</button></div>
+              </div>
+            ))}
+          </div>
+        </>)}
+        {step === 3 && (<div className="text-center py-8"><div className="text-4xl mb-3">✅</div><div className="text-lg font-bold text-white mb-1">Flight selected</div><div className="text-xs text-gray-500">Booking link would open in a real integration. Details saved.</div><button onClick={onClose} className="mt-4 px-6 py-2 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Done</button></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: HOTEL FINDER ─────────────────────────────────────────────────────
+function DartsHotelFinder({ onClose }: { onClose: () => void }) {
+  const [destination, setDestination] = useState('Prague')
+  const [budget, setBudget] = useState('mid')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<{name:string;price:string;rating:string;distance:string}[]>([])
+  const preferences = ['Near venue', 'Gym', 'Late checkout', 'Quiet room']
+  const [selectedPrefs, setSelectedPrefs] = useState<string[]>(['Near venue'])
+
+  const search = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 hotels in ${destination} for a darts player. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation.` }] })
+      })
+      const data = await res.json()
+      const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
+      try { setResults(JSON.parse(text)) } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' }]) }
+    } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' }]) }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="🏨" title="Hotel Finder" subtitle="Find accommodation near tournament venues" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-xs text-gray-400 block mb-1">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Check-in</label><input type="date" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Check-out</label><input type="date" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+        </div>
+        <div><label className="text-xs text-gray-400 block mb-1">Budget</label><select value={budget} onChange={e => setBudget(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option value="budget">Budget (under £70)</option><option value="mid">Mid-range (£70-£150)</option><option value="premium">Premium (£150+)</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Preferences</label><div className="flex flex-wrap gap-2">{preferences.map(p => (<button key={p} onClick={() => setSelectedPrefs(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPrefs.includes(p) ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
+        <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Searching...' : 'Search Hotels'}</button>
+        {results.length > 0 && (<div className="space-y-3 pt-2">{results.map((r, i) => (<div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><div><div className="text-sm font-semibold text-white">{r.name}</div><div className="text-[10px] text-gray-500">{r.rating} · {r.distance} from venue</div></div><div className="text-right"><div className="text-lg font-bold text-red-400">{r.price}</div><button className="text-[10px] text-red-400 hover:underline">Book &rarr;</button></div></div>))}</div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: PRACTICE LOGGER ──────────────────────────────────────────────────
+function DartsPracticeLogger({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), duration: '60', avg: '', checkout: '', one80s: '', bestLeg: '', weakSpot: 'D16', notes: '' })
+  const [sessions, setSessions] = useState<Record<string,string>[]>([])
+
+  useEffect(() => {
+    try { const stored = localStorage.getItem('lumio_darts_practice_log'); if (stored) setSessions(JSON.parse(stored)) } catch {}
+  }, [])
+
+  const save = () => {
+    const updated = [form, ...sessions].slice(0, 20)
+    localStorage.setItem('lumio_darts_practice_log', JSON.stringify(updated))
+    setSessions(updated)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="🎯" title="Practice Logger" subtitle="Track practice sessions and performance" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Date</label><input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Duration (min)</label><input value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">3-Dart Average</label><input value={form.avg} onChange={e => setForm({...form, avg: e.target.value})} placeholder="e.g. 98.4" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Checkout %</label><input value={form.checkout} onChange={e => setForm({...form, checkout: e.target.value})} placeholder="e.g. 42" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">180s</label><input value={form.one80s} onChange={e => setForm({...form, one80s: e.target.value})} placeholder="e.g. 6" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Best Leg (darts)</label><input value={form.bestLeg} onChange={e => setForm({...form, bestLeg: e.target.value})} placeholder="e.g. 14" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <div><label className="text-xs text-gray-400 block mb-1">Weak Spot</label><select value={form.weakSpot} onChange={e => setForm({...form, weakSpot: e.target.value})} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>D16</option><option>D20</option><option>D8</option><option>D4</option><option>D12</option><option>Bullseye</option><option>T20 grouping</option><option>Starting doubles</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Notes</label><textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" placeholder="Session notes..." /></div>
+        <button onClick={save} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Save Session</button>
+        {sessions.length > 0 && (<div className="pt-2"><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Last {Math.min(sessions.length, 5)} sessions</div><div className="space-y-2">{sessions.slice(0,5).map((s, i) => (<div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs"><span className="text-gray-400">{s.date}</span><span className="text-white">{s.avg || '—'} avg</span><span className="text-gray-500">{s.duration}min</span><span className="text-gray-500">{s.one80s || '0'} x 180</span></div>))}</div></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: MATCH REPORT ─────────────────────────────────────────────────────
+function DartsMatchReport({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+  const [form, setForm] = useState({ opponent: '', tournament: '', myAvg: '', oppAvg: '', won: true, score: '', })
+  const [report, setReport] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `Write a professional darts match report for ${player.name} (#${player.pdcRank}). Opponent: ${form.opponent}. Tournament: ${form.tournament}. My average: ${form.myAvg}. Opponent average: ${form.oppAvg}. Result: ${form.won ? 'Won' : 'Lost'} ${form.score}. Write 150 words, professional style, suitable for social media.` }] })
+      })
+      const data = await res.json()
+      setReport(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate report.')
+    } catch { setReport('Unable to generate report.') }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="📋" title="AI Match Report" subtitle="Generate professional match reports" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Opponent</label><input value={form.opponent} onChange={e => setForm({...form, opponent: e.target.value})} placeholder="e.g. G. Price" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Tournament</label><input value={form.tournament} onChange={e => setForm({...form, tournament: e.target.value})} placeholder="e.g. European Ch." className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">My Average</label><input value={form.myAvg} onChange={e => setForm({...form, myAvg: e.target.value})} placeholder="e.g. 99.4" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Opponent Average</label><input value={form.oppAvg} onChange={e => setForm({...form, oppAvg: e.target.value})} placeholder="e.g. 96.2" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Result</label><div className="flex gap-2">{['Won','Lost'].map(r => (<button key={r} onClick={() => setForm({...form, won: r==='Won'})} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${(r==='Won'&&form.won)||(r==='Lost'&&!form.won)?'bg-red-600/20 text-red-400 border border-red-600/40':'bg-gray-800 text-gray-400 border border-gray-700'}`}>{r}</button>))}</div></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Score</label><input value={form.score} onChange={e => setForm({...form, score: e.target.value})} placeholder="e.g. 6-4" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Generating...' : 'Generate Report'}</button>
+        {report && (<div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{report}</p><button onClick={() => navigator.clipboard.writeText(report)} className="mt-3 text-xs text-red-400 hover:underline">Copy to clipboard</button></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: EQUIPMENT CHECK ──────────────────────────────────────────────────
+function DartsEquipmentCheck({ onClose }: { onClose: () => void }) {
+  const [equipment, setEquipment] = useState([
+    { item: 'Barrels', detail: '24g Target Vapor8', replace: false, notes: '' },
+    { item: 'Flights', detail: 'Target Pro Ultra Standard', replace: false, notes: '' },
+    { item: 'Shafts', detail: 'Target Pro Grip Medium', replace: true, notes: 'Slight wobble — replace before Prague' },
+    { item: 'Board', detail: 'Winmau Blade 6', replace: false, notes: '' },
+    { item: 'Oche mat', detail: 'Red Dragon Pro mat (9ft)', replace: false, notes: '' },
+    { item: 'Case', detail: 'Target Takoma XL', replace: false, notes: '' },
+  ])
+
+  const save = () => { localStorage.setItem('lumio_darts_equipment', JSON.stringify(equipment)) }
+
+  return (
+    <div>
+      <DartsModalHeader icon="🏹" title="Equipment Check" subtitle="Review and manage your dart setup" onClose={onClose} />
+      <div className="p-6 space-y-3">
+        {equipment.map((eq, i) => (
+          <div key={i} className={`bg-[#0a0c14] border rounded-xl p-4 ${eq.replace ? 'border-amber-600/40' : 'border-gray-800'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div><div className="text-sm font-semibold text-white">{eq.item}</div><div className="text-xs text-gray-400">{eq.detail}</div></div>
+              <button onClick={() => { const updated = [...equipment]; updated[i] = {...eq, replace: !eq.replace}; setEquipment(updated) }} className={`text-[10px] px-2 py-1 rounded-lg font-semibold ${eq.replace ? 'bg-amber-600/20 text-amber-400 border border-amber-600/40' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>{eq.replace ? 'Needs replacing' : 'OK'}</button>
+            </div>
+            <input value={eq.notes} onChange={e => { const updated = [...equipment]; updated[i] = {...eq, notes: e.target.value}; setEquipment(updated) }} placeholder="Notes..." className="w-full bg-transparent border-b border-gray-800 text-xs text-gray-400 py-1 focus:outline-none focus:border-red-600/40" />
+          </div>
+        ))}
+        <button onClick={save} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Save Equipment Check</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: PRIZE TRACKER ────────────────────────────────────────────────────
+function DartsPrizeTracker({ onClose }: { onClose: () => void }) {
+  const seasonTarget = 250000
+  const [ytd, setYtd] = useState(68750)
+  const [results, setResults] = useState([
+    { event: 'Players Ch. 8', prize: 8000, result: 'QF' },
+    { event: 'UK Open', prize: 24000, result: 'QF' },
+    { event: 'Premier League N6', prize: 10000, result: 'W' },
+    { event: 'Euro Tour 3', prize: 6750, result: 'R16' },
+    { event: 'Players Ch. 7', prize: 4000, result: 'R2' },
+  ])
+  const [newEvent, setNewEvent] = useState('')
+  const [newPrize, setNewPrize] = useState('')
+  const [newResult, setNewResult] = useState('')
+
+  const addResult = () => {
+    if (!newEvent || !newPrize) return
+    const prize = parseInt(newPrize)
+    const updated = [{ event: newEvent, prize, result: newResult }, ...results]
+    setResults(updated)
+    setYtd(ytd + prize)
+    localStorage.setItem('lumio_darts_prizes', JSON.stringify({ ytd: ytd + prize, results: updated }))
+    setNewEvent(''); setNewPrize(''); setNewResult('')
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="💰" title="Prize Money Tracker" subtitle="Track season earnings and targets" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4">
+          <div className="flex justify-between items-center mb-2"><span className="text-xs text-gray-400">Season target</span><span className="text-xs text-gray-500">£{seasonTarget.toLocaleString()}</span></div>
+          <div className="w-full bg-gray-800 rounded-full h-4 mb-2"><div className="h-4 rounded-full bg-gradient-to-r from-red-600 to-red-400 flex items-center justify-end pr-2" style={{ width: `${Math.min((ytd/seasonTarget)*100, 100)}%` }}><span className="text-[9px] text-white font-bold">{Math.round((ytd/seasonTarget)*100)}%</span></div></div>
+          <div className="flex justify-between"><span className="text-lg font-bold text-red-400">£{ytd.toLocaleString()}</span><span className="text-xs text-gray-500">£{(seasonTarget-ytd).toLocaleString()} remaining</span></div>
+        </div>
+        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Last 5 results</div>
+        <div className="space-y-2">
+          {results.slice(0,5).map((r, i) => (<div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs"><span className="text-gray-300">{r.event}</span><span className="text-gray-500">{r.result}</span><span className="text-green-400 font-bold">£{r.prize.toLocaleString()}</span></div>))}
+        </div>
+        <div className="border-t border-gray-800 pt-4">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Add result</div>
+          <div className="grid grid-cols-3 gap-2">
+            <input value={newEvent} onChange={e => setNewEvent(e.target.value)} placeholder="Event" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+            <input value={newPrize} onChange={e => setNewPrize(e.target.value)} placeholder="Prize £" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+            <input value={newResult} onChange={e => setNewResult(e.target.value)} placeholder="Result" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+          </div>
+          <button onClick={addResult} className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Add Result</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: SPONSOR POST ─────────────────────────────────────────────────────
+function DartsSponsorPost({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+  const [sponsor, setSponsor] = useState('Red Dragon')
+  const [postType, setPostType] = useState('Product review')
+  const [platform, setPlatform] = useState('Instagram')
+  const [includeStats, setIncludeStats] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [post, setPost] = useState('')
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a ${platform} post for professional darts player ${player.name} (#${player.pdcRank} PDC) promoting ${sponsor}. Post type: ${postType}. ${includeStats ? `Include stats: ${player.threeDartAverage} avg, ${player.checkoutPercent}% checkout.` : ''} Keep it authentic, under 200 words. Include relevant hashtags.` }] })
+      })
+      const data = await res.json()
+      setPost(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate post.')
+    } catch { setPost('Unable to generate post.') }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="📱" title="AI Sponsor Post" subtitle="Generate sponsor content for social media" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-xs text-gray-400 block mb-1">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Red Dragon</option><option>Paddy Power</option><option>Betway</option><option>Ladbrokes</option><option>Winmau</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Post type</label><select value={postType} onChange={e => setPostType(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Product review</option><option>Match day</option><option>Training session</option><option>Behind the scenes</option><option>Giveaway</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Platform</label><div className="flex gap-2">{['Instagram','Twitter','Facebook','TikTok'].map(p => (<button key={p} onClick={() => setPlatform(p)} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${platform === p ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
+        <div className="flex items-center gap-2"><button onClick={() => setIncludeStats(!includeStats)} className={`w-9 h-5 rounded-full transition-all ${includeStats ? 'bg-red-600' : 'bg-gray-700'}`}><div className={`w-4 h-4 rounded-full bg-white transition-all ${includeStats ? 'ml-4' : 'ml-0.5'}`} /></button><span className="text-xs text-gray-400">Include performance stats</span></div>
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Generating...' : 'Generate Post'}</button>
+        {post && (<div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{post}</p><button onClick={() => navigator.clipboard.writeText(post)} className="mt-3 text-xs text-red-400 hover:underline">Copy to clipboard</button></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: MEDIA MANAGER ────────────────────────────────────────────────────
+function DartsMediaManager({ onClose }: { onClose: () => void }) {
+  const [obligations, setObligations] = useState([
+    { id: '1', title: 'Red Dragon barrel review video', due: 'Today 12:00', done: false, type: 'Content shoot' },
+    { id: '2', title: 'Betway Instagram story — match day', due: 'Today 19:00', done: false, type: 'Social post' },
+    { id: '3', title: 'Betway Twitter post — pre-match', due: 'Today 18:00', done: false, type: 'Social post' },
+    { id: '4', title: 'Sky Sports post-match interview', due: 'Tonight ~22:30', done: false, type: 'Interview' },
+  ])
+  const [newTitle, setNewTitle] = useState('')
+
+  const toggle = (id: string) => { setObligations(prev => prev.map(o => o.id === id ? {...o, done: !o.done} : o)) }
+  const add = () => { if (!newTitle) return; setObligations(prev => [...prev, { id: Date.now().toString(), title: newTitle, due: 'TBD', done: false, type: 'Other' }]); setNewTitle('') }
+  const save = () => { localStorage.setItem('lumio_darts_media', JSON.stringify(obligations)) }
+
+  return (
+    <div>
+      <DartsModalHeader icon="📣" title="Media Manager" subtitle="Track media obligations and content duties" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-center flex-1"><div className="text-lg font-bold text-red-400">{obligations.filter(o => !o.done).length}</div><div className="text-[10px] text-gray-500">Pending</div></div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-center flex-1"><div className="text-lg font-bold text-green-400">{obligations.filter(o => o.done).length}</div><div className="text-[10px] text-gray-500">Done</div></div>
+        </div>
+        <div className="space-y-2">
+          {obligations.map(o => (
+            <div key={o.id} className={`flex items-center gap-3 bg-[#0a0c14] border rounded-xl p-3 transition-all ${o.done ? 'border-green-600/30 opacity-60' : 'border-gray-800'}`}>
+              <button onClick={() => toggle(o.id)} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${o.done ? 'bg-green-500 border-green-500' : 'border-gray-600'}`}>{o.done && <span className="text-[9px] text-white font-bold">✓</span>}</button>
+              <div className="flex-1 min-w-0"><div className={`text-sm ${o.done ? 'line-through text-gray-600' : 'text-gray-200'}`}>{o.title}</div><div className="text-[10px] text-gray-500">{o.due} · {o.type}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2"><input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Add obligation..." className="flex-1 bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /><button onClick={add} className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Add</button></div>
+        <button onClick={save} className="w-full py-2 rounded-xl text-xs font-semibold border border-gray-700 text-gray-400 hover:text-white transition-all">Save &amp; Export</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: MENTAL PREP ──────────────────────────────────────────────────────
+function DartsMentalPrep({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+  const [opponent, setOpponent] = useState('G. Price')
+  const [venue, setVenue] = useState('Westfalenhallen, Dortmund')
+  const [feeling, setFeeling] = useState(7)
+  const [concern, setConcern] = useState('Doubles under pressure')
+  const [loading, setLoading] = useState(false)
+  const [prep, setPrep] = useState('')
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `Generate a pre-match mental preparation plan for ${player.name} (#${player.pdcRank} PDC, avg ${player.threeDartAverage}). Opponent: ${opponent}. Venue: ${venue}. Current feeling: ${feeling}/10. Main concern: ${concern}. Include breathing exercises, visualization, and key mental cues. 200 words max.` }] })
+      })
+      const data = await res.json()
+      setPrep(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate prep.')
+    } catch { setPrep('Unable to generate prep.') }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="🧠" title="AI Mental Prep" subtitle="Pre-match mental preparation plan" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Opponent</label><input value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Venue</label><input value={venue} onChange={e => setVenue(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+        </div>
+        <div><label className="text-xs text-gray-400 block mb-1">How are you feeling? ({feeling}/10)</label><input type="range" min="1" max="10" value={feeling} onChange={e => setFeeling(parseInt(e.target.value))} className="w-full accent-red-600" /><div className="flex justify-between text-[10px] text-gray-600"><span>Anxious</span><span>Confident</span></div></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Main concern</label><select value={concern} onChange={e => setConcern(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Doubles under pressure</option><option>Slow start</option><option>Opponent intimidation</option><option>TV camera nerves</option><option>Fatigue</option><option>Crowd noise</option></select></div>
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? 'Generating...' : 'Generate Prep Plan'}</button>
+        {prep && (<div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{prep}</p><div className="flex gap-2 mt-3"><button onClick={() => {if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(prep);u.rate=0.9;speechSynthesis.speak(u)}}} className="text-xs text-red-400 hover:underline flex items-center gap-1"><span>🔊</span> Listen</button><button onClick={() => navigator.clipboard.writeText(prep)} className="text-xs text-gray-500 hover:underline">Copy</button></div></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: PHYSIO LOG ───────────────────────────────────────────────────────
+function DartsPhysioLog({ onClose }: { onClose: () => void }) {
+  const areas = ['Shoulder', 'Elbow', 'Wrist', 'Back', 'Knee', 'Neck']
+  const [selectedArea, setSelectedArea] = useState('Elbow')
+  const [pain, setPain] = useState(3)
+  const [issueType, setIssueType] = useState('Strain')
+  const [notes, setNotes] = useState('')
+  const [issues, setIssues] = useState([
+    { area: 'Elbow', pain: 3, type: 'Repetitive strain', date: '2026-04-08', notes: 'Ongoing — treatment with Dr Reid' },
+    { area: 'Shoulder', pain: 2, type: 'Stiffness', date: '2026-04-06', notes: 'Improving with physio' },
+  ])
+
+  const save = () => {
+    const updated = [{ area: selectedArea, pain, type: issueType, date: new Date().toISOString().slice(0,10), notes }, ...issues]
+    setIssues(updated)
+    localStorage.setItem('lumio_darts_physio', JSON.stringify(updated))
+    setNotes('')
+  }
+
+  return (
+    <div>
+      <DartsModalHeader icon="💊" title="Physio Log" subtitle="Track injuries, pain, and recovery" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-xs text-gray-400 block mb-2">Body area</label><div className="flex flex-wrap gap-2">{areas.map(a => (<button key={a} onClick={() => setSelectedArea(a)} className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${selectedArea === a ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{a}</button>))}</div></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Pain level ({pain}/10)</label><input type="range" min="0" max="10" value={pain} onChange={e => setPain(parseInt(e.target.value))} className="w-full accent-red-600" /><div className="flex justify-between text-[10px] text-gray-600"><span>None</span><span>Severe</span></div></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Issue type</label><select value={issueType} onChange={e => setIssueType(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Strain</option><option>Stiffness</option><option>Pain</option><option>Swelling</option><option>Repetitive strain</option><option>Post-treatment</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" placeholder="Treatment notes..." /></div>
+        <button onClick={save} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Log Issue</button>
+        {issues.length > 0 && (<div className="pt-2"><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Current issues</div><div className="space-y-2">{issues.map((iss, i) => (<div key={i} className={`bg-[#0a0c14] border rounded-lg px-3 py-2 ${iss.pain >= 5 ? 'border-red-600/40' : 'border-gray-800'}`}><div className="flex items-center justify-between text-xs"><span className="text-white font-semibold">{iss.area}</span><span className={`font-bold ${iss.pain >= 5 ? 'text-red-400' : iss.pain >= 3 ? 'text-amber-400' : 'text-green-400'}`}>{iss.pain}/10</span></div><div className="text-[10px] text-gray-500">{iss.type} · {iss.date}</div>{iss.notes && <div className="text-[10px] text-gray-400 mt-1">{iss.notes}</div>}</div>))}</div></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: EXPENSE LOGGER ───────────────────────────────────────────────────
+function DartsExpenseLogger({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), category: 'Travel', amount: '', description: '', receipt: false })
+  const [expenses, setExpenses] = useState<{date:string;category:string;amount:string;description:string;receipt:boolean}[]>([])
+
+  useEffect(() => {
+    try { const stored = localStorage.getItem('lumio_darts_expenses'); if (stored) setExpenses(JSON.parse(stored)) } catch {}
+  }, [])
+
+  const save = () => {
+    const updated = [form, ...expenses]
+    setExpenses(updated)
+    localStorage.setItem('lumio_darts_expenses', JSON.stringify(updated))
+    setForm({ date: new Date().toISOString().slice(0,10), category: 'Travel', amount: '', description: '', receipt: false })
+  }
+
+  const total = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0)
+
+  return (
+    <div>
+      <DartsModalHeader icon="🧾" title="Expense Logger" subtitle="Track tour expenses and receipts" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4 text-center"><div className="text-xs text-gray-500">Running total</div><div className="text-2xl font-bold text-red-400">£{total.toLocaleString()}</div></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Date</label><input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Category</label><select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Travel</option><option>Accommodation</option><option>Equipment</option><option>Entry fees</option><option>Food</option><option>Coaching</option><option>Physio</option><option>Other</option></select></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-400 block mb-1">Amount (£)</label><input value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0.00" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="What for?" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+        </div>
+        <div className="flex items-center gap-2"><button onClick={() => setForm({...form, receipt: !form.receipt})} className={`w-9 h-5 rounded-full transition-all ${form.receipt ? 'bg-red-600' : 'bg-gray-700'}`}><div className={`w-4 h-4 rounded-full bg-white transition-all ${form.receipt ? 'ml-4' : 'ml-0.5'}`} /></button><span className="text-xs text-gray-400">Receipt attached</span></div>
+        <button onClick={save} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Log Expense</button>
+        {expenses.length > 0 && (<div className="pt-2"><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Recent expenses</div><div className="space-y-2">{expenses.slice(0,5).map((e, i) => (<div key={i} className="flex items-center justify-between bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs"><span className="text-gray-400">{e.date}</span><span className="text-gray-300">{e.description || e.category}</span><span className="text-red-400 font-bold">£{e.amount}</span>{e.receipt && <span className="text-green-400 text-[10px]">📎</span>}</div>))}</div></div>)}
+      </div>
+    </div>
+  )
+}
+
+// ─── MODAL: EXHIBITION BOOKER ────────────────────────────────────────────────
+function DartsExhibitionBooker({ onClose }: { onClose: () => void }) {
+  const [exhibitions, setExhibitions] = useState([
+    { id: '1', venue: 'Lakeside CC, Frimley Green', date: 'May 20', fee: '£3,500', status: 'confirmed' as const, contact: 'John Smith' },
+    { id: '2', venue: 'Butlins Minehead', date: 'Jun 8', fee: '£5,000', status: 'pending' as const, contact: 'Sarah Jones' },
+    { id: '3', venue: 'Working Mens Club, Barnsley', date: 'Jun 22', fee: '£2,000', status: 'enquiry' as const, contact: 'Mike Brown' },
+  ])
+  const [newVenue, setNewVenue] = useState('')
+  const [newDate, setNewDate] = useState('')
+  const [newFee, setNewFee] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiEmail, setAiEmail] = useState('')
+
+  const addEnquiry = () => {
+    if (!newVenue) return
+    setExhibitions(prev => [...prev, { id: Date.now().toString(), venue: newVenue, date: newDate || 'TBD', fee: newFee ? `£${newFee}` : 'TBD', status: 'enquiry', contact: '' }])
+    localStorage.setItem('lumio_darts_exhibitions', JSON.stringify(exhibitions))
+    setNewVenue(''); setNewDate(''); setNewFee('')
+  }
+
+  const generateEmail = async (venue: string) => {
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/ai/darts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Write a professional response email for a darts exhibition booking enquiry at ${venue}. From Jake Morrison's management team. Confirm interest, ask for venue capacity, date flexibility, and fee. 100 words max, professional tone.` }] })
+      })
+      const data = await res.json()
+      setAiEmail(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || '')
+    } catch { setAiEmail('Unable to generate email.') }
+    setAiLoading(false)
+  }
+
+  const statusColors: Record<string, string> = { confirmed: 'bg-green-600/20 text-green-400 border-green-600/30', pending: 'bg-amber-600/20 text-amber-400 border-amber-600/30', enquiry: 'bg-gray-800 text-gray-400 border-gray-700' }
+
+  return (
+    <div>
+      <DartsModalHeader icon="🎪" title="Exhibition Booker" subtitle="Manage exhibition bookings and enquiries" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="space-y-3">
+          {exhibitions.map(ex => (
+            <div key={ex.id} className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div><div className="text-sm font-semibold text-white">{ex.venue}</div><div className="text-[10px] text-gray-500">{ex.date} · {ex.fee}{ex.contact ? ` · ${ex.contact}` : ''}</div></div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusColors[ex.status]}`}>{ex.status}</span>
+              </div>
+              {ex.status === 'enquiry' && (<button onClick={() => generateEmail(ex.venue)} disabled={aiLoading} className="text-[10px] text-red-400 hover:underline">{aiLoading ? 'Generating...' : 'Generate response email'}</button>)}
+            </div>
+          ))}
+        </div>
+        {aiEmail && (<div className="bg-[#0a0c14] border border-gray-800 rounded-xl p-4"><p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{aiEmail}</p><button onClick={() => navigator.clipboard.writeText(aiEmail)} className="mt-2 text-[10px] text-red-400 hover:underline">Copy email</button></div>)}
+        <div className="border-t border-gray-800 pt-4">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Add enquiry</div>
+          <div className="grid grid-cols-3 gap-2">
+            <input value={newVenue} onChange={e => setNewVenue(e.target.value)} placeholder="Venue" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+            <input value={newDate} onChange={e => setNewDate(e.target.value)} placeholder="Date" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+            <input value={newFee} onChange={e => setNewFee(e.target.value)} placeholder="Fee £" className="bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+          </div>
+          <button onClick={addEnquiry} className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Add Enquiry</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidebarExpanded = sidebarPinned || sidebarHovered;
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const closeModal = () => setActiveModal(null)
 
   useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_darts_sidebar_pinned') === 'true') }, [])
   function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_darts_sidebar_pinned', String(next)); return next }) }
@@ -6102,7 +6833,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
       );
     }
     switch (activeSection) {
-      case 'dashboard':     return <DashboardView player={player} session={session} />;
+      case 'dashboard':     return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
       case 'morning':       return <MorningBriefingView player={player} session={session} />;
       case 'performance':   return <DartsPerformanceView player={player} session={session} onNavigate={setActiveSection} />;
       case 'orderofmerit':  return <OrderOfMeritView onNavigate={setActiveSection} player={player} session={session} />;
@@ -6154,7 +6885,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
       case 'board-booking':      return <BoardBookingView player={player} session={session} />;
       case 'accreditations':     return <AccreditationsView player={player} session={session} />;
       case 'county-darts':       return <CountyDartsView player={player} session={session} />;
-      default:              return <DashboardView player={player} session={session} />;
+      default:              return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
     }
   };
 
@@ -6344,6 +7075,27 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
           </button>
         ))}
       </nav>
+
+      {/* Modal overlay */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            {activeModal === 'flights' && <DartsFlightFinder onClose={closeModal} player={player} session={session} />}
+            {activeModal === 'hotel' && <DartsHotelFinder onClose={closeModal} />}
+            {activeModal === 'practice' && <DartsPracticeLogger onClose={closeModal} />}
+            {activeModal === 'matchreport' && <DartsMatchReport onClose={closeModal} player={player} />}
+            {activeModal === 'equipment' && <DartsEquipmentCheck onClose={closeModal} />}
+            {activeModal === 'prizes' && <DartsPrizeTracker onClose={closeModal} />}
+            {activeModal === 'sponsor' && <DartsSponsorPost onClose={closeModal} player={player} />}
+            {activeModal === 'media' && <DartsMediaManager onClose={closeModal} />}
+            {activeModal === 'mental' && <DartsMentalPrep onClose={closeModal} player={player} />}
+            {activeModal === 'physio' && <DartsPhysioLog onClose={closeModal} />}
+            {activeModal === 'expense' && <DartsExpenseLogger onClose={closeModal} />}
+            {activeModal === 'exhibition' && <DartsExhibitionBooker onClose={closeModal} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

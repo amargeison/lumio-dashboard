@@ -93,6 +93,13 @@ const DEMO_PLAYER: GolfPlayer = {
   plan: 'pro_plus',
 };
 
+const PRIORITY_STYLES: Record<string, { dot: string; bg: string; color: string; label: string }> = {
+  critical: { dot: '#EF4444', bg: 'rgba(239,68,68,0.12)',   color: '#F87171', label: 'Critical' },
+  high:     { dot: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  color: '#FBBF24', label: 'High'     },
+  medium:   { dot: '#3B82F6', bg: 'rgba(59,130,246,0.12)',  color: '#60A5FA', label: 'Medium'   },
+  low:      { dot: '#6B7280', bg: 'rgba(107,114,128,0.12)', color: '#9CA3AF', label: 'Low'      },
+}
+
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 const StatCard = ({ label, value, sub, color = 'purple' }: { label: string; value: string | number; sub?: string; color?: string }) => {
   const colorMap: Record<string, string> = {
@@ -513,11 +520,17 @@ function SeasonIntelligenceStrip() {
   );
 }
 
-function DashboardView({ player, session, setActiveSection, setActiveModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; setActiveModal?: (m: string) => void }) {
+function DashboardView({ player, session, setActiveSection, onOpenModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; onOpenModal: (m: string) => void }) {
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   });
   const [tourStep, setTourStep] = useState(0);
+  const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [repliedTo, setRepliedTo] = useState<string[]>([]);
+  const [replyToast, setReplyToast] = useState(false);
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'tour'>('today');
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
@@ -525,39 +538,37 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
     { event: 'KLM Open', pos: '3', points: 480, prize: '£124k' },
     { event: 'Austrian Alpine', pos: '31', points: 42, prize: '£18k' },
   ];
-  const tasks = [
-    { time: '07:30', task: 'AI Morning Briefing', done: true },
-    { time: '08:30', task: 'Pete — practice session: putting from 8–15ft (120 min)', done: true },
-    { time: '11:00', task: 'Short game: bunker practice with Dave (45 min)', done: false },
-    { time: '13:00', task: 'Physio — lower back treatment with Tom', done: false },
-    { time: '14:30', task: 'Pro-Am briefing: BMW International — partners confirmed', done: false },
-    { time: '16:00', task: 'TaylorMade equipment review call (45 min)', done: false },
-    { time: 'By 18:00', task: 'Callaway Instagram post due — Sarah has drafted caption', done: false },
-    { time: '20:00', task: 'Dr. Reed — mental performance check-in (video call)', done: false },
-  ];
 
-  const quickActions = [
-    { icon: '✈️', label: 'Book Flight', target: 'travel', modal: 'flight' },
-    { icon: '📋', label: 'Log Round', target: 'matchprep', modal: '' },
-    { icon: '🗺️', label: 'Course Notes', target: 'coursefit', modal: 'coursenotes' },
-    { icon: '🏌️', label: 'Caddie Briefing', target: 'caddie', modal: 'matchprep' },
-    { icon: '⚕️', label: 'Log Injury', target: 'physio', modal: 'injury' },
-    { icon: '🤝', label: 'Sponsor Post', target: 'sponsorship', modal: 'sponsorpost' },
-    { icon: '🎯', label: 'TrackMan Session', target: 'trackman', modal: '' },
-    { icon: '📋', label: 'Practice Log', target: 'practicelog', modal: '' },
-    { icon: '💰', label: 'Add Expense', target: 'financial', modal: 'expense' },
-    { icon: '📱', label: 'Media Request', target: 'media', modal: '' },
-  ];
-
-  const morningChannels = [
-    { icon: '📊', label: 'OWGR Movement', detail: '#87 → holding — 285pts defending this week' },
-    { icon: '🏌️', label: 'Caddie Notes', detail: 'Mick updated hole strategy for Eichenried R1' },
-    { icon: '⚕️', label: 'Physio Check', detail: 'Lower back mild — cleared for play, treatment 13:00' },
-    { icon: '📈', label: 'SG Alert', detail: 'Putting −1.18 strokes/round — focus of today\'s session' },
-    { icon: '🤝', label: 'Sponsor Alert', detail: 'Callaway post due by 18:00 — Sarah has caption' },
-    { icon: '💰', label: 'Financial', detail: 'Prize money YTD: £367k — on track for £450k target' },
-    { icon: '🧠', label: 'Mental', detail: 'Dr. Reed video call at 20:00 — pre-tournament check-in' },
-    { icon: '🌤️', label: 'Weather', detail: 'Munich: 22°C, partly cloudy, wind 8mph W — ideal conditions' },
+  // ─── MORNING ROUNDUP DATA ──────────────────────────────────────────────────
+  const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id: 'agent', label: 'Agent Messages', icon: '📞', count: 2, urgent: true, color: '#8B5CF6', messages: [
+      { id: 'ag1', from: 'James Crawford', text: 'Callaway want to extend the deal — new terms attached. £65k/yr + equipment. Need your sign-off by Friday.', time: '08:12' },
+      { id: 'ag2', from: 'James Crawford', text: 'BMW Pro-Am appearance fee confirmed: £12,000 + travel. Hospitality tent tomorrow 14:30.', time: '07:45' },
+    ]},
+    { id: 'tournament', label: 'Tournament Desk', icon: '🏆', count: 3, urgent: true, color: '#0ea5e9', messages: [
+      { id: 'td1', from: 'DP World Tour', text: 'R2 tee time confirmed: 09:24, Hole 1, with R. McIlroy & S. Scheffler.', time: '06:30' },
+      { id: 'td2', from: 'Entry Desk', text: 'Scottish Open entry deadline closes TODAY at 17:00. Your entry is pending.', time: '07:00' },
+      { id: 'td3', from: 'BMW International', text: 'Practice range opens 06:00 tomorrow. Pin positions for R2 posted to caddie app.', time: '08:00' },
+    ]},
+    { id: 'caddie', label: 'Caddie Notes', icon: '🏌️', count: 2, urgent: false, color: '#15803D', messages: [
+      { id: 'cn1', from: 'Mick Sullivan', text: 'Updated hole 7 strategy — 9-iron not 8 from the new tee. Pin back-left, aim 15ft right.', time: '08:30' },
+      { id: 'cn2', from: 'Mick Sullivan', text: 'Yardage book corrections for holes 12 and 15. Wind forecast changed — switching to low ball flight plan.', time: '07:15' },
+    ]},
+    { id: 'sponsor', label: 'Media & Sponsor', icon: '📱', count: 3, urgent: false, color: '#F59E0B', messages: [
+      { id: 'sp1', from: 'Sarah Chen', text: 'Callaway post due before 18:00 — caption drafted and attached. Just need your photo from the range.', time: '09:00' },
+      { id: 'sp2', from: 'Sarah Chen', text: 'Sky Sports interview request for post-round — 5 min, greenside. Confirmed tentatively.', time: '08:45' },
+      { id: 'sp3', from: 'Carlos Mendez', text: 'Range session notes sent — focus on 7-iron carry distance today. TrackMan data attached.', time: '07:30' },
+    ]},
+    { id: 'physio', label: 'Physio & Medical', icon: '⚕️', count: 1, urgent: true, color: '#EF4444', messages: [
+      { id: 'ph1', from: 'Dr Anna Price', text: 'Lower back — mild stiffness. Cleared for play. Treatment booked 13:00. Ice 15 min post-round.', time: '07:00' },
+    ]},
+    { id: 'travel', label: 'Travel & Hotels', icon: '✈️', count: 2, urgent: false, color: '#6B7280', messages: [
+      { id: 'tr1', from: 'James Crawford', text: 'Scottish Open hotel — prices rising fast. Best option: Marine North Berwick, £280/night. Book today?', time: '08:20' },
+      { id: 'tr2', from: 'Mick Sullivan', text: 'My Edinburgh flights confirmed for Scottish Open. Arriving Wed evening.', time: '07:50' },
+    ]},
+    { id: 'financial', label: 'Financial', icon: '💰', count: 1, urgent: false, color: '#F59E0B', messages: [
+      { id: 'fi1', from: 'Accountant', text: 'Prize money YTD: £367,000. Season target: £450k. Munich expenses need submitting by EOD Friday.', time: '09:10' },
+    ]},
   ];
 
   const WorldClock = ({ city, offset }: { city: string; offset: number }) => {
@@ -627,25 +638,40 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
         </div>
       </div>
 
-      {/* Quick Actions — 2-row wrapped grid */}
+      {/* Quick Actions — 12 AI-powered pill buttons */}
       <div className="mb-5">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
-            { label:'Book Flight',       icon:'✈️', color:'#0ea5e9' },
-            { label:'Log Round',         icon:'📋', color:'#15803D' },
-            { label:'Course Notes',      icon:'🗺️', color:'#15803D' },
-            { label:'Caddie Briefing',   icon:'🏌️', color:'#F59E0B' },
-            { label:'Log Injury',        icon:'💊', color:'#EF4444' },
-            { label:'Sponsor Post',      icon:'📱', color:'#F59E0B' },
-            { label:'TrackMan Session',  icon:'📡', color:'#0ea5e9' },
-            { label:'Add Expense',       icon:'💰', color:'#6B7280' },
-          ].map((a, i) => (
-            <button key={i} className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{ background: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
-              <span>{a.icon}</span>{a.label}
+            { id:'flight',       label:'Smart Flights',      icon:'✈️', color:'#0ea5e9', hot:true  },
+            { id:'hotel',        label:'Find Hotel',          icon:'🏨', color:'#0ea5e9', hot:true  },
+            { id:'coursestrategy', label:'Course Notes AI',  icon:'🗺️', color:'#15803D', hot:true  },
+            { id:'loground',     label:'Log Round',           icon:'📋', color:'#15803D', hot:false },
+            { id:'trackman',     label:'TrackMan Session',    icon:'📡', color:'#0ea5e9', hot:true  },
+            { id:'caddiebriefai', label:'Caddie Brief',      icon:'🏌️', color:'#F59E0B', hot:true  },
+            { id:'sponsorpost',  label:'Sponsor Post',        icon:'📱', color:'#F59E0B', hot:true  },
+            { id:'ranking',      label:'Ranking Sim',         icon:'📊', color:'#0ea5e9', hot:true  },
+            { id:'injury',       label:'Log Injury',          icon:'💊', color:'#EF4444', hot:false },
+            { id:'expense',      label:'Add Expense',         icon:'💰', color:'#6B7280', hot:false },
+            { id:'mentalprep',   label:'Mental Prep',         icon:'🧠', color:'#8B5CF6', hot:true  },
+            { id:'visa',         label:'Visa Check',          icon:'🌍', color:'#6B7280', hot:true  },
+          ].map((a) => (
+            <button key={a.id}
+              onClick={() => onOpenModal(a.id)}
+              className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{
+                background: a.hot ? `${a.color}18` : '#111318',
+                border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
+                color: a.hot ? a.color : '#9CA3AF',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
+              <span>{a.icon}</span>
+              {a.label}
+              {a.hot && (
+                <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none"
+                  style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>
+              )}
             </button>
           ))}
         </div>
@@ -727,20 +753,76 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
       {/* Tab Content */}
       {dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Col 1: Morning Roundup */}
-          <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-            <div className="text-sm font-semibold text-white mb-4">🌅 Morning Roundup</div>
-            <div className="space-y-2">
-              {morningChannels.map((ch, i) => (
-                <div key={i} className="flex items-start gap-3 py-2 border-b border-gray-800/40 last:border-0">
-                  <span className="text-base flex-shrink-0 mt-0.5">{ch.icon}</span>
-                  <div>
-                    <div className="text-xs font-semibold text-gray-300">{ch.label}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{ch.detail}</div>
-                  </div>
-                </div>
-              ))}
+          {/* Col 1: Morning Roundup — expandable channels */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-2">
+                <span>🌅</span>
+                <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p>
+              </div>
+              <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
             </div>
+            <div>
+              {ROUNDUP_ITEMS.map((ch) => {
+                const isOpen = expandedChannel === ch.id
+                return (
+                  <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
+                    <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
+                      className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-base">{ch.icon}</span>
+                        <span className="text-sm" style={{ color: '#D1D5DB' }}>{ch.label}</span>
+                        {ch.urgent && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-3 space-y-2">
+                        {ch.messages.map(msg => (
+                          <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: ch.color + '22', color: ch.color }}>
+                                  {msg.from.split(' ').map(w => w[0]).join('').slice(0,2)}
+                                </div>
+                                <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
+                              </div>
+                              <span className="text-[10px] flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
+                            </div>
+                            <p className="text-xs leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{msg.text}</p>
+                            {repliedTo.includes(msg.id) ? (
+                              <span className="text-[10px]" style={{ color: '#15803D' }}>Replied ✓</span>
+                            ) : replyingTo === msg.id ? (
+                              <div className="mt-2">
+                                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={2}
+                                  className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
+                                <div className="flex gap-2 mt-1.5">
+                                  <button onClick={() => { setRepliedTo(prev => [...prev, msg.id]); setReplyingTo(null); setReplyText(''); setReplyToast(true); setTimeout(() => setReplyToast(false), 2000) }}
+                                    className="text-[10px] px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#15803D', color: '#fff' }}>Send</button>
+                                  <button onClick={() => { setReplyingTo(null); setReplyText('') }}
+                                    className="text-[10px] px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => setReplyingTo(msg.id)} className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>Reply</button>
+                                <button className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
           </div>
           {/* Col 2: Today's Round */}
           <div className="space-y-4">
@@ -814,80 +896,87 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
       )}
 
       {dashTab === 'quickwins' && (
-        <div className="grid grid-cols-3 gap-4">
-          {(() => {
-            const now = new Date();
-            const upcoming = POINTS_EXPIRY.filter(e => new Date(e.expires) >= now);
-            const sorted = [...upcoming].sort((a, b) => new Date(a.expires).getTime() - new Date(b.expires).getTime());
-            const primary = sorted[0];
-            const urg = primary ? getExpiryUrgency(primary.expires) : null;
-            return urg && primary ? (
-              <div className={`${urg.color === 'red' ? 'bg-red-500/10 border-red-500/40' : urg.color === 'yellow' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-gray-800/40 border-gray-700/40'} border rounded-xl p-4`}>
-                <div className="text-sm font-semibold mb-1" style={{ color: urg.color === 'red' ? '#f87171' : urg.color === 'yellow' ? '#facc15' : '#d1d5db' }}>⚠️ Points Expiring</div>
-                <div className="text-white font-bold text-lg">{primary.points} pts · {urg.daysLeft} days</div>
-                <div className="text-xs text-gray-400">{primary.event} {primary.pos} — expires {primary.expires}</div>
+        <div className="space-y-3">
+          {[
+            { id:'qw1', title:'Log R2 round score before leaderboard closes', priority:'critical' as const, category:'Performance', action:'Log round →', modal:'loground' },
+            { id:'qw2', title:'Callaway post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post →', modal:'sponsorpost' },
+            { id:'qw3', title:'Book Scottish Open hotel — prices rising', priority:'high' as const, category:'Travel', action:'Find hotel →', modal:'hotel' },
+            { id:'qw4', title:'Mick updated hole 7 strategy — review before R3', priority:'high' as const, category:'Prep', action:'Open caddie brief →', modal:'caddiebriefai' },
+            { id:'qw5', title:'OWGR points update — check ranking movement', priority:'medium' as const, category:'Rankings', action:'Simulate →', modal:'ranking' },
+          ].map(qw => {
+            const ps = PRIORITY_STYLES[qw.priority]
+            return (
+              <div key={qw.id} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ps.dot }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white font-medium">{qw.title}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
+                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{qw.category}</span>
+                  </div>
+                </div>
+                <button onClick={() => onOpenModal(qw.modal)} className="text-xs px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>{qw.action}</button>
               </div>
-            ) : (
-              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4">
-                <div className="text-gray-300 text-sm font-semibold mb-1">✅ Points Expiring</div>
-                <div className="text-white font-bold text-lg">All clear</div>
-              </div>
-            );
-          })()}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-            <div className="text-blue-400 text-sm font-semibold mb-1">📋 Obligation Today</div>
-            <div className="text-white font-bold text-lg">Callaway Post</div>
-            <div className="text-xs text-gray-400">Caption drafted by Sarah — review in Sponsorship tab</div>
-          </div>
-          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-            <div className="text-green-400 text-sm font-semibold mb-1">💰 Prize This Week</div>
-            <div className="text-white font-bold text-lg">Win = £1.32M</div>
-            <div className="text-xs text-gray-400">T10 = £142k · MC = £0 + travel costs</div>
-          </div>
+            )
+          })}
         </div>
       )}
 
       {dashTab === 'tasks' && (
-        <div>
-          <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-3">TODAY'S SCHEDULE</div>
-          <div className="space-y-2">
-            {tasks.map((t, i) => (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${t.done ? 'bg-gray-900/30 border-gray-800/50 opacity-50' : 'bg-[#0d0f1a] border-gray-800'}`}>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600'}`}>
-                  {t.done && <span className="text-teal-400 text-xs">✓</span>}
+        <div className="space-y-3">
+          {[
+            { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high' as const, category:'Training', action:'Log session →', modal:'loground' },
+            { id:'dt2', time:'09:24', title:'Tee time R2 — with McIlroy, Scheffler', priority:'critical' as const, category:'Match', action:'Open caddie brief →', modal:'caddiebriefai' },
+            { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high' as const, category:'Medical', action:'Log medical →', modal:'injury' },
+            { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium' as const, category:'Performance', action:'Open TrackMan →', modal:'trackman' },
+            { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical' as const, category:'Entries', action:'Enter now →', modal:'' },
+            { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post →', modal:'sponsorpost' },
+            { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium' as const, category:'Finance', action:'Log expense →', modal:'expense' },
+          ].map(dt => {
+            const ps = PRIORITY_STYLES[dt.priority]
+            return (
+              <div key={dt.id} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-xs font-bold w-14 flex-shrink-0 tabular-nums" style={{ color: dt.priority === 'critical' ? '#F87171' : '#6B7280' }}>{dt.time}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white font-medium">{dt.title}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
+                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{dt.category}</span>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 w-16 flex-shrink-0">{t.time}</div>
-                <div className={`text-sm ${t.done ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{t.task}</div>
+                {dt.modal && <button onClick={() => onOpenModal(dt.modal)} className="text-xs px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>{dt.action}</button>}
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
       )}
 
       {dashTab === 'insights' && <SeasonIntelligenceStrip />}
 
       {dashTab === 'dontmiss' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5">
-            <div className="text-red-400 text-sm font-semibold mb-2">⏰ Callaway Renewal</div>
-            <div className="text-white font-bold text-lg mb-1">18 days remaining</div>
-            <div className="text-xs text-gray-400">Agent Sarah has a renewal proposal ready. Review in Sponsorship tab before your call with Callaway on Friday.</div>
-          </div>
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-5">
-            <div className="text-yellow-400 text-sm font-semibold mb-2">📊 OWGR Watch</div>
-            <div className="text-white font-bold text-lg mb-1">Top 50 Push Required</div>
-            <div className="text-xs text-gray-400">Currently #{player.owgr}. Top 50 locks Masters 2027 invitation and WGC eligibility. Need strong results in next 4 events.</div>
-          </div>
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
-            <div className="text-blue-400 text-sm font-semibold mb-2">🧠 Mental Performance</div>
-            <div className="text-white font-bold text-lg mb-1">Video Call 20:00</div>
-            <div className="text-xs text-gray-400">Dr. Reed pre-tournament check-in. Putting anxiety cycle from recent rounds is the focus.</div>
-          </div>
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-5">
-            <div className="text-purple-400 text-sm font-semibold mb-2">⚕️ Physio Flag</div>
-            <div className="text-white font-bold text-lg mb-1">Lower Back — Managed</div>
-            <div className="text-xs text-gray-400">Cleared to play but treatment at 13:00 with Tom. Watch 4th round fatigue especially on par 5s.</div>
-          </div>
+        <div className="space-y-3">
+          {[
+            { id:'dm1', urgency:'CRITICAL', urgencyColor:'#EF4444', category:'Match', when:'09:24 today', title:'R2 tee time — McIlroy & Scheffler group', consequence:'If missed: disqualified', action:'Open caddie brief →', modal:'caddiebriefai' },
+            { id:'dm2', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Sponsor', when:'Before 18:00', title:'Callaway post — contractual obligation', consequence:'If missed: contract penalty clause', action:'Generate post →', modal:'sponsorpost' },
+            { id:'dm3', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Entries', when:'17:00', title:'Scottish Open entry closes today', consequence:'If missed: miss Rolex Series event', action:'Enter now →', modal:'' },
+            { id:'dm4', urgency:'THIS WEEK', urgencyColor:'#3B82F6', category:'Travel', when:'Friday', title:'The Open hotel — book now or lose allocation', consequence:'If missed: St Andrews no rooms within 30 miles', action:'Find hotel →', modal:'hotel' },
+            { id:'dm5', urgency:'THIS WEEK', urgencyColor:'#3B82F6', category:'Rankings', when:'Sunday', title:'Race to Dubai — 3 events left for top 50', consequence:'If missed: lose Tour card', action:'Check ranking →', modal:'ranking' },
+          ].map(dm => (
+            <div key={dm.id} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: `1px solid ${dm.urgencyColor}30` }}>
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: `${dm.urgencyColor}20`, color: dm.urgencyColor }}>{dm.urgency}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold" style={{ color: '#6B7280' }}>{dm.category}</span>
+                    <span className="text-[10px]" style={{ color: '#4B5563' }}>{dm.when}</span>
+                  </div>
+                  <div className="text-sm text-white font-medium mb-1">{dm.title}</div>
+                  <div className="text-xs italic" style={{ color: '#EF4444' }}>{dm.consequence}</div>
+                </div>
+                {dm.modal && <button onClick={() => onOpenModal(dm.modal)} className="text-xs px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap flex-shrink-0" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>{dm.action}</button>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -4328,7 +4417,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} setActiveModal={setActiveModal} />;
+      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
       case 'morning':     return <MorningBriefingView player={player} session={session} />;
       case 'owgr':        return <OWGRView player={player} session={session} />;
       case 'schedule':    return <ScheduleView player={player} session={session} />;
@@ -4358,7 +4447,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
       case 'shotlink':    return <ShotLinkView player={player} session={session} />;
       case 'lpga':        return <LPGAView player={player} session={session} />;
       case 'mobileapp':   return <MobileAppView player={player} session={session} />;
-      default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} setActiveModal={setActiveModal} />;
+      default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
     }
   };
 
