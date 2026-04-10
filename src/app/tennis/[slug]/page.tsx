@@ -1145,93 +1145,57 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* LEFT: Step list */}
             <div className="space-y-1">
-              {[
-                { n:1,  label:'Your tennis OS, fully connected',          active:true  },
-                { n:2,  label:'Start every match week knowing everything' },
-                { n:3,  label:'Every action, one click away'              },
-                { n:4,  label:'GPS, rankings, and performance'            },
-                { n:5,  label:'Your team, front and centre'               },
-                { n:6,  label:'AI that actually helps you win'            },
-                { n:7,  label:'Travel sorted in 60 seconds'              },
-                { n:8,  label:'Sponsors managed automatically'            },
-                { n:9,  label:'Nothing falls through the cracks'          },
-                { n:10, label:"You've seen enough — let's go"             },
-              ].map(step => (
-                <div key={step.n} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all"
-                  style={{
-                    backgroundColor: step.active ? 'rgba(14,165,233,0.1)' : 'transparent',
-                    border: step.active ? '1px solid rgba(14,165,233,0.3)' : '1px solid transparent',
-                  }}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: step.active ? '#0ea5e9' : 'rgba(255,255,255,0.05)', color: step.active ? '#fff' : '#4B5563' }}>{step.n}</div>
-                  <span className="text-sm" style={{ color: step.active ? '#F9FAFB' : '#6B7280' }}>{step.label}</span>
-                </div>
+              {TOUR_STEPS.map((s, i) => (
+                <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all" style={{ backgroundColor: tourStep === i ? 'rgba(14,165,233,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(14,165,233,0.3)' : '1px solid transparent' }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: i < tourStep ? '#22C55E' : tourStep === i ? '#0ea5e9' : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : '#4B5563' }}>{i < tourStep ? '✓' : s.n}</div>
+                  <span className="text-sm" style={{ color: tourStep === i ? '#F9FAFB' : '#6B7280' }}>{s.label}</span>
+                </button>
               ))}
             </div>
-
-            {/* RIGHT: Feature preview */}
             <div className="lg:col-span-2">
-              <div className="rounded-2xl p-8" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
-                <div className="text-5xl mb-4">🎾</div>
-                <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>Your tennis OS, fully connected</h2>
-                <p className="text-base leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>
-                  You&apos;re looking at Lumio Tennis — one portal that replaces the 6 tools you probably use right now.
-                  Rankings, GPS, sponsors, travel, match prep, and your team — all here, all connected, all talking to each other.
-                </p>
+              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 480 }}>
+                <div className="p-6">
+                  <div className="text-4xl mb-3">{step.icon}</div>
+                  <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
+                  <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.description}</p>
 
-                <div className="rounded-xl p-4 mb-6" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.15), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.3)' }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-lg">🌅</span>
-                    <div>
-                      <div className="text-sm font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div>
-                      <div className="text-xs" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:00 Court 4 · Monte-Carlo</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { icon:'📊', label:'#67 ATP',    color:'#0ea5e9' },
-                      { icon:'✅', label:'Match Today', color:'#22C55E' },
-                      { icon:'⚠️', label:'2 Urgent',    color:'#EF4444' },
-                      { icon:'💰', label:'£387k YTD',   color:'#F59E0B' },
-                    ].map((s, i) => (
-                      <div key={i} className="text-center rounded-lg py-2" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                        <div className="text-base">{s.icon}</div>
-                        <div className="text-[10px] font-bold mt-0.5" style={{ color: s.color }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
+                  {step.preview === 'dashboard_overview' && (<div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>)}
+
+                  {step.preview === 'morning_briefing' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}><div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#0a0c14', borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Since you were last here</span></div>{[{ icon:'📞', label:'Agent Messages', count:2, urgent:false, color:'#8B5CF6' },{ icon:'🏆', label:'Tournament Desk', count:3, urgent:true, color:'#0ea5e9' },{ icon:'📱', label:'Media & Sponsor', count:4, urgent:false, color:'#F59E0B' },{ icon:'⚕️', label:'Physio & Medical', count:1, urgent:true, color:'#EF4444' }].map((ch, i) => (<div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}><div className="flex items-center gap-2"><span>{ch.icon}</span><span className="text-xs text-white">{ch.label}</span>{ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}</div><span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span></div>))}</div>)}
+
+                  {step.preview === 'quick_actions' && (<div className="space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Quick actions</div><div className="flex flex-wrap gap-2">{[{ icon:'✈️', label:'Smart Flights', color:'#0ea5e9', hot:true },{ icon:'🎾', label:'Match Prep AI', color:'#22C55E', hot:true },{ icon:'📱', label:'Sponsor Post', color:'#F59E0B', hot:false },{ icon:'📣', label:'Press Statement', color:'#8B5CF6', hot:false },{ icon:'💼', label:'Agent Brief', color:'#F59E0B', hot:true },{ icon:'🎯', label:'Wildcard Request', color:'#EF4444', hot:false },{ icon:'💊', label:'Log Injury', color:'#EF4444', hot:false },{ icon:'⏱️', label:'Warm-up Timer', color:'#F59E0B', hot:false }].map((a, i) => (<div key={i} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold relative" style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}</div>))}</div><div className="text-xs p-3 rounded-xl" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.15)', color: '#93C5FD' }}>💡 Smart Flights searches 8+ airlines simultaneously — you shouldn&apos;t be able to find cheaper on Google.</div></div>)}
+
+                  {step.preview === 'performance' && (<div className="space-y-3"><div className="grid grid-cols-2 gap-3">{[{ label:'ATP Ranking', value:`#${player.ranking ?? 67}`, sub:'↑2 this week', color:'#0ea5e9' },{ label:'Race to Turin', value:`#${player.race_ranking ?? 54}`, sub:'Top 8 qualifies', color:'#22C55E' },{ label:'Clay win rate', value:'68%', sub:'Above ATP avg', color:'#15803D' },{ label:'First serve %', value:'64%', sub:'↑6% last 5 matches', color:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.sub}</div></div></div>))}</div><div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🔌 Connect Catapult OpenField or STATSports Sonra in Settings for live GPS load, ACWR and heatmaps.</div></div>)}
+
+                  {step.preview === 'team' && (<div className="grid grid-cols-2 gap-3">{[{ initials:'CM', name:'Carlos Mendez', role:'Head Coach', status:'Match notes ready', color:'#22C55E' },{ initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', status:'12:30 treatment', color:'#EF4444' },{ initials:'JW', name:'James Wright', role:'Agent', status:'3 inquiries pending', color:'#F59E0B' },{ initials:'TE', name:'Tom Ellis', role:'Stringer', status:'11:45 confirmed', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#4B5563' }}>{m.status}</div></div><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#22C55E' }} /></div>))}</div>)}
+
+                  {step.preview === 'match_prep' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,197,94,0.3)' }}><div className="px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.2)' }}><div className="text-xs font-bold" style={{ color: '#22C55E' }}>🎾 Match Prep AI — C. Martinez · Clay</div></div><div className="p-4 text-xs space-y-2" style={{ backgroundColor: '#111318', color: '#D1D5DB' }}>{['🎯 SERVE PATTERNS: 68% wide on deuce court, 71% body on ad court. Second serve: kick to backhand.','🔄 RETURN GAME: Positions 2 steps left of centre. Strong forehand return — attack his BH side.','⚡ TACTICAL: Lead with inside-out FH. Force him wide, attack with DTL BH. Avoid extended rallies.','📊 H2H: 3–1 in your favour. Won last 3 on clay. He struggles when behind early.'].map((line, i) => (<div key={i} className="py-1.5" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : 'none' }}>{line}</div>))}</div><div className="px-4 py-2 text-[10px]" style={{ backgroundColor: '#0a0c14', color: '#4B5563' }}>Generated using web_search · ATP data · real-time opponent stats</div></div>)}
+
+                  {step.preview === 'travel' && (<div className="space-y-2"><div className="text-xs font-bold mb-2" style={{ color: '#4B5563' }}>✈️ LHR → MAD · 26 Apr · Business · 2 pax</div>{[{ airline:'British Airways', dep:'07:20', arr:'10:35', dur:'2h15m', stops:'Direct', price:312, score:96, badge:'Best value', badgeColor:'#0ea5e9' },{ airline:'easyJet', dep:'06:05', arr:'09:20', dur:'2h15m', stops:'Direct', price:187, score:88, badge:'Cheapest', badgeColor:'#22C55E' },{ airline:'Vueling', dep:'11:30', arr:'14:45', dur:'2h15m', stops:'Direct', price:224, score:85, badge:null, badgeColor:'' }].map((f, i) => (<div key={i} className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: i === 0 ? 'rgba(14,165,233,0.08)' : '#111318', border: i === 0 ? '1px solid rgba(14,165,233,0.3)' : '1px solid #1F2937' }}><div><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{f.airline}</span>{f.badge && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badgeColor }}>{f.badge}</span>}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.dep} → {f.arr} · {f.dur} · {f.stops}</div></div><div className="text-right"><div className="text-sm font-black text-white">£{f.price * 2}</div><div className="text-[10px]" style={{ color: '#22C55E' }}>Score {f.score}/100</div></div></div>))}<div className="text-[10px] text-center mt-1" style={{ color: '#374151' }}>AI searched BA, easyJet, Ryanair, Vueling, Air France + more</div></div>)}
+
+                  {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Rolex · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Rolex. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#RolexAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Rolex', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Lululemon', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Nike', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
+
+                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Martinez — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Lululemon kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Rolex sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
+
+                  {step.preview === 'cta' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{[{ icon:'🎾', label:'Live ATP rankings', color:'#0ea5e9' },{ icon:'📬', label:'Gmail + Outlook sync', color:'#22C55E' },{ icon:'📡', label:'GPS load tracking', color:'#F59E0B' },{ icon:'🤖', label:'AI for every workflow', color:'#8B5CF6' },{ icon:'✈️', label:'Smart travel booking', color:'#0ea5e9' },{ icon:'🤝', label:'Sponsor management', color:'#F59E0B' }].map((f, i) => (<div key={i} className="flex items-center gap-2 text-xs rounded-xl p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base">{f.icon}</span><span style={{ color: f.color }}>{f.label}</span></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.2), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.4)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-xs mb-3" style={{ color: '#6B7280' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><a href="/pricing-sports" className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Start free trial →</a></div></div>)}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { icon:'🤖', label:'AI Morning Briefing',  sub:'Reads your day aloud in 60 seconds' },
-                    { icon:'📡', label:'GPS Performance',       sub:'Load, heatmaps, ACWR tracking' },
-                    { icon:'🔁', label:'Transfer Researcher',   sub:'AI finds players to your brief' },
-                    { icon:'✈️', label:'Travel in 60 seconds', sub:'Flights + hotels + booking email' },
-                  ].map((f, i) => (
-                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl"
-                      style={{ backgroundColor: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.15)' }}>
-                      <span className="text-xl flex-shrink-0">{f.icon}</span>
-                      <div>
-                        <div className="text-xs font-bold text-white">{f.label}</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.sub}</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
+                  <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm transition-all" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
+                  <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {TOUR_STEPS.length}</span>
+                  {tourStep < TOUR_STEPS.length - 1 ? (
+                    <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Next →</button>
+                  ) : (
+                    <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go 🚀</button>
+                  )}
                 </div>
-
-                <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }}
-                  className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all" style={{ backgroundColor: '#0ea5e9' }}>
-                  Let&apos;s take a tour →
-                </button>
-                <p className="text-xs text-center mt-2" style={{ color: '#4B5563' }}>Or explore on your own — come back here anytime</p>
               </div>
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {/* ── TODAY TAB ── */}
       {dashTab === 'today' && (
