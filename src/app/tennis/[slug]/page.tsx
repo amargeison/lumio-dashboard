@@ -1862,205 +1862,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         </div>
       )}
 
-      {/* GPS & VIDEO — moved to sidebar, content in GPSVideoView */}
-      {false && (
-          <div className="pt-4 space-y-6">
-
-            {/* Device Status Bar */}
-            <div className="flex flex-wrap gap-3">
-              <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <span className="text-lg">🛰️</span>
-                <span className="text-sm font-semibold text-white">Lumio GPS Tracker</span>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} />
-                <span className="text-xs" style={{ color: '#22C55E' }}>Connected</span>
-                <span className="text-xs" style={{ color: '#6B7280' }}>Battery: 87%</span>
-                <span className="text-xs" style={{ color: '#6B7280' }}>Last sync: 2 mins ago</span>
-                <button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Settings</button>
-              </div>
-              <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <span className="text-lg">🎾</span>
-                <span className="text-sm font-semibold text-white">SwingVision</span>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} />
-                <span className="text-xs" style={{ color: '#22C55E' }}>Connected</span>
-                <span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span>
-                <button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>View Clips</button>
-              </div>
-            </div>
-
-            {/* Session Stats Strip */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: 'Court Coverage', value: '4.2 km', color: '#06b6d4' },
-                { label: 'Sprint Distance', value: '1.8 km', color: '#06b6d4' },
-                { label: 'Top Speed', value: '28.4 km/h', color: '#06b6d4' },
-                { label: 'Load Score', value: '74 / 100', color: '#F59E0B' },
-                { label: 'Recovery Index', value: 'Good', color: '#22C55E' },
-              ].map(s => (
-                <div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Two Column: Heatmap + Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* LEFT — Court Heatmap */}
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-3">Court Movement Heatmap</div>
-                <svg viewBox="0 0 300 540" className="w-full max-w-[280px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-                  <rect x="0" y="0" width="300" height="540" rx="4" fill="#1a6b3c" />
-                  <line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" />
-                  <line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" />
-                  <line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" />
-                  <line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" />
-                  <line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" />
-                  <line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" />
-                  <line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" />
-                  <line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" />
-                  <line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" />
-                  <line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" />
-                  <line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" />
-                  <line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" />
-                  <line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" />
-                  {/* Heatmap zones */}
-                  <ellipse cx="150" cy="500" rx="60" ry="25" fill="#ef4444" opacity="0.5" />
-                  <ellipse cx="80" cy="490" rx="40" ry="20" fill="#ef4444" opacity="0.4" />
-                  <ellipse cx="220" cy="480" rx="35" ry="18" fill="#f59e0b" opacity="0.35" />
-                  <ellipse cx="150" cy="450" rx="45" ry="22" fill="#f59e0b" opacity="0.3" />
-                  <ellipse cx="100" cy="300" rx="30" ry="20" fill="#3b82f6" opacity="0.2" />
-                  <ellipse cx="200" cy="310" rx="25" ry="18" fill="#3b82f6" opacity="0.15" />
-                </svg>
-                <div className="flex items-center justify-center gap-2 mt-3">
-                  <span className="text-[10px]" style={{ color: '#3b82f6' }}>Low</span>
-                  <div className="w-24 h-1.5 rounded-full" style={{ background: 'linear-gradient(90deg, #3b82f6, #f59e0b, #ef4444)' }} />
-                  <span className="text-[10px]" style={{ color: '#ef4444' }}>High</span>
-                </div>
-              </div>
-
-              {/* RIGHT — Session Breakdown */}
-              <div className="space-y-4">
-                {/* Per-set distance */}
-                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="text-sm font-bold text-white mb-3">Distance by Set</div>
-                  <div className="flex items-end gap-4 h-24">
-                    {[{ set: 'Set 1', km: 2.1, load: 38 }, { set: 'Set 2', km: 1.4, load: 26 }, { set: 'Set 3', km: 0.7, load: 10 }].map(s => (
-                      <div key={s.set} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div>
-                        <div className="w-full rounded-t" style={{ height: `${(s.km / 2.1) * 100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} />
-                        <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div>
-                        <div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Speed zones */}
-                <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="text-sm font-bold text-white mb-3">Speed Zones</div>
-                  <div className="space-y-2">
-                    {[{ zone: 'Walking', pct: 45 }, { zone: 'Jogging', pct: 28 }, { zone: 'Running', pct: 19 }, { zone: 'Sprinting', pct: 8 }].map(z => (
-                      <div key={z.zone} className="flex items-center gap-3">
-                        <span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span>
-                        <div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div>
-                        <span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recovery */}
-                <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span>
-                    <span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span>
-                  </div>
-                  <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div>
-                </div>
-              </div>
-            </div>
-
-            {/* SwingVision Shot Data */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white">SwingVision — Shot Analysis</div>
-              </div>
-              <div className="p-5">
-                <div className="grid grid-cols-5 gap-3 mb-5">
-                  {[{ l: '1st Serve %', v: '68%' }, { l: 'Winners', v: '14' }, { l: 'Unforced Errors', v: '8' }, { l: 'Avg Rally', v: '4.2' }, { l: 'Net Pts Won', v: '71%' }].map(s => (
-                    <div key={s.l} className="text-center p-2 rounded-lg" style={{ backgroundColor: '#0a0c14' }}>
-                      <div className="text-base font-black" style={{ color: '#06b6d4' }}>{s.v}</div>
-                      <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-xs font-bold text-white mb-2">Shot Type Breakdown</div>
-                <div className="space-y-1.5">
-                  {[{ type: 'Forehand Winner', count: 6, color: '#22C55E' }, { type: 'Backhand Winner', count: 4, color: '#22C55E' }, { type: 'Serve Winner', count: 4, color: '#22C55E' }, { type: 'Volley Winner', count: 2, color: '#22C55E' }, { type: 'Forehand Error', count: 5, color: '#EF4444' }, { type: 'Backhand Error', count: 3, color: '#EF4444' }].map(s => (
-                    <div key={s.type} className="flex items-center gap-3">
-                      <span className="text-xs w-28" style={{ color: '#9CA3AF' }}>{s.type}</span>
-                      <div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${(s.count / 6) * 100}%`, backgroundColor: s.color }} /></div>
-                      <span className="text-xs w-6 text-right font-bold" style={{ color: s.color }}>{s.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* AI Coaching Brief */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span>🤖</span>
-                  <span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span>
-                  <button onClick={() => { gpsGenerated.current = false; setGpsAiBrief(null); setGpsAiLoading(true); /* re-trigger */ }} className="text-xs" style={{ color: '#06b6d4' }}>Regenerate</button>
-                </div>
-              </div>
-              <div className="px-5 py-4">
-                {gpsAiLoading && <div className="text-sm" style={{ color: '#06b6d4' }}>Analysing your session data...</div>}
-                {gpsAiBrief && !gpsAiLoading && <div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{gpsAiBrief}</div>}
-              </div>
-            </div>
-
-            {/* Session History */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white">Session History</div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead><tr className="text-gray-500 border-b border-gray-800">
-                    <th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th>
-                  </tr></thead>
-                  <tbody>
-                    {[
-                      { date: '09 Apr', surface: 'Clay', coverage: '3.8km', load: 68, speed: '27.1km/h', outcome: 'W vs Ruud', win: true },
-                      { date: '07 Apr', surface: 'Clay', coverage: '4.1km', load: 79, speed: '29.2km/h', outcome: 'W vs Zverev', win: true },
-                      { date: '05 Apr', surface: 'Clay', coverage: '2.9km', load: 51, speed: '25.8km/h', outcome: 'Practice', win: null },
-                      { date: '03 Apr', surface: 'Hard', coverage: '4.4km', load: 82, speed: '30.1km/h', outcome: 'L vs Sinner', win: false },
-                      { date: '01 Apr', surface: 'Hard', coverage: '3.2km', load: 61, speed: '26.4km/h', outcome: 'Practice', win: null },
-                    ].map((r, i) => (
-                      <tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win === true ? 'rgba(34,197,94,0.04)' : r.win === false ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
-                        <td className="px-5 py-2.5 text-gray-300">{r.date}</td>
-                        <td className="py-2.5 text-gray-400">{r.surface}</td>
-                        <td className="py-2.5 text-right text-white font-medium">{r.coverage}</td>
-                        <td className="py-2.5 text-right"><span style={{ color: r.load > 80 ? '#EF4444' : r.load > 60 ? '#F59E0B' : '#22C55E' }}>{r.load}</span></td>
-                        <td className="py-2.5 text-right text-gray-300">{r.speed}</td>
-                        <td className="px-5 py-2.5 text-right"><span style={{ color: r.win === true ? '#22C55E' : r.win === false ? '#EF4444' : '#6B7280' }}>{r.outcome}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        )
-      })()}
-
       {/* DON'T MISS TAB */}
       {dashTab === 'dontmiss' && (() => {
         const DONT_MISS_ITEMS = [
@@ -6345,6 +6146,7 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
 function SettingsView({ player, session, photos, setPhotos }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void }) {
   const ACCENT = '#0ea5e9'
   const ACCENT_LIGHT = '#38bdf8'
+  const [currentPhoto, setCurrentPhoto] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') || '' : '')
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState<{ label: string; tz: string }[]>(() => {
@@ -6410,8 +6212,8 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
           <div className="flex items-center justify-between px-5 py-4">
             <span className="text-sm" style={{ color: '#9CA3AF' }}>Profile Photo</span>
             <div className="flex items-center gap-3">
-              {session.photoDataUrl ? (
-                <img src={session.photoDataUrl} alt="Profile" className="w-11 h-11 rounded-full object-cover" style={{ border: `2px solid ${ACCENT}` }} />
+              {currentPhoto || session.photoDataUrl ? (
+                <img src={currentPhoto || session.photoDataUrl || ''} alt="Profile" className="w-11 h-11 rounded-full object-cover" style={{ border: `2px solid ${ACCENT}` }} />
               ) : (
                 <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}20`, border: `2px solid ${ACCENT}`, color: ACCENT, fontWeight: 700, fontSize: 16 }}>
                   {(session.userName || 'U')[0]}
@@ -6432,7 +6234,7 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
                       ctx.drawImage(img, 0, 0, 400, 400)
                       const compressed = canvas.toDataURL('image/jpeg', 0.7)
                       try { localStorage.setItem('lumio_tennis_profile_photo', compressed) } catch {}
-                      window.location.reload()
+                      setCurrentPhoto(compressed)
                     }
                     img.src = ev.target?.result as string
                   }
@@ -7958,6 +7760,51 @@ export default function TennisTourPage() {
     >
       {(session) => <TennisPortalInner session={session} />}
     </SportsDemoGate>
+  )
+}
+
+// ─── GPS & VIDEO VIEW ────────────────────────────────────────────────────────
+function GPSVideoView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const [gpsAiBrief, setGpsAiBrief] = useState<string | null>(null)
+  const [gpsAiLoading, setGpsAiLoading] = useState(false)
+  const gpsGenerated = useRef(false)
+
+  useEffect(() => {
+    if (gpsGenerated.current) return
+    gpsGenerated.current = true
+    setGpsAiLoading(true)
+    fetch('/api/ai/tennis', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user',
+        content: `You are an elite ATP tennis coaching analyst. Session data: GPS: Court coverage 4.2km, sprint distance 1.8km, top speed 28.4km/h, load score 74/100, recovery index Good, heaviest movement baseline deuce side. SwingVision: 68% first serve in, 14 winners, 8 unforced errors, avg rally 4.2 shots, net points won 71%. Generate a post-session coaching brief. Plain text only. No markdown. No bullet points. No dashes. No numbered lists. No bold. No headers. Write in clean flowing paragraphs only. Professional ATP coaching tone.`
+      }] })
+    }).then(r => r.json()).then(d => setGpsAiBrief(cleanResponse(d.content?.[0]?.text || 'Unable to generate brief.'))).catch(() => setGpsAiBrief('Unable to generate brief.')).finally(() => setGpsAiLoading(false))
+  }, [])
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-3">
+        <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🛰️</span><span className="text-sm font-semibold text-white">Lumio GPS Tracker</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Connected</span><span className="text-xs" style={{ color: '#6B7280' }}>Battery: 87%</span><span className="text-xs" style={{ color: '#6B7280' }}>Last sync: 2 mins ago</span><button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Settings</button></div>
+        <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🎾</span><span className="text-sm font-semibold text-white">SwingVision</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Connected</span><span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span><button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>View Clips</button></div>
+      </div>
+      <div className="grid grid-cols-5 gap-3">{[{ label:'Court Coverage', value:'4.2 km', color:'#06b6d4' },{ label:'Sprint Distance', value:'1.8 km', color:'#06b6d4' },{ label:'Top Speed', value:'28.4 km/h', color:'#06b6d4' },{ label:'Load Score', value:'74 / 100', color:'#F59E0B' },{ label:'Recovery Index', value:'Good', color:'#22C55E' }].map(s => (<div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>))}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-sm font-bold text-white mb-3">Court Movement Heatmap</div>
+          <svg viewBox="0 0 300 540" className="w-full max-w-[280px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}><rect x="0" y="0" width="300" height="540" rx="4" fill="#1a6b3c" /><line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" /><line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" /><line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" /><line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" /><line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" /><line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" /><line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" /><line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" /><line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" /><line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" /><line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" /><line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" /><line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" /><ellipse cx="150" cy="500" rx="60" ry="25" fill="#ef4444" opacity="0.5" /><ellipse cx="80" cy="490" rx="40" ry="20" fill="#ef4444" opacity="0.4" /><ellipse cx="220" cy="480" rx="35" ry="18" fill="#f59e0b" opacity="0.35" /><ellipse cx="150" cy="450" rx="45" ry="22" fill="#f59e0b" opacity="0.3" /><ellipse cx="100" cy="300" rx="30" ry="20" fill="#3b82f6" opacity="0.2" /><ellipse cx="200" cy="310" rx="25" ry="18" fill="#3b82f6" opacity="0.15" /></svg>
+          <div className="flex items-center justify-center gap-2 mt-3"><span className="text-[10px]" style={{ color: '#3b82f6' }}>Low</span><div className="w-24 h-1.5 rounded-full" style={{ background: 'linear-gradient(90deg, #3b82f6, #f59e0b, #ef4444)' }} /><span className="text-[10px]" style={{ color: '#ef4444' }}>High</span></div>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-3">Distance by Set</div><div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div></div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-3">Speed Zones</div><div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div></div>
+          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div><div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div></div>
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">SwingVision — Shot Analysis</div></div><div className="p-5"><div className="grid grid-cols-5 gap-3 mb-5">{[{ l:'1st Serve %', v:'68%' },{ l:'Winners', v:'14' },{ l:'Unforced Errors', v:'8' },{ l:'Avg Rally', v:'4.2' },{ l:'Net Pts Won', v:'71%' }].map(s => (<div key={s.l} className="text-center p-2 rounded-lg" style={{ backgroundColor: '#0a0c14' }}><div className="text-base font-black" style={{ color: '#06b6d4' }}>{s.v}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</div></div>))}</div><div className="text-xs font-bold text-white mb-2">Shot Type Breakdown</div><div className="space-y-1.5">{[{ type:'Forehand Winner', count:6, color:'#22C55E' },{ type:'Backhand Winner', count:4, color:'#22C55E' },{ type:'Serve Winner', count:4, color:'#22C55E' },{ type:'Volley Winner', count:2, color:'#22C55E' },{ type:'Forehand Error', count:5, color:'#EF4444' },{ type:'Backhand Error', count:3, color:'#EF4444' }].map(s => (<div key={s.type} className="flex items-center gap-3"><span className="text-xs w-28" style={{ color: '#9CA3AF' }}>{s.type}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${(s.count/6)*100}%`, backgroundColor: s.color }} /></div><span className="text-xs w-6 text-right font-bold" style={{ color: s.color }}>{s.count}</span></div>))}</div></div></div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span></div><div className="px-5 py-4">{gpsAiLoading && <div className="text-sm" style={{ color: '#06b6d4' }}>Analysing your session data...</div>}{gpsAiBrief && !gpsAiLoading && <div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{gpsAiBrief}</div>}</div></div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">Session History</div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{[{ date:'09 Apr', surface:'Clay', coverage:'3.8km', load:68, speed:'27.1km/h', outcome:'W vs Ruud', win:true },{ date:'07 Apr', surface:'Clay', coverage:'4.1km', load:79, speed:'29.2km/h', outcome:'W vs Zverev', win:true },{ date:'05 Apr', surface:'Clay', coverage:'2.9km', load:51, speed:'25.8km/h', outcome:'Practice', win:null },{ date:'03 Apr', surface:'Hard', coverage:'4.4km', load:82, speed:'30.1km/h', outcome:'L vs Sinner', win:false },{ date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null }].map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div></div>
+      <TennisAISection context="default" player={player} session={session} />
+    </div>
   )
 }
 
@@ -9862,6 +9709,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'scout':       return <OpponentScoutView h2hData={h2hData} player={player} session={session} />;
       case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
       case 'gps':         return <GPSCourtView player={player} session={session} />;
+      case 'gpsvideo':    return <GPSVideoView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
       default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
     }
