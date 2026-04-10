@@ -129,6 +129,7 @@ const SIDEBAR_ITEMS = [
   { id: 'dashboard',   label: 'Dashboard',          icon: '🏠', group: 'OVERVIEW'     },
   { id: 'morning',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW'     },
   { id: 'performance', label: 'Performance',         icon: '📊', group: 'PERFORMANCE'  },
+  { id: 'gpsvideo',    label: 'GPS & Video',         icon: '🛰️', group: 'PERFORMANCE'  },
   { id: 'schedule',    label: 'Tournament Schedule', icon: '🗓️', group: 'MATCH'        },
   { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'MATCH'        },
   { id: 'matchprep',   label: 'Match Prep',          icon: '🎯', group: 'MATCH'        },
@@ -878,7 +879,7 @@ const IncomeExpenseChart = () => {
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
 function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate, activeModal, onOpenModal, onCloseModal, roleConfig, currentRole }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void; activeModal: string | null; onOpenModal: (id: string) => void; onCloseModal: () => void; roleConfig: typeof TENNIS_ROLE_CONFIG[keyof typeof TENNIS_ROLE_CONFIG]; currentRole: string }) {
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'gpsvideo'|'dontmiss'|'team'>(() => {
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
   const [brandPrimary, setBrandPrimary] = useState(() => {
@@ -1154,7 +1155,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
             { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
             { id:'insights' as const,   label:'Insights',    icon:'📊' },
-            { id:'gpsvideo' as const,   label:'GPS & Video', icon:'🛰️' },
             { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
             { id:'team' as const,       label:'Team',        icon:'👥' },
           ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
@@ -1862,25 +1862,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         </div>
       )}
 
-      {/* GPS & VIDEO TAB */}
-      {dashTab === 'gpsvideo' && (() => {
-        const [gpsAiBrief, setGpsAiBrief] = useState<string | null>(null)
-        const [gpsAiLoading, setGpsAiLoading] = useState(false)
-        const gpsGenerated = useRef(false)
-
-        useEffect(() => {
-          if (gpsGenerated.current) return
-          gpsGenerated.current = true
-          setGpsAiLoading(true)
-          fetch('/api/ai/tennis', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user',
-              content: `You are an elite ATP tennis coaching analyst. Session data: GPS: Court coverage 4.2km, sprint distance 1.8km, top speed 28.4km/h, load score 74/100, recovery index Good, heaviest movement baseline deuce side. SwingVision: 68% first serve in, 14 winners, 8 unforced errors, avg rally 4.2 shots, net points won 71%. Generate a post-session coaching brief with: Three key performance observations, Two tactical focus points for next session, One physical/recovery recommendation based on load score. Plain text only. No markdown. No bullet points. No dashes. No numbered lists. No bold. No headers. Write in clean flowing paragraphs only. Professional ATP coaching tone.`
-            }] })
-          }).then(r => r.json()).then(d => setGpsAiBrief(cleanResponse(d.content?.[0]?.text || 'Unable to generate brief.'))).catch(() => setGpsAiBrief('Unable to generate brief.')).finally(() => setGpsAiLoading(false))
-        }, [])
-
-        return (
+      {/* GPS & VIDEO — moved to sidebar, content in GPSVideoView */}
+      {false && (
           <div className="pt-4 space-y-6">
 
             {/* Device Status Bar */}
@@ -9995,7 +9978,9 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
           {sidebarExpanded ? (
             <>
-              <img src="/tennis_logo.png" alt="Lumio Tennis" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
+              <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ height: 48, width: 'auto', objectFit: 'contain', opacity: 0.7, transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '0.7' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
               <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
             </>
