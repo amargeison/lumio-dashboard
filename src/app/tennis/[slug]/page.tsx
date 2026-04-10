@@ -866,6 +866,12 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  const [brandPrimary, setBrandPrimary] = useState(() => {
+    try { return localStorage.getItem('lumio_tennis_brand_primary') || '#7C3AED' } catch { return '#7C3AED' }
+  })
+  const [brandSecondary, setBrandSecondary] = useState(() => {
+    try { return localStorage.getItem('lumio_tennis_brand_secondary') || '#FFFFFF' } catch { return '#FFFFFF' }
+  })
   const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
   const [tourStep, setTourStep] = useState(0)
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
@@ -1084,9 +1090,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           {/* Getting Started tab with badge */}
           <button onClick={() => setDashTab('gettingstarted')}
             className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#0ea5e9' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? 'rgba(14,165,233,0.05)' : 'transparent' }}>
+            style={{ borderBottomColor: dashTab === 'gettingstarted' ? brandPrimary : 'transparent', color: dashTab === 'gettingstarted' ? brandPrimary : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? `${brandPrimary}0d` : 'transparent' }}>
             <span className="text-base">🚀</span>Getting Started
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>10</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: brandPrimary }}>10</span>
           </button>
           {([
             { id:'today' as const,      label:'Today',       icon:'🏠' },
@@ -1098,7 +1104,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
             <button key={t.id} onClick={() => setDashTab(t.id)}
               className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-              style={{ borderBottomColor: dashTab === t.id ? '#0ea5e9' : 'transparent', color: dashTab === t.id ? '#0ea5e9' : '#6B7280', backgroundColor: dashTab === t.id ? 'rgba(14,165,233,0.05)' : 'transparent' }}>
+              style={{ borderBottomColor: dashTab === t.id ? brandPrimary : 'transparent', color: dashTab === t.id ? brandPrimary : '#6B7280', backgroundColor: dashTab === t.id ? `${brandPrimary}0d` : 'transparent' }}>
               <span className="text-base">{t.icon}</span>{t.label}
             </button>
           ))}
@@ -1146,7 +1152,32 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
                   <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.description}</p>
 
-                  {step.preview === 'dashboard_overview' && (<div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>)}
+                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
+                  {/* Brand Colours — only in step 1 detail */}
+                  <div className="mt-4 space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div>
+                    <p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p>
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label>
+                        <input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_tennis_brand_primary', e.target.value) }}
+                          className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+                      </div>
+                      <div>
+                        <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label>
+                        <input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_tennis_brand_secondary', e.target.value) }}
+                          className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label>
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div>
+                          <div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  </>)}
 
                   {step.preview === 'morning_briefing' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}><div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#0a0c14', borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Since you were last here</span></div>{[{ icon:'📞', label:'Agent Messages', count:2, urgent:false, color:'#8B5CF6' },{ icon:'🏆', label:'Tournament Desk', count:3, urgent:true, color:'#0ea5e9' },{ icon:'📱', label:'Media & Sponsor', count:4, urgent:false, color:'#F59E0B' },{ icon:'⚕️', label:'Physio & Medical', count:1, urgent:true, color:'#EF4444' }].map((ch, i) => (<div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}><div className="flex items-center gap-2"><span>{ch.icon}</span><span className="text-xs text-white">{ch.label}</span>{ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}</div><span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span></div>))}</div>)}
 
@@ -1211,12 +1242,15 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <button key={a.id}
                   onClick={() => onOpenModal(a.id)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-                  style={a.hot ? { backgroundColor: '#7C3AED', color: '#F9FAFB' } : { backgroundColor: '#1a2332', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  style={a.hot
+                    ? { backgroundColor: brandPrimary, color: brandSecondary }
+                    : { backgroundColor: '#1a2332', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)' }
+                  }>
                   <span>{a.icon}</span>
                   {a.label}
                   {a.hot && (
-                    <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none"
-                      style={{ backgroundColor: '#fff', color: '#7C3AED' }}>AI</span>
+                    <span className="absolute -top-1 -right-1 text-[8px] px-1.5 py-0.5 rounded-full font-black"
+                      style={{ backgroundColor: brandSecondary, color: brandPrimary }}>AI</span>
                   )}
                 </button>
               ))}
@@ -6102,6 +6136,22 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Theme</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Dark</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Accent colour</span><div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: ACCENT }} /><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{ACCENT}</span></div></div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Primary brand colour</p><p className="text-xs" style={{ color: '#6B7280' }}>Fills AI buttons and accents</p></div>
+            <div className="flex items-center gap-2">
+              <input type="color" defaultValue={typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_brand_primary') || '#7C3AED' : '#7C3AED'}
+                onChange={e => localStorage.setItem('lumio_tennis_brand_primary', e.target.value)}
+                className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+              <button onClick={() => { localStorage.setItem('lumio_tennis_brand_primary', '#7C3AED'); localStorage.setItem('lumio_tennis_brand_secondary', '#FFFFFF') }}
+                className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>Reset</button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Secondary brand colour</p><p className="text-xs" style={{ color: '#6B7280' }}>Text colour on filled buttons</p></div>
+            <input type="color" defaultValue={typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_brand_secondary') || '#FFFFFF' : '#FFFFFF'}
+              onChange={e => localStorage.setItem('lumio_tennis_brand_secondary', e.target.value)}
+              className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+          </div>
         </div>
       </div>
 
@@ -8949,3 +8999,4 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
     </div>
   );
 }
+
