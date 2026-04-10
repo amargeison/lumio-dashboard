@@ -8074,7 +8074,21 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
 
 function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarExpanded = sidebarPinned || sidebarHovered;
+
+  useEffect(() => {
+    setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_tennis_sidebar_pinned') === 'true')
+  }, [])
+
+  function toggleSidebarPin() {
+    setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_tennis_sidebar_pinned', String(next)); return next })
+  }
+  function handleSidebarEnter() { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null }; setSidebarHovered(true) }
+  function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
+
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
   const player = DEMO_PLAYER;
@@ -8609,52 +8623,73 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           </div>
         </div>
       )}
-      {/* Sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 flex flex-col border-r border-gray-800 ${sidebarCollapsed ? 'w-14' : 'w-56'}`}
-        style={{ background: '#0a0c14' }}>
+      {/* Sidebar — floating when unpinned, pushes content when pinned */}
+      {sidebarPinned && <div style={{ width: 220, flexShrink: 0 }} />}
+      <aside
+        className="hidden md:flex flex-col overflow-hidden"
+        style={{
+          width: sidebarExpanded ? 220 : 72,
+          backgroundColor: '#0a0c14',
+          borderRight: '1px solid #1F2937',
+          transition: 'width 250ms ease',
+          position: sidebarPinned ? 'relative' : 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          zIndex: sidebarPinned ? 'auto' : 40,
+          marginLeft: sidebarPinned ? -220 : 0,
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}>
+
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
+          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
             {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
-              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
                   style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
                   🎾
                 </div>
             }
-            {!sidebarCollapsed && (
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#4B5563' }}>
+            {sidebarExpanded && (
+              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>
                 Lumio Tennis
               </span>
             )}
           </div>
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-xs ml-auto" style={{ color: '#4B5563' }}>
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
+          {sidebarExpanded && (
+            <button onClick={toggleSidebarPin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#0ea5e9' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            </button>
+          )}
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2 px-2">
+        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems.filter(i => i.group === group);
             return (
               <div key={group} className="mb-3">
-                {!sidebarCollapsed && (
+                {sidebarExpanded && (
                   <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
                 )}
                 {items.map(item => (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg mb-0.5 transition-all text-left ${
-                      activeSection === item.id
-                        ? 'bg-purple-600/20 text-purple-300 border border-purple-600/30'
-                        : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
-                    }`}
-                    title={sidebarCollapsed ? item.label : undefined}
+                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
+                    style={{
+                      backgroundColor: activeSection === item.id ? 'rgba(139,92,246,0.12)' : 'transparent',
+                      color: activeSection === item.id ? '#c084fc' : '#6B7280',
+                      borderLeft: activeSection === item.id ? '2px solid #a855f7' : '2px solid transparent',
+                      paddingLeft: sidebarExpanded ? 10 : 0,
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                    }}
+                    title={sidebarExpanded ? undefined : item.label}
                   >
                     <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {!sidebarCollapsed && <span className="text-xs font-medium truncate">{item.label}</span>}
+                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
                   </button>
                 ))}
               </div>
@@ -8675,22 +8710,28 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
               localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
             }
           }}
-          sidebarCollapsed={sidebarCollapsed}
+          sidebarCollapsed={!sidebarExpanded}
         />
 
         {/* Sidebar Footer */}
-        {!sidebarCollapsed && (
+        {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800">
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
           </div>
         )}
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
-          <img src="/tennis_logo.png" alt="Lumio Tennis" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
-            onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
-          <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
+          {sidebarExpanded ? (
+            <>
+              <img src="/tennis_logo.png" alt="Lumio Tennis" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
+                onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
+              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO TENNIS</span>
+            </>
+          ) : (
+            <span className="text-lg">🎾</span>
+          )}
         </div>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
