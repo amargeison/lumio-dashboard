@@ -1,4 +1,5 @@
-'use client'
-import LumioCricket from '@/components/cricket/LumioCricket'
-export default function Page() { return <LumioCricket /> }
+import { redirect } from 'next/navigation'
 
+export default function CricketDemoRedirect() {
+  redirect('/cricket/cricket-demo')
+}

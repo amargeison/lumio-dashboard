@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+
+type RugbyCode = 'union' | 'league'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface RugbyClub {
@@ -28,12 +30,11 @@ interface RugbyClub {
 
 // ─── RUGBY ROLES ──────────────────────────────────────────────────────────────
 const RUGBY_ROLES = [
-  { id: 'ceo',        label: 'CEO / Chairman',      icon: '🏛️' },
-  { id: 'dor',        label: 'Director of Rugby',   icon: '🏉' },
-  { id: 'coach',      label: 'Head Coach',           icon: '🎽' },
-  { id: 'medical',    label: 'Head of Medical',      icon: '🏥' },
-  { id: 'commercial', label: 'Commercial Director',  icon: '💼' },
-  { id: 'academy',    label: 'Academy Director',     icon: '🎓' },
+  { id: 'player',  label: 'Player',            icon: '🏉', description: 'Full access — your complete rugby OS' },
+  { id: 'agent',   label: 'Agent / Manager',   icon: '💼', description: 'Commercial, contracts and schedule' },
+  { id: 'coach',   label: 'Coach',             icon: '📋', description: 'Performance, tactics and training' },
+  { id: 'physio',  label: 'Physiotherapist',    icon: '⚕️', description: 'Medical, GPS load and recovery' },
+  { id: 'sponsor', label: 'Sponsor / Partner',  icon: '🤝', description: 'Brand presence and ROI' },
 ]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
@@ -2549,6 +2550,708 @@ Keep under 400 words.` }]
       </div>
     </div>
   );
+}
+
+// ─── RUGBY ROLE CONFIG ───────────────────────────────────────────────────────
+const RUGBY_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
+  player: { label: 'Player', icon: '🏉', accent: '#7C3AED', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
+  agent: { label: 'Agent', icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','matchdayrev','contracts','agents','calendar','mediahr','stadium','activation'], hiddenTabs: ['team','dailytasks'], roundupChannels: ['agent','sponsor'], message: 'Commercial and contracts view.' },
+  coach: { label: 'Coach', icon: '📋', accent: '#22C55E', sidebar: ['dashboard','dorbriefing','insights','matchday','selection','availability','gps-load','heatmap','video-analysis','match-stats','setpiece','carryanalytics','training-planner','periodisation','opposition','halftime'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['coach','medical'], message: 'Performance and tactical view.' },
+  physio: { label: 'Physio', icon: '⚕️', accent: '#EF4444', sidebar: ['dashboard','concussion','rtp','medical','welfareaudit','mentalperformance','gps-load'], hiddenTabs: ['quickwins','dontmiss','team'], roundupChannels: ['medical'], message: 'Medical and recovery view.' },
+  sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','mediahr','fanhub','matchdayrev'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
+}
+
+// ─── RUGBY AI SECTION ────────────────────────────────────────────────────────
+interface RugbyAISectionProps {
+  context: string
+  club: RugbyClub
+  session: SportsDemoSession
+  rugbyCode: RugbyCode
+}
+
+function RugbyAISection({ context, club, session, rugbyCode }: RugbyAISectionProps) {
+  const [summary, setSummary] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [generated, setGenerated] = useState(false)
+  const hasGenerated = useRef(false)
+
+  const codeLabel = rugbyCode === 'union' ? 'Rugby Union' : 'Rugby League'
+
+  const HIGHLIGHTS: Record<string, string[]> = {
+    dashboard: [
+      `League position: #${club.leaguePosition} in ${club.league}`,
+      `Cap headroom: ${fmt(club.capCeiling - club.currentSpend)} — compliant`,
+      `Franchise readiness: ${club.franchiseScore}% (target 85%)`,
+      `Next fixture: ${club.nextFixture} — ${club.nextFixtureDate}`,
+      rugbyCode === 'union' ? 'Lineout success: 85% — above league avg' : 'Tackle busts per game: 14.2 — 3rd in Super League',
+    ],
+    performance: [
+      rugbyCode === 'union' ? 'Lineout retention: 85% — top 4 in Championship' : 'Completion rate: 82% — above league avg',
+      'GPS avg ACWR: 1.22 — amber zone',
+      '2 players in overload — Barnes, Foster',
+      rugbyCode === 'union' ? 'Scrum success: 71% — needs improvement' : 'Metres per carry: 8.4m — strong',
+      'Tackle miss rate: 10% — within target (<12%)',
+    ],
+    medical: [
+      '1 active HIA: Danny Foster — Day 8 of protocol',
+      '2 injured: Briggs (shoulder), Patel (hamstring)',
+      '2 GPS overload flags — rest recommended',
+      'Annual screenings: 36/38 complete',
+      'Mental health flags: 3 players below 6.5 threshold',
+    ],
+    sponsorship: [
+      `Total sponsorship: ${fmt(172000)} across 5 partners`,
+      'Pipeline: 2 prospects worth est. £43k',
+      '1 overdue obligation — Hartfield Building Society video',
+      '2 renewals due within 60 days',
+      'Matchday revenue: £374k vs £400k target (94%)',
+    ],
+    financial: [
+      `Cap spend: ${fmt(club.currentSpend)} of ${fmt(club.capCeiling)}`,
+      `Headroom: ${fmt(club.capCeiling - club.currentSpend)} — GREEN`,
+      'Academy credits: -£48,000 applied',
+      'Effective cap charge post-credits: £2,257,000',
+      'Next cap return due: 10 May (34 days)',
+    ],
+    default: [
+      `${club.name} — ${club.league} — #${club.leaguePosition}`,
+      `Code: ${codeLabel}`,
+      `Squad: ${club.squadSize} players — 28 available`,
+      `Franchise: ${club.franchiseScore}% — 2 RED criteria`,
+      `Next: ${club.nextFixture}`,
+    ],
+  }
+
+  const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
+
+  const generateSummary = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/rugby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are a club intelligence AI for ${session.clubName || club.name}, a ${codeLabel} club in ${club.league}.
+
+Generate an AI OPERATIONAL SUMMARY for the "${context}" section.
+
+IMPORTANT: This summary must be specifically about "${context}".
+Do NOT give generic rugby advice. Be specific to this section.
+
+Context guide:
+- "dashboard" → today's priorities, urgent items, match week status
+- "performance" → GPS load, ACWR, set piece stats, tackle data
+- "medical" → HIA protocols, injury status, return-to-play, welfare
+- "sponsorship" → obligations, renewals, pipeline, matchday revenue
+- "financial" → salary cap, headroom, credits, audit status
+
+Write 4-5 bullet points. Each starts with a relevant emoji.
+Each point is a complete sentence with specific details.
+Max 200 words.`
+          }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : ''
+      ).join('') || ''
+      setSummary(text)
+      setGenerated(true)
+    } catch {
+      setSummary('Unable to generate summary. Check API connection.')
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    if (hasGenerated.current) return
+    hasGenerated.current = true
+    generateSummary()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const renderSummary = (text: string) =>
+    text.split('\n').filter(l => l.trim()).map((line, i) => (
+      <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0">
+        <span className="flex-shrink-0">{/^[\u{1F300}-\u{1FAFF}]/u.test(line) ? '' : '•'}</span>
+        <span>{line}</span>
+      </div>
+    ))
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-purple-400 font-bold text-sm">🤖 Lumio AI</span>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">
+            {context.toUpperCase()}
+          </span>
+        </div>
+        <button onClick={generateSummary} disabled={loading}
+          className="text-xs text-gray-500 hover:text-gray-300 disabled:opacity-50">
+          {loading ? '...' : '↺ Refresh'}
+        </button>
+      </div>
+
+      <div className="mb-3">
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Performance Intelligence</div>
+        <div className="grid grid-cols-1 gap-1">
+          {highlights.map((h, i) => (
+            <div key={i} className="text-xs text-gray-400 flex items-start gap-1.5 py-0.5">
+              <span className="text-purple-500 mt-0.5 flex-shrink-0">•</span>
+              <span>{h}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-xs text-purple-400 py-3">
+          <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+          Generating AI summary...
+        </div>
+      )}
+
+      {summary && !loading && (
+        <div className="pt-3 border-t border-gray-800">
+          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">AI Operational Summary</div>
+          {renderSummary(summary)}
+          {generated && (
+            <div className="text-[10px] text-gray-700 mt-2">Powered by Claude · Lumio Rugby</div>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+// ─── RUGBY SPONSOR DASHBOARD ─────────────────────────────────────────────────
+function RugbySponsorDashboard({ session, club }: { session: SportsDemoSession; club: RugbyClub }) {
+  const [tab, setTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const GOLD = '#D4AF37'
+
+  const tabs = [
+    { id: 'overview' as const, label: 'Overview', icon: '📊' },
+    { id: 'obligations' as const, label: 'Obligations', icon: '📋' },
+    { id: 'content' as const, label: 'Content', icon: '📱' },
+    { id: 'events' as const, label: 'Events', icon: '🎟️' },
+    { id: 'roi' as const, label: 'ROI & Reach', icon: '📈' },
+  ]
+
+  return (
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex items-center gap-3 mb-2">
+        <span className="text-3xl">🤝</span>
+        <div>
+          <h1 className="text-xl font-bold text-white">Sponsor Portal</h1>
+          <p className="text-xs" style={{ color: '#6B7280' }}>
+            {session.clubName || club.name} — Partnership Dashboard
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-1 border-b border-gray-800">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${tab === t.id ? 'text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+            style={tab === t.id ? { borderColor: GOLD, color: GOLD } : {}}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Partnership Value" value={fmt(85000)} sub="Shirt sponsor" color="yellow" />
+            <StatCard label="Obligations Met" value="34/38" sub="Season to date" color="green" />
+            <StatCard label="Matchday Events" value="4" sub="Remaining this season" color="purple" />
+            <StatCard label="Est. Brand Reach" value="289k" sub="Cumulative this month" color="blue" />
+          </div>
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Upcoming Matchdays</div>
+            <div className="space-y-2">
+              {[
+                { date: 'Sat 11 Apr', match: 'vs Jersey Reds', type: 'Premiership', hospitality: '4 boxes available' },
+                { date: 'Sat 25 Apr', match: 'vs Saracens', type: 'Championship', hospitality: '2 boxes available' },
+                { date: 'Sat 3 May', match: 'Hartfield Building Society Day', type: 'Sponsor Event', hospitality: '40 guests confirmed' },
+              ].map((m, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs">
+                  <div><span className="text-white font-medium">{m.match}</span> <span className="text-gray-500">— {m.date}</span></div>
+                  <span className="text-gray-400">{m.hospitality}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {tab === 'obligations' && (
+        <div className="space-y-4">
+          <Card className="border-red-600/30">
+            <div className="text-sm font-semibold text-red-400 mb-2">Overdue (1)</div>
+            <div className="text-xs text-gray-300">Monthly player video (March) — Due: 31 March — <span className="text-red-400 font-medium">OVERDUE</span></div>
+          </Card>
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Upcoming This Month</div>
+            {[
+              { obligation: 'Player appearance — Karl Foster', due: '20 April' },
+              { obligation: 'Social media mention for new development', due: '15 April' },
+              { obligation: 'Community match programme Q4 report', due: '30 April' },
+            ].map((o, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+                <span className="text-gray-300">{o.obligation}</span>
+                <span className="text-gray-500">{o.due}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {tab === 'content' && (
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Content Calendar</div>
+          <div className="text-xs text-gray-400">Sponsor content posts, social media mentions, and video obligations are tracked here.</div>
+          <div className="mt-4 space-y-2">
+            {[
+              { type: 'Video', desc: 'Monthly player video — March (OVERDUE)', status: 'overdue' },
+              { type: 'Social', desc: 'Smith & Sons development mention', status: 'due' },
+              { type: 'Photo', desc: 'Matchday hospitality photos — Jersey Reds', status: 'upcoming' },
+            ].map((c, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs">
+                <div><span className="text-white font-medium">{c.type}</span> — <span className="text-gray-400">{c.desc}</span></div>
+                <span className={`text-[10px] px-2 py-0.5 rounded ${c.status === 'overdue' ? 'bg-red-600/20 text-red-400' : c.status === 'due' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-800 text-gray-500'}`}>{c.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {tab === 'events' && (
+        <div className="space-y-3">
+          {[
+            { date: 'Sat 11 Apr', event: 'Fan Zone — Jersey Reds (H)', tickets: 'Free entry' },
+            { date: 'Sat 3 May', event: 'Hartfield Building Society Hospitality Day', tickets: '40 guests — invite only' },
+            { date: 'Sat 10 May', event: 'Season Finale vs Saracens', tickets: 'Free entry' },
+            { date: 'Sun 25 May', event: 'End of Season Awards', tickets: 'Club Members+' },
+          ].map((e, i) => (
+            <Card key={i}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold text-white">{e.event}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">{e.date} — {e.tickets}</div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab === 'roi' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Media Reach" value="289k" sub="This month" color="purple" />
+            <StatCard label="Matchday Attendance" value="2,800" sub="Avg per game" color="teal" />
+            <StatCard label="Social Mentions" value="23" sub="This month" color="blue" />
+            <StatCard label="Positive Sentiment" value="92%" sub="Press coverage" color="green" />
+          </div>
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Brand Exposure Summary</div>
+            <div className="text-xs text-gray-400 space-y-2">
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Shirt visibility (TV/media)</span><span className="text-white">14 broadcasts</span></div>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Stadium signage impressions</span><span className="text-white">~48,000</span></div>
+              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Digital/social reach</span><span className="text-white">289,000</span></div>
+              <div className="flex justify-between py-1.5"><span>Hospitality guest total</span><span className="text-white">180 this season</span></div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── MODAL HELPERS ───────────────────────────────────────────────────────────
+function ModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <div className="text-base font-bold text-white">{title}</div>
+          <div className="text-xs" style={{ color: '#6B7280' }}>{subtitle}</div>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+    </div>
+  )
+}
+
+function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
+  return (
+    <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+      {steps.map((s, i) => (
+        <React.Fragment key={s}>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ backgroundColor: i < current ? '#22C55E' : i === current ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: i <= current ? '#fff' : '#4B5563' }}>
+              {i < current ? '✓' : i + 1}
+            </div>
+            <span className="text-xs font-semibold" style={{ color: i === current ? '#7C3AED' : i < current ? '#22C55E' : '#4B5563' }}>{s}</span>
+          </div>
+          {i < steps.length - 1 && <div className="flex-1 h-px" style={{ backgroundColor: i < current ? '#22C55E' : '#1F2937' }} />}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
+// ─── MODAL COMPONENTS ────────────────────────────────────────────────────────
+
+function RugbyFlightFinder({ onClose, session, club }: { onClose: () => void; session: SportsDemoSession; club: RugbyClub }) {
+  const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
+  const [from, setFrom] = useState('London Heathrow (LHR)')
+  const [to, setTo] = useState('Dublin (DUB) — European Cup')
+  const [depart, setDepart] = useState('')
+  const [returnDate, setReturnDate] = useState('')
+  const [cabinClass, setCabinClass] = useState('Economy')
+  const [passengers, setPassengers] = useState(35)
+  const [results, setResults] = useState<Array<{airline:string;flightNo:string;departs:string;arrives:string;duration:string;stops:string;price:number;currency:string;score:number;badge?:string}>>([])
+  const [selectedFlight, setSelectedFlight] = useState<typeof results[0] | null>(null)
+
+  const UPCOMING = [
+    { label: 'European Cup — Dublin', to: 'Dublin (DUB)', date: '2026-04-25' },
+    { label: 'Challenge Cup — Toulouse', to: 'Toulouse (TLS)', date: '2026-05-10' },
+    { label: 'Pre-season — Lisbon', to: 'Lisbon (LIS)', date: '2026-08-15' },
+  ]
+
+  const FALLBACK_RESULTS = [
+    { airline:'British Airways', flightNo:'BA834', departs:'07:15', arrives:'08:45', duration:'1h30m', stops:'Direct', price:185, currency:'GBP', score:96, badge:'Best value' },
+    { airline:'Ryanair', flightNo:'FR204', departs:'06:30', arrives:'08:00', duration:'1h30m', stops:'Direct', price:89, currency:'GBP', score:88, badge:'Cheapest' },
+    { airline:'Aer Lingus', flightNo:'EI153', departs:'09:00', arrives:'10:30', duration:'1h30m', stops:'Direct', price:142, currency:'GBP', score:92, badge:'Recommended' },
+    { airline:'easyJet', flightNo:'EZY442', departs:'11:45', arrives:'13:15', duration:'1h30m', stops:'Direct', price:118, currency:'GBP', score:85 },
+  ]
+
+  const searchFlights = async () => {
+    setStep('searching')
+    try {
+      const res = await fetch('/api/ai/rugby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers (rugby squad). Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Recommended", or null. Realistic prices for group booking.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : FALLBACK_RESULTS)
+    } catch { setResults(FALLBACK_RESULTS) }
+    setStep('results')
+  }
+
+  return (
+    <>
+      <ModalHeader icon="✈️" title="Smart Flight Finder" subtitle="AI searches flights for squad travel" onClose={onClose} />
+      {step !== 'searching' && <StepIndicator steps={['Configure','Search','Results','Book']} current={['configure','searching','results','book'].indexOf(step)} />}
+      <div className="p-6 space-y-4">
+        {step === 'configure' && (
+          <>
+            <div className="text-xs text-gray-500 mb-2">Quick select — upcoming fixtures:</div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {UPCOMING.map(u => (
+                <button key={u.label} onClick={() => { setTo(u.to); setDepart(u.date) }}
+                  className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white border border-gray-700 hover:border-purple-500/50 transition-all">
+                  {u.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">From</label><input value={from} onChange={e => setFrom(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">To</label><input value={to} onChange={e => setTo(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Depart</label><input type="date" value={depart} onChange={e => setDepart(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Return</label><input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Class</label><select value={cabinClass} onChange={e => setCabinClass(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none"><option>Economy</option><option>Premium</option><option>Business</option></select></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Passengers</label><input type="number" value={passengers} onChange={e => setPassengers(Number(e.target.value))} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+            </div>
+            <button onClick={searchFlights} className="w-full py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all">Search Flights</button>
+          </>
+        )}
+        {step === 'searching' && (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <div className="text-sm text-purple-400 font-medium">Searching airlines...</div>
+            <div className="text-xs text-gray-500 mt-1">Checking {session.clubName || club.name} group rates</div>
+          </div>
+        )}
+        {step === 'results' && (
+          <div className="space-y-3">
+            {results.map((f, i) => (
+              <button key={i} onClick={() => { setSelectedFlight(f); setStep('book') }}
+                className={`w-full text-left p-4 rounded-xl border transition-all ${selectedFlight === f ? 'border-purple-500 bg-purple-600/10' : 'border-gray-800 hover:border-gray-700'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-bold text-white">{f.airline}</span>
+                  <div className="flex items-center gap-2">
+                    {f.badge && <span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400">{f.badge}</span>}
+                    <span className="text-lg font-bold text-white">£{f.price}<span className="text-xs text-gray-500">/pp</span></span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400">{f.flightNo} · {f.departs}→{f.arrives} · {f.duration} · {f.stops}</div>
+              </button>
+            ))}
+          </div>
+        )}
+        {step === 'book' && selectedFlight && (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">✅</div>
+            <div className="text-lg font-bold text-white mb-1">{selectedFlight.airline} — {selectedFlight.flightNo}</div>
+            <div className="text-sm text-gray-400">{selectedFlight.departs} → {selectedFlight.arrives} · {passengers} passengers</div>
+            <div className="text-xl font-bold text-purple-400 mt-3">£{selectedFlight.price * passengers} total</div>
+            <div className="text-xs text-gray-500 mt-1">Group booking reference would be generated here</div>
+            <button onClick={onClose} className="mt-6 px-6 py-2 rounded-lg text-xs font-bold bg-purple-600 text-white">Done</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function RugbyMatchPrepAI({ onClose, club }: { onClose: () => void; club: RugbyClub }) {
+  const [brief, setBrief] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/rugby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `Generate a 250-word opposition analysis brief for ${club.name} vs Jersey Reds (${club.nextFixtureDate}). Include: set piece stats, key threats, tactical recommendations. Be specific and data-driven.` }]
+        })
+      })
+      const data = await res.json()
+      setBrief(data.content?.[0]?.text || 'Generation failed.')
+    } catch { setBrief('Error connecting to AI service.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🏉" title="Match Prep AI" subtitle="Opposition analysis brief" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white">
+          {loading ? 'Generating...' : 'Generate Opposition Brief'}
+        </button>
+        {brief && <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{brief}</div>}
+      </div>
+    </>
+  )
+}
+
+function RugbySponsorPost({ onClose, session, club }: { onClose: () => void; session: SportsDemoSession; club: RugbyClub }) {
+  const [post, setPost] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [sponsor, setSponsor] = useState('Hartfield Building Society')
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/rugby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 500,
+          messages: [{ role: 'user', content: `Write a social media sponsor post for ${session.clubName || club.name} featuring ${sponsor}. Make it authentic, professional, and suitable for Instagram/Twitter. Include relevant hashtags. Max 150 words.` }]
+        })
+      })
+      const data = await res.json()
+      setPost(data.content?.[0]?.text || 'Generation failed.')
+    } catch { setPost('Error connecting to AI service.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="📱" title="Sponsor Post Generator" subtitle="AI writes authentic sponsor content" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Sponsor</label>
+          <select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none">
+            {SPONSORS.map(s => <option key={s.name}>{s.name}</option>)}
+          </select>
+        </div>
+        <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white">
+          {loading ? 'Generating...' : 'Generate Post'}
+        </button>
+        {post && <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap">{post}</div>}
+      </div>
+    </>
+  )
+}
+
+function RugbyInjuryLogger({ onClose }: { onClose: () => void }) {
+  const [bodyPart, setBodyPart] = useState('')
+  const [severity, setSeverity] = useState('mild')
+  const [notifyPhysio, setNotifyPhysio] = useState(true)
+  const [logged, setLogged] = useState(false)
+
+  const BODY_PARTS = ['Head / Concussion', 'Neck', 'Shoulder', 'Chest / Ribs', 'Back', 'Hip / Groin', 'Knee (ACL/MCL)', 'Ankle', 'Hamstring', 'Quadricep', 'Calf', 'Foot', 'Wrist / Hand', 'Elbow']
+
+  return (
+    <>
+      <ModalHeader icon="⚕️" title="Log Injury" subtitle="Log and auto-notify the physio team" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!logged ? (
+          <>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase mb-2 block">Body Part</label>
+              <div className="grid grid-cols-3 gap-2">
+                {BODY_PARTS.map(bp => (
+                  <button key={bp} onClick={() => setBodyPart(bp)}
+                    className={`px-3 py-2 rounded-lg text-xs border transition-all ${bodyPart === bp ? 'border-red-500 bg-red-600/10 text-red-400' : 'border-gray-800 text-gray-400 hover:border-gray-700'}`}>
+                    {bp}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase mb-2 block">Severity</label>
+              <div className="flex gap-2">
+                {['mild','moderate','severe'].map(s => (
+                  <button key={s} onClick={() => setSeverity(s)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium border capitalize transition-all ${severity === s ? (s === 'severe' ? 'border-red-500 bg-red-600/10 text-red-400' : s === 'moderate' ? 'border-amber-500 bg-amber-600/10 text-amber-400' : 'border-green-500 bg-green-600/10 text-green-400') : 'border-gray-800 text-gray-400'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={notifyPhysio} onChange={e => setNotifyPhysio(e.target.checked)} className="rounded" />
+              <span className="text-xs text-gray-400">Notify physio team immediately</span>
+            </div>
+            <button onClick={() => setLogged(true)} disabled={!bodyPart}
+              className="w-full py-3 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white">
+              Log Injury
+            </button>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">✅</div>
+            <div className="text-lg font-bold text-white">Injury Logged</div>
+            <div className="text-xs text-gray-400 mt-1">{bodyPart} — {severity}</div>
+            {notifyPhysio && <div className="text-xs text-green-400 mt-2">Physio team notified</div>}
+            <button onClick={onClose} className="mt-6 px-6 py-2 rounded-lg text-xs font-bold bg-purple-600 text-white">Done</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function RugbyExpenseLogger({ onClose }: { onClose: () => void }) {
+  const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState('Travel')
+  const [note, setNote] = useState('')
+  const [logged, setLogged] = useState(false)
+
+  return (
+    <>
+      <ModalHeader icon="🧾" title="Log Expense" subtitle="Quick expense logging" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!logged ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Amount (GBP)</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Category</label><select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none"><option>Travel</option><option>Accommodation</option><option>Equipment</option><option>Medical</option><option>Nutrition</option><option>Other</option></select></div>
+            </div>
+            <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Note</label><input value={note} onChange={e => setNote(e.target.value)} placeholder="Description..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:border-purple-500 focus:outline-none" /></div>
+            <button onClick={() => setLogged(true)} disabled={!amount} className="w-full py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white">Log Expense</button>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">✅</div>
+            <div className="text-lg font-bold text-white">Expense Logged</div>
+            <div className="text-xs text-gray-400 mt-1">£{amount} — {category}</div>
+            <button onClick={onClose} className="mt-6 px-6 py-2 rounded-lg text-xs font-bold bg-purple-600 text-white">Done</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function RugbyVideoAnalysis({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <ModalHeader icon="🎬" title="Video Analysis" subtitle="Tag and review match footage" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="text-center py-8">
+          <div className="text-4xl mb-3">🎬</div>
+          <div className="text-lg font-bold text-white">Video Analysis</div>
+          <div className="text-xs text-gray-400 mt-2">Session tagging and clip review tools.</div>
+          <div className="text-xs text-purple-400 mt-4">Coming soon — AI auto-tagging for scrums, lineouts, rucks and tackles.</div>
+        </div>
+        <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold bg-gray-800 text-gray-300">Close</button>
+      </div>
+    </>
+  )
+}
+
+function RugbyContractCheck({ onClose, club }: { onClose: () => void; club: RugbyClub }) {
+  const expiring = SQUAD.filter(p => p.contractEnd.includes('2026'))
+  return (
+    <>
+      <ModalHeader icon="📋" title="Contract Status" subtitle="Quick contract overview" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard label="Total Squad" value={club.squadSize} color="purple" />
+          <StatCard label="Expiring" value={expiring.length} sub="This season" color="red" />
+          <StatCard label="Loans" value="5" sub="3 in, 2 out" color="blue" />
+        </div>
+        <div className="text-xs font-semibold text-white mb-2">Expiring Contracts</div>
+        {expiring.map((p, i) => (
+          <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+            <span className="text-gray-200">{p.name} — {p.pos}</span>
+            <span className="text-red-400">{p.contractEnd}</span>
+          </div>
+        ))}
+        <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold bg-gray-800 text-gray-300">Close</button>
+      </div>
+    </>
+  )
+}
+
+function RugbyVisaCheck({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <ModalHeader icon="🌍" title="Visa Check" subtitle="Requirements for away fixtures" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="text-xs text-gray-500 mb-3">European Cup and Challenge Cup fixture visa requirements:</div>
+        {[
+          { dest: 'Dublin, Ireland', req: 'No visa required (CTA)', status: 'ok' },
+          { dest: 'Toulouse, France', req: 'No visa required (EU travel)', status: 'ok' },
+          { dest: 'Cape Town, South Africa', req: 'Visa on arrival (30 days)', status: 'check' },
+          { dest: 'Lisbon, Portugal', req: 'No visa required (EU travel)', status: 'ok' },
+        ].map((v, i) => (
+          <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs">
+            <div>
+              <div className="text-white font-medium">{v.dest}</div>
+              <div className="text-gray-500 mt-0.5">{v.req}</div>
+            </div>
+            <span className={`text-[10px] px-2 py-0.5 rounded ${v.status === 'ok' ? 'bg-green-600/20 text-green-400' : 'bg-amber-600/20 text-amber-400'}`}>
+              {v.status === 'ok' ? 'Clear' : 'Check required'}
+            </span>
+          </div>
+        ))}
+        <div className="text-[10px] text-gray-600">Note: Non-British passport holders may have additional requirements. Check with club admin.</div>
+        <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold bg-gray-800 text-gray-300">Close</button>
+      </div>
+    </>
+  )
 }
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
