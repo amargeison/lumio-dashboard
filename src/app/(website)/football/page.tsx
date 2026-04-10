@@ -277,6 +277,20 @@ function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
 export default function FootballLandingPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
+      {/* ── PORTAL NAVIGATION STRIP ── */}
+      <div style={{ backgroundColor: '#1E3A5F', borderBottom: '2px solid #D97706', padding: '10px 40px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', whiteSpace: 'nowrap' }}>⚽ Football portals:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Link href="/football/pro/oakridge-fc" style={{ fontSize: 13, fontWeight: 600, padding: '5px 14px', borderRadius: 999, backgroundColor: '#D97706', color: '#000', textDecoration: 'none', whiteSpace: 'nowrap' }}>Pro &amp; Academy</Link>
+          <span style={{ color: '#4B5563', fontSize: 10 }}>·</span>
+          <Link href="/nonleague/harfield-fc" style={{ fontSize: 13, fontWeight: 600, padding: '5px 14px', borderRadius: 999, backgroundColor: 'transparent', color: '#D97706', border: '1px solid #D97706', textDecoration: 'none', whiteSpace: 'nowrap' }}>Non-League</Link>
+          <span style={{ color: '#4B5563', fontSize: 10 }}>·</span>
+          <Link href="/grassroots/sunday-rovers-fc" style={{ fontSize: 13, fontWeight: 600, padding: '5px 14px', borderRadius: 999, backgroundColor: 'transparent', color: '#D97706', border: '1px solid #D97706', textDecoration: 'none', whiteSpace: 'nowrap' }}>Grassroots</Link>
+          <span style={{ color: '#4B5563', fontSize: 10 }}>·</span>
+          <Link href="/womens/lumio-sports-fc" style={{ fontSize: 13, fontWeight: 600, padding: '5px 14px', borderRadius: 999, backgroundColor: 'transparent', color: '#D97706', border: '1px solid #D97706', textDecoration: 'none', whiteSpace: 'nowrap' }}>Women&apos;s FC</Link>
+        </div>
+      </div>
+
       {/* ── HERO ── */}
       <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${NAVY}66, transparent 50%), radial-gradient(circle at 80% 60%, ${RED}22, transparent 55%)`, pointerEvents: 'none' }} />
