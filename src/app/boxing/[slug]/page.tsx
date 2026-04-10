@@ -467,7 +467,9 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers.`
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingFighter; session: SportsDemoSession; onOpenModal?: (id: string) => void }) {
-  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  })
   const firstName = session.userName?.split(' ')[0] || fighter.name?.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -487,29 +489,6 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions */}
-      <div className="overflow-x-auto pb-2 -mx-1">
-        <div className="flex gap-2 px-1 min-w-max">
-          {[
-            { label: 'Log Sparring',      icon: '🥊', modal: undefined },
-            { label: 'Weight Check',       icon: '⚖️', modal: 'weight' },
-            { label: 'Fight Prep AI',      icon: '🧠', modal: 'matchprep' },
-            { label: 'Book Flight',        icon: '✈️', modal: 'flights' },
-            { label: 'Sponsor Post',       icon: '📱', modal: 'sponsor' },
-            { label: 'Log Injury',         icon: '🏥', modal: 'injury' },
-            { label: 'Ranking Sim',        icon: '📊', modal: 'ranking' },
-            { label: 'Visa Check',         icon: '🌍', modal: 'visa' },
-            { label: 'Add Expense',        icon: '💰', modal: 'expense' },
-            { label: 'Video Upload',       icon: '🎬', modal: undefined },
-          ].map((a, i) => (
-            <button key={i}
-              onClick={() => a.modal && onOpenModal?.(a.modal)}
-              className="flex items-center gap-1.5 bg-[#0d1117] border border-gray-800 hover:border-red-500/40 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">
-              <span>{a.icon}</span>{a.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Greeting banner */}
       <div className="bg-gradient-to-r from-red-900/20 to-[#0d1117] border border-red-600/20 rounded-2xl p-6">
@@ -564,16 +543,47 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
       </div>
 
+      {/* Quick Actions Grid — 2 rows, no scrollbar */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { id:'flights',   label:'Book Flight',     icon:'✈️', color:'#dc2626', hot:true  },
+          { id:'matchprep', label:'Fight Prep AI',   icon:'🧠', color:'#22C55E', hot:true  },
+          { id:'sponsor',   label:'Sponsor Post',    icon:'📱', color:'#F59E0B', hot:false },
+          { id:'ranking',   label:'Ranking Sim',     icon:'📊', color:'#dc2626', hot:false },
+          { id:'injury',    label:'Log Injury',      icon:'🏥', color:'#EF4444', hot:false },
+          { id:'expense',   label:'Add Expense',     icon:'💰', color:'#6B7280', hot:false },
+          { id:'weight',    label:'Weight Check',    icon:'⚖️', color:'#0ea5e9', hot:false },
+          { id:'visa',      label:'Visa Check',      icon:'🌍', color:'#6B7280', hot:false },
+        ].map(a => (
+          <button key={a.id} onClick={() => onOpenModal?.(a.id)}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all relative"
+            style={{
+              background: a.hot ? `${a.color}18` : '#111318',
+              border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
+              color: a.hot ? a.color : '#9CA3AF',
+            }}>
+            <span>{a.icon}</span>{a.label}
+            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+          </button>
+        ))}
+      </div>
+
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-800 overflow-x-auto">
+        <button onClick={() => setDashTab('gettingstarted')}
+          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#dc2626' : '#6B7280' }}>
+          <span>🚀</span>Getting Started
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
+        </button>
         {([
-          { id:'today',      label:'Today',       icon:'🏠' },
-          { id:'quickwins',  label:'Quick Wins',  icon:'⚡' },
-          { id:'dailytasks', label:'Daily Tasks', icon:'✅' },
-          { id:'insights',   label:'Insights',    icon:'📊' },
-          { id:'dontmiss',   label:"Don't Miss",  icon:'🔴' },
-          { id:'team',       label:'Team',        icon:'👥' },
-        ] as const).map(t => (
+          { id:'today' as const,      label:'Today',       icon:'🏠' },
+          { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
+          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
+          { id:'insights' as const,   label:'Insights',    icon:'📊' },
+          { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
+          { id:'team' as const,       label:'Team',        icon:'👥' },
+        ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
             className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
               dashTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
@@ -582,6 +592,79 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           </button>
         ))}
       </div>
+
+      {/* GETTING STARTED */}
+      {dashTab === 'gettingstarted' && (() => {
+        const CHECKLIST = [
+          { id:'gs1', label:'Connect your ranking profile', desc:'Link your BoxRec or WBC profile for live ranking data', icon:'🌍' },
+          { id:'gs2', label:'Add your trainer', desc:'Invite your head trainer to collaborate on camp plans', icon:'🥊' },
+          { id:'gs3', label:'Set your fight schedule', desc:'Add your next fight and upcoming bouts to the calendar', icon:'📅' },
+          { id:'gs4', label:'Upload sponsor agreements', desc:'Add your sponsor contracts for obligation tracking', icon:'🤝' },
+          { id:'gs5', label:'Set your weight class target', desc:'Configure your target weight and cut timeline', icon:'⚖️' },
+          { id:'gs6', label:'Add your manager', desc:'Connect your manager for commercial and contract updates', icon:'💼' },
+          { id:'gs7', label:'Configure camp preferences', desc:'Set your training schedule, sparring days, and rest protocol', icon:'🏕️' },
+          { id:'gs8', label:'Set travel preferences', desc:'Add your home airport, hotel preferences, and visa info', icon:'✈️' },
+          { id:'gs9', label:'Add your promoter', desc:'Link your promoter for purse bids and fight night logistics', icon:'🏟️' },
+          { id:'gs10', label:'You\'re ready — fight!', desc:'Your camp dashboard is set up. Time to train.', icon:'🏆' },
+        ]
+        const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+          try { const s = localStorage.getItem('boxing_getting_started'); return s ? JSON.parse(s) : {} } catch { return {} }
+        })
+        const toggle = (id: string) => {
+          setChecked(prev => {
+            const next = { ...prev, [id]: !prev[id] }
+            try { localStorage.setItem('boxing_getting_started', JSON.stringify(next)) } catch {}
+            const doneCount = Object.values(next).filter(Boolean).length
+            if (doneCount >= CHECKLIST.length) { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} }
+            return next
+          })
+        }
+        const doneCount = Object.values(checked).filter(Boolean).length
+        return (
+          <div className="pt-4 max-w-3xl">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-black text-white">🚀 Getting Started</h2>
+                <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Complete these steps to set up your fight camp dashboard.</p>
+              </div>
+              <div className="text-sm font-bold" style={{ color: '#dc2626' }}>{doneCount}/{CHECKLIST.length}</div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2 mb-6">
+              <div className="h-2 rounded-full transition-all" style={{ width: `${(doneCount/CHECKLIST.length)*100}%`, backgroundColor: '#dc2626' }} />
+            </div>
+            <div className="space-y-2">
+              {CHECKLIST.map((item, i) => (
+                <div key={item.id} className="flex items-start gap-4 rounded-xl p-4 transition-all cursor-pointer"
+                  onClick={() => toggle(item.id)}
+                  style={{ backgroundColor: checked[item.id] ? 'rgba(220,38,38,0.05)' : '#111318', border: `1px solid ${checked[item.id] ? 'rgba(220,38,38,0.2)' : '#1F2937'}`, opacity: checked[item.id] ? 0.6 : 1 }}>
+                  <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                    style={{ backgroundColor: checked[item.id] ? '#dc2626' : 'transparent', borderColor: checked[item.id] ? '#dc2626' : '#4B5563' }}>
+                    {checked[item.id] && <span className="text-white text-xs font-bold">✓</span>}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{item.icon}</span>
+                      <span className="text-sm font-semibold" style={{ color: checked[item.id] ? '#6B7280' : '#F9FAFB', textDecoration: checked[item.id] ? 'line-through' : 'none' }}>{item.label}</span>
+                    </div>
+                    {!checked[item.id] && <p className="text-xs mt-1 ml-7" style={{ color: '#6B7280' }}>{item.desc}</p>}
+                  </div>
+                  <span className="text-xs font-bold" style={{ color: '#374151' }}>{i+1}/{CHECKLIST.length}</span>
+                </div>
+              ))}
+            </div>
+            {doneCount >= CHECKLIST.length && (
+              <div className="text-center mt-8 py-6">
+                <div className="text-5xl mb-3">🏆</div>
+                <p className="text-lg font-bold text-white mb-2">Camp dashboard ready!</p>
+                <button onClick={() => { try { localStorage.setItem('boxing_getting_started_seen','true') } catch {} setDashTab('today') }}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>
+                  Go to Dashboard →
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* TODAY */}
       {dashTab === 'today' && (
@@ -5409,9 +5492,8 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
 
         {/* Sidebar Footer */}
         {sidebarExpanded && (
-          <div className="p-3 border-t border-gray-800">
-            <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
-            <div className="text-xs text-red-400 font-semibold mt-0.5">Elite . GBP 499/mo</div>
+          <div className="p-3 border-t border-gray-800 flex items-center justify-center">
+            <img src="/boxing_logo.png" alt="Lumio Boxing" style={{ maxHeight: 32, objectFit: 'contain' }} />
           </div>
         )}
       </aside>

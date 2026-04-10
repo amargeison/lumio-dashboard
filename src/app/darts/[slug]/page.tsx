@@ -6246,7 +6246,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
         )}
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
           {sidebarExpanded
-            ? <span className="text-xs font-bold tracking-widest" style={{ color: '#4B5563' }}>LUMIO DARTS</span>
+            ? <img src="/darts_logo.png" alt="Lumio Darts" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" />
             : <span className="text-lg">🎯</span>}
         </div>
       </aside>
