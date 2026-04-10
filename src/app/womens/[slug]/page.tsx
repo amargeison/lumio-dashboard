@@ -3565,6 +3565,122 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   </div>
 )
 
+// ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
+const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
+  director: { label: 'Director', icon: '⚽', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
+  head_coach: { label: 'Head Coach', icon: '📋', accent: '#22C55E', sidebar: 'all', hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  welfare: { label: 'Welfare Officer', icon: '🛡️', accent: '#EF4444', sidebar: 'all', hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  commercial: { label: 'Commercial', icon: '💼', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
+  sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], message: null },
+}
+
+// ─── WOMENS SPONSOR DASHBOARD ────────────────────────────────────────────────
+const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: SportsDemoSession }) => {
+  const [tab, setTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const gold = '#D4AF37'
+  const tabs = [
+    { id: 'overview' as const, label: 'Overview', icon: '📊' },
+    { id: 'obligations' as const, label: 'Obligations', icon: '📋' },
+    { id: 'content' as const, label: 'Content', icon: '📱' },
+    { id: 'events' as const, label: 'Events', icon: '🎪' },
+    { id: 'roi' as const, label: 'ROI', icon: '💰' },
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-2xl">🤝</span>
+        <div>
+          <h2 className="text-lg font-bold text-white">Sponsor Portal — {session.clubName}</h2>
+          <p className="text-xs text-gray-500">Partnership dashboard · {club.league}</p>
+        </div>
+      </div>
+      <div className="flex gap-1 border-b border-gray-800 mb-4">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-4 py-2.5 text-xs font-semibold transition-all relative"
+            style={{ color: tab === t.id ? gold : '#6B7280', borderBottom: tab === t.id ? `2px solid ${gold}` : '2px solid transparent' }}>
+            <span className="mr-1.5">{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-bold" style={{ color: gold }}>£420k</div><div className="text-xs text-gray-400">Annual Value</div></div>
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-bold text-green-400">92%</div><div className="text-xs text-gray-400">Obligations Met</div></div>
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-bold text-blue-400">3.2M</div><div className="text-xs text-gray-400">Brand Impressions</div></div>
+            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="text-2xl font-bold text-pink-400">4.1x</div><div className="text-xs text-gray-400">ROI Multiplier</div></div>
+          </div>
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-3">Partnership Summary</h3>
+            <div className="space-y-2 text-xs text-gray-400">
+              <p>Kit sponsor partnership with {club.name}. Includes front-of-shirt branding, digital content rights, and matchday hospitality.</p>
+              <p>Contract period: Jul 2025 - Jun 2028. Annual review in January.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {tab === 'obligations' && (
+        <div className="space-y-3">
+          {[
+            { t: 'Front-of-shirt logo placement', s: 'Complete', c: 'green' },
+            { t: 'Social media mentions (8/month)', s: '6 of 8', c: 'amber' },
+            { t: 'Matchday LED boards (all home)', s: 'Complete', c: 'green' },
+            { t: 'Player appearance (2/quarter)', s: '1 of 2', c: 'amber' },
+            { t: 'Press conference backdrop', s: 'Complete', c: 'green' },
+          ].map((o, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
+              <span className="text-xs text-gray-300">{o.t}</span>
+              <span className={`text-xs px-2 py-0.5 rounded ${o.c === 'green' ? 'bg-green-600/20 text-green-400' : 'bg-amber-600/20 text-amber-400'}`}>{o.s}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab === 'content' && (
+        <div className="space-y-3">
+          {['Matchday graphic — vs Brighton (scheduled Fri)', 'Player interview — Emma Clarke (filmed, pending edit)', 'Kit reveal teaser — Summer 2026 (concept stage)', 'Training ground BTS — Monthly series (next: 15 Apr)'].map((c, i) => (
+            <div key={i} className="p-3 bg-[#0D1117] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>
+          ))}
+        </div>
+      )}
+      {tab === 'events' && (
+        <div className="space-y-3">
+          {[
+            { e: 'Matchday Hospitality — vs Brighton', d: 'Sat 12 Apr', s: '12 of 20 seats' },
+            { e: 'End of Season Awards', d: 'Sun 25 May', s: 'Table confirmed' },
+            { e: 'Pre-Season Launch Event', d: 'Jul 2026', s: 'Planning' },
+          ].map((ev, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
+              <div><div className="text-xs text-gray-200">{ev.e}</div><div className="text-[10px] text-gray-500">{ev.d}</div></div>
+              <span className="text-xs text-gray-400">{ev.s}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab === 'roi' && (
+        <div className="space-y-4">
+          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-white mb-3">ROI Summary</h3>
+            <div className="space-y-2">
+              {[
+                { l: 'Brand impressions', v: '3.2M', g: '+18% YoY' },
+                { l: 'Social reach', v: '1.8M', g: '+24% YoY' },
+                { l: 'Matchday exposure (mins)', v: '540', g: '18 home matches' },
+                { l: 'Estimated media value', v: '£1.72M', g: '4.1x ROI' },
+              ].map((r, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800">
+                  <span className="text-xs text-gray-400">{r.l}</span>
+                  <div className="text-right"><span className="text-xs font-bold text-white mr-2">{r.v}</span><span className="text-[10px] text-green-400">{r.g}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── ROLES FOR DEMO GATE ─────────────────────────────────────────────────────
 const WOMENS_ROLES = [
   { id: 'ceo', label: 'CEO / Chairman', icon: '🏛️' },
@@ -4089,6 +4205,95 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeRole, setActiveRole] = useState(session.role)
 
+  // Role config
+  const [roleOverride, setRoleOverride] = useState<string | null>(null)
+  const currentRole = (roleOverride || session.role || 'director') as keyof typeof WOMENS_ROLE_CONFIG
+  const roleConfig = WOMENS_ROLE_CONFIG[currentRole] ?? WOMENS_ROLE_CONFIG.director
+  const isSponsor = currentRole === 'sponsor'
+
+  // Dashboard tabs
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { return localStorage.getItem('womens_getting_started_seen') ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  })
+
+  // Morning banner quotes
+  const [quoteIdx, setQuoteIdx] = useState(0)
+  const womenQuotes = [
+    '"The future is female football." — Sarina Wiegman',
+    '"We are not just playing for ourselves. We are playing for every girl watching." — Lucy Bronze',
+    '"Equal play, equal pay, every single day." — Megan Rapinoe',
+    '"Football has no gender." — Ada Hegerberg',
+  ]
+  useEffect(() => {
+    const iv = setInterval(() => setQuoteIdx(p => (p + 1) % womenQuotes.length), 8000)
+    return () => clearInterval(iv)
+  }, [])
+
+  // Weather
+  const [weather, setWeather] = useState<{ temp: number; desc: string } | null>(null)
+  useEffect(() => {
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&current_weather=true')
+      .then(r => r.json())
+      .then(d => {
+        if (d.current_weather) {
+          const code = d.current_weather.weathercode
+          const desc = code <= 3 ? 'Clear' : code <= 48 ? 'Cloudy' : code <= 67 ? 'Rain' : code <= 77 ? 'Snow' : 'Storm'
+          setWeather({ temp: Math.round(d.current_weather.temperature), desc })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // TTS
+  const [speaking, setSpeaking] = useState(false)
+  const handleTTS = () => {
+    if (speaking) { window.speechSynthesis?.cancel(); setSpeaking(false); return }
+    const text = `Good morning ${session.userName || club.director || 'Director'}. Today's date is ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. ${womenQuotes[quoteIdx]}`
+    const u = new SpeechSynthesisUtterance(text)
+    u.onend = () => setSpeaking(false)
+    window.speechSynthesis?.speak(u)
+    setSpeaking(true)
+  }
+
+  // World clock
+  const getTime = (tz: string) => {
+    try { return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' }) } catch { return '--:--' }
+  }
+  const [clockTick, setClockTick] = useState(0)
+  useEffect(() => {
+    const iv = setInterval(() => setClockTick(p => p + 1), 60000)
+    return () => clearInterval(iv)
+  }, [])
+
+  // Getting started
+  const [onboarding, setOnboarding] = useState<boolean[]>(() => {
+    try { const s = localStorage.getItem('lumio_womens_onboarding'); return s ? JSON.parse(s) : Array(10).fill(false) } catch { return Array(10).fill(false) }
+  })
+  const toggleOnboarding = (idx: number) => {
+    const next = [...onboarding]; next[idx] = !next[idx]; setOnboarding(next)
+    try { localStorage.setItem('lumio_womens_onboarding', JSON.stringify(next)); if (next.every(Boolean)) localStorage.setItem('womens_getting_started_seen', '1') } catch {}
+  }
+
+  // AI morning summary
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const aiSummaryFetched = useRef(false)
+  useEffect(() => {
+    if (dashTab === 'today' && !aiSummaryFetched.current && !aiSummary) {
+      aiSummaryFetched.current = true
+      setAiLoading(true)
+      fetch('/api/ai/womens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: `Generate a brief morning summary for ${club.name} director. Include: FSR status (68% salary ratio, safe), 2 welfare flags, next match Sat 12 Apr vs Brighton, and one actionable insight. Keep it under 100 words.` })
+      }).then(r => r.json()).then(d => { setAiSummary(d.response || d.text || 'AI summary unavailable.'); setAiLoading(false) })
+        .catch(() => { setAiSummary('AI summary could not be loaded.'); setAiLoading(false) })
+    }
+  }, [dashTab])
+
+  // Team tab sub-tabs
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
+
   const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'COMMERCIAL', 'OPERATIONS']
 
   const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps'])
@@ -4098,7 +4303,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView club={club} />
+      case 'dashboard':   return null // handled inline
       case 'fsr':         return <FSRDashboardView club={club} />
       case 'welfare':     return <WelfareView />
       case 'briefing':    return <MorningBriefingView club={club} />
@@ -4130,9 +4335,78 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'medical':     return <MedicalRecordsView />
       case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
       case 'settings':    return <SettingsViewFull club={club} />
-      default:            return <DashboardView club={club} />
+      default:            return null
     }
   }
+
+  // ── Tab definitions ──
+  const allTabs = [
+    { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
+    { id: 'today' as const, label: 'Today', icon: '🏠' },
+    { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
+    { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
+    { id: 'insights' as const, label: 'Insights', icon: '📊' },
+    { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
+    { id: 'team' as const, label: 'Team', icon: '👥' },
+  ]
+  const visibleTabs = allTabs.filter(t => !roleConfig.hiddenTabs.includes(t.id))
+
+  // ── Getting Started items ──
+  const onboardingItems = [
+    'Connect WSL/Championship profile',
+    'Set up FSR compliance dashboard',
+    'Add squad (24 players)',
+    'Configure welfare monitoring',
+    'Upload sponsor agreements',
+    'Set dual registration agreements',
+    'Add coaching and medical team',
+    'Configure Karen Carney Review compliance',
+    'Set fixture schedule',
+    'Ready — let\'s make history ⚽',
+  ]
+
+  // ── Quick actions ──
+  const quickActions = [
+    { id:'flights',    label:'Book Flight',      icon:'✈️', hot:true,  color:'#BE185D' },
+    { id:'matchprep',  label:'Match Prep AI',    icon:'🎯', hot:true,  color:'#22C55E' },
+    { id:'fsr',        label:'FSR Check',        icon:'📊', hot:false, color:'#6B7280' },
+    { id:'welfare',    label:'Welfare Alert',    icon:'🛡️', hot:false, color:'#EF4444' },
+    { id:'sponsor',    label:'Sponsor Post AI',  icon:'📱', hot:true,  color:'#F59E0B' },
+    { id:'ranking',    label:'Ranking Sim',      icon:'📈', hot:true,  color:'#BE185D' },
+    { id:'injury',     label:'Log Injury',       icon:'💊', hot:false, color:'#EF4444' },
+    { id:'expense',    label:'Add Expense',      icon:'🧾', hot:false, color:'#6B7280' },
+    { id:'dualreg',    label:'Dual Registration',icon:'🔄', hot:false, color:'#6B7280' },
+    { id:'ofsted',     label:'Ofsted Mode',      icon:'📋', hot:false, color:'#6B7280' },
+    { id:'preseason',  label:'Pre-Season',       icon:'🏕️', hot:false, color:'#6B7280' },
+    { id:'visa',       label:'Visa Check',       icon:'🌍', hot:true,  color:'#6B7280' },
+  ]
+
+  // ── Quick Wins items ──
+  const quickWinsItems = [
+    { t: 'Review FSR headroom — £380k available before cap breach', p: 'High', c: '#EF4444' },
+    { t: 'Renew Local Energy Co sponsorship — £35k/yr expiring Apr', p: 'High', c: '#EF4444' },
+    { t: 'Schedule ACL screening block — 4 players overdue', p: 'Medium', c: '#F59E0B' },
+    { t: 'Send contract renewal offer to Lucy Whitmore (CM)', p: 'Medium', c: '#F59E0B' },
+    { t: 'Update Karen Carney compliance — 2 criteria outstanding', p: 'Low', c: '#22C55E' },
+  ]
+
+  // ── Daily Tasks items ──
+  const dailyTaskItems = [
+    { t: 'Morning welfare check-in — 2 flags active', p: 'Urgent', cat: 'Welfare', c: '#EF4444' },
+    { t: 'Confirm squad list for Brighton (Sat 12 Apr)', p: 'High', cat: 'Football', c: '#BE185D' },
+    { t: 'Review GPS load data — training session analysis', p: 'Medium', cat: 'Performance', c: '#F59E0B' },
+    { t: 'Approve social media matchday content', p: 'Medium', cat: 'Commercial', c: '#F59E0B' },
+    { t: 'Board meeting prep — financial summary pack', p: 'Low', cat: 'Operations', c: '#22C55E' },
+  ]
+
+  // ── Don't Miss items ──
+  const dontMissItems = [
+    { t: 'Emily Zhang ACL composite score 87/100 — immediate load reduction required', u: 'Critical', con: 'Risk of ACL injury if not addressed today', c: '#EF4444' },
+    { t: 'Registration window closes 30 Apr — dual reg agreements pending', u: 'Urgent', con: 'Players ineligible if not registered', c: '#EF4444' },
+    { t: 'Ava Mitchell maternity leave starts May — return plan not filed', u: 'High', con: 'Non-compliant with FA welfare standards', c: '#F59E0B' },
+    { t: 'Independent welfare officer appointment overdue', u: 'High', con: 'Karen Carney Review criterion failing', c: '#F59E0B' },
+    { t: 'Nike kit review meeting Wed 16 Apr — samples not received', u: 'Medium', con: 'Delay to 2026/27 kit launch timeline', c: '#F59E0B' },
+  ]
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif', color: '#e5e7eb' }}>
@@ -4180,7 +4454,14 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        {/* Demo workspace banner */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
+          <span>Demo workspace · sample data</span>
+          <a href="/pricing-sports" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
+        </div>
+
+        {/* FSR button bar */}
         <div className="border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0A0B12' }}>
           <div className="flex items-center gap-3">
             {session.logoDataUrl
@@ -4213,9 +4494,296 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             }`}>{club.league}</span>
           </div>
         </div>
-        <div className="p-6 max-w-6xl">
-          {renderView()}
-        </div>
+
+        {/* Role banner */}
+        {currentRole !== 'director' && !isSponsor && roleConfig.message && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
+            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <div className="flex items-center gap-2">
+              <span>{roleConfig.icon}</span>
+              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong> — {roleConfig.message}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Sponsor dashboard override */}
+        {isSponsor && activeSection === 'dashboard' ? (
+          <div className="p-6 max-w-6xl flex-1">
+            <WomensSponsorDashboard club={club} session={session} />
+          </div>
+        ) : activeSection !== 'dashboard' ? (
+          <div className="p-6 max-w-6xl flex-1">
+            {renderView()}
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col">
+            {/* Morning banner */}
+            <div className="mx-6 mt-6 rounded-2xl p-5 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0D1117 0%, #131720 50%, #0D1117 100%)', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Good morning, {session.userName || club.director || 'Director'}. ⚽</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="text-xs italic mt-2 transition-all duration-500" style={{ color: '#BE185D' }}>{womenQuotes[quoteIdx]}</p>
+                </div>
+                <button onClick={handleTTS} className="p-2 rounded-lg hover:bg-white/5 transition-colors" title="Read aloud">
+                  <span className="text-lg">{speaking ? '🔊' : '🔈'}</span>
+                </button>
+              </div>
+
+              {/* Stat boxes */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {[
+                  { label: 'FSR Status', value: 'SAFE', color: '#22C55E' },
+                  { label: 'Squad', value: '24', color: '#BE185D' },
+                  { label: 'Welfare Flags', value: '2', color: '#F59E0B' },
+                  { label: 'Next Match', value: 'Sat 12 Apr', color: '#3B82F6' },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 0 }}>
+                    <div className="w-[72px] h-[72px] rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}15`, border: `1px solid ${s.color}30` }}>
+                      <span className="text-base font-black" style={{ color: s.color }}>{s.value}</span>
+                    </div>
+                    <span className="text-[11px] text-gray-400 leading-tight">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* World clock + Weather */}
+              <div className="flex items-center gap-4 flex-wrap text-[10px] text-gray-500">
+                {[
+                  { city: 'London', tz: 'Europe/London' },
+                  { city: 'New York', tz: 'America/New_York' },
+                  { city: 'Sydney', tz: 'Australia/Sydney' },
+                  { city: 'Madrid', tz: 'Europe/Madrid' },
+                ].map(c => (
+                  <span key={c.city} className="flex items-center gap-1">
+                    <span className="font-semibold text-gray-400">{c.city}</span> {getTime(c.tz)}
+                  </span>
+                ))}
+                {weather && (
+                  <span className="flex items-center gap-1 ml-auto">
+                    🌤️ London {weather.temp}°C · {weather.desc}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 px-6 mt-4 border-b border-gray-800 flex-shrink-0 overflow-x-auto">
+              {visibleTabs.map(t => (
+                <button key={t.id} onClick={() => setDashTab(t.id)}
+                  className="px-3 py-2.5 text-xs font-semibold transition-all relative whitespace-nowrap"
+                  style={{ color: dashTab === t.id ? '#BE185D' : '#6B7280', borderBottom: dashTab === t.id ? '2px solid #BE185D' : '2px solid transparent' }}>
+                  <span className="mr-1">{t.icon}</span>{t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 px-6 py-3 overflow-x-auto flex-shrink-0">
+              {quickActions.map(a => (
+                <button key={a.id} onClick={() => { if (['fsr','welfare','dualreg','preseason'].includes(a.id)) setActiveSection(a.id); else if (a.id === 'matchprep') setActiveSection('match') }}
+                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
+                  style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
+                  <span>{a.icon}</span>{a.label}
+                  {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div className="p-6 max-w-6xl flex-1">
+              {/* Getting Started tab */}
+              {dashTab === 'gettingstarted' && (
+                <div className="space-y-4">
+                  <SectionHeader title="Getting Started" subtitle="Complete these 10 steps to set up your club" icon="🚀" />
+                  <div className="space-y-2">
+                    {onboardingItems.map((item, idx) => (
+                      <button key={idx} onClick={() => toggleOnboarding(idx)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+                        style={{ backgroundColor: onboarding[idx] ? '#111318' : '#0D1117', border: onboarding[idx] ? '1px solid #22C55E30' : '1px solid #1F2937' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: onboarding[idx] ? '#22C55E20' : '#1F2937', border: onboarding[idx] ? '1px solid #22C55E50' : '1px solid #374151' }}>
+                          {onboarding[idx] ? <span className="text-green-400 text-xs">✓</span> : <span className="text-gray-500 text-xs">{idx + 1}</span>}
+                        </div>
+                        <span className={`text-xs ${onboarding[idx] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{item}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-4 p-3 rounded-xl text-xs" style={{ backgroundColor: '#BE185D15', border: '1px solid #BE185D30' }}>
+                    <span style={{ color: '#BE185D' }} className="font-semibold">{onboarding.filter(Boolean).length}/10 complete</span>
+                    <span className="text-gray-500 ml-2">— {onboarding.every(Boolean) ? 'All done! Switch to Today tab.' : 'Keep going, you\'re doing great!'}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Today tab */}
+              {dashTab === 'today' && (
+                <div className="space-y-6">
+                  <DashboardView club={club} />
+                  {/* AI Morning Summary */}
+                  <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm">🤖</span>
+                      <h3 className="text-sm font-bold text-white">AI Morning Summary</h3>
+                    </div>
+                    {aiLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <div className="w-4 h-4 border-2 border-pink-600/30 border-t-pink-600 rounded-full animate-spin" />
+                        Generating summary...
+                      </div>
+                    ) : aiSummary ? (
+                      <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500">Summary will appear here.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Wins tab */}
+              {dashTab === 'quickwins' && (
+                <div className="space-y-4">
+                  <SectionHeader title="Quick Wins" subtitle="High-impact actions you can take right now" icon="⚡" />
+                  {quickWinsItems.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-4 bg-[#0D1117] border border-gray-800 rounded-xl">
+                      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: item.c }} />
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-200">{item.t}</p>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: `${item.c}20`, color: item.c }}>{item.p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Daily Tasks tab */}
+              {dashTab === 'dailytasks' && (
+                <div className="space-y-4">
+                  <SectionHeader title="Daily Tasks" subtitle="Your operational checklist for today" icon="✅" />
+                  {dailyTaskItems.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-4 bg-[#0D1117] border border-gray-800 rounded-xl">
+                      <div className="w-5 h-5 rounded border border-gray-700 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer hover:border-pink-600/50">
+                        <span className="text-[10px] text-gray-600">{idx + 1}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-200">{item.t}</p>
+                        <span className="text-[10px] text-gray-500 mt-1">{item.cat}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: `${item.c}20`, color: item.c }}>{item.p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Insights tab */}
+              {dashTab === 'insights' && (
+                <InsightsView club={club} defaultRole={activeRole} />
+              )}
+
+              {/* Don't Miss tab */}
+              {dashTab === 'dontmiss' && (
+                <div className="space-y-4">
+                  <SectionHeader title="Don't Miss" subtitle="Critical items that need your attention" icon="🔴" />
+                  {dontMissItems.map((item, idx) => (
+                    <div key={idx} className="p-4 bg-[#0D1117] rounded-xl" style={{ border: `1px solid ${item.c}30` }}>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <p className="text-xs text-gray-200 font-medium">{item.t}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: `${item.c}20`, color: item.c }}>{item.u}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500">Consequence: {item.con}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Team tab */}
+              {dashTab === 'team' && (
+                <div className="space-y-4">
+                  <SectionHeader title="Team" subtitle="Staff, structure, and club information" icon="👥" />
+                  <div className="flex gap-1 border-b border-gray-800 mb-4">
+                    {[
+                      { id: 'today' as const, label: 'Today' },
+                      { id: 'org' as const, label: 'Org Chart' },
+                      { id: 'info' as const, label: 'Team Info' },
+                      { id: 'club' as const, label: 'Club Info' },
+                    ].map(t => (
+                      <button key={t.id} onClick={() => setTeamSubTab(t.id)}
+                        className="px-4 py-2 text-xs font-semibold transition-all"
+                        style={{ color: teamSubTab === t.id ? '#BE185D' : '#6B7280', borderBottom: teamSubTab === t.id ? '2px solid #BE185D' : '2px solid transparent' }}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  {teamSubTab === 'today' && (
+                    <div className="space-y-2">
+                      {[
+                        { name: club.manager, role: 'Head Coach', status: 'In office', icon: '🎽' },
+                        { name: 'Dr Sarah Patel', role: 'Club Doctor', status: 'Matchday prep', icon: '🏥' },
+                        { name: 'James Kerr', role: 'Performance Analyst', status: 'GPS review', icon: '📡' },
+                        { name: 'Lisa Okonkwo', role: 'Welfare Officer', status: '2 check-ins today', icon: '❤️' },
+                      ].map((s, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 bg-[#0D1117] border border-gray-800 rounded-xl">
+                          <span className="text-lg">{s.icon}</span>
+                          <div className="flex-1"><div className="text-xs font-semibold text-white">{s.name}</div><div className="text-[10px] text-gray-500">{s.role}</div></div>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-green-600/20 text-green-400">{s.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {teamSubTab === 'org' && (
+                    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+                      <h3 className="text-sm font-bold text-white mb-4">Organisation Chart</h3>
+                      <div className="space-y-3 text-xs">
+                        <div className="text-center p-2 rounded-lg" style={{ backgroundColor: '#BE185D20', border: '1px solid #BE185D40' }}>
+                          <div className="font-bold text-white">{club.director}</div><div className="text-gray-400">Director</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[{ n: club.manager, r: 'Head Coach' }, { n: 'Commercial Dir.', r: 'Commercial' }, { n: 'Lisa Okonkwo', r: 'Welfare' }].map((p, i) => (
+                            <div key={i} className="text-center p-2 rounded-lg bg-gray-800/50 border border-gray-700">
+                              <div className="font-semibold text-white">{p.n}</div><div className="text-gray-500">{p.r}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {teamSubTab === 'info' && (
+                    <div className="space-y-2">
+                      {[
+                        { l: 'Squad size', v: '24 registered' },
+                        { l: 'Coaching staff', v: '6 (Head Coach + 5)' },
+                        { l: 'Medical team', v: '3 (Doctor, Physio, S&C)' },
+                        { l: 'Welfare', v: '1 Welfare Officer' },
+                        { l: 'Analytics', v: '2 (Performance + Scout)' },
+                      ].map((r, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
+                          <span className="text-xs text-gray-400">{r.l}</span>
+                          <span className="text-xs text-gray-200">{r.v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {teamSubTab === 'club' && (
+                    <div className="space-y-2">
+                      {[
+                        { l: 'Club', v: club.name },
+                        { l: 'League', v: club.league },
+                        { l: 'Stadium', v: `${club.stadium} (${club.capacity.toLocaleString()})` },
+                        { l: 'Founded', v: String(club.founded) },
+                        { l: 'Kit Sponsor', v: club.kitSponsor || 'None' },
+                      ].map((r, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
+                          <span className="text-xs text-gray-400">{r.l}</span>
+                          <span className="text-xs text-gray-200">{r.v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
