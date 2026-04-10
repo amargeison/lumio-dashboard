@@ -298,6 +298,32 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
   const [tourStep, setTourStep] = useState(0)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [dartsSummary, setDartsSummary] = useState<string | null>(null)
+  const [dartsSummaryLoading, setDartsSummaryLoading] = useState(false)
+
+  // TTS
+  const speakBriefing = () => {
+    if (typeof window === 'undefined') return
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    const text = dartsSummary || `Good morning ${firstName}. Tonight you face Gerwyn Price at the European Championship in Dortmund. Your 3-dart average is 97.8 this season. Focus on D16 under pressure. Red Dragon content shoot at 12. Good luck.`
+    const u = new SpeechSynthesisUtterance(text); u.rate = 0.95
+    const voices = window.speechSynthesis.getVoices()
+    const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
+    if (pref) u.voice = pref
+    u.onstart = () => setIsSpeaking(true); u.onend = () => setIsSpeaking(false); u.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(u)
+  }
+  useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+
+  // Auto-generate AI summary
+  useEffect(() => {
+    if (dartsSummary || dartsSummaryLoading) return
+    setDartsSummaryLoading(true)
+    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: `Morning briefing for Jake Morrison, #${player.pdcRank} PDC darts player "The Hammer". Cover: PDC ranking (#${player.pdcRank}, up 2), 3-dart average (${player.threeDartAverage}), tonight vs G. Price European Championship R1 (Dortmund, 20:00, Win = £110,000), one prep tip, one thing to watch in Price's game. 4-5 sentences, coaching tone. No intro.` }] }) })
+      .then(r => r.json()).then(d => setDartsSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setDartsSummaryLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -348,11 +374,16 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🎯</h1>
+              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+                style={{ background: isSpeaking ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(249,115,22,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#F97316' : '#9CA3AF' }}>
+                <Volume2 size={14} />
+              </button>
             </div>
             <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
-            <p className="text-xs italic" style={{ color: '#dc2626' }}>
+            <p className="text-xs italic" style={{ color: '#F59E0B' }}>
               &ldquo;The harder you work, the luckier you get.&rdquo; &mdash; Gary Player
             </p>
           </div>
@@ -381,8 +412,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Dortmund', tz:'Europe/Berlin', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
                   <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#dc2626' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#dc2626' : '#6B7280' }}>{city}</span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F59E0B' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#F59E0B' : '#6B7280' }}>{city}</span>
                   </div>
                 ))}
               </div>
@@ -447,15 +478,24 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
         const STEPS = [
-          { n:1, label:'Connect your PDC profile' },{ n:2, label:'Add your practice partner' },{ n:3, label:'Set your tournament calendar' },{ n:4, label:'Upload sponsor agreements' },{ n:5, label:'Set your average target' },{ n:6, label:'Add your coach' },{ n:7, label:'Configure equipment preferences' },{ n:8, label:'Set travel preferences' },{ n:9, label:'Add your agent' },{ n:10, label:"You're ready — throw" },
+          { n:1, label:'Connect your PDC profile', icon:'🎯', desc:'Link your PDC player profile to see live ranking updates, tournament schedule and prize money tracking automatically synced to your dashboard.' },
+          { n:2, label:'Add your practice partner', icon:'🤝', desc:'Add your regular practice partner so you can log joint sessions, compare averages and track improvement together.' },
+          { n:3, label:'Set your tournament calendar', icon:'📅', desc:'Import your PDC tour schedule so Lumio can surface upcoming deadlines, travel needs and preparation windows automatically.' },
+          { n:4, label:'Upload sponsor agreements', icon:'📋', desc:'Upload your current sponsor contracts so Lumio tracks obligations, posting deadlines and renewal dates — never miss a commitment.' },
+          { n:5, label:'Set your average target', icon:'📊', desc:'Set your 3-dart average target for the season. Lumio tracks your practice sessions against this target and flags when you\'re trending below.' },
+          { n:6, label:'Add your coach', icon:'🧠', desc:'Add your coach or manager so they can access your stats, log session notes and collaborate on your game plan.' },
+          { n:7, label:'Configure equipment preferences', icon:'🎣', desc:'Log your current barrel, flight, shaft and grip setup. Lumio alerts you when performance dips that may correlate with equipment changes.' },
+          { n:8, label:'Set travel preferences', icon:'✈️', desc:'Set your home airport, preferred airlines and hotel budget so Smart Flights AI and Hotel Finder pre-fill your preferences automatically.' },
+          { n:9, label:'Add your agent', icon:'🤝', desc:'Add your agent or manager contact so exhibition enquiries, sponsor negotiations and media requests route to the right person.' },
+          { n:10, label:"You're ready — throw!", icon:'🏆', desc:'Your Lumio Darts portal is fully set up. Everything you need to manage your career is in one place. Good luck on tour.' },
         ]
         const step = STEPS[tourStep]
         return (
           <div className="pt-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1 mr-4">
-                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#dc2626' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
-                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#dc2626' }} /></div>
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#F59E0B' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#F59E0B' }} /></div>
               </div>
               <button onClick={() => { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
             </div>
@@ -463,9 +503,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="space-y-1">
                 {STEPS.map((s, i) => (
                   <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
-                    style={{ backgroundColor: tourStep === i ? 'rgba(220,38,38,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent' }}>
+                    style={{ backgroundColor: tourStep === i ? 'rgba(249,115,22,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={{ backgroundColor: i < tourStep ? '#22C55E' : tourStep === i ? '#dc2626' : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : '#4B5563' }}>
+                      style={{ backgroundColor: i < tourStep ? '#22C55E' : tourStep === i ? '#F97316' : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : '#4B5563' }}>
                       {i < tourStep ? '✓' : s.n}
                     </div>
                     <span className="text-sm" style={{ color: tourStep === i ? '#F9FAFB' : '#6B7280' }}>{s.label}</span>
@@ -473,21 +513,28 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 ))}
               </div>
               <div className="lg:col-span-2">
-                <div className="rounded-2xl p-8" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
-                  <div className="text-5xl mb-4">🎯</div>
-                  <h2 className="text-2xl font-black text-white mb-3">{step.label}</h2>
-                  <p className="text-sm leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>Set up your Lumio Darts portal step by step. Each item connects a key part of your professional darts career to your dashboard.</p>
-                  <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[{ icon:'📊', v:`#${player.pdcRank}`, label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v:String(player.threeDartAverage), label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v:`£${Math.round(player.careerEarnings/1000)}k`, label:'Career', c:'#F59E0B' },{ icon:'🏆', v:'Tonight', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
-                        <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
-                      ))}
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                  <div className="p-6">
+                    <div className="text-4xl mb-3">{step.icon}</div>
+                    <h2 className="text-xl font-black text-white mb-2">{step.label}</h2>
+                    <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.desc}</p>
+                    <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[{ icon:'📊', v:`#${player.pdcRank}`, label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v:String(player.threeDartAverage), label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v:`£${Math.round(player.careerEarnings/1000)}k`, label:'Career', c:'#F59E0B' },{ icon:'🏆', v:'Tonight', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
+                          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') } }}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>
-                    {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go 🎯"}
-                  </button>
+                  <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
+                    <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
+                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {STEPS.length}</span>
+                    {tourStep < STEPS.length - 1 ? (
+                      <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#F97316' }}>Next →</button>
+                    ) : (
+                      <button onClick={() => { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go 🎯</button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -497,6 +544,18 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
       {/* TODAY */}
       {dashTab === 'today' && (
+        <div className="space-y-4">
+        {/* AI Morning Summary */}
+        <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #111318, #1a1a2e)', border: '1px solid rgba(249,115,22,0.2)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full flex items-center justify-center text-sm" style={{background:'rgba(249,115,22,0.15)'}}>🤖</div><span className="text-xs font-bold" style={{color:'#F97316'}}>AI Morning Summary</span>{dartsSummaryLoading && <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{background:'rgba(249,115,22,0.15)',color:'#F97316'}}>Generating...</span>}</div>
+            <button onClick={() => { setDartsSummary(null); setDartsSummaryLoading(false) }} className="text-[10px]" style={{color:'#4B5563'}} title="Regenerate">🔄</button>
+          </div>
+          {dartsSummaryLoading ? (<div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded animate-pulse" style={{width:`${80+i*5}%`,background:'#1F2937'}}/>)}</div>)
+           : dartsSummary ? (<div className="text-sm leading-relaxed" style={{color:'#F9FAFB',fontStyle:'italic',borderLeft:'3px solid #F97316',paddingLeft:14}}>{dartsSummary}</div>)
+           : (<div className="text-sm leading-relaxed" style={{color:'#F9FAFB',fontStyle:'italic',borderLeft:'3px solid #F97316',paddingLeft:14}}>Good morning. European Championship tonight — Gerwyn Price in R1. Your checkout percentage is trending up. Focus on D16 under pressure. Red Dragon content shoot at 12. Travel to Dortmund confirmed.</div>)}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT: Morning Roundup */}
           <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
@@ -627,6 +686,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
