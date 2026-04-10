@@ -301,6 +301,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'kit',label:'Kit & Equipment',icon:'👕'},
     {id:'travel',label:'Travel & Logistics',icon:'✈'},
     {id:'team-comms',label:'Team Comms',icon:'💬'},
+    {id:'preseason',label:'Pre-Season',icon:'🏏',badge:'NEW'},
   ]},
   {section:'COMMERCIAL',items:[
     {id:'commercial',label:'Commercial',icon:'💼'},
@@ -4159,6 +4160,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
     commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContent/>,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
+    preseason:<div className="p-8 text-center text-gray-500">Pre-Season coming soon</div>,
   };
 
   return(
