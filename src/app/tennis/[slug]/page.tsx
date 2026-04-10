@@ -52,6 +52,64 @@ interface TennisPlayer {
   career_titles: number;
 }
 
+// ─── DASHBOARD TAB TYPES ──────────────────────────────────────────────────────
+interface TennisTask {
+  id: string
+  title: string
+  description?: string
+  due: string
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  category: string
+  source: 'lumio' | 'manual' | 'workflow' | 'atp'
+  done: boolean
+  overdue: boolean
+  linkedWorkflow?: string
+}
+
+interface TennisQuickWin {
+  id: string
+  title: string
+  description: string
+  impact: 'high' | 'medium'
+  effort: '2min' | '5min' | '10min' | '15min'
+  category: string
+  action: string
+  actionSection?: string
+  actionUrl?: string
+  source: string
+}
+
+const PRIORITY_STYLES: Record<string, { dot: string; bg: string; color: string; label: string }> = {
+  critical: { dot: '#EF4444', bg: 'rgba(239,68,68,0.12)',   color: '#F87171', label: 'Critical' },
+  high:     { dot: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  color: '#FBBF24', label: 'High'     },
+  medium:   { dot: '#3B82F6', bg: 'rgba(59,130,246,0.12)',  color: '#60A5FA', label: 'Medium'   },
+  low:      { dot: '#6B7280', bg: 'rgba(107,114,128,0.12)', color: '#9CA3AF', label: 'Low'      },
+}
+
+const SOURCE_ICON: Record<string, string> = {
+  lumio: '⚡', manual: '✏️', workflow: '🔄', atp: '🎾'
+}
+
+const TENNIS_QUICK_WINS: TennisQuickWin[] = [
+  { id: 'tqw-1', title: 'Book Madrid flights — prices rising daily', description: 'Departing 26 Apr. Business class now £340 vs £280 last week.', impact: 'high', effort: '2min', category: 'Travel', action: 'Search flights →', actionSection: 'travel', source: 'Travel Desk' },
+  { id: 'tqw-2', title: 'Reply to Rolex renewal inquiry', description: 'Agent James Wright sent the renewal brief 3 days ago. Decision needed this week.', impact: 'high', effort: '5min', category: 'Commercial', action: 'Open sponsorship →', actionSection: 'sponsorship', source: 'Agent' },
+  { id: 'tqw-3', title: 'Lululemon post overdue today', description: 'Carlos needs kit photo before 12:00 for today\'s obligation.', impact: 'high', effort: '2min', category: 'Sponsor', action: 'View obligation →', actionSection: 'sponsorship', source: 'Lululemon' },
+  { id: 'tqw-4', title: 'Hamburg 500 wildcard — deadline today', description: 'Tournament director needs answer by 5pm. Clashes with Eastbourne.', impact: 'high', effort: '5min', category: 'Entries', action: 'Manage entries →', actionSection: 'entries', source: 'ATP Entry' },
+  { id: 'tqw-5', title: 'Review Martinez serve patterns', description: 'Match today at 13:00. Analysis team uploaded 3 tagged clips.', impact: 'medium', effort: '10min', category: 'Match Prep', action: 'View match prep →', actionSection: 'matchprep', source: 'Analysis' },
+  { id: 'tqw-6', title: 'Roland-Garros hotel deposit due 1 May', description: 'Apartment owner requesting €800 deposit. Travel desk waiting.', impact: 'medium', effort: '5min', category: 'Travel', action: 'Search hotels →', actionSection: 'travel', source: 'Travel Desk' },
+  { id: 'tqw-7', title: '2 Nike posts outstanding — March obligation', description: 'Nike partnership requires 4 posts per season. 2 overdue since March.', impact: 'medium', effort: '5min', category: 'Commercial', action: 'View obligation →', actionSection: 'sponsorship', source: 'Nike' },
+]
+
+const TENNIS_TASKS: TennisTask[] = [
+  { id: 't1', title: 'Reply to Tournament Desk — court time moved 30 min', description: 'URGENT: Confirm receipt of court schedule change.', due: '10:00', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false },
+  { id: 't2', title: 'See Dr Lee for shoulder — pre-match', description: 'Physio flagged inflammation. Ice 20 min + treatment.', due: '12:30', priority: 'high', category: 'Medical', source: 'lumio', done: false, overdue: false },
+  { id: 't3', title: 'Practice session — serve patterns', description: 'Focus: kick serve to backhand on deuce court. 90 min max.', due: '10:00', priority: 'high', category: 'Training', source: 'lumio', done: false, overdue: false },
+  { id: 't4', title: 'Stringing with Carlos — 2x Wilson Luxilon ALU', description: 'Clay tensions confirmed. Pick up at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false },
+  { id: 't5', title: 'Lululemon kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false },
+  { id: 't6', title: 'Respond to Hamburg 500 wildcard offer', description: 'Deadline 5pm today. Clashes with Eastbourne.', due: '17:00', priority: 'high', category: 'Entries', source: 'atp', done: false, overdue: false },
+  { id: 't7', title: 'Match vs C. Martinez — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false },
+]
+
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',   label: 'Dashboard',          icon: '🏠', group: 'OVERVIEW'     },
