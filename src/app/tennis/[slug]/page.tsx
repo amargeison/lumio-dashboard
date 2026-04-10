@@ -6424,6 +6424,44 @@ function SettingsView({ player, session, photos, setPhotos }: { player: TennisPl
           <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Profile</p>
         </div>
         <div className="divide-y" style={{ borderColor: '#1F2937' }}>
+          <div className="flex items-center justify-between px-5 py-4">
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Profile Photo</span>
+            <div className="flex items-center gap-3">
+              {session.photoDataUrl ? (
+                <img src={session.photoDataUrl} alt="Profile" className="w-11 h-11 rounded-full object-cover" style={{ border: `2px solid ${ACCENT}` }} />
+              ) : (
+                <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}20`, border: `2px solid ${ACCENT}`, color: ACCENT, fontWeight: 700, fontSize: 16 }}>
+                  {(session.userName || 'U')[0]}
+                </div>
+              )}
+              <input type="file" id="settings-photo-upload" accept="image/*" style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = (ev) => {
+                    const img = new window.Image()
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas')
+                      canvas.width = 400; canvas.height = 400
+                      const ctx = canvas.getContext('2d')
+                      if (!ctx) return
+                      ctx.drawImage(img, 0, 0, 400, 400)
+                      const compressed = canvas.toDataURL('image/jpeg', 0.7)
+                      try { localStorage.setItem('lumio_tennis_profile_photo', compressed) } catch {}
+                      window.location.reload()
+                    }
+                    img.src = ev.target?.result as string
+                  }
+                  reader.readAsDataURL(file)
+                  e.target.value = ''
+                }} />
+              <button onClick={() => document.getElementById('settings-photo-upload')?.click()}
+                className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ background: `${ACCENT}20`, border: `1px solid ${ACCENT}`, color: ACCENT }}>
+                📷 Change Photo
+              </button>
+            </div>
+          </div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{session?.userName || player.name}</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Tour / Circuit</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{player.tour} Tour</span></div>
           <div className="flex items-center justify-between px-5 py-3"><span className="text-sm" style={{ color: '#9CA3AF' }}>Ranking</span><span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>#{player.ranking}</span></div>
