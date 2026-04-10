@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
@@ -56,6 +56,7 @@ const SIDEBAR_ITEMS = [
   { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
   { id: 'gps',          label: 'GPS & PlayerData',    icon: '📡', group: 'OPERATIONS' },
   { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
+  { id: 'preseason',    label: 'Pre-Season',           icon: '⚽', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ]
 
@@ -3594,6 +3595,237 @@ export default function WomensFootballPortal({ params }: { params: { slug: strin
   )
 }
 
+// ─── PRE-SEASON CAMP VIEW ─────────────────────────────────────────────────────
+function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string; accent: string; aiRoute: string }) {
+  const [camp, setCamp] = useState<{ opener: string; opposition: string; squad: number; formation: string } | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState({ opener: '', opposition: '', squad: '22', formation: '4-3-3' })
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiHighlights, setAiHighlights] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  // Daily checklist
+  const today = new Date().toISOString().split('T')[0]
+  const checklistKey = `${storageKey}_checklist_${today}`
+  const [checklist, setChecklist] = useState<boolean[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem(checklistKey) : null; return s ? JSON.parse(s) : Array(8).fill(false) } catch { return Array(8).fill(false) }
+  })
+  useEffect(() => { localStorage.setItem(checklistKey, JSON.stringify(checklist)) }, [checklist, checklistKey])
+
+  // Fitness tests
+  const [fitnessTests, setFitnessTests] = useState<string[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${storageKey}_fitness`) : null; return s ? JSON.parse(s) : ['progress','pass','warn','pass','progress'] } catch { return ['progress','pass','warn','pass','progress'] }
+  })
+  useEffect(() => { localStorage.setItem(`${storageKey}_fitness`, JSON.stringify(fitnessTests)) }, [fitnessTests, storageKey])
+
+  // GPS load
+  const [gpsLoad, setGpsLoad] = useState(41)
+
+  // Tactical checklist
+  const [tactical, setTactical] = useState<boolean[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${storageKey}_tactical`) : null; return s ? JSON.parse(s) : Array(5).fill(false) } catch { return Array(5).fill(false) }
+  })
+  useEffect(() => { localStorage.setItem(`${storageKey}_tactical`, JSON.stringify(tactical)) }, [tactical, storageKey])
+
+  // Friendlies
+  const [friendlies, setFriendlies] = useState<{opp:string; score:string; notes:string; result:'W'|'D'|'L'}[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${storageKey}_friendlies`) : null; return s ? JSON.parse(s) : [{ opp:'Bromley Reserves', score:'3-1', notes:'Good defensive shape', result:'W' }] } catch { return [{ opp:'Bromley Reserves', score:'3-1', notes:'Good defensive shape', result:'W' }] }
+  })
+  useEffect(() => { localStorage.setItem(`${storageKey}_friendlies`, JSON.stringify(friendlies)) }, [friendlies, storageKey])
+
+  useEffect(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null; if (s) setCamp(JSON.parse(s)) } catch { /* */ }
+  }, [storageKey])
+
+  const activate = () => {
+    const c = { opener: form.opener, opposition: form.opposition, squad: parseInt(form.squad), formation: form.formation }
+    setCamp(c); localStorage.setItem(storageKey, JSON.stringify(c)); setShowModal(false)
+  }
+  const deactivate = () => { setCamp(null); localStorage.removeItem(storageKey) }
+
+  const daysTo = camp ? Math.max(0, Math.ceil((new Date(camp.opener).getTime() - Date.now()) / 86400000)) : 0
+  const totalDays = camp ? Math.max(1, Math.ceil((new Date(camp.opener).getTime() - new Date().getTime()) / 86400000 + 30)) : 30
+  const pctRemaining = camp ? daysTo / totalDays : 1
+  const phase = pctRemaining > 0.66 ? 'Fitness Block' : pctRemaining > 0.33 ? 'Tactical Block' : 'Match Sharpness'
+  const phaseColor = pctRemaining > 0.66 ? '#3B82F6' : pctRemaining > 0.33 ? '#F59E0B' : '#22C55E'
+
+  // AI generation
+  useEffect(() => {
+    if (!camp) return
+    setAiLoading(true)
+    Promise.all([
+      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate a football pre-season AI summary. Opening fixture vs ${camp.opposition}, ${daysTo} days remaining, currently in ${phase} phase, squad of ${camp.squad}, target formation ${camp.formation}. 6 numbered bullet points: overall squad readiness, fitness levels, tactical shape progress, key players to watch, injury concerns, one watch-out for the opener. Be specific and coaching-focused. No intro, just the 6 points.` }] }) }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}),
+      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: `Generate 5 urgent pre-season action items for opening fixture vs ${camp.opposition} in ${daysTo} days, ${phase} phase. Each item one line, specific and actionable. Cover: fitness test gaps, tactical shape issues, set piece readiness, player form concerns, squad balance. No intro.` }] }) }).then(r => r.json()).then(d => setAiHighlights(d.content?.[0]?.text || null)).catch(() => {}),
+    ]).finally(() => setAiLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camp?.opener])
+
+  const readinessScores = [
+    { label:'Fitness Base', score:71 },{ label:'Tactical Shape', score:58 },{ label:'Set Pieces', score:63 },
+    { label:'Squad Depth', score:74 },{ label:'Match Sharpness', score:49 },{ label:'Injury Status', score:82 },
+  ]
+  const overallScore = Math.round(readinessScores.reduce((a,s)=>a+s.score,0)/readinessScores.length)
+  const checklistItems = ['Morning fitness/GPS session','Technical drills','Tactical shape work','Set piece practice','Small-sided games','Recovery/cool down','Video analysis session','Nutrition & hydration logged']
+  const completedChecklist = checklist.filter(Boolean).length
+  const fitnessTestData = [
+    { label:'Bleep Test (VO2 Max)', target:'Level 13' },{ label:'Sprint 40m', target:'<5.2s' },
+    { label:'GPS Load (km/session)', target:'11km' },{ label:'Strength Test', target:'1.5x BW' },{ label:'Recovery Score', target:'>80 HRV' },
+  ]
+  const tacticalItems = ['Defensive shape drilled','Pressing triggers agreed','Attacking patterns rehearsed','Set piece routines locked','Transition play drilled']
+
+  const scoreColor = (s: number) => s >= 80 ? '#22C55E' : s >= 60 ? '#F59E0B' : '#EF4444'
+
+  // ─── NOT ACTIVE ─────────
+  if (!camp) return (
+    <div className="space-y-6">
+      <div className="rounded-2xl p-12 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="text-6xl mb-4">⚽</div>
+        <h2 className="text-2xl font-black text-white mb-2">Pre-Season Camp Mode</h2>
+        <p className="text-lg mb-2" style={{ color: accent }}>Build the base. Set the shape. Hit the ground running.</p>
+        <p className="text-sm max-w-lg mx-auto mb-8" style={{ color: '#9CA3AF' }}>Activate pre-season and Lumio tracks every session, fitness test, GPS load, tactical shape and squad readiness — all the way to your opening fixture.</p>
+        <button onClick={() => setShowModal(true)} className="px-8 py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: accent }}>Activate Pre-Season →</button>
+      </div>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <h3 className="text-lg font-bold text-white">Activate Pre-Season</h3>
+            <div><label className="text-xs text-gray-500 mb-1 block">Season opener date</label><input type="date" value={form.opener} onChange={e=>setForm(f=>({...f,opener:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Opposition (opening fixture)</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Manchester City" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
+            {form.opener && <div className="text-xs" style={{ color: '#6B7280' }}>Camp length: {Math.max(0,Math.ceil((new Date(form.opener).getTime()-Date.now())/86400000))} days</div>}
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-500 mb-1 block">Squad size</label><input type="number" value={form.squad} onChange={e=>setForm(f=>({...f,squad:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
+              <div><label className="text-xs text-gray-500 mb-1 block">Formation target</label><select value={form.formation} onChange={e=>setForm(f=>({...f,formation:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }}>{['4-3-3','4-4-2','4-2-3-1','3-5-2','5-3-2'].map(f=><option key={f}>{f}</option>)}</select></div>
+            </div>
+            <button onClick={activate} disabled={!form.opener||!form.opposition} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: form.opener&&form.opposition ? accent : '#374151' }}>Activate Pre-Season ⚽</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // ─── ACTIVE ─────────
+  return (
+    <div className="space-y-6">
+      {/* Pre-Season Banner */}
+      <div className="flex items-center justify-between px-5 py-3 rounded-xl" style={{ backgroundColor: '#F59E0B20', border: '1px solid #F59E0B40' }}>
+        <div className="flex items-center gap-3">
+          <span>⚽</span>
+          <span className="text-sm font-bold text-white">Pre-Season Active</span>
+          <span className="text-sm" style={{ color: '#F59E0B' }}>Opening Fixture: {camp.opposition} · {daysTo} days to go</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: phaseColor }}>{phase}</span>
+        </div>
+        <button onClick={deactivate} className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Deactivate</button>
+      </div>
+
+      {/* AI Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: accent }}>AI Pre-Season Summary</div>
+          {aiLoading ? <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded bg-gray-800 animate-pulse" style={{width:`${80+i*5}%`}}/>)}</div>
+           : aiSummary ? <div className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiSummary}</div>
+           : <div className="text-xs" style={{ color: '#6B7280' }}>AI summary will generate when camp is active.</div>}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#F59E0B' }}>AI Key Highlights</div>
+          {aiLoading ? <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded bg-gray-800 animate-pulse" style={{width:`${70+i*8}%`}}/>)}</div>
+           : aiHighlights ? <div className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiHighlights}</div>
+           : <div className="text-xs" style={{ color: '#6B7280' }}>Highlights will generate when camp is active.</div>}
+        </div>
+      </div>
+
+      {/* Squad Readiness Score */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-bold text-white">Squad Readiness Score</div>
+          <div className="text-3xl font-black" style={{ color: scoreColor(overallScore) }}>{overallScore}<span className="text-sm text-gray-500">/100</span></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {readinessScores.map(s => (
+            <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between mb-1"><span className="text-xs text-white">{s.label}</span><span className="text-sm font-black" style={{ color: scoreColor(s.score) }}>{s.score}</span></div>
+              <div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width:`${s.score}%`, backgroundColor: scoreColor(s.score) }}/></div>
+              {s.score < 60 && <div className="text-[9px] mt-1" style={{ color: '#EF4444' }}>Needs attention</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily Training Checklist */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-3"><div className="text-sm font-bold text-white">Today&apos;s Session Checklist</div><div className="text-xs" style={{ color: scoreColor(completedChecklist >= 6 ? 80 : completedChecklist >= 4 ? 65 : 40) }}>{completedChecklist}/8 completed</div></div>
+        <div className="space-y-2">
+          {checklistItems.map((item, i) => (
+            <button key={i} onClick={() => setChecklist(c => c.map((v,j)=>j===i?!v:v))} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all" style={{ backgroundColor: checklist[i] ? 'rgba(34,197,94,0.08)' : 'transparent', border: checklist[i] ? '1px solid rgba(34,197,94,0.2)' : '1px solid #1F2937' }}>
+              <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: checklist[i] ? '#22C55E' : '#374151', backgroundColor: checklist[i] ? 'rgba(34,197,94,0.2)' : 'transparent' }}>{checklist[i] && <span className="text-[10px]" style={{ color: '#22C55E' }}>✓</span>}</div>
+              <span className="text-xs" style={{ color: checklist[i] ? '#22C55E' : '#D1D5DB', textDecoration: checklist[i] ? 'line-through' : 'none' }}>{item}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Fitness Testing + GPS Load */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-sm font-bold text-white mb-3">Fitness Test Results</div>
+          <div className="space-y-2">
+            {fitnessTestData.map((t, i) => (
+              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                <div><div className="text-xs text-white">{t.label}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>Target: {t.target}</div></div>
+                <select value={fitnessTests[i]} onChange={e => setFitnessTests(f => f.map((v,j)=>j===i?e.target.value:v))} className="text-[10px] px-2 py-1 rounded" style={{ backgroundColor: '#1F2937', color: fitnessTests[i]==='pass'?'#22C55E':fitnessTests[i]==='warn'?'#F59E0B':'#6B7280', border: 'none' }}>
+                  <option value="progress">In Progress</option><option value="pass">✅ Passed</option><option value="warn">⚠️ Below target</option><option value="fail">❌ Failed</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-sm font-bold text-white mb-3">GPS Load Tracker</div>
+          <div className="text-center mb-4">
+            <div className="text-4xl font-black" style={{ color: gpsLoad >= 55 ? '#22C55E' : gpsLoad >= 40 ? '#F59E0B' : '#EF4444' }}>{gpsLoad}<span className="text-sm text-gray-500">km</span></div>
+            <div className="text-xs" style={{ color: '#6B7280' }}>of 65km weekly target</div>
+          </div>
+          <div className="w-full bg-gray-800 rounded-full h-2 mb-3"><div className="h-2 rounded-full" style={{ width: `${Math.min(100, (gpsLoad/65)*100)}%`, backgroundColor: gpsLoad >= 55 ? '#22C55E' : gpsLoad >= 40 ? '#F59E0B' : '#EF4444' }}/></div>
+          <div className="flex justify-center gap-3 mb-3">
+            <button onClick={() => setGpsLoad(g=>Math.max(0,g-5))} className="px-4 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>- 5km</button>
+            <button onClick={() => setGpsLoad(g=>g+5)} className="px-4 py-1.5 rounded-lg text-xs" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>+ 5km</button>
+          </div>
+          <div className="text-[10px] text-center" style={{ color: '#6B7280' }}>Increase load by max 10% per week to avoid injury spike</div>
+        </div>
+      </div>
+
+      {/* Friendly Matches */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-3"><div className="text-sm font-bold text-white">Friendly Matches</div><div className="text-xs" style={{ color: '#6B7280' }}>{friendlies.length} of 4 planned</div></div>
+        <div className="space-y-2">
+          {friendlies.map((f, i) => (
+            <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white" style={{ backgroundColor: f.result==='W'?'#22C55E':f.result==='D'?'#F59E0B':'#EF4444' }}>{f.result}</span>
+                <div><div className="text-xs text-white">{f.opp}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{f.notes}</div></div>
+              </div>
+              <span className="text-xs font-bold text-white">{f.score}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => setFriendlies(f => [...f, { opp:'TBC', score:'0-0', notes:'', result:'D' }])} className="mt-3 w-full py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>+ Add Result</button>
+      </div>
+
+      {/* Formation Board */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="flex items-center justify-between mb-3"><div className="text-sm font-bold text-white">Formation Board</div><span className="text-sm font-bold" style={{ color: accent }}>{camp.formation}</span></div>
+        <div className="space-y-2">
+          {tacticalItems.map((item, i) => (
+            <button key={i} onClick={() => setTactical(t => t.map((v,j)=>j===i?!v:v))} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all" style={{ backgroundColor: tactical[i] ? 'rgba(34,197,94,0.08)' : 'transparent', border: tactical[i] ? '1px solid rgba(34,197,94,0.2)' : '1px solid #1F2937' }}>
+              <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: tactical[i] ? '#22C55E' : '#374151', backgroundColor: tactical[i] ? 'rgba(34,197,94,0.2)' : 'transparent' }}>{tactical[i] && <span className="text-[10px]" style={{ color: '#22C55E' }}>✓</span>}</div>
+              <span className="text-xs" style={{ color: tactical[i] ? '#22C55E' : '#D1D5DB', textDecoration: tactical[i] ? 'line-through' : 'none' }}>{item}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function WomensFootballPortalInner({ club, session }: { club: WomensClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -3638,6 +3870,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'team':        return <StaffDirectoryView />
       case 'gps':         return <GPSPlayerDataView />
       case 'medical':     return <MedicalRecordsView />
+      case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
       case 'settings':    return <SettingsViewFull club={club} />
       default:            return <DashboardView club={club} />
     }
@@ -3667,6 +3900,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                   }`}>
                   <span className="text-sm">{item.icon}</span>
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                  {!sidebarCollapsed && item.id === 'preseason' && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
               ))}
             </div>
