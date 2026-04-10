@@ -639,10 +639,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       </div>
 
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-gray-800/50" style={{ scrollbarWidth: 'none', overflowX: 'hidden' }}>
+      <div className="flex items-center gap-0 border-b border-gray-800/50" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
-          className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${dashTab === 'gettingstarted' ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-          🚀 Getting Started
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
+          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#15803D' : 'transparent', color: dashTab === 'gettingstarted' ? '#4ade80' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#15803D0d' : 'transparent' }}>
+          <span className="text-base">🚀</span>Getting Started
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>10</span>
         </button>
         {([
@@ -654,8 +655,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           { id: 'team' as const, label: 'Team', icon: '👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all -mb-px ${dashTab === t.id ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            <span>{t.icon}</span>{t.label}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
+            style={{ borderBottomColor: dashTab === t.id ? '#15803D' : 'transparent', color: dashTab === t.id ? '#4ade80' : '#6B7280', backgroundColor: dashTab === t.id ? '#15803D0d' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -889,24 +891,31 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       {dashTab === 'quickwins' && (
         <div className="space-y-3">
           {[
-            { id:'qw1', title:'Log R2 round score before leaderboard closes', priority:'critical' as const, category:'Performance', action:'Log round →', modal:'loground' },
-            { id:'qw2', title:'Callaway post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post →', modal:'sponsorpost' },
-            { id:'qw3', title:'Book Scottish Open hotel — prices rising', priority:'high' as const, category:'Travel', action:'Find hotel →', modal:'hotel' },
-            { id:'qw4', title:'Mick updated hole 7 strategy — review before R3', priority:'high' as const, category:'Prep', action:'Open caddie brief →', modal:'caddiebriefai' },
-            { id:'qw5', title:'OWGR points update — check ranking movement', priority:'medium' as const, category:'Rankings', action:'Simulate →', modal:'ranking' },
+            { id:'qw1', title:'Log R2 round score before leaderboard closes', priority:'critical' as const, category:'Performance', action:'Log round', modal:'loground', effort:'2min', description:'Leaderboard closes at 18:00 — log your R2 score to maintain live tracking.' },
+            { id:'qw2', title:'Callaway post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost', effort:'5min', description:'Contractual sponsor post obligation. AI can generate caption in your voice.' },
+            { id:'qw3', title:'Book Scottish Open hotel — prices rising', priority:'high' as const, category:'Travel', action:'Find hotel', modal:'hotel', effort:'2min', description:'Preferred hotels filling up fast. Book now to save.' },
+            { id:'qw4', title:'Mick updated hole 7 strategy — review before R3', priority:'high' as const, category:'Prep', action:'Open caddie brief', modal:'caddiebriefai', effort:'5min', description:'Caddie notes updated with new wind data and pin positions.' },
+            { id:'qw5', title:'OWGR points update — check ranking movement', priority:'medium' as const, category:'Rankings', action:'Simulate', modal:'ranking', effort:'2min', description:'Points recalculated after this week — check projected movement.' },
           ].map(qw => {
             const ps = PRIORITY_STYLES[qw.priority]
             return (
-              <div key={qw.id} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ps.dot }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-white font-medium">{qw.title}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
-                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{qw.category}</span>
+              <div key={qw.id} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label.toUpperCase()}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#15803D1a', color: '#4ade80' }}>⏱ {qw.effort}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{qw.category}</span>
+                    </div>
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{qw.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{qw.description}</p>
+                    <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: AI + Live data</p>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <button onClick={() => onOpenModal(qw.modal)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#15803D' }}>{qw.action} →</button>
+                    <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
                   </div>
                 </div>
-                <button onClick={() => onOpenModal(qw.modal)} className="text-xs px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>{qw.action}</button>
               </div>
             )
           })}
@@ -916,26 +925,30 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       {dashTab === 'tasks' && (
         <div className="space-y-3">
           {[
-            { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high' as const, category:'Training', action:'Log session →', modal:'loground' },
-            { id:'dt2', time:'09:24', title:'Tee time R2 — with McIlroy, Scheffler', priority:'critical' as const, category:'Match', action:'Open caddie brief →', modal:'caddiebriefai' },
-            { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high' as const, category:'Medical', action:'Log medical →', modal:'injury' },
-            { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium' as const, category:'Performance', action:'Open TrackMan →', modal:'trackman' },
-            { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical' as const, category:'Entries', action:'Enter now →', modal:'' },
-            { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post →', modal:'sponsorpost' },
-            { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium' as const, category:'Finance', action:'Log expense →', modal:'expense' },
+            { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high' as const, category:'Training', action:'Log session', modal:'loground' },
+            { id:'dt2', time:'09:24', title:'Tee time R2 — with McIlroy, Scheffler', priority:'critical' as const, category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
+            { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high' as const, category:'Medical', action:'Log medical', modal:'injury' },
+            { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium' as const, category:'Performance', action:'Open TrackMan', modal:'trackman' },
+            { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical' as const, category:'Entries', action:'Enter now', modal:'' },
+            { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
+            { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium' as const, category:'Finance', action:'Log expense', modal:'expense' },
           ].map(dt => {
             const ps = PRIORITY_STYLES[dt.priority]
             return (
-              <div key={dt.id} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-bold w-14 flex-shrink-0 tabular-nums" style={{ color: dt.priority === 'critical' ? '#F87171' : '#6B7280' }}>{dt.time}</div>
+              <div key={dt.id} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-white font-medium">{dt.title}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
-                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{dt.category}</span>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{dt.category}</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{dt.time}</span>
                   </div>
+                  <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{dt.title}</h4>
                 </div>
-                {dt.modal && <button onClick={() => onOpenModal(dt.modal)} className="text-xs px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#15803D', border: '1px solid rgba(21,128,61,0.3)' }}>{dt.action}</button>}
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  {dt.modal && <button onClick={() => onOpenModal(dt.modal)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#15803D' }}>{dt.action} →</button>}
+                  <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
               </div>
             )
           })}
@@ -4703,9 +4716,9 @@ function GolfSponsorDashboard({ session, player }: { session: SportsDemoSession;
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+      <div className="flex gap-0 border-b px-6" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117', overflowX: 'hidden' }}>
         {([{ id:'overview' as const, label:'Overview', icon:'🏠' }, { id:'obligations' as const, label:'Obligations', icon:'📋' }, { id:'content' as const, label:'Content', icon:'📸' }, { id:'events' as const, label:'Events', icon:'⛳' }, { id:'roi' as const, label:'ROI & Reach', icon:'📊' }]).map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#F1C40F' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderBottomColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#4ade80' : '#6B7280', backgroundColor: activeTab === t.id ? `${sponsorColor}0d` : 'transparent' }}><span className="text-base">{t.icon}</span>{t.label}</button>
         ))}
       </div>
 

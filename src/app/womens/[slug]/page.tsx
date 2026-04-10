@@ -4568,11 +4568,11 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             </div>
 
             {/* Tab bar */}
-            <div className="flex items-center gap-1 px-6 mt-4 border-b border-gray-800 flex-shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-2 px-6 mt-4 border-b border-gray-800 flex-shrink-0 overflow-x-auto">
               {visibleTabs.map(t => (
                 <button key={t.id} onClick={() => setDashTab(t.id)}
-                  className="px-3 py-2.5 text-xs font-semibold transition-all relative whitespace-nowrap"
-                  style={{ color: dashTab === t.id ? '#BE185D' : '#6B7280', borderBottom: dashTab === t.id ? '2px solid #BE185D' : '2px solid transparent' }}>
+                  className="px-4 py-3 text-sm font-semibold transition-all relative whitespace-nowrap border-b-2 -mb-px"
+                  style={{ color: dashTab === t.id ? '#BE185D' : '#6B7280', borderBottomColor: dashTab === t.id ? '#BE185D' : 'transparent', backgroundColor: dashTab === t.id ? '#BE185D0d' : 'transparent' }}>
                   <span className="mr-1">{t.icon}</span>{t.label}
                 </button>
               ))}
@@ -4645,12 +4645,21 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 <div className="space-y-4">
                   <SectionHeader title="Quick Wins" subtitle="High-impact actions you can take right now" icon="⚡" />
                   {quickWinsItems.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-4 bg-[#0D1117] border border-gray-800 rounded-xl">
-                      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: item.c }} />
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-200">{item.t}</p>
+                    <div key={idx} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${item.c}1e`, color: item.c }}>{item.p.toUpperCase()} IMPACT</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#BE185D1e', color: '#BE185D' }}>⏱ 5min</span>
+                          </div>
+                          <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.t}</h3>
+                          <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: Lumio AI</p>
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#BE185D' }}>Action →</button>
+                          <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                        </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: `${item.c}20`, color: item.c }}>{item.p}</span>
                     </div>
                   ))}
                 </div>
@@ -4661,15 +4670,26 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 <div className="space-y-4">
                   <SectionHeader title="Daily Tasks" subtitle="Your operational checklist for today" icon="✅" />
                   {dailyTaskItems.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-4 bg-[#0D1117] border border-gray-800 rounded-xl">
-                      <div className="w-5 h-5 rounded border border-gray-700 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer hover:border-pink-600/50">
-                        <span className="text-[10px] text-gray-600">{idx + 1}</span>
+                    <div key={idx} className="rounded-xl p-4 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer" style={{ borderColor: '#374151' }}>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{item.t}</h3>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${item.c}1e`, color: item.c }}>{item.p}</span>
+                              <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{item.cat}</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#BE185D1e', color: '#BE185D' }}>Lumio</span>
+                              <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#BE185D' }}>Action →</button>
+                          <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-200">{item.t}</p>
-                        <span className="text-[10px] text-gray-500 mt-1">{item.cat}</span>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: `${item.c}20`, color: item.c }}>{item.p}</span>
                     </div>
                   ))}
                 </div>

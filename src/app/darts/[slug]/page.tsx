@@ -426,8 +426,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
-          className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab === 'gettingstarted' ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-          <span>🚀</span>Getting Started
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#f87171' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#dc26260d' : 'transparent' }}>
+          <span className="text-base">🚀</span>Getting Started
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
         </button>
         {([
@@ -439,10 +440,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           { id:'team' as const,       label:'Team',        icon:'👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
-              dashTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
-            }`}>
-            <span>{t.icon}</span>{t.label}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderBottomColor: dashTab === t.id ? '#dc2626' : 'transparent', color: dashTab === t.id ? '#f87171' : '#6B7280', backgroundColor: dashTab === t.id ? '#dc26260d' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -693,31 +693,33 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* QUICK WINS */}
       {dashTab === 'quickwins' && (() => {
         const quickWins = [
-          { id:'qw1', title:'Practice D16 checkout before warm-up', impact:'high' as const, effort:'10min', cat:'Performance', icon:'🎯', action:'Log practice', modal:'practice' as string|undefined },
-          { id:'qw2', title:'Reply to Paddy Power ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined },
-          { id:'qw3', title:'Book Prague Open flights — prices rising', impact:'high' as const, effort:'2min', cat:'Travel', icon:'✈️', action:'Search flights', modal:'flights' as string|undefined },
-          { id:'qw4', title:'Red Dragon content shoot prep — 12:00', impact:'high' as const, effort:'5min', cat:'Sponsor', icon:'🐉', action:'Open brief', modal:'sponsor' as string|undefined },
-          { id:'qw5', title:'Review G. Price checkout patterns', impact:'medium' as const, effort:'15min', cat:'Match Prep', icon:'📊', action:'View scout', modal:'matchreport' as string|undefined },
-          { id:'qw6', title:'Submit Betway social posts — 2 outstanding', impact:'medium' as const, effort:'5min', cat:'Commercial', icon:'📱', action:'View obligation', modal:'sponsor' as string|undefined },
-          { id:'qw7', title:'Confirm hotel for Madrid Premier League', impact:'medium' as const, effort:'5min', cat:'Travel', icon:'🏨', action:'Find hotel', modal:'hotel' as string|undefined },
+          { id:'qw1', title:'Practice D16 checkout before warm-up', impact:'high' as const, effort:'10min', cat:'Performance', icon:'🎯', action:'Log practice', modal:'practice' as string|undefined, description:'Double 16 is your weakest checkout route — 10 minutes of focused practice before warm-up.' },
+          { id:'qw2', title:'Reply to Paddy Power ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined, description:'Agent flagged urgency — competitor also in talks. Quick reply keeps deal alive.' },
+          { id:'qw3', title:'Book Prague Open flights — prices rising', impact:'high' as const, effort:'2min', cat:'Travel', icon:'✈️', action:'Search flights', modal:'flights' as string|undefined, description:'Cheapest seats selling fast — save £80+ booking now.' },
+          { id:'qw4', title:'Red Dragon content shoot prep — 12:00', impact:'high' as const, effort:'5min', cat:'Sponsor', icon:'🐉', action:'Open brief', modal:'sponsor' as string|undefined, description:'Contract obligation — penalty clause applies. Prep kit and backdrop.' },
+          { id:'qw5', title:'Review G. Price checkout patterns', impact:'medium' as const, effort:'15min', cat:'Match Prep', icon:'📊', action:'View scout', modal:'matchreport' as string|undefined, description:'Tonight\'s opponent — understand his favourite doubles and set-up shots.' },
+          { id:'qw6', title:'Submit Betway social posts — 2 outstanding', impact:'medium' as const, effort:'5min', cat:'Commercial', icon:'📱', action:'View obligation', modal:'sponsor' as string|undefined, description:'Agent chasing — sponsor relationship at risk if not submitted today.' },
+          { id:'qw7', title:'Confirm hotel for Madrid Premier League', impact:'medium' as const, effort:'5min', cat:'Travel', icon:'🏨', action:'Find hotel', modal:'hotel' as string|undefined, description:'Preferred hotel may sell out — Premier League week demand.' },
         ]
         return (
           <div className="space-y-3">
-            {quickWins.map((w, i) => (
-              <div key={w.id} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition-all">
-                <div className="w-7 h-7 rounded-full bg-red-600/15 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">{i+1}</div>
-                <span className="text-lg flex-shrink-0">{w.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-200">{w.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">{w.cat}</span>
-                    <span className="text-[10px] text-gray-600">~{w.effort}</span>
+            {quickWins.map((w) => (
+              <div key={w.id} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact==='high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: w.impact==='high' ? '#EF4444' : '#F59E0B' }}>{w.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#dc26261a', color: '#f87171' }}>⏱ {w.effort}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{w.cat}</span>
+                    </div>
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
+                    <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: AI + Live data</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${w.impact==='high'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{w.impact}</span>
-                  {w.modal && <button onClick={() => onOpenModal(w.modal!)} className="text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#dc2626' }}>{w.action} &rarr;</button>}
-                  <button className="text-[10px] px-2 py-1 rounded-lg text-gray-600 hover:text-green-400 hover:bg-green-600/10 border border-gray-800 transition-all">Done</button>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    {w.modal && <button onClick={() => onOpenModal(w.modal!)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>{w.action} →</button>}
+                    <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -739,18 +741,21 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             { time:'20:00', task:'Match vs G. Price — EC R1',       done:false, cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
             { time:'22:30', task:'Post-match media duties',         done:false, cat:'Media',      priority:'medium' as const, modal:'media' as string|undefined },
           ].map((t, i) => (
-            <div key={i} className={`flex items-center gap-4 rounded-xl p-4 border transition-all ${(t as {highlight?:boolean}).highlight?'bg-red-600/10 border-red-600/30':t.done?'bg-gray-900/30 border-gray-800/40 opacity-60':'bg-[#0d1117] border-gray-800 hover:border-gray-700'}`}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${t.done?'bg-green-500 border-green-500':(t as {highlight?:boolean}).highlight?'border-red-500':'border-gray-600'}`}>
-                {t.done && <span className="text-[9px] text-white font-bold">✓</span>}
-              </div>
-              <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{t.time}</span>
+            <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: (t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${(t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: t.done ? 0.6 : 1 }}>
+              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: t.done ? '#22C55E' : '#4B5563', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+              </button>
               <div className="flex-1 min-w-0">
-                <span className={`text-sm ${t.done?'line-through text-gray-600':(t as {highlight?:boolean}).highlight?'text-red-400 font-semibold':'text-gray-200'}`}>{t.task}</span>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='critical'?'rgba(239,68,68,0.12)':t.priority==='high'?'rgba(249,115,22,0.12)':t.priority==='medium'?'rgba(245,158,11,0.12)':'rgba(107,114,128,0.12)', color: t.priority==='critical'?'#EF4444':t.priority==='high'?'#F97316':t.priority==='medium'?'#F59E0B':'#6B7280' }}>{t.priority}</span>
+                  <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                  <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
+                </div>
+                <h4 className="font-semibold text-sm" style={{ color: t.done ? '#4B5563' : (t as {highlight?:boolean}).highlight ? '#f87171' : '#E5E7EB', textDecoration: t.done ? 'line-through' : 'none' }}>{t.task}</h4>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${t.priority==='critical'?'bg-red-600/20 text-red-400':t.priority==='high'?'bg-orange-600/20 text-orange-400':t.priority==='medium'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{t.priority}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500">{t.cat}</span>
-                {t.modal && !t.done && <button onClick={() => onOpenModal(t.modal!)} className="text-[10px] px-2 py-0.5 rounded-lg font-semibold" style={{ color: '#dc2626' }}>Open &rarr;</button>}
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                {t.modal && !t.done && <button onClick={() => onOpenModal(t.modal!)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>Open →</button>}
+                {!t.done && <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
               </div>
             </div>
           ))}
@@ -823,7 +828,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         const [teamSubTab, setTeamSubTab] = useState<'today'|'orgchart'|'info'|'tour'>('today')
         return (
           <div className="space-y-4">
-            <div className="flex gap-1 border-b border-gray-800 overflow-x-auto pb-px">
+            <div className="flex gap-1 border-b border-gray-800 pb-px" style={{ overflowX: 'hidden' }}>
               {([
                 { id:'today' as const, label:'Team Today', icon:'📅' },
                 { id:'orgchart' as const, label:'Org Chart', icon:'🏗️' },

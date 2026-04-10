@@ -375,9 +375,9 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
           { id: 'team' as const, label: 'Team', icon: '👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{ borderColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#c084fc' : '#6B7280' }}>
-            <span>{t.icon}</span>{t.label}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderBottomColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#c084fc' : '#6B7280', backgroundColor: dashTab === t.id ? '#7C3AED0d' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -458,41 +458,60 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
 
       {/* Quick Wins */}
       {dashTab === 'quickwins' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Quick Wins</div>
-          <div className="space-y-2">
-            {[
-              { icon: '📋', text: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start' },
-              { icon: '🤝', text: 'Schedule Hartfield Building Society renewal meeting', action: 'Book' },
-              { icon: '📡', text: 'Review GPS overload flags before Thursday session', action: 'View' },
-            ].map((w, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
-                <div className="flex items-center gap-2 text-xs"><span>{w.icon}</span><span className="text-gray-300">{w.text}</span></div>
-                <button className="text-[10px] px-3 py-1 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">{w.action}</button>
+        <div className="space-y-3">
+          {[
+            { icon: '📋', title: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start', impact: 'high' as const, effort: '15min', category: 'Franchise', description: 'Investment Capacity criterion needs documentation — Caroline Hughes waiting.' },
+            { icon: '🤝', title: 'Schedule Hartfield Building Society renewal meeting', action: 'Book', impact: 'high' as const, effort: '5min', category: 'Sponsor', description: 'Renewal due June 2026. Early meeting secures better terms.' },
+            { icon: '📡', title: 'Review GPS overload flags before Thursday session', action: 'View', impact: 'medium' as const, effort: '5min', category: 'Performance', description: '3 players flagged with high ACWR — review before training.' },
+          ].map((w, i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: w.impact === 'high' ? '#EF4444' : '#F59E0B' }}>{w.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7C3AED1a', color: '#c084fc' }}>⏱ {w.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{w.category}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: Club systems</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>{w.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
               </div>
-            ))}
-          </div>
-        </Card>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Daily Tasks */}
       {dashTab === 'dailytasks' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Daily Tasks — Thursday</div>
-          <div className="space-y-2">
-            {[
-              { time: '10:00', task: 'Team meeting — game plan finalised' },
-              { time: '11:00', task: 'Pre-match press conference' },
-              { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole' },
-              { time: '16:00', task: 'Sponsor call — Hartfield Building Society' },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50 text-xs">
-                <span className="text-purple-400 font-bold w-12">{t.time}</span>
-                <span className="text-gray-300">{t.task}</span>
+        <div className="space-y-3">
+          {[
+            { time: '10:00', task: 'Team meeting — game plan finalised', cat: 'Coaching', priority: 'high' as const },
+            { time: '11:00', task: 'Pre-match press conference', cat: 'Media', priority: 'medium' as const },
+            { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole', cat: 'Medical', priority: 'high' as const },
+            { time: '16:00', task: 'Sponsor call — Hartfield Building Society', cat: 'Commercial', priority: 'medium' as const },
+          ].map((t, i) => (
+            <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='high'?'rgba(249,115,22,0.12)':'rgba(245,158,11,0.12)', color: t.priority==='high'?'#F97316':'#F59E0B' }}>{t.priority}</span>
+                  <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                  <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
+                </div>
+                <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{t.task}</h4>
               </div>
-            ))}
-          </div>
-        </Card>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>Open →</button>
+                <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Insights */}
@@ -682,7 +701,7 @@ function InsightsView({club, activeRole: activeRoleProp = 'dor'}:{club:RugbyClub
   return (
     <div className="space-y-6">
       <QuickActionsBar/><SectionHeader icon="📊" title="Insights" subtitle="Role-specific dashboards — 8 views"/>
-      <div className="overflow-x-auto flex gap-1 border-b border-gray-800 pb-0">{roles.map(r=><button key={r.id} onClick={()=>setActiveRole(r.id)} className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeRole===r.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{r.icon}</span>{r.label}</button>)}</div>
+      <div className="flex gap-1 border-b border-gray-800 pb-0" style={{ overflowX: 'hidden' }}>{roles.map(r=><button key={r.id} onClick={()=>setActiveRole(r.id)} className={`px-4 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all -mb-px whitespace-nowrap`} style={{ borderBottomColor: activeRole===r.id?'#7C3AED':'transparent', color: activeRole===r.id?'#c084fc':'#6B7280', backgroundColor: activeRole===r.id?'#7C3AED0d':'transparent' }}><span className="text-base">{r.icon}</span>{r.label}</button>)}</div>
       {activeRole==='dor'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Cap Headroom" value={fmt(headroom)} sub="Compliant" color="green"/><StatCard label="Franchise" value={`${club.franchiseScore}%`} sub="2 RED criteria" color="orange"/><StatCard label="Targets" value="6" sub="2 priority" color="purple"/><StatCard label="Contract Exp" value="7" sub="Before Jun 2026" color="red"/></div><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><Card><div className="text-sm font-semibold text-white mb-3">Priority Actions</div>{[{a:'Confirm No.8 — Foster HIA Day 8',u:'red'},{a:'LHP contract — external interest',u:'red'},{a:"Women's Game plan — submit by 30 Apr",u:'amber'},{a:'Investment Capacity pack — CEO sign-off',u:'amber'},{a:'Salary cap return — due 10 May',u:'blue'}].map((a,i)=><div key={i} className="flex gap-2 py-2 border-b border-gray-800/50 last:border-0"><span className={`text-xs mt-0.5 flex-shrink-0 ${a.u==='red'?'text-red-400':a.u==='amber'?'text-amber-400':'text-blue-400'}`}>{a.u==='red'?'🔴':a.u==='amber'?'🟡':'🔵'}</span><span className="text-xs text-gray-300">{a.a}</span></div>)}</Card><Card><div className="text-sm font-semibold text-white mb-3">Franchise Gap — 30-Day Sprint</div>{[{c:"Women's Game (42%)",a:'Submit PWR reg',d:'30 Apr',p:'CRITICAL'},{c:'Investment (48%)',a:'Complete investor pack',d:'15 May',p:'HIGH'},{c:'Operating (65%)',a:'Book matchday assessment',d:'30 Jun',p:'MEDIUM'}].map((g,i)=><div key={i} className={`p-3 rounded-lg border mb-2 ${g.p==='CRITICAL'?'border-red-600/30 bg-red-600/5':g.p==='HIGH'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><div className="flex justify-between mb-1"><span className="text-xs font-bold text-white">{g.c}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${g.p==='CRITICAL'?'bg-red-600/20 text-red-400':g.p==='HIGH'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{g.p}</span></div><div className="text-[10px] text-gray-400">{g.a} · {g.d}</div></div>)}</Card></div></div>}
       {activeRole==='coach'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Available" value="28/38" sub="2 HIA · 2 injured" color="teal"/><StatCard label="GPS Overloads" value="2" sub="Barnes · Foster" color="red"/><StatCard label="Team ACWR" value="1.22" sub="Amber" color="orange"/><StatCard label="Next Match" value="Sat" sub="vs Jersey Reds" color="purple"/></div><Card><div className="text-sm font-semibold text-white mb-3">Set Piece + Opposition</div><div className="space-y-2 text-xs"><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Lineout</span><span className="text-green-400 font-bold">85%</span></div><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Scrum</span><span className="text-amber-400 font-bold">71% ⚠</span></div><div className="flex justify-between py-1.5"><span className="text-gray-400">Gainline</span><span className="text-white font-bold">61%</span></div></div><div className="mt-3 text-xs text-gray-400"><div>• Jersey scrum weakness — 4 pen last 3</div><div>• Hawkins kicks left 60%</div><div>• Morris (OF) — 9 turnovers last 3</div></div></Card></div>}
       {activeRole==='medical'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="HIA Active" value="1" sub="Danny Foster" color="red"/><StatCard label="Injured" value="2" sub="Briggs · Patel" color="amber"/><StatCard label="Overload" value="2" sub="Barnes · Foster K." color="orange"/><StatCard label="Screenings" value="2" sub="Overdue" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">Medical Register</div><table className="w-full text-xs"><tbody>{[{p:'Danny Foster',i:'HIA Day 8',r:'19 Apr',s:'Active'},{p:'Karl Briggs',i:'Shoulder post-op',r:'2 May',s:'RTP'},{p:'Ryan Patel',i:'Hamstring Gr2',r:'18 Apr',s:'Rehab'},{p:'Luke Barnes',i:'ACWR 1.52',r:'Managed',s:'Load mgmt'}].map((r,i)=><tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-white">{r.p}</td><td className="py-2 text-gray-400">{r.i}</td><td className="py-2 text-gray-300">{r.r}</td><td className="py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.s==='Active'?'bg-red-600/20 text-red-400':r.s==='RTP'?'bg-blue-600/20 text-blue-400':'bg-gray-800 text-gray-500'}`}>{r.s}</span></td></tr>)}</tbody></table></Card></div>}

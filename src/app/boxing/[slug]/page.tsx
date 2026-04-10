@@ -574,9 +574,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#dc2626' : '#6B7280' }}>
-          <span>🚀</span>Getting Started
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#f87171' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#dc26260d' : 'transparent' }}>
+          <span className="text-base">🚀</span>Getting Started
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
         </button>
         {([
@@ -588,10 +588,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           { id:'team' as const,       label:'Team',        icon:'👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className={`flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${
-              dashTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'
-            }`}>
-            <span>{t.icon}</span>{t.label}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderBottomColor: dashTab === t.id ? '#dc2626' : 'transparent', color: dashTab === t.id ? '#f87171' : '#6B7280', backgroundColor: dashTab === t.id ? '#dc26260d' : 'transparent' }}>
+            <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -856,26 +855,29 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {dashTab === 'quickwins' && (
         <div className="pt-4 space-y-3">
           {[
-            { p:1, action:'Log today\'s weight — behind daily target by 0.08kg',            impact:'Critical', cat:'Weight',     icon:'⚖️', cta:'Log weight →' },
-            { p:2, action:'DAZN pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm →' },
-            { p:3, action:'Sparring session vs southpaw booked — 10:00',                     impact:'High',     cat:'Camp',       icon:'🥊', cta:'Log sparring →' },
-            { p:4, action:'Petrov\'s last 3 fights uploaded — review footage',                impact:'High',     cat:'Prep',       icon:'🎬', cta:'Open scout →' },
-            { p:5, action:'Matchroom contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review →' },
+            { p:1, title:'Log today\'s weight — behind daily target by 0.08kg',            impact:'Critical', cat:'Weight',     icon:'⚖️', cta:'Log weight', effort:'2min', description:'Camp requirement — daily weight tracking keeps cut on schedule.' },
+            { p:2, title:'DAZN pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm', effort:'2min', description:'Press tour begins today. Contractual obligation — confirm now.' },
+            { p:3, title:'Sparring session vs southpaw booked — 10:00',                     impact:'High',     cat:'Camp',       icon:'🥊', cta:'Log sparring', effort:'5min', description:'Southpaw rounds to prepare for Petrov\'s stance. Jim Bevan supervising.' },
+            { p:4, title:'Petrov\'s last 3 fights uploaded — review footage',                impact:'High',     cat:'Prep',       icon:'🎬', cta:'Open scout', effort:'15min', description:'3 recent fights available — study patterns and defensive tendencies.' },
+            { p:5, title:'Matchroom contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review', effort:'5min', description:'Addendum to existing deal — Danny Walsh flagged urgency.' },
           ].map((w, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all"
-              style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
-                style={{ background: 'rgba(220,38,38,0.15)', color: '#dc2626' }}>{w.p}</div>
-              <span className="text-lg flex-shrink-0">{w.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm" style={{ color: '#E5E7EB' }}>{w.action}</p>
-                <span className="text-[10px]" style={{ color: '#6B7280' }}>{w.cat}</span>
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact==='Critical'?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.12)', color: w.impact==='Critical'?'#EF4444':'#F59E0B' }}>{w.impact === 'Critical' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#dc26261a', color: '#f87171' }}>⏱ {w.effort}</span>
+                    <span className="text-xs" style={{ color: '#6B7280' }}>{w.cat}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: AI + Camp data</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>{w.cta} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
               </div>
-              <button className="text-[10px] font-semibold flex-shrink-0" style={{ color: '#dc2626' }}>{w.cta}</button>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
-                style={{ background: w.impact==='Critical'?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.12)', color: w.impact==='Critical'?'#EF4444':'#F59E0B' }}>{w.impact}</span>
             </div>
           ))}
         </div>
@@ -883,25 +885,34 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* DAILY TASKS */}
       {dashTab === 'dailytasks' && (
-        <div className="pt-4 space-y-2">
+        <div className="pt-4 space-y-3">
           {[
-            { time:'07:00', task:'Morning weight log — daily camp requirement',         done:true,  cat:'Weight',     highlight:false },
-            { time:'09:30', task:'Gym session — Jim Bevan',                             done:true,  cat:'Training',   highlight:false },
-            { time:'09:00', task:'Right hand rewrap — tightness flagged yesterday',     done:false, cat:'Medical',    highlight:true  },
-            { time:'14:00', task:'DAZN interview prep — talking points',                done:false, cat:'Media',      highlight:false },
-            { time:'15:00', task:'Review Petrov southpaw footage — 2 hours',            done:false, cat:'Prep',       highlight:false },
-            { time:'EOD',   task:'Nutrition log — camp diet compliance',                 done:false, cat:'Health',     highlight:false },
-            { time:'16:00', task:'Danny Walsh call — purse split discussion',            done:false, cat:'Commercial', highlight:false },
+            { time:'07:00', task:'Morning weight log — daily camp requirement',         done:true,  cat:'Weight',     highlight:false, priority:'high' as const },
+            { time:'09:30', task:'Gym session — Jim Bevan',                             done:true,  cat:'Training',   highlight:false, priority:'high' as const },
+            { time:'09:00', task:'Right hand rewrap — tightness flagged yesterday',     done:false, cat:'Medical',    highlight:true,  priority:'critical' as const },
+            { time:'14:00', task:'DAZN interview prep — talking points',                done:false, cat:'Media',      highlight:false, priority:'medium' as const },
+            { time:'15:00', task:'Review Petrov southpaw footage — 2 hours',            done:false, cat:'Prep',       highlight:false, priority:'high' as const },
+            { time:'EOD',   task:'Nutrition log — camp diet compliance',                 done:false, cat:'Health',     highlight:false, priority:'medium' as const },
+            { time:'16:00', task:'Danny Walsh call — purse split discussion',            done:false, cat:'Commercial', highlight:false, priority:'medium' as const },
           ].map((t, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-xl p-4 border transition-all"
-              style={{ backgroundColor: t.highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', borderColor: t.highlight ? 'rgba(220,38,38,0.3)' : '#1F2937', opacity: t.done ? 0.6 : 1 }}>
-              <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                style={{ borderColor: t.done ? '#22C55E' : t.highlight ? '#dc2626' : '#374151', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+            <div key={i} className="rounded-xl p-4 flex items-start gap-4"
+              style={{ backgroundColor: t.highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${t.highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: t.done ? 0.6 : 1 }}>
+              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center"
+                style={{ borderColor: t.done ? '#22C55E' : '#4B5563', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
                 {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+              </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='critical'?'rgba(239,68,68,0.12)':t.priority==='high'?'rgba(249,115,22,0.12)':'rgba(245,158,11,0.12)', color: t.priority==='critical'?'#EF4444':t.priority==='high'?'#F97316':'#F59E0B' }}>{t.priority}</span>
+                  <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                  <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
+                </div>
+                <h4 className="font-semibold text-sm" style={{ color: t.done ? '#4B5563' : t.highlight ? '#f87171' : '#E5E7EB', textDecoration: t.done ? 'line-through' : 'none' }}>{t.task}</h4>
               </div>
-              <span className="text-[10px] w-10 flex-shrink-0" style={{ color: '#6B7280' }}>{t.time}</span>
-              <div className="flex-1"><span className="text-sm" style={{ color: t.done ? '#4B5563' : t.highlight ? '#dc2626' : '#D1D5DB', textDecoration: t.done ? 'line-through' : 'none', fontWeight: t.highlight ? 600 : 400 }}>{t.task}</span></div>
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.cat}</span>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                {!t.done && <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>Open →</button>}
+                {!t.done && <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
+              </div>
             </div>
           ))}
         </div>

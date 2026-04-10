@@ -675,11 +675,11 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
       </div>
 
       {/* Overview Tabs */}
-      <div className="flex gap-1 p-1 rounded-lg flex-wrap" style={{ backgroundColor: CARD_BG }}>
+      <div className="flex gap-2 border-b" style={{ borderColor: BORDER }}>
         {(['getting-started', 'dashboard', 'quick-wins', 'daily-tasks', 'dont-miss', 'team', 'insights'] as const).map(t => (
-          <button key={t} onClick={() => setOverviewTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-            style={{ backgroundColor: overviewTab === t ? PRIMARY : 'transparent', color: overviewTab === t ? '#fff' : TEXT_SEC }}>
-            {t === 'getting-started' ? 'Getting Started' : t === 'dashboard' ? 'Dashboard' : t === 'quick-wins' ? 'Quick Wins' : t === 'daily-tasks' ? 'Daily Tasks' : t === 'dont-miss' ? "Don't Miss" : t === 'team' ? 'Team' : 'Insights'}
+          <button key={t} onClick={() => setOverviewTab(t)} className="px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap"
+            style={{ borderBottomColor: overviewTab === t ? '#F59E0B' : 'transparent', color: overviewTab === t ? TEXT : TEXT_SEC, backgroundColor: overviewTab === t ? '#F59E0B0d' : 'transparent' }}>
+            {t === 'getting-started' ? '🚀 Getting Started' : t === 'dashboard' ? '🏠 Dashboard' : t === 'quick-wins' ? '⚡ Quick Wins' : t === 'daily-tasks' ? '✅ Daily Tasks' : t === 'dont-miss' ? "🔴 Don't Miss" : t === 'team' ? '👥 Team' : '📊 Insights'}
           </button>
         ))}
       </div>
@@ -701,51 +701,79 @@ function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; u
 
       {/* Quick Wins tab */}
       {overviewTab === 'quick-wins' && (
-        <SectionCard title="Quick Wins — Do These Now">
-          <div className="space-y-2">
-            {[
-              { task: 'Chase 6 outstanding match fees via WhatsApp', priority: 'High', action: 'Send Reminders', color: '#EF4444' },
-              { task: 'Confirm Fletcher fitness for Saturday', priority: 'High', action: 'Text Fletcher', color: '#EF4444' },
-              { task: 'Post matchday announcement on social media', priority: 'Medium', action: 'Use Template', color: GOLD },
-              { task: 'Book floodlight lux test before inspection', priority: 'High', action: 'Call Northern Electricals', color: '#EF4444' },
-              { task: 'Update squad availability for Redbourne game', priority: 'Medium', action: 'Send Poll', color: GOLD },
-            ].map((qw, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-3 flex-1">
-                  <Badge color={qw.color}>{qw.priority}</Badge>
-                  <span className="text-xs" style={{ color: TEXT }}>{qw.task}</span>
-                </div>
-                <button onClick={() => onToast(`${qw.action} triggered`)} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 ml-2" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>{qw.action}</button>
-              </div>
-            ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: TEXT }}>⚡ Quick Wins</h2>
+              <p className="text-sm mt-0.5" style={{ color: TEXT_SEC }}>High impact, low effort — sorted by priority.</p>
+            </div>
           </div>
-        </SectionCard>
+          {[
+            { task: 'Chase 6 outstanding match fees via WhatsApp', priority: 'High', action: 'Send Reminders', color: '#EF4444', effort: '2min', source: 'Finance' },
+            { task: 'Confirm Fletcher fitness for Saturday', priority: 'High', action: 'Text Fletcher', color: '#EF4444', effort: '2min', source: 'Squad' },
+            { task: 'Post matchday announcement on social media', priority: 'Medium', action: 'Use Template', color: GOLD, effort: '5min', source: 'Social' },
+            { task: 'Book floodlight lux test before inspection', priority: 'High', action: 'Call Northern Electricals', color: '#EF4444', effort: '5min', source: 'Ground' },
+            { task: 'Update squad availability for Redbourne game', priority: 'Medium', action: 'Send Poll', color: GOLD, effort: '2min', source: 'Squad' },
+          ].map((qw, i) => (
+            <div key={i} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${qw.color}1e`, color: qw.color }}>{qw.priority.toUpperCase()} IMPACT</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#F59E0B1e', color: '#F59E0B' }}>⏱ {qw.effort}</span>
+                  </div>
+                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{qw.task}</h3>
+                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {qw.source}</p>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button onClick={() => onToast(`${qw.action} triggered`)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#F59E0B' }}>{qw.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Daily Tasks tab */}
       {overviewTab === 'daily-tasks' && (
-        <SectionCard title="Daily Tasks">
-          <div className="space-y-2">
-            {[
-              { task: 'Review training attendance from Thursday', priority: 'Medium', category: 'Football', action: 'Open Training' },
-              { task: 'Approve programme notes for Saturday', priority: 'Low', category: 'Operations', action: 'Edit Notes' },
-              { task: 'Reply to Harfield Brewery sponsorship email', priority: 'High', category: 'Commercial', action: 'Draft Reply' },
-              { task: 'Check pitch condition after overnight rain', priority: 'Medium', category: 'Ground', action: 'Log Inspection' },
-              { task: 'Update FA Vase team sheet if Fletcher is fit', priority: 'Low', category: 'Football', action: 'Update Sheet' },
-            ].map((dt, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-3 flex-1">
-                  <Badge color={dt.priority === 'High' ? '#EF4444' : dt.priority === 'Medium' ? GOLD : TEXT_SEC}>{dt.priority}</Badge>
-                  <div>
-                    <p className="text-xs" style={{ color: TEXT }}>{dt.task}</p>
-                    <p className="text-[10px]" style={{ color: TEXT_SEC }}>{dt.category}</p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: TEXT }}>✅ Daily Tasks</h2>
+              <p className="text-sm mt-0.5" style={{ color: TEXT_SEC }}>Your operational checklist for today.</p>
+            </div>
+          </div>
+          {[
+            { task: 'Review training attendance from Thursday', priority: 'Medium', category: 'Football', action: 'Open Training', color: GOLD },
+            { task: 'Approve programme notes for Saturday', priority: 'Low', category: 'Operations', action: 'Edit Notes', color: TEXT_SEC },
+            { task: 'Reply to Harfield Brewery sponsorship email', priority: 'High', category: 'Commercial', action: 'Draft Reply', color: '#EF4444' },
+            { task: 'Check pitch condition after overnight rain', priority: 'Medium', category: 'Ground', action: 'Log Inspection', color: GOLD },
+            { task: 'Update FA Vase team sheet if Fletcher is fit', priority: 'Low', category: 'Football', action: 'Update Sheet', color: TEXT_SEC },
+          ].map((dt, i) => (
+            <div key={i} className="rounded-xl p-4 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer" style={{ borderColor: '#374151' }}>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{dt.task}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${dt.color}1e`, color: dt.color }}>{dt.priority}</span>
+                      <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{dt.category}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F59E0B1e', color: '#F59E0B' }}>Lumio</span>
+                      <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
+                    </div>
                   </div>
                 </div>
-                <button onClick={() => onToast(dt.action)} className="px-3 py-1.5 rounded-lg text-[10px] font-semibold shrink-0 ml-2" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>{dt.action}</button>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button onClick={() => onToast(dt.action)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#F59E0B' }}>{dt.action} →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
               </div>
-            ))}
-          </div>
-        </SectionCard>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Don't Miss tab */}

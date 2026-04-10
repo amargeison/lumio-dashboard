@@ -2280,12 +2280,12 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-0 border-b" style={{ borderColor: C.border, overflowX: 'hidden' }}>
+      <div className="flex gap-2 border-b" style={{ borderColor: C.border, overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderColor: dashTab === 'gettingstarted' ? C.purple : 'transparent', color: dashTab === 'gettingstarted' ? C.purple : C.dim }}>
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderColor: dashTab === 'gettingstarted' ? '#FBBF24' : 'transparent', color: dashTab === 'gettingstarted' ? '#FBBF24' : C.dim, backgroundColor: dashTab === 'gettingstarted' ? '#FBBF240d' : 'transparent' }}>
           🚀 Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: C.purple }}>10</span>
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#FBBF24' }}>10</span>
         </button>
         {([
           { id:'today' as const, label:'Today', icon:'🏠' },{ id:'quickwins' as const, label:'Quick Wins', icon:'⚡' },
@@ -2293,8 +2293,8 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
           { id:'dontmiss' as const, label:"Don't Miss", icon:'🔴' },{ id:'team' as const, label:'Team', icon:'👥' },
         ]).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{ borderColor: dashTab === t.id ? C.purple : 'transparent', color: dashTab === t.id ? C.text : C.dim }}>
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderColor: dashTab === t.id ? '#FBBF24' : 'transparent', color: dashTab === t.id ? C.text : C.dim, backgroundColor: dashTab === t.id ? '#FBBF240d' : 'transparent' }}>
             <span>{t.icon}</span>{t.label}
           </button>
         ))}

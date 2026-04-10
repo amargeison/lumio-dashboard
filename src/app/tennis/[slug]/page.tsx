@@ -1099,9 +1099,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       <div className="flex gap-0 border-b mb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
         {/* Getting Started tab with badge */}
         <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#F1C40F' : '#6B7280' }}>
-          <span>🚀</span>Getting Started
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#38bdf8' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#0ea5e90d' : 'transparent' }}>
+          <span className="text-base">🚀</span>Getting Started
           <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>10</span>
         </button>
         {([
@@ -1113,12 +1113,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           { id:'team' as const,       label:'Team',        icon:'👥' },
         ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
             style={{
-              borderColor: dashTab === t.id ? '#0ea5e9' : 'transparent',
-              color: dashTab === t.id ? '#F1C40F' : '#6B7280',
+              borderBottomColor: dashTab === t.id ? '#0ea5e9' : 'transparent',
+              color: dashTab === t.id ? '#38bdf8' : '#6B7280',
+              backgroundColor: dashTab === t.id ? '#0ea5e90d' : 'transparent',
             }}>
-            <span>{t.icon}</span>{t.label}
+            <span className="text-base">{t.icon}</span>{t.label}
           </button>
         ))}
       </div>
@@ -1518,40 +1519,36 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           ) : (
             TENNIS_QUICK_WINS.filter(w => !dismissedWins.has(w.id)).map((win) => (
               <div key={win.id}
-                className="rounded-xl p-4 transition-all"
+                className="rounded-2xl p-5 transition-all"
                 style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full"
                         style={{
-                          background: win.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                          backgroundColor: win.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
                           color: win.impact === 'high' ? '#EF4444' : '#F59E0B',
                         }}>{win.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>⏱ {win.effort}</span>
-                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{win.category}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#0ea5e91a', color: '#38bdf8' }}>⏱ {win.effort}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{win.category}</span>
                     </div>
-                    <p className="text-sm font-semibold text-white mb-1">{win.title}</p>
-                    <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{win.description}</p>
-                    <div className="text-[10px] mb-3" style={{ color: '#4B5563' }}>Source: {win.source}</div>
-                    <div className="flex items-center gap-2">
-                      {win.actionSection && (
-                        <button onClick={() => onNavigate(win.actionSection!)}
-                          className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-                          style={{ backgroundColor: '#0ea5e9', color: '#fff' }}
-                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0284c7' }}
-                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9' }}>
-                          {win.action}
-                        </button>
-                      )}
-                      <button onClick={() => onDismissWin(win.id)}
-                        className="text-[11px] px-3 py-1.5 rounded-lg transition-all"
-                        style={{ border: '1px solid #374151', color: '#9CA3AF' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; e.currentTarget.style.color = '#22C55E' }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#9CA3AF' }}>
-                        Mark done ✓
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{win.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{win.description}</p>
+                    <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {win.source}</p>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    {win.actionSection && (
+                      <button onClick={() => onNavigate(win.actionSection!)}
+                        className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#0ea5e9' }}>
+                        {win.action} →
                       </button>
-                    </div>
+                    )}
+                    <button onClick={() => onDismissWin(win.id)}
+                      className="px-4 py-2 text-xs rounded-xl"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                      Mark done
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1600,7 +1597,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             </div>
           )}
           {/* Filter pills */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <div className="flex gap-1.5 pb-1" style={{ overflowX: 'hidden' }}>
             {(['all', 'critical', 'high', 'medium', 'low'] as const).map(f => (
               <button key={f} onClick={() => setTaskFilter(f)}
                 className="text-[10px] px-3 py-1 rounded-full font-semibold transition-all whitespace-nowrap"
@@ -1619,52 +1616,40 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             const ps = PRIORITY_STYLES[t.priority] || PRIORITY_STYLES.medium
             return (
               <div key={t.id}
-                className="flex items-start gap-3 rounded-xl p-4 border transition-all"
+                className="rounded-xl p-4 flex items-start gap-4 border transition-all"
                 style={{
                   backgroundColor: checked ? 'rgba(255,255,255,0.01)' : '#111318',
                   borderColor: t.priority === 'critical' && !checked ? 'rgba(239,68,68,0.3)' : '#1F2937',
                   opacity: checked ? 0.55 : 1,
                 }}>
                 <button onClick={() => onToggleTask(t.id)}
-                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                  className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
                   style={{
-                    borderColor: checked ? '#22C55E' : ps.dot,
+                    borderColor: checked ? '#22C55E' : '#4B5563',
                     background: checked ? 'rgba(34,197,94,0.15)' : 'transparent',
                   }}>
                   {checked && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className="text-sm"
-                      style={{
-                        color: checked ? '#4B5563' : '#E5E7EB',
-                        textDecoration: checked ? 'line-through' : 'none',
-                        fontWeight: t.priority === 'critical' ? 600 : 400,
-                      }}>{t.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded" style={{ background: ps.bg, color: ps.color }}>
-                      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: ps.dot }} />
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: ps.bg, color: ps.color }}>
                       {ps.label}
                     </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.category}</span>
-                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{SOURCE_ICON[t.source] || ''} {t.due}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.category}</span>
                     {t.linkedWorkflow && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.12)', color: '#A78BFA' }}>🔄 {t.linkedWorkflow}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(108,63,197,0.1)', color: '#A78BFA' }}>🔄 {t.linkedWorkflow}</span>
                     )}
-                    {t.overdue && !checked && (
-                      <span className="text-[10px] font-bold" style={{ color: '#EF4444' }}>OVERDUE</span>
-                    )}
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.overdue ? '⚠️ Overdue' : t.due}</span>
                   </div>
+                  <h4 className="font-semibold text-sm" style={{ color: checked ? '#4B5563' : '#E5E7EB', textDecoration: checked ? 'line-through' : 'none' }}>{t.title}</h4>
                   {!checked && t.description && (
-                    <p className="text-[11px] mt-1.5" style={{ color: '#6B7280' }}>{t.description}</p>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>{t.description}</p>
+                  )}
+                  {t.overdue && !checked && (
+                    <span className="inline-block text-xs mt-2 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>OVERDUE</span>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <div className="text-xs font-bold"
-                    style={{ color: t.overdue ? '#F87171' : '#6B7280' }}>
-                    {t.overdue ? '⚠️ Overdue' : t.due}
-                  </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
                   {!checked && t.action && (
                     <>
                       <button
@@ -1672,13 +1657,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                           if (t.actionModal) onOpenModal(t.actionModal)
                           else if (t.actionSection) onNavigate(t.actionSection)
                         }}
-                        className="px-3 py-1.5 text-white text-xs font-bold rounded-xl whitespace-nowrap"
+                        className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap"
                         style={{ backgroundColor: '#0ea5e9' }}>
                         {t.action} →
                       </button>
                       <button
                         onClick={() => onToggleTask(t.id)}
-                        className="px-3 py-1.5 text-xs rounded-xl whitespace-nowrap"
+                        className="px-4 py-2 text-xs rounded-xl whitespace-nowrap"
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
                         Mark done
                       </button>
@@ -1838,7 +1823,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         return (
           <div className="pt-4 space-y-4">
             {/* Sub-tabs */}
-            <div className="flex gap-1 border-b overflow-x-auto pb-0" style={{ borderColor: '#1F2937' }}>
+            <div className="flex gap-1 border-b pb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
               {([
                 { id: 'today' as const, label: 'Team Today', icon: '📍' },
                 { id: 'org' as const, label: 'Org Chart', icon: '🏗️' },
@@ -1846,12 +1831,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 { id: 'club' as const, label: 'Club Info', icon: '🏛️' },
               ]).map(t => (
                 <button key={t.id} onClick={() => setTeamSubTab(t.id)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
                   style={{
-                    borderColor: teamSubTab === t.id ? '#0ea5e9' : 'transparent',
-                    color: teamSubTab === t.id ? '#0ea5e9' : '#6B7280',
+                    borderBottomColor: teamSubTab === t.id ? '#0ea5e9' : 'transparent',
+                    color: teamSubTab === t.id ? '#38bdf8' : '#6B7280',
+                    backgroundColor: teamSubTab === t.id ? '#0ea5e90d' : 'transparent',
                   }}>
-                  <span>{t.icon}</span>{t.label}
+                  <span className="text-base">{t.icon}</span>{t.label}
                 </button>
               ))}
             </div>
@@ -7787,9 +7773,9 @@ function TennisSponsorDashboard({ session, player }: { session: SportsDemoSessio
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+      <div className="flex gap-0 border-b px-6" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117', overflowX: 'hidden' }}>
         {([{ id:'overview' as const, label:'Overview', icon:'🏠' }, { id:'obligations' as const, label:'Obligations', icon:'📋' }, { id:'content' as const, label:'Content', icon:'📸' }, { id:'events' as const, label:'Events', icon:'🎾' }, { id:'roi' as const, label:'ROI & Reach', icon:'📊' }]).map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#F1C40F' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderBottomColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#38bdf8' : '#6B7280', backgroundColor: activeTab === t.id ? `${sponsorColor}0d` : 'transparent' }}><span className="text-base">{t.icon}</span>{t.label}</button>
         ))}
       </div>
 
@@ -8547,12 +8533,11 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
     }
     return (
       <div className="space-y-6">
-        <div className="flex gap-1 border-b border-gray-800 overflow-x-auto pb-0">
+        <div className="flex gap-1 border-b border-gray-800 pb-0" style={{ overflowX: 'hidden' }}>
           {perfTabs.map(t => (
             <button key={t.id} onClick={() => setPerfTab(t.id)}
-              className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${
-                perfTab === t.id ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'
-              }`}>
+              className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+              style={{ borderBottomColor: perfTab === t.id ? '#0ea5e9' : 'transparent', color: perfTab === t.id ? '#38bdf8' : '#6B7280', backgroundColor: perfTab === t.id ? '#0ea5e90d' : 'transparent' }}>
               <span>{t.icon}</span>{t.label}
             </button>
           ))}
