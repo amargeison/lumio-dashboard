@@ -545,8 +545,8 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div key={i} className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
                 style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
                 <div className="text-xl mb-0.5">{s.icon}</div>
-                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
+                <div className="text-lg font-black leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{s.label}</div>
               </div>
             ))}
             <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
