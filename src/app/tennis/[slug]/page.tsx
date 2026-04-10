@@ -1136,7 +1136,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#7C3AED' : 'transparent', color: dashTab === 'gettingstarted' ? '#7C3AED' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
             <span className="text-base">🚀</span>Getting Started
-            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#EF4444', color: '#fff' }}>10</span>
+            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#EF4444', color: '#fff' }}>11</span>
           </button>
           {([
             { id:'today' as const,      label:'Today',       icon:'🏠' },
