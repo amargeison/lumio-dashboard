@@ -33,8 +33,11 @@ type DeptId =
   | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
   | 'finances' | 'welfare' | 'communications' | 'referee' | 'pitch' | 'kit'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
+  | 'morning-roundup' | 'fa-sunday-cup' | 'halftime-talk' | 'availability' | 'discipline'
+  | 'dbs-tracker' | 'subs-tracker' | 'juniors' | 'referee-bookings' | 'preseason'
+  | 'player-profiles' | 'development' | 'league-reg' | 'safeguarding'
 
-type SidebarSection = null | 'Club' | 'Operations' | 'Resources' | 'Club Info'
+type SidebarSection = null | 'Club' | 'Match' | 'Squad' | 'Club Ops' | 'Players' | 'Admin' | 'Juniors' | 'Operations' | 'Resources' | 'Club Info'
 
 // ─── Constants ───────────��────────────────────────────────────���──────────────
 
@@ -48,25 +51,39 @@ const BORDER = '#334155'
 const TEXT = '#F8FAFC'
 const TEXT_SEC = '#94A3B8'
 
-const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
-  { id: 'overview',        label: 'Overview',           icon: Home,           section: null },
-  { id: 'club-profile',    label: 'Club Profile',       icon: MapPin,         section: null },
-  { id: 'squad',           label: 'Squad',              icon: Shirt,          section: 'Club' },
-  { id: 'matchday',        label: 'Match Day',          icon: Trophy,         section: 'Club' },
-  { id: 'fixtures',        label: 'Fixtures & Results', icon: Calendar,       section: 'Club' },
-  { id: 'tactics',         label: 'Tactics',            icon: Clipboard,      section: 'Club' },
-  { id: 'set-pieces',      label: 'Set Pieces',         icon: Target,         section: 'Club' },
-  { id: 'finances',        label: 'Finances',           icon: DollarSign,     section: 'Operations' },
-  { id: 'welfare',         label: 'Welfare',            icon: Shield,         section: 'Operations' },
-  { id: 'communications',  label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
-  { id: 'referee',         label: 'Referees',           icon: Eye,            section: 'Operations' },
-  { id: 'pitch',           label: 'Pitch & Venue',      icon: MapPin,         section: 'Resources' },
-  { id: 'kit',             label: 'Kit & Equipment',    icon: Shirt,          section: 'Resources' },
-  { id: 'volunteers',      label: 'Volunteers',         icon: Users,          section: 'Resources' },
-  { id: 'travel',          label: 'Travel',             icon: Car,            section: 'Resources' },
-  { id: 'documents',       label: 'Documents',          icon: FolderOpen,     section: 'Resources' },
-  { id: 'history',         label: 'Club History',       icon: History,        section: 'Club Info' },
-  { id: 'settings',        label: 'Settings',           icon: Settings,       section: 'Club Info' },
+const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection; badge?: string }[] = [
+  { id: 'overview',         label: 'Dashboard',          icon: Home,           section: null },
+  { id: 'morning-roundup',  label: 'Morning Roundup',    icon: Bell,           section: null, badge: 'NEW' },
+  { id: 'fixtures',         label: 'Fixtures',           icon: Calendar,       section: 'Match' },
+  { id: 'matchday',         label: 'Match Prep',         icon: Trophy,         section: 'Match' },
+  { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match', badge: 'NEW' },
+  { id: 'halftime-talk',    label: 'Halftime Talk',      icon: Mic,            section: 'Match', badge: 'NEW' },
+  { id: 'squad',            label: 'Squad List',         icon: Shirt,          section: 'Squad' },
+  { id: 'availability',     label: 'Availability',       icon: CheckCircle2,   section: 'Squad' },
+  { id: 'discipline',       label: 'Discipline',         icon: AlertCircle,    section: 'Squad' },
+  { id: 'dbs-tracker',      label: 'DBS Tracker',        icon: Shield,         section: 'Squad', badge: 'NEW' },
+  { id: 'kit',              label: 'Kit & Equipment',    icon: Shirt,          section: 'Club Ops' },
+  { id: 'pitch',            label: 'Pitch Booking',      icon: MapPin,         section: 'Club Ops' },
+  { id: 'subs-tracker',     label: 'Subs Tracker',       icon: DollarSign,     section: 'Club Ops', badge: 'NEW' },
+  { id: 'finances',         label: 'Finances',           icon: DollarSign,     section: 'Club Ops' },
+  { id: 'player-profiles',  label: 'Player Profiles',    icon: Users,          section: 'Players' },
+  { id: 'development',      label: 'Development Notes',  icon: TrendingUp,     section: 'Players' },
+  { id: 'referee-bookings', label: 'Referee Bookings',   icon: Eye,            section: 'Admin', badge: 'NEW' },
+  { id: 'league-reg',       label: 'League Registration',icon: FileText,       section: 'Admin' },
+  { id: 'safeguarding',     label: 'Safeguarding',       icon: Shield,         section: 'Admin' },
+  { id: 'juniors',          label: 'Junior Section',     icon: GraduationCap,  section: 'Juniors', badge: 'NEW' },
+  { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Club' },
+  { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Club' },
+  { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations' },
+  { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
+  { id: 'referee',          label: 'Referees',           icon: Eye,            section: 'Operations' },
+  { id: 'volunteers',       label: 'Volunteers',         icon: Users,          section: 'Resources' },
+  { id: 'travel',           label: 'Travel',             icon: Car,            section: 'Resources' },
+  { id: 'documents',        label: 'Documents',          icon: FolderOpen,     section: 'Resources' },
+  { id: 'club-profile',     label: 'Club Profile',       icon: MapPin,         section: 'Club Info' },
+  { id: 'history',          label: 'Club History',       icon: History,        section: 'Club Info' },
+  { id: 'preseason',        label: 'Pre-Season',         icon: Activity,       section: 'Club Info', badge: 'NEW' },
+  { id: 'settings',         label: 'Settings',           icon: Settings,       section: 'Club Info' },
 ]
 
 // ─── Squad Data ───────────��──────────────────────────────────────────────────
@@ -436,7 +453,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: 
             {sec.items.map(item => { const active = activeDept === item.id; return (
               <button key={item.id} onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }} className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
                 style={{ backgroundColor: active ? `${tierColor}1f` : 'transparent', color: active ? tierColor : TEXT_SEC, borderLeft: active ? `2px solid ${tierColor}` : '2px solid transparent', paddingLeft: expanded ? 12 : 0, justifyContent: expanded ? 'flex-start' : 'center' }} title={expanded ? undefined : item.label}>
-                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />{expanded && <span className="truncate">{item.label}</span>}
+                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />{expanded && <><span className="truncate">{item.label}</span>{item.badge && <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{backgroundColor:PRIMARY}}>{item.badge}</span>}</>}
               </button>
             )})}</div>))}
         </nav>
@@ -2650,6 +2667,20 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
               {activeDept === 'travel' && <TravelView onToast={fireToast} />}
               {activeDept === 'documents' && <DocumentsView />}
               {activeDept === 'history' && <HistoryView />}
+              {activeDept === 'morning-roundup' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🌅 Morning Roundup</h2><p className="text-sm" style={{color:TEXT_SEC}}>Your daily inbox — availability, subs, DBS alerts, pitch status, FA FULL-TIME submissions, and weather.</p></div>}
+              {activeDept === 'fa-sunday-cup' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🏆 FA Sunday Cup</h2><p className="text-sm" style={{color:TEXT_SEC}}>FA Sunday Cup R1 — vs Millfield Athletic, Sun 4 May, Riverside Park. Cup run mode, prize money tracker, and draw alerts.</p></div>}
+              {activeDept === 'halftime-talk' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🎤 Halftime Talk Generator</h2><p className="text-sm" style={{color:TEXT_SEC}}>3 taps → 3-point halftime talk via AI → read aloud. Designed for the touchline on your phone.</p></div>}
+              {activeDept === 'availability' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>📋 Availability</h2><p className="text-sm" style={{color:TEXT_SEC}}>WhatsApp availability tracker — 13 confirmed, 2 declined, 3 no response for Saturday&apos;s match.</p></div>}
+              {activeDept === 'discipline' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>⚠️ Discipline</h2><p className="text-sm" style={{color:TEXT_SEC}}>Yellow and red card tracker, suspensions, and FA discipline record for the season.</p></div>}
+              {activeDept === 'dbs-tracker' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><div className="rounded-lg p-3 mb-4" style={{backgroundColor:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)'}}><div className="text-xs font-bold" style={{color:'#EF4444'}}>⚠️ SAFEGUARDING RISK: Dave Nolan and Bob Turner DBS certificates are OVERDUE. They must not have unsupervised access to children until renewed.</div></div><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🛡️ DBS Certificate Tracker</h2><div className="space-y-2">{[{name:'Dave Nolan',role:'Manager',expiry:'Mar 2024',status:'🔴 OVERDUE'},{name:'Bob Turner',role:'Treasurer',expiry:'Jan 2025',status:'🔴 OVERDUE'},{name:'Phil Rees',role:'Coach',expiry:'Jun 2026',status:'✅ Valid'},{name:'Sarah Nolan',role:'Welfare',expiry:'Sep 2027',status:'✅ Valid'},{name:'Terry Walsh',role:'Groundsman',expiry:'Nov 2025',status:'🟡 7 months'}].map((p,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-lg" style={{backgroundColor:BG,border:`1px solid ${BORDER}`}}><div><div className="text-sm font-bold" style={{color:TEXT}}>{p.name}</div><div className="text-xs" style={{color:TEXT_SEC}}>{p.role} · Expires {p.expiry}</div></div><span className="text-xs font-bold">{p.status}</span></div>))}</div></div>}
+              {activeDept === 'subs-tracker' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>💰 Subs Collection</h2><p className="text-sm mb-4" style={{color:TEXT_SEC}}>£620 collected of £720 target · 4 players outstanding · £110 overdue</p><div className="space-y-2">{[{name:'Tommo Jenkins',owed:'£50',weeks:'6 weeks',sev:'🔴'},{name:'Andy Kirby',owed:'£30',weeks:'3 weeks',sev:'🟡'},{name:'Pete Walsh',owed:'£20',weeks:'2 weeks',sev:'🟡'},{name:'Lee Burns',owed:'£10',weeks:'1 week',sev:'🟢'}].map((p,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-lg" style={{backgroundColor:BG,border:`1px solid ${BORDER}`}}><div><div className="text-sm font-bold" style={{color:TEXT}}>{p.name}</div><div className="text-xs" style={{color:TEXT_SEC}}>{p.owed} · {p.weeks} overdue</div></div><span>{p.sev}</span></div>))}</div></div>}
+              {activeDept === 'juniors' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🎓 Junior Section</h2><p className="text-sm mb-4" style={{color:TEXT_SEC}}>Sunday Rovers FC Juniors — U12s (14 players) · U14s (12 players)</p><div className="rounded-lg p-3 mb-4" style={{backgroundColor:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)'}}><div className="text-xs" style={{color:'#EF4444'}}>All coaches working with juniors must have a valid Enhanced DBS certificate. Phil Rees ✅ · Sarah Nolan ✅ · Dave Nolan 🔴 OVERDUE — must not coach juniors until renewed.</div></div></div>}
+              {activeDept === 'referee-bookings' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>👁️ Referee Bookings</h2><p className="text-sm mb-4" style={{color:TEXT_SEC}}>Upcoming home fixtures with referee status, booking history, and cash reminders.</p><div className="space-y-2">{[{name:'Mike Jenkins',rating:'⭐⭐⭐⭐⭐',status:'✅ Available'},{name:'Dave Pearce',rating:'⭐⭐⭐⭐',status:'✅ Available'},{name:'Steve Cole',rating:'⭐⭐⭐',status:'❓ Unknown'}].map((r,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-lg" style={{backgroundColor:BG,border:`1px solid ${BORDER}`}}><div><div className="text-sm font-bold" style={{color:TEXT}}>{r.name}</div><div className="text-xs" style={{color:TEXT_SEC}}>{r.rating}</div></div><span className="text-xs">{r.status}</span></div>))}</div></div>}
+              {activeDept === 'player-profiles' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>👤 Player Profiles</h2><p className="text-sm" style={{color:TEXT_SEC}}>Individual player cards with season stats, emergency contacts, DBS status, and subs.</p></div>}
+              {activeDept === 'development' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>📈 Development Notes</h2><p className="text-sm" style={{color:TEXT_SEC}}>Private manager notes per player — performance ratings, what improved, what to work on.</p></div>}
+              {activeDept === 'league-reg' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>📋 League Registration</h2><p className="text-sm" style={{color:TEXT_SEC}}>FA and league registration status for all players. Westshire Sunday League Division 2.</p></div>}
+              {activeDept === 'safeguarding' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🛡️ Safeguarding</h2><p className="text-sm" style={{color:TEXT_SEC}}>Club safeguarding policy, designated welfare officer (Sarah Nolan), incident log, and parental consent tracker.</p></div>}
+              {activeDept === 'preseason' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>⚽ Pre-Season</h2><p className="text-sm" style={{color:TEXT_SEC}}>Pre-season camp tracker — fitness, friendlies, squad readiness, and conditions prep.</p></div>}
               {activeDept === 'settings' && <SettingsView />}
             </main>
           </div>
