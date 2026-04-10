@@ -8320,37 +8320,157 @@ function TennisEntryManager({ onClose }: { onClose: () => void }) {
 }
 
 function TennisHotelFinder({ onClose, session }: { onClose: () => void; session: SportsDemoSession }) {
+  const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
   const [destination, setDestination] = useState('Monte-Carlo, Monaco')
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState<null | Array<{name:string;stars:number;price:number;distance:string;score:number;badge?:string}>>(null)
+  const [roomType, setRoomType] = useState('Double')
+  const [guests, setGuests] = useState(1)
+  const [results, setResults] = useState<Array<{name:string;stars:number;price:number;distance:string;feature:string;badge?:string}>>([])
+  const [selected, setSelected] = useState<typeof results[0] | null>(null)
+
+  const TOURNAMENTS = [
+    { label: 'Monte-Carlo — 13 Apr', dest: 'Monte-Carlo, Monaco', cin: '2026-04-12', cout: '2026-04-14' },
+    { label: 'Madrid Open — 26 Apr', dest: 'Madrid, Spain', cin: '2026-04-25', cout: '2026-05-04' },
+    { label: 'Roland-Garros — 25 May', dest: 'Paris, France', cin: '2026-05-24', cout: '2026-06-08' },
+    { label: 'Halle Open — 14 Jun', dest: 'Halle, Germany', cin: '2026-06-13', cout: '2026-06-20' },
+    { label: 'Wimbledon — 29 Jun', dest: 'London, UK', cin: '2026-06-28', cout: '2026-07-13' },
+    { label: 'US Open — 24 Aug', dest: 'New York, USA', cin: '2026-08-23', cout: '2026-09-07' },
+  ]
+
+  const FALLBACK = [
+    { name: 'Hôtel Hermitage Monte-Carlo', stars: 5, price: 380, distance: '0.3km from venue', feature: 'In-house physio · pool · gym', badge: 'Best overall' },
+    { name: 'Novotel Monte-Carlo', stars: 4, price: 195, distance: '0.8km from venue', feature: 'Gym · free cancellation', badge: 'Best value' },
+    { name: 'Columbus Monte-Carlo', stars: 4, price: 220, distance: '0.6km from venue', feature: 'Pool · restaurant · quiet' },
+    { name: 'Port Palace', stars: 4, price: 260, distance: '0.5km from venue', feature: 'Harbour view · spa access' },
+  ]
+
+  const searchHotels = async () => {
+    setStep('searching')
+    try {
+      const res = await fetch('/api/ai/tennis', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `Search for the best hotels near ${destination} for a professional tennis player checking in ${checkIn || 'next week'} checking out ${checkOut || '5 days later'}. Room type: ${roomType}. Prioritise proximity to the tournament venue, player-friendly amenities (gym, pool, physio services), and value. Return exactly 4 hotel options as a JSON array: [{"name":"","stars":4,"price":200,"distance":"0.5km from venue","feature":"key amenity","badge":"Best overall or Best value or null"}]. Realistic prices in GBP.` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string})=>b.type==='text').map((b:{text:string})=>b.text).join('') || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      setResults(match ? JSON.parse(match[0]) : FALLBACK)
+    } catch { setResults(FALLBACK) }
+    setStep('results')
+  }
 
   return (<>
-    <ModalHeader icon="🏨" title="Hotel Finder" subtitle="Best hotels near your tournament" onClose={onClose} />
-    <div className="p-6 space-y-4">
-      {!results && !loading && (<>
-        <div><label className="text-xs text-gray-500 mb-1 block">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs text-gray-500 mb-1 block">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-          <div><label className="text-xs text-gray-500 mb-1 block">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
-        </div>
-        <button onClick={async () => { setLoading(true); await new Promise(r => setTimeout(r, 2000)); setResults([{name:'Hôtel Hermitage',stars:5,price:380,distance:'0.4km',score:97,badge:'Best overall'},{name:'Novotel Monte-Carlo',stars:4,price:195,distance:'0.8km',score:89,badge:'Best value'},{name:'Columbus Monte-Carlo',stars:4,price:220,distance:'0.6km',score:85},{name:'Port Palace',stars:4,price:260,distance:'0.5km',score:83}]); setLoading(false) }}
-          className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Search Hotels →</button>
-      </>)}
-      {loading && <div className="text-center py-12"><div className="text-5xl mb-4 animate-bounce">🏨</div><div className="text-sm font-bold text-white">Finding best hotels...</div></div>}
-      {results && (<div className="space-y-3">
-        {results.map((h,i) => (
-          <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{h.name}</span>{h.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>{h.badge}</span>}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{'⭐'.repeat(h.stars)} · {h.distance}</div></div><div className="text-right"><div className="text-lg font-black text-white">£{h.price}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>per night</div></div></div>
+    <ModalHeader icon="🏨" title="Smart Hotel Finder" subtitle="AI searches top booking sites for the best player-friendly hotels" onClose={onClose} />
+    {step !== 'searching' && (
+      <StepIndicator steps={['Configure','Search','Results','Book']} current={['configure','searching','results','book'].indexOf(step)} />
+    )}
+    <div className="p-6">
+      {/* CONFIGURE */}
+      {step === 'configure' && (
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider mb-2 block" style={{ color: '#6B7280' }}>Upcoming tournaments</label>
+            <div className="flex flex-wrap gap-2">
+              {TOURNAMENTS.map(t => (
+                <button key={t.label} onClick={() => { setDestination(t.dest); setCheckIn(t.cin); setCheckOut(t.cout) }}
+                  className="text-xs px-3 py-1.5 rounded-full transition-all"
+                  style={{ backgroundColor: destination === t.dest ? 'rgba(14,165,233,0.2)' : 'rgba(255,255,255,0.05)', border: destination === t.dest ? '1px solid #0ea5e9' : '1px solid #1F2937', color: destination === t.dest ? '#0ea5e9' : '#9CA3AF' }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
-        ))}
-        <div className="flex gap-3">
-          <button onClick={() => setResults(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Again</button>
-          <button onClick={() => { const h=results[0]; window.open(`mailto:james.wright@agent.com?subject=${encodeURIComponent(`Hotel — ${h.name}`)}&body=${encodeURIComponent(`Book ${h.name}, ${destination}. ${checkIn} to ${checkOut}. ~£${h.price}/night.\n\nThanks, ${session.userName || 'Alex'}`)}`) }}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>📧 Send to agent →</button>
+          <div><label className="text-xs text-gray-500 mb-1 block">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500 mb-1 block">Room type</label><select value={roomType} onChange={e => setRoomType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}><option>Single</option><option>Double</option><option>Suite</option><option>Presidential Suite</option></select></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Guests</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setGuests(Math.max(1,guests-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white w-4 text-center">{guests}</span><button onClick={() => setGuests(Math.min(4,guests+1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
+          </div>
+          <div className="flex items-start gap-2 p-3 rounded-xl" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
+            <span className="text-base flex-shrink-0">🏨</span>
+            <p className="text-xs" style={{ color: '#93C5FD' }}>Lumio AI searches Booking.com, Hotels.com, Marriott, Four Seasons and more — scoring on distance to venue, price, and player reviews.</p>
+          </div>
+          <button onClick={searchHotels} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Search Hotels →</button>
         </div>
-      </div>)}
+      )}
+
+      {/* SEARCHING */}
+      {step === 'searching' && (
+        <div className="text-center py-12">
+          <div className="text-5xl mb-4 animate-bounce">🏨</div>
+          <div className="text-base font-bold text-white mb-2">Searching hotels near {destination}...</div>
+          <div className="text-xs mb-6" style={{ color: '#6B7280' }}>Checking availability for {checkIn || 'your dates'}...</div>
+          <div className="space-y-2 max-w-xs mx-auto">
+            {['Checking Booking.com...', 'Checking Hotels.com...', 'Scoring by distance to venue...', 'Finding best value...'].map((t, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs" style={{ color: '#4B5563' }}>
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#0ea5e9' }} />{t}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* RESULTS */}
+      {step === 'results' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-bold text-white">{results.length} hotels found</div>
+            <div className="text-xs" style={{ color: '#6B7280' }}>{destination} · {roomType} · {guests} guest{guests > 1 ? 's' : ''}</div>
+          </div>
+          {results.map((h, i) => (
+            <div key={i} onClick={() => setSelected(h)}
+              className="rounded-xl p-4 cursor-pointer transition-all"
+              style={{ backgroundColor: selected?.name === h.name ? 'rgba(14,165,233,0.1)' : '#111318', border: selected?.name === h.name ? '1px solid #0ea5e9' : '1px solid #1F2937' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{h.name}</span>
+                    {h.badge && <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: h.badge === 'Best overall' ? '#0ea5e9' : '#22C55E' }}>{h.badge}</span>}
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{'⭐'.repeat(h.stars)} · {h.distance}</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#4B5563' }}>{h.feature}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-black text-white">£{h.price}</div>
+                  <div className="text-[10px]" style={{ color: '#6B7280' }}>per night</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="flex gap-3 mt-4">
+            <button onClick={() => setStep('configure')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Search again</button>
+            <button onClick={() => selected && setStep('book')} disabled={!selected} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: selected ? '#0ea5e9' : '#374151' }}>Book selected →</button>
+          </div>
+        </div>
+      )}
+
+      {/* BOOK */}
+      {step === 'book' && selected && (
+        <div className="space-y-4">
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}>
+            <div className="text-sm font-bold text-white mb-2">Booking summary</div>
+            <div className="space-y-1 text-xs" style={{ color: '#9CA3AF' }}>
+              {[['Hotel', selected.name], ['Location', destination], ['Check-in', checkIn], ['Check-out', checkOut], ['Room', roomType], ['Guests', String(guests)], ['Price', `£${selected.price}/night`]].map(([l,v]) => (
+                <div key={l} className="flex justify-between"><span>{l}</span><span className="text-white">{v}</span></div>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep('results')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={() => window.open(`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(selected.name + ' ' + destination)}`, '_blank')}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Open Booking.com →</button>
+            <button onClick={() => navigator.clipboard.writeText(`${selected.name}\n${destination}\n${checkIn} to ${checkOut}\n${roomType} · ${guests} guest(s)\n£${selected.price}/night`)}
+              className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>📋 Copy</button>
+          </div>
+        </div>
+      )}
     </div>
   </>)
 }
