@@ -793,6 +793,36 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
+  // Speech state
+  const [isSpeaking, setIsSpeaking] = useState(false)
+
+  const speakBriefing = () => {
+    if (typeof window === 'undefined') return
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    const briefingText = [
+      `Good morning ${firstName}.`,
+      `Today is ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}.`,
+      `You have a match today against C. Martinez at 1pm on Court 4.`,
+      `Head to Head: 3 wins to 1 in your favour.`,
+      `Your clay serve average is 4% below your season average — focus on the kick serve to his backhand on the deuce court.`,
+      `2 urgent messages: The tournament desk has moved your court time 30 minutes. Physio Dr Lee wants to see you at 12:30 for your shoulder.`,
+      `Lululemon sponsor post is due today — Carlos needs the kit photo before noon.`,
+      `312 ranking points drop off after Monte-Carlo. A win tonight keeps you at number 67. A loss risks dropping to 71.`,
+      `Good luck today.`,
+    ].join(' ')
+    const utterance = new SpeechSynthesisUtterance(briefingText)
+    const voices = window.speechSynthesis.getVoices()
+    const preferred = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.name.includes('Arthur') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
+    if (preferred) utterance.voice = preferred
+    utterance.rate = 0.95; utterance.pitch = 1.0; utterance.volume = 1.0
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+
   // Photo frame state
   const [photoIndex, setPhotoIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -880,25 +910,21 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
 
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex-shrink-0">
-              <div className="w-12 h-12 rounded-xl overflow-hidden border-2 flex items-center justify-center"
-                style={{ borderColor: 'rgba(14,165,233,0.4)', background: 'rgba(14,165,233,0.1)' }}>
-                {session.logoDataUrl
-                  ? <img src={session.logoDataUrl} alt="" className="w-full h-full object-cover" />
-                  : <span className="text-2xl">🎾</span>}
-              </div>
-            </div>
-
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h1 className="text-2xl font-bold text-white">
                   {greeting}, {firstName} 👋
                 </h1>
                 <button
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all text-sm"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
-                  title="Read briefing aloud">
-                  🔊
+                  onClick={speakBriefing}
+                  title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-sm"
+                  style={{
+                    background: isSpeaking ? 'rgba(14,165,233,0.3)' : 'rgba(255,255,255,0.08)',
+                    border: isSpeaking ? '1px solid rgba(14,165,233,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                    color: isSpeaking ? '#0ea5e9' : '#9CA3AF',
+                  }}>
+                  {isSpeaking ? '⏹' : '🔊'}
                 </button>
               </div>
               <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
@@ -1197,17 +1223,17 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
                     <ChevronUp size={14} style={{ color: '#6B7280' }} />
                   </div>
                 </div>
-                <div className="px-5 py-4 space-y-2.5">
+                <div className="px-5 py-4 space-y-3">
                   {[
-                    'Match vs C. Martinez today — H2H 3–1 in your favour. Focus kick serve.',
-                    '312 ranking points drop off after Monte-Carlo — win tonight critical.',
-                    'Rolex renewal due in 47 days — agent follow-up scheduled.',
-                    'Roland-Garros direct acceptance confirmed — entry deadline 3 May.',
-                    'Coach debrief added — Carlos requests 17:00 session post-match.',
+                    { type: 'match',    icon: '🎾', text: 'Match today vs C. Martinez — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
+                    { type: 'messages', icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
+                    { type: 'schedule', icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
+                    { type: 'sponsor',  icon: '🤝', text: 'Lululemon post due today — Carlos needs kit photo before 12:00. Reply to agent about Rolex renewal this week.' },
+                    { type: 'travel',   icon: '✈️', text: 'Madrid hotel confirmed (NH Eurobuilding, 26 Apr). Roland-Garros apartment deposit due 1 May — travel desk waiting.' },
                   ].map((item, i) => (
-                    <div key={i} className="flex gap-3 text-xs" style={{ color: '#9CA3AF' }}>
-                      <span className="font-bold flex-shrink-0 w-4" style={{ color: '#0ea5e9' }}>{i+1}</span>
-                      <span>{item}</span>
+                    <div key={i} className="flex gap-3 text-xs">
+                      <span className="text-base flex-shrink-0">{item.icon}</span>
+                      <span style={{ color: '#D1D5DB' }}>{item.text}</span>
                     </div>
                   ))}
                 </div>
@@ -1218,21 +1244,24 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
                     <span>⚡</span>
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Key Highlights</p>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
                   </div>
-                  <span className="text-[10px] font-medium cursor-pointer hover:underline" style={{ color: '#0ea5e9' }}>Today</span>
+                  <span className="text-[10px] font-medium cursor-pointer hover:underline" style={{ color: '#0ea5e9' }}>Performance</span>
                 </div>
                 <div className="px-5 py-4 space-y-2.5">
                   {[
-                    'Match vs Martinez today — H2H 3–1 in your favour',
-                    'Rolex renewal due in 47 days — agent follow-up needed',
-                    '312 pts drop off after Monte-Carlo — win tonight critical',
-                    'Roland-Garros direct acceptance confirmed',
-                    'New coach debrief requested for 17:00',
+                    { n:1, trend:'↑', color:'#22C55E', text:'Serve % up to 64% in last 5 matches — above season avg (58%). Clay kick serve working.' },
+                    { n:2, trend:'⚠', color:'#EF4444', text:'312 ranking points drop off after Monte-Carlo. Win tonight = hold #67. Loss = risk dropping to #71.' },
+                    { n:3, trend:'↑', color:'#22C55E', text:'Clay win rate 68% this season — above ATP tour avg (61%). Best surface by 7%.' },
+                    { n:4, trend:'→', color:'#0ea5e9', text:'Race to Turin: #54 — top 8 qualifies. Madrid and Roland-Garros are the key points events.' },
+                    { n:5, trend:'↓', color:'#F59E0B', text:'Break point conversion 38% — below top-50 avg (44%). Converting break chances is the difference maker.' },
                   ].map((item, i) => (
-                    <div key={i} className="flex gap-3 text-xs" style={{ color: '#9CA3AF' }}>
-                      <span className="font-bold flex-shrink-0 w-4" style={{ color: '#F1C40F' }}>{i+1}</span>
-                      <span>{item}</span>
+                    <div key={i} className="flex gap-3 text-xs">
+                      <div className="flex items-center gap-1 flex-shrink-0 w-8">
+                        <span className="font-bold" style={{ color: '#0ea5e9' }}>{item.n}</span>
+                        <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
+                      </div>
+                      <span style={{ color: '#D1D5DB' }}>{item.text}</span>
                     </div>
                   ))}
                 </div>

@@ -393,9 +393,13 @@ export default function SportsDemoGate({
   }
 
   const resetSession = () => {
-    localStorage.removeItem(sessionKey(sport))
-    localStorage.removeItem(`lumio_${sport}_demo_active`)
-    setSession(null); setStep('email'); setEmail(''); setCode('')
+    try {
+      localStorage.removeItem(sessionKey(sport))
+      localStorage.removeItem(`lumio_${sport}_demo_active`)
+      localStorage.removeItem(`lumio_${sport}_photos`)
+    } catch { /* ignore */ }
+    setSession(null); setStep(isDevHost ? 'club' : 'email'); setEmail(''); setCode('')
+    setUserName(''); setClubName(defaultClubName)
     setPhotoDataUrl(null); setLogoDataUrl(null)
     setShowResetConfirm(false); setError('')
     setInviteEmails(['', '', '', '', ''])
