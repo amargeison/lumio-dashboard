@@ -600,8 +600,37 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
         <StatCard label="Scoring Average" value="70.2" sub="Last 10 rounds" color="purple" />
       </div>
 
+      {/* Quick Actions — 2-row wrapped grid */}
+      <div className="mb-5">
+        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label:'Book Flight',       icon:'✈️', color:'#0ea5e9' },
+            { label:'Log Round',         icon:'📋', color:'#15803D' },
+            { label:'Course Notes',      icon:'🗺️', color:'#15803D' },
+            { label:'Caddie Briefing',   icon:'🏌️', color:'#F59E0B' },
+            { label:'Log Injury',        icon:'💊', color:'#EF4444' },
+            { label:'Sponsor Post',      icon:'📱', color:'#F59E0B' },
+            { label:'TrackMan Session',  icon:'📡', color:'#0ea5e9' },
+            { label:'Add Expense',       icon:'💰', color:'#6B7280' },
+          ].map((a, i) => (
+            <button key={i} className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+              style={{ background: '#111318', border: '1px solid #1F2937', color: '#9CA3AF' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
+              <span>{a.icon}</span>{a.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Tab Bar */}
       <div className="flex items-center gap-1 border-b border-gray-800/50 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        <button onClick={() => setDashTab('gettingstarted')}
+          className={`px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${dashTab === 'gettingstarted' ? 'border-[#15803D] text-green-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+          🚀 Getting Started
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>10</span>
+        </button>
         {([
           { id: 'today' as const, label: 'Today' },
           { id: 'quickwins' as const, label: 'Quick Wins' },
@@ -616,6 +645,57 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
           </button>
         ))}
       </div>
+
+      {/* Getting Started */}
+      {dashTab === 'gettingstarted' && (() => {
+        const STEPS = [
+          { n:1, label:'Connect your OWGR profile' },{ n:2, label:'Add your caddie' },{ n:3, label:'Set your tournament schedule' },{ n:4, label:'Upload sponsor agreements' },{ n:5, label:'Set earnings target' },{ n:6, label:'Add your coaching team' },{ n:7, label:'Configure TrackMan sync' },{ n:8, label:'Set travel preferences' },{ n:9, label:'Add your agent' },{ n:10, label:"You're ready — go play" },
+        ]
+        const step = STEPS[tourStep]
+        return (
+          <div className="pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1 mr-4">
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#15803D' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#15803D' }} /></div>
+              </div>
+              <button onClick={() => { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="space-y-1">
+                {STEPS.map((s, i) => (
+                  <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                    style={{ backgroundColor: tourStep === i ? 'rgba(21,128,61,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(21,128,61,0.3)' : '1px solid transparent' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: i < tourStep ? '#22C55E' : tourStep === i ? '#15803D' : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : '#4B5563' }}>
+                      {i < tourStep ? '✓' : s.n}
+                    </div>
+                    <span className="text-sm" style={{ color: tourStep === i ? '#F9FAFB' : '#6B7280' }}>{s.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="lg:col-span-2">
+                <div className="rounded-2xl p-8" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                  <div className="text-5xl mb-4">⛳</div>
+                  <h2 className="text-2xl font-black text-white mb-3">{step.label}</h2>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>Set up your Lumio Golf portal step by step. Each item connects a key part of your professional golf career to your dashboard.</p>
+                  <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (
+                        <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') } }}
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>
+                    {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go ⛳"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Tab Content */}
       {dashTab === 'today' && (
