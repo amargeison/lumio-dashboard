@@ -1884,10 +1884,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         const demoStaffPhotos: Record<string, string> = {
           'Carlos Mendez': '/Carlos_Mendez.jpg',
           'Dr Sarah Lee': '/Sarah_Lee.jpg',
-          'James Wright': '/James_Wright.jpg',
-          'Petra Novak': '/Petra_Novak.jpg',
-          'Marcos Silva': '/Marcos_Silva.jpg',
-          'Tom Ellis': '/Tom_Ellis.jpg',
+          'James Wright': '/Marcus_Webb.jpg',
+          'Petra Novak': '/Elena_Russo.jpg',
+          'Marcos Silva': '/James_Okafor.jpg',
+          'Tom Ellis': '/Rick_Dalton.jpg',
         }
         const TEAM_MEMBERS = [
           { name: 'Carlos Mendez', role: 'Head Coach', initials: 'CM', status: 'Debrief requested — 17:00 today', available: true, location: 'Monte-Carlo', phone: '+34 612 xxx xxx', speciality: 'Tactical & match strategy', rating: 92 },
@@ -1925,7 +1925,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 {TEAM_MEMBERS.map((m, i) => (
                   <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                     {demoStaffPhotos[m.name] ? (
-                      <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-10 h-10 rounded-full object-cover object-top flex-shrink-0 border" style={{ borderColor: 'rgba(14,165,233,0.3)' }} />
+                      <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-10 h-10 rounded-full object-cover object-center flex-shrink-0 border" style={{ borderColor: 'rgba(14,165,233,0.3)' }} />
                     ) : (
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
@@ -1999,7 +1999,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       </div>
                       <div className="flex justify-center pb-3">
                         {demoStaffPhotos[m.name] ? (
-                          <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-20 h-20 rounded-full object-cover object-top border-2" style={{ borderColor: `${m.deptColor}60` }} />
+                          <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-20 h-20 rounded-full object-cover object-center border-2" style={{ borderColor: `${m.deptColor}60` }} />
                         ) : (
                           <div className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-black border-2" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>
                         )}
