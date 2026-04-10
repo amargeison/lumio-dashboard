@@ -1130,8 +1130,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         <div className="pt-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1 mr-4">
-              <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#0ea5e9' }}>STEP {tourStep + 1} OF {TOUR_STEPS.length}</div>
-              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`, backgroundColor: '#0ea5e9' }} /></div>
+              <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: brandPrimary }}>STEP {tourStep + 1} OF {TOUR_STEPS.length}</div>
+              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`, backgroundColor: brandPrimary }} /></div>
             </div>
             <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
           </div>
