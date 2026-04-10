@@ -7,13 +7,20 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 
 
 export const CRICKET_ROLES = [
-  { id: 'chairman',   label: 'Club Chairman',   icon: '🏛️', description: 'Board & strategy'    },
-  { id: 'manager',    label: 'Club Manager',     icon: '🏏', description: 'Full club view'       },
-  { id: 'captain',    label: 'Club Captain',     icon: '🏆', description: 'Squad & fixtures'     },
+  { id: 'director',   label: 'Director',         icon: '🏛️', description: 'Board & strategy'    },
   { id: 'head_coach', label: 'Head Coach',       icon: '🎯', description: 'Coaching & analytics' },
-  { id: 'commercial', label: 'Commercial',       icon: '💼', description: 'Sponsors & events'    },
-  { id: 'secretary',  label: 'Club Secretary',   icon: '📋', description: 'Admin & compliance'   },
+  { id: 'captain',    label: 'Captain',           icon: '🏆', description: 'Squad & fixtures'     },
+  { id: 'analyst',    label: 'Analyst',           icon: '📊', description: 'Data & performance'   },
+  { id: 'sponsor',    label: 'Sponsor',           icon: '🤝', description: 'Sponsorship & events' },
 ]
+
+const CRICKET_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
+  director:   { label: 'Director',    icon: '🏛️', accent: '#8B5CF6', sidebar: 'all', message: null },
+  head_coach: { label: 'Head Coach',  icon: '🎯', accent: '#22C55E', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','practice-log','declaration','net-planner','performance-stats','squad','medical','gps','pathway','overseas','settings'], message: 'Coaching and performance view.' },
+  captain:    { label: 'Captain',     icon: '🏆', accent: '#3B82F6', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','squad','medical','opposition','livescores','team-comms','settings'], message: 'Squad and match view.' },
+  analyst:    { label: 'Analyst',     icon: '📊', accent: '#F59E0B', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','performance-stats','gps','livescores','settings'], message: 'Data and analytics view.' },
+  sponsor:    { label: 'Sponsor',     icon: '🤝', accent: '#EC4899', sidebar: ['dashboard','sponsorship','media','ticket-matchday','fan-engagement','commercial','settings'], message: null },
+}
 
 const C = {
   bg:'#07080F',sidebar:'#0B0D1B',card:'#0F1629',cardAlt:'#111827',
@@ -419,7 +426,11 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   function handleSidebarLeave() { sidebarLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 400) }
 
   // Role override
-  const [roleOverride, setRoleOverride] = useState(session?.role || 'chairman')
+  const [roleOverride, setRoleOverride] = useState(session?.role || 'director')
+  const currentRole = (roleOverride || 'director') as keyof typeof CRICKET_ROLE_CONFIG
+  const roleConfig = CRICKET_ROLE_CONFIG[currentRole] ?? CRICKET_ROLE_CONFIG.director
+  const isDirector = currentRole === 'director'
+  const isSponsor = currentRole === 'sponsor'
   const[battingFmt,setBattingFmt]=useState('All');
   const[bowlingFmt,setBowlingFmt]=useState('All');
   const[videoFilter,setVideoFilter]=useState('All');
@@ -4207,8 +4218,28 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     );
   };
 
+  // Sponsor dashboard for sponsor role
+  const CricketSponsorDashboard = () => {
+    const [sTab, setSTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+    return (
+      <div className="space-y-6">
+        <div><h2 className="text-xl font-black" style={{color:C.text}}>Sponsor Dashboard</h2><p className="text-xs" style={{color:C.dim}}>Yorkshire CCC partnership overview</p></div>
+        <div className="flex gap-1 border-b" style={{borderColor:C.border}}>
+          {([{id:'overview' as const,label:'Overview',icon:'🏠'},{id:'obligations' as const,label:'Obligations',icon:'📋'},{id:'content' as const,label:'Content',icon:'📸'},{id:'events' as const,label:'Events',icon:'🏏'},{id:'roi' as const,label:'ROI & Reach',icon:'📊'}]).map(t=>(
+            <button key={t.id} onClick={()=>setSTab(t.id)} className="px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px whitespace-nowrap" style={{borderColor:sTab===t.id?C.amber:'transparent',color:sTab===t.id?C.amber:C.dim}}>{t.icon} {t.label}</button>
+          ))}
+        </div>
+        {sTab==='overview'&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{l:'Partnership Value',v:'£180k/yr',c:C.amber},{l:'Contract Ends',v:'Dec 2027',c:C.teal},{l:'Obligations Met',v:'8/12',c:C.green},{l:'ROI Score',v:'4.2x',c:C.purple}].map((s,i)=>(<div key={i} className="rounded-xl p-4" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-xs" style={{color:C.dim}}>{s.l}</div><div className="text-xl font-black" style={{color:s.c}}>{s.v}</div></div>))}</div>}
+        {sTab==='obligations'&&<div className="space-y-2">{[{t:'Boundary board branding',s:'✅ Done'},{t:'Matchday hospitality x6',s:'4/6 used'},{t:'Player appearance (1)',s:'⏳ Pending'},{t:'Social media posts x12',s:'8/12 done'}].map((o,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><span className="text-sm" style={{color:C.text}}>{o.t}</span><span className="text-xs" style={{color:C.amber}}>{o.s}</span></div>))}</div>}
+        {sTab==='content'&&<div className="rounded-xl p-5" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-sm font-bold mb-3" style={{color:C.text}}>Content Calendar</div><div className="text-xs" style={{color:C.muted}}>Scheduled posts, co-branded content, and player feature opportunities managed through the media team.</div></div>}
+        {sTab==='events'&&<div className="space-y-2">{[{e:'T20 Blast Finals Day',d:'Sep 2026',t:'Hospitality'},{e:'County Championship vs Lancashire',d:'11 Apr 2026',t:'Boundary boards'},{e:'Annual Awards Dinner',d:'Oct 2026',t:'Title sponsor'}].map((ev,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div><div className="text-sm" style={{color:C.text}}>{ev.e}</div><div className="text-xs" style={{color:C.dim}}>{ev.d}</div></div><span className="text-[10px] px-2 py-0.5 rounded-full" style={{backgroundColor:C.amberDim,color:C.amber}}>{ev.t}</span></div>))}</div>}
+        {sTab==='roi'&&<div className="grid grid-cols-2 gap-3">{[{l:'Brand impressions',v:'2.4M',c:C.teal},{l:'Social reach',v:'480k',c:C.blue},{l:'Matchday footfall',v:'12,400',c:C.green},{l:'Media mentions',v:'34',c:C.purple}].map((s,i)=>(<div key={i} className="rounded-xl p-4 text-center" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-xs" style={{color:C.dim}}>{s.l}</div><div className="text-xl font-black" style={{color:s.c}}>{s.v}</div></div>))}</div>}
+      </div>
+    )
+  }
+
   const pages={
-    dashboard:<Dashboard/>,briefing:<Briefing/>,
+    dashboard: isSponsor ? <CricketSponsorDashboard/> : <Dashboard/>,briefing:<Briefing/>,
     'match-centre':<MatchCentre/>,'batting-analytics':<BattingAnalytics/>,'bowling-analytics':<BowlingAnalytics/>,
     'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,declaration:<DeclarationPlanner/>,dls:<DLSCalculator/>,'fan-engagement':<FanEngagement/>,'performance-stats':<PerformanceStats/>,
     squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,signings:<SigningPipeline/>,'net-planner':<NetSessionPlanner/>,'match-report':<MatchReport/>,
@@ -4247,10 +4278,13 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
         </div>
 
         <nav style={{flex:1,overflowY:'auto',padding:'10px 6px'}}>
-          {SECTIONED_NAV.map((sec,si)=>(
+          {SECTIONED_NAV.map((sec,si)=>{
+            const filteredItems = roleConfig.sidebar === 'all' ? sec.items : sec.items.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+            if (filteredItems.length === 0) return null
+            return (
             <div key={sec.section}>
               {sidebarExpanded && <div style={{fontSize:10,color:C.dim,letterSpacing:'0.1em',padding:'10px 10px 6px',textTransform:'uppercase',marginTop:si===0?0:6}}>{sec.section}</div>}
-              {sec.items.map(item=>(
+              {filteredItems.map(item=>(
                 <button key={item.id} onClick={()=>{setPage(item.id); if (!sidebarPinned) setSidebarHovered(false)}}
                   className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
                   style={{
@@ -4268,7 +4302,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
                 </button>
               ))}
             </div>
-          ))}
+            )
+          })}
         </nav>
 
         {session && (
@@ -4300,6 +4335,13 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
           <span>Demo workspace · sample data</span>
           <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
         </div>
+        {/* Role banner */}
+        {!isDirector && !isSponsor && (
+          <div className="flex items-center gap-2 px-6 py-2 text-xs" style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <span>{roleConfig.icon}</span>
+            <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong>{roleConfig.message ? ` — ${roleConfig.message}` : ''}</span>
+          </div>
+        )}
         <div style={{padding:'24px 28px'}}>
           {(pages as Record<string,React.ReactNode>)[page]||<Dashboard/>}
         </div>
