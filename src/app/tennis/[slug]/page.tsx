@@ -8624,7 +8624,6 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         </div>
       )}
       {/* Sidebar — floating when unpinned, pushes content when pinned */}
-      {sidebarPinned && <div style={{ width: 220, flexShrink: 0 }} />}
       <aside
         className="hidden md:flex flex-col overflow-hidden"
         style={{
@@ -8632,12 +8631,11 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'width 250ms ease',
-          position: sidebarPinned ? 'relative' : 'fixed',
+          position: 'fixed',
           top: 0,
           left: 0,
           height: '100vh',
-          zIndex: sidebarPinned ? 'auto' : 40,
-          marginLeft: sidebarPinned ? -220 : 0,
+          zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -8734,7 +8732,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
           style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
