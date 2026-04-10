@@ -106,7 +106,7 @@ const ClubStep = memo(function ClubStep({
 
 const ProfileStep = memo(function ProfileStep({
   userNameRef, photoDataUrl, setPhotoDataUrl, photoInputRef, handlePhotoUpload,
-  accentColor, sportLabel, roles, selectedRole, defaultUserName,
+  accentColor, sportLabel, sportEmoji, roles, selectedRole, defaultUserName,
   onContinue, onSkip,
 }: {
   userNameRef: React.RefObject<HTMLInputElement | null>
@@ -116,6 +116,7 @@ const ProfileStep = memo(function ProfileStep({
   handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => void
   accentColor: string
   sportLabel: string
+  sportEmoji: string
   roles: Array<{ id: string; label: string; icon: string; description?: string }>
   selectedRole: string
   defaultUserName: string
@@ -127,38 +128,70 @@ const ProfileStep = memo(function ProfileStep({
   return (
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
       <div>
-        <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">Step 2 of 4</div>
+        <div className="text-[11px] uppercase tracking-widest mb-2" style={{ color: accentColor }}>Step 2 of 4</div>
         <h2 className="text-lg font-bold text-white mb-1">Add your photo — see how you look in Lumio</h2>
+        <p className="text-sm text-gray-500">Your photo appears on your player card and across the portal.</p>
       </div>
-      <div className="flex gap-8 items-start">
-        {/* Photo upload */}
-        <div className="flex-shrink-0 flex flex-col items-center gap-3">
+
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        {/* LEFT: Large photo upload circle */}
+        <div className="flex flex-col items-center gap-3">
           <button onClick={() => photoInputRef.current?.click()} className="relative group">
-            <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center overflow-hidden bg-gray-900 hover:border-gray-400 transition-colors">
-              {photoDataUrl
-                ? <img src={photoDataUrl} alt="You" className="w-full h-full object-cover" />
-                : <span className="text-2xl font-bold text-gray-600">{initials}</span>}
+            <div className="w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all"
+              style={{ background: `${accentColor}15`, border: `2px dashed ${accentColor}60` }}>
+              {photoDataUrl ? (
+                <img src={photoDataUrl} alt="You" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span className="text-4xl font-black" style={{ color: `${accentColor}80` }}>{initials}</span>
+              )}
             </div>
             <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white text-[10px] font-bold">Upload</span>
+              <span className="text-white text-xs font-bold">Upload photo</span>
             </div>
           </button>
+          <span className="text-sm" style={{ color: '#6B7280' }}>Upload your photo</span>
           <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, setPhotoDataUrl)} />
-          <p className="text-[10px] text-gray-600">Click to upload</p>
         </div>
-        {/* FIFA card preview */}
-        <div className="flex-shrink-0">
-          <div className="w-28 h-40 rounded-lg flex flex-col items-center justify-between py-3 px-2"
-            style={{ background: `linear-gradient(135deg, ${accentColor}40, ${accentColor}15)`, border: `1px solid ${accentColor}60` }}>
-            <div className="text-[8px] font-bold tracking-widest uppercase w-full text-center" style={{ color: accentColor }}>{sportLabel.toUpperCase()}</div>
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center bg-gray-800" style={{ borderColor: accentColor }}>
-              {photoDataUrl ? <img src={photoDataUrl} alt="You" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-gray-600">{initials}</span>}
+
+        {/* RIGHT: Large FIFA card */}
+        <div className="w-48 h-72 rounded-2xl flex flex-col items-center justify-between py-4 px-3 relative"
+          style={{ background: `linear-gradient(135deg, ${accentColor}60, ${accentColor}20)`, border: `1px solid ${accentColor}80`, boxShadow: `0 0 40px ${accentColor}30` }}>
+          <div className="w-full flex items-start justify-between">
+            <div>
+              <div className="text-4xl font-black leading-none text-white">
+                {selectedRole === 'player' ? '92' : selectedRole === 'coach' ? '88' : selectedRole === 'chairman' ? '94' : selectedRole === 'manager' ? '91' : '89'}
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: accentColor }}>
+                {roles.find(r => r.id === selectedRole)?.label?.toUpperCase() ?? 'PLAYER'}
+              </div>
             </div>
-            <div className="text-[9px] text-center w-full truncate font-semibold text-white">{defaultUserName || 'YOUR NAME'}</div>
-            <div className="text-[7px] font-bold uppercase tracking-wider" style={{ color: accentColor }}>{roles.find(r => r.id === selectedRole)?.label ?? 'ROLE'}</div>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: accentColor }}>YOU</span>
+              <span className="text-xl">{sportEmoji}</span>
+            </div>
+          </div>
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 flex items-center justify-center" style={{ borderColor: accentColor, backgroundColor: `${accentColor}20` }}>
+            {photoDataUrl ? (
+              <img src={photoDataUrl} alt="You" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-3xl font-black" style={{ color: accentColor }}>{initials}</span>
+            )}
+          </div>
+          <div className="text-center">
+            <div className="text-base font-black text-white uppercase tracking-wide">{defaultUserName || 'YOUR NAME'}</div>
+            <div className="text-xs mt-0.5" style={{ color: accentColor }}>{roles.find(r => r.id === selectedRole)?.label ?? 'Player'}</div>
+          </div>
+          <div className="w-full grid grid-cols-2 gap-x-4 text-[10px]">
+            {[{ label: 'PAC', value: 87 }, { label: 'DRI', value: 76 }, { label: 'SHO', value: 79 }, { label: 'DEF', value: 71 }, { label: 'PAS', value: 84 }, { label: 'PHY', value: 83 }].map(s => (
+              <div key={s.label} className="flex items-center justify-between py-0.5" style={{ borderBottom: `1px solid ${accentColor}20` }}>
+                <span className="font-black text-white">{s.value}</span>
+                <span style={{ color: accentColor }}>{s.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
       <div>
         <input ref={userNameRef} type="text" defaultValue={defaultUserName} placeholder="Your name"
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500" />
@@ -506,6 +539,7 @@ export default function SportsDemoGate({
         handlePhotoUpload={handlePhotoUpload}
         accentColor={accentColor}
         sportLabel={sportLabel}
+        sportEmoji={sportEmoji || '⚽'}
         roles={roles}
         selectedRole={selectedRole}
         defaultUserName={userName}

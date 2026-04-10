@@ -846,7 +846,9 @@ const IncomeExpenseChart = () => {
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
 function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void }) {
-  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+  })
   const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
@@ -1033,6 +1035,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
       {/* ── TAB BAR ── */}
       <div className="flex gap-0 border-b overflow-x-auto mb-0" style={{ borderColor: '#1F2937' }}>
+        {/* Getting Started tab with badge */}
+        <button onClick={() => setDashTab('gettingstarted')}
+          className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+          style={{ borderColor: dashTab === 'gettingstarted' ? '#0ea5e9' : 'transparent', color: dashTab === 'gettingstarted' ? '#F1C40F' : '#6B7280' }}>
+          <span>🚀</span>Getting Started
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>10</span>
+        </button>
         {([
           { id:'today' as const,      label:'Today',       icon:'🏠' },
           { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
@@ -1051,6 +1060,109 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           </button>
         ))}
       </div>
+
+      {/* ── GETTING STARTED TAB ── */}
+      {dashTab === 'gettingstarted' && (
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#0ea5e9' }}>STEP 1 OF 10</div>
+              <div className="w-64 bg-gray-800 rounded-full h-1 mb-4">
+                <div className="h-1 rounded-full" style={{ width: '10%', backgroundColor: '#0ea5e9' }} />
+              </div>
+            </div>
+            <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }}
+              className="text-sm" style={{ color: '#6B7280' }}>Skip tour →</button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* LEFT: Step list */}
+            <div className="space-y-1">
+              {[
+                { n:1,  label:'Your tennis OS, fully connected',          active:true  },
+                { n:2,  label:'Start every match week knowing everything' },
+                { n:3,  label:'Every action, one click away'              },
+                { n:4,  label:'GPS, rankings, and performance'            },
+                { n:5,  label:'Your team, front and centre'               },
+                { n:6,  label:'AI that actually helps you win'            },
+                { n:7,  label:'Travel sorted in 60 seconds'              },
+                { n:8,  label:'Sponsors managed automatically'            },
+                { n:9,  label:'Nothing falls through the cracks'          },
+                { n:10, label:"You've seen enough — let's go"             },
+              ].map(step => (
+                <div key={step.n} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all"
+                  style={{
+                    backgroundColor: step.active ? 'rgba(14,165,233,0.1)' : 'transparent',
+                    border: step.active ? '1px solid rgba(14,165,233,0.3)' : '1px solid transparent',
+                  }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ backgroundColor: step.active ? '#0ea5e9' : 'rgba(255,255,255,0.05)', color: step.active ? '#fff' : '#4B5563' }}>{step.n}</div>
+                  <span className="text-sm" style={{ color: step.active ? '#F9FAFB' : '#6B7280' }}>{step.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* RIGHT: Feature preview */}
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl p-8" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                <div className="text-5xl mb-4">🎾</div>
+                <h2 className="text-2xl font-black mb-3" style={{ color: '#F9FAFB' }}>Your tennis OS, fully connected</h2>
+                <p className="text-base leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>
+                  You&apos;re looking at Lumio Tennis — one portal that replaces the 6 tools you probably use right now.
+                  Rankings, GPS, sponsors, travel, match prep, and your team — all here, all connected, all talking to each other.
+                </p>
+
+                <div className="rounded-xl p-4 mb-6" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.15), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.3)' }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-lg">🌅</span>
+                    <div>
+                      <div className="text-sm font-bold text-white">Good morning, {session.userName?.split(' ')[0] || firstName} 👋</div>
+                      <div className="text-xs" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:00 Court 4 · Monte-Carlo</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { icon:'📊', label:'#67 ATP',    color:'#0ea5e9' },
+                      { icon:'✅', label:'Match Today', color:'#22C55E' },
+                      { icon:'⚠️', label:'2 Urgent',    color:'#EF4444' },
+                      { icon:'💰', label:'£387k YTD',   color:'#F59E0B' },
+                    ].map((s, i) => (
+                      <div key={i} className="text-center rounded-lg py-2" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                        <div className="text-base">{s.icon}</div>
+                        <div className="text-[10px] font-bold mt-0.5" style={{ color: s.color }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {[
+                    { icon:'🤖', label:'AI Morning Briefing',  sub:'Reads your day aloud in 60 seconds' },
+                    { icon:'📡', label:'GPS Performance',       sub:'Load, heatmaps, ACWR tracking' },
+                    { icon:'🔁', label:'Transfer Researcher',   sub:'AI finds players to your brief' },
+                    { icon:'✈️', label:'Travel in 60 seconds', sub:'Flights + hotels + booking email' },
+                  ].map((f, i) => (
+                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl"
+                      style={{ backgroundColor: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.15)' }}>
+                      <span className="text-xl flex-shrink-0">{f.icon}</span>
+                      <div>
+                        <div className="text-xs font-bold text-white">{f.label}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={() => { localStorage.setItem('tennis_getting_started_seen', 'true'); setDashTab('today') }}
+                  className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all" style={{ backgroundColor: '#0ea5e9' }}>
+                  Let&apos;s take a tour →
+                </button>
+                <p className="text-xs text-center mt-2" style={{ color: '#4B5563' }}>Or explore on your own — come back here anytime</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TODAY TAB ── */}
       {dashTab === 'today' && (
