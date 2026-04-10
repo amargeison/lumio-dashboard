@@ -64,6 +64,9 @@ interface TennisTask {
   done: boolean
   overdue: boolean
   linkedWorkflow?: string
+  action?: string
+  actionSection?: string
+  actionModal?: string
 }
 
 interface TennisQuickWin {
@@ -101,13 +104,13 @@ const TENNIS_QUICK_WINS: TennisQuickWin[] = [
 ]
 
 const TENNIS_TASKS: TennisTask[] = [
-  { id: 't1', title: 'Reply to Tournament Desk — court time moved 30 min', description: 'URGENT: Confirm receipt of court schedule change.', due: '10:00', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false },
-  { id: 't2', title: 'See Dr Lee for shoulder — pre-match', description: 'Physio flagged inflammation. Ice 20 min + treatment.', due: '12:30', priority: 'high', category: 'Medical', source: 'lumio', done: false, overdue: false },
-  { id: 't3', title: 'Practice session — serve patterns', description: 'Focus: kick serve to backhand on deuce court. 90 min max.', due: '10:00', priority: 'high', category: 'Training', source: 'lumio', done: false, overdue: false },
-  { id: 't4', title: 'Stringing with Carlos — 2x Wilson Luxilon ALU', description: 'Clay tensions confirmed. Pick up at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false },
-  { id: 't5', title: 'Lululemon kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false },
-  { id: 't6', title: 'Respond to Hamburg 500 wildcard offer', description: 'Deadline 5pm today. Clashes with Eastbourne.', due: '17:00', priority: 'high', category: 'Entries', source: 'atp', done: false, overdue: false },
-  { id: 't7', title: 'Match vs C. Martinez — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false },
+  { id: 't1', title: 'Reply to Tournament Desk — court time moved 30 min', description: 'URGENT: Confirm receipt of court schedule change. Court 4 now 13:30.', due: '10:00', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Reply now', actionSection: 'morning' },
+  { id: 't2', title: 'See Dr Lee for shoulder — pre-match', description: 'Physio flagged inflammation. Ice 20 min + treatment before warm-up.', due: '12:30', priority: 'high', category: 'Medical', source: 'lumio', done: false, overdue: false, action: 'View physio', actionSection: 'physio-recovery' },
+  { id: 't3', title: 'Practice session — serve patterns', description: 'Focus: kick serve to backhand on deuce court. 90 min max.', due: '10:00', priority: 'high', category: 'Training', source: 'lumio', done: false, overdue: false, action: 'Log practice', actionModal: 'notes' },
+  { id: 't4', title: 'Stringing with Carlos — 2x Wilson Luxilon ALU', description: 'Clay tensions confirmed. Pick up from string room at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false, action: 'String order', actionModal: 'strings' },
+  { id: 't5', title: 'Lululemon kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false, action: 'View obligation', actionSection: 'sponsorship' },
+  { id: 't6', title: 'Respond to Hamburg 500 wildcard offer', description: 'Deadline 5pm today. Clashes with Eastbourne.', due: '17:00', priority: 'high', category: 'Entries', source: 'atp', done: false, overdue: false, action: 'Entry manager', actionModal: 'entries' },
+  { id: 't7', title: 'Match vs C. Martinez — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Match prep', actionModal: 'matchprep' },
 ]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
@@ -845,6 +848,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
   const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
+  const [tourStep, setTourStep] = useState(0)
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -1622,6 +1626,31 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <p className="text-[11px] mt-1.5" style={{ color: '#6B7280' }}>{t.description}</p>
                   )}
                 </div>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <div className="text-xs font-bold"
+                    style={{ color: t.overdue ? '#F87171' : '#6B7280' }}>
+                    {t.overdue ? '⚠️ Overdue' : t.due}
+                  </div>
+                  {!checked && t.action && (
+                    <>
+                      <button
+                        onClick={() => {
+                          if (t.actionModal) onOpenModal(t.actionModal)
+                          else if (t.actionSection) onNavigate(t.actionSection)
+                        }}
+                        className="px-3 py-1.5 text-white text-xs font-bold rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: '#0ea5e9' }}>
+                        {t.action} →
+                      </button>
+                      <button
+                        onClick={() => onToggleTask(t.id)}
+                        className="px-3 py-1.5 text-xs rounded-xl whitespace-nowrap"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                        Mark done
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -1845,28 +1874,54 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
             {/* Team Info */}
             {teamSubTab === 'info' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {TEAM_MEMBERS.map((m, i) => (
-                  <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
-                        {m.initials}
+              <div>
+                <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Team Info</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {[
+                    { initials:'CM', name:'Carlos Mendez', role:'Head Coach', dept:'Coaching', rating:92, deptColor:'#22C55E', ref:'LUM-001', stats:{TAC:92,MOT:95,STR:88,EXP:97,COM:91,PRE:89}, speciality:'Tactical & match strategy', location:'Monte-Carlo', contact:'+34 612 xxx xxx', available:true },
+                    { initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', dept:'Medical', rating:95, deptColor:'#EF4444', ref:'LUM-002', stats:{DIA:94,TRT:93,REC:90,PRE:88,CON:92,SPT:86}, speciality:'Sports rehabilitation', location:'Monte-Carlo', contact:'+44 7700 xxx xxx', available:true },
+                    { initials:'JW', name:'James Wright', role:'Agent (IMG)', dept:'Commercial', rating:88, deptColor:'#F59E0B', ref:'LUM-003', stats:{NEG:91,NET:89,DEL:88,STR:87,COM:90,INS:85}, speciality:'Commercial & endorsements', location:'London (remote)', contact:'+44 207 xxx xxxx', available:true },
+                    { initials:'PN', name:'Petra Novak', role:'Nutritionist', dept:'Support', rating:90, deptColor:'#10B981', ref:'LUM-004', stats:{NUT:92,FUE:88,WGT:85,PER:87,REC:84,SUP:82}, speciality:'Sports nutrition & hydration', location:'Monte-Carlo', contact:'+385 91 xxx xxxx', available:true },
+                    { initials:'MS', name:'Marcos Silva', role:'Sports Psychologist', dept:'Support', rating:87, deptColor:'#8B5CF6', ref:'LUM-005', stats:{FOC:93,PRE:91,MND:88,CNF:90,RES:87,CLR:85}, speciality:'Mental conditioning', location:'Madrid (remote)', contact:'+34 911 xxx xxx', available:false },
+                    { initials:'TE', name:'Tom Ellis', role:'Stringer', dept:'Equipment', rating:91, deptColor:'#0ea5e9', ref:'LUM-006', stats:{TEN:90,PRE:88,STR:92,CON:83,SPD:80,REL:91}, speciality:'Racket customisation', location:'Monte-Carlo', contact:'+44 7800 xxx xxx', available:true },
+                  ].map((m, i) => (
+                    <div key={i} className="rounded-2xl overflow-hidden"
+                      style={{ background: `linear-gradient(135deg, ${m.deptColor}18 0%, rgba(0,0,0,0.6) 100%)`, border: `1px solid ${m.deptColor}35` }}>
+                      <div className="flex items-start justify-between px-5 pt-5 pb-3">
+                        <div>
+                          <div className="text-3xl font-black leading-none" style={{ color: '#F9FAFB' }}>{m.rating}</div>
+                          <div className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: m.deptColor }}>{m.role.split(' ')[0].toUpperCase()}</div>
+                        </div>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${m.deptColor}25`, color: m.deptColor }}>{m.dept}</span>
                       </div>
-                      <div>
-                        <div className="text-sm font-semibold text-white">{m.name}</div>
-                        <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
+                      <div className="flex justify-center pb-3">
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-black border-2" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>
                       </div>
-                      <div className="ml-auto text-2xl font-black" style={{ color: m.rating >= 90 ? '#22C55E' : m.rating >= 85 ? '#F59E0B' : '#6B7280' }}>{m.rating}</div>
+                      <div className="text-center px-5 pb-3">
+                        <div className="text-base font-black text-white">{m.name}</div>
+                        <div className="text-xs mt-0.5" style={{ color: m.deptColor }}>{m.role}</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-x-0 px-5 pb-3" style={{ borderTop: `1px solid ${m.deptColor}20`, borderBottom: `1px solid ${m.deptColor}20` }}>
+                        {Object.entries(m.stats).map(([k, v], si) => (
+                          <div key={k} className="flex items-center justify-center gap-1 py-2 text-xs" style={{ borderRight: (si+1)%3!==0?`1px solid ${m.deptColor}15`:'none', borderBottom: si<3?`1px solid ${m.deptColor}15`:'none' }}>
+                            <span className="font-black text-white">{v}</span>
+                            <span style={{ color: m.deptColor }}>{k}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="px-5 py-3 space-y-1.5 text-xs">
+                        {[['Speciality',m.speciality],['Location',m.location],['Contact',m.contact]].map(([l,v]) => (
+                          <div key={l} className="flex justify-between"><span style={{ color: '#6B7280' }}>{l}</span><span className="text-white text-right">{v}</span></div>
+                        ))}
+                        <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Available</span><span className="font-bold" style={{ color: m.available?'#22C55E':'#EF4444' }}>{m.available?'Yes':'No'}</span></div>
+                      </div>
+                      <div className="px-5 pb-5 pt-1 flex items-center justify-between">
+                        <span className="text-[10px]" style={{ color: '#374151' }}>{m.ref}</span>
+                        <button className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-lg" style={{ backgroundColor: `${m.deptColor}20`, color: m.deptColor, border: `1px solid ${m.deptColor}30` }}>👤 Profile</button>
+                      </div>
                     </div>
-                    <div className="space-y-1.5 text-[11px]">
-                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Speciality</span><span style={{ color: '#D1D5DB' }}>{m.speciality}</span></div>
-                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Location</span><span style={{ color: '#D1D5DB' }}>{m.location}</span></div>
-                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Contact</span><span style={{ color: '#D1D5DB' }}>{m.phone}</span></div>
-                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Available</span><span style={{ color: m.available ? '#22C55E' : '#EF4444' }}>{m.available ? 'Yes' : 'No'}</span></div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
