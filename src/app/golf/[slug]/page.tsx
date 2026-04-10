@@ -576,28 +576,56 @@ function DashboardView({ player, session, setActiveSection, setActiveModal }: { 
 
   return (
     <div className="space-y-6">
-      {/* Greeting Banner */}
-      <div className="bg-gradient-to-r from-[#15803D]/20 to-teal-900/20 border border-[#15803D]/30 rounded-xl p-5">
-        <div className="flex items-center justify-between">
+      {/* Greeting Banner — stat boxes + world clock inside */}
+      <div className="bg-gradient-to-r from-[#15803D]/20 to-teal-900/20 border border-[#15803D]/30 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>Good morning, {player.name.split(' ')[0]}.</h1>
-            <p className="text-sm text-gray-400 mt-1">Here is your overview for today — BMW International Open, Munich.</p>
+            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Syne, sans-serif' }}>Good morning, {(session.userName || player.name).split(' ')[0]}. ⛳</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+            </p>
+            <p className="text-xs italic mt-2" style={{ color: '#15803D' }}>
+              &ldquo;The more I practice, the luckier I get.&rdquo; &mdash; Gary Player
+            </p>
           </div>
-          <div className="flex items-center gap-6">
-            <WorldClock city="London" offset={1} />
-            <WorldClock city="New York" offset={-4} />
-            <WorldClock city="Augusta" offset={-4} />
-            <WorldClock city="Dubai" offset={4} />
+          <div className="hidden md:flex items-center gap-6 text-xs text-right">
+            {[
+              { city:'London',   tz:'Europe/London'       },
+              { city:'New York', tz:'America/New_York'    },
+              { city:'Augusta',  tz:'America/New_York'    },
+              { city:'Dubai',    tz:'Asia/Dubai'          },
+            ].map(({ city, tz }) => (
+              <div key={city}>
+                <div className="text-white font-bold">
+                  {new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}
+                </div>
+                <div className="text-gray-500">{city}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="OWGR Ranking" value={`#${player.owgr}`} sub="▲3 this week" color="green" />
-        <StatCard label="Race to Dubai" value={`#${player.race_to_dubai_pos}`} sub={`${player.race_to_dubai_points} pts`} color="teal" />
-        <StatCard label="Season Earnings" value="£367k" sub="Target: £450k" color="yellow" />
-        <StatCard label="Scoring Average" value="70.2" sub="Last 10 rounds" color="purple" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-[#0d1117]/60 border border-[#15803D]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.owgr}</div>
+            <div className="text-xs text-gray-400 mt-0.5">OWGR Ranking</div>
+            <div className="text-[10px] text-green-400 mt-1">▲3 this week</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#15803D]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">#{player.race_to_dubai_pos}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Race to Dubai</div>
+            <div className="text-[10px] text-gray-500 mt-1">{player.race_to_dubai_points} pts</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#15803D]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">£367k</div>
+            <div className="text-xs text-gray-400 mt-0.5">Season Earnings</div>
+            <div className="text-[10px] text-gray-500 mt-1">Target: £450k</div>
+          </div>
+          <div className="bg-[#0d1117]/60 border border-[#15803D]/20 rounded-xl p-4">
+            <div className="text-2xl font-black text-white">70.2</div>
+            <div className="text-xs text-gray-400 mt-0.5">Scoring Average</div>
+            <div className="text-[10px] text-gray-500 mt-1">Last 10 rounds</div>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions — 2-row wrapped grid */}
