@@ -410,15 +410,15 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               { icon:'✅', value:`${player.checkoutPercent}%`, label:'Checkout', color:'#22C55E' },
               { icon:'🏆', value:'#12', label:'Career High', color:'#8B5CF6' },
             ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
-                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
-                <div className="text-xl mb-0.5">{s.icon}</div>
-                <div className="text-lg font-black leading-none" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{s.label}</div>
+              <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
+                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
+                <span className="text-base">{s.icon}</span>
+                <span className="text-lg font-black text-white">{s.value}</span>
+                <span className="text-xs opacity-70">{s.label}</span>
               </div>
             ))}
-            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
               <div className="text-xl">🌧️</div>
               <div className="text-sm font-bold text-white">14°C</div>
               <div className="text-[9px]" style={{ color: '#6B7280' }}>London</div>
