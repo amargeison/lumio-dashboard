@@ -1953,7 +1953,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
-                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : (session.userName || 'Big Al').slice(0,2).toUpperCase() })()}
+                      {session.photoDataUrl
+                        ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" />
+                        : (session.userName || firstName || 'AL').slice(0,2).toUpperCase()}
                     </div>
                     <div className="text-sm font-semibold text-white">{session.userName || 'Big Al'}</div>
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
@@ -1963,10 +1965,14 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {TEAM_MEMBERS.map((m, i) => (
                     <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                      <div className="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5"
-                        style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
-                        {m.initials}
-                      </div>
+                      {demoStaffPhotos[m.name] ? (
+                        <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-8 h-8 mx-auto rounded-full object-cover object-center mb-1.5 border" style={{ borderColor: 'rgba(14,165,233,0.3)' }} />
+                      ) : (
+                        <div className="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5"
+                          style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', color: '#0ea5e9' }}>
+                          {m.initials}
+                        </div>
+                      )}
                       <div className="text-xs font-semibold text-white">{m.name}</div>
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>{m.role}</div>
                     </div>
