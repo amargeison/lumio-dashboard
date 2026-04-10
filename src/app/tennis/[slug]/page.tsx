@@ -1014,12 +1014,41 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     { label:'Career High', value:`#${player.career_high ?? 44}`,                   icon:'📧', color:'#0ea5e9' },
   ]
 
-  const CLOCKS = [
-    { city:'London',    tz:'Europe/London',       isUser:true  },
-    { city:'New York',  tz:'America/New_York',    isUser:false },
-    { city:'Melbourne', tz:'Australia/Melbourne', isUser:false },
-    { city:'Dubai',     tz:'Asia/Dubai',          isUser:false },
+  // Detect user timezone
+  const userTimezone = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/London'
+  const TZ_CITY: Record<string,string> = {
+    'Europe/London':'London','Europe/Paris':'Paris','Europe/Berlin':'Berlin','Europe/Madrid':'Madrid','Europe/Rome':'Rome','Europe/Amsterdam':'Amsterdam','Europe/Stockholm':'Stockholm','Europe/Zurich':'Zurich','Europe/Moscow':'Moscow',
+    'America/New_York':'New York','America/Chicago':'Chicago','America/Denver':'Denver','America/Los_Angeles':'Los Angeles','America/Toronto':'Toronto','America/Vancouver':'Vancouver','America/Sao_Paulo':'São Paulo',
+    'Asia/Dubai':'Dubai','Asia/Tokyo':'Tokyo','Asia/Shanghai':'Shanghai','Asia/Singapore':'Singapore','Asia/Hong_Kong':'Hong Kong','Asia/Seoul':'Seoul','Asia/Mumbai':'Mumbai',
+    'Australia/Sydney':'Sydney','Australia/Melbourne':'Melbourne','Pacific/Auckland':'Auckland',
+  }
+  const userCity = TZ_CITY[userTimezone] || userTimezone.split('/').pop()?.replace(/_/g,' ') || 'Your location'
+  const clockCities = [
+    { city: userCity, tz: userTimezone, isUser: true },
+    ...([
+      { city:'London',tz:'Europe/London' },{ city:'New York',tz:'America/New_York' },{ city:'Melbourne',tz:'Australia/Melbourne' },{ city:'Dubai',tz:'Asia/Dubai' },
+    ].filter(c => c.tz !== userTimezone).slice(0, 3).map(c => ({ ...c, isUser: false }))),
   ]
+
+  // Live weather via Open-Meteo (free, no key)
+  const [weather, setWeather] = useState<{ temp:number; icon:string; city:string } | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) { setWeather({ temp:10, icon:'⛅', city:userCity }); return }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m,weather_code&timezone=auto`)
+          const d = await r.json()
+          const t = Math.round(d.current?.temperature_2m ?? 10)
+          const wc = d.current?.weather_code ?? 0
+          const icon = wc===0?'☀️':wc<=2?'⛅':wc===3?'☁️':wc<=49?'🌫️':wc<=69?'🌧️':wc<=79?'❄️':'⛈️'
+          setWeather({ temp:t, icon, city:userCity })
+        } catch { setWeather({ temp:10, icon:'⛅', city:userCity }) }
+      },
+      () => setWeather({ temp:10, icon:'⛅', city:userCity }),
+      { timeout: 5000 }
+    )
+  }, [])
 
   return (
     <div className="space-y-0">
@@ -1069,13 +1098,19 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
             <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="text-xl">🌤️</div>
-              <div className="text-sm font-bold text-white">10°C</div>
-              <div className="text-[9px]" style={{ color: '#6B7280' }}>Monaco</div>
+              {weather ? (<>
+                <div className="text-xl">{weather.icon}</div>
+                <div className="text-sm font-bold text-white">{weather.temp}°C</div>
+                <div className="text-[9px] text-center leading-tight" style={{ color: '#6B7280' }}>{weather.city.split(' ')[0]}</div>
+              </>) : (<>
+                <div className="text-xl">🌤️</div>
+                <div className="text-sm font-bold text-white">--°C</div>
+                <div className="text-[9px]" style={{ color: '#6B7280' }}>Loading</div>
+              </>)}
             </div>
 
             <div className="flex flex-col gap-0.5 ml-1 text-right">
-              {CLOCKS.map(({ city, tz, isUser }) => {
+              {clockCities.map(({ city, tz, isUser }) => {
                 const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
                 return (
                   <div key={city} className="flex items-center gap-2 justify-end">
