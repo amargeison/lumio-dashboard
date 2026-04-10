@@ -2183,7 +2183,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
 
   // Dashboard state
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('cricket_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('lumio_cricket_onboarding') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
   const [tourStep, setTourStep] = useState(0)
   const [aiSummary, setAiSummary] = useState<string | null>(null)
@@ -2207,7 +2207,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   // Auto-generate AI summary on mount
   useEffect(() => {
     setAiLoading(true)
-    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Yorkshire CCC director. Cover: Division One position (2nd), upcoming fixture vs Lancashire, squad availability (16/18 fit), Brook batting form, Coad bowling workload, one pitch/weather watch-out. 4-5 sentences, director tone. No intro, just the briefing.' }] }) })
+    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Yorkshire CCC director. Division One position: 2nd. Next fixture: vs Lancashire. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
       .then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setAiLoading(false))
   }, [])
 
@@ -2243,6 +2243,16 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
               ))}
             </div>
           </div>
+        </div>
+        {/* Weather strip */}
+        <div className="flex items-center gap-6 mb-4 px-1">
+          {[{ city:'London', tz:'Europe/London', icon:'🌥️' },{ city:'Mumbai', tz:'Asia/Kolkata', icon:'☀️' },{ city:'Sydney', tz:'Australia/Sydney', icon:'🌤️' },{ city:'Cape Town', tz:'Africa/Johannesburg', icon:'⛅' }].map(({ city, icon }) => (
+            <div key={city} className="flex items-center gap-1.5 text-xs">
+              <span>{icon}</span>
+              <span style={{ color: C.dim }}>{city}</span>
+              <span style={{ color: C.muted, fontWeight: 600 }}>{city === 'London' ? '14°C' : city === 'Mumbai' ? '34°C' : city === 'Sydney' ? '18°C' : '22°C'}</span>
+            </div>
+          ))}
         </div>
         {/* Stat boxes inside banner */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
@@ -2328,7 +2338,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
                 <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: C.purple }}>STEP {tourStep + 1} OF {STEPS.length}</div>
                 <div className="w-full rounded-full h-1" style={{ background: C.border }}><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: C.purple }} /></div>
               </div>
-              <button onClick={() => { localStorage.setItem('cricket_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: C.dim }}>Skip tour →</button>
+              <button onClick={() => { localStorage.setItem('lumio_cricket_onboarding', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: C.dim }}>Skip tour →</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="space-y-1">
@@ -2355,7 +2365,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
                       ))}
                     </div>
                   </div>
-                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('cricket_getting_started_seen', 'true'); setDashTab('today') } }}
+                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('lumio_cricket_onboarding', 'true'); setDashTab('today') } }}
                     className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: C.purple }}>
                     {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go 🏏"}
                   </button>
@@ -4521,9 +4531,9 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
       {/* Content */}
       <div style={{flex:1,overflowY:'auto',marginLeft: sidebarPinned ? 220 : 72, transition:'margin-left 250ms ease'}}>
         {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#FBBF24', color: '#000000' }}>
           <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
+          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#000000' }}>sign up for 3 months free →</a>
         </div>
         {/* Role banner */}
         {!isDirector && !isSponsor && (

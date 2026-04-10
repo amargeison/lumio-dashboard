@@ -221,6 +221,43 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
   });
   const toggleCheck = (id: string) => setChecklist(prev => { const next = { ...prev, [id]: !prev[id] }; try { localStorage.setItem('lumio_rugby_checklist', JSON.stringify(next)) } catch {} return next });
 
+  // Rotating daily quotes
+  const RUGBY_QUOTES = [
+    { text: 'Rugby is a game for barbarians played by gentlemen.', author: 'Winston Churchill' },
+    { text: 'Good players inspire themselves. Great players inspire others.', author: 'Richie McCaw' },
+    { text: 'It is not the size of the dog in the fight, but the size of the fight in the dog.', author: 'Jonah Lomu' },
+    { text: 'The strength of the team is each individual member. The strength of each member is the team.', author: 'Phil Jackson' },
+    { text: 'Nobody who ever gave their best regretted it.', author: 'George Halas' },
+    { text: 'Hard work beats talent when talent doesn\'t work hard.', author: 'Tim Notke' },
+    { text: 'Champions do extra. Champions make the effort.', author: 'Martin Johnson' },
+  ];
+  const dailyQuote = RUGBY_QUOTES[Math.floor(Date.now() / 86400000) % RUGBY_QUOTES.length];
+
+  // Live weather via Open-Meteo — derived from timezone (no geolocation)
+  const [weather, setWeather] = useState<{ temp:number; condition:string; icon:string; city:string } | null>(null);
+  const userTimezone = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/London';
+  useEffect(() => {
+    const TZ_COORDS: Record<string,{lat:number;lon:number;city:string}> = {
+      'Europe/London':{lat:51.51,lon:-0.13,city:'London'},'Europe/Paris':{lat:48.85,lon:2.35,city:'Paris'},'Europe/Berlin':{lat:52.52,lon:13.41,city:'Berlin'},'Europe/Madrid':{lat:40.42,lon:-3.70,city:'Madrid'},'Europe/Rome':{lat:41.90,lon:12.50,city:'Rome'},
+      'America/New_York':{lat:40.71,lon:-74.01,city:'New York'},'America/Chicago':{lat:41.88,lon:-87.63,city:'Chicago'},'America/Los_Angeles':{lat:34.05,lon:-118.24,city:'Los Angeles'},'America/Toronto':{lat:43.65,lon:-79.38,city:'Toronto'},
+      'Asia/Dubai':{lat:25.20,lon:55.27,city:'Dubai'},'Asia/Tokyo':{lat:35.68,lon:139.69,city:'Tokyo'},'Asia/Singapore':{lat:1.35,lon:103.82,city:'Singapore'},
+      'Australia/Sydney':{lat:-33.87,lon:151.21,city:'Sydney'},'Australia/Melbourne':{lat:-37.81,lon:144.96,city:'Melbourne'},'Pacific/Auckland':{lat:-36.85,lon:174.76,city:'Auckland'},
+      'Africa/Johannesburg':{lat:-26.20,lon:28.04,city:'Cape Town'},
+    };
+    const coords = TZ_COORDS[userTimezone] || {lat:51.51,lon:-0.13,city:'London'};
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=auto`)
+      .then(r => r.json())
+      .then(data => {
+        const temp = Math.round(data.current?.temperature_2m ?? 10);
+        const wc = data.current?.weather_code ?? 0;
+        const getC = (c:number) => { if(c===0) return {label:'Clear',icon:'☀️'}; if(c<=2) return {label:'Partly cloudy',icon:'⛅'}; if(c===3) return {label:'Overcast',icon:'☁️'}; if(c<=49) return {label:'Foggy',icon:'🌫️'}; if(c<=59) return {label:'Drizzle',icon:'🌦️'}; if(c<=69) return {label:'Rainy',icon:'🌧️'}; if(c<=79) return {label:'Snowy',icon:'❄️'}; return {label:'Stormy',icon:'⛈️'} };
+        const {label,icon} = getC(wc);
+        setWeather({temp,condition:label,icon,city:coords.city});
+      })
+      .catch(() => setWeather({temp:10,condition:'Partly cloudy',icon:'⛅',city:'London'}));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // World clocks
   const now = new Date();
   const clocks = [
@@ -228,6 +265,14 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
     { city: 'Auckland', tz: 'Pacific/Auckland' },
     { city: 'Sydney', tz: 'Australia/Sydney' },
     { city: 'Cape Town', tz: 'Africa/Johannesburg' },
+  ];
+
+  // Banner stat boxes matching spec
+  const BANNER_STATS = [
+    { label: 'Championship', value: '#7', icon: '🏆', color: '#7C3AED' },
+    { label: 'Tackles', value: '847', icon: '💪', color: '#22C55E' },
+    { label: 'Lineout', value: '94%', icon: '📊', color: '#0ea5e9' },
+    { label: 'Days to Fixture', value: '12', icon: '📅', color: '#EF4444' },
   ];
 
   const GETTING_STARTED = [
@@ -255,45 +300,91 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Greeting Banner */}
-      <div className="bg-gradient-to-r from-purple-900/30 to-gray-900/20 border border-purple-600/30 rounded-xl p-5">
+    <div className="space-y-0">
+
+      {/* ── MORNING BANNER — Single dark card ── */}
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
+        style={{ background: 'linear-gradient(135deg, #1e1035 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(124,58,237,0.2)' }}>
+
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-white mb-1">
-              Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}{session?.userName ? `, ${session.userName}` : ''}
+            <h1 className="text-2xl font-bold text-white mb-1">
+              Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}{session?.userName ? `, ${session.userName}` : ''} 👋
             </h1>
-            <p className="text-xs text-gray-400">{club.name} · {club.league} · Match Week</p>
+            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
+              {now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
+            </p>
+            <p className="text-xs italic" style={{ color: '#F1C40F' }}>
+              &ldquo;{dailyQuote.text}&rdquo; &mdash; {dailyQuote.author}
+            </p>
           </div>
-          <div className="flex gap-4">
-            {clocks.map(c => {
-              const t = now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' });
-              return (
-                <div key={c.city} className="text-center">
-                  <div className="text-xs text-white font-mono">{t}</div>
-                  <div className="text-[10px] text-gray-600">{c.city}</div>
-                </div>
-              );
-            })}
+
+          <div className="hidden md:flex items-center gap-3 ml-4">
+            {BANNER_STATS.map((s, i) => (
+              <div key={i}
+                className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
+                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
+                <div className="text-xl mb-0.5">{s.icon}</div>
+                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
+              </div>
+            ))}
+
+            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {weather ? (<>
+                <div className="text-xl">{weather.icon}</div>
+                <div className="text-sm font-bold text-white">{weather.temp}&deg;C</div>
+                <div className="text-[9px] text-center leading-tight" style={{ color: '#6B7280' }}>{weather.city.split(' ')[0]}</div>
+              </>) : (<>
+                <div className="text-xl">🌤️</div>
+                <div className="text-sm font-bold text-white">--&deg;C</div>
+                <div className="text-[9px]" style={{ color: '#6B7280' }}>Loading</div>
+              </>)}
+            </div>
+
+            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {clocks.map(c => {
+                  const t = now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <div key={c.city} className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold tabular-nums text-white">{t}</span>
+                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{c.city}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
+            </div>
           </div>
         </div>
+
       </div>
 
-      {/* KPI Stat Boxes */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard label="Cap Headroom" value={fmt(headroom)} sub="To ceiling — compliant" color="green" />
-        <StatCard label="Floor Buffer" value={`+${fmt(floorBuffer)}`} sub="Above minimum" color="green" />
-        <StatCard label="Franchise Score" value={`${club.franchiseScore}%`} sub="Target: 85%" color="orange" />
-        <StatCard label="Squad Available" value={`${available}/${club.squadSize}`} sub={`${club.squadSize - available} unavailable`} color={available >= 30 ? 'teal' : 'orange'} />
-        {code === 'union'
-          ? <StatCard label="Lineout %" value="85%" sub="Above league avg" color="purple" />
-          : <StatCard label="Tackle Busts" value="14.2" sub="Per game — 3rd in league" color="purple" />
-        }
+      {/* ── TAB BAR ── */}
+      <div className="flex gap-0 border-b mb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
+        {([
+          { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
+          { id: 'today' as const, label: 'Today', icon: '🏠' },
+          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
+          { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
+          { id: 'insights' as const, label: 'Insights', icon: '📊' },
+          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
+          { id: 'team' as const, label: 'Team', icon: '👥' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setDashTab(t.id)}
+            className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{ borderColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#c084fc' : '#6B7280' }}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions — below tab bar */}
       {onOpenModal && (
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mt-4 mb-4">
           {QUICK_ACTIONS.map((a, i) => (
             <button key={i} onClick={() => onOpenModal(a.modal)}
               className="bg-[#0d1117] border border-gray-800 hover:border-purple-500/50 rounded-xl p-3 text-center transition-all hover:scale-105">
@@ -303,24 +394,6 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
           ))}
         </div>
       )}
-
-      {/* Tab Bar */}
-      <div className="flex gap-1 border-b border-gray-800 overflow-x-auto">
-        {([
-          { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
-          { id: 'today' as const, label: 'Today', icon: '📅' },
-          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
-          { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
-          { id: 'insights' as const, label: 'Insights', icon: '📊' },
-          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔔' },
-          { id: 'team' as const, label: 'Team', icon: '👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${dashTab === t.id ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            <span>{t.icon}</span>{t.label}
-          </button>
-        ))}
-      </div>
 
       {/* Getting Started Tab */}
       {dashTab === 'gettingstarted' && (
