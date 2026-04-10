@@ -845,7 +845,7 @@ const IncomeExpenseChart = () => {
 };
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
-function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate, activeModal, onOpenModal, onCloseModal }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void; activeModal: string | null; onOpenModal: (id: string) => void; onCloseModal: () => void }) {
+function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate, activeModal, onOpenModal, onCloseModal, roleConfig, currentRole }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void; activeModal: string | null; onOpenModal: (id: string) => void; onCloseModal: () => void; roleConfig: typeof TENNIS_ROLE_CONFIG[keyof typeof TENNIS_ROLE_CONFIG]; currentRole: string }) {
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
@@ -1053,7 +1053,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           { id:'insights' as const,   label:'Insights',    icon:'📊' },
           { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
           { id:'team' as const,       label:'Team',        icon:'👥' },
-        ]).map(t => (
+        ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
           <button key={t.id} onClick={() => setDashTab(t.id)}
             className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
             style={{
@@ -1223,7 +1223,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
               </div>
               <div>
-                {ROUNDUP_ITEMS.map((ch) => {
+                {(roleConfig.roundupChannels === 'all' ? ROUNDUP_ITEMS : ROUNDUP_ITEMS.filter(ch => (roleConfig.roundupChannels as string[]).includes(ch.id))).map((ch) => {
                   const isOpen = expandedChannel === ch.id
                   return (
                     <div key={ch.id} style={{ borderBottom: '1px solid #1F2937' }}>
@@ -7115,13 +7115,11 @@ function PrizeForecasterView({ player, session }: { player: TennisPlayer; sessio
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 // ─── TENNIS ROLES ─────────────────────────────────────────────────────────────
 const TENNIS_ROLES = [
-  { id: 'player',     label: 'Player',          icon: '🎾', description: 'My performance & stats' },
-  { id: 'chairman',   label: 'Club Chairman',  icon: '🏛️', description: 'Board & strategy'    },
-  { id: 'manager',    label: 'Club Manager',    icon: '🎾', description: 'Full club view'       },
-  { id: 'captain',    label: 'Club Captain',    icon: '🏆', description: 'Teams & competitions' },
-  { id: 'head_coach', label: 'Head Coach',      icon: '🎯', description: 'Coaching & players'   },
-  { id: 'commercial', label: 'Commercial',      icon: '💼', description: 'Sponsors & events'    },
-  { id: 'secretary',  label: 'Club Secretary',  icon: '📋', description: 'Admin & compliance'   },
+  { id: 'player',  label: 'Player',            icon: '🎾', description: 'Full access — your complete tennis OS' },
+  { id: 'agent',   label: 'Agent / Manager',   icon: '💼', description: 'Commercial, schedule and financial view' },
+  { id: 'coach',   label: 'Coach',             icon: '📋', description: 'Performance, tactics and training view' },
+  { id: 'physio',  label: 'Physio',            icon: '⚕️', description: 'Medical, GPS load and recovery view' },
+  { id: 'sponsor', label: 'Sponsor / Partner', icon: '🤝', description: 'Brand presence, obligations and ROI view' },
 ]
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
@@ -7647,6 +7645,206 @@ function TennisHotelFinder({ onClose, session }: { onClose: () => void; session:
   </>)
 }
 
+const TENNIS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
+  player: { label: 'Player', icon: '🎾', accent: '#0ea5e9', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
+  agent: { label: 'Agent / Manager', icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','morning','sponsorship','financial','agent','travel','tourcard','entries','schedule','live-scores','media','exhibitions','settings'], hiddenTabs: ['team','dailytasks'], roundupChannels: ['agent','tournament','sponsor','prize','travel','wildcard'], message: 'Commercial and schedule view — player controls full access.' },
+  coach: { label: 'Coach', icon: '📋', accent: '#22C55E', sidebar: ['dashboard','morning','performance','schedule','live-scores','matchprep','opponentintel','practicelog','video','teamhub','physio-recovery','mental','draw-bracket','settings'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['coach','tournament','physio'], message: 'Performance and tactical view.' },
+  physio: { label: 'Physio', icon: '⚕️', accent: '#EF4444', sidebar: ['dashboard','morning','physio-recovery','mental','settings'], hiddenTabs: ['quickwins','dontmiss','team'], roundupChannels: ['physio','coach'], message: 'Medical, load and recovery view.' },
+  sponsor: { label: 'Sponsor / Partner', icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','media','settings'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
+}
+
+function TennisSponsorDashboard({ session, player }: { session: SportsDemoSession; player: TennisPlayer }) {
+  const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
+  const sponsorName = session.clubName || 'Rolex'
+  const sponsorColor = '#D4AF37'
+  const sponsorLogo = session.logoDataUrl
+
+  const OBLIGATIONS = [
+    { id:'o1', title:'Instagram post — Monte-Carlo kit', due:'Today', status:'pending', platform:'Instagram', reach:'120k' },
+    { id:'o2', title:'Twitter match day mention', due:'Today', status:'pending', platform:'Twitter', reach:'87k' },
+    { id:'o3', title:'Roland-Garros pre-tournament post', due:'24 May', status:'scheduled', platform:'Instagram', reach:'120k' },
+    { id:'o4', title:'Wimbledon kit photoshoot', due:'20 Jun', status:'upcoming', platform:'Multi', reach:'250k' },
+    { id:'o5', title:'US Open brand activation', due:'22 Aug', status:'upcoming', platform:'Multi', reach:'400k' },
+    { id:'o6', title:'Year-end campaign content', due:'30 Nov', status:'upcoming', platform:'Multi', reach:'180k' },
+  ]
+
+  const CONTENT = [
+    { title:'Monte-Carlo practice session', date:'8 Apr', type:'Photo', platform:'Instagram', likes:'4.2k', reach:'94k' },
+    { title:'Madrid hotel check-in', date:'26 Apr', type:'Story', platform:'Instagram', likes:'2.1k', reach:'67k' },
+    { title:'Pre-match warmup', date:'Today', type:'Video', platform:'TikTok', likes:'8.7k', reach:'220k' },
+  ]
+
+  const EVENTS = [
+    { event:'Monte-Carlo Masters QF', date:'Today', venue:'Monte-Carlo CC', broadcast:'Eurosport, Sky Sports', exposure:'Est. 2.4M viewers' },
+    { event:'Madrid Open', date:'26 Apr', venue:'Caja Mágica', broadcast:'Eurosport, Tennis Channel', exposure:'Est. 3.1M viewers' },
+    { event:'Roland-Garros', date:'25 May', venue:'Stade Roland-Garros', broadcast:'ITV, Eurosport', exposure:'Est. 8.2M viewers' },
+    { event:'Wimbledon', date:'29 Jun', venue:'All England Club', broadcast:'BBC, ESPN', exposure:'Est. 14.5M viewers' },
+  ]
+
+  return (
+    <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Hero banner */}
+      <div className="relative px-8 py-6" style={{ background: `linear-gradient(135deg, ${sponsorColor}25 0%, rgba(0,0,0,0.8) 60%, #0d1117 100%)`, borderBottom: `1px solid ${sponsorColor}30` }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
+              {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
+              <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
+              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name || 'Alex Rivera'} · ATP #{player.ranking ?? 67}</div>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            {[{ label:'Obligations', value:'6 total', sub:'2 due today', color:'#EF4444' }, { label:'Est. reach', value:'14.2M', sub:'this season', color:sponsorColor }, { label:'Deal value', value:'£240k/yr', sub:'renewal 47d', color:'#22C55E' }, { label:'ATP ranking', value:`#${player.ranking ?? 67}`, sub:'current', color:'#0ea5e9' }].map((s,i) => (
+              <div key={i} className="text-center px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px] text-white font-semibold">{s.label}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+        {([{ id:'overview' as const, label:'Overview', icon:'🏠' }, { id:'obligations' as const, label:'Obligations', icon:'📋' }, { id:'content' as const, label:'Content', icon:'📸' }, { id:'events' as const, label:'Events', icon:'🎾' }, { id:'roi' as const, label:'ROI & Reach', icon:'📊' }]).map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#F1C40F' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {OBLIGATIONS.filter(o => o.status === 'pending').length > 0 && (
+              <div className="rounded-xl p-5" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <div className="flex items-center gap-2 mb-3"><span>🔴</span><span className="text-sm font-bold text-white">{OBLIGATIONS.filter(o => o.status === 'pending').length} obligations due today</span></div>
+                {OBLIGATIONS.filter(o => o.status === 'pending').map(o => (
+                  <div key={o.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+                    <div><div className="text-sm text-white">{o.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{o.platform} · Est. reach {o.reach}</div></div>
+                    <span className="text-xs px-2 py-1 rounded font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>Due {o.due}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || 'Alex Rivera'} is competing at Monte-Carlo Masters QF</p></div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[{ label:'Expected TV viewers', value:'2.4M', icon:'📺', color:sponsorColor }, { label:'Social following', value:'207k', icon:'📱', color:'#0ea5e9' }, { label:'Press accredited', value:'94', icon:'📰', color:'#8B5CF6' }].map((s,i) => (
+                  <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}><div className="text-2xl mb-1">{s.icon}</div><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Season obligations</p>
+                <div className="flex items-center gap-3 mb-2"><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width:'0%', backgroundColor: sponsorColor }} /></div><span className="text-xs font-bold" style={{ color: sponsorColor }}>0/{OBLIGATIONS.length}</span></div>
+                <div className="space-y-1 text-xs">
+                  {[['Pending',OBLIGATIONS.filter(o=>o.status==='pending').length,'#EF4444'],['Scheduled',OBLIGATIONS.filter(o=>o.status==='scheduled').length,'#0ea5e9'],['Upcoming',OBLIGATIONS.filter(o=>o.status==='upcoming').length,'#6B7280']].map(([l,v,c]) => (
+                    <div key={l as string} className="flex justify-between" style={{ color: '#6B7280' }}><span>{l as string}</span><span style={{ color: c as string }}>{v as number}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Deal summary</p>
+                {[['Partner since','January 2023'],['Deal value','£240,000/yr'],['Renewal date','27 May 2026 (47d)'],['Obligations','6 posts / season'],['Events','3 appearances/yr']].map(([l,v]) => (
+                  <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #1F2937' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-bold text-white">{v}</span></div>
+                ))}
+                <div className="mt-3 pt-2"><button className="w-full py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: sponsorColor }}>Discuss renewal →</button></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OBLIGATIONS */}
+        {activeTab === 'obligations' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Obligations</h2>
+            {OBLIGATIONS.map(o => (
+              <div key={o.id} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: `1px solid ${o.status==='pending'?'rgba(239,68,68,0.3)':'#1F2937'}` }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1"><span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: o.status==='pending'?'rgba(239,68,68,0.15)':o.status==='scheduled'?'rgba(14,165,233,0.15)':'rgba(107,114,128,0.15)', color: o.status==='pending'?'#EF4444':o.status==='scheduled'?'#0ea5e9':'#6B7280' }}>{o.status==='pending'?'⏰ Due today':o.status==='scheduled'?'📅 Scheduled':'⏳ Upcoming'}</span><span className="text-xs" style={{ color: '#6B7280' }}>{o.platform}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{o.title}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>Due: {o.due} · Est. reach: {o.reach}</div>
+                  </div>
+                  {o.status === 'pending' && <button className="text-xs px-3 py-1.5 rounded-lg font-bold text-white flex-shrink-0" style={{ backgroundColor: '#EF4444' }}>Chase player →</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        {activeTab === 'content' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Gallery</h2>
+            {CONTENT.map((c,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${sponsorColor}15`, border: `1px solid ${sponsorColor}30` }}>{c.type==='Photo'?'📸':c.type==='Story'?'📱':'🎬'}</div>
+                    <div><div className="text-sm font-bold text-white">{c.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{c.platform} · {c.date} · {c.type}</div></div>
+                  </div>
+                  <div className="text-right"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{c.reach} reach</div><div className="text-xs" style={{ color: '#6B7280' }}>{c.likes} likes</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EVENTS */}
+        {activeTab === 'events' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Tournament Calendar</h2>
+            {EVENTS.map((e,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">{i===0 && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#EF4444' }}>LIVE TODAY</span>}<span className="text-xs" style={{ color: '#6B7280' }}>{e.date}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{e.event}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>📍 {e.venue}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6B7280' }}>📺 {e.broadcast}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{e.exposure}</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ROI */}
+        {activeTab === 'roi' && (
+          <div className="space-y-5 max-w-3xl">
+            <h2 className="text-xl font-black text-white">ROI &amp; Reach</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[{ label:'Total reach YTD', value:'14.2M', color:sponsorColor }, { label:'Media impressions', value:'3.8M', color:'#0ea5e9' }, { label:'Social engagements', value:'127k', color:'#22C55E' }, { label:'Press mentions', value:'43', color:'#8B5CF6' }].map((s,i) => (
+                <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold text-white mb-4">Estimated brand value breakdown</p>
+              {[{ label:'TV / broadcast exposure', value:'£180,000', pct:75, color:sponsorColor }, { label:'Social media reach', value:'£32,000', pct:13, color:'#0ea5e9' }, { label:'Press & editorial', value:'£18,000', pct:7, color:'#8B5CF6' }, { label:'On-court branding', value:'£12,000', pct:5, color:'#22C55E' }].map((r,i) => (
+                <div key={i} className="mb-4"><div className="flex justify-between mb-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{r.label}</span><span className="text-xs font-bold" style={{ color: r.color }}>{r.value}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.color }} /></div></div>
+              ))}
+              <div className="flex justify-between pt-3 mt-2" style={{ borderTop: '1px solid #1F2937' }}><span className="text-sm font-bold text-white">Total estimated value</span><span className="text-sm font-black" style={{ color: sponsorColor }}>£242,000</span></div>
+            </div>
+            <div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${sponsorColor}20, rgba(0,0,0,0.4))`, border: `1px solid ${sponsorColor}40` }}>
+              <div className="text-2xl mb-2">🤝</div>
+              <div className="text-base font-bold text-white mb-1">Renewal in 47 days</div>
+              <div className="text-xs mb-4" style={{ color: '#6B7280' }}>Current deal expires 27 May 2026. ROI tracking positively.</div>
+              <button className="px-8 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: sponsorColor }}>Start renewal discussion →</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -7662,6 +7860,14 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   });
   useEffect(() => { localStorage.setItem('lumio_tennis_photos', JSON.stringify(photos)) }, [photos]);
   const activeRole = session.role;
+  const currentRole = (session.role || 'player') as keyof typeof TENNIS_ROLE_CONFIG
+  const roleConfig = TENNIS_ROLE_CONFIG[currentRole] ?? TENNIS_ROLE_CONFIG.player
+  const isPlayer = currentRole === 'player'
+  const isSponsor = currentRole === 'sponsor'
+
+  const visibleSidebarItems = roleConfig.sidebar === 'all'
+    ? SIDEBAR_ITEMS
+    : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -8121,7 +8327,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
@@ -8163,7 +8369,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
       case 'gps':         return <GPSCourtView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
-      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} />;
+      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
     }
   };
 
@@ -8207,7 +8413,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-2 px-2">
           {groups.map(group => {
-            const items = SIDEBAR_ITEMS.filter(i => i.group === group);
+            const items = visibleSidebarItems.filter(i => i.group === group);
             return (
               <div key={group} className="mb-3">
                 {!sidebarCollapsed && (
@@ -8269,10 +8475,23 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
           <span>Demo workspace · sample data</span>
           <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-            To see your own data — sign up for 6 months free →
+            To see your own data — sign up for 3 months free →
           </a>
         </div>
+        {!isPlayer && !isSponsor && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
+            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
+            <div className="flex items-center gap-2">
+              <span>{roleConfig.icon}</span>
+              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong>{roleConfig.message ? ` — ${roleConfig.message}` : ''}</span>
+            </div>
+            <span style={{ color: `${roleConfig.accent}80` }}>Player controls full access →</span>
+          </div>
+        )}
         {/* Content + Card Row */}
+        {isSponsor ? (
+          <TennisSponsorDashboard session={session} player={player} />
+        ) : (
         <div className="flex-1 flex overflow-hidden">
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">
@@ -8306,6 +8525,8 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             </div>
           </div>
         </div>
+        )}
+
       </div>
       {activeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"

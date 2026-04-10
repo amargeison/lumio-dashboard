@@ -232,14 +232,14 @@ const EarlyAccessStep = memo(function EarlyAccessStep({
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
       <div>
         <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">Step 3 of 4</div>
-        <h2 className="text-xl font-bold text-white mb-2">Want 6 months free with your own data?</h2>
+        <h2 className="text-xl font-bold text-white mb-2">Want 3 months free with your own data?</h2>
         <p className="text-sm text-gray-400 leading-relaxed">
-          We&apos;re looking for a small number of clubs to help us shape Lumio. Sign up for our early access programme and get 6 months completely free — no commitment, no contract, no pushy sales. All we ask at the end is an honest case study and the chance to keep working with you.
+          We&apos;re looking for a small number of clubs to help us shape Lumio. Sign up for our early access programme and get 3 months completely free — no commitment, no contract, no pushy sales. All we ask at the end is an honest case study and the chance to keep working with you.
         </p>
       </div>
       <div className="space-y-2.5">
         {[
-          '6 months completely free',
+          '3 months completely free',
           'We build features you ask for',
           'No commitment or lock-in',
           'Honest feedback shapes the product',
