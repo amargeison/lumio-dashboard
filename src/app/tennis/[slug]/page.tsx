@@ -1229,19 +1229,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               ].map((a) => (
                 <button key={a.id}
                   onClick={() => onOpenModal(a.id)}
-                  className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-                  style={{
-                    background: a.hot ? `${a.color}18` : '#111318',
-                    border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937',
-                    color: a.hot ? a.color : '#9CA3AF',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = `${a.color}15` }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = a.hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = a.hot ? a.color : '#9CA3AF'; e.currentTarget.style.background = a.hot ? `${a.color}18` : '#111318' }}>
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
+                  style={a.hot ? { backgroundColor: '#7C3AED', color: '#F9FAFB' } : { backgroundColor: '#1a2332', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <span>{a.icon}</span>
                   {a.label}
                   {a.hot && (
                     <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none"
-                      style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>
+                      style={{ backgroundColor: '#fff', color: '#7C3AED' }}>AI</span>
                   )}
                 </button>
               ))}
