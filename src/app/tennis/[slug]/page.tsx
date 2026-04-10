@@ -845,8 +845,9 @@ const IncomeExpenseChart = () => {
 };
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
-function DashboardView({ player, session, photos, setPhotos }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void }) {
+function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void }) {
   const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
+  const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
   const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -866,7 +867,8 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
       `2 urgent messages: The tournament desk has moved your court time 30 minutes. Physio Dr Lee wants to see you at 12:30 for your shoulder.`,
       `Lululemon sponsor post is due today — Carlos needs the kit photo before noon.`,
       `312 ranking points drop off after Monte-Carlo. A win tonight keeps you at number 67. A loss risks dropping to 71.`,
-      `Good luck today.`,
+      `Good luck today. You've put in the work — trust your game and enjoy the moment.`,
+      `By the way, if you purchase a plan, you can choose from 20 different voices to suit your style.`,
     ].join(' ')
     const utterance = new SpeechSynthesisUtterance(briefingText)
     const voices = window.speechSynthesis.getVoices()
@@ -1332,76 +1334,171 @@ function DashboardView({ player, session, photos, setPhotos }: { player: TennisP
       {/* QUICK WINS TAB */}
       {dashTab === 'quickwins' && (
         <div className="pt-4 space-y-3">
-          {[
-            { p:1, action:'Book Madrid flights — prices rising, depart 26 Apr',     impact:'High', cat:'Travel',      icon:'✈️' },
-            { p:2, action:'Reply to Rolex renewal inquiry — deadline 47 days',      impact:'High', cat:'Commercial',  icon:'🤝' },
-            { p:3, action:'Submit Roland-Garros hotel preference to agent',         impact:'High', cat:'Logistics',   icon:'🏨' },
-            { p:4, action:'Review Martinez serve patterns before 13:00 match',     impact:'High', cat:'Match Prep',  icon:'🎾' },
-            { p:5, action:'Post Lululemon sponsor content — due this week',        impact:'Med',  cat:'Commercial',  icon:'📱' },
-            { p:6, action:'Confirm Hamburg 500 vs Eastbourne clash with agent',    impact:'Med',  cat:'Entries',     icon:'📋' },
-            { p:7, action:'Book physio for post-match recovery session',           impact:'Med',  cat:'Wellness',    icon:'⚕️' },
-          ].map((w, i) => (
-            <div key={i}
-              className="flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all"
-              style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#374151' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1F2937' }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
-                style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>{w.p}</div>
-              <span className="text-lg flex-shrink-0">{w.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm" style={{ color: '#E5E7EB' }}>{w.action}</p>
-                <span className="text-[10px]" style={{ color: '#6B7280' }}>{w.cat}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
-                style={{
-                  background: w.impact === 'High' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
-                  color: w.impact === 'High' ? '#EF4444' : '#F59E0B',
-                }}>{w.impact}</span>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Quick Wins</h3>
+              <p className="text-[11px]" style={{ color: '#6B7280' }}>{TENNIS_QUICK_WINS.filter(w => !dismissedWins.has(w.id)).length} actions remaining</p>
             </div>
-          ))}
+            {dismissedWins.size > 0 && (
+              <span className="text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>
+                {dismissedWins.size} completed
+              </span>
+            )}
+          </div>
+          {TENNIS_QUICK_WINS.filter(w => !dismissedWins.has(w.id)).length === 0 ? (
+            <div className="text-center py-12 rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-3xl mb-3">🎉</div>
+              <div className="text-sm font-semibold text-white mb-1">All done!</div>
+              <div className="text-xs" style={{ color: '#6B7280' }}>You have cleared all your quick wins for today.</div>
+            </div>
+          ) : (
+            TENNIS_QUICK_WINS.filter(w => !dismissedWins.has(w.id)).map((win) => (
+              <div key={win.id}
+                className="rounded-xl p-4 transition-all"
+                style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                        style={{
+                          background: win.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                          color: win.impact === 'high' ? '#EF4444' : '#F59E0B',
+                        }}>{win.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>⏱ {win.effort}</span>
+                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{win.category}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-white mb-1">{win.title}</p>
+                    <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{win.description}</p>
+                    <div className="text-[10px] mb-3" style={{ color: '#4B5563' }}>Source: {win.source}</div>
+                    <div className="flex items-center gap-2">
+                      {win.actionSection && (
+                        <button onClick={() => onNavigate(win.actionSection!)}
+                          className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                          style={{ backgroundColor: '#0ea5e9', color: '#fff' }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0284c7' }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9' }}>
+                          {win.action}
+                        </button>
+                      )}
+                      <button onClick={() => onDismissWin(win.id)}
+                        className="text-[11px] px-3 py-1.5 rounded-lg transition-all"
+                        style={{ border: '1px solid #374151', color: '#9CA3AF' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; e.currentTarget.style.color = '#22C55E' }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#9CA3AF' }}>
+                        Mark done ✓
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          {/* Show completed items */}
+          {TENNIS_QUICK_WINS.filter(w => dismissedWins.has(w.id)).length > 0 && (
+            <div className="pt-2 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#374151' }}>Completed</div>
+              {TENNIS_QUICK_WINS.filter(w => dismissedWins.has(w.id)).map(win => (
+                <div key={win.id} className="flex items-center gap-3 rounded-lg px-4 py-2" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span className="text-xs" style={{ color: '#22C55E' }}>✓</span>
+                  <span className="text-xs" style={{ color: '#4B5563', textDecoration: 'line-through' }}>{win.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* DAILY TASKS TAB */}
       {dashTab === 'dailytasks' && (
-        <div className="pt-4 space-y-2">
-          {[
-            { time:'07:30', task:'AI Morning Briefing',              done:true,  cat:'Routine',    highlight:false },
-            { time:'08:30', task:'Physio treatment — right shoulder',done:true,  cat:'Wellness',   highlight:false },
-            { time:'10:00', task:'Practice session — serve patterns', done:false, cat:'Training',   highlight:false },
-            { time:'11:45', task:'Stringing with Carlos (2x Wilson)', done:false, cat:'Equipment',  highlight:false },
-            { time:'13:00', task:'Match vs C. Martinez — Court 4',   done:false, cat:'Match',      highlight:true  },
-            { time:'15:30', task:'Post-match physio recovery',        done:false, cat:'Wellness',   highlight:false },
-            { time:'17:00', task:'Coach debrief with Carlos',         done:false, cat:'Coaching',   highlight:false },
-            { time:'18:30', task:'Sponsor content post — Lululemon',  done:false, cat:'Commercial', highlight:false },
-          ].map((t, i) => (
-            <div key={i}
-              className="flex items-center gap-4 rounded-xl p-4 border transition-all"
-              style={{
-                backgroundColor: t.highlight ? 'rgba(14,165,233,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318',
-                borderColor: t.highlight ? 'rgba(14,165,233,0.3)' : '#1F2937',
-                opacity: t.done ? 0.6 : 1,
-              }}>
-              <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                style={{
-                  borderColor: t.done ? '#22C55E' : t.highlight ? '#0ea5e9' : '#374151',
-                  background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent',
-                }}>
-                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
-              </div>
-              <span className="text-[10px] w-10 flex-shrink-0" style={{ color: '#6B7280' }}>{t.time}</span>
-              <div className="flex-1">
-                <span className="text-sm"
-                  style={{
-                    color: t.done ? '#4B5563' : t.highlight ? '#0ea5e9' : '#D1D5DB',
-                    textDecoration: t.done ? 'line-through' : 'none',
-                    fontWeight: t.highlight ? 600 : 400,
-                  }}>{t.task}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.cat}</span>
+        <div className="pt-4 space-y-3">
+          {/* Header + Add Task */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Daily Tasks</h3>
+              <p className="text-[11px]" style={{ color: '#6B7280' }}>
+                {tasks.filter(t => !taskChecked[t.id]).length} remaining &middot; {Object.values(taskChecked).filter(Boolean).length} done
+              </p>
             </div>
-          ))}
+            <button onClick={() => setShowAddTask(!showAddTask)}
+              className="text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all"
+              style={{ backgroundColor: showAddTask ? 'rgba(239,68,68,0.15)' : 'rgba(14,165,233,0.15)', color: showAddTask ? '#EF4444' : '#0ea5e9', border: showAddTask ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(14,165,233,0.3)' }}>
+              {showAddTask ? 'Cancel' : '+ Add task'}
+            </button>
+          </div>
+          {/* Add task input */}
+          {showAddTask && (
+            <div className="flex gap-2 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.3)' }}>
+              <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="What needs doing?"
+                className="flex-1 text-xs bg-transparent outline-none" style={{ color: '#F9FAFB' }}
+                onKeyDown={e => { if (e.key === 'Enter') onAddTask() }} />
+              <button onClick={onAddTask} className="text-[11px] px-3 py-1 rounded-lg font-semibold"
+                style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>Add</button>
+            </div>
+          )}
+          {/* Filter pills */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {(['all', 'critical', 'high', 'medium', 'low'] as const).map(f => (
+              <button key={f} onClick={() => setTaskFilter(f)}
+                className="text-[10px] px-3 py-1 rounded-full font-semibold transition-all whitespace-nowrap"
+                style={{
+                  background: taskFilter === f ? (f === 'all' ? 'rgba(14,165,233,0.15)' : PRIORITY_STYLES[f]?.bg || 'rgba(14,165,233,0.15)') : 'rgba(255,255,255,0.04)',
+                  color: taskFilter === f ? (f === 'all' ? '#0ea5e9' : PRIORITY_STYLES[f]?.color || '#0ea5e9') : '#6B7280',
+                  border: taskFilter === f ? `1px solid ${f === 'all' ? 'rgba(14,165,233,0.3)' : PRIORITY_STYLES[f]?.dot + '44' || 'rgba(14,165,233,0.3)'}` : '1px solid transparent',
+                }}>
+                {f === 'all' ? 'All' : PRIORITY_STYLES[f]?.label || f}
+              </button>
+            ))}
+          </div>
+          {/* Task list */}
+          {tasks.filter(t => taskFilter === 'all' || t.priority === taskFilter).map(t => {
+            const checked = taskChecked[t.id] || false
+            const ps = PRIORITY_STYLES[t.priority] || PRIORITY_STYLES.medium
+            return (
+              <div key={t.id}
+                className="flex items-start gap-3 rounded-xl p-4 border transition-all"
+                style={{
+                  backgroundColor: checked ? 'rgba(255,255,255,0.01)' : '#111318',
+                  borderColor: t.priority === 'critical' && !checked ? 'rgba(239,68,68,0.3)' : '#1F2937',
+                  opacity: checked ? 0.55 : 1,
+                }}>
+                <button onClick={() => onToggleTask(t.id)}
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                  style={{
+                    borderColor: checked ? '#22C55E' : ps.dot,
+                    background: checked ? 'rgba(34,197,94,0.15)' : 'transparent',
+                  }}>
+                  {checked && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <span className="text-sm"
+                      style={{
+                        color: checked ? '#4B5563' : '#E5E7EB',
+                        textDecoration: checked ? 'line-through' : 'none',
+                        fontWeight: t.priority === 'critical' ? 600 : 400,
+                      }}>{t.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded" style={{ background: ps.bg, color: ps.color }}>
+                      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: ps.dot }} />
+                      {ps.label}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{t.category}</span>
+                    <span className="text-[10px]" style={{ color: '#6B7280' }}>{SOURCE_ICON[t.source] || ''} {t.due}</span>
+                    {t.linkedWorkflow && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.12)', color: '#A78BFA' }}>🔄 {t.linkedWorkflow}</span>
+                    )}
+                    {t.overdue && !checked && (
+                      <span className="text-[10px] font-bold" style={{ color: '#EF4444' }}>OVERDUE</span>
+                    )}
+                  </div>
+                  {!checked && t.description && (
+                    <p className="text-[11px] mt-1.5" style={{ color: '#6B7280' }}>{t.description}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -6715,6 +6812,40 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
 
   const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
+  // Quick Wins dismissed state
+  const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
+    try { const s = localStorage.getItem('tennis_dismissed_wins'); return s ? new Set(JSON.parse(s)) : new Set() } catch { return new Set() }
+  })
+  const dismissWin = (id: string) => {
+    setDismissedWins(prev => { const next = new Set(prev); next.add(id); try { localStorage.setItem('tennis_dismissed_wins', JSON.stringify([...next])) } catch {} return next })
+  }
+
+  // Daily Tasks state
+  const [tasks, setTasks] = useState<TennisTask[]>(() => TENNIS_TASKS)
+  const [taskChecked, setTaskChecked] = useState<Record<string, boolean>>(() => {
+    try { const s = localStorage.getItem('tennis_tasks_checked'); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+  const [newTaskText, setNewTaskText] = useState('')
+  const [showAddTask, setShowAddTask] = useState(false)
+  const toggleTask = (id: string) => {
+    setTaskChecked(prev => { const next = { ...prev, [id]: !prev[id] }; try { localStorage.setItem('tennis_tasks_checked', JSON.stringify(next)) } catch {} return next })
+  }
+  const addTask = () => {
+    if (!newTaskText.trim()) return
+    setTasks(prev => [{ id: `manual-${Date.now()}`, title: newTaskText.trim(), due: 'Today', priority: 'medium' as const, category: 'Manual', source: 'manual' as const, done: false, overdue: false }, ...prev])
+    setNewTaskText(''); setShowAddTask(false)
+  }
+
+  // Don't Miss dismissed state
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(() => {
+    try { const s = localStorage.getItem('tennis_dismissed_alerts'); return s ? new Set(JSON.parse(s)) : new Set() } catch { return new Set() }
+  })
+  const dismissAlert = (id: string) => {
+    setDismissedAlerts(prev => { const next = new Set(prev); next.add(id); try { localStorage.setItem('tennis_dismissed_alerts', JSON.stringify([...next])) } catch {} return next })
+  }
+
+  // Team sub-tab
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
 // ─── MATCH REPORTS VIEW ───────────────────────────────────────────────────────
 function MatchReportsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
@@ -7115,7 +7246,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
@@ -7157,7 +7288,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
       case 'gps':         return <GPSCourtView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
-      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} />;
+      default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} />;
     }
   };
 
