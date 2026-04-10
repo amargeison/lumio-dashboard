@@ -2010,7 +2010,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
                       {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : (session.userName || firstName || 'AL').slice(0,2).toUpperCase() })()}
                     </div>
-                    <div className="text-sm font-semibold text-white">{session.userName || 'Big Al'}</div>
+                    <div className="text-sm font-semibold text-white">{(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()}</div>
+                    {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null; return nn ? <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginTop: 2 }}>&quot;{nn}&quot;</div> : null })()}
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
                   </div>
                 </div>
@@ -2114,7 +2115,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Player Details</h4>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
                     {[
-                      ['Full Name', session.userName || 'Big Al'], ['Nationality', `${player.flag} ${player.nationality}`],
+                      ['Full Name', (() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()], ['Nationality', `${player.flag} ${player.nationality}`],
                       ['DOB', player.dateOfBirth], ['Age', `${player.age}`],
                       ['Height', player.height], ['Weight', player.weight],
                       ['Plays', player.plays], ['Backhand', player.backhand],
@@ -6664,12 +6665,11 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
           {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session?.photoDataUrl ? <img src={ph || session?.photoDataUrl || ''} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div> })()}
         </div>
         {/* Name */}
-        <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
-          {(session?.userName || player.name).split(' ')[0]}
-        </div>
-        <div className="text-purple-300 font-bold text-xs uppercase tracking-widest text-center mb-2">
-          {(session?.userName || player.name).split(' ').slice(1).join(' ')}
-        </div>
+        {(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; const fullName = n || session?.userName || player.name; return (<>
+        <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{fullName.split(' ')[0]}</div>
+        <div className="text-purple-300 font-bold text-xs uppercase tracking-widest text-center">{fullName.split(' ').slice(1).join(' ')}</div>
+        </>)})()}
+        {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null; return nn ? <div className="text-center mb-2" style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>&quot;{nn}&quot;</div> : <div className="mb-2" /> })()}
 
         {/* Surface Win % bars */}
         <div className="space-y-1.5 mb-2">
