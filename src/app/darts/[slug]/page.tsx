@@ -7178,22 +7178,15 @@ function CountyDartsView({ player, session }: { player: DartsPlayer; session: Sp
 
 // ─── DARTS ROLES ──────────────────────────────────────────────────────────────
 const DARTS_ROLES = [
-  { id: 'player',     label: 'Player',              icon: '🎯', description: 'My stats & tour career' },
-  { id: 'chairman',   label: 'Organisation Chair', icon: '🏛️', description: 'Board & strategy'   },
-  { id: 'manager',    label: 'Tour Manager',        icon: '🎯', description: 'Full tour view'      },
-  { id: 'director',   label: 'Player Director',     icon: '⭐', description: 'Player management'   },
-  { id: 'commercial', label: 'Commercial',          icon: '💼', description: 'Sponsors & events'   },
-  { id: 'secretary',  label: 'Secretary',           icon: '📋', description: 'Admin & compliance'  },
+  { id: 'player',  label: 'Player',            icon: '🎯', description: 'My stats & tour career' },
+  { id: 'agent',   label: 'Agent / Manager',   icon: '🤝', description: 'Commercial & tour management' },
+  { id: 'sponsor', label: 'Sponsor / Partner', icon: '⭐', description: 'Sponsorship & media' },
 ]
 
 const DARTS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
-  player:     { label: 'Player',              icon: '🎯', accent: '#dc2626', sidebar: 'all', message: null },
-  chairman:   { label: 'Organisation Chair',  icon: '🏛️', accent: '#F59E0B', sidebar: ['dashboard','morning','financial','sponsorship','exhibitions','media','agent','settings'], message: 'Board & strategy view — player controls full access.' },
-  manager:    { label: 'Tour Manager',        icon: '🎯', accent: '#22C55E', sidebar: ['dashboard','morning','schedule','live-scores','draw-bracket','match-prep','travel','teamhub','equipment','settings'], message: 'Full tour management view.' },
-  director:   { label: 'Player Director',     icon: '⭐', accent: '#8B5CF6', sidebar: ['dashboard','morning','performance','schedule','live-scores','opponentintel','practicelog','teamhub','mental','physio-recovery','career','settings'], message: 'Player development and performance view.' },
-  commercial: { label: 'Commercial',          icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','morning','sponsorship','exhibitions','media','financial','agent','settings'], message: 'Sponsors, exhibitions and commercial view.' },
-  secretary:  { label: 'Secretary',           icon: '📋', accent: '#6B7280', sidebar: ['dashboard','morning','schedule','travel','tourcard','settings'], message: 'Admin and compliance view.' },
-  sponsor:    { label: 'Sponsor / Partner',   icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','media','settings'], message: null },
+  player:  { label: 'Player',            icon: '🎯', accent: '#dc2626', sidebar: 'all', message: null },
+  agent:   { label: 'Agent / Manager',   icon: '🤝', accent: '#22C55E', sidebar: ['dashboard','morning','schedule','live-scores','financial','sponsorship','exhibitions','media','travel','agent','teamhub','settings'], message: 'Agent & manager view — commercial, travel and tour management.' },
+  sponsor: { label: 'Sponsor / Partner', icon: '⭐', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','media','settings'], message: null },
 }
 
 function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession; player: DartsPlayer }) {
