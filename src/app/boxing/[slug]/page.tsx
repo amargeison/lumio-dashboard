@@ -4495,7 +4495,7 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
           </div>
         </div>
       )}
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="dashboard" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4599,7 +4599,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
           </div>
         ))}
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="opponent" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4668,7 +4668,7 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="sponsorship" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5032,7 +5032,7 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
           );
         })()}
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5127,7 +5127,7 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
           </div>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5189,7 +5189,7 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
           Rounds where Marcus spent &gt;55% in the centre ring (R1, R2, R4) averaged <span className="text-green-400 font-medium">49% connect rate</span>. Rounds where he drifted to the ropes (&gt;35%) dropped to <span className="text-red-400 font-medium">37% connect rate</span>. This confirms the centre-ring strategy is directly linked to punch output efficiency. Jim&apos;s instruction: &quot;work the jab to keep centre position&quot; is statistically validated.
         </div>
       </div>
-      <BoxingAISection context="default" fighter={_fighter} session={session} />
+      <BoxingAISection context="training" fighter={_fighter} session={session} />
     </div>
   );
 }
