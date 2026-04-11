@@ -465,25 +465,39 @@ Fighter context:
 - Weight: ${fighter.current_weight}kg → ${fighter.target_weight}kg
 - Camp Day: ${fighter.camp_day}/${fighter.camp_total}
 
-Write 4-5 bullet points covering the most important insight for ${context}.
-Start each line with a relevant emoji. Be specific. Max 180 words. No headers. Plain text only. No markdown. No bullet points.`
+Cover the four or five most important insights for the ${context} section in one flowing paragraph. Be specific. Around 120–160 words. Plain prose only — no bullet points, no dashes, no numbered lists, no emoji at the start of lines, no bold, no headers, no markdown.`
           }]
         })
       })
       const data = await res.json()
+      if (!res.ok || data.error) {
+        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || `HTTP ${res.status}`)
+        console.error('[BoxingAISection] API error:', errMsg, data)
+        setSummary(`⚠️ AI service error: ${errMsg}. Check ANTHROPIC_API_KEY in Settings → Developer Tools.`)
+        setGenerated(true)
+        setLoading(false)
+        return
+      }
       const raw = data.content?.map((b: {type:string;text?:string}) =>
         b.type === 'text' ? b.text : '').join('') || ''
-      setSummary(cleanResponse(raw))
+      if (!raw.trim()) {
+        console.warn('[BoxingAISection] Empty response from API:', data)
+        setSummary('⚠️ AI returned an empty response. Try again or check API key configuration.')
+      } else {
+        setSummary(cleanResponse(raw) || raw)
+      }
       setGenerated(true)
-    } catch { setSummary('Unable to generate summary.') }
+    } catch (err) {
+      console.error('[BoxingAISection] Fetch failed:', err)
+      setSummary('⚠️ Unable to reach AI service. Check your network connection.')
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    if (!hasGenerated.current) {
-      hasGenerated.current = true
-      generateSummary()
-    }
+    if (hasGenerated.current) return
+    hasGenerated.current = true
+    generateSummary()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1269,14 +1283,20 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 <span className="text-sm font-bold text-white">📸 Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_boxing_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
-                  <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                  <button className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>
-                  <button className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                  {photoSrc && <button onClick={() => { localStorage.removeItem('lumio_boxing_photo_frame'); setPhotoSrc(null) }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
+                  <input ref={photoInputRef} key={photoSrc ? 'has' : 'no'} type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0]; if (!file) return
+                    const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400
+                    const ctx = canvas.getContext('2d')!; const img = new Image()
+                    img.onload = () => { const size = Math.min(img.width, img.height); ctx.drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, 400, 400); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_boxing_photo_frame', dataUrl) } catch {} setPhotoSrc(dataUrl) }
+                    img.src = URL.createObjectURL(file)
+                  }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
-                {session.photoDataUrl
-                  ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${photoFit}`} />
+                {(photoSrc || session.photoDataUrl)
+                  ? <img src={photoSrc || session.photoDataUrl || ''} alt="" className={`w-full h-full object-${photoFit}`} />
                   : <div className="text-center"><div className="text-4xl mb-2">🥊</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
