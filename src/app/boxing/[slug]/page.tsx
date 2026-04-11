@@ -839,7 +839,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">
-                        <span className="text-base">{ch.icon}</span>
+                        <span className="text-base" style={{ filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
                         <span style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
                         {ch.urgent && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}
                       </div>
@@ -949,9 +949,21 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 })}
               </div>
             </div>
+            {/* Tonight's Venue */}
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
+              <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
+              <div className="text-xs text-gray-500 mt-1">16°C · Clear · Doors open 18:00</div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.2M</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£360,000</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">{fighter.next_fight.broadcast}</span></div>
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT: Photo frame + Camp Info */}
+          {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
           <div className="space-y-4">
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -974,15 +986,59 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 ))}
               </div>
             </div>
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Camp Info</div>
-              <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
-              <div className="text-xs text-gray-500 mt-1">{fighter.next_fight.broadcast} · {fighter.next_fight.date}</div>
-              <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Days to fight:</span><span className="text-red-400 font-bold">{fighter.next_fight.days_away}</span></div>
-                <div className="flex justify-between text-gray-400"><span>Weight status:</span><span className="text-teal-400 font-bold">{fighter.current_weight}kg → {fighter.target_weight}kg</span></div>
-                <div className="flex justify-between text-gray-400"><span>Recovery:</span><span className="text-green-400 font-bold">{recoveryScore}%</span></div>
-                <div className="flex justify-between text-gray-400"><span>Opponent:</span><span className="text-white">{fighter.next_fight.opponent} ({fighter.next_fight.opponent_ranking})</span></div>
+
+            {/* AI Morning Summary — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#8B5CF6' }}>✨</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                </div>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                </span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {[
+                  { type:'fight',    icon:'🥊', text:`Fight ${fighter.next_fight.days_away} days away — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking}) at ${fighter.next_fight.venue}. Camp day ${fighter.camp_day}/${fighter.camp_total}. On track for power peak.` },
+                  { type:'weight',   icon:'⚖️', text:`Weight ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Daily cut: ${((fighter.current_weight - fighter.target_weight) / fighter.next_fight.days_away).toFixed(2)}kg/day. Log today before 09:00.` },
+                  { type:'camp',     icon:'🏕️', text:'Sparring 8 rds vs Darnell Hughes at 11:00 — southpaw rounds to prep for Petrov. Jim Bevan flagged right hand rewrap — book Dr Mitchell 09:00.' },
+                  { type:'sponsor',  icon:'🤝', text:'DAZN interview prep today — talking points needed by 14:00. Under Armour camp video content outstanding from March obligation.' },
+                  { type:'travel',   icon:'✈️', text:'O2 Arena fight week hotel confirmed — Canary Wharf Marriott, 4 nights. Corner team flights (Jim, Tony, Ricky) booked BA LHR→LCY.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <span className="text-base flex-shrink-0">{item.icon}</span>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance Intelligence — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>⚡</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: '#dc2626' }}>Performance</span>
+              </div>
+              <div className="px-5 py-4 space-y-2.5">
+                {[
+                  { n:1, trend:'↑', color:'#22C55E', text:'Sparring power output up 8% — last 5 sessions vs season avg. Right hand velocity and body shot compression both trending up. Keep the current pad routine.' },
+                  { n:2, trend:'⚠', color:'#EF4444', text:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg left to cut in ${fighter.next_fight.days_away} days — on track but one missed daily log risks a rapid fight week cut.` },
+                  { n:3, trend:'↑', color:'#22C55E', text:'ACWR 1.12 — optimal zone. Load ramping correctly. Jim flagged sharpness on pads this week as "best camp yet".' },
+                  { n:4, trend:'→', color:'#dc2626', text:`WBC #${fighter.rankings.wbc} / IBF #${fighter.rankings.ibf} — win tonight and the mandatory shot opens up next quarter. First top-10 WBC fight — media interest is high.` },
+                  { n:5, trend:'↓', color:'#F59E0B', text:'Round 9-12 work rate dipped 4% vs earlier camps — conditioning focus this week. Ricky Dunn adding 2nd interval block on Thursday.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <div className="flex items-center gap-1 flex-shrink-0 w-8">
+                      <span className="font-bold" style={{ color: '#dc2626' }}>{item.n}</span>
+                      <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
+                    </div>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
