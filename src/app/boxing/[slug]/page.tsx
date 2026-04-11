@@ -783,12 +783,20 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       extra: `Fight camp day ${fighter.camp_day}. ${fighter.next_fight.days_away} days to fight night against ${fighter.next_fight.opponent}.`,
     })
     const u = new SpeechSynthesisUtterance(script)
-    const savedVoice = (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_voice_name')) || 'Sarah'
-    const settings = voiceMap[savedVoice] || voiceMap['Sarah']
-    u.rate = settings.rate; u.pitch = settings.pitch
-    if (!localStorage.getItem('lumio_boxing_voice_name')) localStorage.setItem('lumio_boxing_voice_name', 'Sarah')
-    const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
-    if (pref) u.voice = pref
+    const savedVoiceName = localStorage.getItem('lumio_boxing_voice_name') || 'Sarah'
+    const browserVoiceMap: Record<string, string[]> = {
+      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
+      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
+      'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
+    }
+    const preferred = browserVoiceMap[savedVoiceName] || browserVoiceMap['Sarah']
+    const match = voices.find(v => preferred.some(p => v.name.includes(p)))
+      || voices.find(v => savedVoiceName === 'George'
+        ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male')
+        : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
+    if (match) u.voice = match
+    u.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
+    u.rate = savedVoiceName === 'George' ? 0.92 : 0.95
     u.onstart = () => setIsSpeaking(true); u.onend = () => setIsSpeaking(false); u.onerror = () => setIsSpeaking(false)
     window.speechSynthesis.speak(u)
   }

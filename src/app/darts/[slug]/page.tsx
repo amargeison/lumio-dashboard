@@ -485,12 +485,20 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       extra: `You're PDC number ${player.pdcRank} with a ${player.checkoutPercent}% checkout rate.`,
     })
     const u = new SpeechSynthesisUtterance(text)
-    const savedVoice = (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_voice_name')) || 'Sarah'
-    const settings = voiceMap[savedVoice] || voiceMap['Sarah']
-    u.rate = settings.rate; u.pitch = settings.pitch
-    if (!localStorage.getItem('lumio_darts_voice_name')) localStorage.setItem('lumio_darts_voice_name', 'Sarah')
-    const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
-    if (pref) u.voice = pref
+    const savedVoiceName = localStorage.getItem('lumio_darts_voice_name') || 'Sarah'
+    const browserVoiceMap: Record<string, string[]> = {
+      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
+      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
+      'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
+    }
+    const preferred = browserVoiceMap[savedVoiceName] || browserVoiceMap['Sarah']
+    const match = voices.find(v => preferred.some(p => v.name.includes(p)))
+      || voices.find(v => savedVoiceName === 'George'
+        ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male')
+        : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
+    if (match) u.voice = match
+    u.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
+    u.rate = savedVoiceName === 'George' ? 0.92 : 0.95
     u.onstart = () => setIsSpeaking(true); u.onend = () => setIsSpeaking(false); u.onerror = () => setIsSpeaking(false)
     window.speechSynthesis.speak(u)
   }
