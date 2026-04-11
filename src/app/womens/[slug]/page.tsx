@@ -4430,7 +4430,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           {groups.map((group: string) => {
-            const items = filteredItems.filter((i: { group: string }) => i.group === group)
+            const items = filteredItems
+              .filter((i: { group: string }) => i.group === group)
+              .sort((a: { id: string }, b: { id: string }) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0))
             if (items.length === 0) return null
             return (
             <div key={group}>

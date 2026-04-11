@@ -2,7 +2,7 @@
 // TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
+import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
@@ -789,6 +789,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     : player.name
   const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl) : null
   const firstName = displayPlayerName.split(' ')[0] || 'James'
+  // Speech state — morning briefing TTS
+  const [isSpeaking, setIsSpeaking] = useState(false)
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   });
@@ -910,6 +912,66 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     );
   };
 
+  // ── Smart briefing TTS — matches tennis/darts/boxing ──────────────────
+  const getVoicesReady = (): Promise<SpeechSynthesisVoice[]> => new Promise(resolve => {
+    if (typeof window === 'undefined') return resolve([])
+    const v = window.speechSynthesis.getVoices()
+    if (v.length > 0) return resolve(v)
+    window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
+  })
+  const speakBriefing = async () => {
+    if (typeof window === 'undefined') return
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
+    window.speechSynthesis.cancel()
+    const scheduleRaw = [
+      { id:'gs1', time:'07:00', label:'Range session — 90 min',              highlight:false },
+      { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
+      { id:'gs3', time:'09:24', label:'R2 tee time — with McIlroy, Scheffler', highlight:true },
+      { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
+      { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+      { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
+      { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+      { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
+    ]
+    const scheduleForBriefing = buildScheduleItems(
+      scheduleRaw,
+      new Set(Object.entries(scheduleChecked).filter(([, v]) => v).map(([k]) => k)),
+      new Set(Object.entries(scheduleCancelled).filter(([, v]) => v).map(([k]) => k)),
+    )
+    const briefingText = generateSmartBriefing({
+      now: new Date(),
+      playerName: displayPlayerName,
+      schedule: scheduleForBriefing,
+      match: { opponent: 'R2 at Golfclub München Eichenried', time: '09:24', result: null },
+      roundupSummary: buildRoundupSummary(ROUNDUP_ITEMS),
+      sport: 'golf',
+      timezone: getUserTimezone(),
+      extra: `You're ranked #${player.owgr} in the OWGR with ${player.owgr_points.toLocaleString()} points, #${player.race_to_dubai_pos} on the Race to Dubai.`,
+    })
+    const allVoices = await getVoicesReady()
+    const savedVoiceName = localStorage.getItem('lumio_tts_voice_name') || 'Sarah'
+    const voiceMap: Record<string, string[]> = {
+      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
+      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
+      'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
+    }
+    const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
+    const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
+      || allVoices.find(v => savedVoiceName === 'George'
+        ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male')
+        : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
+    const utterance = new SpeechSynthesisUtterance(briefingText)
+    if (match) utterance.voice = match
+    utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
+    utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95
+    utterance.volume = 1.0
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+  useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+
   return (
     <div className="space-y-6">
       {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
@@ -919,6 +981,10 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-white">Good morning, {firstName} ⛳</h1>
+              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Golf will read your morning headlines, round schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'} className="flex items-center justify-center rounded-lg transition-all"
+                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? 'rgba(21,128,61,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(21,128,61,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#4ade80' : '#9CA3AF' }}>
+                <Volume2 size={15} strokeWidth={1.75} />
+              </button>
             </div>
             <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
@@ -1019,31 +1085,32 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
-        const STEPS = [
-          { n:1,  label:'Connect your OWGR profile',        icon:'📊', title:'Connect your OWGR profile',          desc:'Link your OWGR and DP World Tour player ID for live rankings, Race to Dubai standings, and tournament entries. All stats sync automatically.' },
-          { n:2,  label:'Add your caddie',                  icon:'🏌️', title:'Add your caddie',                    desc:'Add Mick or your current caddie so yardage books, course notes and pin positions sync to both of your devices.' },
-          { n:3,  label:'Set your tournament calendar',     icon:'📅', title:'Set your tournament calendar',       desc:'Import your DP World Tour and PGA Tour schedule. Lumio tracks entry deadlines, travel, and prize money per event.' },
-          { n:4,  label:'Upload sponsor agreements',        icon:'🤝', title:'Upload sponsor agreements',          desc:'Add your Callaway, Rolex and apparel deals. Lumio tracks content obligations, renewal dates and season values.' },
-          { n:5,  label:'Set scoring targets',              icon:'🎯', title:'Set your scoring targets',           desc:'Set your season scoring average and cut-made targets. Lumio tracks progress round-by-round and flags dips in form.' },
-          { n:6,  label:'Add your team',                    icon:'👥', title:'Add your team',                      desc:'Invite your coach, caddie, physio and agent to collaborate on game plans, session notes and daily tasks.' },
-          { n:7,  label:'Configure equipment & bag',        icon:'🏷️', title:'Configure equipment & bag preferences', desc:'Log your driver, irons, wedges, putter and ball preferences. Get alerts when equipment is due for review or replacement.' },
-          { n:8,  label:'Set travel preferences',           icon:'✈️', title:'Set travel preferences',             desc:'Save your home airport, hotel preferences and visa info so Smart Flights auto-fills every tour booking.' },
-          { n:9,  label:'Configure notifications',          icon:'🔔', title:'Configure notifications',            desc:'Choose which alerts you want — tee time reminders, sponsor deadlines, practice reminders, ranking changes.' },
-          { n:10, label:'Go live',                          icon:'🚀', title:"You're ready — let's go!",          desc:'Your golf portal is ready. Every section is live with demo data. Explore freely or sign up for your free trial to connect real OWGR data.' },
+        const TOUR_STEPS = [
+          { n:1, label:'Your golf OS, fully connected', icon:'⛳', preview:'dashboard' },
+          { n:2, label:'Start every tournament week knowing everything', icon:'🌅', preview:'briefing' },
+          { n:3, label:'Every action, one click away', icon:'⚡', preview:'actions' },
+          { n:4, label:'Tour travel sorted in 60 seconds', icon:'✈️', preview:'travel' },
+          { n:5, label:'Every shot tracked, every ranking point counted', icon:'📊', preview:'performance' },
+          { n:6, label:'Your team, always in the loop', icon:'👥', preview:'team' },
+          { n:7, label:'AI that actually improves your game', icon:'🤖', preview:'ai' },
+          { n:8, label:'Sponsors managed automatically', icon:'🤝', preview:'sponsor' },
+          { n:9, label:'Nothing falls through the cracks', icon:'🔔', preview:'dontmiss' },
+          { n:10, label:'Run your golf career like a business', icon:'🏆', preview:'cta' },
         ]
-        const step = STEPS[tourStep]
+        const step = TOUR_STEPS[tourStep]
+        const goLive = () => { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') }
         return (
           <div className="pt-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1 mr-4">
-                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#15803D' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
-                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#15803D' }} /></div>
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#15803D' }}>STEP {tourStep + 1} OF {TOUR_STEPS.length}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`, backgroundColor: '#15803D' }} /></div>
               </div>
-              <button onClick={() => { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
+              <button onClick={goLive} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="space-y-1">
-                {STEPS.map((s, i) => (
+                {TOUR_STEPS.map((s, i) => (
                   <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
                     style={{ backgroundColor: tourStep === i ? 'rgba(21,128,61,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(21,128,61,0.3)' : '1px solid transparent' }}>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -1055,26 +1122,27 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 ))}
               </div>
               <div className="lg:col-span-2">
-                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 420 }}>
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
-                    <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
-                    <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.desc}</p>
-                    <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (
-                          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
-                        ))}
-                      </div>
-                    </div>
+                    {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your golf OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. World rankings, tournament schedule, TrackMan data, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next event:</span> <span className="text-white font-semibold">Masters — Augusta National</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Tee time:</span> <span className="text-white font-semibold">09:24 R2 — Hole 1</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#15803D' }}>⛳</span> <span style={{ color: '#9CA3AF' }}>Used by DP World Tour and PGA Tour players to manage their season end to end.</span></div></>)}
+                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every tournament week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers today&apos;s tee time, course conditions, caddie notes, sponsor obligations and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(21,128,61,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(21,128,61,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">AI Morning Summary</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(21,128,61,0.12)', color: '#15803D' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⛳', text:'Tee time 09:24 R2 Augusta National. Wind 14mph SW — affects Amen Corner significantly.' },{ icon:'🤝', text:'Callaway content post due by 12:00 — Instagram photo needed. Penalty clause.' },{ icon:'✈️', text:'Madrid hotel confirmed for next week. Transfer from airport arranged.' },{ icon:'📊', text:'Cut line projected +2. You are -3 after R1. GIR% yesterday: 72% — above season avg.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up on the range.</span></div></>)}
+                    {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — book the cheapest flights, log a TrackMan session, get caddie notes AI-generated, file a physio report, post sponsor content.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Course Notes AI', icon:'🗺️', hot:true },{ label:'Log Round', icon:'📋', hot:false },{ label:'TrackMan Session', icon:'📡', hot:true },{ label:'Caddie Brief', icon:'⛳', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#16A34A' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#16A34A' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🗺️</span> <span style={{ color: '#0ea5e9' }}>Course Notes AI pulls the latest course data, pin positions and weather forecast and briefs your caddie in 10 seconds.</span></div></>)}
+                    {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Tour travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every DP World Tour and PGA Tour venue. Smart Hotel finds the best course-adjacent hotels.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Delta · DL 417</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£687 return</span></div><div className="text-[10px] text-gray-400">London LHR → Augusta Regional · 9h 45m · 1 stop ATL</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Augusta Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£189/night</span></div><div className="text-[10px] text-gray-400">1.2km from Augusta National · Driving range ✅ · 8.7 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Tour players using Smart Flights save an average of £890 per tournament. That&apos;s £18k over a 20-event season.</span></div></>)}
+                    {step.preview === 'performance' && (<><h2 className="text-xl font-black text-white mb-2">Every shot tracked. Every ranking point counted.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>OWGR ranking, Race to Dubai standing, scoring average, GIR%, driving distance, putting average — all updated after every round.</p><div className="grid grid-cols-2 gap-3 mb-4">{[{ label:'OWGR', value:`#${player.owgr}`, sub:'↑ 4 this month', color:'#15803D' },{ label:'Race to Dubai', value:`#${player.race_to_dubai_pos}`, sub:`${player.owgr_points.toFixed(0)} pts`, color:'#0D9488' },{ label:'Scoring Avg', value:'70.2', sub:'Tour avg: 71.1', color:'#F97316' },{ label:'Form (last 5)', value:'MC-6-3-1-MC', sub:'2 top-10s', color:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-[10px] text-gray-500 mb-1">{s.label}</div><div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📈</span> <span style={{ color: '#9CA3AF' }}>The Ranking Simulator shows you exactly what you need to finish this week to break into the top 50.</span></div></>)}
+                    {step.preview === 'team' && (<><h2 className="text-xl font-black text-white mb-2">Your team. Always in the loop.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Caddie, coach, physio, agent, equipment sponsor — all connected. Message the whole team in one tap.</p><div className="space-y-2 mb-4">{[{ name:'Mick Sullivan', role:'Caddie', status:'Course notes sent for R2', color:'#15803D' },{ name:'Carlos Mendez', role:'Coach', status:'Swing review at 17:00', color:'#0D9488' },{ name:'James Wright', role:'Agent', status:'Callaway renewal pending', color:'#F59E0B' },{ name:'Dr Sarah Lee', role:'Physio', status:'Back treatment 18:00', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div><div className="text-[10px] text-gray-500">{m.status}</div></div><div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📨</span> <span style={{ color: '#9CA3AF' }}>Your caddie book syncs automatically with the course notes AI. No more WhatsApp chains the night before.</span></div></>)}
+                    {step.preview === 'ai' && (<><h2 className="text-xl font-black text-white mb-2">AI analysis that actually improves your game.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Course Notes AI pulls pin positions, wind history and green speed. TrackMan AI spots patterns. Caddie Brief AI writes the full hole-by-hole strategy.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}><div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Course Notes AI — Augusta National R2</span></div><div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}><p>Back 9 playing 2.1 shots harder than front. Wind 14mph SW — affects 11, 12, 13 significantly.</p><p>Your GIR% on par 5s this season: 89%. Attack 15 in 2 — you&apos;re 4 for 5 this season.</p><p>Avoid short-left on 12. Pin is back-right today — bail-out centre is the play.</p></div><div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using course data, weather API and TrackMan history · Claude AI</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}><span style={{ color: '#A78BFA' }}>🤖</span> <span style={{ color: '#A78BFA' }}>Powered by Claude AI · Anthropic · The same AI trusted by Fortune 500 companies.</span></div></>)}
+                    {step.preview === 'sponsor' && (<><h2 className="text-xl font-black text-white mb-2">Never miss a sponsor obligation again.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Content shoots, Instagram posts, appearance fees, equipment contracts — all tracked. Social Media AI writes the post, you approve it, one click posts it.</p><div className="space-y-2 mb-4">{[{ name:'Callaway', status:'Instagram post due today — photo needed before 12:00', badge:'DUE NOW', badgeColor:'#EF4444', value:'£120k/yr' },{ name:'Rolex', status:'Renewal meeting Apr 25 — agent handling', badge:'RENEWAL', badgeColor:'#F59E0B', value:'£85k/yr' },{ name:'Dubai Tourism', status:'Appearance inquiry — £45k — respond by Apr 30', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£45k' }].map((s, i) => (<div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{s.name}</span><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${s.badgeColor}20`, color: s.badgeColor }}>{s.badge}</span></div><div className="text-[10px] text-gray-500 mt-0.5">{s.status}</div></div><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.value}</span></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📱</span> <span style={{ color: '#9CA3AF' }}>Sponsor Post AI generates the Instagram caption in your voice. Takes 8 seconds.</span></div></>)}
+                    {step.preview === 'dontmiss' && (<><h2 className="text-xl font-black text-white mb-2">Nothing falls through the cracks.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything — entry deadlines, world ranking points dropping off, visa expiry, sponsor deadlines.</p><div className="space-y-2 mb-4">{[{ badge:'ALERT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'180 OWGR points drop off after this event. Finish T20 or better to hold #87.', sub:'Miss = drop to #94 — lose exemptions' },{ badge:'8 DAYS', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'The Open Championship entry deadline closes.', sub:'Lumio flagged this 30 days out' },{ badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Callaway Instagram post due by 12:00. Penalty clause.', sub:'Content obligation — contractual' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}><span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span><div><div className="text-[11px] text-white">{d.text}</div><div className="text-[10px] italic mt-0.5" style={{ color: '#EF4444' }}>{d.sub}</div></div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📋</span> <span style={{ color: '#9CA3AF' }}>Entry deadline for The Open Championship closes in 8 days. Lumio flagged this 30 days out.</span></div></>)}
+                    {step.preview === 'cta' && (<><h2 className="text-xl font-black text-white mb-2">Run your golf career like a business.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Rankings, travel, TrackMan data, sponsors, team, AI analysis — all in one place. Built for DP World Tour and PGA Tour professionals.</p><div className="grid grid-cols-3 gap-2 mb-4">{[{ icon:'📊', label:'OWGR Rankings', desc:'Live tracking' },{ icon:'✈️', label:'Smart Travel', desc:'Flights + hotels' },{ icon:'🤖', label:'AI Analysis', desc:'Course + caddie' },{ icon:'🤝', label:'Sponsors', desc:'Obligations tracked' },{ icon:'👥', label:'Team Hub', desc:'Everyone connected' },{ icon:'📡', label:'TrackMan', desc:'Session data' }].map((f, i) => (<div key={i} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl mb-1">{f.icon}</div><div className="text-[10px] font-bold text-white">{f.label}</div><div className="text-[9px] text-gray-500">{f.desc}</div></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.1), rgba(13,148,136,0.1))', border: '1px solid rgba(21,128,61,0.25)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-[11px] mb-3" style={{ color: '#9CA3AF' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><div className="flex justify-center gap-2"><button onClick={goLive} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#15803D' }}>Go to my dashboard →</button><button className="px-4 py-2 rounded-xl text-xs font-bold" style={{ border: '1px solid #374151', color: '#9CA3AF' }}>Invite my caddie →</button></div></div><div className="rounded-lg p-3 mt-4 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>🏆</span> <span style={{ color: '#F59E0B' }}>You&apos;re one of our first 20 founding members. We&apos;ll build what you ask for.</span></div></>)}
                   </div>
                   <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
                     <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
-                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {STEPS.length}</span>
-                    {tourStep < STEPS.length - 1 ? (
+                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {TOUR_STEPS.length}</span>
+                    {tourStep < TOUR_STEPS.length - 1 ? (
                       <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Next →</button>
                     ) : (
-                      <button onClick={() => { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go ⛳</button>
+                      <button onClick={goLive} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go ⛳</button>
                     )}
                   </div>
                 </div>
