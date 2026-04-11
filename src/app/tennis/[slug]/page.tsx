@@ -2140,8 +2140,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             {/* Team Info */}
             {teamSubTab === 'info' && (
               <div>
-                <h2 className="text-xl font-black mb-6" style={{ color: '#F9FAFB' }}>Team Info</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <h2 className="text-sm font-black mb-3" style={{ color: '#F9FAFB' }}>Team Info</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                   {[
                     { initials:'CM', name:'Carlos Mendez', role:'Head Coach', dept:'Coaching', rating:92, deptColor:'#22C55E', ref:'LUM-001', stats:{TAC:92,MOT:95,STR:88,EXP:97,COM:91,PRE:89}, speciality:'Tactical & match strategy', location:'Monte-Carlo', contact:'+34 612 xxx xxx', available:true },
                     { initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', dept:'Medical', rating:95, deptColor:'#EF4444', ref:'LUM-002', stats:{DIA:94,TRT:93,REC:90,PRE:88,CON:92,SPT:86}, speciality:'Sports rehabilitation', location:'Monte-Carlo', contact:'+44 7700 xxx xxx', available:true },
@@ -2150,45 +2150,45 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     { initials:'MS', name:'Marcos Silva', role:'Sports Psychologist', dept:'Support', rating:87, deptColor:'#8B5CF6', ref:'LUM-005', stats:{FOC:93,PRE:91,MND:88,CNF:90,RES:87,CLR:85}, speciality:'Mental conditioning', location:'Madrid (remote)', contact:'+34 911 xxx xxx', available:false },
                     { initials:'TE', name:'Tom Ellis', role:'Stringer', dept:'Equipment', rating:91, deptColor:'#0ea5e9', ref:'LUM-006', stats:{TEN:90,PRE:88,STR:92,CON:83,SPD:80,REL:91}, speciality:'Racket customisation', location:'Monte-Carlo', contact:'+44 7800 xxx xxx', available:true },
                   ].map((m, i) => (
-                    <div key={i} className="rounded-2xl overflow-hidden"
+                    <div key={i} className="rounded-xl overflow-hidden"
                       style={{ background: `linear-gradient(135deg, ${m.deptColor}18 0%, rgba(0,0,0,0.6) 100%)`, border: `1px solid ${m.deptColor}35` }}>
-                      <div className="flex items-start justify-between px-5 pt-5 pb-3">
+                      <div className="flex items-start justify-between px-2 pt-2 pb-1">
                         <div>
-                          <div className="text-3xl font-black leading-none" style={{ color: '#F9FAFB' }}>{m.rating}</div>
-                          <div className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: m.deptColor }}>{m.role.split(' ')[0].toUpperCase()}</div>
+                          <div className="text-base font-black leading-none" style={{ color: '#F9FAFB' }}>{m.rating}</div>
+                          <div className="text-[7px] font-bold uppercase tracking-widest mt-0.5" style={{ color: m.deptColor }}>{m.role.split(' ')[0].toUpperCase()}</div>
                         </div>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${m.deptColor}25`, color: m.deptColor }}>{m.dept}</span>
+                        <span className="text-[7px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${m.deptColor}25`, color: m.deptColor }}>{m.dept}</span>
                       </div>
-                      <div className="flex justify-center pb-3">
+                      <div className="flex justify-center pb-1">
                         {demoStaffPhotos[m.name] ? (
-                          <div className="w-20 h-20 rounded-full overflow-hidden border-2 flex-shrink-0" style={{ borderColor: `${m.deptColor}60` }}>
+                          <div className="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0" style={{ borderColor: `${m.deptColor}60` }}>
                             <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" />
                           </div>
                         ) : (
-                          <div className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-black border-2" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>
                         )}
                       </div>
-                      <div className="text-center px-5 pb-3">
-                        <div className="text-base font-black text-white">{m.name}</div>
-                        <div className="text-xs mt-0.5" style={{ color: m.deptColor }}>{m.role}</div>
+                      <div className="text-center px-2 pb-1">
+                        <div className="text-[10px] font-black text-white leading-tight">{m.name}</div>
+                        <div className="text-[8px] mt-0.5" style={{ color: m.deptColor }}>{m.role}</div>
                       </div>
-                      <div className="grid grid-cols-3 gap-x-0 px-5 pb-3" style={{ borderTop: `1px solid ${m.deptColor}20`, borderBottom: `1px solid ${m.deptColor}20` }}>
+                      <div className="grid grid-cols-3 gap-x-0 px-1.5 pb-1" style={{ borderTop: `1px solid ${m.deptColor}20`, borderBottom: `1px solid ${m.deptColor}20` }}>
                         {Object.entries(m.stats).map(([k, v], si) => (
-                          <div key={k} className="flex items-center justify-center gap-1 py-2 text-xs" style={{ borderRight: (si+1)%3!==0?`1px solid ${m.deptColor}15`:'none', borderBottom: si<3?`1px solid ${m.deptColor}15`:'none' }}>
+                          <div key={k} className="flex items-center justify-center gap-0.5 py-0.5 text-[8px]" style={{ borderRight: (si+1)%3!==0?`1px solid ${m.deptColor}15`:'none', borderBottom: si<3?`1px solid ${m.deptColor}15`:'none' }}>
                             <span className="font-black text-white">{v}</span>
                             <span style={{ color: m.deptColor }}>{k}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="px-5 py-3 space-y-1.5 text-xs">
-                        {[['Speciality',m.speciality],['Location',m.location],['Contact',m.contact]].map(([l,v]) => (
-                          <div key={l} className="flex justify-between"><span style={{ color: '#6B7280' }}>{l}</span><span className="text-white text-right">{v}</span></div>
+                      <div className="px-2 py-1 space-y-0.5 text-[8px]">
+                        {[['Speciality',m.speciality],['Location',m.location]].map(([l,v]) => (
+                          <div key={l} className="flex justify-between"><span style={{ color: '#6B7280' }}>{l}</span><span className="text-white text-right truncate ml-1">{v}</span></div>
                         ))}
                         <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Available</span><span className="font-bold" style={{ color: m.available?'#22C55E':'#EF4444' }}>{m.available?'Yes':'No'}</span></div>
                       </div>
-                      <div className="px-5 pb-5 pt-1 flex items-center justify-between">
-                        <span className="text-[10px]" style={{ color: '#374151' }}>{m.ref}</span>
-                        <button className="flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-lg" style={{ backgroundColor: `${m.deptColor}20`, color: m.deptColor, border: `1px solid ${m.deptColor}30` }}>👤 Profile</button>
+                      <div className="px-2 pb-2 pt-0.5 flex items-center justify-between">
+                        <span className="text-[7px]" style={{ color: '#374151' }}>{m.ref}</span>
+                        <button className="flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${m.deptColor}20`, color: m.deptColor, border: `1px solid ${m.deptColor}30` }}>👤 Profile</button>
                       </div>
                     </div>
                   ))}
@@ -9204,6 +9204,10 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const sidebarExpanded = sidebarPinned || sidebarHovered;
   const sidebarRef = useRef<HTMLElement | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(72);
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
+  const liveProfileName = useTennisProfileName();
+  const liveProfilePhoto = useTennisProfilePhoto();
+  const liveSession = { ...session, userName: liveProfileName || session.userName, photoDataUrl: liveProfilePhoto || session.photoDataUrl };
 
   useEffect(() => {
     setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_tennis_sidebar_pinned') === 'true')
@@ -9919,7 +9923,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         </nav>
 
         <RoleSwitcher
-          session={session}
+          session={liveSession}
           roles={TENNIS_ROLES}
           accentColor="#0ea5e9"
           onRoleChange={(role) => {
