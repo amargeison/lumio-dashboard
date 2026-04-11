@@ -457,7 +457,7 @@ export default function TennisLandingPage() {
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${PURPLE}33, transparent 50%), radial-gradient(circle at 80% 60%, ${PURPLE_LIGHT}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tennis_logo.png" alt="Lumio Tennis" style={{ height: 80, margin: '0 auto 32px', display: 'block' }}
+          <img src="/tennis_transparent_logo.png" alt="Lumio Tennis" style={{ height: 80, margin: '0 auto 32px', display: 'block' }}
             onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
             LUMIO TOUR
@@ -686,6 +686,129 @@ export default function TennisLandingPage() {
               Order Your Lumio GPS Tracker →
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* ── PLAYER DIRECTORY + COACH FINDER ── */}
+      <section style={{ padding: '48px 24px', backgroundColor: BG }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <section style={{
+            background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 100%)',
+            border: '1px solid #a855f730',
+            borderRadius: '24px',
+            padding: '56px 48px',
+            margin: '32px 0',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute', top: '-80px', left: '-80px',
+              width: '300px', height: '300px',
+              background: 'radial-gradient(circle, #a855f720 0%, transparent 70%)',
+              pointerEvents: 'none'
+            }} />
+
+            <div style={{ marginBottom: '20px' }}>
+              <span style={{
+                background: '#a855f7', color: '#fff',
+                padding: '5px 14px', borderRadius: '999px',
+                fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em',
+                textTransform: 'uppercase'
+              }}>
+                👥 Player & Coach Network
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', marginBottom: '16px', lineHeight: 1.2 }}>
+              Scout opponents. Find hitting partners.<br/>
+              <span style={{ color: '#a855f7' }}>Hire your next coach.</span>
+            </h2>
+
+            <p style={{ color: '#94a3b8', fontSize: '17px', maxWidth: '620px', lineHeight: 1.7, marginBottom: '40px' }}>
+              Everything you need to build your network — directly inside your portal.
+              Search live ATP/WTA player profiles, find hitting partners near you,
+              and use our AI Coach Finder to get a personalised shortlist of coaches
+              matched to your game, your goals and your budget.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '40px' }}>
+
+              <div style={{ background: '#a855f710', border: '1px solid #a855f730', borderRadius: '16px', padding: '28px' }}>
+                <div style={{ fontSize: '28px', marginBottom: '12px' }}>👥</div>
+                <h3 style={{ color: '#a855f7', fontWeight: 700, fontSize: '17px', marginBottom: '10px' }}>
+                  Player Directory
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                  Search live ATP/WTA rankings and player profiles. Scout upcoming opponents —
+                  playing style, serve patterns, surface preferences, recent form.
+                  Add players to your contacts and find hitting partners available for hire.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    '🏆 Live ATP/WTA rankings',
+                    '🎾 Opponent scouting profiles',
+                    '🤝 Hitting partner search',
+                    '📋 Personal contact list'
+                  ].map(f => (
+                    <div key={f} style={{ color: '#a855f7', fontSize: '13px', fontWeight: 500 }}>{f}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: '#06b6d410', border: '1px solid #06b6d430', borderRadius: '16px', padding: '28px' }}>
+                <div style={{ fontSize: '28px', marginBottom: '12px' }}>🎓</div>
+                <h3 style={{ color: '#06b6d4', fontWeight: 700, fontSize: '17px', marginBottom: '10px' }}>
+                  AI Coach Finder
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                  Tell us what you want to work on, your preferred working style and your budget.
+                  Our AI searches live coaching data and returns a personalised shortlist —
+                  with a draft approach email ready to send in one click.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    '🧠 Goal-based matching',
+                    '📍 Location & travel preferences',
+                    '💰 Budget-aware recommendations',
+                    '📧 AI draft approach email'
+                  ].map(f => (
+                    <div key={f} style={{ color: '#06b6d4', fontSize: '13px', fontWeight: 500 }}>{f}</div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            <div style={{
+              display: 'flex', gap: '40px',
+              padding: '20px 28px',
+              background: '#ffffff08',
+              borderRadius: '12px',
+              flexWrap: 'wrap',
+              marginBottom: '32px'
+            }}>
+              {[
+                { stat: '2,000+', label: 'ATP & WTA players searchable' },
+                { stat: '4',      label: 'Personalised coach matches per search' },
+                { stat: 'Live',   label: 'Rankings updated in real time' },
+                { stat: '1-click', label: 'Draft approach email to any coach' },
+              ].map(({ stat, label }) => (
+                <div key={stat}>
+                  <div style={{ color: '#a855f7', fontSize: '26px', fontWeight: 800 }}>{stat}</div>
+                  <div style={{ color: '#64748b', fontSize: '13px', maxWidth: '160px' }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            <button style={{
+              background: '#a855f7', color: '#fff',
+              padding: '14px 32px', borderRadius: '999px',
+              fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer'
+            }}>
+              Explore the Player Network →
+            </button>
+
+          </section>
         </div>
       </section>
 

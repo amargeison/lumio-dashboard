@@ -9288,9 +9288,10 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
           messages: [{ role: 'user', content: `Search for current ${tourFilter === 'wta' ? 'WTA' : tourFilter === 'atp' ? 'ATP' : 'ATP and WTA'} tennis player rankings. Query: "${searchQuery || 'top 20 current ranking'}". For each player return: name, current ranking number, nationality, age, plays hand, coach name, last 3 tournament results, best surface, career high ranking. Format each player on one line separated by pipes: NAME | RANKING | NATIONALITY | AGE | HAND | COACH | RECENT_RESULTS | BEST_SURFACE | CAREER_HIGH. Return up to 10 players. No other text.` }] })
       })
       const data = await res.json()
+      if (data.error) { setSearchResults(`⚠️ ${data.error}`); setSearchLoading(false); return }
       const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''
-      setSearchResults(cleanResponse(text))
-    } catch { setSearchResults('Unable to search. Check connection.') }
+      setSearchResults(cleanResponse(text) || '⚠️ No results. Try a different search.')
+    } catch { setSearchResults('⚠️ Search failed. Check connection.') }
     setSearchLoading(false)
   }
 
@@ -9300,11 +9301,12 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for detailed profile of tennis player ${name}. Include: playing style, strengths and weaknesses, head-to-head vs top 10, serve and return stats, current coach and team, social media. Write as flowing paragraphs. Plain text only, no markdown, no bullets, no headers.` }] })
+          messages: [{ role: 'user', content: `Search for detailed profile of tennis player ${name}. Cover playing style, strengths and weaknesses, head-to-head vs top 10, serve and return stats, current coach and team, and social media presence. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      setProfileData(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
-    } catch { setProfileData('Unable to load profile.') }
+      if (data.error) { setProfileData(`⚠️ ${data.error}`); setProfileLoading(false); return }
+      setProfileData(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No profile data found.')
+    } catch { setProfileData('⚠️ Unable to load profile.') }
     setProfileLoading(false)
   }
 
@@ -9314,11 +9316,12 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for professional tennis hitting partners available for hire. The player is ranked ATP #${player.ranking ?? 67}, based in Europe. Find 4-5 hitting partners who are former professionals or high-level players available for practice sessions. For each: name, background, speciality, approximate day rate, how to contact. Plain text only, no markdown.` }] })
+          messages: [{ role: 'user', content: `Search for professional tennis hitting partners available for hire. The player is ranked ATP #${player.ranking ?? 67}, based in Europe. Find 4-5 hitting partners who are former professionals or high-level players available for practice sessions. For each, write a paragraph covering name, background, speciality, approximate day rate, and how to contact. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      setPartnerResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
-    } catch { setPartnerResults('Unable to search.') }
+      if (data.error) { setPartnerResults(`⚠️ ${data.error}`); setPartnerLoading(false); return }
+      setPartnerResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No results found.')
+    } catch { setPartnerResults('⚠️ Search failed.') }
     setPartnerLoading(false)
   }
 
@@ -9485,10 +9488,11 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `You are a tennis career consultant. Help find the right coach. Player: ATP #${player.ranking ?? 67}. Goals: ${goals.join(', ')}. Specific issues: ${freeText || 'general improvement'}. Preferences: experience ${experience || 'any'}, location ${location || 'flexible'}, budget ${budget || 'flexible'}, style ${style || 'any'}. Search and recommend 4 tennis coaches. For each: full name, background, coaching philosophy, notable players coached, availability, fee range, why they match. Write each as a paragraph. Plain text only, no markdown, no bullets, no headers.` }] })
+          messages: [{ role: 'user', content: `You are a tennis career consultant. Help find the right coach. Player: ATP #${player.ranking ?? 67}. Goals: ${goals.join(', ')}. Specific issues: ${freeText || 'general improvement'}. Preferences: experience ${experience || 'any'}, location ${location || 'flexible'}, budget ${budget || 'flexible'}, style ${style || 'any'}. Search and recommend 4 tennis coaches. Write each as a paragraph covering full name, background, coaching philosophy, notable players coached, availability, fee range, and why they match. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      setResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
+      if (data.error) { setResults(`⚠️ ${data.error}`); setLoading(false); return }
+      setResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No coaches found. Try adjusting preferences.')
     } catch { setResults('Unable to search. Check connection.') }
     setLoading(false); setStep('results')
   }
@@ -9499,7 +9503,7 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${name}. Include their full coaching history, playing career, philosophy, current availability, fee structure, and contact methods. Plain text paragraphs only.` }] })
+          messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${name}. Cover their full coaching history, playing career, philosophy, current availability, fee structure, and contact methods. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
       setDeepSearch({ name, data: cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''), loading: false })
