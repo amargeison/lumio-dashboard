@@ -160,6 +160,8 @@ const SIDEBAR_ITEMS = [
   { id: 'federation',  label: 'Federation',          icon: '🏛️', group: 'TOOLS'        },
   { id: 'accreditations', label: 'Accreditations',   icon: '🪪', group: 'TOOLS'        },
   { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'TOOLS'        },
+  { id: 'playerdirectory', label: 'Player Directory', icon: '👥', group: 'NETWORK' },
+  { id: 'coachfinder', label: 'Coach Finder', icon: '🎓', group: 'NETWORK' },
 ];
 
 // ─── DEMO PLAYER DATA ─────────────────────────────────────────────────────────
@@ -7861,7 +7863,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
     fetch('/api/ai/tennis', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user',
-        content: `You are an elite ATP tennis coaching analyst. Session data: GPS: Court coverage 4.2km, sprint distance 1.8km, top speed 28.4km/h, load score 74/100, recovery index Good, heaviest movement baseline deuce side. SwingVision: 68% first serve in, 14 winners, 8 unforced errors, avg rally 4.2 shots, net points won 71%. Generate a post-session coaching brief. Plain text only. No markdown. No bullet points. No dashes. No numbered lists. No bold. No headers. Write in clean flowing paragraphs only. Professional ATP coaching tone.`
+        content: `You are an elite ATP tennis coaching analyst. Session data: GPS: Court coverage 4.2km, sprint distance 1.8km, top speed 28.4km/h, load score 74/100, recovery index Good, heaviest movement baseline deuce side. SwingVision: 68% first serve in, 14 winners, 8 unforced errors, avg rally 4.2 shots, net points won 71%. Generate a post-session coaching brief in a professional ATP coaching tone. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
       }] })
     }).then(r => r.json()).then(d => setGpsAiBrief(cleanResponse(d.content?.[0]?.text || 'Unable to generate brief.'))).catch(() => setGpsAiBrief('Unable to generate brief.')).finally(() => setGpsAiLoading(false))
   }, [])
@@ -7934,7 +7936,7 @@ function TennisSendMessage({ onClose, session, player }: { onClose: () => void; 
       const res = await fetch('/api/ai/tennis', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
-          content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional tennis player (ATP #${player.ranking ?? 67}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble.`
+          content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional tennis player (ATP #${player.ranking ?? 67}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
         }] })
       })
       const data = await res.json()
@@ -8147,7 +8149,7 @@ function TennisSocialMedia({ onClose, session, player }: { onClose: () => void; 
       const toneLabel = TONES.find(t => t.id === tone)?.label || tone
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 800,
-        messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Format as:\n${platforms.includes('twitter') ? 'TWITTER: (max 280 chars, include relevant hashtags)\n' : ''}${platforms.includes('instagram') ? 'INSTAGRAM: (engaging caption, 3-5 hashtags on new line)\n' : ''}${platforms.includes('linkedin') ? 'LINKEDIN: (professional, 2-3 short paragraphs)\n' : ''}${platforms.includes('facebook') ? 'FACEBOOK: (conversational, shareable)\n' : ''}${platforms.includes('tiktok') ? 'TIKTOK: (punchy caption, trending hashtag style)\n' : ''}Only include platforms that were selected. Plain text only. No markdown. No bullet points. No dashes. No numbered lists. No bold. No headers. Write in clean flowing paragraphs only.` }]
+        messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Label each platform's post with the platform name in capitals followed by a colon, then the caption on the next line. ${platforms.includes('twitter') ? 'Twitter: max 280 chars, include relevant hashtags. ' : ''}${platforms.includes('instagram') ? 'Instagram: engaging caption with 3-5 hashtags at the end. ' : ''}${platforms.includes('linkedin') ? 'LinkedIn: professional, 2-3 short paragraphs. ' : ''}${platforms.includes('facebook') ? 'Facebook: conversational, shareable. ' : ''}${platforms.includes('tiktok') ? 'TikTok: punchy caption, trending hashtag style. ' : ''}Only include platforms that were selected. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
       }) })
       const data = await res.json()
       const raw = cleanResponse(data.content?.[0]?.text || '')
@@ -8478,7 +8480,7 @@ function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          messages: [{ role: 'user', content: `You are a top tennis analyst. Generate a tactical match prep brief for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) vs ${opponent} at ${tournament} on ${surface}. Cover: OPPONENT PROFILE, SERVE PATTERNS, RETURN GAME, TACTICAL RECOMMENDATIONS (3-4 specific), H2H CONTEXT, MENTAL EDGE. Use emoji headers. Max 400 words.` }]
+          messages: [{ role: 'user', content: `You are a top tennis analyst. Generate a tactical match prep brief for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) vs ${opponent} at ${tournament} on ${surface}. Cover opponent profile, serve patterns, return game, three to four specific tactical recommendations, head-to-head context, and mental edge. Max 400 words. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
         })
       })
       const data = await res.json()
@@ -8526,7 +8528,7 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags at the end. Write ONLY the caption. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
       setPost(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
@@ -8569,7 +8571,7 @@ function TennisPressStatement({ onClose, session, player }: { onClose: () => voi
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. 4-5 talking points. Genuine, not corporate. ~150 words.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. Cover four to five talking points woven naturally into the statement. Genuine, not corporate. Around 150 words. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
       setStatement(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
@@ -9197,7 +9199,7 @@ function TennisWildcardRequest({ onClose, session, player }: { onClose: () => vo
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a professional wildcard request letter for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) to the tournament director of ${tournament}.\n\nReason for request: ${reason}\nPlayer nationality: British\nCurrent ranking: #${player.ranking ?? 67}\nCareer high: #${player.career_high ?? 44}\nRecent results: Monte-Carlo QF (this week), solid clay season\n\nWrite a concise, professional letter (150-200 words) that opens addressing the tournament director, clearly states the wildcard request, gives 2-3 compelling reasons, mentions British market appeal if relevant, and closes professionally.\n\nWrite ONLY the letter, no commentary.` }] }) })
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a professional wildcard request letter for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) to the tournament director of ${tournament}.\n\nReason for request: ${reason}\nPlayer nationality: British\nCurrent ranking: #${player.ranking ?? 67}\nCareer high: #${player.career_high ?? 44}\nRecent results: Monte-Carlo QF (this week), solid clay season\n\nWrite a concise, professional letter (150-200 words) that opens addressing the tournament director, clearly states the wildcard request, gives 2-3 compelling reasons woven into the prose, mentions British market appeal if relevant, and closes professionally.\n\nWrite ONLY the letter, no commentary.\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
       const data = await res.json(); setLetter(cleanResponse(data.content?.[0]?.text || 'Unable to generate letter.'))
     } catch { setLetter('Unable to generate letter.') }
     setLoading(false)
@@ -9231,7 +9233,7 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 700, messages: [{ role: 'user', content: `Generate a weekly agent briefing for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}).\n\nWrite a concise weekly brief covering:\n1. RANKING UPDATE — current position, points at risk, trajectory\n2. THIS WEEK — tournament result/status, prize money earned\n3. UPCOMING — next 3 tournaments, entry status, travel confirmed\n4. SPONSOR STATUS — obligations due, any outstanding content\n5. FINANCIAL — prize money YTD, expenses flag if any\n6. ACTION ITEMS — 3 things agent needs to action this week\n\nFormat with clear numbered sections, bullet points within each.\nTone: professional, direct, information-dense. Max 300 words.\nWrite ONLY the brief, addressed to "James" (agent name).` }] }) })
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 700, messages: [{ role: 'user', content: `Generate a weekly agent briefing for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}).\n\nWrite a concise weekly brief covering ranking update (current position, points at risk, trajectory), this week (tournament result/status, prize money earned), upcoming (next 3 tournaments, entry status, travel confirmed), sponsor status (obligations due, any outstanding content), financial (prize money YTD, expenses flag if any), and action items (three things agent needs to action this week).\n\nTone: professional, direct, information-dense. Max 300 words.\nWrite ONLY the brief, addressed to "James" (agent name).\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
       const data = await res.json(); setBrief(cleanResponse(data.content?.[0]?.text || 'Unable to generate brief.'))
     } catch { setBrief('Unable to generate brief.') }
     setLoading(false)
@@ -9259,6 +9261,335 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
         </>)}
       </div>
     </>
+  )
+}
+
+function PlayerDirectoryView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const [dirTab, setDirTab] = useState<'rankings'|'partners'|'contacts'>('rankings')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [tourFilter, setTourFilter] = useState('all')
+  const [searchResults, setSearchResults] = useState<string | null>(null)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [profileModal, setProfileModal] = useState<string | null>(null)
+  const [profileData, setProfileData] = useState<string | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [partnerResults, setPartnerResults] = useState<string | null>(null)
+  const [partnerLoading, setPartnerLoading] = useState(false)
+  const [contacts, setContacts] = useState<Array<{name:string;ranking:string;nationality:string;addedAt:string}>>(() => {
+    try { return JSON.parse(localStorage.getItem('lumio_tennis_contacts') || '[]') } catch { return [] }
+  })
+
+  const searchPlayers = async () => {
+    setSearchLoading(true)
+    try {
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for current ${tourFilter === 'wta' ? 'WTA' : tourFilter === 'atp' ? 'ATP' : 'ATP and WTA'} tennis player rankings. Query: "${searchQuery || 'top 20 current ranking'}". For each player return: name, current ranking number, nationality, age, plays hand, coach name, last 3 tournament results, best surface, career high ranking. Format each player on one line separated by pipes: NAME | RANKING | NATIONALITY | AGE | HAND | COACH | RECENT_RESULTS | BEST_SURFACE | CAREER_HIGH. Return up to 10 players. No other text.` }] })
+      })
+      const data = await res.json()
+      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''
+      setSearchResults(cleanResponse(text))
+    } catch { setSearchResults('Unable to search. Check connection.') }
+    setSearchLoading(false)
+  }
+
+  const searchProfile = async (name: string) => {
+    setProfileModal(name); setProfileLoading(true); setProfileData(null)
+    try {
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for detailed profile of tennis player ${name}. Include: playing style, strengths and weaknesses, head-to-head vs top 10, serve and return stats, current coach and team, social media. Write as flowing paragraphs. Plain text only, no markdown, no bullets, no headers.` }] })
+      })
+      const data = await res.json()
+      setProfileData(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
+    } catch { setProfileData('Unable to load profile.') }
+    setProfileLoading(false)
+  }
+
+  const searchPartners = async () => {
+    setPartnerLoading(true)
+    try {
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for professional tennis hitting partners available for hire. The player is ranked ATP #${player.ranking ?? 67}, based in Europe. Find 4-5 hitting partners who are former professionals or high-level players available for practice sessions. For each: name, background, speciality, approximate day rate, how to contact. Plain text only, no markdown.` }] })
+      })
+      const data = await res.json()
+      setPartnerResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
+    } catch { setPartnerResults('Unable to search.') }
+    setPartnerLoading(false)
+  }
+
+  const addContact = (name: string, ranking: string, nationality: string) => {
+    const updated = [...contacts, { name, ranking, nationality, addedAt: new Date().toISOString() }]
+    setContacts(updated)
+    localStorage.setItem('lumio_tennis_contacts', JSON.stringify(updated))
+  }
+
+  const removeContact = (name: string) => {
+    const updated = contacts.filter(c => c.name !== name)
+    setContacts(updated)
+    localStorage.setItem('lumio_tennis_contacts', JSON.stringify(updated))
+  }
+
+  // Parse pipe-separated results into cards
+  const parseResults = (text: string) => {
+    return text.split('\n').filter(l => l.includes('|')).map(line => {
+      const parts = line.split('|').map(p => p.trim())
+      return { name: parts[0]||'', ranking: parts[1]||'', nationality: parts[2]||'', age: parts[3]||'', hand: parts[4]||'', coach: parts[5]||'', results: parts[6]||'', surface: parts[7]||'', careerHigh: parts[8]||'' }
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex gap-1 border-b" style={{ borderColor: '#1F2937' }}>
+        {([{ id:'rankings' as const, label:'🏆 ATP/WTA Rankings' },{ id:'partners' as const, label:'🎾 Hitting Partners' },{ id:'contacts' as const, label:'📋 My Contacts' }]).map(t => (
+          <button key={t.id} onClick={() => setDirTab(t.id)} className="px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
+            style={{ borderBottomColor: dirTab === t.id ? '#7C3AED' : 'transparent', color: dirTab === t.id ? '#7C3AED' : '#6B7280', backgroundColor: dirTab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* RANKINGS TAB */}
+      {dirTab === 'rankings' && (
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchPlayers()}
+              placeholder="Search player name, nationality, ranking..."
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+            <button onClick={searchPlayers} disabled={searchLoading} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>
+              {searchLoading ? '🔍 Searching...' : '🔍 Search'}
+            </button>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {['all','atp','wta','challenger'].map(f => (
+              <button key={f} onClick={() => setTourFilter(f)} className="px-3 py-1.5 rounded-full text-xs font-bold"
+                style={{ backgroundColor: tourFilter === f ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: tourFilter === f ? '#fff' : '#6B7280' }}>
+                {f === 'all' ? 'All Tours' : f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          {searchLoading && <div className="text-center py-8"><div className="text-3xl mb-2 animate-bounce">🔍</div><div className="text-sm text-white">Searching live rankings...</div></div>}
+          {searchResults && !searchLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {parseResults(searchResults).map((p, i) => (
+                <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: '#a855f720', color: '#a855f7' }}>
+                      {p.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{p.name}</div>
+                      <div className="text-xs" style={{ color: '#6B7280' }}>{p.nationality} · {p.age} · {p.hand}</div>
+                    </div>
+                    {p.ranking && <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>#{p.ranking}</span>}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>SURFACE</div><div className="text-xs font-semibold text-white">{p.surface || '—'}</div></div>
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>CAREER HIGH</div><div className="text-xs font-semibold text-white">#{p.careerHigh || '—'}</div></div>
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>COACH</div><div className="text-xs font-semibold text-white truncate">{p.coach || '—'}</div></div>
+                  </div>
+                  {p.results && <div className="text-xs mt-2" style={{ color: '#6B7280' }}>{p.results}</div>}
+                  <div className="flex gap-2 mt-3">
+                    <button onClick={() => searchProfile(p.name)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>👁️ Full Profile</button>
+                    <button onClick={() => addContact(p.name, p.ranking, p.nationality)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#3b82f618', border: '1px solid #3b82f640', color: '#3b82f6' }}>➕ Add to Contacts</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!searchResults && !searchLoading && <div className="text-center py-12"><div className="text-4xl mb-3">🏆</div><div className="text-sm text-white mb-1">Search ATP/WTA Rankings</div><div className="text-xs" style={{ color: '#6B7280' }}>Powered by Lumio AI — searches live ranking data from public sources</div></div>}
+        </div>
+      )}
+
+      {/* HITTING PARTNERS TAB */}
+      {dirTab === 'partners' && (
+        <div className="space-y-4">
+          {!partnerResults && !partnerLoading && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🎾</div>
+              <div className="text-sm text-white mb-4">Find hitting partners and sparring pros near you</div>
+              <button onClick={searchPartners} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>🔍 Find Hitting Partners Near Me</button>
+            </div>
+          )}
+          {partnerLoading && <div className="text-center py-8"><div className="text-3xl mb-2 animate-bounce">🎾</div><div className="text-sm text-white">Searching for partners...</div></div>}
+          {partnerResults && !partnerLoading && (
+            <div className="rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{partnerResults}</div>
+          )}
+        </div>
+      )}
+
+      {/* MY CONTACTS TAB */}
+      {dirTab === 'contacts' && (
+        <div className="space-y-4">
+          {contacts.length === 0 ? (
+            <div className="text-center py-12"><div className="text-4xl mb-3">📋</div><div className="text-sm text-white">No contacts saved yet</div><div className="text-xs" style={{ color: '#6B7280' }}>Search players and click "Add to Contacts"</div></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {contacts.map((c, i) => (
+                <div key={i} className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#a855f720', color: '#a855f7' }}>{c.name.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
+                  <div className="flex-1"><div className="text-sm font-bold text-white">{c.name}</div><div className="text-xs" style={{ color: '#6B7280' }}>{c.nationality} · #{c.ranking}</div></div>
+                  <button onClick={() => removeContact(c.name)} className="text-xs px-2 py-1 rounded" style={{ color: '#EF4444' }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Profile modal */}
+      {profileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setProfileModal(null) }}>
+          <div className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-lg font-bold text-white">{profileModal}</div>
+              <button onClick={() => setProfileModal(null)} className="text-gray-500 hover:text-white">✕</button>
+            </div>
+            {profileLoading && <div className="text-sm" style={{ color: '#7C3AED' }}>🔍 Searching for detailed profile...</div>}
+            {profileData && <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{profileData}</div>}
+          </div>
+        </div>
+      )}
+
+      <TennisAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
+function CoachFinderView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const [step, setStep] = useState<'goals'|'prefs'|'search'|'results'>('goals')
+  const [goals, setGoals] = useState<string[]>([])
+  const [freeText, setFreeText] = useState('')
+  const [experience, setExperience] = useState('')
+  const [location, setLocation] = useState('')
+  const [budget, setBudget] = useState('')
+  const [style, setStyle] = useState('')
+  const [results, setResults] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [shortlist, setShortlist] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('lumio_tennis_coach_shortlist') || '[]') } catch { return [] }
+  })
+  const [deepSearch, setDeepSearch] = useState<{name:string;data:string|null;loading:boolean}|null>(null)
+
+  const GOALS = ['🎯 Serve technique','↩️ Return of serve','🧠 Mental game','🏃 Movement & fitness','⚡ Net game/volleys','📊 Tactical awareness','🎾 Backhand','🤜 Forehand','🏆 Tournament preparation','💰 Career management','🌍 Tour scheduling','📱 Media & brand']
+  const toggleGoal = (g: string) => setGoals(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])
+
+  const search = async () => {
+    setStep('search'); setLoading(true)
+    try {
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `You are a tennis career consultant. Help find the right coach. Player: ATP #${player.ranking ?? 67}. Goals: ${goals.join(', ')}. Specific issues: ${freeText || 'general improvement'}. Preferences: experience ${experience || 'any'}, location ${location || 'flexible'}, budget ${budget || 'flexible'}, style ${style || 'any'}. Search and recommend 4 tennis coaches. For each: full name, background, coaching philosophy, notable players coached, availability, fee range, why they match. Write each as a paragraph. Plain text only, no markdown, no bullets, no headers.` }] })
+      })
+      const data = await res.json()
+      setResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''))
+    } catch { setResults('Unable to search. Check connection.') }
+    setLoading(false); setStep('results')
+  }
+
+  const researchCoach = async (name: string) => {
+    setDeepSearch({ name, data: null, loading: true })
+    try {
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${name}. Include their full coaching history, playing career, philosophy, current availability, fee structure, and contact methods. Plain text paragraphs only.` }] })
+      })
+      const data = await res.json()
+      setDeepSearch({ name, data: cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''), loading: false })
+    } catch { setDeepSearch({ name, data: 'Unable to search.', loading: false }) }
+  }
+
+  const saveToShortlist = (name: string) => {
+    const updated = [...shortlist, name]
+    setShortlist(updated)
+    localStorage.setItem('lumio_tennis_coach_shortlist', JSON.stringify(updated))
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🎓</span><div><div className="text-lg font-bold text-white">Coach Finder</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered coach matching based on your goals and preferences</div></div></div>
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-2">
+        {['Goals','Preferences','Search','Shortlist'].map((s, i) => {
+          const idx = ['goals','prefs','search','results'].indexOf(step)
+          return (<React.Fragment key={s}><div className="flex items-center gap-1.5"><div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: i < idx ? '#22C55E' : i === idx ? '#7C3AED' : '#1F2937', color: i <= idx ? '#fff' : '#4B5563' }}>{i < idx ? '✓' : i+1}</div><span className="text-xs font-semibold" style={{ color: i === idx ? '#7C3AED' : i < idx ? '#22C55E' : '#4B5563' }}>{s}</span></div>{i < 3 && <div className="flex-1 h-px" style={{ backgroundColor: i < idx ? '#22C55E' : '#1F2937' }} />}</React.Fragment>)
+        })}
+      </div>
+
+      {/* STEP 1: Goals */}
+      {step === 'goals' && (
+        <div className="space-y-4">
+          <div className="text-sm font-bold text-white">What do you want to work on?</div>
+          <div className="flex flex-wrap gap-2">
+            {GOALS.map(g => (<button key={g} onClick={() => toggleGoal(g)} className="px-3 py-2 rounded-xl text-xs font-semibold transition-all" style={{ backgroundColor: goals.includes(g) ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.05)', border: goals.includes(g) ? '1px solid #7C3AED' : '1px solid #1F2937', color: goals.includes(g) ? '#a855f7' : '#9CA3AF' }}>{g}</button>))}
+          </div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Anything specific?</label><textarea value={freeText} onChange={e => setFreeText(e.target.value)} rows={3} placeholder="e.g. I drop my shoulder on the backhand, I struggle in tiebreaks..." className="w-full px-4 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <button onClick={() => setStep('prefs')} disabled={goals.length === 0} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: goals.length > 0 ? '#7C3AED' : '#374151' }}>Next — Preferences →</button>
+        </div>
+      )}
+
+      {/* STEP 2: Preferences */}
+      {step === 'prefs' && (
+        <div className="space-y-4">
+          {[
+            { label: 'Experience level', options: ['🏆 Former ATP Top 10','🎾 Former ATP Top 100','🎓 Elite Academy','📋 Certified Pro'], state: experience, set: setExperience },
+            { label: 'Location', options: ['📍 Near me','🌍 Travel/tour','💻 Remote/online','🏠 Residential camp'], state: location, set: setLocation },
+            { label: 'Budget (per week)', options: ['£500-1k','£1k-2.5k','£2.5k-5k','£5k+'], state: budget, set: setBudget },
+            { label: 'Working style', options: ['🔥 Intense','🤝 Collaborative','📊 Data-driven','🧘 Holistic'], state: style, set: setStyle },
+          ].map(section => (
+            <div key={section.label}>
+              <div className="text-xs font-bold mb-2" style={{ color: '#6B7280' }}>{section.label}</div>
+              <div className="flex flex-wrap gap-2">{section.options.map(o => (<button key={o} onClick={() => section.set(o)} className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: section.state === o ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.05)', border: section.state === o ? '1px solid #7C3AED' : '1px solid #1F2937', color: section.state === o ? '#a855f7' : '#9CA3AF' }}>{o}</button>))}</div>
+            </div>
+          ))}
+          <div className="flex gap-3">
+            <button onClick={() => setStep('goals')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+            <button onClick={search} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>🔍 Find Coaches →</button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3: Searching */}
+      {step === 'search' && loading && (
+        <div className="text-center py-12"><div className="text-4xl mb-3 animate-bounce">🎓</div><div className="text-sm font-bold text-white mb-2">Searching for coaches...</div><div className="text-xs" style={{ color: '#6B7280' }}>Analysing your goals and preferences</div></div>
+      )}
+
+      {/* STEP 4: Results */}
+      {step === 'results' && results && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-bold text-white">Recommended Coaches</div>
+            {shortlist.length > 0 && <span className="text-xs px-2 py-1 rounded-full" style={{ background: '#22C55E18', color: '#22C55E' }}>💾 {shortlist.length} shortlisted</span>}
+          </div>
+          <div className="rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', borderLeft: '4px solid #7C3AED', border: '1px solid #1F2937', color: '#D1D5DB' }}>{results}</div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep('goals')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Start over</button>
+            <button onClick={search} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔄 Search again</button>
+          </div>
+        </div>
+      )}
+
+      {/* Deep search modal */}
+      {deepSearch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setDeepSearch(null) }}>
+          <div className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-4"><div className="text-lg font-bold text-white">{deepSearch.name}</div><button onClick={() => setDeepSearch(null)} className="text-gray-500 hover:text-white">✕</button></div>
+            {deepSearch.loading && <div className="text-sm" style={{ color: '#7C3AED' }}>🔍 Researching...</div>}
+            {deepSearch.data && <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{deepSearch.data}</div>}
+          </div>
+        </div>
+      )}
+
+      <TennisAISection context="default" player={player} session={session} />
+    </div>
   )
 }
 
@@ -9323,7 +9654,7 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
     }
   }, [activeSection]);
 
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'NETWORK'];
 
   // Quick Wins dismissed state
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
@@ -9415,7 +9746,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `Write a post-match analysis report for Alex Rivera (ATP #67) who ${match.result === 'W' ? 'won' : 'lost'} against ${match.opponent} (ranked ${match.oppRank}) at the ${match.tournament} ${match.round}, score ${match.score} on ${match.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead. Write in a professional coach/analyst voice.`
+            content: `Write a post-match analysis report for Alex Rivera (ATP #67) who ${match.result === 'W' ? 'won' : 'lost'} against ${match.opponent} (ranked ${match.oppRank}) at the ${match.tournament} ${match.round}, score ${match.score} on ${match.surface}. Cover a brief match summary, three key tactical moments, what worked well, areas to improve, and a one-sentence look ahead. Write in a professional coach/analyst voice. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
           }]
         }),
       });
@@ -9796,6 +10127,8 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'gps':         return <GPSCourtView player={player} session={session} />;
       case 'gpsvideo':    return <GPSVideoView player={player} session={session} />;
       case 'draw':        return <DrawBracketView player={player} session={session} />;
+      case 'playerdirectory': return <PlayerDirectoryView player={player} session={session} />;
+      case 'coachfinder': return <CoachFinderView player={player} session={session} />;
       default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
     }
   };
