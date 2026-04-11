@@ -548,6 +548,63 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   const [repliedTo, setRepliedTo] = useState<string[]>([]);
   const [replyToast, setReplyToast] = useState(false);
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'tour'>('today');
+  const [scheduleChecked, setScheduleChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('golf_schedule_checked') : null) || '{}') } catch { return {} }
+  });
+  const [scheduleCancelled, setScheduleCancelled] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('golf_schedule_cancelled') : null) || '{}') } catch { return {} }
+  });
+  const toggleScheduleItem = (id: string) => {
+    setScheduleChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try { localStorage.setItem('golf_schedule_checked', JSON.stringify(next)) } catch {}
+      return next
+    })
+  };
+  const cancelScheduleItem = (id: string) => {
+    setScheduleCancelled(prev => {
+      const next = { ...prev, [id]: true }
+      try { localStorage.setItem('golf_schedule_cancelled', JSON.stringify(next)) } catch {}
+      return next
+    })
+  };
+  const [dashTasks, setDashTasks] = useState<Array<{ id: string; time: string; title: string; priority: 'critical'|'high'|'medium'|'low'; category: string; action: string; modal: string; custom?: boolean }>>(() => {
+    try {
+      const s = typeof window !== 'undefined' ? localStorage.getItem('golf_custom_tasks') : null
+      return s ? JSON.parse(s) : []
+    } catch { return [] }
+  });
+  const [dashTasksChecked, setDashTasksChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('golf_tasks_checked') : null) || '{}') } catch { return {} }
+  });
+  const toggleDashTaskItem = (id: string) => {
+    setDashTasksChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try { localStorage.setItem('golf_tasks_checked', JSON.stringify(next)) } catch {}
+      return next
+    })
+  };
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const dashPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [dashPhotoSrc, setDashPhotoSrc] = useState<string | null>(() => {
+    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_dash_photo_frame') : null } catch { return null }
+  });
+  const [dashPhotoFit, setDashPhotoFit] = useState<'cover'|'contain'>(() => {
+    try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_golf_dash_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
+  });
+  const addCustomTask = () => {
+    if (!newTaskTitle.trim()) return
+    const id = `custom_${Date.now()}`
+    const t: { id: string; time: string; title: string; priority: 'critical'|'high'|'medium'|'low'; category: string; action: string; modal: string; custom?: boolean } = { id, time: 'EOD', title: newTaskTitle.trim(), priority: 'medium', category: 'Custom', action: 'Open', modal: '', custom: true }
+    setDashTasks(prev => {
+      const next = [...prev, t]
+      try { localStorage.setItem('golf_custom_tasks', JSON.stringify(next)) } catch {}
+      return next
+    })
+    setNewTaskTitle('')
+    setShowAddTask(false)
+  };
   const recentForm = [
     { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
@@ -562,7 +619,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       { id: 'ag1', from: 'James Crawford', text: 'Callaway want to extend the deal — new terms attached. £65k/yr + equipment. Need your sign-off by Friday.', time: '08:12' },
       { id: 'ag2', from: 'James Crawford', text: 'BMW Pro-Am appearance fee confirmed: £12,000 + travel. Hospitality tent tomorrow 14:30.', time: '07:45' },
     ]},
-    { id: 'tournament', label: 'Tournament Desk', icon: '🏆', count: 3, urgent: true, color: '#0ea5e9', messages: [
+    { id: 'tournament', label: 'Tournament Desk', icon: '🏆', count: 3, urgent: true, color: '#D97706', messages: [
       { id: 'td1', from: 'DP World Tour', text: 'R2 tee time confirmed: 09:24, Hole 1, with R. McIlroy & S. Scheffler.', time: '06:30' },
       { id: 'td2', from: 'Entry Desk', text: 'Scottish Open entry deadline closes TODAY at 17:00. Your entry is pending.', time: '07:00' },
       { id: 'td3', from: 'BMW International', text: 'Practice range opens 06:00 tomorrow. Pin positions for R2 posted to caddie app.', time: '08:00' },
@@ -571,7 +628,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       { id: 'cn1', from: 'Mick Sullivan', text: 'Updated hole 7 strategy — 9-iron not 8 from the new tee. Pin back-left, aim 15ft right.', time: '08:30' },
       { id: 'cn2', from: 'Mick Sullivan', text: 'Yardage book corrections for holes 12 and 15. Wind forecast changed — switching to low ball flight plan.', time: '07:15' },
     ]},
-    { id: 'sponsor', label: 'Media & Sponsor', icon: '📱', count: 3, urgent: false, color: '#F59E0B', messages: [
+    { id: 'sponsor', label: 'Media & Sponsor', icon: '📱', count: 3, urgent: false, color: '#EA580C', messages: [
       { id: 'sp1', from: 'Sarah Chen', text: 'Callaway post due before 18:00 — caption drafted and attached. Just need your photo from the range.', time: '09:00' },
       { id: 'sp2', from: 'Sarah Chen', text: 'Sky Sports interview request for post-round — 5 min, greenside. Confirmed tentatively.', time: '08:45' },
       { id: 'sp3', from: 'Carlos Mendez', text: 'Range session notes sent — focus on 7-iron carry distance today. TrackMan data attached.', time: '07:30' },
@@ -579,11 +636,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     { id: 'physio', label: 'Physio & Medical', icon: '⚕️', count: 1, urgent: true, color: '#EF4444', messages: [
       { id: 'ph1', from: 'Dr Anna Price', text: 'Lower back — mild stiffness. Cleared for play. Treatment booked 13:00. Ice 15 min post-round.', time: '07:00' },
     ]},
-    { id: 'travel', label: 'Travel & Hotels', icon: '✈️', count: 2, urgent: false, color: '#6B7280', messages: [
+    { id: 'travel', label: 'Travel & Hotels', icon: '✈️', count: 2, urgent: false, color: '#06B6D4', messages: [
       { id: 'tr1', from: 'James Crawford', text: 'Scottish Open hotel — prices rising fast. Best option: Marine North Berwick, £280/night. Book today?', time: '08:20' },
       { id: 'tr2', from: 'Mick Sullivan', text: 'My Edinburgh flights confirmed for Scottish Open. Arriving Wed evening.', time: '07:50' },
     ]},
-    { id: 'financial', label: 'Financial', icon: '💰', count: 1, urgent: false, color: '#F59E0B', messages: [
+    { id: 'financial', label: 'Financial', icon: '💰', count: 1, urgent: false, color: '#EAB308', messages: [
       { id: 'fi1', from: 'Accountant', text: 'Prize money YTD: £367,000. Season target: £450k. Munich expenses need submitting by EOD Friday.', time: '09:10' },
     ]},
   ];
@@ -711,7 +768,16 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
         const STEPS = [
-          { n:1, label:'Connect your OWGR profile' },{ n:2, label:'Add your caddie' },{ n:3, label:'Set your tournament schedule' },{ n:4, label:'Upload sponsor agreements' },{ n:5, label:'Set earnings target' },{ n:6, label:'Add your coaching team' },{ n:7, label:'Configure TrackMan sync' },{ n:8, label:'Set travel preferences' },{ n:9, label:'Add your agent' },{ n:10, label:"You're ready — go play" },
+          { n:1,  label:'Connect your OWGR profile',        icon:'📊', title:'Connect your OWGR profile',          desc:'Link your OWGR and DP World Tour player ID for live rankings, Race to Dubai standings, and tournament entries. All stats sync automatically.' },
+          { n:2,  label:'Add your caddie',                  icon:'🏌️', title:'Add your caddie',                    desc:'Add Mick or your current caddie so yardage books, course notes and pin positions sync to both of your devices.' },
+          { n:3,  label:'Set your tournament calendar',     icon:'📅', title:'Set your tournament calendar',       desc:'Import your DP World Tour and PGA Tour schedule. Lumio tracks entry deadlines, travel, and prize money per event.' },
+          { n:4,  label:'Upload sponsor agreements',        icon:'🤝', title:'Upload sponsor agreements',          desc:'Add your Callaway, Rolex and apparel deals. Lumio tracks content obligations, renewal dates and season values.' },
+          { n:5,  label:'Set scoring targets',              icon:'🎯', title:'Set your scoring targets',           desc:'Set your season scoring average and cut-made targets. Lumio tracks progress round-by-round and flags dips in form.' },
+          { n:6,  label:'Add your team',                    icon:'👥', title:'Add your team',                      desc:'Invite your coach, caddie, physio and agent to collaborate on game plans, session notes and daily tasks.' },
+          { n:7,  label:'Configure equipment & bag',        icon:'🏷️', title:'Configure equipment & bag preferences', desc:'Log your driver, irons, wedges, putter and ball preferences. Get alerts when equipment is due for review or replacement.' },
+          { n:8,  label:'Set travel preferences',           icon:'✈️', title:'Set travel preferences',             desc:'Save your home airport, hotel preferences and visa info so Smart Flights auto-fills every tour booking.' },
+          { n:9,  label:'Configure notifications',          icon:'🔔', title:'Configure notifications',            desc:'Choose which alerts you want — tee time reminders, sponsor deadlines, practice reminders, ranking changes.' },
+          { n:10, label:'Go live',                          icon:'🚀', title:"You're ready — let's go!",          desc:'Your golf portal is ready. Every section is live with demo data. Explore freely or sign up for your free trial to connect real OWGR data.' },
         ]
         const step = STEPS[tourStep]
         return (
@@ -737,21 +803,28 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 ))}
               </div>
               <div className="lg:col-span-2">
-                <div className="rounded-2xl p-8" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
-                  <div className="text-5xl mb-4">⛳</div>
-                  <h2 className="text-2xl font-black text-white mb-3">{step.label}</h2>
-                  <p className="text-sm leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>Set up your Lumio Golf portal step by step. Each item connects a key part of your professional golf career to your dashboard.</p>
-                  <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (
-                        <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
-                      ))}
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                  <div className="p-6">
+                    <div className="text-4xl mb-3">{step.icon}</div>
+                    <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
+                    <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.desc}</p>
+                    <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (
+                          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') } }}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>
-                    {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go ⛳"}
-                  </button>
+                  <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
+                    <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
+                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {STEPS.length}</span>
+                    {tourStep < STEPS.length - 1 ? (
+                      <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Next →</button>
+                    ) : (
+                      <button onClick={() => { localStorage.setItem('golf_getting_started_seen', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go ⛳</button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -775,7 +848,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               {ROUNDUP_ITEMS.map((ch) => {
                 const isOpen = expandedChannel === ch.id
                 return (
-                  <div key={ch.id} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}0d`, borderRadius: 8, marginBottom: 6 }}>
+                  <div key={ch.id} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: 8, marginBottom: 6 }}>
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">
@@ -878,12 +951,53 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 ))}
               </div>
             </div>
+            {/* Today's Schedule */}
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
+              <div className="space-y-2">
+                {[
+                  { id:'gs1', time:'07:00', label:'Range session — 90 min',              highlight:false },
+                  { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
+                  { id:'gs3', time:'09:24', label:'R2 tee time — with McIlroy, Scheffler', highlight:true },
+                  { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
+                  { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+                  { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
+                  { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+                  { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
+                ].filter(s => !scheduleCancelled[s.id]).map((s) => (
+                  <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${scheduleChecked[s.id] ? 'opacity-50' : ''} ${s.highlight ? 'text-green-400' : ''}`}>
+                    <button onClick={() => toggleScheduleItem(s.id)} className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: scheduleChecked[s.id] ? '#22C55E' : 'transparent', borderColor: scheduleChecked[s.id] ? '#22C55E' : s.highlight ? '#15803D' : '#4B5563' }}>
+                      {scheduleChecked[s.id] && <span className="text-white text-[8px]">✓</span>}
+                    </button>
+                    <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
+                    <span className={`text-xs flex-1 ${scheduleChecked[s.id] ? 'line-through text-gray-600' : s.highlight ? 'text-green-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                    <button onClick={() => cancelScheduleItem(s.id)} className="text-[9px] text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">Cancel →</button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           {/* Col 3: Photo Frame + Venue */}
           <div className="space-y-4">
-            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-              <div className="h-40 flex items-center justify-center text-6xl" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>⛳</div>
-              <div className="p-4">
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { const next = dashPhotoFit === 'cover' ? 'contain' : 'cover'; setDashPhotoFit(next); try { localStorage.setItem('lumio_golf_dash_photo_fit', next) } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">{dashPhotoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
+                  {dashPhotoSrc && <button onClick={() => { setDashPhotoSrc(null); try { localStorage.removeItem('lumio_golf_dash_photo_frame') } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  <button onClick={() => dashPhotoInputRef.current?.click()} className="text-[10px] text-green-400 hover:text-green-300">+ Add</button>
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={dashPhotoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_golf_dash_photo_frame', compressed); setDashPhotoSrc(compressed) } catch { try { const lq = c.toDataURL('image/jpeg', 0.4); localStorage.setItem('lumio_golf_dash_photo_frame', lq); setDashPhotoSrc(lq) } catch { /* too large */ } } }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden h-48 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>
+                {dashPhotoSrc
+                  ? <img src={dashPhotoSrc} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                  : session.photoDataUrl
+                    ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                    : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+              </div>
+              <div className="mt-3">
                 <div className="text-white font-semibold text-sm">{player.name}</div>
                 <div className="text-xs text-gray-500 mt-1">#{player.owgr} OWGR · {player.nationality} {player.flag}</div>
                 <div className="text-xs text-gray-500 mt-1">{player.tour} · Age {player.age}</div>
@@ -938,40 +1052,98 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       )}
 
-      {dashTab === 'tasks' && (
+      {dashTab === 'tasks' && (() => {
+        const BASE_TASKS: Array<{ id: string; time: string; title: string; priority: 'critical'|'high'|'medium'|'low'; category: string; action: string; modal: string; custom?: boolean }> = [
+          { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high', category:'Training', action:'Log session', modal:'loground' },
+          { id:'dt2', time:'09:24', title:'Tee time R2 — with McIlroy, Scheffler', priority:'critical', category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
+          { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high', category:'Medical', action:'Log medical', modal:'injury' },
+          { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium', category:'Performance', action:'Open TrackMan', modal:'trackman' },
+          { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical', category:'Entries', action:'Enter now', modal:'' },
+          { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
+          { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium', category:'Finance', action:'Log expense', modal:'expense' },
+        ]
+        const ALL_TASKS = [...BASE_TASKS, ...dashTasks]
+        return (
         <div className="space-y-3">
-          {[
-            { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high' as const, category:'Training', action:'Log session', modal:'loground' },
-            { id:'dt2', time:'09:24', title:'Tee time R2 — with McIlroy, Scheffler', priority:'critical' as const, category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
-            { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high' as const, category:'Medical', action:'Log medical', modal:'injury' },
-            { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium' as const, category:'Performance', action:'Open TrackMan', modal:'trackman' },
-            { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical' as const, category:'Entries', action:'Enter now', modal:'' },
-            { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
-            { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium' as const, category:'Finance', action:'Log expense', modal:'expense' },
-          ].map(dt => {
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daily Tasks</div>
+            <button onClick={() => setShowAddTask(v => !v)} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(21,128,61,0.12)', color: '#4ade80', border: '1px solid rgba(21,128,61,0.3)' }}>+ Add Task</button>
+          </div>
+          {showAddTask && (
+            <div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: '#111318', border: '1px solid rgba(21,128,61,0.3)' }}>
+              <input value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addCustomTask() }} placeholder="New task title..." className="flex-1 bg-transparent text-xs text-gray-200 placeholder-gray-600 outline-none" autoFocus />
+              <button onClick={addCustomTask} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white" style={{ backgroundColor: '#15803D' }}>Add</button>
+              <button onClick={() => { setShowAddTask(false); setNewTaskTitle('') }} className="text-xs px-3 py-1.5 rounded-lg text-gray-500">Cancel</button>
+            </div>
+          )}
+          {ALL_TASKS.map(dt => {
             const ps = PRIORITY_STYLES[dt.priority]
+            const done = dashTasksChecked[dt.id] || false
             return (
-              <div key={dt.id} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
+              <div key={dt.id} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: done ? 'rgba(255,255,255,0.01)' : '#111318', border: '1px solid #1F2937', opacity: done ? 0.6 : 1 }}>
+                <button onClick={() => toggleDashTaskItem(dt.id)} className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: done ? '#22C55E' : '#4B5563', background: done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+                  {done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+                </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
                     <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{dt.category}</span>
                     <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{dt.time}</span>
                   </div>
-                  <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{dt.title}</h4>
+                  <h4 className="font-semibold text-sm" style={{ color: done ? '#4B5563' : '#E5E7EB', textDecoration: done ? 'line-through' : 'none' }}>{dt.title}</h4>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  {dt.modal && <button onClick={() => onOpenModal(dt.modal)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#15803D' }}>{dt.action} →</button>}
-                  <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                  {dt.modal && !done && <button onClick={() => onOpenModal(dt.modal)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#15803D' }}>Open →</button>}
+                  {!done && <button onClick={() => toggleDashTaskItem(dt.id)} className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
                 </div>
               </div>
             )
           })}
         </div>
-      )}
+        )
+      })()}
 
-      {dashTab === 'insights' && <SeasonIntelligenceStrip />}
+      {dashTab === 'insights' && (
+        <div className="space-y-6">
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label:'OWGR Rank',       value:`#${player.owgr}`,                sub:'Up 3 this week',        color:'#15803D', icon:'📊' },
+              { label:'Race Standing',   value:`#${player.race_to_dubai_pos}`,   sub:`${player.race_to_dubai_points.toLocaleString()} pts`, color:'#0D9488', icon:'🏆' },
+              { label:'Scoring Avg',     value:'70.2',                            sub:'Tour avg: 71.1',        color:'#8B5CF6', icon:'🎯' },
+              { label:'Season Earnings', value:'£367k',                           sub:'Target £450k',          color:'#F59E0B', icon:'💰' },
+              { label:'Form',            value:'T14·T6·MC·T3·T31',                sub:'Last 5 events',         color:'#22C55E', icon:'📈' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-4 text-center">
+                <div className="text-lg mb-1">{kpi.icon}</div>
+                <div className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">{kpi.label}</div>
+                <div className="text-[9px] text-gray-600 mt-0.5">{kpi.sub}</div>
+              </div>
+            ))}
+          </div>
+          {/* Insight Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { type:'ALERT',       value:'285 pts at risk',  title:'Ranking points expiring',     description:'You are defending 285 OWGR points from this event last year. T20+ this week holds your #87 spot. Miss the cut and you drop to ~#104.', action:'View OWGR breakdown', color:'#EF4444' },
+              { type:'OPPORTUNITY', value:'£65k/yr',          title:'Callaway renewal terms',      description:'Your agent James has new Callaway terms — £65k/yr + equipment for 2 more years. Renewal decision due Friday. Competitor interest from TaylorMade.', action:'View offer details', color:'#22C55E' },
+              { type:'TREND',       value:'-0.6 avg',         title:'Scoring average improving',   description:'Your scoring average has dropped from 70.8 to 70.2 over the last 6 events. SG: Putting still the drag (-1.18) — fix this and you break 70.', action:'View trend chart',    color:'#3B82F6' },
+              { type:'ACHIEVEMENT', value:'T3 finish',        title:'KLM Open top-3',              description:'Your T3 at the KLM Open was your best finish of the season — 480 points and £124k. Confirms the tee-to-green work with Carlos is paying off.', action:'View event stats',    color:'#F59E0B' },
+            ].map((tile, i) => (
+              <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: `${tile.color}15`, color: tile.color, border: `1px solid ${tile.color}40` }}>{tile.type}</span>
+                  <span className="text-sm font-bold" style={{ color: tile.color }}>{tile.value}</span>
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">{tile.title}</h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tile.description}</p>
+                <button className="text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-all" style={{ backgroundColor: `${tile.color}10`, color: tile.color, border: `1px solid ${tile.color}30` }}>{tile.action} →</button>
+              </div>
+            ))}
+          </div>
+          <SeasonIntelligenceStrip />
+        </div>
+      )}
 
       {dashTab === 'dontmiss' && (
         <div className="space-y-3">

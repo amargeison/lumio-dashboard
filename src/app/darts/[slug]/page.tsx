@@ -2953,7 +2953,7 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   const ACCENT = '#dc2626';
   const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [voiceId, setVoiceId] = useState('nova');
+  const [voiceId, setVoiceId] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL');
   const [boardSetup, setBoardSetup] = useState('Winmau');
   const [dartWeight, setDartWeight] = useState(player.dartSetup?.barrelWeight || '23g');
   const [devPrompt, setDevPrompt] = useState('');
