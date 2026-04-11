@@ -1,4 +1,5 @@
 'use client';
+// TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
@@ -9291,8 +9292,13 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
           messages: [{ role: 'user', content: `Search for current ${tourFilter === 'wta' ? 'WTA' : tourFilter === 'atp' ? 'ATP' : 'ATP and WTA'} tennis player rankings. Query: "${searchQuery || 'top 20 current ranking'}". For each player return: name, current ranking number, nationality, age, plays hand, coach name, last 3 tournament results, best surface, career high ranking. Format each player on one line separated by pipes: NAME | RANKING | NATIONALITY | AGE | HAND | COACH | RECENT_RESULTS | BEST_SURFACE | CAREER_HIGH. Return up to 10 players. No other text.` }] })
       })
       const data = await res.json()
-      if (data.error) { setSearchResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setSearchLoading(false); return }
+      console.log('[Player Directory] API response:', JSON.stringify(data).slice(0, 500))
+      if (data.error || data.type === 'error') {
+        const msg = typeof data.error === 'string' ? data.error : data.error?.message || data.message || JSON.stringify(data.error || data)
+        setSearchResults(`⚠️ ${msg}`); setSearchLoading(false); return
+      }
       const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''
+      console.log('[Player Directory] Parsed text:', text.slice(0, 300))
       setSearchResults(cleanResponse(text) || '⚠️ No results. Try a different search.')
     } catch { setSearchResults('⚠️ Search failed. Check connection.') }
     setSearchLoading(false)
@@ -10172,7 +10178,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         style={{
           width: sidebarExpanded ? 'fit-content' : 72,
           minWidth: sidebarExpanded ? 180 : 72,
-          maxWidth: 280,
+          maxWidth: 220,
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'min-width 250ms ease, width 250ms ease',

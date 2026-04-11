@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "golive": "git checkout main && git merge dev && git push origin main && git checkout dev",
+    "golive": "bash deploy.sh",
     "golive-schools": "git checkout schools-dev && git merge dev && git push origin schools-dev && git checkout dev",
     "provision:dry": "npx ts-node --project tsconfig.json scripts/provision-schools.ts scripts/schools-import.csv --dry-run",
     "provision:live": "npx ts-node --project tsconfig.json scripts/provision-schools.ts scripts/schools-import.csv",
