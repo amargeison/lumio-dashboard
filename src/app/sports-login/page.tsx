@@ -3,8 +3,7 @@
 // Lumio Sports portal sign-in.
 //
 // Email + password via Supabase Auth. On success, look up the
-// sports_profiles row for the user and route them to /{sport}/app
-// (live sports) or /{sport}/coming-soon (the rest).
+// sports_profiles row for the user and route them to /{sport}/app.
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -12,7 +11,6 @@ import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
 const ACCENT = '#8B5CF6'
-const LIVE_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing'])
 const ALLOWED_SPORTS = new Set([
   'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens',
 ])
@@ -64,10 +62,7 @@ function SportsLoginForm() {
         return
       }
 
-      const target = LIVE_SPORTS.has(profile.sport)
-        ? `/${profile.sport}/app`
-        : `/${profile.sport}/coming-soon`
-      router.push(target)
+      router.push(`/${profile.sport}/app`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed.')
       setLoading(false)

@@ -12,6 +12,12 @@ export interface SportsDemoSession {
   logoDataUrl: string | null
   sport: string
   verifiedAt: string
+  /**
+   * False when the portal is rendered for a real signed-in user via
+   * /{sport}/app. Undefined or true when rendered inside the public
+   * /{sport}/{slug} demo shell. Used to gate the demo banner.
+   */
+  isDemoShell?: boolean
 }
 
 export type SportKey =

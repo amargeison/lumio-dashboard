@@ -845,6 +845,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   });
   const [tourStep, setTourStep] = useState(0);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+  });
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [repliedTo, setRepliedTo] = useState<string[]>([]);
@@ -1214,10 +1219,22 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
             </div>
             <div>
-              {ROUNDUP_ITEMS.map((ch) => {
+              {(roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_ITEMS).map((ch, idx) => {
                 const isOpen = expandedChannel === ch.id
                 return (
-                  <div key={ch.id} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: 8, marginBottom: 6 }}>
+                  <div key={ch.id} draggable
+                    onDragStart={() => setDragIdx(idx)}
+                    onDragEnter={() => setDragOverIdx(idx)}
+                    onDragOver={e => e.preventDefault()}
+                    onDragEnd={() => {
+                      if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                        const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_ITEMS]
+                        const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
+                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_golf_roundup_order', JSON.stringify(newOrder))
+                      }
+                      setDragIdx(null); setDragOverIdx(null)
+                    }}
+                    style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: 8, marginBottom: 6, borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">

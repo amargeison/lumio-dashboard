@@ -9,8 +9,8 @@
 //
 // On submit:
 //   POST /api/sports-auth/create-profile
-//   Live sports → /{sport}/app
-//   Coming-soon sports → /{sport}/coming-soon
+//   All sports → /{sport}/app  (live ones render the portal; the rest render
+//                                a coming-soon placeholder)
 //
 // NOTE: Photo uploads are stored as base64 dataURLs for now and passed
 // straight through to the API. Migrating to Supabase Storage is a
@@ -164,9 +164,7 @@ export default function SportsSignupPage() {
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
 
-      const redirectTo: string =
-        data.redirectTo ||
-        (LIVE_SPORTS.includes(sport) ? `/${sport}/app` : `/${sport}/coming-soon`)
+      const redirectTo: string = data.redirectTo || `/${sport}/app`
       router.push(redirectTo)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Signup failed.')

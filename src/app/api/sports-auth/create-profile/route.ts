@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js'
 const ALLOWED_SPORTS = new Set([
   'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens',
 ])
-const LIVE_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing'])
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -90,9 +89,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const redirectTo = LIVE_SPORTS.has(sport)
-      ? `/${sport}/app`
-      : `/${sport}/coming-soon`
+    // Every sport's post-signup destination is /{sport}/app. The page itself
+    // decides whether to render the live portal or the coming-soon placeholder.
+    const redirectTo = `/${sport}/app`
 
     return NextResponse.json({
       success: true,
