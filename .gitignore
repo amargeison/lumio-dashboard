@@ -65,3 +65,4 @@ next-env.d.ts
 !public/*_logo.png
 !public/Lumio_Sports_logo.png
 !public/badges/*
+.env*.local
