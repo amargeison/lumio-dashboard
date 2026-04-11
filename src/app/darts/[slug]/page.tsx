@@ -632,7 +632,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div key={i} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px' }} className="hover:border-gray-700 transition-all">
                   <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base" style={{ color: ch.color }}>{ch.icon}</span>
+                      <span className="text-base" style={{ color: ch.color, filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
                       <span style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
                       {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
                     </div>
@@ -731,9 +731,20 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 ))}
               </div>
             </div>
+            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
+              <div className="text-sm font-bold text-white">Westfalenhallen, Dortmund</div>
+              <div className="text-xs text-gray-500 mt-1">14°C · Overcast · Doors open 18:00</div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">20:00</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£110,000</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£30,000</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Darts</span></div>
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT: Photo frame + venue info */}
+          {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
           <div className="space-y-4">
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -759,15 +770,59 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 ))}
               </div>
             </div>
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
-              <div className="text-sm font-bold text-white">Westfalenhallen, Dortmund</div>
-              <div className="text-xs text-gray-500 mt-1">14°C · Overcast · Doors open 18:00</div>
-              <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">20:00</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£110,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£30,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Darts</span></div>
+
+            {/* AI Morning Summary — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#8B5CF6' }}>✨</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                </div>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                </span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {[
+                  { type:'match',    icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
+                  { type:'messages', icon:'📬', text:'2 urgent messages: Paddy Power ambassador offer via agent (£85k/yr) + Red Dragon flagging content deadline for 12:00 shoot.' },
+                  { type:'schedule', icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Red Dragon shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
+                  { type:'sponsor',  icon:'🤝', text:'Red Dragon content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
+                  { type:'travel',   icon:'✈️', text:'Prague Open flights selling fast — save £80+ booking now. Return flight to Gatwick confirmed 23:30 via Düsseldorf.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <span className="text-base flex-shrink-0">{item.icon}</span>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance Intelligence — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>⚡</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: '#dc2626' }}>Performance</span>
+              </div>
+              <div className="px-5 py-4 space-y-2.5">
+                {[
+                  { n:1, trend:'↑', color:'#22C55E', text:`3-dart average up to ${player.threeDartAverage} — above season avg (98.4). Sharp on the doubles in warm-up.` },
+                  { n:2, trend:'⚠', color:'#EF4444', text:'£12,400 points drop off after Players Championship 8. Win tonight = hold #9 Order of Merit. Loss = risk slipping to #12.' },
+                  { n:3, trend:'↑', color:'#22C55E', text:`Checkout % now ${player.checkoutPercent}% — above tour avg (35%). D16 still the weakest — 10min practice before warm-up.` },
+                  { n:4, trend:'→', color:'#dc2626', text:'Race to Alexandra Palace: top 16 qualifies. Euro Ch. and Players Ch. are the key points events before year-end.' },
+                  { n:5, trend:'↓', color:'#F59E0B', text:'First 9 darts leg rate dipped 4% — below tour avg. Reset routine and opening throw focus in practice today.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <div className="flex items-center gap-1 flex-shrink-0 w-8">
+                      <span className="font-bold" style={{ color: '#dc2626' }}>{item.n}</span>
+                      <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
+                    </div>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

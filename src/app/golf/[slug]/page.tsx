@@ -853,7 +853,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">
-                        <span className="text-base">{ch.icon}</span>
+                        <span className="text-base" style={{ filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
                         <span className="text-sm" style={{ color: ch.color, fontWeight: 600, fontSize: 15 }}>{ch.label}</span>
                         {ch.urgent && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
@@ -978,8 +978,21 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 ))}
               </div>
             </div>
+            {/* Today's Venue */}
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Today&apos;s Venue</div>
+              <div className="text-sm font-bold text-white">Golfclub München Eichenried</div>
+              <div className="text-xs text-gray-500 mt-1">22°C · 8mph W · Course open 06:30</div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex justify-between text-gray-400"><span>Tee time:</span><span className="text-white">09:24 (R2)</span></div>
+                <div className="flex justify-between text-gray-400"><span>Yardage:</span><span className="text-white">7,545 yd · Par 72</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.32M</span></div>
+                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">Cut line · £0</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Golf</span></div>
+              </div>
+            </div>
           </div>
-          {/* Col 3: Photo Frame + Venue */}
+          {/* Col 3: Photo Frame + AI Morning Summary + Performance Intelligence */}
           <div className="space-y-4">
             <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -1004,15 +1017,58 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 <div className="text-xs text-gray-500 mt-1">{player.tour} · Age {player.age}</div>
               </div>
             </div>
-            <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-              <div className="text-sm font-semibold text-white mb-3">🏟️ Venue Info</div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between"><span className="text-gray-500">Course</span><span className="text-gray-300">Golfclub München Eichenried</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Location</span><span className="text-gray-300">Munich, Germany</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Event</span><span className="text-gray-300">BMW International Open</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Prize Fund</span><span className="text-gray-300">$4.5M (Win = £1.32M)</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Course Fit</span><span className="text-teal-400 font-medium">8.1 / 10</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Weather</span><span className="text-gray-300">22°C · 8mph W</span></div>
+            {/* AI Morning Summary — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#8B5CF6' }}>✨</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                </div>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(21,128,61,0.15)', color: '#4ade80' }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                </span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {[
+                  { type:'round',    icon:'⛳', text:'R2 today at Golfclub München Eichenried — 09:24 tee with McIlroy & Scheffler. Course fit 8.1/10. Pin positions favour draw off the tee on 1, 7 and 14.' },
+                  { type:'caddie',   icon:'📋', text:'Mick updated hole 7 strategy — new wind data and pin position means 9-iron from the repositioned tee. Review caddie brief before warm-up.' },
+                  { type:'sponsor',  icon:'🤝', text:'Callaway post due 18:00 today — Carlos needs caption and round-day kit photo. Penalty clause applies if missed.' },
+                  { type:'travel',   icon:'✈️', text:'Scottish Open hotel prices rising — preferred rooms filling fast. Book today to lock in Renfield Hotel rate before it goes.' },
+                  { type:'ranking',  icon:'📊', text:`OWGR #${player.owgr} — 285 points defending this week. T20+ needed to hold. Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points.toLocaleString()} pts.` },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <span className="text-base flex-shrink-0">{item.icon}</span>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance Intelligence — matches tennis */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+                <div className="flex items-center gap-2">
+                  <span>⚡</span>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: '#4ade80' }}>Performance</span>
+              </div>
+              <div className="px-5 py-4 space-y-2.5">
+                {[
+                  { n:1, trend:'↑', color:'#22C55E', text:`SG: Approach +0.72 this season — well above tour avg. Iron play is the strength, keep working the set-up with Mick.` },
+                  { n:2, trend:'⚠', color:'#EF4444', text:'Putting SG -1.18 — 8-15ft the weakest range. 15 minutes on the short putting green before warm-up, focus on pace not line.' },
+                  { n:3, trend:'↑', color:'#22C55E', text:`Course fit 8.1/10 — best of the season so far. Historic play here: 2 top 10s in 3 starts. Trust the game plan.` },
+                  { n:4, trend:'→', color:'#4ade80', text:`Race to Dubai: #${player.race_to_dubai_pos}. Top 50 needed for Tour Championship — BMW and Scottish Open are the key points events left.` },
+                  { n:5, trend:'↓', color:'#F59E0B', text:'Driving accuracy down to 58% on last 4 starts — below season avg. Fairways first off the tee today, especially on doglegs 3 and 12.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 text-xs">
+                    <div className="flex items-center gap-1 flex-shrink-0 w-8">
+                      <span className="font-bold" style={{ color: '#4ade80' }}>{item.n}</span>
+                      <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
+                    </div>
+                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -1334,8 +1390,6 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           )}
         </div>
       )}
-
-      <GolfAISection context="dashboard" player={player} session={session} />
     </div>
   );
 }
