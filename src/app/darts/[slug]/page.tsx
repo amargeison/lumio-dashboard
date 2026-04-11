@@ -352,11 +352,19 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   useEffect(() => {
     if (dartsSummary || dartsSummaryLoading) return
     setDartsSummaryLoading(true)
-    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for Jake Morrison, professional darts player ranked #${player.pdcRank} on the PDC tour, known as "The Hammer". Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Gerwyn Price (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Price leads 3-4) and the key tactical note (Price's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
+    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for ${displayPlayerName}, professional darts player ranked #${player.pdcRank} on the PDC tour${displayPlayerNickname ? `, known as ${displayPlayerNickname}` : ''}. Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Gerwyn Price (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Price leads 3-4) and the key tactical note (Price's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
       .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const firstName = session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Jake'
+  const isPlayerRole = !session.role || session.role === 'player'
+  const displayPlayerName = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name)
+    : player.name
+  const displayPlayerNickname = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
+    : `"${player.nickname}"`
+  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
@@ -657,9 +665,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="flex items-center justify-between">
                 <div className="text-center">
                   <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
-                    {session.photoDataUrl ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                    {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
                   </div>
-                  <div className="text-xs font-bold text-white">{session.userName || player.name}</div>
+                  <div className="text-xs font-bold text-white">{displayPlayerName}</div>
                   <div className="text-[10px] text-red-400">#{player.pdcRank} PDC</div>
                 </div>
                 <div className="text-center px-4">
@@ -927,10 +935,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div className="bg-red-600/15 border border-red-600/30 rounded-xl px-6 py-3 text-center">
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(220,38,38,0.2)', border: '2px solid #dc2626', color: '#dc2626' }}>
-                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : 'JM' })()}
+                      {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : (() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : displayPlayerName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() })()}
                     </div>
-                    <div className="text-sm font-bold text-white">{session.userName || player.name}</div>
-                    <div className="text-[10px] text-gray-500 italic">&quot;{player.nickname}&quot;</div>
+                    <div className="text-sm font-bold text-white">{displayPlayerName}</div>
+                    {displayPlayerNickname && <div className="text-[10px] text-gray-500 italic">{displayPlayerNickname}</div>}
                     <div className="text-[10px] text-red-400">Player — #{player.pdcRank} PDC</div>
                   </div>
                   <div className="w-px h-6 bg-gray-700" />
