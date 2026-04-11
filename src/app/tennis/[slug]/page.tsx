@@ -892,7 +892,15 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [tourStep, setTourStep] = useState(0)
   const [showGpsModal, setShowGpsModal] = useState(false)
   const [gpsRequested, setGpsRequested] = useState(false)
-  const firstName = (typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null)?.split(' ')[0] || session.userName?.split(' ')[0] || player.name?.split(' ')[0] || 'Alex'
+  const isPlayerRole = currentRole === 'player'
+  const displayPlayerName = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null) || session.userName || player.name)
+    : player.name
+  const displayPlayerNickname = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
+    : ''
+  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
