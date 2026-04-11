@@ -273,15 +273,20 @@ const WaveBanner = ({ fighter, session }: { fighter: BoxingFighter; session: Spo
 );
 
 // ─── FIGHTER CARD ─────────────────────────────────────────────────────────────
-const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) => (
+const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) => {
+  const isPlayerRole = !session.role || session.role === 'fighter'
+  const liveName = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null) || session.userName || fighter.name : fighter.name
+  const liveNickname = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '' : fighter.nickname
+  const livePhoto = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl : null
+  return (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
     <div className="flex flex-col items-center text-center mb-3">
-      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mb-2 border-2 border-red-500/40"
+      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mb-2 border-2 border-red-500/40 overflow-hidden"
         style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(234,88,12,0.3))' }}>
-        {fighter.flag}
+        {livePhoto ? <img src={livePhoto} alt={liveName} className="w-full h-full object-cover object-center" /> : fighter.flag}
       </div>
-      <div className="text-sm font-bold text-white">{fighter.name}</div>
-      <div className="text-[10px] text-red-400 font-semibold">&ldquo;{fighter.nickname}&rdquo;</div>
+      <div className="text-sm font-bold text-white">{liveName}</div>
+      {liveNickname ? <div className="text-[10px] text-red-400 font-semibold">&ldquo;{liveNickname}&rdquo;</div> : null}
       <div className="text-xs text-gray-400 mt-1">{fighter.record.wins}-{fighter.record.losses} ({fighter.record.ko} KO)</div>
     </div>
     <div className="space-y-1.5 text-xs">
@@ -301,7 +306,8 @@ const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: Sp
       <div className="flex justify-between"><span className="text-gray-500">Manager</span><span className="text-gray-300">{fighter.manager}</span></div>
     </div>
   </div>
-);
+  )
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── GPS DEMO DATA & RING COMPONENTS ──────────────────────────────────────────

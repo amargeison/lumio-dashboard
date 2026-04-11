@@ -8274,13 +8274,11 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
                   <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const compressed = r.result as string; localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed); if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated')) }; r.readAsDataURL(f) }} />
                 </label>
                 {/* Name */}
-                <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
-                  {(session.userName || player.name).split(' ')[0]}
-                </div>
-                <div className="text-red-300 font-bold text-xs uppercase tracking-widest text-center mb-1">
-                  {(session.userName || player.name).split(' ').slice(1).join(' ')}
-                </div>
-                <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{player.nickname}&quot;</div>
+                {(() => { const pn = (typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name; return (<>
+                <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{pn.split(' ')[0]}</div>
+                <div className="text-red-300 font-bold text-xs uppercase tracking-widest text-center mb-1">{pn.split(' ').slice(1).join(' ')}</div>
+                </>)})()}
+                {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null; return nn ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{nn}&quot;</div> : <div className="mb-2" /> })()}
                 {/* PDC Ranking badge */}
                 <div className="flex justify-center mb-2">
                   <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>
