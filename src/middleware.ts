@@ -54,6 +54,24 @@ export async function middleware(request: NextRequest) {
   // Root / is handled by src/app/page.tsx (host-based routing)
   // lumiosports.com/ → /sports, lumiocms.com/ → /home
 
+  // Sports /{sport}/app routes — require an authenticated Supabase session.
+  // The cookie name pattern is `sb-{ref}-auth-token` (Supabase SSR default).
+  // The page itself also re-checks auth via createBrowserClient as a backup.
+  const SPORTS_APP_SLUGS = new Set([
+    'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens',
+  ])
+  const sportsAppParts = pathname.split('/').filter(Boolean)
+  if (sportsAppParts.length >= 2 && sportsAppParts[1] === 'app' && SPORTS_APP_SLUGS.has(sportsAppParts[0])) {
+    const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.endsWith('-auth-token'))
+    if (!hasAuthCookie) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/sports-login'
+      url.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
+  }
+
   // Handle /{slug}/{department} → rewrite to /{department} internally
   // while keeping the URL as /{slug}/{department}
   const parts = pathname.split('/').filter(Boolean)
