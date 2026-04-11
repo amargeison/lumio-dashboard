@@ -1,31 +1,83 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
 
+const HERO_CARDS: { border: string; label: string; value: string; pill: string; pillColor: string }[] = [
+  { border: '#8B5CF6', label: 'Cap Headroom', value: '£460,000', pill: 'COMPLIANT', pillColor: '#10B981' },
+  { border: '#EC4899', label: 'FSR Status', value: '74%', pill: 'REVIEW', pillColor: '#F59E0B' },
+  { border: '#A3E635', label: 'ATP Ranking', value: '#67', pill: '+3 this week', pillColor: '#6B7280' },
+  { border: '#EF4444', label: 'Fight Camp', value: 'Day 14/56', pill: 'Weight on track', pillColor: '#10B981' },
+  { border: '#38BDF8', label: 'OWGR', value: '#87', pill: 'Race to Dubai: 12th', pillColor: '#6B7280' },
+]
+
 export default function SportsHubPage() {
+  const portalRef = useRef<HTMLDivElement>(null)
+  const scrollToPortals = () => portalRef.current?.scrollIntoView({ behavior: 'smooth' })
+
   return (
     <div style={{ background: '#07080F', color: '#F9FAFB' }}>
+      <style>{`
+        @keyframes pulse-orb{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.25;transform:scale(1.1)}}
+        @keyframes fade-up{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
 
-      {/* ═══ SECTION 1: HERO ═══ */}
-      <section style={{ position: 'relative', overflow: 'hidden', paddingTop: 140, paddingBottom: 80, paddingLeft: 24, paddingRight: 24 }}>
-        <div style={{ position: 'absolute', top: -150, left: '50%', transform: 'translateX(-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', color: '#9CA3AF', marginBottom: 24, textTransform: 'uppercase' }}>
-            LUMIO SPORTS &middot; POWERED BY CLAUDE AI
-          </p>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, lineHeight: 1.1, color: '#F9FAFB', marginBottom: 24 }}>
-            The AI brain behind your career.
+      {/* ═══ SECTION 1: HERO (original) ═══ */}
+      <section className="relative overflow-hidden pt-32 pb-20 px-6">
+        <div className="absolute top-[-100px] left-[-100px] w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, #8B5CF6, transparent 70%)', filter: 'blur(120px)', animation: 'pulse-orb 8s ease-in-out infinite' }} />
+        <div className="absolute bottom-[-80px] right-[-80px] w-[500px] h-[500px] rounded-full" style={{ background: 'radial-gradient(circle, #06B6D4, transparent 70%)', filter: 'blur(120px)', animation: 'pulse-orb 8s ease-in-out infinite 4s' }} />
+
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-sm font-medium" style={{ border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.08)', color: '#D1D5DB' }}>
+            🏆 Ten portals. One platform. Built for sport.
+          </div>
+
+          <h1 className="font-black leading-[1.05] mb-6" style={{ fontSize: 'clamp(3rem, 8vw, 7rem)' }}>
+            The operating system<br />
+            <span style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              professional sport
+            </span><br />
+            has been waiting for.
           </h1>
-          <p style={{ fontSize: 18, color: '#9CA3AF', maxWidth: 640, margin: '0 auto 40px', lineHeight: 1.7 }}>
-            Your personal AI chief of staff — match prep, sponsorship, travel, media. All handled. So you can focus on performing.
+
+          <p className="text-lg leading-relaxed mb-10 mx-auto" style={{ color: '#94A3B8', maxWidth: 680 }}>
+            From the Champ Rugby salary cap to the PDC Order of Merit. From WSL FSR compliance to ATP ranking points expiry. From Premiership transfer deadlines to OWGR exemptions. Every sport. Every regulation. Every decision — one platform.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
-            <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              Apply for free founding access &rarr;
+
+          <div className="flex flex-wrap justify-center gap-8 mb-10">
+            {[
+              { n: '10', l: 'Portals live' },
+              { n: '0', l: 'Dedicated sport OS platforms that existed before this' },
+              { n: '£500m', l: "Women's football global revenue with zero dedicated software" },
+              { n: '56', l: 'Pages of Premiership salary cap regulations tracked in Excel' },
+            ].map((s, i) => (
+              <div key={i} className="text-center">
+                <div className="font-black text-3xl md:text-4xl" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.n}</div>
+                <div className="text-xs mt-1 max-w-[160px]" style={{ color: '#64748B' }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4 mb-14">
+            <button onClick={scrollToPortals} className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: 'white' }}>
+              Explore all portals →
+            </button>
+            <Link href="/ai" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{ border: '1px solid rgba(139,92,246,0.4)', color: 'white', background: 'rgba(139,92,246,0.08)' }}>
+              See our AI features ✨
             </Link>
-            <a href="#portals" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', color: '#F9FAFB', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              See it in action &darr;
-            </a>
+            <Link href="/sports-signup" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{ border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}>
+              Apply for founding access →
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            {HERO_CARDS.map((c, i) => (
+              <div key={i} className="rounded-xl p-4 text-left" style={{ background: '#0D1117', border: `1px solid ${c.border}33`, minWidth: 170, animation: `fade-up 0.6s ease-out ${i * 0.15}s both` }}>
+                <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#64748B' }}>{c.label}</div>
+                <div className="text-lg font-bold text-white mb-1">{c.value}</div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${c.pillColor}20`, color: c.pillColor }}>{c.pill}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -95,7 +147,7 @@ export default function SportsHubPage() {
       </section>
 
       {/* ═══ SECTION 5: SPORT PORTALS GRID ═══ */}
-      <section id="portals" style={{ padding: '80px 24px', borderTop: '1px solid #1F2937' }}>
+      <section ref={portalRef} id="portals" style={{ padding: '80px 24px', borderTop: '1px solid #1F2937' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: 900, textAlign: 'center', color: '#F9FAFB', marginBottom: 48 }}>
             Built for your sport

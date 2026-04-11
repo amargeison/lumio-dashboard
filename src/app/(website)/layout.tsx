@@ -10,6 +10,7 @@ import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',    href: '/sports-product' },
+  { label: 'Our AI',     href: '/ai', badge: 'NEW' },
   { label: 'Football',   href: '/football' },
   { label: 'Womens FC',  href: '/womens-football' },
   { label: 'Rugby',      href: '/rugby' },
@@ -225,7 +226,7 @@ function Nav() {
               {l.label}
               {(l as any).badge && (
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                  style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA', lineHeight: 1 }}>
+                  style={{ backgroundColor: 'rgba(139,92,246,0.2)', color: '#A78BFA', lineHeight: 1, boxShadow: '0 0 6px rgba(139,92,246,0.4)' }}>
                   {(l as any).badge}
                 </span>
               )}
