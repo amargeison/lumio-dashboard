@@ -532,6 +532,12 @@ function SeasonIntelligenceStrip() {
 }
 
 function DashboardView({ player, session, setActiveSection, onOpenModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; onOpenModal: (m: string) => void }) {
+  const isPlayerRole = !session.role || session.role === 'player'
+  const displayPlayerName = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session.userName || player.name)
+    : player.name
+  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const firstName = displayPlayerName.split(' ')[0] || 'James'
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   });
@@ -604,7 +610,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">Good morning, {(session.userName || player.name).split(' ')[0]} ⛳</h1>
+              <h1 className="text-2xl font-bold text-white">Good morning, {firstName} ⛳</h1>
             </div>
             <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}

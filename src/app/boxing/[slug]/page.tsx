@@ -484,7 +484,15 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [gsChecked, setGsChecked] = useState<Record<string, boolean>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started') : null; return s ? JSON.parse(s) : {} } catch { return {} }
   })
-  const firstName = session.userName?.split(' ')[0] || fighter.name?.split(' ')[0] || 'Marcus'
+  const isPlayerRole = !session.role || session.role === 'fighter'
+  const displayPlayerName = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null) || session.userName || fighter.name)
+    : fighter.name
+  const displayPlayerNickname = isPlayerRole
+    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '')
+    : `"${fighter.nickname}"`
+  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const firstName = displayPlayerName.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const recoveryScore = 81;

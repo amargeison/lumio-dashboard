@@ -11,8 +11,10 @@ const cleanResponse = (text: string) => text
   .replace(/\*\*(.*?)\*\*/g, '$1')
   .replace(/\*(.*?)\*/g, '$1')
   .replace(/^\s*[-•·–—]\s*/gm, '')
-  .replace(/^\s*[\u2022\u2023\u25E6\u2043\u2219]\s*/gm, '')
+  .replace(/^\s*[\u2022\u2023\u25E6\u2043\u2219\u25AA\u25CF\u2013\u2014]\s*/gm, '')
   .replace(/^\s*\d+\.\s*/gm, '')
+  .replace(/^\s*[a-zA-Z]\.\s*/gm, '')
+  .replace(/^[\s]*[🎯🎾🏋️✈️🏆🙏💬🔴🟡🟢⚡💡🎙️📋📊🛰️🤖🥊⛳🎱]\s*/gm, '')
   .replace(/\n{3,}/g, '\n\n')
   .trim()
 
@@ -386,12 +388,13 @@ Context guide:
 - "media" → press obligations, interview requests, social media
 - "dashboard" → today's schedule, urgent messages, key priorities
 
-Write 4-5 bullet points. Each starts with a relevant emoji.
-Each point is a complete sentence with specific details.
+Write 4-5 specific points covering actions, context, and operational detail.
 Do NOT repeat what is in the Performance Intelligence panel.
 Performance Intelligence shows numbers/stats.
 This panel shows actions, context, and operational detail.
-Max 200 words.`
+Max 200 words.
+
+Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
           }]
         })
       })
@@ -2265,9 +2268,11 @@ Serve stats: 1st serve %: 64%, aces: 4, double faults: 2, first serve won: 74%.
 Surface win rate: Clay 58%, Grass 72%, Hard 61%.
 Points expiring: 125 pts in 7 days (2025 Monte-Carlo result).
 
-Cover: MATCH PREP (today's opponent intel), GPS STATUS (load and recovery recommendation), SERVE (one specific technical focus), RANKING (points situation), OBLIGATIONS (sponsor/media). End with a one-line motivational closer from Marco.
+Cover: match prep (today's opponent intel), GPS status (load and recovery recommendation), serve (one specific technical focus), ranking (points situation), obligations (sponsor/media). End with a one-line motivational closer from Marco.
 
-Be direct, specific, professional. Around 250 words.`
+Be direct, specific, professional. Around 250 words.
+
+Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
           }]
         })
       });
@@ -3623,7 +3628,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
           max_tokens: 500,
           messages: [{
             role: 'user',
-            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${practiceSession.date}, Type: ${practiceSession.type}, Duration: ${practiceSession.duration}, Partner: ${practiceSession.partner}, Coach notes: ${practiceSession.coachNotes}. Provide exactly: 3 specific technical observations, 2 areas to focus on next session, 1 tactical pattern to develop. Be concise and specific to tennis.`
+            content: `Analyse this tennis practice session for player Alex Rivera (ATP #67, right-handed, two-handed backhand). Session details: Date: ${practiceSession.date}, Type: ${practiceSession.type}, Duration: ${practiceSession.duration}, Partner: ${practiceSession.partner}, Coach notes: ${practiceSession.coachNotes}. Cover three specific technical observations, two areas to focus on next session, and one tactical pattern to develop. Be concise and specific to tennis. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
           }],
         }),
       });
@@ -7409,7 +7414,7 @@ const MatchReportsView = ({ player, session }: { player: TennisPlayer; session: 
     try {
       const res = await fetch('/api/ai/football-search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'player', query: `You are a professional tennis analyst writing a concise post-match report. Write in a professional coach/analyst voice. Be specific and tactical.\n\nWrite a post-match analysis report for Alex Rivera (ATP #67) who ${won ? 'won' : 'lost'} against ${m.opponent} (#${m.oppRank}) at ${m.tournament} ${m.round}, score ${m.score} on ${m.surface}. Include: 1) Match summary (2 sentences), 2) Key tactical moments (3 bullet points), 3) What worked well (2 bullet points), 4) Areas to improve (2 bullet points), 5) One sentence looking ahead.` }),
+        body: JSON.stringify({ type: 'player', query: `You are a professional tennis analyst writing a concise post-match report. Write in a professional coach/analyst voice. Be specific and tactical.\n\nWrite a post-match analysis report for Alex Rivera (ATP #67) who ${won ? 'won' : 'lost'} against ${m.opponent} (#${m.oppRank}) at ${m.tournament} ${m.round}, score ${m.score} on ${m.surface}. Cover a brief match summary, three key tactical moments, what worked well, areas to improve, and a one-sentence look ahead. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }),
       });
       const data = await res.json();
       const text = typeof data.result === 'string' ? data.result : data.result?.summary || 'Report generated.';
