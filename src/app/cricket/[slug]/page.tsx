@@ -4542,8 +4542,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
       <div style={{flex:1,overflowY:'auto',marginLeft: sidebarPinned ? 220 : 72, transition:'margin-left 250ms ease'}}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#FBBF24', color: '#000000' }}>
-          <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#000000' }}>sign up for 3 months free →</a>
+          <span>This is a demo · sample data</span>
+          <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#000000' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
         </div>
         {/* Role banner */}
         {!isDirector && !isSponsor && (

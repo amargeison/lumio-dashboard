@@ -2625,8 +2625,8 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
         <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
           {/* Demo workspace banner */}
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#F97316', color: '#ffffff' }}>
-            <span>Demo workspace &middot; sample data</span>
-            <a href="/pricing-sports" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data &mdash; sign up for 3 months free &rarr;</a>
+            <span>This is a demo &middot; sample data</span>
+            <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access &rarr; lumiosports.com/sports-signup</a>
           </div>
 
           <div className="flex-1 overflow-y-auto">
