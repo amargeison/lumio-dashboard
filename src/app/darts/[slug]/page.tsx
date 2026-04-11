@@ -6,6 +6,7 @@ import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Setting
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
+import SportsSettings from '@/components/sports/SportsSettings'
 
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -327,6 +328,16 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       return next
     })
   }
+  const [scheduleCancelled, setScheduleCancelled] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('darts_schedule_cancelled') : null) || '{}') } catch { return {} }
+  })
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  const cancelScheduleItem = (id: string, label: string) => {
+    const person = label.includes('with ') ? label.split('with ')[1] : label.includes('—') ? label.split('—')[0].trim() : label
+    navigator.clipboard.writeText(`Hi ${person} — I need to cancel my ${label.toLowerCase()} scheduled for today. Apologies for short notice. — ${firstName}`)
+    setScheduleCancelled(prev => { const next = { ...prev, [id]: true }; localStorage.setItem('darts_schedule_cancelled', JSON.stringify(next)); return next })
+    setCancelConfirm(null)
+  }
   const [tasksChecked, setTasksChecked] = useState<Record<string,boolean>>(() => {
     try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('darts_tasks_checked') : null) || '{}') } catch { return {} }
   })
@@ -422,6 +433,17 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const [replyText, setReplyText] = useState('')
   const [repliedTo, setRepliedTo] = useState<Set<string>>(new Set())
   const [dismissedMessages, setDismissedMessages] = useState<Set<string>>(new Set())
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('darts_dismissed_alerts') : null; return s ? new Set(JSON.parse(s)) : new Set() } catch { return new Set() }
+  })
+  const dismissAlert = (id: string) => {
+    setDismissedAlerts(prev => { const next = new Set(prev); next.add(id); try { localStorage.setItem('darts_dismissed_alerts', JSON.stringify([...next])) } catch {} return next })
+  }
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('darts_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
   const ROUNDUP_CHANNELS = [
     { label: 'Agent Messages',     icon: '📞', count: 2, color: '#0D9488', urgent: false, messages: [
       { from: 'James Wright', text: 'Paddy Power want an answer by Friday — shall I push for better terms?', time: '08:12' },
@@ -540,8 +562,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar */}
-      <div className="mb-5 mt-4">
+      {/* Quick Actions — below tab bar (Today only) */}
+      {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -567,7 +589,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
@@ -647,8 +669,20 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <span className="text-[10px] text-gray-600">Since you were last here</span>
             </div>
             <div className="space-y-2">
-              {ROUNDUP_CHANNELS.map((ch, i) => (
-                <div key={i} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px' }} className="hover:border-gray-700 transition-all">
+              {(roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_CHANNELS).map((ch, idx) => (
+                <div key={ch.label} draggable
+                  onDragStart={() => setDragIdx(idx)}
+                  onDragEnter={() => setDragOverIdx(idx)}
+                  onDragOver={e => e.preventDefault()}
+                  onDragEnd={() => {
+                    if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                      const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_CHANNELS]
+                      const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
+                      const newOrder = reordered.map(c => c.label); setRoundupOrder(newOrder); localStorage.setItem('darts_roundup_order', JSON.stringify(newOrder))
+                    }
+                    setDragIdx(null); setDragOverIdx(null)
+                  }}
+                  style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }} className="hover:border-gray-700 transition-all">
                   <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
                     <div className="flex items-center gap-2.5">
                       <span className="text-base" style={{ color: ch.color, filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
@@ -738,16 +772,31 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
                   { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
                   { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
-                ].map((s) => (
-                  <div key={s.id} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${scheduleChecked[s.id] ? 'opacity-50' : ''} ${s.highlight ? 'text-red-400' : ''}`}>
-                    <button onClick={() => toggleScheduleItem(s.id)} className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: scheduleChecked[s.id] ? '#22C55E' : 'transparent', borderColor: scheduleChecked[s.id] ? '#22C55E' : s.highlight ? '#EF4444' : '#4B5563' }}>
-                      {scheduleChecked[s.id] && <span className="text-white text-[8px]">✓</span>}
+                ].map((s) => {
+                  const done = scheduleChecked[s.id]
+                  const cancelled = scheduleCancelled[s.id]
+                  return (
+                  <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${done || cancelled ? 'opacity-50' : ''} ${s.highlight && !done && !cancelled ? 'text-red-400' : ''}`}>
+                    <button onClick={() => !cancelled && toggleScheduleItem(s.id)} className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: done ? '#22C55E' : cancelled ? '#374151' : 'transparent', borderColor: done ? '#22C55E' : cancelled ? '#374151' : s.highlight ? '#EF4444' : '#4B5563' }}>
+                      {done && <span className="text-white text-[8px]">✓</span>}
+                      {cancelled && <span className="text-gray-500 text-[8px]">✕</span>}
                     </button>
                     <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                    <span className={`text-xs ${scheduleChecked[s.id] ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                    <span className={`text-xs flex-1 ${done || cancelled ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                    {!s.highlight && !done && !cancelled && cancelConfirm !== s.id && (
+                      <button onClick={() => setCancelConfirm(s.id)} className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#6B7280' }}>Cancel →</button>
+                    )}
+                    {cancelConfirm === s.id && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px]" style={{ color: '#6B7280' }}>Cancel?</span>
+                        <button onClick={() => cancelScheduleItem(s.id, s.label)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Send</button>
+                        <button onClick={() => setCancelConfirm(null)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>Dismiss</button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
@@ -982,44 +1031,61 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       )}
 
       {/* DON'T MISS */}
-      {dashTab === 'dontmiss' && (
+      {dashTab === 'dontmiss' && (() => {
+        const DONT_MISS_ITEMS = [
+          { id:'dm1', urgency:'TONIGHT', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Match', deadline:'Tonight 20:00', title:'Match vs G. Price — European Championship R1', desc:'20:00 Westfalenhallen, Dortmund. H2H 3-4 Price. His checkout 39.8% vs yours — start strong on the opening leg.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep →', section:'matchprep', modal:'matchreport' as string|undefined },
+          { id:'dm2', urgency:'TODAY', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Sponsor', deadline:'Today 12:00', title:'Red Dragon content shoot — prep kit and backdrop', desc:'Contract obligation with penalty clause. Barrel review video required. Bring backup set.', consequence:'Penalty clause applies if missed — contract breach risk', action:'Open brief →', section:'sponsor', modal:'sponsor' as string|undefined },
+          { id:'dm3', urgency:'THIS WK', urgencyBg:'rgba(245,158,11,0.15)', urgencyColor:'#F59E0B', category:'Travel', deadline:'Mon 14 Apr', title:'Prague Open flights — prices rising fast', desc:'Depart Mon 14 Apr. BA from £189 — cheapest seats selling fast. Save £80+ booking now.', consequence:'Prices increase daily — £80+ savings lost if delayed', action:'Search flights →', section:'flights', modal:'flights' as string|undefined },
+          { id:'dm4', urgency:'THIS WK', urgencyBg:'rgba(245,158,11,0.15)', urgencyColor:'#F59E0B', category:'Sponsor', deadline:'Thu deadline', title:'2 Betway social posts outstanding', desc:'Agent chasing — James flagged urgency. Sponsor relationship at risk.', consequence:'Sponsor relationship at risk — repeat offence', action:'Create post →', section:'socialmedia', modal:'sponsor' as string|undefined },
+          { id:'dm5', urgency:'14 DAYS', urgencyBg:'rgba(139,92,246,0.15)', urgencyColor:'#8B5CF6', category:'Commercial', deadline:'25 Apr', title:'Paddy Power ambassador decision', desc:'Respond to agent by 25 Apr. Estimated £40k/yr deal — competitor also in talks.', consequence:'Estimated £40k/yr deal — competitor also in talks', action:'View inquiry →', section:'commercial', modal:undefined as string|undefined },
+          { id:'dm6', urgency:'MAY 3', urgencyBg:'rgba(75,85,99,0.15)', urgencyColor:'#6B7280', category:'Travel', deadline:'3 May', title:'Madrid Premier League hotel not confirmed', desc:'Deadline approaching. Preferred hotel may sell out — Premier League week.', consequence:'Preferred hotel may sell out', action:'Find hotel →', section:'hotel', modal:'hotel' as string|undefined },
+        ]
+        const visible = DONT_MISS_ITEMS.filter(d => !dismissedAlerts.has(d.id))
+        return (
         <div className="space-y-3">
-          {[
-            { urgency:'TONIGHT', item:'Match vs G. Price — European Championship R1. 20:00 Dortmund.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep', color:'#dc2626', modal:undefined as string|undefined },
-            { urgency:'TODAY',   item:'Red Dragon content shoot at 12:00 — prep kit and backdrop.', consequence:'Contract obligation — penalty clause applies', action:'Open brief', color:'#EF4444', modal:'sponsor' as string|undefined },
-            { urgency:'THIS WK', item:'Prague Open flights — depart Mon 14 Apr. Prices rising.', consequence:'Cheapest seats selling fast — save £80+ booking now', action:'Search flights', color:'#F59E0B', modal:'flights' as string|undefined },
-            { urgency:'THIS WK', item:'2 Betway social posts outstanding — agent chasing.', consequence:'Sponsor relationship at risk — James flagged urgency', action:'Create post', color:'#F59E0B', modal:'sponsor' as string|undefined },
-            { urgency:'14 DAYS', item:'Paddy Power ambassador decision — respond to agent by 25 Apr.', consequence:'Estimated £40k/yr deal — competitor also in talks', action:'View inquiry', color:'#8B5CF6', modal:undefined as string|undefined },
-            { urgency:'MAY 3',   item:'Madrid Premier League hotel not confirmed. Deadline approaching.', consequence:'Preferred hotel may sell out — Premier League week', action:'Find hotel', color:'#6B7280', modal:'hotel' as string|undefined },
-          ].map((d, i) => (
-            <div key={i} className="flex items-start gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-              <span className={`text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5 ${d.urgency==='TONIGHT'||d.urgency==='TODAY'?'bg-red-600/20 text-red-400':d.urgency==='THIS WK'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{d.urgency}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-200 mb-1">{d.item}</p>
-                <p className="text-[10px] text-gray-500 italic mb-2">{d.consequence}</p>
-                <div className="flex items-center gap-2">
-                  {d.modal ? (
-                    <button onClick={() => onOpenModal(d.modal!)} className="text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all" style={{ background: `${d.color}15`, border: `1px solid ${d.color}40`, color: d.color }}>{d.action} &rarr;</button>
-                  ) : (
-                    <button className="text-[10px] font-semibold" style={{color:d.color}}>{d.action} &rarr;</button>
-                  )}
-                  <button className="text-[10px] px-2 py-1 rounded-lg text-gray-600 hover:text-gray-400 border border-gray-800 transition-all">Dismiss</button>
+          <p className="text-[11px]" style={{ color: '#6B7280' }}>{visible.length} items need attention</p>
+          {visible.map(d => (
+            <div key={d.id} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5"
+                  style={{ background: d.urgencyBg, color: d.urgencyColor }}>{d.urgency}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1F2937', color: '#6B7280' }}>{d.category}</span>
+                    <span className="text-[10px]" style={{ color: '#6B7280' }}>Due: {d.deadline}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-white mb-1">{d.title}</p>
+                  <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{d.desc}</p>
+                  <p className="text-[11px] italic mb-3" style={{ color: '#EF4444' }}>If missed: {d.consequence}</p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => d.modal && onOpenModal(d.modal)}
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                      style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>
+                      {d.action}
+                    </button>
+                    <button onClick={() => dismissAlert(d.id)}
+                      className="text-[11px] px-3 py-1.5 rounded-lg transition-all"
+                      style={{ border: '1px solid #374151', color: '#6B7280' }}>
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
+        )
+      })()}
 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
         const demoStaffPhotos: Record<string, string> = {
-          'Dave Askew': '/staff_photos/Marcus_Webb.jpg',
-          'Steve Morris': '/staff_photos/Carlos_Mendez.jpg',
-          'Dr Paul Reid': '/staff_photos/Sarah_Lee.jpg',
-          'James Wright': '/staff_photos/Marcus_Webb.jpg',
-          'Red Dragon': '/staff_photos/Rick_Dalton.jpg',
-          'Marcos Silva': '/staff_photos/Elena_Russo.jpg',
+          'Dave Askew': '/Marcus_Webb.jpg',
+          'Steve Morris': '/Carlos_Mendez.jpg',
+          'Dr Paul Reid': '/Sarah_Lee.jpg',
+          'James Wright': '/Marcus_Webb.jpg',
+          'Red Dragon': '/Rick_Dalton.jpg',
+          'Marcos Silva': '/Elena_Russo.jpg',
         }
         const TEAM_MEMBERS = [
           { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA', phone:'+44 7700 900123', email:'dave@dhsports.com', since:'2021', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'42 events managed', stat2:'98% satisfaction' },
@@ -1050,7 +1116,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 {TEAM_MEMBERS.map((m, i) => (
                   <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
                     <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0 overflow-hidden">
-                      {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover" /> : m.initials}
+                      {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /> : m.initials}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-white">{m.name}</div>
@@ -1114,7 +1180,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                     <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-r from-red-900/30 to-gray-900/30" />
                     <div className="relative">
                       <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-600/30 flex items-center justify-center text-lg font-bold text-red-400 mx-auto mb-2 overflow-hidden">
-                        {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover" /> : m.initials}
+                        {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /> : m.initials}
                       </div>
                       <div className="text-center mb-3">
                         <div className="text-sm font-bold text-white">{m.name}</div>
@@ -3025,332 +3091,6 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 }
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-function SettingsView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
-  const ACCENT = '#dc2626';
-  const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [voiceId, setVoiceId] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL');
-  const [boardSetup, setBoardSetup] = useState('Winmau');
-  const [dartWeight, setDartWeight] = useState(player.dartSetup?.barrelWeight || '23g');
-  const [devPrompt, setDevPrompt] = useState('');
-  const [devResponse, setDevResponse] = useState('');
-  const [devRoute, setDevRoute] = useState('/api/ai/darts');
-  const [devTesting, setDevTesting] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_name')) || player.name);
-  const [editingNickname, setEditingNickname] = useState(false);
-  const [nicknameValue, setNicknameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_nickname')) || player.nickname);
-
-  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true');
-
-  const toggleStyle = (on: boolean) => ({
-    width: 44, height: 24, borderRadius: 12,
-    backgroundColor: on ? ACCENT : '#374151',
-    position: 'relative' as const, cursor: 'pointer', transition: 'background-color 0.2s',
-  });
-  const toggleKnob = (on: boolean) => ({
-    width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff',
-    position: 'absolute' as const, top: 3, left: on ? 23 : 3, transition: 'left 0.2s',
-  });
-
-  const Card = ({ children }: { children: React.ReactNode }) => (
-    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>{children}</div>
-  );
-  const SectionHead = ({ title }: { title: string }) => (
-    <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-      <p className="text-sm font-semibold text-white">{title}</p>
-    </div>
-  );
-  const Row = ({ label, right }: { label: string; right: React.ReactNode }) => (
-    <div className="flex items-center justify-between px-5 py-3">
-      <span className="text-sm text-gray-300">{label}</span>
-      <div>{right}</div>
-    </div>
-  );
-  const ConnectBtn = ({ connected }: { connected?: boolean }) => (
-    <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{
-      backgroundColor: connected ? 'rgba(16,185,129,0.15)' : `${ACCENT}22`,
-      color: connected ? '#10b981' : ACCENT,
-    }}>{connected ? 'Connected' : 'Connect'}</button>
-  );
-  const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
-    <div style={toggleStyle(on)} onClick={onToggle}><div style={toggleKnob(on)} /></div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, integrations, team access, appearance, and developer tools." />
-
-      {/* 1 — Profile */}
-      <Card>
-        <SectionHead title="🎯 Profile" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm text-gray-300">Name</span>
-            <div className="flex items-center gap-2">
-              {editingName ? (
-                <>
-                  <input value={nameValue} onChange={e => setNameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
-                  <button onClick={() => { localStorage.setItem('lumio_darts_name', nameValue); setEditingName(false) }} className="text-xs text-green-400">Save</button>
-                  <button onClick={() => setEditingName(false)} className="text-xs text-gray-500">Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-white">{nameValue}</span>
-                  <button onClick={() => setEditingName(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm text-gray-300">Nickname</span>
-            <div className="flex items-center gap-2">
-              {editingNickname ? (
-                <>
-                  <input value={nicknameValue} onChange={e => setNicknameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
-                  <button onClick={() => { localStorage.setItem('lumio_darts_nickname', nicknameValue); setEditingNickname(false) }} className="text-xs text-green-400">Save</button>
-                  <button onClick={() => setEditingNickname(false)} className="text-xs text-gray-500">Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-white">&quot;{nicknameValue}&quot;</span>
-                  <button onClick={() => setEditingNickname(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
-                </>
-              )}
-            </div>
-          </div>
-          {[
-            { label: 'Tour', value: 'PDC Professional' },
-            { label: 'Ranking', value: `#${player.pdcRank}` },
-            { label: 'Coach', value: player.coach },
-            { label: 'Manager', value: player.manager },
-            { label: 'Season', value: '2025/26' },
-          ].map((f, i) => (
-            <Row key={i} label={f.label} right={<span className="text-sm text-white">{f.value}</span>} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 2 — Sport-Specific Configuration */}
-      <Card>
-        <SectionHead title="🎯 Darts Configuration" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="PDC Player ID" right={<span className="text-sm text-white font-mono">PDC-{player.pdcRank.toString().padStart(4, '0')}</span>} />
-          <Row label="Board Setup" right={
-            <select value={boardSetup} onChange={e => setBoardSetup(e.target.value)}
-              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
-              {['Winmau', 'Target', 'Unicorn'].map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          } />
-          <Row label="Dart Weight Preference" right={
-            <select value={dartWeight} onChange={e => setDartWeight(e.target.value)}
-              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
-              {['21g', '22g', '23g', '24g', '25g', '26g'].map(w => <option key={w} value={w}>{w}</option>)}
-            </select>
-          } />
-        </div>
-      </Card>
-
-      {/* 3 — Integrations: Data Providers */}
-      <Card>
-        <SectionHead title="🔌 Integrations — Data Providers" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: 'PDC Profile', icon: '🎯', connected: true },
-            { name: 'WDF Profile', icon: '🌍', connected: false },
-            { name: 'STATSports', icon: '📡', connected: false },
-            { name: 'Softronic', icon: '💻', connected: false },
-            { name: 'Dartfish', icon: '📹', connected: false },
-            { name: 'DartConnect', icon: '🔌', connected: true },
-          ].map((p, i) => (
-            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 4 — Integrations: Communication */}
-      <Card>
-        <SectionHead title="💬 Integrations — Communication" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: 'Slack', icon: '💬', connected: true },
-            { name: 'Microsoft Teams', icon: '👥', connected: false },
-            { name: 'Google Workspace', icon: '📧', connected: false },
-            { name: 'WhatsApp Business', icon: '📱', connected: false },
-          ].map((p, i) => (
-            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 5 — Team & Staff */}
-      <Card>
-        <SectionHead title="👥 Team & Staff" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: player.coach, role: 'Coach', access: 'Full' },
-            { name: player.manager, role: 'Manager', access: 'Commercial' },
-            { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
-          ].map((s, i) => (
-            <div key={i} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <div className="text-sm text-white">{s.name}</div>
-                <div className="text-xs text-gray-500">{s.role}</div>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${s.access === 'Full' ? 'bg-teal-600/20 text-teal-400' : s.access === 'Commercial' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400'}`}>{s.access}</span>
-            </div>
-          ))}
-          <div className="px-5 py-3 italic text-xs text-gray-500">No pending invites</div>
-          <div className="px-5 py-3">
-            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>+ Invite Team Member</button>
-          </div>
-        </div>
-      </Card>
-
-      {/* 6 — Voice Assistant */}
-      <Card>
-        <SectionHead title="🎙️ Voice Assistant" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="Text-to-Speech" right={<Toggle on={ttsEnabled} onToggle={() => setTtsEnabled(!ttsEnabled)} />} />
-          <Row label="Voice" right={
-            <select value={voiceId} onChange={e => setVoiceId(e.target.value)}
-              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
-              {['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'].map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          } />
-        </div>
-      </Card>
-
-      {/* 7 — World Clock */}
-      <Card>
-        <SectionHead title="🕐 World Clock" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { city: 'London', tz: 'Europe/London' },
-            { city: 'Amsterdam', tz: 'Europe/Amsterdam' },
-            { city: 'Berlin', tz: 'Europe/Berlin' },
-            { city: 'Las Vegas', tz: 'America/Los_Angeles' },
-          ].map((c, i) => (
-            <Row key={i} label={c.city} right={
-              <span className="text-sm text-white font-mono">
-                {new Date().toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' })}
-              </span>
-            } />
-          ))}
-        </div>
-      </Card>
-
-      {/* 8 — Appearance */}
-      <Card>
-        <SectionHead title="🎨 Appearance" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="Theme" right={<span className="text-sm text-white">Dark</span>} />
-          <Row label="Accent Colour" right={
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full" style={{ backgroundColor: ACCENT }} />
-              <span className="text-xs text-gray-400 font-mono">{ACCENT}</span>
-            </div>
-          } />
-        </div>
-      </Card>
-
-      {/* 9 — DEV SECTION (conditional) */}
-      {isDev && (
-        <Card>
-          <SectionHead title="🛠️ Developer Tools" />
-          <div className="p-5">
-            <div className="grid grid-cols-2 gap-4">
-              {/* 1 — Demo Data */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Demo Data</div>
-                <div className="text-[10px] text-gray-500 mb-3">Status: <span className="text-teal-400">Loaded</span></div>
-                <button onClick={() => { localStorage.removeItem('lumio_darts_data'); window.location.reload(); }}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>Reset Demo Data</button>
-              </div>
-
-              {/* 2 — API Route Tester */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">API Route Tester</div>
-                <select value={devRoute} onChange={e => setDevRoute(e.target.value)}
-                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white mb-2">
-                  <option value="/api/ai/darts">/api/ai/darts</option>
-                </select>
-                <textarea value={devPrompt} onChange={e => setDevPrompt(e.target.value)} placeholder="Enter prompt..."
-                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 mb-2 resize-none" rows={2} />
-                <button onClick={async () => {
-                  setDevTesting(true); setDevResponse('');
-                  try {
-                    const res = await fetch(devRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: devPrompt }) });
-                    const data = await res.json();
-                    setDevResponse(JSON.stringify(data, null, 2));
-                  } catch (err) { setDevResponse(String(err)); }
-                  setDevTesting(false);
-                }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>
-                  {devTesting ? 'Testing...' : 'Test'}
-                </button>
-                {devResponse && <pre className="mt-2 text-[10px] text-gray-400 max-h-24 overflow-auto whitespace-pre-wrap">{devResponse}</pre>}
-              </div>
-
-              {/* 3 — LocalStorage Inspector */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">LocalStorage Inspector</div>
-                <div className="space-y-1 max-h-28 overflow-auto mb-2">
-                  {typeof window !== 'undefined' && Object.keys(localStorage).filter(k => k.startsWith('lumio_')).map(k => (
-                    <div key={k} className="flex items-center justify-between text-[10px]">
-                      <span className="text-gray-400 font-mono truncate mr-2">{k}</span>
-                      <button onClick={() => { localStorage.removeItem(k); window.location.reload(); }} className="text-red-400 hover:text-red-300 shrink-0">✕</button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => localStorage.removeItem(k)); window.location.reload(); }}
-                    className="text-[10px] text-red-400 hover:text-red-300">Clear All</button>
-                  <button onClick={() => {
-                    const data: Record<string,string> = {};
-                    Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => { data[k] = localStorage.getItem(k) || ''; });
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lumio_localstorage.json'; a.click();
-                  }} className="text-[10px] text-blue-400 hover:text-blue-300">Export JSON</button>
-                </div>
-              </div>
-
-              {/* 4 — Environment */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Environment</div>
-                <div className="space-y-1 text-[10px]">
-                  <div><span className="text-gray-500">NODE_ENV:</span> <span className="text-gray-300">{process.env.NODE_ENV}</span></div>
-                  <div><span className="text-gray-500">Branch:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || 'local'}</span></div>
-                  <div><span className="text-gray-500">Deploy:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev'}</span></div>
-                  <div><span className="text-gray-500">Next.js:</span> <span className="text-gray-300">{require('next/package.json').version}</span></div>
-                </div>
-              </div>
-
-              {/* 5 — TypeScript Check */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">TypeScript Check</div>
-                <div className="text-[10px] text-gray-500 mb-2">Run in terminal:</div>
-                <code className="block text-[10px] text-yellow-400 bg-black/40 rounded px-2 py-1 mb-2 select-all">npx tsc --noEmit --skipLibCheck</code>
-                <textarea placeholder="Paste output here..." className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-[10px] text-white placeholder-gray-600 resize-none" rows={3} />
-              </div>
-
-              {/* 6 — Portal Info */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Portal Info</div>
-                <div className="space-y-1 text-[10px]">
-                  <div><span className="text-gray-500">Sport:</span> <span className="text-gray-300">Darts</span></div>
-                  <div><span className="text-gray-500">Slug:</span> <span className="text-gray-300 font-mono">{typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''}</span></div>
-                  <div><span className="text-gray-500">File:</span> <span className="text-gray-300 font-mono">src/app/darts/[slug]/page.tsx</span></div>
-                  <div><span className="text-gray-500">LocalStorage keys:</span> <span className="text-gray-300">{typeof window !== 'undefined' ? Object.keys(localStorage).filter(k => k.startsWith('lumio_')).length : 0}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <DartsAISection context="default" player={player} session={session} />
-    </div>
-  );
-}
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ─── DartConnect Integration ──────────────────────────────────────────────────
@@ -7936,7 +7676,79 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
       case 'equipment':     return <EquipmentSetupView player={player} session={session} />;
       case 'career':        return <CareerPlanningView onNavigate={setActiveSection} player={player} session={session} />;
       case 'datahub':       return <DataHubView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'settings':      return <SettingsView player={player} onNavigate={setActiveSection} session={session} />;
+      case 'settings':      return (
+        <SportsSettings
+          sport="darts"
+          slug={slug}
+          sportLabel="Darts"
+          entity="player"
+          accentColour="#dc2626"
+          accentLight="#ef4444"
+          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
+          storagePrefix="lumio_darts_"
+          profile={{
+            name: 'Full Name',
+            tour: 'Tour',
+            tourValue: 'PDC Professional',
+            ranking: 'Ranking',
+            rankingValue: `#${player.pdcRank}`,
+            coach: 'Coach',
+            coachValue: player.coach,
+            agent: 'Manager',
+            agentValue: player.manager,
+            playerIdLabel: 'PDC Player ID',
+            staffInviteRoles: ['Coach','Manager','Physio','Sports Psychologist','Admin'],
+          }}
+          configFields={[
+            { id: 'pdcId', label: 'PDC Player ID', description: 'For live ranking and tour data', kind: 'text', placeholder: 'e.g. PDC-0019' },
+            { id: 'boardSetup', label: 'Board Setup', kind: 'select', options: ['Winmau','Target','Unicorn'], defaultValue: 'Winmau' },
+            { id: 'dartWeight', label: 'Dart Weight Preference', kind: 'select', options: ['21g','22g','23g','24g','25g','26g'], defaultValue: player.dartSetup?.barrelWeight || '23g' },
+          ]}
+          integrationGroups={[
+            {
+              title: 'DATA PROVIDERS',
+              items: [
+                { name: 'PDC Profile', desc: 'Rankings & tour data', connected: true },
+                { name: 'WDF Profile', desc: 'World Darts Federation stats' },
+                { name: 'STATSports', desc: 'Movement & load tracking' },
+                { name: 'Softronic', desc: 'Tournament scoring software' },
+                { name: 'Dartfish', desc: 'Video analysis' },
+                { name: 'DartConnect', desc: 'Digital scorekeeping', connected: true },
+              ],
+            },
+            {
+              title: 'COMMUNICATION',
+              items: [
+                { name: 'Slack', desc: 'Team messaging & alerts', connected: true },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Player & manager messaging' },
+              ],
+            },
+          ]}
+          voiceOptions={[
+            { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Warm, confident British female — ideal for morning briefings' },
+            { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — clear and composed' },
+            { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'Professional British male — steady matchday narration' },
+          ]}
+          teamInvite={{
+            enabled: true,
+            staffCount: 1,
+            pendingInvites: 0,
+            roleOptions: ['Coach','Manager','Physio','Sports Psychologist','Admin'],
+            members: [
+              { name: player.coach, role: 'Coach', access: 'Full' },
+              { name: player.manager, role: 'Manager', access: 'Commercial' },
+              { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
+            ],
+          }}
+          showWorldClock
+          showAppearance
+          showDeveloperTools
+          devApiRouteOptions={['/api/ai/darts']}
+          extraSections={<DartsAISection context="default" player={player} session={session} />}
+        />
+      );
       case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} player={player} session={session} />;
       case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} player={player} session={session} />;
       case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} player={player} session={session} />;
@@ -8009,7 +7821,9 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
 
         <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
-            const items = visibleSidebarItems.filter(i => i.group === group);
+            const items = visibleSidebarItems
+              .filter(i => i.group === group)
+              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
             return (
               <div key={group} className="mb-3">
                 {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
