@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -5419,7 +5420,46 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
             const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
             const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
               || allVoices.find(v => savedVoiceName === 'George' ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male') : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
-            const utterance = new SpeechSynthesisUtterance(brief)
+            let speechText = brief
+            if (!speechText) {
+              const scheduleRaw = [
+                { id:'gs1', time:'07:00', label:'Range session — 90 min',              highlight:false },
+                { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
+                { id:'gs3', time:'09:24', label:'R2 tee time — with McIlroy, Scheffler', highlight:true },
+                { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
+                { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+                { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
+                { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+                { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
+              ]
+              const checkedState: Record<string,boolean> = JSON.parse(localStorage.getItem('golf_schedule_checked') || '{}')
+              const cancelledState: Record<string,boolean> = JSON.parse(localStorage.getItem('golf_schedule_cancelled') || '{}')
+              const schedItems = buildScheduleItems(scheduleRaw, checkedState, cancelledState)
+              const roundupChannels = [
+                { label: 'Agent Messages', count: 2, urgent: true },
+                { label: 'Tournament Desk', count: 3, urgent: true },
+                { label: 'Caddie Notes', count: 2, urgent: false },
+                { label: 'Media & Sponsor', count: 3, urgent: false },
+                { label: 'Physio & Medical', count: 1, urgent: true },
+                { label: 'Travel & Hotels', count: 2, urgent: false },
+                { label: 'Financial', count: 1, urgent: false },
+              ]
+              const isPlayerRole = !session.role || session.role === 'player'
+              const smartPlayerName = isPlayerRole
+                ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session.userName || player.name)
+                : player.name
+              speechText = generateSmartBriefing({
+                now: new Date(),
+                playerName: smartPlayerName,
+                schedule: schedItems,
+                match: null,
+                roundupSummary: buildRoundupSummary(roundupChannels),
+                sport: 'golf',
+                timezone: getUserTimezone(),
+                extra: `OWGR number ${player.owgr}. BMW International Open, Munich.`,
+              })
+            }
+            const utterance = new SpeechSynthesisUtterance(speechText)
             if (match) utterance.voice = match
             utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
             utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95

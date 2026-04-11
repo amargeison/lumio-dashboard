@@ -4,6 +4,7 @@ import { use, useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line, ReferenceLine, Cell } from 'recharts';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 
 
 export const CRICKET_ROLES = [
@@ -2194,7 +2195,16 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   const speakBriefing = () => {
     if (typeof window === 'undefined') return
     if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
-    const text = aiSummary || 'Good morning. Championship opener in 3 days. Brook passed his final fitness check. Coad bowled 12 overs in nets. Lancashire opener Jennings flagged as vulnerable to the nip-backer early. Weather looks good. Ticket sales at 94% capacity.'
+    const text = aiSummary || generateSmartBriefing({
+      now: new Date(),
+      playerName: session?.userName || 'Director',
+      schedule: [],
+      match: null,
+      roundupSummary: { totalMessages: 0, urgentCount: 0, urgentLabels: [] },
+      sport: 'cricket',
+      timezone: getUserTimezone(),
+      extra: 'Championship opener in 3 days. Squad: 16 of 18 available.',
+    })
     const u = new SpeechSynthesisUtterance(text)
     const voices = window.speechSynthesis.getVoices()
     const pref = voices.find(v => v.name.includes('Daniel') || v.name.includes('Google UK') || v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en'))
