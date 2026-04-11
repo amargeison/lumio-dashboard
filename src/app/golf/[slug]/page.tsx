@@ -439,22 +439,38 @@ Generate a concise AI department summary for the "${context}" section. Focus: ${
 
 Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos} (${player.race_to_dubai_points} pts), career high #${player.career_high_owgr}, SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Current event: BMW International Open, Munich. Coach: ${player.coach}, Caddie: ${player.caddie}.
 
-Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No headers. Respond in plain text only — no markdown, no bullet characters, no bold or italic formatting.`
+Cover the four or five most important insights for this section in one flowing paragraph. Around 120–160 words. Plain prose only — no bullet points, no dashes, no numbered lists, no emoji at the start of lines, no bold, no headers, no markdown.`
           }]
         })
       })
       const data = await res.json()
-      setSummary(cleanResponse(data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''))
+      if (!res.ok || data.error) {
+        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || `HTTP ${res.status}`)
+        console.error('[GolfAISection] API error:', errMsg, data)
+        setSummary(`⚠️ AI service error: ${errMsg}. Check ANTHROPIC_API_KEY in Settings → Developer Tools.`)
+        setGenerated(true)
+        setLoading(false)
+        return
+      }
+      const raw = data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
+      if (!raw.trim()) {
+        console.warn('[GolfAISection] Empty response from API:', data)
+        setSummary('⚠️ AI returned an empty response. Try again or check API key configuration.')
+      } else {
+        setSummary(cleanResponse(raw) || raw)
+      }
       setGenerated(true)
-    } catch { setSummary('Unable to generate summary.') }
+    } catch (err) {
+      console.error('[GolfAISection] Fetch failed:', err)
+      setSummary('⚠️ Unable to reach AI service. Check your network connection.')
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    if (!hasGenerated.current) {
-      hasGenerated.current = true
-      generateSummary()
-    }
+    if (hasGenerated.current) return
+    hasGenerated.current = true
+    generateSummary()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -482,7 +498,12 @@ Write 4-5 bullet points. Start each with a relevant emoji. Max 180 words. No hea
               Generate AI summary for this section →
             </button>
           )}
-          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+          {loading && (
+            <div>
+              <div className="text-[10px] text-gray-600 mb-2">Generating AI summary…</div>
+              <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>
+            </div>
+          )}
           {summary && !loading && <div>{renderSummary(summary)}</div>}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
