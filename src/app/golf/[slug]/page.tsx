@@ -37,6 +37,34 @@ function useGolfProfilePhoto(): string | null {
   }, [])
   return photo
 }
+function useGolfBrandName(): string {
+  const [name, setName] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_golf_brand_name') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_golf_brand_name') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useGolfBrandLogo(): string {
+  const [logo, setLogo] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_golf_brand_logo') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setLogo(localStorage.getItem('lumio_golf_brand_logo') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return logo
+}
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -1053,8 +1081,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar */}
-      <div className="mb-5 mt-4">
+      {/* Quick Actions — below tab bar (Today only) */}
+      {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -1081,7 +1109,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
@@ -5625,7 +5653,7 @@ export default function GolfTourPage() {
   )
 }
 
-function GolfPortalInner({ session }: { session: SportsDemoSession }) {
+export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const activeRole = session.role;
@@ -5636,6 +5664,8 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useGolfProfileName()
   const liveProfilePhotoOuter = useGolfProfilePhoto()
+  const liveBrandName = useGolfBrandName()
+  const liveBrandLogo = useGolfBrandLogo()
   const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
 
   // Sidebar pin state
@@ -5740,6 +5770,8 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           accentLight="#16a34a"
           session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
           storagePrefix="lumio_golf_"
+          brandNameValue={liveBrandName}
+          brandLogoUrl={liveBrandLogo}
           profile={{
             name: 'Full Name',
             tour: 'Tour / Circuit',
@@ -5898,11 +5930,13 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
         onMouseLeave={handleSidebarLeave}>
         <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(21,128,61,0.15)', border: '1px solid rgba(21,128,61,0.3)' }}>⛳</div>
+            {liveBrandLogo
+              ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+              : session.logoDataUrl
+                ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(21,128,61,0.15)', border: '1px solid rgba(21,128,61,0.3)' }}>⛳</div>
             }
-            {sidebarExpanded && <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>Lumio Golf</span>}
+            {sidebarExpanded && <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>{liveBrandName || 'Lumio Golf'}</span>}
           </div>
           {sidebarExpanded && (
             <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#15803D' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
@@ -5963,14 +5997,16 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
-        {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
-          style={{ backgroundColor: '#15803D', color: '#ffffff' }}>
-          <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-            To see your own data — sign up for 3 months free →
-          </a>
-        </div>
+        {/* Demo workspace banner — hidden when rendered inside /golf/app for a real signed-in user */}
+        {session.isDemoShell !== false && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+            style={{ backgroundColor: '#15803D', color: '#ffffff' }}>
+            <span>This is a demo · sample data</span>
+            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+              Apply for your free founding access → lumiosports.com/sports-signup
+            </a>
+          </div>
+        )}
 
         {/* Content + card */}
         <div className="flex-1 flex overflow-hidden">

@@ -82,6 +82,10 @@ export interface SportsSettingsProps {
   photoDataUrl?: string | null
   onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void
   onLogoRemove?: () => void
+  brandNameValue?: string
+  brandLogoUrl?: string
+  onBrandNameChange?: (v: string) => void
+  onBrandLogoChange?: (v: string) => void
 }
 
 // ─── DATA ──────────────────────────────────────────────────────────────────
@@ -141,6 +145,8 @@ export default function SportsSettings(props: SportsSettingsProps) {
   const profilePhotoKey = `${storagePrefix}profile_photo`
   const nameKey = `${storagePrefix}name`
   const nicknameKey = `${storagePrefix}nickname`
+  const brandNameKey = `${storagePrefix}brand_name`
+  const brandLogoKey = `${storagePrefix}brand_logo`
   const brandPrimaryKey = `${storagePrefix}brand_primary`
   const brandSecondaryKey = `${storagePrefix}brand_secondary`
   const demoActiveKey = `${storagePrefix}demo_active`
@@ -158,6 +164,24 @@ export default function SportsSettings(props: SportsSettingsProps) {
   const [nicknameValue, setNicknameValue] = useState<string>(() =>
     typeof window !== 'undefined' ? localStorage.getItem(nicknameKey) || '' : ''
   )
+  const [editingBrandName, setEditingBrandName] = useState(false)
+  const [brandNameLocal, setBrandNameLocal] = useState<string>(() => {
+    if (props.brandNameValue !== undefined) return props.brandNameValue
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem(brandNameKey) || ''
+  })
+  const [brandLogoLocal, setBrandLogoLocal] = useState<string>(() => {
+    if (props.brandLogoUrl !== undefined) return props.brandLogoUrl
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem(brandLogoKey) || ''
+  })
+  // Sync with parent if controlled
+  useEffect(() => {
+    if (props.brandNameValue !== undefined) setBrandNameLocal(props.brandNameValue)
+  }, [props.brandNameValue])
+  useEffect(() => {
+    if (props.brandLogoUrl !== undefined) setBrandLogoLocal(props.brandLogoUrl)
+  }, [props.brandLogoUrl])
   const [ttsOn, setTtsOn] = useState<boolean>(() =>
     typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true
   )
@@ -583,6 +607,106 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Brand / Club Name */}
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-sm" style={{ color: '#9CA3AF' }}>Brand / Club Name</span>
+            {editingBrandName ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  value={brandNameLocal}
+                  onChange={e => setBrandNameLocal(e.target.value)}
+                  placeholder='e.g. "Team Margeison"'
+                  autoFocus
+                  style={{ background: '#ffffff10', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 180 }}
+                />
+                <button
+                  onClick={() => {
+                    localStorage.setItem(brandNameKey, brandNameLocal)
+                    if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                    props.onBrandNameChange?.(brandNameLocal)
+                    setEditingBrandName(false)
+                  }}
+                  style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditingBrandName(false)}
+                  style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #ffffff20', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="text-sm" style={{ color: brandNameLocal ? '#F9FAFB' : '#475569', fontStyle: brandNameLocal ? 'normal' : 'italic' }}>
+                  {brandNameLocal || 'Not set'}
+                </span>
+                <button
+                  onClick={() => setEditingBrandName(true)}
+                  style={{ background: 'transparent', color: ACCENT, border: `1px solid ${ACCENT}30`, borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Brand / Club Logo */}
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div>
+              <div className="text-sm" style={{ color: '#9CA3AF' }}>Brand / Club Logo</div>
+              <div style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>Shows in top-left corner</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {brandLogoLocal && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brandLogoLocal} alt="Brand logo" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'contain', background: '#ffffff10', padding: 4 }} />
+              )}
+              <label style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {brandLogoLocal ? 'Change Logo' : 'Upload Logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const canvas = document.createElement('canvas')
+                    canvas.width = 200; canvas.height = 200
+                    const ctx = canvas.getContext('2d')
+                    if (!ctx) return
+                    const img = new window.Image()
+                    img.onload = () => {
+                      const size = Math.min(img.width, img.height)
+                      ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 200, 200)
+                      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+                      try { localStorage.setItem(brandLogoKey, dataUrl) } catch {}
+                      setBrandLogoLocal(dataUrl)
+                      if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                      props.onBrandLogoChange?.(dataUrl)
+                    }
+                    img.src = URL.createObjectURL(file)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+              {brandLogoLocal && (
+                <button
+                  onClick={() => {
+                    try { localStorage.removeItem(brandLogoKey) } catch {}
+                    setBrandLogoLocal('')
+                    if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                    props.onBrandLogoChange?.('')
+                  }}
+                  style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef444430', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
 
           {profile.tour && (

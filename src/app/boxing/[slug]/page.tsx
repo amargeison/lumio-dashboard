@@ -36,6 +36,34 @@ function useBoxingProfilePhoto(): string | null {
   }, [])
   return photo
 }
+function useBoxingBrandName(): string {
+  const [name, setName] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_boxing_brand_name') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_boxing_brand_name') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useBoxingBrandLogo(): string {
+  const [logo, setLogo] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_boxing_brand_logo') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setLogo(localStorage.getItem('lumio_boxing_brand_logo') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return logo
+}
 
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -805,6 +833,10 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [photoFit, setPhotoFit] = useState<'cover'|'contain'>(() => {
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   })
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
+    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_photo_frame') : null } catch { return null }
+  })
 
   // Morning Roundup state
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
@@ -990,8 +1022,8 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar */}
-      <div className="mb-5 mt-4">
+      {/* Quick Actions — below tab bar (Today only) */}
+      {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -1018,7 +1050,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
@@ -1495,12 +1527,12 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {/* TEAM — 4 sub-tabs */}
       {dashTab === 'team' && (() => {
         const demoStaffPhotos: Record<string, string> = {
-          'Jim Bevan': '/staff_photos/Carlos_Mendez.jpg',
-          'Danny Walsh': '/staff_photos/Marcus_Webb.jpg',
-          'Dr Sarah Mitchell': '/staff_photos/Sarah_Lee.jpg',
-          'Ricky Dunn': '/staff_photos/James_Okafor.jpg',
-          'Tony Malone': '/staff_photos/Rick_Dalton.jpg',
-          'DAZN': '/staff_photos/Elena_Russo.jpg',
+          'Jim Bevan': '/Carlos_Mendez.jpg',
+          'Danny Walsh': '/Marcus_Webb.jpg',
+          'Dr Sarah Mitchell': '/Sarah_Lee.jpg',
+          'Ricky Dunn': '/James_Okafor.jpg',
+          'Tony Malone': '/Rick_Dalton.jpg',
+          'DAZN': '/Elena_Russo.jpg',
         }
         const [teamSubTab, setTeamSubTab] = [teamSub, setTeamSub]
         return (
@@ -1523,7 +1555,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               ].map((m, i) => (
                 <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>
-                    {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover" /> : m.initials}
+                    {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /> : m.initials}
                   </div>
                   <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#6B7280' }}>{m.status}</div></div>
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? '#22C55E' : '#374151' }} />
@@ -1550,18 +1582,37 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             </div>
           )}
           {teamSubTab === 'info' && (
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                {name:'Jim Bevan',role:'Head Trainer',overall:95,stats:[{l:'TAC',v:96},{l:'MOT',v:94},{l:'EXP',v:97},{l:'COM',v:93},{l:'STR',v:91},{l:'PRE',v:95}]},
-                {name:'Danny Walsh',role:'Manager',overall:92,stats:[{l:'NEG',v:95},{l:'NET',v:93},{l:'EXP',v:94},{l:'COM',v:91},{l:'DEA',v:96},{l:'REL',v:90}]},
-                {name:'Dr Mitchell',role:'Fight Doctor',overall:96,stats:[{l:'DIA',v:97},{l:'TRT',v:96},{l:'PRE',v:94},{l:'CON',v:95},{l:'EXP',v:93},{l:'KNO',v:97}]},
-                {name:'Ricky Dunn',role:'Conditioning',overall:90,stats:[{l:'FIT',v:93},{l:'STR',v:91},{l:'SPD',v:92},{l:'END',v:94},{l:'REC',v:89},{l:'PRE',v:88}]},
-              ].map((p,i)=>(
-                <div key={i} className="rounded-xl p-4" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
-                  <div className="flex items-center justify-between mb-3"><div><div className="text-sm font-bold text-white">{p.name}</div><div className="text-[10px]" style={{color:'#dc2626'}}>{p.role}</div></div><div className="text-2xl font-black" style={{color:'#22C55E'}}>{p.overall}</div></div>
-                  <div className="grid grid-cols-3 gap-1">{p.stats.map(s=>(<div key={s.l} className="flex items-center justify-between py-0.5 text-[10px]" style={{borderBottom:'1px solid #1F2937'}}><span style={{color:'#6B7280'}}>{s.l}</span><span className="font-bold text-white">{s.v}</span></div>))}</div>
-                </div>
-              ))}
+            <div>
+              <h2 className="text-sm font-black mb-3" style={{ color: '#F9FAFB' }}>Team Info</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {[
+                  { initials:'JB', name:'Jim Bevan', role:'Head Trainer', dept:'Training', rating:95, deptColor:'#22C55E', ref:'LUM-001', stats:{TAC:96,MOT:94,EXP:97,COM:93,STR:91,PRE:95}, speciality:'Boxing tactical coach', location:'London', available:true },
+                  { initials:'DW', name:'Danny Walsh', role:'Manager', dept:'Commercial', rating:92, deptColor:'#F59E0B', ref:'LUM-002', stats:{NEG:95,NET:93,EXP:94,COM:91,DEA:96,REL:90}, speciality:'Fight negotiations', location:'London', available:true },
+                  { initials:'SM', name:'Dr Sarah Mitchell', role:'Fight Doctor', dept:'Medical', rating:96, deptColor:'#EF4444', ref:'LUM-003', stats:{DIA:97,TRT:96,PRE:94,CON:95,EXP:93,KNO:97}, speciality:'Sports medicine', location:'London', available:true },
+                  { initials:'RD', name:'Ricky Dunn', role:'Conditioning', dept:'Fitness', rating:90, deptColor:'#0ea5e9', ref:'LUM-004', stats:{FIT:93,STR:91,SPD:92,END:94,REC:89,PRE:88}, speciality:'Strength & conditioning', location:'London', available:true },
+                  { initials:'TM', name:'Tony Malone', role:'Cutman', dept:'Corner', rating:93, deptColor:'#8B5CF6', ref:'LUM-005', stats:{SWF:95,PRE:94,CLM:92,EXP:96,TEC:91,REA:93}, speciality:'Fight night corner', location:'London', available:true },
+                  { initials:'DZ', name:'DAZN', role:'Broadcast', dept:'Media', rating:88, deptColor:'#F97316', ref:'LUM-006', stats:{REA:90,PRO:88,NET:92,EXP:87,COM:89,COV:91}, speciality:'Live broadcast', location:'London', available:true },
+                ].map((m, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${m.deptColor}18 0%, rgba(0,0,0,0.6) 100%)`, border: `1px solid ${m.deptColor}35` }}>
+                    <div className="flex items-start justify-between px-2 pt-2 pb-1">
+                      <div><div className="text-base font-black leading-none" style={{ color: '#F9FAFB' }}>{m.rating}</div><div className="text-[7px] font-bold uppercase tracking-widest mt-0.5" style={{ color: m.deptColor }}>{m.role.split(' ')[0].toUpperCase()}</div></div>
+                      <span className="text-[7px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${m.deptColor}25`, color: m.deptColor }}>{m.dept}</span>
+                    </div>
+                    <div className="flex justify-center pb-1">
+                      {demoStaffPhotos[m.name] ? (<div className="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0" style={{ borderColor: `${m.deptColor}60` }}><img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /></div>) : (<div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border" style={{ backgroundColor: `${m.deptColor}20`, borderColor: `${m.deptColor}60`, color: m.deptColor }}>{m.initials}</div>)}
+                    </div>
+                    <div className="text-center px-2 pb-1"><div className="text-[10px] font-black text-white leading-tight">{m.name}</div><div className="text-[8px] mt-0.5" style={{ color: m.deptColor }}>{m.role}</div></div>
+                    <div className="grid grid-cols-3 gap-x-0 px-1.5 pb-1" style={{ borderTop: `1px solid ${m.deptColor}20`, borderBottom: `1px solid ${m.deptColor}20` }}>
+                      {Object.entries(m.stats).map(([k, v], si) => (<div key={k} className="flex items-center justify-center gap-0.5 py-0.5 text-[8px]" style={{ borderRight: (si+1)%3!==0?`1px solid ${m.deptColor}15`:'none', borderBottom: si<3?`1px solid ${m.deptColor}15`:'none' }}><span className="font-black text-white">{v}</span><span style={{ color: m.deptColor }}>{k}</span></div>))}
+                    </div>
+                    <div className="px-2 py-1 space-y-0.5 text-[8px]">
+                      {[['Speciality',m.speciality],['Location',m.location]].map(([l,v]) => (<div key={l} className="flex justify-between"><span style={{ color: '#6B7280' }}>{l}</span><span className="text-white text-right truncate ml-1">{v}</span></div>))}
+                      <div className="flex justify-between"><span style={{ color: '#6B7280' }}>Available</span><span className="font-bold" style={{ color: m.available?'#22C55E':'#EF4444' }}>{m.available?'Yes':'No'}</span></div>
+                    </div>
+                    <div className="px-2 pb-2 pt-0.5 flex items-center justify-between"><span className="text-[7px]" style={{ color: '#374151' }}>{m.ref}</span><button className="flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${m.deptColor}20`, color: m.deptColor, border: `1px solid ${m.deptColor}30` }}>👤 Profile</button></div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {teamSubTab === 'record' && (
@@ -6456,7 +6507,7 @@ function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: 
   )
 }
 
-function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
+export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
@@ -6465,6 +6516,8 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useBoxingProfileName()
   const liveProfilePhotoOuter = useBoxingProfilePhoto()
+  const liveBrandName = useBoxingBrandName()
+  const liveBrandLogo = useBoxingBrandLogo()
   const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -6558,6 +6611,8 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
           accentLight="#ef4444"
           session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
           storagePrefix="lumio_boxing_"
+          brandNameValue={liveBrandName}
+          brandLogoUrl={liveBrandLogo}
           profile={{
             name: 'Full Name',
             tour: 'Tour',
@@ -6662,17 +6717,21 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         {/* Sidebar Header */}
         <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                  🥊
-                </div>
+            {liveBrandLogo
+              ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+              : session.logoDataUrl
+                ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                    🥊
+                  </div>
             }
             {sidebarExpanded && (
-              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Lumio Fight
-              </span>
+              liveBrandName
+                ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>{liveBrandName}</span>
+                : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Lumio Fight
+                  </span>
             )}
           </div>
           {sidebarExpanded && (
@@ -6745,14 +6804,16 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
-        {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
-          style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
-          <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-            To see your own data — sign up for 3 months free →
-          </a>
-        </div>
+        {/* Demo workspace banner — hidden when rendered inside /boxing/app for a real signed-in user */}
+        {session.isDemoShell !== false && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+            style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
+            <span>This is a demo · sample data</span>
+            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+              Apply for your free founding access → lumiosports.com/sports-signup
+            </a>
+          </div>
+        )}
         {(() => {
           try {
             const stored = localStorage.getItem('lumio_boxing_fight_camp')
