@@ -301,6 +301,16 @@ export default function GolfPage() {
         </div>
       </section>
 
+      {/* Founding Member Banner */}
+      <div style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(90deg, rgba(139,92,246,0.1), rgba(0,0,0,0))', borderTop: '1px solid rgba(139,92,246,0.2)', borderBottom: '1px solid rgba(139,92,246,0.2)' }}>
+        <span style={{ color: '#a855f7', fontSize: 13, fontWeight: 700 }}>🎯 Founding member spots: 20 available · Free for 3 months · No card needed</span>
+      </div>
+
+      {/* Powered by Claude AI */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0', margin: '24px 0' }}>
+        <span style={{ color: '#6B7280', fontSize: 12, fontWeight: 600 }}>Powered by Claude AI · Built by Anthropic</span>
+      </div>
+
       {/* Features Grid */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-20">
         <h2 className="text-3xl md:text-4xl font-black text-center mb-3" style={{ color: '#F9FAFB' }}>Everything a touring pro needs. In one place.</h2>
@@ -431,26 +441,20 @@ export default function GolfPage() {
         </div>
       </section>
 
-      {/* Early Access */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <div className="rounded-2xl p-8 md:p-12 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-          <h2 className="text-3xl md:text-4xl font-black mb-4" style={{ color: '#F9FAFB' }}>Be one of the first players on Lumio Golf.</h2>
-          <p className="text-sm max-w-2xl mx-auto mb-6" style={{ color: MUTED }}>
-            We&apos;re working with a small number of professional players and their teams to shape the product. 6 months free. No commitment. All we ask for at the end is an honest case study.
-          </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} className="text-[10px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${ACCENT}10`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>{p}</span>
-            ))}
-          </div>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <a href="mailto:hello@lumiosports.com?subject=Golf%20Early%20Access" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
-              Apply for early access →
-            </a>
-            <Link href="/golf/golf-demo" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB' }}>
-              Or try the demo →
-            </Link>
-          </div>
+      {/* Founding Member CTA */}
+      <section style={{ textAlign: 'center', padding: '80px 24px', background: '#07080F' }}>
+        <div style={{ fontSize: 13, color: '#8B5CF6', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16 }}>FOUNDING MEMBER · 20 SPOTS</div>
+        <h2 style={{ fontSize: 32, fontWeight: 800, color: '#F9FAFB', marginBottom: 12 }}>Want to be one of our first 20 golf athletes?</h2>
+        <p style={{ fontSize: 16, color: '#9CA3AF', maxWidth: 500, margin: '0 auto 32px' }}>
+          3 months free. No card. No commitment. All we ask is honest feedback.
+        </p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="/sports-signup?sport=golf" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: '#15803D', color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none' }}>
+            Apply for founding access →
+          </a>
+          <a href="/golf/golf-demo" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, textDecoration: 'none', border: '1px solid #374151' }}>
+            Or try the demo →
+          </a>
         </div>
       </section>
     </div>

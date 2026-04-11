@@ -294,6 +294,16 @@ export default function RugbyLandingPage() {
         </div>
       </section>
 
+      {/* Founding Member Banner */}
+      <div style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(90deg, rgba(139,92,246,0.1), rgba(0,0,0,0))', borderTop: '1px solid rgba(139,92,246,0.2)', borderBottom: '1px solid rgba(139,92,246,0.2)' }}>
+        <span style={{ color: '#a855f7', fontSize: 13, fontWeight: 700 }}>🎯 Founding member spots: 20 available · Free for 3 months · No card needed</span>
+      </div>
+
+      {/* Powered by Claude AI */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0', margin: '24px 0' }}>
+        <span style={{ color: '#6B7280', fontSize: 12, fontWeight: 600 }}>Powered by Claude AI · Built by Anthropic</span>
+      </div>
+
       {/* ── FEATURE GRID ── */}
       <section id="features" style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -447,7 +457,7 @@ export default function RugbyLandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/contact" style={{ display: 'block', textAlign: 'center', marginTop: 24, padding: '14px 24px', borderRadius: 10, backgroundColor: PURPLE, color: '#fff', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Start free trial</Link>
+              <Link href="/sports-signup?sport=rugby" style={{ display: 'block', textAlign: 'center', marginTop: 24, padding: '14px 24px', borderRadius: 10, backgroundColor: PURPLE, color: '#fff', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Apply for founding access →</Link>
             </div>
             {/* Club Elite */}
             <div style={{ backgroundColor: CARD, border: `2px solid ${PURPLE}`, borderRadius: 16, padding: 32, position: 'relative' }}>
@@ -468,28 +478,20 @@ export default function RugbyLandingPage() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section style={{ padding: '120px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 48, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
-            The Championship Rugby Club OS that coaches actually use.
-          </h2>
-          <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Join the clubs using Lumio Rugby to manage salary cap, GPS performance, franchise readiness, and AI coaching intelligence from one platform.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['53 sections', 'AI powered', 'GPS integrated', 'Franchise ready'].map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: `${PURPLE}1A`, border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              View Hartfield RFC demo →
-            </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Book a walkthrough
-            </Link>
-          </div>
+      {/* ── FOUNDING MEMBER CTA ── */}
+      <section style={{ textAlign: 'center', padding: '80px 24px', background: '#07080F' }}>
+        <div style={{ fontSize: 13, color: '#8B5CF6', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16 }}>FOUNDING MEMBER · 20 SPOTS</div>
+        <h2 style={{ fontSize: 32, fontWeight: 800, color: '#F9FAFB', marginBottom: 12 }}>Want to be one of our first 20 rugby athletes?</h2>
+        <p style={{ fontSize: 16, color: '#9CA3AF', maxWidth: 500, margin: '0 auto 32px' }}>
+          3 months free. No card. No commitment. All we ask is honest feedback.
+        </p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="/sports-signup?sport=rugby" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: '#7C3AED', color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none' }}>
+            Apply for founding access →
+          </a>
+          <a href="/rugby/rugby-demo" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, textDecoration: 'none', border: '1px solid #374151' }}>
+            Or try the demo →
+          </a>
         </div>
       </section>
     </div>

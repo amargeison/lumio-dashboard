@@ -490,6 +490,16 @@ export default function TennisLandingPage() {
         </div>
       </section>
 
+      {/* Founding Member Banner */}
+      <div style={{ textAlign: 'center', padding: '16px', background: 'linear-gradient(90deg, rgba(139,92,246,0.1), rgba(0,0,0,0))', borderTop: '1px solid rgba(139,92,246,0.2)', borderBottom: '1px solid rgba(139,92,246,0.2)' }}>
+        <span style={{ color: '#a855f7', fontSize: 13, fontWeight: 700 }}>🎯 Founding member spots: 20 available · Free for 3 months · No card needed</span>
+      </div>
+
+      {/* Powered by Claude AI */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0', margin: '24px 0' }}>
+        <span style={{ color: '#6B7280', fontSize: 12, fontWeight: 600 }}>Powered by Claude AI · Built by Anthropic</span>
+      </div>
+
       {/* ── WORLD FIRST — GPS INTELLIGENCE ── */}
       <section style={{ padding: '0 24px 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -521,7 +531,7 @@ export default function TennisLandingPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 16 }}>
-                <a href="mailto:hello@lumiosports.com?subject=Lumio%20GPS%20Tracker%20Order" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Order Lumio GPS Tracker →</a>
+                <Link href="/sports-signup?sport=tennis" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Apply for free founding access →</Link>
                 <Link href="/tennis/demo" style={{ background: 'transparent', color: '#06b6d4', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: '1px solid #06b6d4', cursor: 'pointer', textDecoration: 'none' }}>See it in the portal</Link>
               </div>
             </div>
@@ -682,9 +692,9 @@ export default function TennisLandingPage() {
             ))}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <a href="mailto:hello@lumiosports.com?subject=Lumio%20GPS%20Tracker%20Order" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
-              Order Your Lumio GPS Tracker →
-            </a>
+            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+              Apply for free founding access →
+            </Link>
           </div>
         </div>
       </section>
@@ -812,28 +822,20 @@ export default function TennisLandingPage() {
         </div>
       </section>
 
-      {/* ── EARLY ACCESS CTA ── */}
-      <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 48, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
-            Be one of the first players on Lumio Tour.
-          </h2>
-          <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            We&apos;re working with a small number of professional players and their teams to shape the product. 3 months free. No commitment. All we ask for at the end is an honest case study.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['3 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              Apply for free founding access →
-            </Link>
-            <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Or try the demo →
-            </Link>
-          </div>
+      {/* ── FOUNDING MEMBER CTA ── */}
+      <section style={{ textAlign: 'center', padding: '80px 24px', background: '#07080F' }}>
+        <div style={{ fontSize: 13, color: '#8B5CF6', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16 }}>FOUNDING MEMBER · 20 SPOTS</div>
+        <h2 style={{ fontSize: 32, fontWeight: 800, color: '#F9FAFB', marginBottom: 12 }}>Want to be one of our first 20 tennis athletes?</h2>
+        <p style={{ fontSize: 16, color: '#9CA3AF', maxWidth: 500, margin: '0 auto 32px' }}>
+          3 months free. No card. No commitment. All we ask is honest feedback.
+        </p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none' }}>
+            Apply for founding access →
+          </a>
+          <a href="/tennis/tennis-demo" style={{ display: 'inline-flex', padding: '16px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, textDecoration: 'none', border: '1px solid #374151' }}>
+            Or try the demo →
+          </a>
         </div>
       </section>
     </div>
