@@ -4469,8 +4469,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       <main className="flex-1 overflow-y-auto flex flex-col">
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
-          <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up for 3 months free →</a>
+          <span>This is a demo · sample data</span>
+          <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
         </div>
 
         {/* FSR button bar */}

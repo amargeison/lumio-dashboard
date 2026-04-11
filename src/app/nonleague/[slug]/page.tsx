@@ -201,8 +201,8 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
 
       {/* Demo workspace banner */}
       <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
-        <span>Demo workspace · sample data</span>
-        <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>To see your own data — sign up free →</a>
+        <span>This is a demo · sample data</span>
+        <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
       </div>
 
       {/* Top-right avatar + notifications */}
