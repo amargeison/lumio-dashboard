@@ -5720,12 +5720,24 @@ export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
 
+  // Customise Portal — hidden items
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { const saved = localStorage.getItem('lumio_golf_hidden_items'); return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
+  useEffect(() => {
+    const handler = (e: Event) => { const ce = e as CustomEvent; if (ce.detail?.storagePrefix === 'lumio_golf_') setHiddenItems(ce.detail.hiddenItems) }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+  const isHidden = (key: string) => hiddenItems.includes(key)
+
   // Role config
   const currentRole = (session.role || 'player') as keyof typeof GOLF_ROLE_CONFIG
   const roleConfig = GOLF_ROLE_CONFIG[currentRole] ?? GOLF_ROLE_CONFIG.player
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
-  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+  const visibleSidebarItems = (roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))).filter(item => !isHidden(item.id))
 
   // Quick Wins dismissed state
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
@@ -5860,6 +5872,26 @@ export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
             pendingInvites: 0,
             roleOptions: ['Coach','Short Game Coach','Caddie','Physio','Agent','Fitness Trainer','Mental Coach','Admin'],
           }}
+          navItems={[
+            { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
+            { key: 'owgr', label: 'OWGR & Race to Dubai', emoji: '📊' },
+            { key: 'strokes', label: 'Strokes Gained', emoji: '📈' },
+            { key: 'coursefit', label: 'Course Fit & Strategy', emoji: '🗺️' },
+            { key: 'practicelog', label: 'Practice Log', emoji: '📋' },
+            { key: 'team', label: 'Team Hub', emoji: '👥' },
+            { key: 'caddie', label: 'Caddie Workflow', emoji: '🏌️' },
+            { key: 'sponsorship', label: 'Sponsorship', emoji: '🤝' },
+            { key: 'financial', label: 'Financial Dashboard', emoji: '💰' },
+            { key: 'travel', label: 'Travel & Logistics', emoji: '✈️' },
+          ]}
+          featureItems={[
+            { key: 'morning-briefing', label: 'Morning Briefing', emoji: '🌅', description: 'AI summary at top of dashboard' },
+            { key: 'quick-actions', label: 'Quick Actions bar', emoji: '⚡', description: 'Action buttons below tab bar' },
+            { key: 'ai-section', label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+            { key: 'world-clock', label: 'World Clock', emoji: '🕐', description: 'Multi-timezone clock in banner' },
+            { key: 'player-card', label: 'Player Card', emoji: '🃏', description: 'Stats card in right sidebar' },
+          ]}
+          onVisibilityChange={(items) => setHiddenItems(items)}
           showWorldClock
           showAppearance
           showDeveloperTools

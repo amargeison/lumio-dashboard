@@ -86,6 +86,9 @@ export interface SportsSettingsProps {
   brandLogoUrl?: string
   onBrandNameChange?: (v: string) => void
   onBrandLogoChange?: (v: string) => void
+  navItems?: { key: string; label: string; emoji: string }[]
+  featureItems?: { key: string; label: string; emoji: string; description?: string }[]
+  onVisibilityChange?: (hiddenItems: string[]) => void
 }
 
 // ─── DATA ──────────────────────────────────────────────────────────────────
@@ -136,11 +139,26 @@ export default function SportsSettings(props: SportsSettingsProps) {
     extraSections,
     topExtraSections,
     storagePrefix: storagePrefixProp,
+    navItems,
+    featureItems,
+    onVisibilityChange,
   } = props
 
   const ACCENT = accentColour
   const ACCENT_LIGHT = accentLight || accentColour
   const storagePrefix = storagePrefixProp ?? `lumio_${sport}_`
+
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { const saved = localStorage.getItem(`${storagePrefix}hidden_items`); return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
+  const toggleVisibility = (key: string) => {
+    const updated = hiddenItems.includes(key) ? hiddenItems.filter(k => k !== key) : [...hiddenItems, key]
+    setHiddenItems(updated)
+    localStorage.setItem(`${storagePrefix}hidden_items`, JSON.stringify(updated))
+    onVisibilityChange?.(updated)
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-visibility-changed', { detail: { hiddenItems: updated, storagePrefix } }))
+  }
 
   const profilePhotoKey = `${storagePrefix}profile_photo`
   const nameKey = `${storagePrefix}name`
@@ -1205,6 +1223,53 @@ export default function SportsSettings(props: SportsSettingsProps) {
       )}
 
       {extraSections}
+
+      {/* ── CUSTOMISE PORTAL ──────────────────────────────────────── */}
+      {(navItems || featureItems) && (
+        <div style={{ marginTop: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <span style={{ fontSize: 18 }}>🎛️</span>
+            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0 }}>Customise Portal</h3>
+          </div>
+          <p style={{ color: '#475569', fontSize: 13, marginBottom: 20 }}>Show or hide sections and features. Changes take effect immediately.</p>
+          {navItems && navItems.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Navigation</div>
+              {navItems.map(item => (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 16 }}>{item.emoji}</span>
+                    <span style={{ color: '#e2e8f0', fontSize: 14 }}>{item.label}</span>
+                  </div>
+                  <button onClick={() => toggleVisibility(item.key)} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: hiddenItems.includes(item.key) ? '#1e293b' : ACCENT, position: 'relative' as const, transition: 'background 0.2s' }}>
+                    <span style={{ position: 'absolute' as const, top: 3, left: hiddenItems.includes(item.key) ? 4 : 22, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', display: 'block' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {featureItems && featureItems.length > 0 && (
+            <div>
+              <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Dashboard Features</div>
+              {featureItems.map(item => (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 16 }}>{item.emoji}</span>
+                    <div>
+                      <div style={{ color: '#e2e8f0', fontSize: 14 }}>{item.label}</div>
+                      {item.description && <div style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>{item.description}</div>}
+                    </div>
+                  </div>
+                  <button onClick={() => toggleVisibility(item.key)} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: hiddenItems.includes(item.key) ? '#1e293b' : ACCENT, position: 'relative' as const, transition: 'background 0.2s' }}>
+                    <span style={{ position: 'absolute' as const, top: 3, left: hiddenItems.includes(item.key) ? 4 : 22, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', display: 'block' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => { setHiddenItems([]); localStorage.removeItem(`${storagePrefix}hidden_items`); onVisibilityChange?.([]) }} style={{ marginTop: 20, background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}>Reset to defaults</button>
+        </div>
+      )}
 
       {/* ── DEV SECTION ────────────────────────────────────────────── */}
       {showDeveloperTools && isDev && (

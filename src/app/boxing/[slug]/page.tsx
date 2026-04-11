@@ -6982,13 +6982,25 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
 
+  // Customise Portal — hidden items
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { const saved = localStorage.getItem('lumio_boxing_hidden_items'); return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
+  useEffect(() => {
+    const handler = (e: Event) => { const ce = e as CustomEvent; if (ce.detail?.storagePrefix === 'lumio_boxing_') setHiddenItems(ce.detail.hiddenItems) }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+  const isHidden = (key: string) => hiddenItems.includes(key)
+
   // Role config
   const [roleOverride, setRoleOverride] = useState(session.role || 'fighter')
   const currentRole = (roleOverride || 'fighter') as keyof typeof BOXING_ROLE_CONFIG
   const roleConfig = BOXING_ROLE_CONFIG[currentRole] ?? BOXING_ROLE_CONFIG.fighter
   const isFighter = currentRole === 'fighter'
   const isSponsor = currentRole === 'sponsor'
-  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+  const visibleSidebarItems = (roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))).filter(item => !isHidden(item.id))
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -7116,6 +7128,26 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
               { name: fighter.physio, role: 'Physio', access: 'Limited' },
             ],
           }}
+          navItems={[
+            { key: 'training', label: 'Training Log', emoji: '🥊' },
+            { key: 'sparring', label: 'Sparring Planner', emoji: '🤼' },
+            { key: 'opposition', label: 'Opposition Analysis', emoji: '🔍' },
+            { key: 'weight', label: 'Weight Tracker', emoji: '⚖️' },
+            { key: 'cut', label: 'Cut Planner', emoji: '📉' },
+            { key: 'medical', label: 'Medical Record', emoji: '🏥' },
+            { key: 'rankings', label: 'World Rankings', emoji: '🌍' },
+            { key: 'sponsorships', label: 'Sponsorships', emoji: '🤝' },
+            { key: 'media', label: 'Media Obligations', emoji: '📱' },
+            { key: 'earnings', label: 'Fight Earnings', emoji: '💰' },
+          ]}
+          featureItems={[
+            { key: 'morning-briefing', label: 'Morning Briefing', emoji: '🌅', description: 'AI summary at top of dashboard' },
+            { key: 'quick-actions', label: 'Quick Actions bar', emoji: '⚡', description: 'Action buttons below tab bar' },
+            { key: 'ai-section', label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+            { key: 'world-clock', label: 'World Clock', emoji: '🕐', description: 'Multi-timezone clock in banner' },
+            { key: 'player-card', label: 'Fighter Card', emoji: '🃏', description: 'Stats card in right sidebar' },
+          ]}
+          onVisibilityChange={(items) => setHiddenItems(items)}
           showWorldClock
           showAppearance
           showDeveloperTools
