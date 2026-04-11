@@ -5794,7 +5794,6 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           showAppearance
           showDeveloperTools
           devApiRouteOptions={['/api/ai/golf']}
-          extraSections={<GolfAISection context="default" player={player} session={session} />}
         />
       );
       case 'arccos':      return <ArccosView player={player} session={session} />;
