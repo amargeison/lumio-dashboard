@@ -8,6 +8,36 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 
+// ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
+function useGolfProfileName(): string | null {
+  const [name, setName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_golf_name')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_golf_name'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useGolfProfilePhoto(): string | null {
+  const [photo, setPhoto] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_golf_profile_photo')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setPhoto(localStorage.getItem('lumio_golf_profile_photo'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return photo
+}
+
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '')
@@ -534,12 +564,225 @@ function SeasonIntelligenceStrip() {
   );
 }
 
+function GolfSendMessage({ onClose, player, session }: { onClose: () => void; player: GolfPlayer; session: SportsDemoSession }) {
+  const [step, setStep] = useState<'who'|'how'|'message'|'preview'|'sent'>('who')
+  const [selectedPeople, setSelectedPeople] = useState<string[]>([])
+  const [customPerson, setCustomPerson] = useState('')
+  const [channels, setChannels] = useState<string[]>(['email'])
+  const [messageText, setMessageText] = useState('')
+  const [isUrgent, setIsUrgent] = useState(false)
+  const [aiDraft, setAiDraft] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const TEAM = [
+    { name: 'Mick Sullivan', role: 'Caddie', icon: '⛳' },
+    { name: 'Carlos Mendez', role: 'Head Coach', icon: '📋' },
+    { name: 'Dr Sarah Lee', role: 'Physiotherapist', icon: '⚕️' },
+    { name: 'James Wright', role: 'Agent', icon: '💼' },
+    { name: 'Petra Novak', role: 'Nutritionist', icon: '🥗' },
+    { name: 'TaylorMade', role: 'Equipment Sponsor', icon: '🏌️' },
+  ]
+
+  const CHANNELS = [
+    { id: 'sms', label: 'Text / SMS', icon: '💬' },
+    { id: 'whatsapp', label: 'WhatsApp', icon: '🟢' },
+    { id: 'email', label: 'Email', icon: '📧' },
+    { id: 'internal', label: 'Internal Message', icon: '🔔' },
+  ]
+
+  const togglePerson = (name: string) => setSelectedPeople(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  const toggleChannel = (id: string) => setChannels(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
+
+  const allRecipients = [...selectedPeople, ...(customPerson.trim() ? [customPerson.trim()] : [])]
+
+  const handleSend = async (urgent: boolean) => {
+    setIsUrgent(urgent)
+    setLoading(true)
+    try {
+      const usedChannels = urgent ? CHANNELS.map(c => c.label) : channels.map(id => CHANNELS.find(c => c.id === id)?.label || id)
+      const res = await fetch('/api/ai/golf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+          content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional golfer (OWGR #${player.owgr}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
+        }] })
+      })
+      const data = await res.json()
+      setAiDraft(cleanResponse(data.content?.[0]?.text || messageText))
+    } catch { setAiDraft(urgent ? `[URGENT] ${messageText}` : messageText) }
+    setLoading(false)
+    setStep('preview')
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📨</span>
+          <div>
+            <div className="text-base font-bold text-white">Send Message</div>
+            <div className="text-xs" style={{ color: '#6B7280' }}>
+              {step === 'who' ? 'Step 1 — Who are you messaging?' : step === 'how' ? 'Step 2 — How do you want to send it?' : step === 'message' ? 'Step 3 — Write your message' : step === 'preview' ? 'Preview — Confirm & send' : 'Sent!'}
+            </div>
+          </div>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all">✕</button>
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex items-center gap-2 px-6 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
+        {['Who', 'How', 'Message', 'Preview'].map((s, i) => {
+          const stepIdx = ['who','how','message','preview'].indexOf(step)
+          return (
+            <React.Fragment key={s}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                  style={{ backgroundColor: i < stepIdx ? '#22C55E' : i === stepIdx ? '#15803D' : 'rgba(255,255,255,0.05)', color: i <= stepIdx ? '#fff' : '#4B5563' }}>
+                  {i < stepIdx ? '✓' : i + 1}
+                </div>
+                <span className="text-xs font-semibold" style={{ color: i === stepIdx ? '#15803D' : i < stepIdx ? '#22C55E' : '#4B5563' }}>{s}</span>
+              </div>
+              {i < 3 && <div className="flex-1 h-px" style={{ backgroundColor: i < stepIdx ? '#22C55E' : '#1F2937' }} />}
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      <div className="p-6">
+        {/* STEP 1: Who */}
+        {step === 'who' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {TEAM.map(m => (
+                <button key={m.name} onClick={() => togglePerson(m.name)}
+                  className="flex items-center gap-3 rounded-xl p-3 text-left transition-all"
+                  style={{ backgroundColor: selectedPeople.includes(m.name) ? 'rgba(21,128,61,0.15)' : '#111318', border: selectedPeople.includes(m.name) ? '1px solid rgba(21,128,61,0.5)' : '1px solid #1F2937' }}>
+                  <span className="text-lg">{m.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">{m.name}</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</div>
+                  </div>
+                  {selectedPeople.includes(m.name) && <span style={{ color: '#15803D' }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <div>
+              <input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name..."
+                className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+            </div>
+            {allRecipients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {allRecipients.map(n => (
+                  <span key={n} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: 'rgba(21,128,61,0.2)', color: '#4ADE80' }}>{n}</span>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setStep('how')} disabled={allRecipients.length === 0}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ backgroundColor: allRecipients.length > 0 ? '#15803D' : '#374151' }}>
+              Next — choose channels →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: How */}
+        {step === 'how' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {CHANNELS.map(ch => (
+                <button key={ch.id} onClick={() => toggleChannel(ch.id)}
+                  className="flex items-center gap-3 rounded-xl p-4 text-left transition-all"
+                  style={{ backgroundColor: channels.includes(ch.id) ? 'rgba(21,128,61,0.15)' : '#111318', border: channels.includes(ch.id) ? '1px solid rgba(21,128,61,0.5)' : '1px solid #1F2937' }}>
+                  <span className="text-2xl">{ch.icon}</span>
+                  <span className="text-sm font-semibold text-white">{ch.label}</span>
+                  {channels.includes(ch.id) && <span className="ml-auto" style={{ color: '#15803D' }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('who')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => setStep('message')} disabled={channels.length === 0}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: channels.length > 0 ? '#15803D' : '#374151' }}>
+                Next — write message →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Message */}
+        {step === 'message' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <span className="text-xs" style={{ color: '#6B7280' }}>To:</span>
+              {allRecipients.map(n => <span key={n} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(21,128,61,0.15)', color: '#4ADE80' }}>{n}</span>)}
+              <span className="text-xs" style={{ color: '#6B7280' }}>via</span>
+              {channels.map(id => <span key={id} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{CHANNELS.find(c => c.id === id)?.label}</span>)}
+            </div>
+            <textarea value={messageText} onChange={e => setMessageText(e.target.value)} rows={5} placeholder="Type your message..."
+              className="w-full px-4 py-3 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} autoFocus />
+            <div className="flex gap-3">
+              <button onClick={() => setStep('how')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
+              <button onClick={() => handleSend(false)} disabled={!messageText.trim() || loading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: messageText.trim() ? '#15803D' : '#374151' }}>
+                {loading ? '⏳ Drafting...' : 'Send →'}
+              </button>
+              <button onClick={() => handleSend(true)} disabled={!messageText.trim() || loading}
+                className="py-2.5 px-4 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: messageText.trim() ? '#EF4444' : '#374151' }}>
+                🚨 URGENT
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Preview */}
+        {step === 'preview' && (
+          <div className="space-y-4">
+            {isUrgent && (
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <span>🚨</span>
+                <span className="text-xs font-bold" style={{ color: '#EF4444' }}>URGENT — sending to ALL channels simultaneously</span>
+              </div>
+            )}
+            <div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>
+              {aiDraft}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setStep('message'); setAiDraft('') }} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Edit</button>
+              <button onClick={() => setStep('sent')}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: isUrgent ? '#EF4444' : '#15803D' }}>
+                ✓ Confirm Send
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SENT */}
+        {step === 'sent' && (
+          <div className="text-center py-8">
+            <div className="text-5xl mb-3">✅</div>
+            <div className="text-base font-bold text-white mb-2">Message sent!</div>
+            <div className="text-sm mb-4" style={{ color: '#6B7280' }}>
+              Sent via {isUrgent ? 'all channels' : channels.map(id => CHANNELS.find(c => c.id === id)?.label).join(', ')} to {allRecipients.join(', ')}
+            </div>
+            <button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#15803D' }}>Done</button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 function DashboardView({ player, session, setActiveSection, onOpenModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; onOpenModal: (m: string) => void }) {
+  const liveProfileName = useGolfProfileName()
+  const liveProfilePhoto = useGolfProfilePhoto()
   const isPlayerRole = !session.role || session.role === 'player'
   const displayPlayerName = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session.userName || player.name)
+    ? (liveProfileName || session.userName || player.name)
     : player.name
-  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl) : null
   const firstName = displayPlayerName.split(' ')[0] || 'James'
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
@@ -744,6 +987,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
+            { id:'sendmessage', label:'Send Message', icon:'📨', color:'#15803D', hot:false },
             { id:'flight', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
             { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
             { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
@@ -1293,9 +1537,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(21,128,61,0.1)', border: '1px solid rgba(21,128,61,0.3)', minWidth: 200 }}>
                 <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                   style={{ background: 'rgba(21,128,61,0.2)', border: '2px solid #15803D', color: '#15803D' }}>
-                  {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : 'JH' })()}
+                  {liveProfilePhoto ? <img src={liveProfilePhoto} alt="" className="w-full h-full object-cover" /> : 'JH'}
                 </div>
-                <div className="text-sm font-bold text-white">{session.userName || player.name}</div>
+                <div className="text-sm font-bold text-white">{liveProfileName || session.userName || player.name}</div>
                 <div className="text-[10px]" style={{ color: '#15803D' }}>Player · OWGR #{player.owgr}</div>
               </div>
               <div className="w-px h-4 bg-gray-700" />
@@ -5316,6 +5560,10 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const [toastDismissed, setToastDismissed] = useState(false);
   const player = DEMO_PLAYER;
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
+  const liveProfileNameOuter = useGolfProfileName()
+  const liveProfilePhotoOuter = useGolfProfilePhoto()
+  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
 
   // Sidebar pin state
   const [sidebarPinned, setSidebarPinned] = useState(false)
@@ -5516,6 +5764,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
             {activeModal === 'mentalprep' && <GolfMentalPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'visa' && <GolfVisaCheck onClose={closeModal} />}
             {activeModal === 'socialmedia' && <GolfSocialMediaAI onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'sendmessage' && <GolfSendMessage onClose={closeModal} player={player} session={session} />}
           </div>
         </div>
       )}
@@ -5619,7 +5868,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           })}
         </nav>
         <RoleSwitcher
-          session={session}
+          session={liveSession}
           roles={GOLF_ROLES}
           accentColor="#15803D"
           onRoleChange={(role) => {
