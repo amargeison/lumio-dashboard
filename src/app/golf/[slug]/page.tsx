@@ -1947,7 +1947,7 @@ function RoundPrepView({ player, session }: { player: GolfPlayer; session: Sport
       )}
 
       {tab === 'scorecard' && <ScorecardEntry />}
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="dashboard" player={player} session={session} />
     </div>
   );
 }
@@ -2231,7 +2231,7 @@ function MorningBriefingView({ player, session }: { player: GolfPlayer; session:
           </div>
         ))}
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="dashboard" player={player} session={session} />
     </div>
   );
 }
@@ -2675,7 +2675,7 @@ function ScheduleView({ player, session }: { player: GolfPlayer; session: Sports
         </table>
       </div>
       </>}
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="owgr" player={player} session={session} />
     </div>
   );
 }
@@ -3083,7 +3083,7 @@ th { background: #eee; text-transform: uppercase; font-size: 9px; letter-spacing
           </table>
         </div>
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="coursefit" player={player} session={session} />
     </div>
   );
 }
@@ -3540,7 +3540,7 @@ function CareerView({ player, session }: { player: GolfPlayer; session: SportsDe
         <StatCard label="Turned Pro" value={DEMO_PLAYER.turned_pro.toString()} sub={`${2026 - DEMO_PLAYER.turned_pro} years on tour`} color="blue" />
         <StatCard label="Age" value={DEMO_PLAYER.age} sub="Peak window now" color="orange" />
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="owgr" player={player} session={session} />
     </div>
   );
 }
@@ -3571,7 +3571,7 @@ function ExemptionsView({ player, session }: { player: GolfPlayer; session: Spor
           </div>
         ))}
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="owgr" player={player} session={session} />
     </div>
   );
 }
@@ -3776,7 +3776,7 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
         <div className="text-sm font-semibold text-blue-400 mb-1">ℹ️ Arccos Pro Insights — Access Model</div>
         <div className="text-xs text-gray-400">Arccos Pro Insights is invitation-only for touring professionals — not purchased like the consumer app ($155/yr). Molinari's team recruits players directly. Lumio Tour's integration works with both: Arccos Pro data flows in for invited tour players, consumer Arccos data flows in for all others. The integration requires an Arccos account (consumer or Pro).</div>
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="strokes" player={player} session={session} />
     </div>
   );
 }
@@ -3878,7 +3878,7 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
         <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ Pricing & Access</div>
         <div className="text-xs text-gray-400">DataGolf offers a free tier for public data. The paid API tier (needed for SG categories, course history, and real-time data) starts at approximately $150–$500/month depending on call volume and data depth. For Lumio Tour, this is a backend cost — not charged to players — absorbed as product infrastructure.</div>
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="strokes" player={player} session={session} />
     </div>
   );
 }
@@ -3973,7 +3973,7 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
         <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ TrackMan API — Phase 2</div>
         <div className="text-xs text-gray-400">TrackMan has a developer API for authorised integrations. Connection requires the coach or player to authorise Lumio Tour as a connected app within their TrackMan Performance Studio account. Data shared: session metadata, club averages, ball flight parameters, and dispersion charts. No video data transferred. This is scoped as a Phase 2 integration.</div>
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="practicelog" player={player} session={session} />
     </div>
   );
 }
@@ -4051,7 +4051,7 @@ function ShotLinkView({ player, session }: { player: GolfPlayer; session: Sports
           ))}
         </div>
       </div>
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="strokes" player={player} session={session} />
     </div>
   );
 }
@@ -4196,7 +4196,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
           </div>
         </div>
       )}
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="owgr" player={player} session={session} />
     </div>
   );
 }
@@ -4469,7 +4469,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
           </div>
         </div>
       )}
-      <GolfAISection context="default" player={player} session={session} />
+      <GolfAISection context="sponsorship" player={player} session={session} />
     </div>
   );
 }
