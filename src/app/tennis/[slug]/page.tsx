@@ -37,6 +37,34 @@ function useTennisProfilePhoto(): string | null {
   }, [])
   return photo
 }
+function useTennisBrandName(): string {
+  const [name, setName] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_tennis_brand_name') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_tennis_brand_name') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useTennisBrandLogo(): string {
+  const [logo, setLogo] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lumio_tennis_brand_logo') || ''
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setLogo(localStorage.getItem('lumio_tennis_brand_logo') || '')
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return logo
+}
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -9196,7 +9224,7 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
   )
 }
 
-function TennisPortalInner({ session }: { session: SportsDemoSession }) {
+export function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -9207,6 +9235,8 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileName = useTennisProfileName();
   const liveProfilePhoto = useTennisProfilePhoto();
+  const liveBrandName = useTennisBrandName();
+  const liveBrandLogo = useTennisBrandLogo();
   const liveSession = { ...session, userName: liveProfileName || session.userName, photoDataUrl: liveProfilePhoto || session.photoDataUrl };
 
   useEffect(() => {
@@ -9749,6 +9779,8 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           accentLight="#38bdf8"
           session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
           storagePrefix="lumio_tennis_"
+          brandNameValue={liveBrandName}
+          brandLogoUrl={liveBrandLogo}
           profile={{
             name: 'Full Name',
             tour: 'Tour / Circuit',
@@ -9861,16 +9893,18 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         {/* Sidebar Header */}
         <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
-                  🎾
-                </div>
+            {liveBrandLogo
+              ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+              : session.logoDataUrl
+                ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                    🎾
+                  </div>
             }
             {sidebarExpanded && (
               <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>
-                Lumio Tennis
+                {liveBrandName || 'Lumio Tennis'}
               </span>
             )}
           </div>
@@ -9960,14 +9994,16 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? sidebarWidth : 72, transition: 'margin-left 250ms ease' }}>
-        {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
-          style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
-          <span>Demo workspace · sample data</span>
-          <a href="/pricing-sports" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-            To see your own data — sign up for 3 months free →
-          </a>
-        </div>
+        {/* Demo workspace banner — hidden when rendered inside /tennis/app for a real signed-in user */}
+        {session.isDemoShell !== false && (
+          <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
+            style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
+            <span>This is a demo · sample data</span>
+            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
+              Apply for your free founding access → lumiosports.com/sports-signup
+            </a>
+          </div>
+        )}
         {!isPlayer && !isSponsor && (
           <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
             style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
