@@ -437,6 +437,8 @@ function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
     travel:       [`Fight venue: ${fighter.next_fight.venue}`, 'Camp departs: 14 days before fight — logistics in progress', 'Corner team flights: 4 booked, 1 pending (cutman)', 'Media day — arrivals press conference scheduled', `Broadcast: ${fighter.next_fight.broadcast}`],
     financial:    ['Purse (guaranteed): £380,000', 'PPV upside: estimated £120k–£280k additional', 'Camp costs this cycle: £42,800 — on budget', 'Agent commission: 15% of gross purse', 'Tax instalment due Jul — accountant briefed'],
     mental:       ['Mindset: coach rates 9.1/10 this camp — best in career', 'Visualisation sessions: daily at 07:00 — 14 completed', `${fighter.next_fight.opponent} mental game: known to intimidate pre-fight — stay composed`, 'Cut stress protocol: start breathing practice at final weight cut', 'Post-fight plan confirmed — reduces anxiety about outcome'],
+    opponent:     [`${fighter.next_fight.opponent} — ${fighter.next_fight.opponent_ranking} — southpaw, aggressive style`, 'Last 5 fights: 4W-1L — loss by SD to ranked contender', 'Known weakness: struggles against movers who use the jab', 'Tends to fade after round 8 — conditioning concern', 'Corner team change: new trainer since last fight — watch for tactical shifts'],
+    medical:      ['Pre-fight medical: BBBofC clearance on track', 'MRI scan valid — within 12-month window', 'Blood work due: submit by fight week deadline', 'Right shoulder: monitored — physio reports improving', 'No suspensions or medical flags on record'],
     default:      [`Fight Night in ${fighter.next_fight.days_away} days — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking})`, `Weight on track: ${fighter.current_weight}kg — cut manageable`, 'Purse bid deadline: 30 Apr — agent actioning', 'GPS load: ACWR 1.25 — manage carefully', 'Sparring: 8 rounds this week — good sessions'],
   }
 
@@ -531,7 +533,12 @@ Cover the four or five most important insights for the ${context} section in one
               Generate AI summary for this section →
             </button>
           )}
-          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+          {loading && (
+            <div>
+              <div className="text-[10px] text-gray-600 mb-2">Generating AI summary…</div>
+              <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>
+            </div>
+          )}
           {summary && !loading && <div>{renderSummary(summary)}</div>}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
@@ -1887,7 +1894,7 @@ function SparringPlannerView({ fighter, session }: { fighter: BoxingFighter; ses
           </div>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2033,7 +2040,7 @@ function OppositionAnalysisView({ fighter, session }: { fighter: BoxingFighter; 
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="opponent" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2420,7 +2427,7 @@ function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -2558,7 +2565,7 @@ function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; sessi
           </div>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="medical" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3614,7 +3621,7 @@ function FighterBriefingView({ fighter, session }: { fighter: BoxingFighter; ses
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="dashboard" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3665,7 +3672,7 @@ function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; sessio
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3759,7 +3766,7 @@ function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; se
           </table>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3864,7 +3871,7 @@ function MediaObligationsView({ fighter, session }: { fighter: BoxingFighter; se
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="sponsorship" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -3920,7 +3927,7 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="sponsorship" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4058,7 +4065,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
           <span>Dec 2027 (expires)</span>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4336,7 +4343,7 @@ function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; se
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4378,7 +4385,7 @@ function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session:
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="opponent" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4488,7 +4495,7 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
           </div>
         </div>
       )}
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="dashboard" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4592,7 +4599,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
           </div>
         ))}
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="opponent" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -4661,7 +4668,7 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
           ))}
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="sponsorship" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5025,7 +5032,7 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
           );
         })()}
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5120,7 +5127,7 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
           </div>
         </div>
       </div>
-      <BoxingAISection context="default" fighter={fighter} session={session} />
+      <BoxingAISection context="training" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -5182,7 +5189,7 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
           Rounds where Marcus spent &gt;55% in the centre ring (R1, R2, R4) averaged <span className="text-green-400 font-medium">49% connect rate</span>. Rounds where he drifted to the ropes (&gt;35%) dropped to <span className="text-red-400 font-medium">37% connect rate</span>. This confirms the centre-ring strategy is directly linked to punch output efficiency. Jim&apos;s instruction: &quot;work the jab to keep centre position&quot; is statistically validated.
         </div>
       </div>
-      <BoxingAISection context="default" fighter={_fighter} session={session} />
+      <BoxingAISection context="training" fighter={_fighter} session={session} />
     </div>
   );
 }
