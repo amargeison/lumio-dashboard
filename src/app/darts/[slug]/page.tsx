@@ -315,6 +315,28 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
   const [tourStep, setTourStep] = useState(0)
+  const [scheduleChecked, setScheduleChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('darts_schedule_checked') : null) || '{}') } catch { return {} }
+  })
+  const toggleScheduleItem = (id: string) => {
+    setScheduleChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      localStorage.setItem('darts_schedule_checked', JSON.stringify(next))
+      return next
+    })
+  }
+  const [tasksChecked, setTasksChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('darts_tasks_checked') : null) || '{}') } catch { return {} }
+  })
+  const toggleTaskItem = (id: string) => {
+    setTasksChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      localStorage.setItem('darts_tasks_checked', JSON.stringify(next))
+      return next
+    })
+  }
+  const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'orgchart'|'info'|'tour'>('today')
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [dartsSummary, setDartsSummary] = useState<string | null>(null)
   const [dartsSummaryLoading, setDartsSummaryLoading] = useState(false)
@@ -530,16 +552,16 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
         const STEPS = [
-          { n:1, label:'Connect your PDC profile', icon:'🎯', desc:'Link your PDC player profile to see live ranking updates, tournament schedule and prize money tracking automatically synced to your dashboard.' },
-          { n:2, label:'Add your practice partner', icon:'🤝', desc:'Add your regular practice partner so you can log joint sessions, compare averages and track improvement together.' },
-          { n:3, label:'Set your tournament calendar', icon:'📅', desc:'Import your PDC tour schedule so Lumio can surface upcoming deadlines, travel needs and preparation windows automatically.' },
-          { n:4, label:'Upload sponsor agreements', icon:'📋', desc:'Upload your current sponsor contracts so Lumio tracks obligations, posting deadlines and renewal dates — never miss a commitment.' },
-          { n:5, label:'Set your average target', icon:'📊', desc:'Set your 3-dart average target for the season. Lumio tracks your practice sessions against this target and flags when you\'re trending below.' },
-          { n:6, label:'Add your coach', icon:'🧠', desc:'Add your coach or manager so they can access your stats, log session notes and collaborate on your game plan.' },
-          { n:7, label:'Configure equipment preferences', icon:'🎣', desc:'Log your current barrel, flight, shaft and grip setup. Lumio alerts you when performance dips that may correlate with equipment changes.' },
-          { n:8, label:'Set travel preferences', icon:'✈️', desc:'Set your home airport, preferred airlines and hotel budget so Smart Flights AI and Hotel Finder pre-fill your preferences automatically.' },
-          { n:9, label:'Add your agent', icon:'🤝', desc:'Add your agent or manager contact so exhibition enquiries, sponsor negotiations and media requests route to the right person.' },
-          { n:10, label:"You're ready — throw!", icon:'🏆', desc:'Your Lumio Darts portal is fully set up. Everything you need to manage your career is in one place. Good luck on tour.' },
+          { n:1, label:'Connect your PDC profile', icon:'🎯', title:'Connect your PDC profile', desc:'Link your PDC player ID for live Order of Merit, rankings, and tournament entries. All stats sync automatically.' },
+          { n:2, label:'Add your practice partner', icon:'🤝', title:'Add your practice partner', desc:'Add your regular sparring partner so you can log shared sessions and compare averages.' },
+          { n:3, label:'Set your tournament calendar', icon:'📅', title:'Set your tournament calendar', desc:'Import your PDC tour schedule. Lumio tracks entry deadlines, travel bookings, and prize money per event.' },
+          { n:4, label:'Upload sponsor agreements', icon:'🤝', title:'Upload sponsor agreements', desc:'Add your Red Dragon, sponsor and commercial deals. Lumio tracks obligations, content deadlines and renewals.' },
+          { n:5, label:'Set your average target', icon:'📊', title:'Set your average target', desc:'Set your season target 3-dart average. Lumio tracks your progress match-by-match and flags when you dip below.' },
+          { n:6, label:'Add your coach', icon:'📋', title:'Add your coach', desc:'Invite your coach to collaborate on game plans, review footage, and track session notes together.' },
+          { n:7, label:'Configure equipment preferences', icon:'🏹', title:'Configure equipment preferences', desc:'Log your barrel weight, flights, shafts and board setup. Get alerts when it is time to replace worn equipment.' },
+          { n:8, label:'Set travel preferences', icon:'✈️', title:'Set travel preferences', desc:'Save your home airport, hotel preferences and visa info so Smart Flights auto-fills every booking.' },
+          { n:9, label:'Configure notifications', icon:'🔔', title:'Configure notifications', desc:'Choose which alerts you want — match reminders, sponsor deadlines, practice reminders, ranking changes.' },
+          { n:10, label:'Go live', icon:'🚀', title:"You're ready — let's go!", desc:'Your darts portal is ready. Every section is live with demo data. Explore freely or sign up for your free trial to connect real PDC data.' },
         ]
         const step = STEPS[tourStep]
         return (
@@ -689,20 +711,21 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
               <div className="space-y-2">
                 {[
-                  { time:'09:00', label:'AI Morning Briefing',        done:true  },
-                  { time:'10:00', label:'Practice — D16 checkout',    done:false },
-                  { time:'12:00', label:'Red Dragon content shoot',   done:false },
-                  { time:'14:00', label:'Physio — shoulder & elbow',  done:false },
-                  { time:'16:30', label:'Pre-match warm-up routine',  done:false },
-                  { time:'20:00', label:'Match vs G. Price — R1',     done:false, highlight:true },
-                  { time:'22:30', label:'Post-match media',           done:false },
-                ].map((s, i) => (
-                  <div key={i} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${s.highlight ? 'text-red-400' : ''}`}>
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-green-500/20 border-green-500' : s.highlight ? 'border-red-500 bg-red-500/10' : 'border-gray-700'}`}>
-                      {s.done && <span className="text-[8px] text-green-400">✓</span>}
-                    </div>
+                  { id:'s1', time:'09:00', label:'AI Morning Briefing',        highlight:false },
+                  { id:'s2', time:'10:00', label:'Practice — D16 checkout',    highlight:false },
+                  { id:'s3', time:'12:00', label:'Red Dragon content shoot',   highlight:false },
+                  { id:'s4', time:'14:00', label:'Physio — shoulder & elbow',  highlight:false },
+                  { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
+                  { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
+                  { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
+                ].map((s) => (
+                  <div key={s.id} className={`flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${scheduleChecked[s.id] ? 'opacity-50' : ''} ${s.highlight ? 'text-red-400' : ''}`}>
+                    <button onClick={() => toggleScheduleItem(s.id)} className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: scheduleChecked[s.id] ? '#22C55E' : 'transparent', borderColor: scheduleChecked[s.id] ? '#22C55E' : s.highlight ? '#EF4444' : '#4B5563' }}>
+                      {scheduleChecked[s.id] && <span className="text-white text-[8px]">✓</span>}
+                    </button>
                     <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                    <span className={`text-xs ${s.done ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                    <span className={`text-xs ${scheduleChecked[s.id] ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
                   </div>
                 ))}
               </div>
@@ -789,22 +812,38 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       })()}
 
       {/* DAILY TASKS */}
-      {dashTab === 'dailytasks' && (
+      {dashTab === 'dailytasks' && (() => {
+        const ALL_TASKS = [
+          { id:'t1', time:'09:00', task:'AI Morning Briefing',             cat:'Routine',    priority:'low' as const,  modal:undefined as string|undefined },
+          { id:'t2', time:'10:00', task:'Practice — D16 checkout routes',  cat:'Training',   priority:'high' as const, modal:'practice' as string|undefined },
+          { id:'t3', time:'11:00', task:'Physio — elbow treatment',        cat:'Wellness',   priority:'medium' as const, modal:'physio' as string|undefined },
+          { id:'t4', time:'12:00', task:'Red Dragon content shoot',        cat:'Sponsor',    priority:'high' as const, modal:'sponsor' as string|undefined },
+          { id:'t5', time:'14:00', task:'Agent call — Paddy Power inquiry',cat:'Commercial', priority:'medium' as const, modal:undefined as string|undefined },
+          { id:'t6', time:'16:30', task:'Pre-match warm-up routine',       cat:'Prep',       priority:'high' as const, modal:'mental' as string|undefined },
+          { id:'t7', time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', cat:'Match',  highlight:true, priority:'critical' as const, modal:undefined as string|undefined },
+          { id:'t8', time:'20:00', task:'Match vs G. Price — EC R1',       cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
+          { id:'t9', time:'22:30', task:'Post-match media duties',         cat:'Media',      priority:'medium' as const, modal:'media' as string|undefined },
+        ]
+        const filtered = taskFilter === 'all' ? ALL_TASKS : ALL_TASKS.filter(t => t.priority === taskFilter)
+        return (
         <div className="space-y-3">
-          {[
-            { time:'09:00', task:'AI Morning Briefing',             done:true,  cat:'Routine',    priority:'low' as const,  modal:undefined as string|undefined },
-            { time:'10:00', task:'Practice — D16 checkout routes',  done:false, cat:'Training',   priority:'high' as const, modal:'practice' as string|undefined },
-            { time:'11:00', task:'Physio — elbow treatment',        done:false, cat:'Wellness',   priority:'medium' as const, modal:'physio' as string|undefined },
-            { time:'12:00', task:'Red Dragon content shoot',        done:false, cat:'Sponsor',    priority:'high' as const, modal:'sponsor' as string|undefined },
-            { time:'14:00', task:'Agent call — Paddy Power inquiry',done:false, cat:'Commercial', priority:'medium' as const, modal:undefined as string|undefined },
-            { time:'16:30', task:'Pre-match warm-up routine',       done:false, cat:'Prep',       priority:'high' as const, modal:'mental' as string|undefined },
-            { time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', done:false, cat:'Match',  highlight:true, priority:'critical' as const, modal:undefined as string|undefined },
-            { time:'20:00', task:'Match vs G. Price — EC R1',       done:false, cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
-            { time:'22:30', task:'Post-match media duties',         done:false, cat:'Media',      priority:'medium' as const, modal:'media' as string|undefined },
-          ].map((t, i) => (
-            <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: (t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${(t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: t.done ? 0.6 : 1 }}>
-              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: t.done ? '#22C55E' : '#4B5563', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
-                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {(['all','critical','high','medium','low'] as const).map(f => (
+                <button key={f} onClick={() => setTaskFilter(f)} className="text-[10px] px-2.5 py-1 rounded-lg font-semibold capitalize transition-all"
+                  style={{ backgroundColor: taskFilter === f ? (f==='critical'?'rgba(239,68,68,0.15)':f==='high'?'rgba(249,115,22,0.15)':f==='medium'?'rgba(245,158,11,0.15)':f==='low'?'rgba(107,114,128,0.15)':'rgba(220,38,38,0.1)') : 'transparent', color: taskFilter === f ? (f==='critical'?'#EF4444':f==='high'?'#F97316':f==='medium'?'#F59E0B':f==='low'?'#6B7280':'#f87171') : '#4B5563', border: taskFilter === f ? '1px solid' : '1px solid transparent', borderColor: taskFilter === f ? (f==='critical'?'rgba(239,68,68,0.3)':f==='high'?'rgba(249,115,22,0.3)':f==='medium'?'rgba(245,158,11,0.3)':f==='low'?'rgba(107,114,128,0.3)':'rgba(220,38,38,0.3)') : 'transparent' }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+            <button className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#f87171', border: '1px solid rgba(220,38,38,0.3)' }}>+ Add Task</button>
+          </div>
+          {filtered.map((t) => {
+            const done = tasksChecked[t.id] || false
+            return (
+            <div key={t.id} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: (t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.06)' : done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${(t as {highlight?:boolean}).highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: done ? 0.6 : 1 }}>
+              <button onClick={() => toggleTaskItem(t.id)} className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: done ? '#22C55E' : '#4B5563', background: done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+                {done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -812,37 +851,58 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
                   <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
                 </div>
-                <h4 className="font-semibold text-sm" style={{ color: t.done ? '#4B5563' : (t as {highlight?:boolean}).highlight ? '#f87171' : '#E5E7EB', textDecoration: t.done ? 'line-through' : 'none' }}>{t.task}</h4>
+                <h4 className="font-semibold text-sm" style={{ color: done ? '#4B5563' : (t as {highlight?:boolean}).highlight ? '#f87171' : '#E5E7EB', textDecoration: done ? 'line-through' : 'none' }}>{t.task}</h4>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
-                {t.modal && !t.done && <button onClick={() => onOpenModal(t.modal!)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>Open →</button>}
-                {!t.done && <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
+                {t.modal && !done && <button onClick={() => onOpenModal(t.modal!)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>Open →</button>}
+                {!done && <button onClick={() => toggleTaskItem(t.id)} className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
-      )}
+        )
+      })()}
 
       {/* INSIGHTS */}
       {dashTab === 'insights' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title:'PDC Ranking',         value:`#${player.pdcRank}`, sub:'Up 2 this week',               color:'#dc2626', icon:'📊' },
-            { title:'Points at risk',      value:'£12,400',  sub:'Drop off after Players Ch. 8', color:'#EF4444', icon:'⚠️' },
-            { title:'3-Dart avg (last 5)', value:'98.4',     sub:'↑0.6 above season avg',        color:'#22C55E', icon:'🎯' },
-            { title:'Prize money YTD',     value:'£187k',    sub:'Ahead of projection (+8%)',    color:'#F59E0B', icon:'💰' },
-            { title:'Checkout %',          value:`${player.checkoutPercent}%`, sub:'Above tour avg (35%)', color:'#8B5CF6', icon:'🔢' },
-            { title:'Sponsor obligations', value:'2 due',    sub:'Betway posts + Red Dragon',    color:'#EC4899', icon:'🤝' },
-          ].map((ins, i) => (
-            <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 flex items-start gap-4">
-              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">{ins.title}</div>
-                <div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div>
-                <div className="text-[11px] text-gray-500 mt-1">{ins.sub}</div>
+        <div className="space-y-6">
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label:'PDC Rank', value:`#${player.pdcRank}`, sub:'Up 2 this week', color:'#dc2626', icon:'📊' },
+              { label:'OOM Standing', value:'#19', sub:'£687k career', color:'#F97316', icon:'🏆' },
+              { label:'Checkout %', value:`${player.checkoutPercent}%`, sub:'Tour avg: 35%', color:'#8B5CF6', icon:'🎯' },
+              { label:'Season Earnings', value:'£187k', sub:'+8% vs projection', color:'#F59E0B', icon:'💰' },
+              { label:'Form', value:'W-W-L-W-W', sub:'Last 5 matches', color:'#22C55E', icon:'📈' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-4 text-center">
+                <div className="text-lg mb-1">{kpi.icon}</div>
+                <div className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">{kpi.label}</div>
+                <div className="text-[9px] text-gray-600 mt-0.5">{kpi.sub}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Insight Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { type:'ALERT', value:'£12,400 at risk', title:'Points dropping off', description:'Your Players Championship 8 earnings (£12,400) drop off after this week. Win tonight to cover the gap and hold #19.', action:'View OOM breakdown', color:'#EF4444' },
+              { type:'OPPORTUNITY', value:'£40k/yr', title:'Paddy Power ambassador deal', description:'Your agent flagged a Paddy Power ambassador inquiry worth an estimated £40k/yr. A competitor is also in talks — respond by Apr 25.', action:'View inquiry details', color:'#22C55E' },
+              { type:'TREND', value:'+0.8 avg', title:'3-dart average rising', description:'Your 3-dart average has risen 0.8 points over the last 3 weeks. First-9 average (101.4) is at a career high. Sustaining TV form.', action:'View trend chart', color:'#3B82F6' },
+              { type:'ACHIEVEMENT', value:'8 titles', title:'Career titles milestone', description:'Your win at Players Championship 6 brought your career title count to 8. One more puts you in the all-time PDC top-50 winners list.', action:'View career stats', color:'#F59E0B' },
+            ].map((tile, i) => (
+              <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: `${tile.color}15`, color: tile.color, border: `1px solid ${tile.color}40` }}>{tile.type}</span>
+                  <span className="text-sm font-bold" style={{ color: tile.color }}>{tile.value}</span>
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">{tile.title}</h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{tile.description}</p>
+                <button className="text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-all" style={{ backgroundColor: `${tile.color}10`, color: tile.color, border: `1px solid ${tile.color}30` }}>{tile.action} →</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -894,7 +954,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           { name:'James Wright',    role:'Agent',              status:'Paddy Power response pending',    available:true,  initials:'JW', phone:'+44 7700 900321', email:'james@sportsmgmt.com', since:'2020', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'15% commission', stat2:'£84k deals YTD' },
           { name:'Marcos Silva',    role:'Sports Psychologist',status:'Pre-match call 15:00',            available:true,  initials:'MS', phone:'+44 7700 900654', email:'marcos@mindset.com', since:'2024', nationality:'🇧🇷', stat1:'PhD Sports Psychology', stat2:'Pressure specialist' },
         ]
-        const [teamSubTab, setTeamSubTab] = useState<'today'|'orgchart'|'info'|'tour'>('today')
         return (
           <div className="space-y-4">
             <div className="flex gap-1 border-b border-gray-800 pb-px" style={{ overflowX: 'hidden' }}>
