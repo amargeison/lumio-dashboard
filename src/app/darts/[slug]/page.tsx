@@ -1,4 +1,5 @@
 'use client';
+// TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
 
 import { use, useState, useEffect, useRef } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
