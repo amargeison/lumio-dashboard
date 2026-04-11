@@ -8,6 +8,36 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 
+// ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
+function useDartsProfileName(): string | null {
+  const [name, setName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_darts_name')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_darts_name'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useDartsProfilePhoto(): string | null {
+  const [photo, setPhoto] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_darts_profile_photo')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setPhoto(localStorage.getItem('lumio_darts_profile_photo'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return photo
+}
+
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
@@ -409,14 +439,16 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  const liveProfileName = useDartsProfileName()
+  const liveProfilePhoto = useDartsProfilePhoto()
   const isPlayerRole = !session.role || session.role === 'player'
   const displayPlayerName = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name)
+    ? (liveProfileName || session.userName || player.name)
     : player.name
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
     : `"${player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl) : null
   const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -593,31 +625,33 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
-        const STEPS = [
-          { n:1, label:'Connect your PDC profile', icon:'🎯', title:'Connect your PDC profile', desc:'Link your PDC player ID for live Order of Merit, rankings, and tournament entries. All stats sync automatically.' },
-          { n:2, label:'Add your practice partner', icon:'🤝', title:'Add your practice partner', desc:'Add your regular sparring partner so you can log shared sessions and compare averages.' },
-          { n:3, label:'Set your tournament calendar', icon:'📅', title:'Set your tournament calendar', desc:'Import your PDC tour schedule. Lumio tracks entry deadlines, travel bookings, and prize money per event.' },
-          { n:4, label:'Upload sponsor agreements', icon:'🤝', title:'Upload sponsor agreements', desc:'Add your Red Dragon, sponsor and commercial deals. Lumio tracks obligations, content deadlines and renewals.' },
-          { n:5, label:'Set your average target', icon:'📊', title:'Set your average target', desc:'Set your season target 3-dart average. Lumio tracks your progress match-by-match and flags when you dip below.' },
-          { n:6, label:'Add your coach', icon:'📋', title:'Add your coach', desc:'Invite your coach to collaborate on game plans, review footage, and track session notes together.' },
-          { n:7, label:'Configure equipment preferences', icon:'🏹', title:'Configure equipment preferences', desc:'Log your barrel weight, flights, shafts and board setup. Get alerts when it is time to replace worn equipment.' },
-          { n:8, label:'Set travel preferences', icon:'✈️', title:'Set travel preferences', desc:'Save your home airport, hotel preferences and visa info so Smart Flights auto-fills every booking.' },
-          { n:9, label:'Configure notifications', icon:'🔔', title:'Configure notifications', desc:'Choose which alerts you want — match reminders, sponsor deadlines, practice reminders, ranking changes.' },
-          { n:10, label:'Go live', icon:'🚀', title:"You're ready — let's go!", desc:'Your darts portal is ready. Every section is live with demo data. Explore freely or sign up for your free trial to connect real PDC data.' },
+        const TOUR_STEPS = [
+          { n:1, label:'Your darts OS, fully connected', icon:'🎯', preview:'dashboard' },
+          { n:2, label:'Start every match day knowing everything', icon:'🌅', preview:'briefing' },
+          { n:3, label:'Every action, one click away', icon:'⚡', preview:'actions' },
+          { n:4, label:'PDC Tour travel sorted in 60 seconds', icon:'✈️', preview:'travel' },
+          { n:5, label:'Your stats, your ranking, your performance', icon:'📊', preview:'performance' },
+          { n:6, label:'Your team, front and centre', icon:'👥', preview:'team' },
+          { n:7, label:'AI that actually helps you win', icon:'🤖', preview:'ai' },
+          { n:8, label:'Sponsors managed automatically', icon:'🤝', preview:'sponsor' },
+          { n:9, label:'Nothing falls through the cracks', icon:'🔔', preview:'dontmiss' },
+          { n:10, label:"Run your darts career like a business", icon:'🏆', preview:'cta' },
         ]
-        const step = STEPS[tourStep]
+        const step = TOUR_STEPS[tourStep]
+        const goLive = () => { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') }
         return (
           <div className="pt-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1 mr-4">
-                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#F59E0B' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
-                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#F59E0B' }} /></div>
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#F59E0B' }}>STEP {tourStep + 1} OF {TOUR_STEPS.length}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%`, backgroundColor: '#F59E0B' }} /></div>
               </div>
-              <button onClick={() => { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
+              <button onClick={goLive} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* LEFT — Step sidebar */}
               <div className="space-y-1">
-                {STEPS.map((s, i) => (
+                {TOUR_STEPS.map((s, i) => (
                   <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
                     style={{ backgroundColor: tourStep === i ? 'rgba(249,115,22,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -628,27 +662,266 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   </button>
                 ))}
               </div>
+              {/* RIGHT — Preview panel */}
               <div className="lg:col-span-2">
-                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 420 }}>
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
-                    <h2 className="text-xl font-black text-white mb-2">{step.label}</h2>
-                    <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.desc}</p>
-                    <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[{ icon:'📊', v:`#${player.pdcRank}`, label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v:String(player.threeDartAverage), label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v:`£${Math.round(player.careerEarnings/1000)}k`, label:'Career', c:'#F59E0B' },{ icon:'🏆', v:'Tonight', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
-                          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
+
+                    {/* ── Step 1: Dashboard overview ── */}
+                    {step.preview === 'dashboard' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Your darts OS, fully connected.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. Rankings, travel, sponsors, practice logs, your team — all here, all connected.</p>
+                      <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                        <div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[{ icon:'📊', v:`#${player.pdcRank}`, label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v:String(player.threeDartAverage), label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v:`£${Math.round(player.careerEarnings/1000)}k`, label:'Career', c:'#F59E0B' },{ icon:'🏆', v:'Tonight', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
+                            <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
+                          ))}
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+                          <div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next match:</span> <span className="text-white font-semibold">vs G. Price — 20:00 Dortmund</span></div>
+                          <div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">OOM standing:</span> <span className="text-white font-semibold">#19 — £312,400</span></div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <span style={{ color: '#F59E0B' }}>💡</span> <span style={{ color: '#9CA3AF' }}>Used by PDC Tour players to manage everything in one place.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 2: Morning Briefing ── */}
+                    {step.preview === 'briefing' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Start every match day knowing everything.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing reads your entire day back to you — opponent stats, travel confirmed, sponsor deadlines, practice schedule. In 60 seconds.</p>
+                      <div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(249,115,22,0.2)' }}>
+                        <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(249,115,22,0.06)' }}>
+                          <span>✨</span><span className="text-sm font-semibold text-white">AI Morning Summary</span>
+                          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span>
+                        </div>
+                        <div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>
+                          {[
+                            { icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%.' },
+                            { icon:'🤝', text:'Red Dragon content shoot at 12:00 — penalty clause. Kit prepped.' },
+                            { icon:'📬', text:'2 urgent messages: Paddy Power £85k/yr offer + Prague Open entry deadline.' },
+                            { icon:'✈️', text:'Travel to Dortmund confirmed. Return flight 23:30 via Düsseldorf.' },
+                          ].map((item, i) => (
+                            <div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker icon every morning. Sarah reads it to you while you warm up.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 3: Quick Actions ── */}
+                    {step.preview === 'actions' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>13 quick actions on your dashboard — log a practice session, file a physio report, generate a sponsor post, send your agent a brief. All in under 60 seconds.</p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {[
+                          { label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Practice Log', icon:'🎯', hot:false },
+                          { label:'Match Report AI', icon:'📋', hot:true },{ label:'Sponsor Post AI', icon:'📱', hot:true },{ label:'Mental Prep AI', icon:'🧠', hot:true },
+                        ].map((a, i) => (
+                          <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative"
+                            style={{ backgroundColor: a.hot ? '#D97706' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}>
+                            <span>{a.icon}</span>{a.label}
+                            {a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#D97706' }}>AI</span>}
+                          </span>
                         ))}
                       </div>
-                    </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                        <span>✈️</span> <span style={{ color: '#0ea5e9' }}>Smart Flights searches 8+ airlines simultaneously — you shouldn&apos;t be able to find it cheaper on Google.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 4: Travel ── */}
+                    {step.preview === 'travel' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">PDC Tour travel sorted in 60 seconds.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights AI finds the cheapest flights to every PDC venue. Smart Hotel finds tournament hotels near the venue. All pre-filled with your home airport and preferences.</p>
+                      <div className="space-y-2 mb-4">
+                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-white">Ryanair · FR 3847</span>
+                            <span className="text-xs font-black" style={{ color: '#22C55E' }}>£87 return</span>
+                          </div>
+                          <div className="text-[10px] text-gray-400">London STN → Dortmund · 2h 15m · Direct · Depart 06:40</div>
+                          <div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div>
+                        </div>
+                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-white">Eurowings · EW 461</span>
+                            <span className="text-xs font-bold text-gray-300">£124 return</span>
+                          </div>
+                          <div className="text-[10px] text-gray-400">London LHR → Düsseldorf + train · 3h 40m · 1 stop</div>
+                        </div>
+                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-white">🏨 Westfalenhallen Marriott</span>
+                            <span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£94/night</span>
+                          </div>
+                          <div className="text-[10px] text-gray-400">0.3km from venue · Gym · Restaurant · 8.4 rating</div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Players using Smart Flights save an average of £340 per tournament on travel vs booking manually.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 5: Performance ── */}
+                    {step.preview === 'performance' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Your stats. Your ranking. Your performance.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Live PDC ranking, OOM standing, checkout %, 3-dart average trend, first-9 averages — all tracked automatically. See exactly where you need to improve.</p>
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {[
+                          { label:'PDC Ranking', value:`#${player.pdcRank}`, sub:'↑ 2 this week', color:'#dc2626' },
+                          { label:'Checkout %', value:`${player.checkoutPercent}%`, sub:'Tour avg: 35%', color:'#22C55E' },
+                          { label:'3-Dart Average', value:String(player.threeDartAverage), sub:'Career best: 99.2', color:'#F97316' },
+                          { label:'Form (last 5)', value:'W-W-L-W-W', sub:'80% win rate', color:'#0ea5e9' },
+                        ].map((s, i) => (
+                          <div key={i} className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                            <div className="text-[10px] text-gray-500 mb-1">{s.label}</div>
+                            <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
+                            <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <span>📈</span> <span style={{ color: '#9CA3AF' }}>The Ranking Simulator shows you exactly what you need to win tonight to move up the OOM.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 6: Team ── */}
+                    {step.preview === 'team' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Your team. Always in the loop.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Manager, coach, physio, agent, equipment sponsor — all connected. Message your whole team in one tap. Everyone sees what they need to see.</p>
+                      <div className="space-y-2 mb-4">
+                        {[
+                          { name:'Dave Askew', role:'Manager', status:'Confirmed travel to Dortmund', color:'#dc2626' },
+                          { name:'Steve Morris', role:'Coach', status:'Pre-match briefing at 16:30', color:'#F97316' },
+                          { name:'Red Dragon', role:'Sponsor', status:'Content shoot 12:00 today', color:'#EA580C' },
+                          { name:'James Wright', role:'Agent', status:'Paddy Power response pending', color:'#0ea5e9' },
+                        ].map((m, i) => (
+                          <div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div>
+                              <div className="text-[10px] text-gray-500">{m.status}</div>
+                            </div>
+                            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <span>📨</span> <span style={{ color: '#9CA3AF' }}>Your agent gets auto-briefed every Monday. Sponsor posts go out with one click.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 7: AI ── */}
+                    {step.preview === 'ai' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">AI that actually helps you win.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Match Report AI analyses your last match. Opponent Scout AI breaks down who you&apos;re playing tonight. Mental Prep AI builds your pre-match routine. All powered by Claude — the world&apos;s most advanced AI.</p>
+                      <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}>
+                        <div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Opponent Scout AI — G. Price</span></div>
+                        <div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}>
+                          <p>Tonight vs G. Price (PDC #7): His checkout is 39.8% vs your {player.checkoutPercent}% — you have the edge on doubles.</p>
+                          <p>He struggles on D16 under pressure — 28% conversion rate in deciding legs. Your D16 is 52%.</p>
+                          <p>Start strong on the opening leg. Price&apos;s first-3 average drops 6 points when he loses leg 1.</p>
+                        </div>
+                        <div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using live PDC match data · Claude AI</div>
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                        <span style={{ color: '#A78BFA' }}>🤖</span> <span style={{ color: '#A78BFA' }}>Powered by Claude AI · Anthropic · The same AI trusted by Fortune 500 companies.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 8: Sponsors ── */}
+                    {step.preview === 'sponsor' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Never miss a sponsor deadline again.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Red Dragon content shoots, social media obligations, post-match appearances — all tracked. Social Media AI writes the caption, you approve it, one click posts it.</p>
+                      <div className="space-y-2 mb-4">
+                        {[
+                          { name:'Red Dragon', status:'Content shoot 12:00 today', badge:'DUE NOW', badgeColor:'#EF4444', value:'£48k/yr' },
+                          { name:'Betway', status:'2 social posts outstanding', badge:'OVERDUE', badgeColor:'#F59E0B', value:'£22k/yr' },
+                          { name:'Paddy Power', status:'Ambassador inquiry — respond by Apr 25', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£40k/yr' },
+                        ].map((s, i) => (
+                          <div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{s.name}</span><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${s.badgeColor}20`, color: s.badgeColor }}>{s.badge}</span></div>
+                              <div className="text-[10px] text-gray-500 mt-0.5">{s.status}</div>
+                            </div>
+                            <span className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
+                        <span>📱</span> <span style={{ color: '#9CA3AF' }}>Sponsor Post AI generates the caption in your voice. Takes 8 seconds.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 9: Don't Miss ── */}
+                    {step.preview === 'dontmiss' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Nothing falls through the cracks.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything urgent — ranking points dropping off, sponsor deadlines, visa expiry, entry deadlines. Sorted by financial impact so you always know what matters most.</p>
+                      <div className="space-y-2 mb-4">
+                        {[
+                          { badge:'TONIGHT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Match vs G. Price — Euro Ch. R1. 20:00 Dortmund.', sub:'Miss = lose £110,000 + ranking points' },
+                          { badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Red Dragon content shoot at 12:00. Penalty clause applies.', sub:'Contract breach risk' },
+                          { badge:'THIS WK', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'Prague Open flights — prices rising £8/day.', sub:'Save £80+ booking now' },
+                          { badge:'14 DAYS', bg:'rgba(139,92,246,0.15)', color:'#8B5CF6', text:'Paddy Power ambassador — £40k/yr. Respond by Apr 25.', sub:'Competitor also in talks' },
+                        ].map((d, i) => (
+                          <div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}>
+                            <span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span>
+                            <div><div className="text-[11px] text-white">{d.text}</div><div className="text-[10px] italic mt-0.5" style={{ color: '#EF4444' }}>{d.sub}</div></div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>£12,400 in OOM points drops off this week. Win tonight to cover the gap.</span>
+                      </div>
+                    </>)}
+
+                    {/* ── Step 10: CTA ── */}
+                    {step.preview === 'cta' && (<>
+                      <h2 className="text-xl font-black text-white mb-2">Run your darts career like a business.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Everything a professional darts player needs — rankings, travel, sponsors, team, AI analysis — in one place. Built for PDC Tour level. Works from the oche to the airport.</p>
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        {[
+                          { icon:'📊', label:'PDC Rankings', desc:'Live OOM tracking' },
+                          { icon:'✈️', label:'Smart Travel', desc:'Flights + hotels' },
+                          { icon:'🤖', label:'AI Analysis', desc:'Match prep + scout' },
+                          { icon:'🤝', label:'Sponsor Manager', desc:'Obligations tracked' },
+                          { icon:'👥', label:'Team Hub', desc:'Everyone connected' },
+                          { icon:'🔔', label:"Don't Miss", desc:'Nothing slips' },
+                        ].map((f, i) => (
+                          <div key={i} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                            <div className="text-xl mb-1">{f.icon}</div>
+                            <div className="text-[10px] font-bold text-white">{f.label}</div>
+                            <div className="text-[9px] text-gray-500">{f.desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(139,92,246,0.1))', border: '1px solid rgba(249,115,22,0.25)' }}>
+                        <div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div>
+                        <div className="text-[11px] mb-3" style={{ color: '#9CA3AF' }}>Connect your real data in under 10 minutes. Cancel anytime.</div>
+                        <div className="flex justify-center gap-2">
+                          <button onClick={goLive} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#F97316' }}>Go to my dashboard →</button>
+                          <button className="px-4 py-2 rounded-xl text-xs font-bold" style={{ border: '1px solid #374151', color: '#9CA3AF' }}>Invite my team →</button>
+                        </div>
+                      </div>
+                      <div className="rounded-lg p-3 mt-4 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <span style={{ color: '#F59E0B' }}>🏆</span> <span style={{ color: '#F59E0B' }}>You&apos;re one of our first 20 founding members. We&apos;ll build what you ask for.</span>
+                      </div>
+                    </>)}
                   </div>
+                  {/* Navigation */}
                   <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
                     <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
-                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {STEPS.length}</span>
-                    {tourStep < STEPS.length - 1 ? (
+                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {TOUR_STEPS.length}</span>
+                    {tourStep < TOUR_STEPS.length - 1 ? (
                       <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#F97316' }}>Next →</button>
                     ) : (
-                      <button onClick={() => { localStorage.setItem('darts_getting_started_seen', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go 🎯</button>
+                      <button onClick={goLive} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go 🎯</button>
                     )}
                   </div>
                 </div>
@@ -1135,7 +1408,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div className="bg-red-600/15 border border-red-600/30 rounded-xl px-6 py-3 text-center">
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(220,38,38,0.2)', border: '2px solid #dc2626', color: '#dc2626' }}>
-                      {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : (() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null; return ph ? <img src={ph} alt="" className="w-full h-full object-cover" /> : displayPlayerName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() })()}
+                      {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : (liveProfilePhoto ? <img src={liveProfilePhoto} alt="" className="w-full h-full object-cover" /> : displayPlayerName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase())}
                     </div>
                     <div className="text-sm font-bold text-white">{displayPlayerName}</div>
                     {displayPlayerNickname && <div className="text-[10px] text-gray-500 italic">{displayPlayerNickname}</div>}
@@ -7592,6 +7865,16 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null } catch { return null } })
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
+  const liveProfileNameOuter = useDartsProfileName()
+  const liveProfilePhotoOuter = useDartsProfilePhoto()
+  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
+    window.addEventListener('lumio-profile-updated', sync)
+    return () => window.removeEventListener('lumio-profile-updated', sync)
+  }, [])
 
   useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_darts_sidebar_pinned') === 'true') }, [])
   function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_darts_sidebar_pinned', String(next)); return next }) }
@@ -7849,7 +8132,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
         </nav>
 
         <RoleSwitcher
-          session={session}
+          session={liveSession}
           roles={DARTS_ROLES}
           accentColor="#dc2626"
           onRoleChange={(role) => {
@@ -7922,7 +8205,7 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
                   style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.2), rgba(249,115,22,0.2))', border: '1px solid rgba(220,38,38,0.3)' }}>
                   {currentPhoto ? <img src={currentPhoto} alt="Player" className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <span className="text-5xl">🎯</span>}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg"><span className="text-white text-xs font-bold">📷 Change photo</span></div>
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const compressed = r.result as string; localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed) }; r.readAsDataURL(f) }} />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const compressed = r.result as string; localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed); if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated')) }; r.readAsDataURL(f) }} />
                 </label>
                 {/* Name */}
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">
