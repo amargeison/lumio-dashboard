@@ -9261,6 +9261,18 @@ export function TennisPortalInner({ session }: { session: SportsDemoSession }) {
 
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
+
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { const saved = localStorage.getItem('lumio_tennis_hidden_items'); return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
+  useEffect(() => {
+    const handler = (e: Event) => { const ce = e as CustomEvent; if (ce.detail?.storagePrefix === 'lumio_tennis_') setHiddenItems(ce.detail.hiddenItems) }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+  const isHidden = (key: string) => hiddenItems.includes(key)
+
   const player = DEMO_PLAYER;
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [h2hData, setH2hData] = useState<any[]>([]);
@@ -9839,6 +9851,28 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             pendingInvites: 0,
             roleOptions: ['Coach','Physio','Agent','Fitness Trainer','Mental Coach','Admin'],
           }}
+          navItems={[
+            { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
+            { key: 'performance', label: 'Performance', emoji: '📊' },
+            { key: 'gpsvideo', label: 'GPS & Video', emoji: '🛰️' },
+            { key: 'schedule', label: 'Tournament Schedule', emoji: '🗓️' },
+            { key: 'matchprep', label: 'Match Prep', emoji: '🎯' },
+            { key: 'team', label: 'Team Hub', emoji: '👥' },
+            { key: 'sponsorship', label: 'Sponsorship', emoji: '🤝' },
+            { key: 'financial', label: 'Financial', emoji: '💰' },
+            { key: 'media', label: 'Media & Content', emoji: '📱' },
+            { key: 'travel', label: 'Travel & Logistics', emoji: '✈️' },
+            { key: 'career', label: 'Career Planning', emoji: '🚀' },
+          ]}
+          featureItems={[
+            { key: 'morning-briefing', label: 'Morning Briefing', emoji: '🌅', description: 'AI summary at top of dashboard' },
+            { key: 'quick-actions', label: 'Quick Actions bar', emoji: '⚡', description: 'Action buttons below tab bar' },
+            { key: 'ai-section', label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+            { key: 'world-clock', label: 'World Clock', emoji: '🕐', description: 'Multi-timezone clock in banner' },
+            { key: 'weather', label: 'Weather widget', emoji: '🌤️', description: 'Current location weather' },
+            { key: 'player-card', label: 'Player Card', emoji: '🃏', description: 'Stats card in right sidebar' },
+          ]}
+          onVisibilityChange={(items) => setHiddenItems(items)}
           showWorldClock
           showAppearance
           showDeveloperTools
@@ -9919,6 +9953,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         <nav className="flex-1 overflow-y-auto py-0.5 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems
+              .filter(item => !isHidden(item.id))
               .filter(i => i.group === group)
               .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
             return (

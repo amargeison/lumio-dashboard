@@ -7961,6 +7961,16 @@ export function DartsPortalInner({ slug, session }: { slug: string; session: Spo
   const sidebarExpanded = sidebarPinned || sidebarHovered;
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const closeModal = () => setActiveModal(null)
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { const saved = localStorage.getItem('lumio_darts_hidden_items'); return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
+  useEffect(() => {
+    const handler = (e: Event) => { const ce = e as CustomEvent; if (ce.detail?.storagePrefix === 'lumio_darts_') setHiddenItems(ce.detail.hiddenItems) }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+  const isHidden = (key: string) => hiddenItems.includes(key)
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null } catch { return null } })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useDartsProfileName()
@@ -8126,6 +8136,29 @@ export function DartsPortalInner({ slug, session }: { slug: string; session: Spo
               { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
             ],
           }}
+          navItems={[
+            { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
+            { key: 'performance', label: 'Performance', emoji: '📈' },
+            { key: 'dartcam', label: 'Dart Cam & Analytics', emoji: '🎯' },
+            { key: 'schedule', label: 'Tournament Schedule', emoji: '🗓️' },
+            { key: 'match-prep', label: 'Match Prep', emoji: '⚡' },
+            { key: 'opponentintel', label: 'Opponent Intel', emoji: '🔍' },
+            { key: 'teamhub', label: 'Team Hub', emoji: '👥' },
+            { key: 'sponsorship', label: 'Sponsorship', emoji: '🤝' },
+            { key: 'exhibitions', label: 'Exhibitions', emoji: '🎪' },
+            { key: 'financial', label: 'Financial', emoji: '💰' },
+            { key: 'travel', label: 'Travel', emoji: '✈️' },
+            { key: 'equipment', label: 'Equipment', emoji: '📦' },
+          ]}
+          featureItems={[
+            { key: 'morning-briefing', label: 'Morning Briefing', emoji: '🌅', description: 'AI summary at top of dashboard' },
+            { key: 'quick-actions', label: 'Quick Actions bar', emoji: '⚡', description: 'Action buttons below tab bar' },
+            { key: 'ai-section', label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+            { key: 'world-clock', label: 'World Clock', emoji: '🕐', description: 'Multi-timezone clock in banner' },
+            { key: 'weather', label: 'Weather widget', emoji: '🌤️', description: 'Current location weather' },
+            { key: 'player-card', label: 'Player Card', emoji: '🃏', description: 'Stats card in right sidebar' },
+          ]}
+          onVisibilityChange={(items) => setHiddenItems(items)}
           showWorldClock
           showAppearance
           showDeveloperTools
@@ -8207,6 +8240,7 @@ export function DartsPortalInner({ slug, session }: { slug: string; session: Spo
         <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
             const items = visibleSidebarItems
+              .filter(item => !isHidden(item.id))
               .filter(i => i.group === group)
               .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
             return (
