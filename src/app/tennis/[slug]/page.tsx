@@ -1544,6 +1544,41 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   })}
                 </div>
               </div>
+
+              {/* Today's Venue */}
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>TODAY&apos;S VENUE</span>
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Monte-Carlo Country Club</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>18&deg;C &middot; Sunny &middot; Court 4 open 10:00</p>
+                  </div>
+                  <div className="space-y-1.5 pt-1" style={{ borderTop: '1px solid #1F2937' }}>
+                    <div className="flex items-center justify-between text-[11px] pt-2">
+                      <span style={{ color: '#6B7280' }}>Match time</span>
+                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>13:00</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span style={{ color: '#6B7280' }}>Court</span>
+                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Court 4 &middot; Clay</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span style={{ color: '#6B7280' }}>Prize (W)</span>
+                      <span className="font-semibold" style={{ color: '#22C55E' }}>&pound;342,000</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span style={{ color: '#6B7280' }}>Prize (L)</span>
+                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>&pound;57,000</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span style={{ color: '#6B7280' }}>TV</span>
+                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Tennis Channel / Amazon Prime</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* RIGHT: Photo frame + AI Morning Summary + AI Key Highlights */}

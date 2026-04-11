@@ -258,6 +258,19 @@ export default function SportsLandingPage() {
         </div>
       </section>
 
+      {/* ═══ FOUNDING MEMBER PROGRAMME ═══ */}
+      <section style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.08))' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: '#F9FAFB', marginBottom: 8 }}>Founding Member Programme</h2>
+        <p style={{ fontSize: 16, color: '#9CA3AF', maxWidth: 500, margin: '0 auto 24px' }}>
+          We&apos;re onboarding our first 20 athletes completely free. No card, no trial timer — just feedback.
+        </p>
+        <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#7C3AED', color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none' }}>
+          Apply for Free Founding Access →
+        </Link>
+        <p style={{ fontSize: 12, color: '#4B5563', marginTop: 12 }}>Available for Tennis, Golf, Darts, Boxing, Rugby, Cricket</p>
+      </section>
+
       {/* ═══ SECTION 6: FINAL CTA ═══ */}
       <section className="relative overflow-hidden px-6 py-32" style={{borderTop:'1px solid #1E293B'}}>
         <div className="absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
