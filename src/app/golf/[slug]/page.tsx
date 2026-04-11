@@ -302,7 +302,11 @@ const FormTracker = ({ results }: { results: Array<{event: string; pos: string; 
 );
 
 // ─── PLAYER CARD ─────────────────────────────────────────────────────────────
-const PlayerCard = ({ player, setActiveSection = () => {} }: { player: GolfPlayer; setActiveSection?: (s: string) => void }) => (
+const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: GolfPlayer; session?: { userName?: string; photoDataUrl?: string | null; role?: string }; setActiveSection?: (s: string) => void }) => {
+  const isPlayerRole = !session?.role || session.role === 'player'
+  const liveName = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session?.userName || player.name : player.name
+  const livePhoto = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null) || session?.photoDataUrl : null
+  return (
   <div className="relative w-52 rounded-xl overflow-hidden border-2 border-green-600/40 shadow-2xl shadow-green-900/30 flex-shrink-0"
     style={{ background: 'linear-gradient(135deg, #0a1a0a 0%, #0d1929 50%, #0a1a12 100%)' }}>
     <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #16a34a, #0D9488, #6C3FC5)' }}></div>
@@ -318,12 +322,12 @@ const PlayerCard = ({ player, setActiveSection = () => {} }: { player: GolfPlaye
         </button>
         <div className="text-2xl">{player.flag}</div>
       </div>
-      <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center text-6xl"
+      <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center text-6xl overflow-hidden"
         style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.15) 0%, rgba(13,148,136,0.15) 100%)', border: '1px solid rgba(22,163,74,0.2)' }}>
-        ⛳
+        {livePhoto ? <img src={livePhoto} alt={liveName} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : '⛳'}
       </div>
-      <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{player.name.split(' ')[0]}</div>
-      <div className="text-green-400 font-bold text-xs uppercase tracking-widest text-center mb-3">{player.name.split(' ').slice(1).join(' ')}</div>
+      <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{liveName.split(' ')[0]}</div>
+      <div className="text-green-400 font-bold text-xs uppercase tracking-widest text-center mb-3">{liveName.split(' ').slice(1).join(' ')}</div>
       <div className="grid grid-cols-3 gap-1 mb-2">
         {[
           { val: player.owgr_points.toFixed(1), label: 'PTS AVG' },
@@ -346,7 +350,8 @@ const PlayerCard = ({ player, setActiveSection = () => {} }: { player: GolfPlaye
       <div className="text-[9px] font-bold text-white/80 uppercase tracking-widest">LUMIO TOUR · GOLF</div>
     </div>
   </div>
-);
+  )
+}
 
 // ─── AI SECTION COMPONENT ────────────────────────────────────────────────────
 interface GolfAISectionProps {
@@ -5905,7 +5910,7 @@ function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
           {/* Right column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
-            <PlayerCard player={player} setActiveSection={setActiveSection} />
+            <PlayerCard player={player} session={session} setActiveSection={setActiveSection} />
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">This Week</div>
               <div className="text-xs text-green-400 font-medium">● In Progress</div>
