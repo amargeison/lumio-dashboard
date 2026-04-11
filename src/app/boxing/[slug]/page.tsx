@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
+import SportsSettings from '@/components/sports/SportsSettings'
 
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -102,7 +103,7 @@ const SIDEBAR_ITEMS = [
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
   { id: 'gps',             label: 'GPS Load Monitor',    icon: '📡', group: 'INTEGRATIONS' },
   { id: 'gpsvest',         label: 'GPS Vest Dashboard',  icon: '🦺', group: 'INTEGRATIONS' },
-  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'SYSTEM' },
+  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'INTEL' },
 ];
 
 // ─── DEMO FIGHTER DATA ────────────────────────────────────────────────────────
@@ -5820,343 +5821,6 @@ function BoxingHotelFinder({ onClose, fighter }: { onClose: () => void; fighter:
   )
 }
 
-function SettingsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
-  const ACCENT = '#dc2626';
-  const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [voiceId, setVoiceId] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL');
-  const [weightClass, setWeightClass] = useState(fighter.weight_class);
-  const [sanctioning, setSanctioning] = useState<Record<string, boolean>>({ WBC: true, WBA: true, WBO: true, IBF: true });
-  const [devPrompt, setDevPrompt] = useState('');
-  const [devResponse, setDevResponse] = useState('');
-  const [devRoute, setDevRoute] = useState('/api/ai/boxing');
-  const [devTesting, setDevTesting] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_name')) || fighter.name);
-  const [editingNickname, setEditingNickname] = useState(false);
-  const [nicknameValue, setNicknameValue] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_nickname')) || fighter.nickname);
-
-  const isDev = typeof window !== 'undefined' && (window.location.hostname.includes('dev.') || localStorage.getItem('lumio_dev_mode') === 'true');
-
-  const toggleStyle = (on: boolean) => ({
-    width: 44, height: 24, borderRadius: 12,
-    backgroundColor: on ? ACCENT : '#374151',
-    position: 'relative' as const, cursor: 'pointer', transition: 'background-color 0.2s',
-  });
-  const toggleKnob = (on: boolean) => ({
-    width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff',
-    position: 'absolute' as const, top: 3, left: on ? 23 : 3, transition: 'left 0.2s',
-  });
-
-  const Card = ({ children }: { children: React.ReactNode }) => (
-    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>{children}</div>
-  );
-  const SectionHead = ({ title }: { title: string }) => (
-    <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-      <p className="text-sm font-semibold text-white">{title}</p>
-    </div>
-  );
-  const Row = ({ label, right }: { label: string; right: React.ReactNode }) => (
-    <div className="flex items-center justify-between px-5 py-3">
-      <span className="text-sm text-gray-300">{label}</span>
-      <div>{right}</div>
-    </div>
-  );
-  const ConnectBtn = ({ connected }: { connected?: boolean }) => (
-    <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{
-      backgroundColor: connected ? 'rgba(16,185,129,0.15)' : `${ACCENT}22`,
-      color: connected ? '#10b981' : ACCENT,
-    }}>{connected ? 'Connected' : 'Connect'}</button>
-  );
-  const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
-    <div style={toggleStyle(on)} onClick={onToggle}><div style={toggleKnob(on)} /></div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader icon="⚙️" title="Settings" subtitle="Profile, integrations, team access, appearance, and developer tools." />
-
-      {/* 1 — Profile */}
-      <Card>
-        <SectionHead title="🥊 Profile" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm text-gray-300">Name</span>
-            <div className="flex items-center gap-2">
-              {editingName ? (
-                <>
-                  <input value={nameValue} onChange={e => setNameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
-                  <button onClick={() => { localStorage.setItem('lumio_boxing_name', nameValue); setEditingName(false) }} className="text-xs text-green-400">Save</button>
-                  <button onClick={() => setEditingName(false)} className="text-xs text-gray-500">Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-white">{nameValue}</span>
-                  <button onClick={() => setEditingName(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm text-gray-300">Nickname</span>
-            <div className="flex items-center gap-2">
-              {editingNickname ? (
-                <>
-                  <input value={nicknameValue} onChange={e => setNicknameValue(e.target.value)} className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-sm text-white w-40" autoFocus />
-                  <button onClick={() => { localStorage.setItem('lumio_boxing_nickname', nicknameValue); setEditingNickname(false) }} className="text-xs text-green-400">Save</button>
-                  <button onClick={() => setEditingNickname(false)} className="text-xs text-gray-500">Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-white">&quot;{nicknameValue}&quot;</span>
-                  <button onClick={() => setEditingNickname(true)} className="text-xs text-gray-500 hover:text-gray-300">Edit</button>
-                </>
-              )}
-            </div>
-          </div>
-          {[
-            { label: 'Tour', value: 'Professional Boxing' },
-            { label: 'Ranking', value: `WBC #${fighter.rankings.wbc} / WBA #${fighter.rankings.wba} / WBO #${fighter.rankings.wbo} / IBF #${fighter.rankings.ibf}` },
-            { label: 'Trainer', value: fighter.trainer },
-            { label: 'Manager', value: fighter.manager },
-            { label: 'Season', value: '2025/26' },
-          ].map((f, i) => (
-            <Row key={i} label={f.label} right={<span className="text-sm text-white">{f.value}</span>} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 2 — Sport-Specific Configuration */}
-      <Card>
-        <SectionHead title="🥊 Boxing Configuration" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="BoxRec Fighter ID" right={<span className="text-sm text-white font-mono">BR-{fighter.id.replace(/\D/g, '').padStart(6, '0')}</span>} />
-          <Row label="Weight Class" right={
-            <select value={weightClass} onChange={e => setWeightClass(e.target.value)}
-              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
-              {['Heavyweight', 'Cruiserweight', 'Light Heavyweight', 'Super Middleweight', 'Middleweight', 'Super Welterweight', 'Welterweight', 'Super Lightweight', 'Lightweight', 'Super Featherweight', 'Featherweight', 'Super Bantamweight', 'Bantamweight', 'Super Flyweight', 'Flyweight', 'Minimumweight'].map(w => <option key={w} value={w}>{w}</option>)}
-            </select>
-          } />
-          <div className="px-5 py-3">
-            <div className="text-sm text-gray-300 mb-2">Sanctioning Body Preference</div>
-            <div className="flex gap-3">
-              {['WBC', 'WBA', 'WBO', 'IBF'].map(body => (
-                <label key={body} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={sanctioning[body]} onChange={() => setSanctioning(s => ({ ...s, [body]: !s[body] }))}
-                    className="rounded border-gray-600" style={{ accentColor: ACCENT }} />
-                  <span className="text-xs text-gray-300">{body}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* 3 — Integrations: Data Providers */}
-      <Card>
-        <SectionHead title="🔌 Integrations — Data Providers" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: 'BoxRec', icon: '🥊', connected: true },
-            { name: 'WBC Rankings', icon: '🟢', connected: true },
-            { name: 'WBA Rankings', icon: '🔵', connected: true },
-            { name: 'WBO Rankings', icon: '🟡', connected: false },
-            { name: 'IBF Rankings', icon: '🔴', connected: false },
-            { name: 'STATSports', icon: '📡', connected: false },
-            { name: 'Veo', icon: '📹', connected: false },
-            { name: 'Compubox', icon: '🖥️', connected: true },
-          ].map((p, i) => (
-            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 4 — Integrations: Communication */}
-      <Card>
-        <SectionHead title="💬 Integrations — Communication" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: 'Slack', icon: '💬', connected: true },
-            { name: 'Microsoft Teams', icon: '👥', connected: false },
-            { name: 'Google Workspace', icon: '📧', connected: false },
-            { name: 'WhatsApp Business', icon: '📱', connected: false },
-          ].map((p, i) => (
-            <Row key={i} label={`${p.icon} ${p.name}`} right={<ConnectBtn connected={p.connected} />} />
-          ))}
-        </div>
-      </Card>
-
-      {/* 5 — Team & Staff */}
-      <Card>
-        <SectionHead title="👥 Team & Staff" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { name: fighter.trainer, role: 'Trainer', access: 'Full' },
-            { name: fighter.manager, role: 'Manager', access: 'Commercial' },
-            { name: fighter.cutman, role: 'Cutman', access: 'Limited' },
-            { name: fighter.strength_coach, role: 'Strength & Conditioning', access: 'Limited' },
-            { name: fighter.nutritionist, role: 'Nutritionist', access: 'Limited' },
-            { name: fighter.physio, role: 'Physio', access: 'Limited' },
-          ].map((s, i) => (
-            <div key={i} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <div className="text-sm text-white">{s.name}</div>
-                <div className="text-xs text-gray-500">{s.role}</div>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${s.access === 'Full' ? 'bg-teal-600/20 text-teal-400' : s.access === 'Commercial' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400'}`}>{s.access}</span>
-            </div>
-          ))}
-          <div className="px-5 py-3 italic text-xs text-gray-500">No pending invites</div>
-          <div className="px-5 py-3">
-            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>+ Invite Team Member</button>
-          </div>
-        </div>
-      </Card>
-
-      {/* 6 — Voice Assistant */}
-      <Card>
-        <SectionHead title="🎙️ Voice Assistant" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="Text-to-Speech" right={<Toggle on={ttsEnabled} onToggle={() => setTtsEnabled(!ttsEnabled)} />} />
-          <Row label="Voice" right={
-            <select value={voiceId} onChange={e => setVoiceId(e.target.value)}
-              className="bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
-              {['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'].map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          } />
-        </div>
-      </Card>
-
-      {/* 7 — World Clock */}
-      <Card>
-        <SectionHead title="🕐 World Clock" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          {[
-            { city: 'London', tz: 'Europe/London' },
-            { city: 'New York', tz: 'America/New_York' },
-            { city: 'Las Vegas', tz: 'America/Los_Angeles' },
-            { city: 'Dubai', tz: 'Asia/Dubai' },
-          ].map((c, i) => (
-            <Row key={i} label={c.city} right={
-              <span className="text-sm text-white font-mono">
-                {new Date().toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' })}
-              </span>
-            } />
-          ))}
-        </div>
-      </Card>
-
-      {/* 8 — Appearance */}
-      <Card>
-        <SectionHead title="🎨 Appearance" />
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <Row label="Theme" right={<span className="text-sm text-white">Dark</span>} />
-          <Row label="Accent Colour" right={
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full" style={{ backgroundColor: ACCENT }} />
-              <span className="text-xs text-gray-400 font-mono">{ACCENT}</span>
-            </div>
-          } />
-        </div>
-      </Card>
-
-      {/* 9 — DEV SECTION (conditional) */}
-      {isDev && (
-        <Card>
-          <SectionHead title="🛠️ Developer Tools" />
-          <div className="p-5">
-            <div className="grid grid-cols-2 gap-4">
-              {/* 1 — Demo Data */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Demo Data</div>
-                <div className="text-[10px] text-gray-500 mb-3">Status: <span className="text-teal-400">Loaded</span></div>
-                <button onClick={() => { localStorage.removeItem('lumio_boxing_data'); window.location.reload(); }}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>Reset Demo Data</button>
-              </div>
-
-              {/* 2 — API Route Tester */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">API Route Tester</div>
-                <select value={devRoute} onChange={e => setDevRoute(e.target.value)}
-                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white mb-2">
-                  <option value="/api/ai/boxing">/api/ai/boxing</option>
-                </select>
-                <textarea value={devPrompt} onChange={e => setDevPrompt(e.target.value)} placeholder="Enter prompt..."
-                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 mb-2 resize-none" rows={2} />
-                <button onClick={async () => {
-                  setDevTesting(true); setDevResponse('');
-                  try {
-                    const res = await fetch(devRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: devPrompt }) });
-                    const data = await res.json();
-                    setDevResponse(JSON.stringify(data, null, 2));
-                  } catch (err) { setDevResponse(String(err)); }
-                  setDevTesting(false);
-                }} className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}>
-                  {devTesting ? 'Testing...' : 'Test'}
-                </button>
-                {devResponse && <pre className="mt-2 text-[10px] text-gray-400 max-h-24 overflow-auto whitespace-pre-wrap">{devResponse}</pre>}
-              </div>
-
-              {/* 3 — LocalStorage Inspector */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">LocalStorage Inspector</div>
-                <div className="space-y-1 max-h-28 overflow-auto mb-2">
-                  {typeof window !== 'undefined' && Object.keys(localStorage).filter(k => k.startsWith('lumio_')).map(k => (
-                    <div key={k} className="flex items-center justify-between text-[10px]">
-                      <span className="text-gray-400 font-mono truncate mr-2">{k}</span>
-                      <button onClick={() => { localStorage.removeItem(k); window.location.reload(); }} className="text-red-400 hover:text-red-300 shrink-0">✕</button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => { Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => localStorage.removeItem(k)); window.location.reload(); }}
-                    className="text-[10px] text-red-400 hover:text-red-300">Clear All</button>
-                  <button onClick={() => {
-                    const data: Record<string,string> = {};
-                    Object.keys(localStorage).filter(k => k.startsWith('lumio_')).forEach(k => { data[k] = localStorage.getItem(k) || ''; });
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lumio_localstorage.json'; a.click();
-                  }} className="text-[10px] text-blue-400 hover:text-blue-300">Export JSON</button>
-                </div>
-              </div>
-
-              {/* 4 — Environment */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Environment</div>
-                <div className="space-y-1 text-[10px]">
-                  <div><span className="text-gray-500">NODE_ENV:</span> <span className="text-gray-300">{process.env.NODE_ENV}</span></div>
-                  <div><span className="text-gray-500">Branch:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || 'local'}</span></div>
-                  <div><span className="text-gray-500">Deploy:</span> <span className="text-gray-300">{process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev'}</span></div>
-                  <div><span className="text-gray-500">Next.js:</span> <span className="text-gray-300">{require('next/package.json').version}</span></div>
-                </div>
-              </div>
-
-              {/* 5 — TypeScript Check */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">TypeScript Check</div>
-                <div className="text-[10px] text-gray-500 mb-2">Run in terminal:</div>
-                <code className="block text-[10px] text-yellow-400 bg-black/40 rounded px-2 py-1 mb-2 select-all">npx tsc --noEmit --skipLibCheck</code>
-                <textarea placeholder="Paste output here..." className="w-full bg-black/40 border border-gray-700 rounded-lg px-2 py-1.5 text-[10px] text-white placeholder-gray-600 resize-none" rows={3} />
-              </div>
-
-              {/* 6 — Portal Info */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
-                <div className="text-xs font-semibold text-white mb-2">Portal Info</div>
-                <div className="space-y-1 text-[10px]">
-                  <div><span className="text-gray-500">Sport:</span> <span className="text-gray-300">Boxing</span></div>
-                  <div><span className="text-gray-500">Slug:</span> <span className="text-gray-300 font-mono">{typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : ''}</span></div>
-                  <div><span className="text-gray-500">File:</span> <span className="text-gray-300 font-mono">src/app/boxing/[slug]/page.tsx</span></div>
-                  <div><span className="text-gray-500">LocalStorage keys:</span> <span className="text-gray-300">{typeof window !== 'undefined' ? Object.keys(localStorage).filter(k => k.startsWith('lumio_')).length : 0}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <BoxingAISection context="default" fighter={fighter} session={session} />
-    </div>
-  );
-}
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -6619,7 +6283,84 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
       case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
       case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
-      case 'settings':        return <SettingsView fighter={fighter} session={session} />;
+      case 'settings':        return (
+        <SportsSettings
+          sport="boxing"
+          slug={fighter.slug}
+          sportLabel="Boxing"
+          entity="player"
+          accentColour="#dc2626"
+          accentLight="#ef4444"
+          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
+          storagePrefix="lumio_boxing_"
+          profile={{
+            name: 'Full Name',
+            tour: 'Tour',
+            tourValue: 'Professional Boxing',
+            ranking: 'Ranking',
+            rankingValue: `WBC #${fighter.rankings.wbc} / WBA #${fighter.rankings.wba} / WBO #${fighter.rankings.wbo} / IBF #${fighter.rankings.ibf}`,
+            coach: 'Trainer',
+            coachValue: fighter.trainer,
+            agent: 'Manager',
+            agentValue: fighter.manager,
+            playerIdLabel: 'BoxRec Fighter ID',
+            staffInviteRoles: ['Trainer','Cutman','Strength Coach','Nutritionist','Physio','Manager'],
+          }}
+          configFields={[
+            { id: 'boxrecId', label: 'BoxRec Fighter ID', description: 'For live ranking and fight history', kind: 'text', placeholder: 'e.g. BR-000001' },
+            { id: 'weightClass', label: 'Weight Class', kind: 'select', options: ['Heavyweight','Cruiserweight','Light Heavyweight','Super Middleweight','Middleweight','Super Welterweight','Welterweight','Super Lightweight','Lightweight','Super Featherweight','Featherweight','Super Bantamweight','Bantamweight','Super Flyweight','Flyweight','Minimumweight'], defaultValue: fighter.weight_class },
+            { id: 'sanctioning', label: 'Sanctioning Body Preference', kind: 'checkboxGroup', options: ['WBC','WBA','WBO','IBF'], defaultValue: ['WBC','WBA','WBO','IBF'] },
+          ]}
+          integrationGroups={[
+            {
+              title: 'DATA PROVIDERS',
+              items: [
+                { name: 'BoxRec', desc: 'Fight history & records', connected: true },
+                { name: 'WBC Rankings', desc: 'World Boxing Council ratings', connected: true },
+                { name: 'WBA Rankings', desc: 'World Boxing Association ratings', connected: true },
+                { name: 'WBO Rankings', desc: 'World Boxing Organization ratings' },
+                { name: 'IBF Rankings', desc: 'International Boxing Federation ratings' },
+                { name: 'STATSports', desc: 'Movement & load tracking' },
+                { name: 'Veo', desc: 'Sparring video capture & analysis' },
+                { name: 'Compubox', desc: 'Live punch stats', connected: true },
+              ],
+            },
+            {
+              title: 'COMMUNICATION',
+              items: [
+                { name: 'Slack', desc: 'Team messaging & alerts', connected: true },
+                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
+                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
+                { name: 'WhatsApp Business', desc: 'Fighter & manager messaging' },
+              ],
+            },
+          ]}
+          voiceOptions={[
+            { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', desc: 'Warm, confident British female — ideal for morning briefings' },
+            { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — clear and composed' },
+            { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', desc: 'Professional British male — steady fight-night narration' },
+          ]}
+          teamInvite={{
+            enabled: true,
+            staffCount: 1,
+            pendingInvites: 0,
+            roleOptions: ['Trainer','Cutman','Strength Coach','Nutritionist','Physio','Manager'],
+            members: [
+              { name: fighter.trainer, role: 'Trainer', access: 'Full' },
+              { name: fighter.manager, role: 'Manager', access: 'Commercial' },
+              { name: fighter.cutman, role: 'Cutman', access: 'Limited' },
+              { name: fighter.strength_coach, role: 'Strength & Conditioning', access: 'Limited' },
+              { name: fighter.nutritionist, role: 'Nutritionist', access: 'Limited' },
+              { name: fighter.physio, role: 'Physio', access: 'Limited' },
+            ],
+          }}
+          showWorldClock
+          showAppearance
+          showDeveloperTools
+          devApiRouteOptions={['/api/ai/boxing']}
+          extraSections={<BoxingAISection context="default" fighter={fighter} session={session} />}
+        />
+      );
       default:                return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;
     }
   };
@@ -6680,7 +6421,9 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-2 px-1.5">
           {groups.map(group => {
-            const items = visibleSidebarItems.filter(i => i.group === group);
+            const items = visibleSidebarItems
+              .filter(i => i.group === group)
+              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
             if (items.length === 0) return null;
             return (
               <div key={group} className="mb-3">
