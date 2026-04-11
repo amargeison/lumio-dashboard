@@ -861,6 +861,11 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
   // Morning Roundup state
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+  })
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [repliedTo, setRepliedTo] = useState<string[]>([])
@@ -979,7 +984,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
-            <p className="text-xs italic" style={{ color: '#dc2626' }}>
+            <p className="text-xs italic" style={{ color: '#facc15' }}>
               &ldquo;Everyone has a plan until they get punched in the mouth.&rdquo; &mdash; Mike Tyson
             </p>
           </div>
@@ -1008,8 +1013,8 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Las Vegas', tz:'America/Los_Angeles', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
                   <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#dc2626' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#dc2626' : '#6B7280' }}>{city}</span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: '#facc15' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
                   </div>
                 ))}
               </div>
@@ -1062,6 +1067,12 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
             { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
             { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
+            { id:'weightcut', label:'Weight Cut AI', icon:'⚖️', color:'#F59E0B', hot:true },
+            { id:'opponentscout', label:'Opponent Scout', icon:'🥊', color:'#8B5CF6', hot:true },
+            { id:'vadacheck', label:'VADA/UKAD Check', icon:'💊', color:'#EF4444', hot:true },
+            { id:'pursebreakdown', label:'Purse Breakdown', icon:'📋', color:'#22C55E', hot:false },
+            { id:'rankingstracker', label:'Rankings Tracker', icon:'🏆', color:'#F59E0B', hot:true },
+            { id:'campcontent', label:'Camp Content AI', icon:'🎬', color:'#8B5CF6', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal?.(a.id)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
@@ -1152,10 +1163,22 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
             </div>
             <div>
-              {ROUNDUP_ITEMS.map((ch) => {
+              {(roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_ITEMS).map((ch, idx) => {
                 const isOpen = expandedChannel === ch.id
                 return (
-                  <div key={ch.id} style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px' }}>
+                  <div key={ch.id} draggable
+                    onDragStart={() => setDragIdx(idx)}
+                    onDragEnter={() => setDragOverIdx(idx)}
+                    onDragOver={e => e.preventDefault()}
+                    onDragEnd={() => {
+                      if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                        const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_ITEMS]
+                        const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
+                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_boxing_roundup_order', JSON.stringify(newOrder))
+                      }
+                      setDragIdx(null); setDragOverIdx(null)
+                    }}
+                    style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
                     <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
                       className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
                       <div className="flex items-center gap-3">
@@ -6534,6 +6557,398 @@ function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: 
   )
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── NEW QUICK ACTION MODALS (6) ──────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ─── WEIGHT CUT AI ───────────────────────────────────────────────────────────
+function BoxingWeightCutAI({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+  const [currentWeight, setCurrentWeight] = useState<string>(() => {
+    try { return (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_current_weight') : null) || String(fighter.current_weight) } catch { return String(fighter.current_weight) }
+  })
+  const [fightWeight, setFightWeight] = useState<string>(String(fighter.target_weight))
+  const [days, setDays] = useState<string>(String(fighter.next_fight.days_away))
+  const [loading, setLoading] = useState(false)
+  const [plan, setPlan] = useState<string | null>(null)
+
+  const curr = parseFloat(currentWeight) || 0
+  const target = parseFloat(fightWeight) || 0
+  const daysN = parseInt(days) || 0
+  const totalCut = Math.max(0, curr - target)
+  const dailyCut = daysN > 0 ? totalCut / daysN : 0
+  const pctOfBody = curr > 0 ? (totalCut / curr) * 100 : 0
+  const progressPct = curr > 0 && target > 0 ? Math.min(100, Math.max(0, ((curr - target) / Math.max(1, curr - target + 5)) * 100)) : 0
+  const barColour = daysN > 10 ? '#22C55E' : daysN >= 4 ? '#F59E0B' : '#EF4444'
+  const dangerous = pctOfBody > 5 && daysN < 7
+
+  const generate = async () => {
+    setLoading(true)
+    try { localStorage.setItem('lumio_boxing_current_weight', currentWeight) } catch {}
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 900,
+          messages: [{ role: 'user', content: `Professional boxer. Current weight: ${curr}kg. Fight limit: ${target}kg. Days to weigh-in: ${daysN}. Total cut required: ${totalCut.toFixed(1)}kg. Daily deficit needed: ${dailyCut.toFixed(2)}kg/day (${pctOfBody.toFixed(1)}% of body mass over ${daysN} days).
+
+Create a safe weight cut protocol covering: daily weight targets from today to weigh-in, water and sodium manipulation timeline, when to start sweat sessions (sauna / bath), final 24-hour water cut, and rehydration plan for the 24 hours after weigh-in before the fight. ${dangerous ? 'FLAG CLEARLY that this cut is medically dangerous — over 5% body weight in under 7 days carries real risk of kidney damage, seizures and impaired fight-night performance. Strongly recommend consultation with a sports medicine doctor.' : ''}
+
+Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setPlan(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
+      setPlan(cleanResponse(raw) || '⚠️ No response from AI.')
+    } catch (err) { console.error('[BoxingWeightCutAI] fetch error:', err); setPlan('⚠️ Unable to reach AI service.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="⚖️" title="Weight Cut AI" subtitle="Daily tracker with AI-generated cut plan" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-3 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Current (kg)</label><input type="number" step="0.1" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Fight limit (kg)</label><input type="number" step="0.1" value={fightWeight} onChange={e => setFightWeight(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Days to weigh-in</label><input type="number" value={days} onChange={e => setDays(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-500">Cut progress</span>
+            <span className="text-xs font-bold" style={{ color: barColour }}>{totalCut.toFixed(1)}kg to cut · {dailyCut.toFixed(2)}kg/day</span>
+          </div>
+          <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
+            <div className="h-full rounded-full transition-all" style={{ width: `${progressPct}%`, backgroundColor: barColour }} />
+          </div>
+          <div className="flex justify-between text-[10px] mt-1" style={{ color: '#4B5563' }}>
+            <span>{curr}kg today</span>
+            <span>{target}kg fight limit</span>
+          </div>
+          {dangerous && <div className="mt-3 text-[11px] p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#F87171' }}>⚠️ Over 5% body weight in under 7 days is medically dangerous. Consult your team doctor before proceeding.</div>}
+        </div>
+        {!plan ? (
+          <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Generating cut plan...' : '🧠 Generate AI cut plan →'}</button>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{plan}</div>
+            <div className="flex gap-3">
+              <button onClick={() => setPlan(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+              <button onClick={() => navigator.clipboard.writeText(plan)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy plan</button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── OPPONENT SCOUT AI (web search) ──────────────────────────────────────────
+function BoxingOpponentScout({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+  const [opponent, setOpponent] = useState(fighter.next_fight.opponent || '')
+  const [weightClass, setWeightClass] = useState(fighter.weight_class || 'Heavyweight')
+  const [loading, setLoading] = useState(false)
+  const [report, setReport] = useState<string | null>(null)
+
+  const generate = async () => {
+    if (!opponent.trim()) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for professional boxer ${opponent} in the ${weightClass} division. Provide a scouting report covering professional record (wins-losses-KO), fighting style (orthodox or southpaw), dominant hand, KO ratio, average rounds per fight, recent form over the last three fights, known weaknesses based on their fight history, and three specific tactical recommendations for beating them. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setReport(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
+      setReport(cleanResponse(raw) || '⚠️ No response from AI.')
+    } catch (err) { console.error('[BoxingOpponentScout] fetch error:', err); setReport('⚠️ Unable to reach AI service.') }
+    setLoading(false)
+  }
+
+  const WEIGHT_CLASSES = ['Heavyweight','Cruiserweight','Light Heavyweight','Super Middleweight','Middleweight','Super Welterweight','Welterweight','Super Lightweight','Lightweight','Super Featherweight','Featherweight','Super Bantamweight','Bantamweight','Super Flyweight','Flyweight','Light Flyweight','Minimumweight']
+
+  return (
+    <>
+      <ModalHeader icon="🥊" title="Opponent Scout" subtitle="AI scouting report with live web search" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!report ? (
+          <>
+            <div><label className="text-xs text-gray-500 mb-1 block">Opponent name</label><input value={opponent} onChange={e => setOpponent(e.target.value)} placeholder="e.g. Viktor Petrov" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Weight class</label><select value={weightClass} onChange={e => setWeightClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{WEIGHT_CLASSES.map(w => <option key={w}>{w}</option>)}</select></div>
+            <button onClick={generate} disabled={loading || !opponent.trim()} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Searching & generating...' : '🔍 Scout opponent →'}</button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 420, overflowY: 'auto' }}>{report}</div>
+            <div className="flex gap-3">
+              <button onClick={() => setReport(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← New search</button>
+              <button onClick={() => navigator.clipboard.writeText(report)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy report</button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── VADA/UKAD CHECK ─────────────────────────────────────────────────────────
+function BoxingVADACheck({ onClose }: { onClose: () => void }) {
+  const [supplement, setSupplement] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  const generate = async () => {
+    if (!supplement.trim()) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 900,
+          messages: [{ role: 'user', content: `Anti-doping compliance check for a professional boxer registered with VADA, UKAD and WADA. Check the following supplement or ingredient list: ${supplement}.
+
+State clearly whether it is on the WADA 2024 or 2025 prohibited list, either in-competition or out-of-competition. Note any known contamination risk from this supplement category (for example pre-workouts historically contaminated with higenamine or 1,3-DMAA). Give a clear recommendation: safe, use with caution, or avoid entirely.
+
+Always add a disclaimer that the boxer should verify with their anti-doping organisation directly before taking any new supplement, and that this tool is a guidance layer, not a medical or legal authority.
+
+Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setResult(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
+      setResult(cleanResponse(raw) || '⚠️ No response from AI.')
+    } catch (err) { console.error('[BoxingVADACheck] fetch error:', err); setResult('⚠️ Unable to reach AI service.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="💊" title="VADA / UKAD Check" subtitle="Screen supplements against the WADA prohibited list" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div className="rounded-xl p-3 text-[11px]" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}>
+          ⚠️ Always verify with VADA, UKAD or your national anti-doping organisation directly before taking any supplement. This tool is guidance only — not a medical or legal authority.
+        </div>
+        {!result ? (
+          <>
+            <div><label className="text-xs text-gray-500 mb-1 block">Supplement name or full ingredient list</label><textarea value={supplement} onChange={e => setSupplement(e.target.value)} rows={4} placeholder="e.g. 'Cellucor C4 Original' or paste the full ingredients panel" className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <button onClick={generate} disabled={loading || !supplement.trim()} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Checking WADA list...' : '💊 Run compliance check →'}</button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 360, overflowY: 'auto' }}>{result}</div>
+            <div className="flex gap-3">
+              <button onClick={() => setResult(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← New check</button>
+              <button onClick={() => navigator.clipboard.writeText(result)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy result</button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── PURSE BREAKDOWN (pure maths) ────────────────────────────────────────────
+function BoxingPurseBreakdown({ onClose }: { onClose: () => void }) {
+  const [grossPurse, setGrossPurse] = useState('500000')
+  const [managerPct, setManagerPct] = useState('20')
+  const [trainerPct, setTrainerPct] = useState('10')
+  const [promoterPct, setPromoterPct] = useState('0')
+  const [taxBand, setTaxBand] = useState<'basic'|'higher'|'additional'>('higher')
+
+  const TAX = { basic: 20, higher: 40, additional: 45 }
+  const purse = parseFloat(grossPurse) || 0
+  const mgr = purse * ((parseFloat(managerPct) || 0) / 100)
+  const trn = purse * ((parseFloat(trainerPct) || 0) / 100)
+  const pro = purse * ((parseFloat(promoterPct) || 0) / 100)
+  const afterCuts = purse - mgr - trn - pro
+  const taxPct = TAX[taxBand]
+  const tax = afterCuts * (taxPct / 100)
+  const takeHome = afterCuts - tax
+
+  const fmt = (n: number) => '£' + Math.round(n).toLocaleString()
+
+  return (
+    <>
+      <ModalHeader icon="📋" title="Purse Breakdown" subtitle="Real take-home after cuts and tax" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Gross purse (£)</label>
+          <input type="number" value={grossPurse} onChange={e => setGrossPurse(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Manager %</label><input type="number" value={managerPct} onChange={e => setManagerPct(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Trainer %</label><input type="number" value={trainerPct} onChange={e => setTrainerPct(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Promoter %</label><input type="number" value={promoterPct} onChange={e => setPromoterPct(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-2 block">UK tax band</label>
+          <div className="flex gap-2">
+            {(['basic','higher','additional'] as const).map(b => (
+              <button key={b} onClick={() => setTaxBand(b)} className="flex-1 py-2 rounded-xl text-xs font-semibold"
+                style={{ backgroundColor: taxBand === b ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.05)', border: taxBand === b ? '1px solid #dc2626' : '1px solid #1F2937', color: taxBand === b ? '#dc2626' : '#9CA3AF' }}>
+                {b === 'basic' ? 'Basic (20%)' : b === 'higher' ? 'Higher (40%)' : 'Additional (45%)'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="flex justify-between text-xs"><span style={{ color: '#9CA3AF' }}>Gross purse</span><span className="font-bold text-white">{fmt(purse)}</span></div>
+          <div className="flex justify-between text-xs"><span style={{ color: '#F59E0B' }}>− Manager ({managerPct}%)</span><span className="font-bold" style={{ color: '#F59E0B' }}>{fmt(mgr)}</span></div>
+          <div className="flex justify-between text-xs"><span style={{ color: '#F59E0B' }}>− Trainer ({trainerPct}%)</span><span className="font-bold" style={{ color: '#F59E0B' }}>{fmt(trn)}</span></div>
+          <div className="flex justify-between text-xs"><span style={{ color: '#F59E0B' }}>− Promoter ({promoterPct}%)</span><span className="font-bold" style={{ color: '#F59E0B' }}>{fmt(pro)}</span></div>
+          <div className="flex justify-between text-xs pt-2" style={{ borderTop: '1px solid #1F2937' }}><span style={{ color: '#D1D5DB' }}>After cuts</span><span className="font-bold text-white">{fmt(afterCuts)}</span></div>
+          <div className="flex justify-between text-xs"><span style={{ color: '#EF4444' }}>− UK tax ({taxPct}%)</span><span className="font-bold" style={{ color: '#EF4444' }}>{fmt(tax)}</span></div>
+          <div className="flex justify-between text-sm pt-3" style={{ borderTop: '1px solid #374151' }}>
+            <span className="font-bold text-white">Take-home</span>
+            <span className="text-lg font-black" style={{ color: '#22C55E' }}>{fmt(takeHome)}</span>
+          </div>
+        </div>
+        <div className="text-[11px]" style={{ color: '#6B7280' }}>💡 This excludes PPV bonuses, ticket commissions, appearance fees and travel/camp reimbursements. Speak to your accountant before making any decisions.</div>
+      </div>
+    </>
+  )
+}
+
+// ─── RANKINGS TRACKER (web search) ───────────────────────────────────────────
+function BoxingRankingsTracker({ onClose, session, fighter }: { onClose: () => void; session: SportsDemoSession; fighter: BoxingFighter }) {
+  const nameFromStorage = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null
+  const [fighterName, setFighterName] = useState(nameFromStorage || session.userName || fighter.name)
+  const [weightClass, setWeightClass] = useState(fighter.weight_class || 'Heavyweight')
+  const [loading, setLoading] = useState(false)
+  const [report, setReport] = useState<string | null>(null)
+
+  const generate = async () => {
+    if (!fighterName.trim()) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: `Search for the current WBO, WBC, IBF and WBA rankings for the ${weightClass} division in professional boxing as of today. Find the position of ${fighterName} if they are listed. Report their position in each of the four major sanctioning bodies, how many wins or positions away from mandatory challenger status they are in any of the belts, the current champions in that division, and the next logical fight that would improve their ranking position most efficiently. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setReport(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
+      setReport(cleanResponse(raw) || '⚠️ No response from AI.')
+    } catch (err) { console.error('[BoxingRankingsTracker] fetch error:', err); setReport('⚠️ Unable to reach AI service.') }
+    setLoading(false)
+  }
+
+  const WEIGHT_CLASSES = ['Heavyweight','Cruiserweight','Light Heavyweight','Super Middleweight','Middleweight','Super Welterweight','Welterweight','Super Lightweight','Lightweight','Super Featherweight','Featherweight','Super Bantamweight','Bantamweight','Super Flyweight','Flyweight','Light Flyweight','Minimumweight']
+
+  return (
+    <>
+      <ModalHeader icon="🏆" title="Rankings Tracker" subtitle="Live WBO / WBC / IBF / WBA positions" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!report ? (
+          <>
+            <div><label className="text-xs text-gray-500 mb-1 block">Fighter name</label><input value={fighterName} onChange={e => setFighterName(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Weight class</label><select value={weightClass} onChange={e => setWeightClass(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{WEIGHT_CLASSES.map(w => <option key={w}>{w}</option>)}</select></div>
+            <button onClick={generate} disabled={loading || !fighterName.trim()} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Searching rankings...' : '🏆 Check all 4 belts →'}</button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 420, overflowY: 'auto' }}>{report}</div>
+            <div className="flex gap-3">
+              <button onClick={() => setReport(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← New search</button>
+              <button onClick={() => navigator.clipboard.writeText(report)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy report</button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── CAMP CONTENT AI ─────────────────────────────────────────────────────────
+function BoxingCampContent({ onClose, session, fighter }: { onClose: () => void; session: SportsDemoSession; fighter: BoxingFighter }) {
+  const nameFromStorage = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null
+  const boxerName = nameFromStorage || session.userName || fighter.name
+  const weeksOut = Math.max(1, Math.round(fighter.next_fight.days_away / 7))
+  const [training, setTraining] = useState('sparring, pad work, conditioning')
+  const [platform, setPlatform] = useState<'Instagram'|'TikTok'|'Twitter/X'|'All'>('Instagram')
+  const [tone, setTone] = useState<'Fired up'|'Professional'|'Humble'>('Fired up')
+  const [loading, setLoading] = useState(false)
+  const [content, setContent] = useState<string | null>(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const toneLine = tone === 'Fired up' ? 'Fired up and intense (🔥 energy)' : tone === 'Professional' ? 'Calm, professional and measured' : 'Humble and grateful, respectful of the opponent'
+      const res = await fetch('/api/ai/boxing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: `Generate authentic social media content for a professional boxer named ${boxerName} who is ${weeksOut} weeks away from their next fight against ${fighter.next_fight.opponent}. Today's training: ${training}. Platform: ${platform}. Tone: ${toneLine}.
+
+Generate a post caption with relevant hashtags at the end, a story or reel hook line where the first three words have to grab attention, and one engagement question to ask followers. Keep it authentic — boxers don't talk like corporations.
+
+Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setContent(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
+      setContent(cleanResponse(raw) || '⚠️ No response from AI.')
+    } catch (err) { console.error('[BoxingCampContent] fetch error:', err); setContent('⚠️ Unable to reach AI service.') }
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <ModalHeader icon="🎬" title="Camp Content AI" subtitle="Daily social content generator" onClose={onClose} />
+      <div className="p-6 space-y-4">
+        {!content ? (
+          <>
+            <div><label className="text-xs text-gray-500 mb-1 block">Today&apos;s training focus</label><input value={training} onChange={e => setTraining(e.target.value)} placeholder="e.g. sparring, pad work, conditioning" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+            <div>
+              <label className="text-xs text-gray-500 mb-2 block">Platform</label>
+              <div className="flex flex-wrap gap-2">
+                {(['Instagram','TikTok','Twitter/X','All'] as const).map(p => (
+                  <button key={p} onClick={() => setPlatform(p)} className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: platform === p ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.05)', border: platform === p ? '1px solid #dc2626' : '1px solid #1F2937', color: platform === p ? '#dc2626' : '#9CA3AF' }}>{p}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-2 block">Tone</label>
+              <div className="flex flex-wrap gap-2">
+                {([['Fired up','🔥'],['Professional','💼'],['Humble','🙏']] as const).map(([t, e]) => (
+                  <button key={t} onClick={() => setTone(t)} className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: tone === t ? 'rgba(220,38,38,0.2)' : 'rgba(255,255,255,0.05)', border: tone === t ? '1px solid #dc2626' : '1px solid #1F2937', color: tone === t ? '#dc2626' : '#9CA3AF' }}>{e} {t}</button>
+                ))}
+              </div>
+            </div>
+            <button onClick={generate} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>{loading ? '⏳ Writing content...' : '🎬 Generate content →'}</button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 400, overflowY: 'auto' }}>{content}</div>
+            <div className="flex gap-3">
+              <button onClick={() => setContent(null)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Regenerate</button>
+              <button onClick={() => navigator.clipboard.writeText(content)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>📋 Copy content</button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
 export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
@@ -6942,6 +7357,12 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
             {activeModal === 'visa' && <BoxingVisaCheck onClose={closeModal} fighter={fighter} />}
             {activeModal === 'socialmedia' && <BoxingSocialMediaAI onClose={closeModal} fighter={fighter} />}
             {activeModal === 'hotel' && <BoxingHotelFinder onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'weightcut' && <BoxingWeightCutAI onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'opponentscout' && <BoxingOpponentScout onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'vadacheck' && <BoxingVADACheck onClose={closeModal} />}
+            {activeModal === 'pursebreakdown' && <BoxingPurseBreakdown onClose={closeModal} />}
+            {activeModal === 'rankingstracker' && <BoxingRankingsTracker onClose={closeModal} session={session} fighter={fighter} />}
+            {activeModal === 'campcontent' && <BoxingCampContent onClose={closeModal} session={session} fighter={fighter} />}
           </div>
         </div>
       )}
