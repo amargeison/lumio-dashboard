@@ -410,6 +410,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       ctx.drawImage(img, 0, 0, 400, 400)
                       const compressed = canvas.toDataURL('image/jpeg', 0.7)
                       try { localStorage.setItem(profilePhotoKey, compressed) } catch {}
+                      if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       setCurrentPhoto(compressed)
                       props.onPhotoChange?.(compressed)
                     }
@@ -450,6 +451,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={() => {
                     localStorage.setItem(nameKey, nameValue)
+                    if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     setEditingName(false)
                   }}
                   style={{
@@ -523,6 +525,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={() => {
                     localStorage.setItem(nicknameKey, nicknameValue)
+                    if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     setEditingNickname(false)
                   }}
                   style={{
