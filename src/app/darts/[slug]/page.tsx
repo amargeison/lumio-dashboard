@@ -5,6 +5,7 @@ import { use, useState, useEffect, useRef } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -358,7 +359,25 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     if (typeof window === 'undefined') return
     if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
     const voices = await getVoicesReady()
-    const text = dartsSummary || `Good morning ${firstName}. Tonight you face Gerwyn Price at the European Championship in Dortmund. Your 3-dart average is 97.8 this season. Focus on D16 under pressure. Red Dragon content shoot at 12. Good luck.`
+    const scheduleRaw = [
+      { id:'s1', time:'09:00', label:'AI Morning Briefing',        highlight:false },
+      { id:'s2', time:'10:00', label:'Practice — D16 checkout',    highlight:false },
+      { id:'s3', time:'12:00', label:'Red Dragon content shoot',   highlight:false },
+      { id:'s4', time:'14:00', label:'Physio — shoulder & elbow',  highlight:false },
+      { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
+      { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
+      { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
+    ]
+    const text = dartsSummary || generateSmartBriefing({
+      now: new Date(),
+      playerName: displayPlayerName,
+      schedule: buildScheduleItems(scheduleRaw, scheduleChecked, {}),
+      match: { opponent: 'G. Price', time: '20:00', result: null },
+      roundupSummary: buildRoundupSummary(ROUNDUP_CHANNELS),
+      sport: 'darts',
+      timezone: getUserTimezone(),
+      extra: `You're PDC number ${player.pdcRank} with a ${player.checkoutPercent}% checkout rate.`,
+    })
     const u = new SpeechSynthesisUtterance(text)
     const savedVoice = (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_voice_name')) || 'Sarah'
     const settings = voiceMap[savedVoice] || voiceMap['Sarah']

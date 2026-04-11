@@ -8,6 +8,36 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 
+// ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
+function useTennisProfileName(): string | null {
+  const [name, setName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_tennis_name')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setName(localStorage.getItem('lumio_tennis_name'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return name
+}
+function useTennisProfilePhoto(): string | null {
+  const [photo, setPhoto] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_tennis_profile_photo')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setPhoto(localStorage.getItem('lumio_tennis_profile_photo'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return photo
+}
+
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '')
@@ -165,9 +195,9 @@ const SIDEBAR_ITEMS = [
   { id: 'courtbooking', label: 'Court Booking',       icon: '🏟️', group: 'TOOLS'        },
   { id: 'federation',  label: 'Federation',          icon: '🏛️', group: 'TOOLS'        },
   { id: 'accreditations', label: 'Accreditations',   icon: '🪪', group: 'TOOLS'        },
+  { id: 'playerdirectory', label: 'Player Directory', icon: '👥', group: 'TOOLS'       },
+  { id: 'coachfinder', label: 'Coach Finder',        icon: '🎓', group: 'TOOLS'       },
   { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'TOOLS'        },
-  { id: 'playerdirectory', label: 'Player Directory', icon: '👥', group: 'NETWORK' },
-  { id: 'coachfinder', label: 'Coach Finder', icon: '🎓', group: 'NETWORK' },
 ];
 
 // ─── DEMO PLAYER DATA ─────────────────────────────────────────────────────────
@@ -903,14 +933,16 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [tourStep, setTourStep] = useState(0)
   const [showGpsModal, setShowGpsModal] = useState(false)
   const [gpsRequested, setGpsRequested] = useState(false)
+  const profileNameLive = useTennisProfileName()
+  const profilePhotoLive = useTennisProfilePhoto()
   const isPlayerRole = currentRole === 'player'
   const displayPlayerName = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null) || session.userName || player.name)
+    ? (profileNameLive || session.userName || player.name)
     : player.name
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
     : ''
-  const displayPlayerPhoto = isPlayerRole ? session.photoDataUrl : null
+  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl) : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -1481,9 +1513,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="text-center">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
                         style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
-                        {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase() })()}
+                        {(profilePhotoLive || session.photoDataUrl) ? <img src={profilePhotoLive || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
                       </div>
-                      <div className="text-xs font-bold text-white">{(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()}</div>
+                      <div className="text-xs font-bold text-white">{profileNameLive || session.userName || player.name}</div>
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
                     </div>
                     <div className="text-center px-3">
@@ -2076,9 +2108,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
-                      {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session.photoDataUrl ? <img src={ph || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : (session.userName || firstName || 'AL').slice(0,2).toUpperCase() })()}
+                      {(profilePhotoLive || session.photoDataUrl) ? <img src={profilePhotoLive || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : (session.userName || firstName || 'AL').slice(0,2).toUpperCase()}
                     </div>
-                    <div className="text-sm font-semibold text-white">{(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()}</div>
+                    <div className="text-sm font-semibold text-white">{profileNameLive || session.userName || player.name}</div>
                     {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null; return nn ? <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginTop: 2 }}>&quot;{nn}&quot;</div> : null })()}
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
                   </div>
@@ -2183,7 +2215,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Player Details</h4>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px]">
                     {[
-                      ['Full Name', (() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; return n || session.userName || player.name })()], ['Nationality', `${player.flag} ${player.nationality}`],
+                      ['Full Name', profileNameLive || session.userName || player.name], ['Nationality', `${player.flag} ${player.nationality}`],
                       ['DOB', player.dateOfBirth], ['Age', `${player.age}`],
                       ['Height', player.height], ['Weight', player.weight],
                       ['Plays', player.plays], ['Backhand', player.backhand],
@@ -6225,6 +6257,8 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
 
 // ─── PLAYER PROFILE CARD (ENHANCED) ──────────────────────────────────────────
 function PlayerCard({ player, session }: { player: TennisPlayer; session?: SportsDemoSession }) {
+  const profileNameLive = useTennisProfileName()
+  const profilePhotoLive = useTennisProfilePhoto()
   const surfaceWinPct = [
     { surface: 'Clay', pct: 58, color: 'bg-orange-500' },
     { surface: 'Hard', pct: 65, color: 'bg-blue-500' },
@@ -6254,10 +6288,10 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         {/* Player photo */}
         <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden"
           style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2) 0%, rgba(13,148,136,0.2) 100%)', border: '1px solid rgba(108,63,197,0.3)' }}>
-          {(() => { const ph = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_profile_photo') : null; return ph || session?.photoDataUrl ? <img src={ph || session?.photoDataUrl || ''} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div> })()}
+          {(profilePhotoLive || session?.photoDataUrl) ? <img src={profilePhotoLive || session?.photoDataUrl || ''} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div>}
         </div>
         {/* Name */}
-        {(() => { const n = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_name') : null; const fullName = n || session?.userName || player.name; return (<>
+        {(() => { const fullName = profileNameLive || session?.userName || player.name; return (<>
         <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{fullName.split(' ')[0]}</div>
         <div className="text-purple-300 font-bold text-xs uppercase tracking-widest text-center">{fullName.split(' ').slice(1).join(' ')}</div>
         </>)})()}
@@ -9235,7 +9269,7 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
     }
   }, [activeSection]);
 
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'NETWORK'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
   // Quick Wins dismissed state
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
@@ -9846,7 +9880,9 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-0.5 px-1.5">
           {groups.map(group => {
-            const items = visibleSidebarItems.filter(i => i.group === group);
+            const items = visibleSidebarItems
+              .filter(i => i.group === group)
+              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
             return (
               <div key={group} className="mb-0.5">
                 {sidebarExpanded && (

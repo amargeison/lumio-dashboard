@@ -5,6 +5,7 @@ import Link from 'next/link'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2, Target, Zap, Calendar, FileText, DollarSign, Award } from 'lucide-react'
+import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface WomensClub {
@@ -4248,7 +4249,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [speaking, setSpeaking] = useState(false)
   const handleTTS = () => {
     if (speaking) { window.speechSynthesis?.cancel(); setSpeaking(false); return }
-    const text = `Good morning ${session.userName || club.director || 'Director'}. Today's date is ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. ${womenQuotes[quoteIdx]}`
+    const text = generateSmartBriefing({
+      now: new Date(),
+      playerName: session?.userName || club?.director || 'Director',
+      schedule: [],
+      match: null,
+      roundupSummary: { totalMessages: 0, urgentCount: 0, urgentLabels: [] },
+      sport: "women's football",
+      timezone: getUserTimezone(),
+      extra: `FSR salary spend at ${club?.salarySpend || 74}% of cap. Next fixture this weekend.`,
+    })
     const u = new SpeechSynthesisUtterance(text)
     u.onend = () => setSpeaking(false)
     window.speechSynthesis?.speak(u)

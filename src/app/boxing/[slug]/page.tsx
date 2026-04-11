@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
@@ -516,8 +517,18 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
     if (typeof window === 'undefined') return
     if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
     const voices = await getVoicesReady()
-    const content = text || `Good morning ${firstName}. Fight camp day ${fighter.camp_day}. ${fighter.next_fight.days_away} days to fight night against ${fighter.next_fight.opponent}. Weight on track. Keep pushing.`
-    const u = new SpeechSynthesisUtterance(content)
+    const scheduleForBriefing = DEFAULT_TASKS.map(t => ({ id: t.id, time: t.time, label: t.task, highlight: !!t.highlight }))
+    const script = text || generateSmartBriefing({
+      now: new Date(),
+      playerName: displayPlayerName || fighter.name,
+      schedule: buildScheduleItems(scheduleForBriefing, tasksChecked, {}),
+      match: null,
+      roundupSummary: buildRoundupSummary(ROUNDUP_ITEMS),
+      sport: 'boxing',
+      timezone: getUserTimezone(),
+      extra: `Fight camp day ${fighter.camp_day}. ${fighter.next_fight.days_away} days to fight night against ${fighter.next_fight.opponent}.`,
+    })
+    const u = new SpeechSynthesisUtterance(script)
     const savedVoice = (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_voice_name')) || 'Sarah'
     const settings = voiceMap[savedVoice] || voiceMap['Sarah']
     u.rate = settings.rate; u.pitch = settings.pitch
