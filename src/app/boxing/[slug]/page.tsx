@@ -6623,7 +6623,6 @@ function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
           showAppearance
           showDeveloperTools
           devApiRouteOptions={['/api/ai/boxing']}
-          extraSections={<BoxingAISection context="default" fighter={fighter} session={session} />}
         />
       );
       default:                return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;

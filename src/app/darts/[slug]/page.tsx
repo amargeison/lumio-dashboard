@@ -1193,23 +1193,25 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <span style={{ color: '#8B5CF6' }}>✨</span>
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
                 </div>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-                </span>
+                <div className="flex items-center gap-2">
+                  {dartsSummary && <button onClick={() => { setDartsSummary(null); setDartsSummaryLoading(false) }} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6B7280', border: '1px solid #374151' }}>↻</button>}
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
+                    {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                  </span>
+                </div>
               </div>
-              <div className="px-5 py-4 space-y-3">
-                {[
-                  { type:'match',    icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
-                  { type:'messages', icon:'📬', text:'2 urgent messages: Paddy Power ambassador offer via agent (£85k/yr) + Red Dragon flagging content deadline for 12:00 shoot.' },
-                  { type:'schedule', icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Red Dragon shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
-                  { type:'sponsor',  icon:'🤝', text:'Red Dragon content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
-                  { type:'travel',   icon:'✈️', text:'Prague Open flights selling fast — save £80+ booking now. Return flight to Gatwick confirmed 23:30 via Düsseldorf.' },
+              <div className="px-5 py-4">
+                {dartsSummaryLoading && <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{ width: `${60 + i * 12}%` }} />)}</div>}
+                {dartsSummary && !dartsSummaryLoading && <div className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{dartsSummary}</div>}
+                {!dartsSummary && !dartsSummaryLoading && <div className="space-y-3">{[
+                  { icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
+                  { icon:'📬', text:'2 urgent messages: Paddy Power ambassador offer via agent (£85k/yr) + Red Dragon flagging content deadline for 12:00 shoot.' },
+                  { icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Red Dragon shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
+                  { icon:'🤝', text:'Red Dragon content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
+                  { icon:'✈️', text:'Prague Open flights selling fast — save £80+ booking now. Return flight to Gatwick confirmed 23:30 via Düsseldorf.' },
                 ].map((item, i) => (
-                  <div key={i} className="flex gap-3 text-xs">
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                  </div>
-                ))}
+                  <div key={i} className="flex gap-3 text-xs"><span className="text-base flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
+                ))}</div>}
               </div>
             </div>
 
@@ -8096,7 +8098,6 @@ function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemo
           showAppearance
           showDeveloperTools
           devApiRouteOptions={['/api/ai/darts']}
-          extraSections={<DartsAISection context="default" player={player} session={session} />}
         />
       );
       case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} player={player} session={session} />;
