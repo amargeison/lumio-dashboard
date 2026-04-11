@@ -405,7 +405,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
       })
       const data = await res.json()
       if (data.error) {
-        setSummary(`⚠️ ${data.error}`)
+        setSummary(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`)
       } else {
         const text = cleanResponse(data.content?.map((b: {type:string;text?:string}) =>
           b.type === 'text' ? b.text : ''
@@ -9291,7 +9291,7 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
           messages: [{ role: 'user', content: `Search for current ${tourFilter === 'wta' ? 'WTA' : tourFilter === 'atp' ? 'ATP' : 'ATP and WTA'} tennis player rankings. Query: "${searchQuery || 'top 20 current ranking'}". For each player return: name, current ranking number, nationality, age, plays hand, coach name, last 3 tournament results, best surface, career high ranking. Format each player on one line separated by pipes: NAME | RANKING | NATIONALITY | AGE | HAND | COACH | RECENT_RESULTS | BEST_SURFACE | CAREER_HIGH. Return up to 10 players. No other text.` }] })
       })
       const data = await res.json()
-      if (data.error) { setSearchResults(`⚠️ ${data.error}`); setSearchLoading(false); return }
+      if (data.error) { setSearchResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setSearchLoading(false); return }
       const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''
       setSearchResults(cleanResponse(text) || '⚠️ No results. Try a different search.')
     } catch { setSearchResults('⚠️ Search failed. Check connection.') }
@@ -9307,7 +9307,7 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
           messages: [{ role: 'user', content: `Search for detailed profile of tennis player ${name}. Cover playing style, strengths and weaknesses, head-to-head vs top 10, serve and return stats, current coach and team, and social media presence. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      if (data.error) { setProfileData(`⚠️ ${data.error}`); setProfileLoading(false); return }
+      if (data.error) { setProfileData(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setProfileLoading(false); return }
       setProfileData(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No profile data found.')
     } catch { setProfileData('⚠️ Unable to load profile.') }
     setProfileLoading(false)
@@ -9322,7 +9322,7 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
           messages: [{ role: 'user', content: `Search for professional tennis hitting partners available for hire. The player is ranked ATP #${player.ranking ?? 67}, based in Europe. Find 4-5 hitting partners who are former professionals or high-level players available for practice sessions. For each, write a paragraph covering name, background, speciality, approximate day rate, and how to contact. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      if (data.error) { setPartnerResults(`⚠️ ${data.error}`); setPartnerLoading(false); return }
+      if (data.error) { setPartnerResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setPartnerLoading(false); return }
       setPartnerResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No results found.')
     } catch { setPartnerResults('⚠️ Search failed.') }
     setPartnerLoading(false)
@@ -9494,7 +9494,7 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
           messages: [{ role: 'user', content: `You are a tennis career consultant. Help find the right coach. Player: ATP #${player.ranking ?? 67}. Goals: ${goals.join(', ')}. Specific issues: ${freeText || 'general improvement'}. Preferences: experience ${experience || 'any'}, location ${location || 'flexible'}, budget ${budget || 'flexible'}, style ${style || 'any'}. Search and recommend 4 tennis coaches. Write each as a paragraph covering full name, background, coaching philosophy, notable players coached, availability, fee range, and why they match. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
-      if (data.error) { setResults(`⚠️ ${data.error}`); setLoading(false); return }
+      if (data.error) { setResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setLoading(false); return }
       setResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No coaches found. Try adjusting preferences.')
     } catch { setResults('Unable to search. Check connection.') }
     setLoading(false); setStep('results')
@@ -9606,9 +9606,21 @@ function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidebarExpanded = sidebarPinned || sidebarHovered;
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(72);
 
   useEffect(() => {
     setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_tennis_sidebar_pinned') === 'true')
+  }, [])
+
+  useEffect(() => {
+    if (!sidebarRef.current || typeof ResizeObserver === 'undefined') return;
+    const el = sidebarRef.current;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) setSidebarWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [])
 
   function toggleSidebarPin() {
@@ -10155,12 +10167,15 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       )}
       {/* Sidebar — floating when unpinned, pushes content when pinned */}
       <aside
+        ref={sidebarRef}
         className="hidden md:flex flex-col overflow-hidden"
         style={{
-          width: sidebarExpanded ? 220 : 72,
+          width: sidebarExpanded ? 'fit-content' : 72,
+          minWidth: sidebarExpanded ? 180 : 72,
+          maxWidth: 280,
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
-          transition: 'width 250ms ease',
+          transition: 'min-width 250ms ease, width 250ms ease',
           position: 'fixed',
           top: 0,
           left: 0,
@@ -10269,7 +10284,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? sidebarWidth : 72, transition: 'margin-left 250ms ease' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
           style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
+  console.log('[tennis/ai] Key status:', process.env.ANTHROPIC_API_KEY ? 'present' : 'MISSING')
   try {
     const body = await req.json()
     const apiKey = process.env.ANTHROPIC_API_KEY
