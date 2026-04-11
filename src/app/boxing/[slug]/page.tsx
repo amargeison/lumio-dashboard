@@ -539,6 +539,72 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [repliedTo, setRepliedTo] = useState<string[]>([])
   const [replyToast, setReplyToast] = useState(false)
 
+  // Getting Started step-tour state
+  const [tourStep, setTourStep] = useState(0)
+
+  // Today's Schedule live state
+  const scheduleKey = `boxing_schedule_${fighter.slug}`
+  const [scheduleChecked, setScheduleChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem(scheduleKey) : null) || '{}') } catch { return {} }
+  })
+  const [scheduleCancelled, setScheduleCancelled] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem(scheduleKey + '_cancelled') : null) || '{}') } catch { return {} }
+  })
+  const toggleScheduleItem = (id: string) => {
+    setScheduleChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try { localStorage.setItem(scheduleKey, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+  const cancelScheduleItem = (id: string) => {
+    setScheduleCancelled(prev => {
+      const next = { ...prev, [id]: true }
+      try { localStorage.setItem(scheduleKey + '_cancelled', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
+  // Daily Tasks live state (+ Add Task support)
+  const tasksKey = `boxing_tasks_${fighter.slug}`
+  type BoxingTask = { id: string; time: string; task: string; cat: string; priority: 'critical'|'high'|'medium'|'low'; highlight?: boolean; modal?: string; custom?: boolean }
+  const DEFAULT_TASKS: BoxingTask[] = [
+    { id:'t1', time:'07:00', task:'Morning weight log — daily camp requirement',     cat:'Weight',     priority:'high',     modal:'weight' },
+    { id:'t2', time:'09:30', task:'Gym session — Jim Bevan',                         cat:'Training',   priority:'high' },
+    { id:'t3', time:'09:00', task:'Right hand rewrap — tightness flagged yesterday', cat:'Medical',    priority:'critical', highlight:true, modal:'injury' },
+    { id:'t4', time:'14:00', task:'DAZN interview prep — talking points',             cat:'Media',      priority:'medium',   modal:'socialmedia' },
+    { id:'t5', time:'15:00', task:'Review Petrov southpaw footage — 2 hours',         cat:'Prep',       priority:'high',     modal:'matchprep' },
+    { id:'t6', time:'EOD',   task:'Nutrition log — camp diet compliance',             cat:'Health',     priority:'medium' },
+    { id:'t7', time:'16:00', task:'Danny Walsh call — purse split discussion',        cat:'Commercial', priority:'medium' },
+  ]
+  const [customTasks, setCustomTasks] = useState<BoxingTask[]>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem(tasksKey + '_custom') : null) || '[]') } catch { return [] }
+  })
+  const [tasksChecked, setTasksChecked] = useState<Record<string,boolean>>(() => {
+    try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem(tasksKey + '_checked') : null) || '{}') } catch { return {} }
+  })
+  const [newTaskText, setNewTaskText] = useState('')
+  const [showAddTask, setShowAddTask] = useState(false)
+  const toggleTaskItem = (id: string) => {
+    setTasksChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try { localStorage.setItem(tasksKey + '_checked', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+  const addTask = () => {
+    const text = newTaskText.trim()
+    if (!text) return
+    const t: BoxingTask = { id: `tc_${Date.now()}`, time: 'Today', task: text, cat: 'Custom', priority: 'medium', custom: true }
+    setCustomTasks(prev => {
+      const next = [...prev, t]
+      try { localStorage.setItem(tasksKey + '_custom', JSON.stringify(next)) } catch {}
+      return next
+    })
+    setNewTaskText('')
+    setShowAddTask(false)
+  }
+
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
     { id:'manager', label:'Manager', icon:'💼', count:2, urgent:true, color:'#dc2626', messages:[
       { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Matchroom offering 70/30. Need your call at 16:00.', time:'8:14am' },
@@ -551,13 +617,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       { id:'s1', from:'DAZN', text:'Pre-fight documentary crew arriving Monday. 3 days filming access needed.', time:'8:30am' },
       { id:'s2', from:'Under Armour', text:'Camp training video — 2 posts outstanding from March obligation.', time:'Yesterday' },
     ]},
-    { id:'medical', label:'Physio & Medical', icon:'🏥', count:1, urgent:true, color:'#EF4444', messages:[
+    { id:'medical', label:'Physio & Medical', icon:'🏥', count:1, urgent:true, color:'#EC4899', messages:[
       { id:'md1', from:'Dr Sarah Mitchell', text:'URGENT: Right hand X-ray needed — knuckle swelling flagged by Jim. Book today.', time:'9:15am' },
     ]},
-    { id:'weight', label:'Weight Check', icon:'⚖️', count:1, urgent:false, color:'#0ea5e9', messages:[
+    { id:'weight', label:'Weight Check', icon:'⚖️', count:1, urgent:false, color:'#22C55E', messages:[
       { id:'w1', from:'Weight Tracker', text:'Morning weigh-in: 97.8kg. Target: 92.7kg. On track — daily cut target: -0.11kg.', time:'7:00am' },
     ]},
-    { id:'travel', label:'Travel & Camp', icon:'✈️', count:2, urgent:false, color:'#6B7280', messages:[
+    { id:'travel', label:'Travel & Camp', icon:'✈️', count:2, urgent:false, color:'#06B6D4', messages:[
       { id:'tr1', from:'Travel desk', text:'O2 Arena fight week hotel confirmed — Canary Wharf Marriott, 4 nights.', time:'8:00am' },
       { id:'tr2', from:'Travel desk', text:'Corner team flights booked — Jim, Tony, Ricky. BA LHR→LCY.', time:'Yesterday' },
     ]},
@@ -681,71 +747,76 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
-        const CHECKLIST = [
-          { id:'gs1', label:'Connect your ranking profile', desc:'Link your BoxRec or WBC profile for live ranking data', icon:'🌍' },
-          { id:'gs2', label:'Add your trainer', desc:'Invite your head trainer to collaborate on camp plans', icon:'🥊' },
-          { id:'gs3', label:'Set your fight schedule', desc:'Add your next fight and upcoming bouts to the calendar', icon:'📅' },
-          { id:'gs4', label:'Upload sponsor agreements', desc:'Add your sponsor contracts for obligation tracking', icon:'🤝' },
-          { id:'gs5', label:'Set your weight class target', desc:'Configure your target weight and cut timeline', icon:'⚖️' },
-          { id:'gs6', label:'Add your manager', desc:'Connect your manager for commercial and contract updates', icon:'💼' },
-          { id:'gs7', label:'Configure camp preferences', desc:'Set your training schedule, sparring days, and rest protocol', icon:'🏕️' },
-          { id:'gs8', label:'Set travel preferences', desc:'Add your home airport, hotel preferences, and visa info', icon:'✈️' },
-          { id:'gs9', label:'Add your promoter', desc:'Link your promoter for purse bids and fight night logistics', icon:'🏟️' },
-          { id:'gs10', label:'You\'re ready — fight!', desc:'Your camp dashboard is set up. Time to train.', icon:'🏆' },
+        const STEPS = [
+          { n:1,  label:'Connect your WBC/WBA/IBF profile', icon:'🌍', title:'Connect your WBC/WBA/IBF profile', desc:'Link your sanctioning body profile for live rankings, mandatory positions, and purse bid tracking. All rankings sync automatically.' },
+          { n:2,  label:'Add your trainer',                 icon:'🥊', title:'Add your trainer',                desc:'Invite your head trainer to collaborate on camp plans, review sparring footage and track session notes together.' },
+          { n:3,  label:'Set your fight calendar',          icon:'📅', title:'Set your fight calendar',         desc:'Add your next fight and upcoming bouts. Lumio tracks purse bids, visa deadlines and fight week logistics for every date.' },
+          { n:4,  label:'Upload sponsor agreements',        icon:'🤝', title:'Upload sponsor agreements',       desc:'Add Under Armour, DAZN and commercial deals. Lumio tracks content obligations, camp appearances and renewal windows.' },
+          { n:5,  label:'Set weight targets',               icon:'⚖️', title:'Set weight targets',              desc:'Enter your fight weight target and walk-around weight. Lumio tracks daily cut progress and flags when you fall behind schedule.' },
+          { n:6,  label:'Add your team',                    icon:'👥', title:'Add your team (trainer / manager / cutman)', desc:'Build out your full camp — head trainer, manager, cutman, conditioning coach and fight doctor. Each gets their own role-specific feed.' },
+          { n:7,  label:'Configure equipment preferences',  icon:'🧤', title:'Configure equipment preferences', desc:'Log your glove brand, wrap style, mouthguard and fight-night kit. Get alerts when consumables need reordering before camp.' },
+          { n:8,  label:'Set travel preferences',           icon:'✈️', title:'Set travel preferences',          desc:'Save your home airport, hotel preferences and visa info so Smart Flights and Hotel Finder auto-fill every fight week booking.' },
+          { n:9,  label:'Configure notifications',          icon:'🔔', title:'Configure notifications',         desc:'Choose which alerts you want — weight check reminders, purse bid updates, sponsor deadlines, media obligations, ranking changes.' },
+          { n:10, label:'Go live',                          icon:'🚀', title:"You're ready — let's go!",        desc:'Your boxing portal is ready. Every section is live with demo data. Explore freely or sign up for your free trial to connect real camp data.' },
         ]
-        const checked = gsChecked
-        const toggle = (id: string) => {
-          setGsChecked(prev => {
-            const next = { ...prev, [id]: !prev[id] }
-            try { localStorage.setItem('boxing_getting_started', JSON.stringify(next)) } catch {}
-            const doneCount2 = Object.values(next).filter(Boolean).length
-            if (doneCount2 >= CHECKLIST.length) { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} }
-            return next
-          })
-        }
-        const doneCount = Object.values(checked).filter(Boolean).length
+        const step = STEPS[tourStep]
         return (
-          <div className="pt-4 max-w-3xl">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-black text-white">🚀 Getting Started</h2>
-                <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Complete these steps to set up your fight camp dashboard.</p>
+          <div className="pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1 mr-4">
+                <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#dc2626' }}>STEP {tourStep + 1} OF {STEPS.length}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full transition-all duration-500" style={{ width: `${((tourStep + 1) / STEPS.length) * 100}%`, backgroundColor: '#dc2626' }} /></div>
               </div>
-              <div className="text-sm font-bold" style={{ color: '#dc2626' }}>{doneCount}/{CHECKLIST.length}</div>
+              <button onClick={() => { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} setDashTab('today') }} className="text-sm flex-shrink-0" style={{ color: '#4B5563' }}>Skip tour →</button>
             </div>
-            <div className="w-full bg-gray-800 rounded-full h-2 mb-6">
-              <div className="h-2 rounded-full transition-all" style={{ width: `${(doneCount/CHECKLIST.length)*100}%`, backgroundColor: '#dc2626' }} />
-            </div>
-            <div className="space-y-2">
-              {CHECKLIST.map((item, i) => (
-                <div key={item.id} className="flex items-start gap-4 rounded-xl p-4 transition-all cursor-pointer"
-                  onClick={() => toggle(item.id)}
-                  style={{ backgroundColor: checked[item.id] ? 'rgba(220,38,38,0.05)' : '#111318', border: `1px solid ${checked[item.id] ? 'rgba(220,38,38,0.2)' : '#1F2937'}`, opacity: checked[item.id] ? 0.6 : 1 }}>
-                  <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
-                    style={{ backgroundColor: checked[item.id] ? '#dc2626' : 'transparent', borderColor: checked[item.id] ? '#dc2626' : '#4B5563' }}>
-                    {checked[item.id] && <span className="text-white text-xs font-bold">✓</span>}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">{item.icon}</span>
-                      <span className="text-sm font-semibold" style={{ color: checked[item.id] ? '#6B7280' : '#F9FAFB', textDecoration: checked[item.id] ? 'line-through' : 'none' }}>{item.label}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="space-y-1">
+                {STEPS.map((s, i) => (
+                  <button key={s.n} onClick={() => setTourStep(i)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                    style={{ backgroundColor: tourStep === i ? 'rgba(220,38,38,0.1)' : 'transparent', border: tourStep === i ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: i < tourStep ? '#22C55E' : tourStep === i ? '#dc2626' : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : '#4B5563' }}>
+                      {i < tourStep ? '✓' : s.n}
                     </div>
-                    {!checked[item.id] && <p className="text-xs mt-1 ml-7" style={{ color: '#6B7280' }}>{item.desc}</p>}
-                  </div>
-                  <span className="text-xs font-bold" style={{ color: '#374151' }}>{i+1}/{CHECKLIST.length}</span>
-                </div>
-              ))}
-            </div>
-            {doneCount >= CHECKLIST.length && (
-              <div className="text-center mt-8 py-6">
-                <div className="text-5xl mb-3">🏆</div>
-                <p className="text-lg font-bold text-white mb-2">Camp dashboard ready!</p>
-                <button onClick={() => { try { localStorage.setItem('boxing_getting_started_seen','true') } catch {} setDashTab('today') }}
-                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>
-                  Go to Dashboard →
-                </button>
+                    <span className="text-sm" style={{ color: tourStep === i ? '#F9FAFB' : '#6B7280' }}>{s.label}</span>
+                  </button>
+                ))}
               </div>
-            )}
+              <div className="lg:col-span-2">
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 400 }}>
+                  <div className="p-6">
+                    <div className="text-4xl mb-3">{step.icon}</div>
+                    <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
+                    <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.desc}</p>
+                    <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { icon:'🥊', v:`#${fighter.rankings.wbc}`, label:'WBC', c:'#dc2626' },
+                          { icon:'🏆', v:`${fighter.record.wins}-${fighter.record.losses}`, label:'Record', c:'#F97316' },
+                          { icon:'⚖️', v:`${fighter.current_weight}kg`, label:'Weight', c:'#F59E0B' },
+                          { icon:'📅', v:`${fighter.next_fight.days_away}d`, label:'Fight', c:'#22C55E' },
+                        ].map((s, i) => (
+                          <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}>
+                            <div className="text-lg">{s.icon}</div>
+                            <div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
+                    <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
+                    <span className="text-xs" style={{ color: '#4B5563' }}>{tourStep + 1} / {STEPS.length}</span>
+                    {tourStep < STEPS.length - 1 ? (
+                      <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#dc2626' }}>Next →</button>
+                    ) : (
+                      <button onClick={() => { try { localStorage.setItem('boxing_getting_started_seen', 'true') } catch {} setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Let&apos;s go 🥊</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )
       })()}
@@ -850,20 +921,31 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
               <div className="space-y-2">
                 {[
-                  { time:'06:00', label:'Roadwork — 8km + hill sprints',        done:true  },
-                  { time:'11:00', label:'Sparring 8rds — Darnell Hughes',       done:false },
-                  { time:'15:00', label:'Strength — upper body power',          done:false },
-                  { time:'16:30', label:'Film study — Petrov last 3 fights',    done:false },
-                  { time:'18:00', label:'Physio — shoulder mobility + ice bath',done:false },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-green-500/20 border-green-500' : 'border-gray-700'}`}>
-                      {s.done && <span className="text-[8px] text-green-400">✓</span>}
+                  { id:'bs1', time:'06:00', label:'Roadwork — 8km + hill sprints',         highlight:false },
+                  { id:'bs2', time:'11:00', label:'Sparring 8rds — Darnell Hughes',        highlight:true  },
+                  { id:'bs3', time:'15:00', label:'Strength — upper body power',           highlight:false },
+                  { id:'bs4', time:'16:30', label:'Film study — Petrov last 3 fights',     highlight:false },
+                  { id:'bs5', time:'18:00', label:'Physio — shoulder mobility + ice bath', highlight:false },
+                ].filter(s => !scheduleCancelled[s.id]).map((s) => {
+                  const done = !!scheduleChecked[s.id]
+                  return (
+                    <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${done ? 'opacity-50' : ''}`}>
+                      <button onClick={() => toggleScheduleItem(s.id)}
+                        className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all"
+                        style={{ backgroundColor: done ? '#22C55E' : 'transparent', borderColor: done ? '#22C55E' : s.highlight ? '#EF4444' : '#4B5563' }}>
+                        {done && <span className="text-white text-[8px]">✓</span>}
+                      </button>
+                      <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
+                      <span className={`text-xs flex-1 ${done ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
+                      {!done && (
+                        <button onClick={() => cancelScheduleItem(s.id)}
+                          className="text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 flex-shrink-0">
+                          Cancel →
+                        </button>
+                      )}
                     </div>
-                    <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                    <span className={`text-xs ${s.done ? 'line-through text-gray-600' : 'text-gray-300'}`}>{s.label}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -941,58 +1023,126 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {/* DAILY TASKS */}
       {dashTab === 'dailytasks' && (
         <div className="pt-4 space-y-3">
-          {[
-            { time:'07:00', task:'Morning weight log — daily camp requirement',         done:true,  cat:'Weight',     highlight:false, priority:'high' as const },
-            { time:'09:30', task:'Gym session — Jim Bevan',                             done:true,  cat:'Training',   highlight:false, priority:'high' as const },
-            { time:'09:00', task:'Right hand rewrap — tightness flagged yesterday',     done:false, cat:'Medical',    highlight:true,  priority:'critical' as const },
-            { time:'14:00', task:'DAZN interview prep — talking points',                done:false, cat:'Media',      highlight:false, priority:'medium' as const },
-            { time:'15:00', task:'Review Petrov southpaw footage — 2 hours',            done:false, cat:'Prep',       highlight:false, priority:'high' as const },
-            { time:'EOD',   task:'Nutrition log — camp diet compliance',                 done:false, cat:'Health',     highlight:false, priority:'medium' as const },
-            { time:'16:00', task:'Danny Walsh call — purse split discussion',            done:false, cat:'Commercial', highlight:false, priority:'medium' as const },
-          ].map((t, i) => (
-            <div key={i} className="rounded-xl p-4 flex items-start gap-4"
-              style={{ backgroundColor: t.highlight ? 'rgba(220,38,38,0.06)' : t.done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${t.highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: t.done ? 0.6 : 1 }}>
-              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center"
-                style={{ borderColor: t.done ? '#22C55E' : '#4B5563', background: t.done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
-                {t.done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
-              </button>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='critical'?'rgba(239,68,68,0.12)':t.priority==='high'?'rgba(249,115,22,0.12)':'rgba(245,158,11,0.12)', color: t.priority==='critical'?'#EF4444':t.priority==='high'?'#F97316':'#F59E0B' }}>{t.priority}</span>
-                  <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
-                  <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
-                </div>
-                <h4 className="font-semibold text-sm" style={{ color: t.done ? '#4B5563' : t.highlight ? '#f87171' : '#E5E7EB', textDecoration: t.done ? 'line-through' : 'none' }}>{t.task}</h4>
-              </div>
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                {!t.done && <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>Open →</button>}
-                {!t.done && <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>}
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Daily Tasks</div>
+            <button onClick={() => setShowAddTask(v => !v)}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: '#dc2626' }}>
+              + Add Task
+            </button>
+          </div>
+          {showAddTask && (
+            <div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+              <input autoFocus value={newTaskText} onChange={e => setNewTaskText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addTask(); if (e.key === 'Escape') { setShowAddTask(false); setNewTaskText('') } }}
+                placeholder="New task…" className="flex-1 bg-transparent text-sm text-white outline-none px-2 py-1.5" />
+              <button onClick={addTask} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Add</button>
+              <button onClick={() => { setShowAddTask(false); setNewTaskText('') }} className="px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
             </div>
-          ))}
+          )}
+          {[...DEFAULT_TASKS, ...customTasks].map((t) => {
+            const done = !!tasksChecked[t.id]
+            return (
+              <div key={t.id} className="rounded-xl p-4 flex items-start gap-4"
+                style={{ backgroundColor: t.highlight ? 'rgba(220,38,38,0.06)' : done ? 'rgba(255,255,255,0.01)' : '#111318', border: `1px solid ${t.highlight ? 'rgba(220,38,38,0.3)' : '#1F2937'}`, opacity: done ? 0.6 : 1 }}>
+                <button onClick={() => toggleTaskItem(t.id)}
+                  className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all"
+                  style={{ borderColor: done ? '#22C55E' : '#4B5563', background: done ? 'rgba(34,197,94,0.15)' : 'transparent' }}>
+                  {done && <span className="text-[9px] font-bold" style={{ color: '#22C55E' }}>✓</span>}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='critical'?'rgba(239,68,68,0.12)':t.priority==='high'?'rgba(249,115,22,0.12)':t.priority==='medium'?'rgba(245,158,11,0.12)':'rgba(107,114,128,0.12)', color: t.priority==='critical'?'#EF4444':t.priority==='high'?'#F97316':t.priority==='medium'?'#F59E0B':'#6B7280' }}>{t.priority}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
+                  </div>
+                  <h4 className="font-semibold text-sm" style={{ color: done ? '#4B5563' : t.highlight ? '#f87171' : '#E5E7EB', textDecoration: done ? 'line-through' : 'none' }}>{t.task}</h4>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  {t.modal && !done && (
+                    <button onClick={() => onOpenModal?.(t.modal!)}
+                      className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#dc2626' }}>
+                      Open →
+                    </button>
+                  )}
+                  {!done && (
+                    <button onClick={() => toggleTaskItem(t.id)}
+                      className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                      Mark done
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
       {/* INSIGHTS */}
       {dashTab === 'insights' && (
-        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title:'WBC Ranking',         value:`#${fighter.rankings.wbc}`, sub:'Up 1 this month',                         color:'#dc2626', icon:'🥊' },
-            { title:'IBF Ranking',          value:`#${fighter.rankings.ibf}`, sub:'Mandatory position approaching',          color:'#EF4444', icon:'🏆' },
-            { title:'Weight to cut',        value:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg`, sub:`${fighter.current_weight}kg → ${fighter.target_weight}kg`, color:'#22C55E', icon:'⚖️' },
-            { title:'Camp progress',        value:`${campProgress}%`,  sub:`Day ${fighter.camp_day} of ${fighter.camp_total}`, color:'#F59E0B', icon:'🏕️' },
-            { title:'ACWR',                 value:'1.12',        sub:'Optimal zone — maintain intensity',            color:'#8B5CF6', icon:'📡' },
-            { title:'Sponsor obligations',  value:'2 due',       sub:'Under Armour post + DAZN shoot',              color:'#EC4899', icon:'🤝' },
-          ].map((ins, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-2xl flex-shrink-0">{ins.icon}</div>
-              <div className="flex-1">
-                <div className="text-xs mb-1" style={{ color: '#6B7280' }}>{ins.title}</div>
-                <div className="text-2xl font-black" style={{color:ins.color}}>{ins.value}</div>
-                <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>{ins.sub}</div>
+        <div className="pt-4 space-y-6">
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label:'WBC Rank',       value:`#${fighter.rankings.wbc}`, sub:'Up 1 this month',                  color:'#dc2626', icon:'🥊' },
+              { label:'IBF Rank',       value:`#${fighter.rankings.ibf}`, sub:'Mandatory approaching',            color:'#EF4444', icon:'🏆' },
+              { label:'Record',         value:`${fighter.record.wins}-${fighter.record.losses}`, sub:`${fighter.record.ko} KOs`, color:'#F97316', icon:'📋' },
+              { label:'Season Earnings',value:'£2.4m',                    sub:'+18% vs projection',               color:'#F59E0B', icon:'💰' },
+              { label:'Days to Fight',  value:`${fighter.next_fight.days_away}d`, sub:`vs ${fighter.next_fight.opponent}`, color:'#22C55E', icon:'📅' },
+            ].map((kpi, i) => (
+              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-lg mb-1">{kpi.icon}</div>
+                <div className="text-[10px] mb-0.5" style={{ color: '#6B7280' }}>{kpi.label}</div>
+                <div className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#4B5563' }}>{kpi.sub}</div>
               </div>
+            ))}
+          </div>
+
+          {/* Insight Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { type:'ALERT',       icon:'⚠️', color:'#EF4444', bg:'rgba(239,68,68,0.08)',  border:'rgba(239,68,68,0.2)',  title:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to cut in ${fighter.next_fight.days_away} days`, desc:`Current ${fighter.current_weight}kg, target ${fighter.target_weight}kg. Daily cut required: ${((fighter.current_weight - fighter.target_weight) / fighter.next_fight.days_away).toFixed(2)}kg/day. On track if you log daily.`, action:'Log weight →', modal:'weight' },
+              { type:'OPPORTUNITY', icon:'💡', color:'#F59E0B', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.2)', title:'Under Armour camp extension offer', desc:'New approach via Danny Walsh — £85k for fight week branding and post-fight content. No competing sponsor in the pipeline. Decision needed by end of week.', action:'Open sponsor brief →', modal:'sponsor' },
+              { type:'TREND',       icon:'📈', color:'#22C55E', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)',  title:'Sparring power output up 8%', desc:'Last 5 sessions vs season avg. Right hand velocity and body shot compression both trending up. Jim Bevan flagged this in camp notes — keep the current pad routine.', action:'View training log →', modal:'matchprep' },
+              { type:'ACHIEVEMENT', icon:'🏆', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)', title:`Record now ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KOs)`, desc:'Last fight: 12-round points win. Promoter Matchroom locking in O2 Arena headline slot. First top-10 WBC fight — media interest is high.', action:'View fight record →', modal:'matchprep' },
+            ].map((tile, i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">{tile.icon}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: tile.color }}>{tile.type}</span>
+                </div>
+                <p className="text-sm font-semibold text-white mb-1">{tile.title}</p>
+                <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>{tile.desc}</p>
+                <button onClick={() => onOpenModal?.(tile.modal)}
+                  className="text-[11px] font-semibold transition-all" style={{ color: tile.color }}>
+                  {tile.action}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Key Metrics Grid */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>Key Metrics</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label:'Camp progress',       value:`${campProgress}%`, trend:`Day ${fighter.camp_day}/${fighter.camp_total}`, trendColor:'#F59E0B' },
+                { label:'ACWR',                value:'1.12',             trend:'Optimal',                                        trendColor:'#22C55E' },
+                { label:'Sparring rounds',     value:'84',               trend:'↑ 12 this week',                                trendColor:'#22C55E' },
+                { label:'Power punches / rd',  value:'32',               trend:'↑ 4',                                           trendColor:'#22C55E' },
+                { label:'Recovery score',      value:`${recoveryScore}%`,trend:'Green zone',                                    trendColor:'#22C55E' },
+                { label:'Camp days remaining', value:`${fighter.camp_total - fighter.camp_day}`, trend:'On schedule',            trendColor:'#0ea5e9' },
+                { label:'Sponsor obligations', value:'2 due',            trend:'UA + DAZN',                                     trendColor:'#EC4899' },
+                { label:'Purse (projected)',   value:'£1.2m',            trend:'70/30 split',                                   trendColor:'#F97316' },
+              ].map((m, i) => (
+                <div key={i} className="rounded-lg p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-[10px] mb-1" style={{ color: '#6B7280' }}>{m.label}</div>
+                  <div className="text-lg font-black text-white">{m.value}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: m.trendColor }}>{m.trend}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       )}
 
@@ -5605,7 +5755,7 @@ function BoxingHotelFinder({ onClose, fighter }: { onClose: () => void; fighter:
 function SettingsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const ACCENT = '#dc2626';
   const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [voiceId, setVoiceId] = useState('nova');
+  const [voiceId, setVoiceId] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL');
   const [weightClass, setWeightClass] = useState(fighter.weight_class);
   const [sanctioning, setSanctioning] = useState<Record<string, boolean>>({ WBC: true, WBA: true, WBO: true, IBF: true });
   const [devPrompt, setDevPrompt] = useState('');
