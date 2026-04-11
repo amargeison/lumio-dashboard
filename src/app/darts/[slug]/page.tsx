@@ -1585,7 +1585,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         )
       })()}
 
-      <DartsAISection context="dashboard" player={player} session={session} />
+      {dashTab === 'today' && <DartsAISection context="dashboard" player={player} session={session} />}
     </div>
   );
 }
