@@ -81,6 +81,8 @@ function compressImage(file: File): Promise<string> {
 
 export default function SportsSignupPage() {
   const router = useRouter()
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const preselectedSport = searchParams?.get('sport') || ''
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
 
@@ -91,7 +93,7 @@ export default function SportsSignupPage() {
   const [step1Error, setStep1Error] = useState('')
 
   // Step 2
-  const [sport, setSport] = useState<SportId | ''>('')
+  const [sport, setSport] = useState<SportId | ''>(preselectedSport as SportId | '')
 
   // Step 3
   const [displayName, setDisplayName] = useState('')
@@ -119,7 +121,8 @@ export default function SportsSignupPage() {
     if (password.length < 8) { setStep1Error('Password must be at least 8 characters.'); return }
     setStep1Error('')
     setDisplayName(name) // pre-fill display name
-    setStep(2)
+    // Skip sport selection if pre-selected from /join
+    setStep(preselectedSport && sport ? 3 : 2)
   }
 
   const advanceFromStep2 = () => {
