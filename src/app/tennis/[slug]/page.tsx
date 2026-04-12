@@ -7,6 +7,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
+import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -1201,7 +1202,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 </button>
               </div>
               <p className="text-sm mb-2" style={{ color: '#0ea5e9' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
-              <p style={{ color: '#F59E0B' }} className="text-sm italic">&ldquo;Champions keep playing until they get it right.&rdquo; &mdash; Billie Jean King</p>
+              <p style={{ color: '#F59E0B' }} className="text-sm italic">&ldquo;{getDailyQuote(TENNIS_QUOTES).text}&rdquo; &mdash; {getDailyQuote(TENNIS_QUOTES).author}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[

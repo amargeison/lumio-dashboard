@@ -7,6 +7,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
+import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -1043,7 +1044,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
             <p className="text-xs italic" style={{ color: '#facc15' }}>
-              &ldquo;The more I practice, the luckier I get.&rdquo; &mdash; Gary Player
+              &ldquo;{getDailyQuote(GOLF_QUOTES).text}&rdquo; &mdash; {getDailyQuote(GOLF_QUOTES).author}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">
