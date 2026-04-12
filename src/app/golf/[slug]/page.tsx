@@ -3659,19 +3659,20 @@ function PracticeLogView({ player, session }: { player: GolfPlayer; session: Spo
 
 // ─── FIND A PRO VIEW ──────────────────────────────────────────────────────────
 function GolfFindProView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
-  const [tab, setTab] = useState<'caddy'|'course'>('caddy')
+  const [tab, setTab] = useState<'caddy'|'course'|'range'>('caddy')
   const [location, setLocation] = useState('')
   const [tourLevel, setTourLevel] = useState('')
   const [budget, setBudget] = useState('')
   const [courseType, setCourseType] = useState('')
   const [results, setResults] = useState('')
   const [loading, setLoading] = useState(false)
-  const TABS = [{ id: 'caddy' as const, label: 'Find a Caddy', emoji: '🎒' },{ id: 'course' as const, label: 'Find a Course', emoji: '⛳' }]
+  const TABS = [{ id: 'caddy' as const, label: 'Find a Caddy', emoji: '🎒' },{ id: 'course' as const, label: 'Find a Course', emoji: '⛳' },{ id: 'range' as const, label: 'Driving Range', emoji: '🏌️' }]
   const search = async () => {
     setLoading(true); setResults('')
     const prompts: Record<string, string> = {
       caddy: `You are a professional golf career consultant. Find a caddy. Tour level: ${tourLevel || player.tour || 'DP World Tour'}. Location/region: ${location || 'Europe/flexible'}. Budget: ${budget || 'standard tour rate'}. Search for and recommend 4 real professional caddies currently available or caddy agencies that place caddies on tour. For each write a paragraph covering: full name or agency, background, tours worked, notable players caddied for, strengths, availability and how to contact. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
       course: `You are a professional golf consultant. Find a course. Location: ${location || 'flexible'}. Course type: ${courseType || 'any'}. Tour level: ${tourLevel || 'professional'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real golf courses suitable for a touring professional. For each write a paragraph covering: course name, location, course type, notable features, green fee or membership, tour professionals who practice there, and booking info. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+      range: `You are a professional golf consultant. Find a driving range or practice facility. Location: ${location || 'flexible'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real driving ranges or practice facilities suitable for a touring professional. For each write a paragraph covering: facility name, location, what they offer (covered bays, TrackMan/Toptracer, short game area, putting green, floodlit), opening hours, pricing, and any notable tour professionals who use it. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
     }
     try {
       const res = await fetch('/api/ai/golf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, tools: [{ type: 'web_search_20250305', name: 'web_search' }], messages: [{ role: 'user', content: prompts[tab] }] }) })
