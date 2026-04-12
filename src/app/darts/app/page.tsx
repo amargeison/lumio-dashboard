@@ -47,15 +47,13 @@ export default function DartsAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
-      const displayName = profile.display_name || 'Jake Morrison'
-      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Jake+Morrison&background=22c55e&color=fff&size=200&bold=true'
-      setSlug(slugify(displayName))
+      setSlug(slugify(profile.display_name || 'player'))
       setSession({
         email: user.email ?? '',
-        userName: displayName,
+        userName: profile.display_name ?? '',
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: displayPhoto,
+        photoDataUrl: profile.avatar_url ?? null,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
