@@ -130,6 +130,7 @@ const SIDEBAR_ITEMS = [
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
   { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'FIGHT CAMP' },
+  { id: 'gpsringheatmap',  label: 'GPS & Ring Heatmap',  icon: '🛰️', group: 'FIGHT CAMP' },
   { id: 'fightcamp',       label: 'Fight Camp',          icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
@@ -5175,6 +5176,10 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
     <div className="space-y-6">
       <QuickActionsBar />
       <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
+      <div className="flex items-center gap-2.5 rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444430' }}>
+        <span>🛰️</span>
+        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gpsringheatmap' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Connect %" value={`${Math.round((totalLanded/totalThrown)*100)}%`} sub={`${totalLanded} of ${totalThrown} thrown`} color="red" />
         <StatCard label="Jab Accuracy" value={`${Math.round((totalJabsLanded/totalJabsThrown)*100)}%`} sub={`${totalJabsLanded}/${totalJabsThrown}`} color="orange" />
@@ -6949,6 +6954,233 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
   )
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS & RING HEATMAP VIEW ──────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function GpsRingHeatmapView() {
+  const [activeRound, setActiveRound] = useState(1)
+  const [activeTab, setActiveTab] = useState<'heatmap'|'load'|'roadwork'>('heatmap')
+
+  const ROUND_DATA = [
+    { round:1, centre:61, ropes:18, corners:4, moving:17, distance:124, note:'Strong start — controls centre well' },
+    { round:2, centre:54, ropes:24, corners:6, moving:16, distance:138, note:'Petrov pressure beginning — gives ground' },
+    { round:3, centre:48, ropes:31, corners:8, moving:13, distance:142, note:'Ropes % rising — fatigue or tactical?' },
+    { round:4, centre:52, ropes:22, corners:5, moving:21, distance:131, note:'Recovery round — Jim adjusts between' },
+    { round:5, centre:58, ropes:17, corners:3, moving:22, distance:126, note:'Best round — game plan working' },
+    { round:6, centre:49, ropes:27, corners:9, moving:15, distance:147, note:'Tired — corner time spikes — flag physio' },
+  ]
+  const round = ROUND_DATA[activeRound - 1]
+
+  const KPI_CARDS = [
+    { label:'Roadwork Distance', value:'8.4km', sub:'Morning run', color:'#22c55e', icon:'🏃' },
+    { label:'Max Speed', value:'6.8 m/s', sub:'24.5 km/h — vs PB 7.1', color:'#0ea5e9', icon:'⚡' },
+    { label:'Sprint Efforts', value:'12', sub:'Target: 8–15/session', color:'#a855f7', icon:'💨' },
+    { label:'Gym Session Load', value:'312 AU', sub:'Green: under 350', color:'#22c55e', icon:'🏋️' },
+    { label:'Accel Events', value:'48', sub:'Footwork intensity', color:'#f59e0b', icon:'📈' },
+    { label:'Weekly ACWR', value:'1.18', sub:'Red at > 1.5', color:'#22c55e', icon:'🛰️' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-3xl">🛰️</span>
+          <div>
+            <h2 className="text-xl font-black text-white">GPS & Ring Heatmap</h2>
+            <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>WORLD FIRST — Punch analytics fused with GPS ring movement data</p>
+          </div>
+        </div>
+        <p className="text-xs" style={{ color: '#94a3b8' }}>UWB beacons at ring corners track position at 10Hz. Combined with CompuBox punch data to reveal footwork-performance correlation.</p>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {KPI_CARDS.map(k => (
+          <div key={k.label} className="rounded-xl p-3" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="text-lg mb-1">{k.icon}</div>
+            <div className="text-xl font-black" style={{ color: k.color }}>{k.value}</div>
+            <div className="text-[11px] font-semibold text-white mt-0.5">{k.label}</div>
+            <div className="text-[10px]" style={{ color: '#475569' }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        {(['heatmap','load','roadwork'] as const).map(t => (
+          <button key={t} onClick={() => setActiveTab(t)}
+            className="px-4 py-2 rounded-lg text-xs font-semibold"
+            style={{ background: activeTab === t ? '#ef4444' : '#1F2937', color: activeTab === t ? '#fff' : '#94a3b8' }}>
+            {t === 'heatmap' ? '🥊 Ring Heatmap' : t === 'load' ? '📊 Session Load' : '🏃 Roadwork GPS'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'heatmap' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* SVG Ring Heatmap */}
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white">Ring Position Map</h3>
+              <div className="flex gap-1.5">
+                {ROUND_DATA.map((_, i) => (
+                  <button key={i} onClick={() => setActiveRound(i + 1)}
+                    className="w-7 h-7 rounded-full text-[11px] font-bold"
+                    style={{ background: activeRound === i + 1 ? '#ef4444' : '#1F2937', color: activeRound === i + 1 ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer' }}>
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <svg viewBox="0 0 300 300" className="w-full max-w-[280px] mx-auto block">
+              <rect x="10" y="10" width="280" height="280" rx="8" fill="#1a1a2e" stroke="#374151" strokeWidth="2"/>
+              {[[20,20],[280,20],[20,280],[280,280]].map(([cx,cy],i) => (
+                <circle key={i} cx={cx} cy={cy} r="8" fill="#374151" stroke="#6B7280" strokeWidth="1"/>
+              ))}
+              <rect x="20" y="20" width="260" height="260" fill="none" stroke="#4B5563" strokeWidth="1.5" strokeDasharray="4,4"/>
+              <ellipse cx="150" cy="150" rx="65" ry="65" fill={`rgba(250,204,21,${round.centre / 100 * 0.7 + 0.1})`}/>
+              <rect x="10" y="10" width="280" height="35" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.8})`}/>
+              <rect x="10" y="255" width="280" height="35" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.6})`}/>
+              <rect x="10" y="10" width="35" height="280" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.5})`}/>
+              <rect x="255" y="10" width="35" height="280" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.5})`}/>
+              {[[10,10],[265,10],[10,265],[265,265]].map(([x,y],i) => (
+                <rect key={i} x={x} y={y} width="30" height="30" fill={`rgba(245,158,11,${round.corners / 100 * 1.5})`}/>
+              ))}
+              <text x="150" y="154" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="13" fontWeight="bold">{round.centre}%</text>
+              <text x="150" y="168" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="9">Centre</text>
+            </svg>
+            <div className="flex gap-3 justify-center mt-3">
+              {[['#facc15','Centre'],['#ef4444','Ropes'],['#f59e0b','Corners'],['#3b82f6','Moving']].map(([c,l]) => (
+                <div key={l} className="flex items-center gap-1">
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
+                  <span className="text-[10px]" style={{ color: '#94a3b8' }}>{l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Round stats + AI insight */}
+          <div className="space-y-3">
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+              <h3 className="text-sm font-bold text-white mb-3">Round {activeRound} Breakdown</h3>
+              {[
+                { label:'Centre Control', value:round.centre, target:55, color:'#facc15' },
+                { label:'Ropes Time', value:round.ropes, target:15, color:'#ef4444', invert:true },
+                { label:'Corner Time', value:round.corners, target:5, color:'#f59e0b', invert:true },
+                { label:'Active Movement', value:round.moving, target:20, color:'#3b82f6' },
+              ].map(stat => (
+                <div key={stat.label} className="mb-2.5">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-xs" style={{ color: '#94a3b8' }}>{stat.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold" style={{ color: stat.color }}>{stat.value}%</span>
+                      <span className="text-[10px]" style={{ color: '#475569' }}>target: {stat.target}%</span>
+                      <span className="text-[10px]">{stat.invert ? stat.value <= stat.target : stat.value >= stat.target ? '✅' : '⚠️'}</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full" style={{ background: '#1F2937' }}>
+                    <div className="h-full rounded-full transition-all" style={{ background: stat.color, width: `${Math.min(stat.value, 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs italic mt-3" style={{ color: '#94a3b8' }}>{round.note}</p>
+              <p className="text-[11px]" style={{ color: '#6B7280' }}>Distance covered: <span className="text-white font-semibold">{round.distance}m</span></p>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #ef444430' }}>
+              <div className="flex items-center gap-2 mb-2"><span>✨</span><span className="text-xs font-bold" style={{ color: '#ef4444' }}>AI Ring Intelligence</span></div>
+              <p className="text-xs leading-relaxed" style={{ color: '#94a3b8' }}>
+                Marcus&apos;s ropes % increases by 8 percentage points in rounds 3 and 6 — a consistent fatigue signature. Centre control in rounds 1–2 is strong at 60%+ but drops sharply under sustained pressure. Drill priority: lateral ring escape when on ropes, and maintaining foot speed in rounds 5–8 of sparring.
+              </p>
+            </div>
+            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+              <h3 className="text-xs font-bold text-white mb-2">Session Averages (All Rounds)</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label:'Avg Centre', value:`${Math.round(ROUND_DATA.reduce((s,r)=>s+r.centre,0)/ROUND_DATA.length)}%`, color:'#facc15' },
+                  { label:'Avg Ropes', value:`${Math.round(ROUND_DATA.reduce((s,r)=>s+r.ropes,0)/ROUND_DATA.length)}%`, color:'#ef4444' },
+                  { label:'Total Distance', value:`${ROUND_DATA.reduce((s,r)=>s+r.distance,0)}m`, color:'#22c55e' },
+                  { label:'Best Round', value:`Rd ${ROUND_DATA.reduce((best,r,i)=>r.centre>ROUND_DATA[best].centre?i:best,0)+1}`, color:'#a855f7' },
+                ].map(s => (
+                  <div key={s.label} className="rounded-lg p-2.5" style={{ background: '#1F2937' }}>
+                    <div className="text-base font-black" style={{ color: s.color }}>{s.value}</div>
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'load' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-4">📊 Session Load Monitor</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1F2937' }}>
+                  {['Round','Centre %','Ropes %','Corners %','Distance','Status'].map(h => (
+                    <th key={h} className="text-left text-[11px] font-semibold uppercase" style={{ padding: '8px 12px', color: '#6B7280' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ROUND_DATA.map(r => (
+                  <tr key={r.round} style={{ borderBottom: '1px solid #0d1117' }}>
+                    <td className="font-semibold text-white" style={{ padding: '10px 12px' }}>Rd {r.round}</td>
+                    <td className="font-bold" style={{ padding: '10px 12px', color: '#facc15' }}>{r.centre}%</td>
+                    <td style={{ padding: '10px 12px', color: r.ropes > 25 ? '#ef4444' : '#94a3b8' }}>{r.ropes}%</td>
+                    <td style={{ padding: '10px 12px', color: r.corners > 7 ? '#f59e0b' : '#94a3b8' }}>{r.corners}%</td>
+                    <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{r.distance}m</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                        style={{ background: r.centre >= 55 ? 'rgba(34,197,94,0.15)' : r.centre >= 48 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)', color: r.centre >= 55 ? '#22c55e' : r.centre >= 48 ? '#f59e0b' : '#ef4444' }}>
+                        {r.centre >= 55 ? '✓ On target' : r.centre >= 48 ? '⚠ Marginal' : '✗ Off target'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'roadwork' && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-4">🏃 Roadwork GPS — Morning Run</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+            {[
+              { label:'Total Distance', value:'8.4 km', color:'#22c55e' },
+              { label:'Avg Pace', value:'4:52 /km', color:'#0ea5e9' },
+              { label:'Max Speed', value:'6.8 m/s', color:'#a855f7' },
+              { label:'Sprint Efforts', value:'12', color:'#ef4444' },
+              { label:'Elevation', value:'+142m', color:'#f59e0b' },
+              { label:'Duration', value:'40:52', color:'#94a3b8' },
+            ].map(s => (
+              <div key={s.label} className="rounded-xl p-3" style={{ background: '#1F2937' }}>
+                <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[11px]" style={{ color: '#6B7280' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#94a3b8' }}>7-Day Distance Trend</h4>
+          <div className="flex gap-2 items-end" style={{ height: 80 }}>
+            {[6.2,8.1,7.4,9.0,6.8,8.4,0].map((d,i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full rounded-t" style={{ background: d === 0 ? '#1F2937' : '#ef4444', height: `${(d / 9.0) * 64}px`, opacity: d === 0 ? 0.3 : 1 }} />
+                <span className="text-[10px]" style={{ color: '#475569' }}>{['M','T','W','T','F','S','S'][i]}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] mt-3" style={{ color: '#475569' }}>ACWR: <span className="font-bold" style={{ color: '#22c55e' }}>1.18</span> — Optimal load zone. Camp load trending correctly for peak phase.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
@@ -6992,6 +7224,11 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
     window.addEventListener('lumio-visibility-changed', handler)
     return () => window.removeEventListener('lumio-visibility-changed', handler)
   }, [])
+  useEffect(() => {
+    const nav = (e: Event) => { const section = (e as CustomEvent).detail; if (typeof section === 'string') setActiveSection(section) }
+    window.addEventListener('lumio-navigate', nav)
+    return () => window.removeEventListener('lumio-navigate', nav)
+  }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
 
   // Role config
@@ -7014,7 +7251,7 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
     }
   }, [toastDismissed]);
 
-  const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL'];
+  const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'INTEGRATIONS'];
 
   const renderView = () => {
     switch (activeSection) {
@@ -7024,6 +7261,7 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
       case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
       case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
+      case 'gpsringheatmap':  return <GpsRingHeatmapView />;
       case 'fightcamp':       return <FightCampView fighter={fighter} session={session} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
       case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
