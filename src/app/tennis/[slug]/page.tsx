@@ -970,7 +970,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
     : ''
-  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl || 'https://ui-avatars.com/api/?name=Alex+Thompson&background=a855f7&color=fff&size=200&bold=true') : null
+  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl || '/alex_thompson.jpg') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'

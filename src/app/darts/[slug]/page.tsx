@@ -549,7 +549,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
     : `"${player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || 'https://ui-avatars.com/api/?name=Jake+Morrison&background=22c55e&color=fff&size=200&bold=true') : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/jake_morrison.jpg') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
