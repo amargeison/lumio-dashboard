@@ -139,6 +139,7 @@ function SportsLoginForm() {
                   value={d}
                   onChange={e => handleDigitChange(i, e.target.value)}
                   onKeyDown={e => handleDigitKeyDown(i, e)}
+                  onPaste={i === 0 ? e => { e.preventDefault(); const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6); if (pasted.length > 0) { const next = ['','','','','','']; pasted.split('').forEach((char, j) => { next[j] = char }); setDigits(next); setTimeout(() => inputRefs.current[Math.min(pasted.length, 5)]?.focus(), 50) } } : undefined}
                   style={{ width: 48, height: 56, textAlign: 'center', fontSize: 22, fontWeight: 800, background: '#111318', border: d ? '1px solid #8B5CF6' : '1px solid #374151', borderRadius: 12, color: '#fff', outline: 'none' }}
                 />
               ))}
