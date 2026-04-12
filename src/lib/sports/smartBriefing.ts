@@ -131,13 +131,16 @@ export function generateSmartBriefing(ctx: BriefingContext): string {
     if (itemDate.getTime() > now.getTime()) {
       if (!item.completed) upcoming.push(item)
     } else {
-      // Past
-      if (!item.completed) overdue.push(item)
-      // Completed past items: skip entirely
+      // Past item
+      if (item.completed) continue // completed past items: skip entirely
+      // Only flag as overdue if within last 2 hours — older items are just gone
+      const minsAgo = minutesBetween(itemDate, now)
+      if (minsAgo <= 120) overdue.push(item)
+      // Items more than 2 hours past: silently skip
     }
   }
 
-  // Overdue items
+  // Overdue items (recent — within last 2 hours)
   if (overdue.length === 1) {
     parts.push(`Heads up — ${overdue[0].label} at ${formatTime12(overdue[0].time)} looks like it was missed.`)
   } else if (overdue.length > 1) {

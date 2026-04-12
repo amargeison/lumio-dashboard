@@ -503,7 +503,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
       { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
     ]
-    const text = dartsSummary || generateSmartBriefing({
+    const greetingPrefix = `${hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'}, ${firstName}. `
+    const text = dartsSummary ? greetingPrefix + dartsSummary : generateSmartBriefing({
       now: new Date(),
       playerName: displayPlayerName,
       schedule: buildScheduleItems(scheduleRaw, scheduleChecked, {}),
