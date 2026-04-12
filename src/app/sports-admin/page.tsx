@@ -3,10 +3,13 @@ import { useState, useEffect } from 'react'
 
 const SC: Record<string, string> = { tennis:'#a855f7', golf:'#16a34a', darts:'#22c55e', boxing:'#ef4444', cricket:'#10b981', rugby:'#f97316', football:'#3b82f6', nonleague:'#f59e0b', grassroots:'#10b981', womens:'#be185d' }
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
+const ATHLETE_SPORTS = new Set(['tennis','golf','darts','boxing'])
+const CLUB_SPORTS = new Set(['football','cricket','rugby','nonleague','grassroots','womens'])
 
 export default function SportsAdminDashboard() {
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewType, setViewType] = useState<'all'|'athletes'|'clubs'>('all')
 
   useEffect(() => {
     const token = localStorage.getItem('sports_admin_token') || ''
@@ -16,26 +19,43 @@ export default function SportsAdminDashboard() {
       .catch(() => setLoading(false))
   }, [])
 
-  const total = users.length
-  const thisMonth = users.filter(u => new Date(u.created_at) > new Date(Date.now() - 30 * 86400000)).length
-  const withLogins = users.filter(u => u.login_count > 0).length
-  const totalAiCalls = users.reduce((s, u) => s + (u.ai_calls || 0), 0)
+  const filtered = viewType === 'athletes' ? users.filter(u => ATHLETE_SPORTS.has(u.sport))
+    : viewType === 'clubs' ? users.filter(u => CLUB_SPORTS.has(u.sport))
+    : users
+
+  const totalAthletes = users.filter(u => ATHLETE_SPORTS.has(u.sport)).length
+  const totalClubs = users.filter(u => CLUB_SPORTS.has(u.sport)).length
+  const thisMonth = filtered.filter(u => new Date(u.created_at) > new Date(Date.now() - 30 * 86400000)).length
+  const withLogins = filtered.filter(u => u.login_count > 0).length
+  const totalAiCalls = filtered.reduce((s, u) => s + (u.ai_calls || 0), 0)
   const sportCounts = users.reduce((acc, u) => { acc[u.sport] = (acc[u.sport] || 0) + 1; return acc }, {} as Record<string, number>)
+  const isClubView = viewType === 'clubs'
+  const nameLabel = isClubView ? 'Club' : 'Athlete'
 
   const STATS = [
-    { label: 'Total Athletes', value: total, color: '#6C3FC5' },
+    { label: 'Total Athletes', value: totalAthletes, color: '#6C3FC5' },
+    { label: 'Total Clubs', value: totalClubs, color: '#3b82f6' },
     { label: 'New This Month', value: thisMonth, color: '#22c55e' },
     { label: 'Have Logged In', value: withLogins, color: '#0ea5e9' },
     { label: 'AI Calls Made', value: totalAiCalls, color: '#f59e0b' },
-    { label: 'Founding Members', value: users.filter(u => u.plan === 'founding').length, color: '#a855f7' },
-    { label: 'Awaiting Setup', value: users.filter(u => u.setup_type === 'lumio' && !u.setup_complete).length, color: '#f59e0b' },
+    { label: 'Awaiting Setup', value: filtered.filter(u => u.setup_type === 'lumio' && !u.setup_complete).length, color: '#f59e0b' },
   ]
+
+  const athleteSports = (Object.entries(sportCounts) as [string, number][]).filter(([s]) => ATHLETE_SPORTS.has(s)).sort((a, b) => b[1] - a[1])
+  const clubSports = (Object.entries(sportCounts) as [string, number][]).filter(([s]) => CLUB_SPORTS.has(s)).sort((a, b) => b[1] - a[1])
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>Dashboard</h1>
-        <p style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>Lumio Sports athlete overview</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div>
+          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>Dashboard</h1>
+          <p style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>Lumio Sports overview</p>
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['all','athletes','clubs'] as const).map(t => (
+            <button key={t} onClick={() => setViewType(t)} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: viewType === t ? '#6C3FC5' : '#1F2937', color: viewType === t ? '#fff' : '#94a3b8', textTransform: 'capitalize' }}>{t}</button>
+          ))}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 32 }}>
@@ -48,16 +68,30 @@ export default function SportsAdminDashboard() {
       </div>
 
       <div style={{ background: '#0d1117', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-        <h2 style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Athletes by Sport</h2>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {(Object.entries(sportCounts) as [string, number][]).sort((a, b) => b[1] - a[1]).map(([sport, count]) => (
-            <div key={sport} style={{ display: 'flex', alignItems: 'center', gap: 8, background: `${SC[sport] || '#6B7280'}15`, border: `1px solid ${SC[sport] || '#6B7280'}40`, borderRadius: 8, padding: '8px 14px' }}>
-              <span>{SE[sport] || '🏅'}</span>
-              <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{sport}</span>
-              <span style={{ color: SC[sport] || '#6B7280', fontSize: 13, fontWeight: 700 }}>{String(count)}</span>
+        <div style={{ display: 'flex', gap: 32 }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>🏅 Athletes</h2>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {athleteSports.map(([sport, count]) => (
+                <div key={sport} style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${SC[sport]}15`, border: `1px solid ${SC[sport]}40`, borderRadius: 8, padding: '6px 12px' }}>
+                  <span>{SE[sport]}</span><span style={{ color: '#fff', fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>{sport}</span><span style={{ color: SC[sport], fontSize: 12, fontWeight: 700 }}>{String(count)}</span>
+                </div>
+              ))}
+              {athleteSports.length === 0 && !loading && <span style={{ color: '#475569', fontSize: 12 }}>None yet</span>}
             </div>
-          ))}
-          {Object.keys(sportCounts).length === 0 && !loading && <p style={{ color: '#475569', fontSize: 13 }}>No signups yet</p>}
+          </div>
+          <div style={{ width: 1, background: '#1F2937' }} />
+          <div style={{ flex: 1 }}>
+            <h2 style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>🏟️ Clubs</h2>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {clubSports.map(([sport, count]) => (
+                <div key={sport} style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${SC[sport]}15`, border: `1px solid ${SC[sport]}40`, borderRadius: 8, padding: '6px 12px' }}>
+                  <span>{SE[sport]}</span><span style={{ color: '#fff', fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>{sport}</span><span style={{ color: SC[sport], fontSize: 12, fontWeight: 700 }}>{String(count)}</span>
+                </div>
+              ))}
+              {clubSports.length === 0 && !loading && <span style={{ color: '#475569', fontSize: 12 }}>None yet</span>}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -68,7 +102,7 @@ export default function SportsAdminDashboard() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #1F2937' }}>
-              {['Athlete','Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
+              {[nameLabel,'Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
                 <th key={c} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
               ))}
             </tr>
@@ -76,9 +110,9 @@ export default function SportsAdminDashboard() {
           <tbody>
             {loading ? (
               <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>Loading...</td></tr>
-            ) : users.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No athletes yet — run the 088 migration in Supabase first</td></tr>
-            ) : users.slice(0, 20).map(u => (
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No {isClubView ? 'clubs' : 'athletes'} yet</td></tr>
+            ) : filtered.slice(0, 20).map(u => (
               <tr key={u.id} style={{ borderBottom: '1px solid #0d1117' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'rgba(255,255,255,0.02)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent' }}>

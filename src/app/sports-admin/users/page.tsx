@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 
 const SC: Record<string, string> = { tennis:'#a855f7', golf:'#16a34a', darts:'#22c55e', boxing:'#ef4444', cricket:'#10b981', rugby:'#f97316', football:'#3b82f6', nonleague:'#f59e0b', grassroots:'#10b981', womens:'#be185d' }
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
-const ALL_SPORTS = ['tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens']
+const ATHLETE_SPORTS = ['tennis','golf','darts','boxing']
+const CLUB_SPORTS = ['football','cricket','rugby','nonleague','grassroots','womens']
 
 export default function SportsAdminUsers() {
   const [users, setUsers] = useState<any[]>([])
@@ -11,6 +12,7 @@ export default function SportsAdminUsers() {
   const [sport, setSport] = useState('all')
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
+  const [viewType, setViewType] = useState<'athletes'|'clubs'>('athletes')
 
   useEffect(() => { const t = setTimeout(() => setDebounced(search), 300); return () => clearTimeout(t) }, [search])
 
@@ -26,9 +28,15 @@ export default function SportsAdminUsers() {
       .catch(() => setLoading(false))
   }, [sport, debounced])
 
+  const sportSet = new Set(viewType === 'athletes' ? ATHLETE_SPORTS : CLUB_SPORTS)
+  const filtered = sport === 'all' ? users.filter(u => sportSet.has(u.sport)) : users
+  const visibleSports = viewType === 'athletes' ? ATHLETE_SPORTS : CLUB_SPORTS
+  const isClub = viewType === 'clubs'
+  const nameLabel = isClub ? 'Club' : 'Athlete'
+
   const exportCSV = () => {
-    const headers = ['Name','Nickname','Email','Sport','Plan','Signed Up','Last Login','Login Count','AI Calls','Quick Actions']
-    const rows = users.map(u => [
+    const headers = [nameLabel,'Nickname','Email','Sport','Plan','Signed Up','Last Login','Login Count','AI Calls','Quick Actions']
+    const rows = filtered.map(u => [
       u.display_name, u.nickname || '', u.email, u.sport, u.plan,
       new Date(u.created_at).toLocaleDateString('en-GB'),
       u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB') : 'Never',
@@ -37,7 +45,7 @@ export default function SportsAdminUsers() {
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `lumio-sports-athletes-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = `lumio-sports-${viewType}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
   }
 
   const markReady = async (userId: string) => {
@@ -49,16 +57,25 @@ export default function SportsAdminUsers() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div><h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>Athletes</h1><p style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>{loading ? '...' : `${users.length} athletes`}</p></div>
-        <button onClick={exportCSV} style={{ background: '#6C3FC5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Export CSV</button>
+        <div>
+          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>{isClub ? 'Clubs' : 'Athletes'}</h1>
+          <p style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>{loading ? '...' : `${filtered.length} ${isClub ? 'clubs' : 'athletes'}`}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 4, marginRight: 8 }}>
+            <button onClick={() => { setViewType('athletes'); setSport('all') }} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: viewType === 'athletes' ? '#6C3FC5' : '#1F2937', color: viewType === 'athletes' ? '#fff' : '#94a3b8' }}>Athletes</button>
+            <button onClick={() => { setViewType('clubs'); setSport('all') }} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: viewType === 'clubs' ? '#3b82f6' : '#1F2937', color: viewType === 'clubs' ? '#fff' : '#94a3b8' }}>Clubs</button>
+          </div>
+          <button onClick={exportCSV} style={{ background: '#6C3FC5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Export CSV</button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-        <input placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder={`Search by ${isClub ? 'club' : 'name'}...`} value={search} onChange={e => setSearch(e.target.value)}
           style={{ flex: 1, background: '#0d1117', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 14 }} />
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button onClick={() => setSport('all')} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: sport === 'all' ? '#6C3FC5' : '#1F2937', color: sport === 'all' ? '#fff' : '#94a3b8' }}>All</button>
-          {ALL_SPORTS.map(s => (
+          {visibleSports.map(s => (
             <button key={s} onClick={() => setSport(s)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: sport === s ? (SC[s] || '#6C3FC5') : '#1F2937', color: sport === s ? '#fff' : '#94a3b8', textTransform: 'capitalize' }}>
               {SE[s]} {s}
             </button>
@@ -70,7 +87,7 @@ export default function SportsAdminUsers() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #1F2937' }}>
-              {['Athlete','Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
+              {[nameLabel,'Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
                 <th key={c} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
               ))}
             </tr>
@@ -78,9 +95,9 @@ export default function SportsAdminUsers() {
           <tbody>
             {loading ? (
               <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>Loading...</td></tr>
-            ) : users.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No athletes found</td></tr>
-            ) : users.map(u => (
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No {isClub ? 'clubs' : 'athletes'} found</td></tr>
+            ) : filtered.map(u => (
               <tr key={u.id} style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'rgba(255,255,255,0.02)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent' }}>
