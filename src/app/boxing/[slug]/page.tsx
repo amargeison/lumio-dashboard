@@ -798,7 +798,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '')
     : `"${fighter.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || 'https://ui-avatars.com/api/?name=Marcus+Reid&background=ef4444&color=fff&size=200&bold=true') : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/marcus_reid.jpg') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
