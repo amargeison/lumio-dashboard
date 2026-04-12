@@ -40,12 +40,14 @@ export default function GolfAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
+      const displayName = profile.display_name || 'James Hargreaves'
+      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=James+Hargreaves&background=16a34a&color=fff&size=200&bold=true'
       setSession({
         email: user.email ?? '',
-        userName: profile.display_name ?? '',
+        userName: displayName,
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: profile.avatar_url ?? null,
+        photoDataUrl: displayPhoto,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
@@ -70,5 +72,11 @@ export default function GolfAppPage() {
       </div>
     )
   }
-  return <GolfPortalInner session={session} />
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await supabase.auth.signOut()
+    router.push('/sports-login')
+  }
+
+  return <GolfPortalInner session={session} onSignOut={handleSignOut} />
 }

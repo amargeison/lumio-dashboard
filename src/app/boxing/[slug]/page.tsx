@@ -7209,7 +7209,7 @@ function GpsRingHeatmapView() {
   )
 }
 
-export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
+export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
@@ -7536,6 +7536,12 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
         />
 
         {/* Sidebar Footer */}
+        {onSignOut && (
+          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            {sidebarExpanded && <span>Sign out</span>}
+          </button>
+        )}
         {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800 flex items-center justify-center">
             <img src="/boxing_logo.png" alt="Lumio Boxing" style={{ maxHeight: 32, objectFit: 'contain' }} />

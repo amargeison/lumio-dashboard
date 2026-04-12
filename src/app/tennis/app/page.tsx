@@ -52,12 +52,14 @@ export default function TennisAppPage() {
         return
       }
 
+      const displayName = profile.display_name || 'Alex Thompson'
+      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Alex+Thompson&background=a855f7&color=fff&size=200&bold=true'
       const built: SportsDemoSession = {
         email: user.email ?? '',
-        userName: profile.display_name ?? '',
+        userName: displayName,
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: profile.avatar_url ?? null,
+        photoDataUrl: displayPhoto,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
@@ -83,5 +85,11 @@ export default function TennisAppPage() {
       </div>
     )
   }
-  return <TennisPortalInner session={session} />
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await supabase.auth.signOut()
+    router.push('/sports-login')
+  }
+
+  return <TennisPortalInner session={session} onSignOut={handleSignOut} />
 }

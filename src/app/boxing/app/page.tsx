@@ -40,12 +40,14 @@ export default function BoxingAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
+      const displayName = profile.display_name || 'Marcus Reid'
+      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Marcus+Reid&background=ef4444&color=fff&size=200&bold=true'
       setSession({
         email: user.email ?? '',
-        userName: profile.display_name ?? '',
+        userName: displayName,
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: profile.avatar_url ?? null,
+        photoDataUrl: displayPhoto,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
@@ -70,5 +72,11 @@ export default function BoxingAppPage() {
       </div>
     )
   }
-  return <BoxingPortalInner session={session} />
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await supabase.auth.signOut()
+    router.push('/sports-login')
+  }
+
+  return <BoxingPortalInner session={session} onSignOut={handleSignOut} />
 }
