@@ -129,6 +129,7 @@ const SIDEBAR_ITEMS = [
   { id: 'qualifying',    label: 'Q-School & Qualifying',icon: '🎓', group: 'OPERATIONS' },
   { id: 'career',        label: 'Career Planning',      icon: '🚀', group: 'OPERATIONS' },
   { id: 'video',         label: 'Video Library',        icon: '🎬', group: 'OPERATIONS' },
+  { id: 'findpro',       label: 'Find a Pro',           icon: '🔍', group: 'OPERATIONS' },
   { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'INTEGRATIONS' },
   { id: 'arccos',        label: 'Arccos Integration',   icon: '📡', group: 'INTEGRATIONS' },
   { id: 'datagolf',      label: 'DataGolf Integration', icon: '🌐', group: 'INTEGRATIONS' },
@@ -3656,6 +3657,49 @@ function PracticeLogView({ player, session }: { player: GolfPlayer; session: Spo
   );
 }
 
+// ─── FIND A PRO VIEW ──────────────────────────────────────────────────────────
+function GolfFindProView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const [tab, setTab] = useState<'caddy'|'course'>('caddy')
+  const [location, setLocation] = useState('')
+  const [tourLevel, setTourLevel] = useState('')
+  const [budget, setBudget] = useState('')
+  const [courseType, setCourseType] = useState('')
+  const [results, setResults] = useState('')
+  const [loading, setLoading] = useState(false)
+  const TABS = [{ id: 'caddy' as const, label: 'Find a Caddy', emoji: '🎒' },{ id: 'course' as const, label: 'Find a Course', emoji: '⛳' }]
+  const search = async () => {
+    setLoading(true); setResults('')
+    const prompts: Record<string, string> = {
+      caddy: `You are a professional golf career consultant. Find a caddy. Tour level: ${tourLevel || player.tour || 'DP World Tour'}. Location/region: ${location || 'Europe/flexible'}. Budget: ${budget || 'standard tour rate'}. Search for and recommend 4 real professional caddies currently available or caddy agencies that place caddies on tour. For each write a paragraph covering: full name or agency, background, tours worked, notable players caddied for, strengths, availability and how to contact. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+      course: `You are a professional golf consultant. Find a course. Location: ${location || 'flexible'}. Course type: ${courseType || 'any'}. Tour level: ${tourLevel || 'professional'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real golf courses suitable for a touring professional. For each write a paragraph covering: course name, location, course type, notable features, green fee or membership, tour professionals who practice there, and booking info. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+    }
+    try {
+      const res = await fetch('/api/ai/golf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, tools: [{ type: 'web_search_20250305', name: 'web_search' }], messages: [{ role: 'user', content: prompts[tab] }] }) })
+      const data = await res.json()
+      const text = data.content?.find((b: { type: string }) => b.type === 'text')?.text || ''
+      setResults(text)
+    } catch { setResults('Search failed — please try again.') }
+    setLoading(false)
+  }
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered live search for caddies and courses worldwide</div></div></div>
+      <div className="flex gap-2 p-1 rounded-xl" style={{ background: '#0d1117' }}>
+        {TABS.map(t => (<button key={t.id} onClick={() => { setTab(t.id); setResults('') }} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#16a34a' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Scotland, Florida" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Tour Level</label><input value={tourLevel} onChange={e => setTourLevel(e.target.value)} placeholder="e.g. DP World Tour" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+        {tab === 'course' && <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Course Type</label><input value={courseType} onChange={e => setCourseType(e.target.value)} placeholder="e.g. Links, Parkland" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>}
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Budget</label><input value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. £200/round" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+      </div>
+      <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white transition-all" style={{ background: loading ? '#374151' : '#16a34a' }}>{loading ? '🔍 Searching live...' : `Search for ${TABS.find(t => t.id === tab)?.label}`}</button>
+      {results && (<div className="rounded-xl p-4 space-y-3" style={{ background: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xs font-bold" style={{ color: '#16a34a' }}>LIVE RESULTS · Powered by AI web search</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{results.split('\n\n').map((para, i) => (<p key={i} className="mb-3">{para}</p>))}</div><div className="text-xs" style={{ color: '#4B5563' }}>Results are AI-generated from live web search · Always verify directly before booking</div></div>)}
+      <GolfAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
 // Generic placeholder for remaining views
 
 function PlaceholderView({ title, icon, description, player, session }: { title: string; icon: string; description: string; player: GolfPlayer; session: SportsDemoSession }) {
@@ -5809,6 +5853,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." player={player} session={session} />;
       case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." player={player} session={session} />;
+      case 'findpro':     return <GolfFindProView player={player} session={session} />;
       case 'settings':    return (
         <SportsSettings
           sport="golf"

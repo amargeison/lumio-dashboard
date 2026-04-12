@@ -5193,6 +5193,51 @@ const COMPUBOX_DATA = [
   { round: 5, jabsLanded: 11, jabsThrown: 27, powerLanded: 10, powerThrown: 21, received: 11, ringZone: { centre: 50, ropes: 33, corners: 17 } },
 ];
 
+// ─── FIND A PRO VIEW ──────────────────────────────────────────────────────────
+function FindProView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const [tab, setTab] = useState<'trainer'|'gym'|'sparring'>('trainer')
+  const [location, setLocation] = useState('')
+  const [style, setStyle] = useState('')
+  const [weightClass, setWeightClass] = useState('')
+  const [budget, setBudget] = useState('')
+  const [results, setResults] = useState('')
+  const [loading, setLoading] = useState(false)
+  const TABS = [{ id: 'trainer' as const, label: 'Find Trainer', emoji: '🥊' },{ id: 'gym' as const, label: 'Find Gym', emoji: '🏋️' },{ id: 'sparring' as const, label: 'Find Sparring', emoji: '🤜' }]
+  const search = async () => {
+    setLoading(true); setResults('')
+    const prompts: Record<string, string> = {
+      trainer: `You are a boxing career consultant. Find a trainer for a professional boxer. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Location: ${location || 'flexible'}. Style: ${style || 'any'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real professional boxing trainers currently active. For each write a paragraph covering: full name, gym base, career highlights, notable fighters trained, training style, contact/booking info if available, and why they suit this fighter. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+      gym: `You are a boxing career consultant. Find a professional boxing gym. Location: ${location || 'UK/flexible'}. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real professional boxing gyms currently operating. For each write a paragraph covering: gym name, location, facilities, notable trainers based there, fighters who train there, membership/access info, and why it suits a travelling professional. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+      sparring: `You are a boxing career consultant. Find sparring partners. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Location: ${location || 'flexible'}. Style: ${style || 'any'}. Search for sparring services, boxing agencies, and gyms that facilitate sparring for professionals. Recommend 4 real options. For each write a paragraph covering who they are, where based, weight classes covered, how to arrange, and approximate cost. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
+    }
+    try {
+      const res = await fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, tools: [{ type: 'web_search_20250305', name: 'web_search' }], messages: [{ role: 'user', content: prompts[tab] }] }) })
+      const data = await res.json()
+      const text = data.content?.find((b: { type: string }) => b.type === 'text')?.text || ''
+      setResults(text)
+    } catch { setResults('Search failed — please try again.') }
+    setLoading(false)
+  }
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered live search for trainers, gyms and sparring partners</div></div></div>
+      <div className="flex gap-2 p-1 rounded-xl" style={{ background: '#0d1117' }}>
+        {TABS.map(t => (<button key={t.id} onClick={() => { setTab(t.id); setResults('') }} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#ef4444' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. London, Las Vegas" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Weight Class</label><input value={weightClass} onChange={e => setWeightClass(e.target.value)} placeholder="e.g. Middleweight" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Style Preference</label><input value={style} onChange={e => setStyle(e.target.value)} placeholder="e.g. Technical, pressure fighter" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+        <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Budget</label><input value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. £500/week" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
+      </div>
+      <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white transition-all" style={{ background: loading ? '#374151' : '#ef4444' }}>{loading ? '🔍 Searching live...' : `Search for ${TABS.find(t => t.id === tab)?.label}`}</button>
+      {results && (<div className="rounded-xl p-4 space-y-3" style={{ background: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xs font-bold" style={{ color: '#ef4444' }}>LIVE RESULTS · Powered by AI web search</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{results.split('\n\n').map((para, i) => (<p key={i} className="mb-3">{para}</p>))}</div><div className="text-xs" style={{ color: '#4B5563' }}>Results are AI-generated from live web search · Always verify contact details directly</div></div>)}
+      <BoxingAISection context="default" fighter={fighter} session={session} />
+    </div>
+  )
+}
+
+// ─── PUNCH ANALYTICS VIEW ─────────────────────────────────────────────────────
 function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const totalJabsLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsLanded,0);
   const totalJabsThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsThrown,0);
