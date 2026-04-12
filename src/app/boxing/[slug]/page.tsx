@@ -1014,7 +1014,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Las Vegas', tz:'America/Los_Angeles', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
                   <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: '#facc15' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#facc15' : '#e2e8f0' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
                     <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
                   </div>
                 ))}
@@ -1311,7 +1311,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           <div className="space-y-4">
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <span className="text-sm font-bold text-white">🖼️ Personal Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_boxing_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   {photoSrc && <button onClick={() => { localStorage.removeItem('lumio_boxing_photo_frame'); setPhotoSrc(null) }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
@@ -1326,9 +1326,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
-                {(photoSrc || session.photoDataUrl)
-                  ? <img src={photoSrc || session.photoDataUrl || ''} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : <div className="text-center"><div className="text-4xl mb-2">🥊</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+                {photoSrc
+                  ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
+                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (
