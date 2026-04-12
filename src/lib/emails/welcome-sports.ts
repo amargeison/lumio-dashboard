@@ -16,13 +16,15 @@ const DEMO_SLUGS: Record<string, string> = {
 export function generateSportsWelcomeEmail(
   name: string,
   sport: string,
-  setupType: 'lumio' | 'self' | null
+  setupType: 'lumio' | 'self' | null,
+  email?: string
 ): string {
   const firstName = name.split(' ')[0] || name
   const sportLabel = SPORT_LABELS[sport] || sport
   const demoSlug = DEMO_SLUGS[sport] || `${sport}-demo`
   const demoUrl = `https://www.lumiosports.com/${sport}/${demoSlug}`
   const appUrl = `https://www.lumiosports.com/${sport}/app`
+  const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}&redirectTo=/${sport}/app`
 
   if (setupType === 'lumio') {
     return emailLayout({
@@ -66,7 +68,7 @@ ${ctaButton(`Explore the ${sportLabel} demo &rarr;`, demoUrl)}
   Everything is set up and waiting for you. Sign in any time to access your AI morning briefing, match prep, travel tools, and more.
 </p>
 
-${ctaButton(`Sign in to your portal &rarr;`, appUrl)}
+${ctaButton(`Sign in to your portal &rarr;`, loginUrl)}
 
 <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Need help with integrations or setup? Just reply to this email.
@@ -91,7 +93,7 @@ ${ctaButton(`Sign in to your portal &rarr;`, appUrl)}
   <tr><td style="padding:8px 0;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;">&#x2714;&#xFE0F; <strong style="color:#f9fafb;">We build what you ask for</strong> &mdash; direct line to the dev team</td></tr>
 </table>
 
-${ctaButton('Complete your portal setup &rarr;', appUrl)}
+${ctaButton('Complete your portal setup &rarr;', loginUrl)}
 
 <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Questions? Reply to this email &mdash; a real person reads every one.
