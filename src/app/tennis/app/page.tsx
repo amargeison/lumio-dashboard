@@ -52,14 +52,12 @@ export default function TennisAppPage() {
         return
       }
 
-      const displayName = profile.display_name || 'Alex Thompson'
-      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Alex+Thompson&background=a855f7&color=fff&size=200&bold=true'
       const built: SportsDemoSession = {
         email: user.email ?? '',
-        userName: displayName,
+        userName: profile.display_name ?? '',
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: displayPhoto,
+        photoDataUrl: profile.avatar_url ?? null,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),

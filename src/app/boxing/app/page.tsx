@@ -40,14 +40,12 @@ export default function BoxingAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
-      const displayName = profile.display_name || 'Marcus Reid'
-      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Marcus+Reid&background=ef4444&color=fff&size=200&bold=true'
       setSession({
         email: user.email ?? '',
-        userName: displayName,
+        userName: profile.display_name ?? '',
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: displayPhoto,
+        photoDataUrl: profile.avatar_url ?? null,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
