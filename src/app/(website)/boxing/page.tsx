@@ -250,11 +250,15 @@ export default function BoxingLandingPage() {
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: RED_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
             LUMIO FIGHT · BOXING
           </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 999, padding: '6px 16px', marginBottom: 20 }}>
+            <span style={{ fontSize: 14 }}>🛰️</span>
+            <span style={{ color: '#ef4444', fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>World First — GPS Ring Movement Tracking</span>
+          </div>
           <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
             The complete platform for professional boxers.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 860, margin: '0 auto 16px' }}>
-            Fight camp management, GPS ring heatmaps, ACWR load monitoring, world rankings, weight tracking, sponsorship and AI morning briefings — everything your team needs, in one place.
+            GPS ring heatmaps that track your movement at 10Hz. Fight camp management, ACWR load monitoring, world rankings, weight tracking, sponsorship and AI morning briefings — with GPS ring tracking no other platform has built.
           </p>
           <p style={{ fontSize: 14, color: RED_LIGHT, fontWeight: 700, marginBottom: 40, letterSpacing: '0.02em' }}>
             No tool like this exists for professional boxing anywhere else.
