@@ -1203,9 +1203,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
                 {photoSrc
                   ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : session.photoDataUrl
-                    ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${photoFit}`} />
-                    : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
+                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (
@@ -1521,12 +1519,14 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div className="w-px h-6 bg-gray-700" />
                   <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
                     {[
-                      { name:'Dave Askew', role:'Manager', initials:'DA' },
-                      { name:'James Wright', role:'Agent', initials:'JW' },
-                      { name:'Steve Morris', role:'Coach', initials:'SM' },
+                      { name:'Dave Askew', role:'Manager' },
+                      { name:'James Wright', role:'Agent' },
+                      { name:'Steve Morris', role:'Coach' },
                     ].map((m, i) => (
                       <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
-                        <div className="w-8 h-8 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-[10px] font-bold text-red-400 mx-auto mb-1">{m.initials}</div>
+                        <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 border border-red-600/30 flex items-center justify-center" style={{ background: 'rgba(220,38,38,0.2)' }}>
+                          {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /> : <span className="text-[10px] font-bold text-red-400">{m.name.split(' ').map(w => w[0]).join('')}</span>}
+                        </div>
                         <div className="text-xs font-semibold text-white">{m.name}</div>
                         <div className="text-[10px] text-gray-500">{m.role}</div>
                       </div>
@@ -1535,12 +1535,14 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div className="w-px h-4 bg-gray-700" />
                   <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
                     {[
-                      { name:'Dr Paul Reid', role:'Physio', initials:'PR' },
-                      { name:'Marcos Silva', role:'Psychologist', initials:'MS' },
-                      { name:'Red Dragon', role:'Sponsor', initials:'RD' },
+                      { name:'Dr Paul Reid', role:'Physio' },
+                      { name:'Marcos Silva', role:'Psychologist' },
+                      { name:'Red Dragon', role:'Sponsor' },
                     ].map((m, i) => (
                       <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-400 mx-auto mb-1">{m.initials}</div>
+                        <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 border border-gray-700 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          {demoStaffPhotos[m.name] ? <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-full h-full object-cover object-center" /> : <span className="text-[10px] font-bold text-gray-400">{m.name.split(' ').map(w => w[0]).join('')}</span>}
+                        </div>
                         <div className="text-xs font-semibold text-white">{m.name}</div>
                         <div className="text-[10px] text-gray-500">{m.role}</div>
                       </div>
