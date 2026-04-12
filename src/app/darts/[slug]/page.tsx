@@ -555,9 +555,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
-    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_photo_frame') : null } catch { return null }
-  })
+  const [photoSrc, setPhotoSrc] = useState<string | null>(null)
   const [photoFit, setPhotoFit] = useState<'cover'|'contain'>(() => {
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   })
@@ -1195,9 +1193,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_darts_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                  {photoSrc && <button onClick={() => { setPhotoSrc(null); localStorage.removeItem('lumio_darts_photo_frame') }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  {photoSrc && <button onClick={() => setPhotoSrc(null)} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
-                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_darts_photo_frame', compressed); setPhotoSrc(compressed) } catch { try { const lq = c.toDataURL('image/jpeg', 0.4); localStorage.setItem('lumio_darts_photo_frame', lq); setPhotoSrc(lq) } catch { /* too large */ } } }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); setPhotoSrc(compressed) }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">

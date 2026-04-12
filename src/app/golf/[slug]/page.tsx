@@ -894,9 +894,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const dashPhotoInputRef = useRef<HTMLInputElement>(null);
-  const [dashPhotoSrc, setDashPhotoSrc] = useState<string | null>(() => {
-    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_dash_photo_frame') : null } catch { return null }
-  });
+  const [dashPhotoSrc, setDashPhotoSrc] = useState<string | null>(null);
   const [dashPhotoFit, setDashPhotoFit] = useState<'cover'|'contain'>(() => {
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_golf_dash_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   });
@@ -1384,9 +1382,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 <span className="text-sm font-bold text-white">📸 Personal Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = dashPhotoFit === 'cover' ? 'contain' : 'cover'; setDashPhotoFit(next); try { localStorage.setItem('lumio_golf_dash_photo_fit', next) } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">{dashPhotoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
-                  {dashPhotoSrc && <button onClick={() => { setDashPhotoSrc(null); try { localStorage.removeItem('lumio_golf_dash_photo_frame') } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  {dashPhotoSrc && <button onClick={() => setDashPhotoSrc(null)} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => dashPhotoInputRef.current?.click()} className="text-[10px] text-green-400 hover:text-green-300">+ Add</button>
-                  <input type="file" accept="image/*" style={{display:'none'}} ref={dashPhotoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_golf_dash_photo_frame', compressed); setDashPhotoSrc(compressed) } catch { try { const lq = c.toDataURL('image/jpeg', 0.4); localStorage.setItem('lumio_golf_dash_photo_frame', lq); setDashPhotoSrc(lq) } catch { /* too large */ } } }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={dashPhotoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); setDashPhotoSrc(compressed) }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden h-48 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>

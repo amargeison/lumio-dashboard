@@ -9278,10 +9278,7 @@ export function TennisPortalInner({ session }: { session: SportsDemoSession }) {
   const [h2hData, setH2hData] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [sponsorToast, setSponsorToast] = useState<string>('');
-  const [photos, setPhotos] = useState<string[]>(() => {
-    try { const stored = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_photos') : null; return stored ? JSON.parse(stored) : [] } catch { return [] }
-  });
-  useEffect(() => { localStorage.setItem('lumio_tennis_photos', JSON.stringify(photos)) }, [photos]);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [roleOverride, setRoleOverride] = useState(session.role || 'player');
   const activeRole = roleOverride;
   const currentRole = (roleOverride || 'player') as keyof typeof TENNIS_ROLE_CONFIG
