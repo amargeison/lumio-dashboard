@@ -64,6 +64,9 @@ export async function GET(req: NextRequest) {
       total_events: events.total,
       has_photo: !!p.avatar_url,
       has_brand: !!p.brand_name,
+      onboarding_complete: !!p.onboarding_complete,
+      setup_type: p.setup_type || null,
+      setup_complete: !!p.setup_complete,
     }
   }) || []
 
