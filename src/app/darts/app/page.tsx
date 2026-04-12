@@ -47,13 +47,15 @@ export default function DartsAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
-      setSlug(slugify(profile.display_name ?? 'player'))
+      const displayName = profile.display_name || 'Jake Morrison'
+      const displayPhoto = profile.avatar_url || 'https://ui-avatars.com/api/?name=Jake+Morrison&background=22c55e&color=fff&size=200&bold=true'
+      setSlug(slugify(displayName))
       setSession({
         email: user.email ?? '',
-        userName: profile.display_name ?? '',
+        userName: displayName,
         clubName: profile.brand_name ?? '',
         role: 'player',
-        photoDataUrl: profile.avatar_url ?? null,
+        photoDataUrl: displayPhoto,
         logoDataUrl: profile.brand_logo_url ?? null,
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
@@ -78,5 +80,10 @@ export default function DartsAppPage() {
       </div>
     )
   }
-  return <DartsPortalInner slug={slug} session={session} />
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await supabase.auth.signOut()
+    router.push('/sports-login')
+  }
+  return <DartsPortalInner slug={slug} session={session} onSignOut={handleSignOut} />
 }

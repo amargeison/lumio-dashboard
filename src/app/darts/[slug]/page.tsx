@@ -7962,7 +7962,7 @@ function DartsExhibitionBooker({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function DartsPortalInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
+export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; session: SportsDemoSession; onSignOut?: () => void }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -8297,6 +8297,12 @@ export function DartsPortalInner({ slug, session }: { slug: string; session: Spo
             <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
             <div className="text-xs text-red-400 font-semibold mt-0.5">{player.plan}</div>
           </div>
+        )}
+        {onSignOut && (
+          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            {sidebarExpanded && <span>Sign out</span>}
+          </button>
         )}
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
           {sidebarExpanded
