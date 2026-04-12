@@ -401,6 +401,30 @@ export default function SportsDemoGate({
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
+      // Check for existing demo profile — skip setup if found
+      try {
+        const profileRes = await fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`)
+        const profileData = await profileRes.json()
+        if (profileData.profile?.user_name) {
+          // Restore saved photo from localStorage keyed by email
+          const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) : null
+          const restored: SportsDemoSession = {
+            email,
+            userName: profileData.profile.user_name,
+            clubName: profileData.profile.club_name || defaultClubName,
+            role: profileData.profile.role || 'player',
+            photoDataUrl: savedPhoto || null,
+            logoDataUrl: null,
+            sport,
+            verifiedAt: new Date().toISOString(),
+          }
+          try { localStorage.setItem(sessionKey(sport), JSON.stringify(restored)); localStorage.setItem(`lumio_${sport}_demo_active`, 'true') } catch {}
+          setSession(restored)
+          setStep('done')
+          setLoading(false)
+          return
+        }
+      } catch {}
       setStep('club')
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Invalid or expired code.') }
     setLoading(false)
@@ -424,8 +448,17 @@ export default function SportsDemoGate({
     try {
       localStorage.setItem(sessionKey(sport), JSON.stringify(newSession))
       localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+      // Save photo keyed by email for cross-session persistence
+      if (photoDataUrl && email) localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, photoDataUrl)
     } catch (e) {
       console.warn('localStorage unavailable, proceeding without persistence', e)
+    }
+    // Update demo lead with profile data (non-blocking)
+    if (email) {
+      fetch('/api/sports-demo/get-profile', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, sport, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole }),
+      }).catch(() => {})
     }
     setSession(newSession)
     setStep('done')

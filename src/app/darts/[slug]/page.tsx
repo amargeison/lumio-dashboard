@@ -551,7 +551,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
     : `"${player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/jake_morrison.jpg') : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -7984,13 +7984,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
     return () => window.removeEventListener('lumio-visibility-changed', handler)
   }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') || session.photoDataUrl || '/jake_morrison.jpg' : null } catch { return null } })
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo')?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg' : null } catch { return null } })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useDartsProfileName()
   const liveProfilePhotoOuter = useDartsProfilePhoto()
   const liveBrandName = useDartsBrandName()
   const liveBrandLogo = useDartsBrandLogo()
-  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl || '/jake_morrison.jpg' }
+  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg' }
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
