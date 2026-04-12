@@ -34,7 +34,7 @@ export default function TennisAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -62,6 +62,7 @@ export default function TennisAppPage() {
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
         isDemoShell: false,
+        enabledFeatures: profile.enabled_features || [],
       }
       setSession(built)
       // Track login event

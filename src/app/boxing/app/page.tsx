@@ -31,7 +31,7 @@ export default function BoxingAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -50,6 +50,7 @@ export default function BoxingAppPage() {
         sport: SPORT,
         verifiedAt: new Date().toISOString(),
         isDemoShell: false,
+        enabledFeatures: profile.enabled_features || [],
       })
       // Track login event
       fetch('/api/sports-events', { method: 'POST', headers: { 'Content-Type': 'application/json' },

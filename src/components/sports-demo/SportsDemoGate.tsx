@@ -18,6 +18,7 @@ export interface SportsDemoSession {
    * /{sport}/{slug} demo shell. Used to gate the demo banner.
    */
   isDemoShell?: boolean
+  enabledFeatures?: string[]
 }
 
 export type SportKey =
