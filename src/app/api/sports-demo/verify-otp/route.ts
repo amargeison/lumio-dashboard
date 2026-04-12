@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { trackSportsEvent } from '@/lib/sports-events'
 
 function getSupabase() {
   return createClient(
@@ -62,6 +63,11 @@ export async function POST(req: NextRequest) {
     } catch {
       // Table may not exist yet — non-fatal
     }
+
+    // Track demo login event (non-blocking)
+    trackSportsEvent(null, sport, 'login', 'demo_login', {
+      demo: true, email: email.toLowerCase(), userName: userName || null,
+    }).catch(() => {})
 
     // Send welcome email
     const sportNames: Record<string, string> = {

@@ -51,6 +51,10 @@ export default function GolfAppPage() {
         verifiedAt: new Date().toISOString(),
         isDemoShell: false,
       })
+      // Track login event
+      fetch('/api/sports-events', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'login', userId: user.id, sport: SPORT, user_agent: navigator.userAgent })
+      }).catch(() => {})
     })()
 
     return () => { cancelled = true }
