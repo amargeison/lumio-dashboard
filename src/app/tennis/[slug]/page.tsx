@@ -1653,7 +1653,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
                     <span>📸</span>
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Photo Frame</p>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Personal Photo Frame</p>
                   </div>
                   <div className="flex items-center gap-3">
                     {photos.length > 1 && <button onClick={() => setIsPaused(!isPaused)} className="text-[10px]" style={{ color: '#6B7280' }}>{isPaused ? '▶ Play' : '⏸ Pause'}</button>}
@@ -1680,7 +1680,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   ) : (
                     <div className="w-full h-full flex items-center justify-center flex-col gap-1">
                       <div className="text-2xl">🎾</div>
-                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Click + Add to upload photos</div>
+                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Family · Holidays · Inspiration</div>
                     </div>
                   )}
                 </div>

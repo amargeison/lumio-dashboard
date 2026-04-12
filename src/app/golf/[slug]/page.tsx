@@ -1381,7 +1381,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           <div className="space-y-4">
             <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <span className="text-sm font-bold text-white">📸 Personal Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = dashPhotoFit === 'cover' ? 'contain' : 'cover'; setDashPhotoFit(next); try { localStorage.setItem('lumio_golf_dash_photo_fit', next) } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">{dashPhotoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   {dashPhotoSrc && <button onClick={() => { setDashPhotoSrc(null); try { localStorage.removeItem('lumio_golf_dash_photo_frame') } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
@@ -1394,7 +1394,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   ? <img src={dashPhotoSrc} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                   : session.photoDataUrl
                     ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
-                    : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+                    : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
               </div>
               <div className="mt-3">
                 <div className="text-white font-semibold text-sm">{player.name}</div>
