@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { trackSportsEvent } from '@/lib/sports-events'
 
 export async function POST(req: NextRequest) {
-  console.log('[tennis/ai] Key status:', process.env.ANTHROPIC_API_KEY ? 'present' : 'MISSING')
   try {
     const body = await req.json()
     const apiKey = process.env.ANTHROPIC_API_KEY
@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
     })
 
     const data = await response.json()
+    // Track AI call (non-blocking)
+    trackSportsEvent(null, 'tennis', 'ai_call', body.messages?.[0]?.content?.slice(0, 80) || 'ai_call', {
+      model: body.model, tokens: data.usage?.output_tokens,
+    }).catch(() => {})
     return NextResponse.json(data)
   } catch {
     return NextResponse.json({ error: 'Failed to call AI' }, { status: 500 })

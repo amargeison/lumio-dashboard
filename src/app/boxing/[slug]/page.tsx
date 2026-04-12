@@ -163,6 +163,7 @@ const SIDEBAR_ITEMS = [
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
   { id: 'gps',             label: 'GPS Load Monitor',    icon: '📡', group: 'INTEGRATIONS' },
   { id: 'gpsvest',         label: 'GPS Vest Dashboard',  icon: '🦺', group: 'INTEGRATIONS' },
+  { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'INTEGRATIONS' },
   { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'INTEL' },
 ];
 
@@ -7322,6 +7323,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
       case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
       case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
+      case 'findpro':         return <FindProView fighter={fighter} session={session} />;
       case 'settings':        return (
         <SportsSettings
           sport="boxing"
