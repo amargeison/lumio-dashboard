@@ -28,7 +28,7 @@ export default function SportsAdminDashboard() {
     { label: 'Have Logged In', value: withLogins, color: '#0ea5e9' },
     { label: 'AI Calls Made', value: totalAiCalls, color: '#f59e0b' },
     { label: 'Founding Members', value: users.filter(u => u.plan === 'founding').length, color: '#a855f7' },
-    { label: 'With Photo', value: users.filter(u => u.has_photo).length, color: '#10b981' },
+    { label: 'Awaiting Setup', value: users.filter(u => u.setup_type === 'lumio' && !u.setup_complete).length, color: '#f59e0b' },
   ]
 
   return (
@@ -68,7 +68,7 @@ export default function SportsAdminDashboard() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #1F2937' }}>
-              {['Athlete','Sport','Email','Plan','Signed Up','Last Login','Logins','AI Calls','Actions'].map(c => (
+              {['Athlete','Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
                 <th key={c} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
               ))}
             </tr>
@@ -86,11 +86,11 @@ export default function SportsAdminDashboard() {
                 <td style={{ padding: '12px 16px' }}><span style={{ color: SC[u.sport] || '#94a3b8', fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{SE[u.sport]} {u.sport}</span></td>
                 <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}>{u.email}</td>
                 <td style={{ padding: '12px 16px' }}><span style={{ background: '#a855f720', color: '#a855f7', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{u.plan}</span></td>
+                <td style={{ padding: '12px 16px', fontSize: 12 }}>{u.onboarding_complete ? <span style={{ color: '#22c55e' }}>✅ Complete</span> : <span style={{ color: '#f59e0b' }}>⏳ Pending</span>}</td>
+                <td style={{ padding: '12px 16px', fontSize: 12 }}>{u.setup_complete ? <span style={{ color: '#22c55e' }}>✅ Live</span> : u.setup_type === 'lumio' ? <span style={{ color: '#a855f7' }}>⚙️ Lumio</span> : u.setup_type === 'self' ? <span style={{ color: '#0ea5e9' }}>🔧 Self</span> : <span style={{ color: '#6B7280' }}>—</span>}</td>
                 <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: 12 }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
-                <td style={{ padding: '12px 16px', color: u.last_login ? '#22c55e' : '#475569', fontSize: 12 }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB') : 'Never'}</td>
                 <td style={{ padding: '12px 16px', color: '#fff', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>{u.login_count}</td>
                 <td style={{ padding: '12px 16px', color: '#f59e0b', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>{u.ai_calls}</td>
-                <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: 13, textAlign: 'center' }}>{u.quick_actions}</td>
               </tr>
             ))}
           </tbody>
