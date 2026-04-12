@@ -7,6 +7,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
+import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -630,7 +631,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
             <p className="text-xs italic" style={{ color: '#F59E0B' }}>
-              &ldquo;The harder you work, the luckier you get.&rdquo; &mdash; Gary Player
+              &ldquo;{getDailyQuote(DARTS_QUOTES).text}&rdquo; &mdash; {getDailyQuote(DARTS_QUOTES).author}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">

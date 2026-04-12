@@ -6,6 +6,7 @@ import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
+import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -986,7 +987,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
             <p className="text-xs italic" style={{ color: '#facc15' }}>
-              &ldquo;Everyone has a plan until they get punched in the mouth.&rdquo; &mdash; Mike Tyson
+              &ldquo;{getDailyQuote(BOXING_QUOTES).text}&rdquo; &mdash; {getDailyQuote(BOXING_QUOTES).author}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">
