@@ -9,7 +9,7 @@ const RESERVED_SLUGS = new Set([
   'hr', 'accounts', 'sales', 'crm', 'marketing', 'operations', 'it',
   'insights', 'school-office', 'offline', 'admin', 'blog', 'football',
   'womens', 'rugby', 'cricket', 'tennis', 'golf', 'boxing', 'darts',
-  'nonleague', 'grassroots', 'join', 'sports-signup', 'sports-login',
+  'nonleague', 'grassroots', 'join', 'sports-signup', 'sports-login', 'sports-admin',
 ])
 
 const DASHBOARD_ROUTES = new Set([
