@@ -446,22 +446,7 @@ export default function SportsDemoGate({
 
   // ── AUTHENTICATED ──
   if (step === 'done' && session) {
-    return (
-      <div className="relative">
-        {children(session)}
-        {showResetConfirm ? (
-          <div className="fixed bottom-4 left-4 z-50 bg-[#0d1117] border border-red-600/40 rounded-xl p-4 shadow-2xl">
-            <p className="text-xs text-gray-300 mb-3">Exit demo and clear session?</p>
-            <div className="flex gap-2">
-              <button onClick={() => setShowResetConfirm(false)} className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">Cancel</button>
-              <button onClick={resetSession} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600/20 text-red-400 border border-red-600/30">Exit demo</button>
-            </div>
-          </div>
-        ) : (
-          <button onClick={() => setShowResetConfirm(true)} className="fixed bottom-4 left-4 z-50 text-[10px] text-gray-700 hover:text-gray-500 transition-colors">Exit demo</button>
-        )}
-      </div>
-    )
+    return <>{children(session)}</>
   }
 
   const Overlay = ({ children: inner }: { children: React.ReactNode }) => (
