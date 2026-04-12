@@ -16,9 +16,10 @@ function SportsLoginForm() {
   const router = useRouter()
   const params = useSearchParams()
   const intendedRedirect = params.get('redirectTo') || ''
+  const prefillEmail = params.get('email') || ''
 
   const [step, setStep] = useState<'email' | 'otp'>('email')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(prefillEmail)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
