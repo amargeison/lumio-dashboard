@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
+import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 
 // All sport IDs the picker exposes
 const ALLOWED_SPORTS = new Set([
@@ -87,6 +89,19 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 },
       )
+    }
+
+    // Send welcome email (non-blocking — don't fail signup if email fails)
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from: 'Lumio Sports <hello@lumiocms.com>',
+        to: email,
+        subject: `Welcome to Lumio Sports, ${displayName.split(' ')[0]} 🎉`,
+        html: generateSportsWelcomeEmail(displayName, sport, null),
+      })
+    } catch (emailErr) {
+      console.error('[sports-auth] Welcome email failed (non-fatal):', emailErr)
     }
 
     // Every sport's post-signup destination is /{sport}/app. The page itself
