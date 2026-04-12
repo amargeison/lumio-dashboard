@@ -7980,13 +7980,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
     return () => window.removeEventListener('lumio-visibility-changed', handler)
   }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') : null } catch { return null } })
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo') || session.photoDataUrl || '/jake_morrison.jpg' : null } catch { return null } })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useDartsProfileName()
   const liveProfilePhotoOuter = useDartsProfilePhoto()
   const liveBrandName = useDartsBrandName()
   const liveBrandLogo = useDartsBrandLogo()
-  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
+  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl || '/jake_morrison.jpg' }
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
@@ -8298,12 +8298,19 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             <div className="text-xs text-red-400 font-semibold mt-0.5">{player.plan}</div>
           </div>
         )}
-        {onSignOut && (
-          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            {sidebarExpanded && <span>Sign out</span>}
-          </button>
-        )}
+        <button onClick={() => {
+          if (onSignOut) { onSignOut(); return }
+          try {
+            localStorage.removeItem('lumio_darts_demo_session')
+            localStorage.removeItem('lumio_sports_demo_darts')
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_darts_'))
+            keys.forEach(k => localStorage.removeItem(k))
+          } catch {}
+          window.location.href = '/darts/darts-demo'
+        }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          {sidebarExpanded && <span>Sign out</span>}
+        </button>
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
           {sidebarExpanded
             ? <img src="/darts_logo.png" alt="Lumio Darts" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" />
