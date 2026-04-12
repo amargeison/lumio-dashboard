@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const {
       email,
-      password,
       displayName,
       nickname,
       sport,
@@ -34,11 +33,8 @@ export async function POST(req: NextRequest) {
       brandLogoUrl,
     } = body as Record<string, string | null | undefined>
 
-    if (!email || !password || !displayName || !sport) {
+    if (!email || !displayName || !sport) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
-    }
-    if (typeof password !== 'string' || password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 })
     }
     if (!ALLOWED_SPORTS.has(sport)) {
       return NextResponse.json({ error: `Invalid sport: ${sport}` }, { status: 400 })
@@ -46,10 +42,9 @@ export async function POST(req: NextRequest) {
 
     const supabase = getServiceClient()
 
-    // 1. Create the auth user
+    // 1. Create the auth user (passwordless — login via OTP)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
-      password,
       email_confirm: true,
       user_metadata: { display_name: displayName, sport, plan: 'founding' },
     })
