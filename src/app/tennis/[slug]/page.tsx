@@ -975,6 +975,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
 
   // Speech state
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -1692,7 +1693,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
                     <Sparkles size={14} style={{ color: '#8B5CF6' }} />
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>

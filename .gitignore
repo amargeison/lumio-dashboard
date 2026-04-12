@@ -65,4 +65,8 @@ next-env.d.ts
 !public/*_logo.png
 !public/Lumio_Sports_logo.png
 !public/badges/*
+!public/jake_morrison.jpg
+!public/alex_thompson.jpg
+!public/james_hargreaves.jpg
+!public/marcus_reid.jpg
 .env*.local
