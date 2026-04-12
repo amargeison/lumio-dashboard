@@ -24,7 +24,7 @@ export default function SportsAdminLayout({ children }: { children: React.ReactN
   }, [])
 
   const handleLogin = () => {
-    if (pin === ADMIN_TOKEN || pin === 'lumiosports2026') {
+    if (pin === ADMIN_TOKEN || pin === '071711') {
       localStorage.setItem('sports_admin_token', ADMIN_TOKEN)
       setAuthed(true)
     } else {
