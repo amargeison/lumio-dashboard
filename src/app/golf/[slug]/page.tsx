@@ -1043,7 +1043,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </p>
-            <p className="text-xs italic" style={{ color: '#15803D' }}>
+            <p className="text-xs italic" style={{ color: '#facc15' }}>
               &ldquo;The more I practice, the luckier I get.&rdquo; &mdash; Gary Player
             </p>
           </div>
@@ -1072,8 +1072,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Augusta', tz:'America/New_York', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
                   <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#15803D' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#15803D' : '#6B7280' }}>{city}</span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#facc15' : '#e2e8f0' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
+                    <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
                   </div>
                 ))}
               </div>
