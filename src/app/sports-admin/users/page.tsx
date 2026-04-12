@@ -54,6 +54,21 @@ export default function SportsAdminUsers() {
     if (res.ok) { setUsers(prev => prev.map(u => u.id === userId ? { ...u, setup_complete: true } : u)) }
   }
 
+  const handleDelete = async (userId: string, email: string) => {
+    if (!confirm(`Delete ${email}? This removes them from Supabase auth and sports_profiles.`)) return
+    const token = localStorage.getItem('sports_admin_token') || ''
+    const res = await fetch('/api/sports-admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify({ userId })
+    })
+    if (res.ok) {
+      setUsers(prev => prev.filter(u => u.id !== userId))
+    } else {
+      alert('Delete failed — check console')
+    }
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -87,16 +102,16 @@ export default function SportsAdminUsers() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #1F2937' }}>
-              {[nameLabel,'Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls'].map(c => (
+              {[nameLabel,'Sport','Email','Plan','Onboarding','Setup','Signed Up','Logins','AI Calls',''].map(c => (
                 <th key={c} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>Loading...</td></tr>
+              <tr><td colSpan={10} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No {isClub ? 'clubs' : 'athletes'} found</td></tr>
+              <tr><td colSpan={10} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 13 }}>No {isClub ? 'clubs' : 'athletes'} found</td></tr>
             ) : filtered.map(u => (
               <tr key={u.id} style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'rgba(255,255,255,0.02)' }}
@@ -110,6 +125,14 @@ export default function SportsAdminUsers() {
                 <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: 12 }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
                 <td style={{ padding: '12px 16px', color: '#fff', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>{u.login_count}</td>
                 <td style={{ padding: '12px 16px', color: '#f59e0b', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>{u.ai_calls}</td>
+                <td style={{ padding: '12px 16px' }}>
+                  <button
+                    onClick={() => handleDelete(u.id, u.email)}
+                    style={{ background: 'transparent', border: '1px solid #374151', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', color: '#6B7280', fontSize: 12 }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444' }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#6B7280' }}
+                  >Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
