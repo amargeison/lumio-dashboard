@@ -140,6 +140,7 @@ const SIDEBAR_ITEMS = [
   { id: 'mandatory',       label: 'Mandatory Tracker',   icon: '📋', group: 'RANKINGS' },
   { id: 'pathtotitle',     label: 'Path to Title',       icon: '🏆', group: 'RANKINGS' },
   { id: 'pursebid',        label: 'Purse Bid Alerts',    icon: '🔔', group: 'RANKINGS' },
+  { id: 'career',          label: 'Career Planning',     icon: '🚀', group: 'RANKINGS' },
   { id: 'pursesim',        label: 'Purse Simulator',     icon: '💷', group: 'FINANCIALS' },
   { id: 'earnings',        label: 'Fight Earnings',      icon: '💰', group: 'FINANCIALS' },
   { id: 'campcosts',       label: 'Camp Costs',          icon: '🧾', group: 'FINANCIALS' },
@@ -3067,6 +3068,35 @@ function PurseBidAlertsView({ fighter, session }: { fighter: BoxingFighter; sess
       <BoxingAISection context="financial" fighter={fighter} session={session} />
     </div>
   );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── CAREER PLANNING VIEW ─────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function BoxingCareerPlanningView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const [horizon, setHorizon] = useState<'1'|'3'|'5'|'10'>('1')
+  const STATS = [{ value: `#${fighter.rankings.wbo}`, label: 'WBO Ranking', sub: 'Super Middleweight' },{ value: '#4', label: 'Career High', sub: 'WBC — Oct 2025' },{ value: '2018', label: 'Turned Pro', sub: '8 years in the game' },{ value: `${fighter.record.wins}-${fighter.record.losses}`, label: 'Pro Record', sub: `${fighter.record.ko} KOs` }]
+  const GOALS: Record<string, { goal: string; target: string; status: string; progress: number; color: string }[]> = {
+    '1': [{ goal: 'Win WBO Super Middleweight title', target: 'Nov 2026', status: 'Mandatory challenger', progress: 75, color: '#ef4444' },{ goal: 'Mandatory WBC challenger status', target: 'Dec 2026', status: 'Currently #7', progress: 65, color: '#a855f7' },{ goal: 'DAZN PPV headliner — 500k buys', target: 'Nov 2026', status: 'In negotiations', progress: 55, color: '#f59e0b' },{ goal: 'Reach 500k social followers', target: 'Dec 2026', status: '312k now', progress: 62, color: '#0ea5e9' },{ goal: 'Secure £300k+ fight purse', target: 'Nov 2026', status: '£180k last fight', progress: 60, color: '#22c55e' }],
+    '3': [{ goal: 'Win two of four major world titles', target: 'Dec 2028', status: 'On track', progress: 40, color: '#ef4444' },{ goal: 'Undisputed contender', target: 'Dec 2028', status: 'In progress', progress: 35, color: '#facc15' },{ goal: '£2M career earnings', target: 'Dec 2028', status: '£740k to date', progress: 37, color: '#22c55e' },{ goal: 'Headline O2 Arena', target: 'Dec 2027', status: 'Target confirmed', progress: 45, color: '#a855f7' },{ goal: '£500k sponsorship/yr', target: 'Dec 2028', status: 'UA £120k/yr', progress: 24, color: '#0ea5e9' }],
+    '5': [{ goal: 'Undisputed champion', target: 'Dec 2030', status: 'Career target', progress: 20, color: '#ef4444' },{ goal: '£5M career earnings', target: 'Dec 2030', status: '£740k to date', progress: 15, color: '#22c55e' },{ goal: 'Legacy fight — Vegas or Saudi', target: 'Dec 2030', status: 'Long-term', progress: 10, color: '#f59e0b' },{ goal: 'Launch boxing academy', target: 'Dec 2029', status: 'Planning', progress: 12, color: '#a855f7' },{ goal: '2M social followers', target: 'Dec 2030', status: '312k now', progress: 16, color: '#0ea5e9' }],
+    '10': [{ goal: 'Hall of fame — 3+ world titles', target: 'Dec 2035', status: 'Life goal', progress: 8, color: '#facc15' },{ goal: 'Move up to Light Heavy', target: 'Dec 2033', status: 'Future plan', progress: 5, color: '#ef4444' },{ goal: '£20M career earnings', target: 'Dec 2035', status: 'Long-term', progress: 4, color: '#22c55e' },{ goal: 'Promote own shows', target: 'Dec 2035', status: 'Future ambition', progress: 5, color: '#a855f7' },{ goal: 'Media / commentary career', target: 'Dec 2035', status: 'Long-term', progress: 3, color: '#0ea5e9' }],
+  }
+  const SEASON = [{ goal: 'Win WBO mandatory vs Petrov', detail: 'Fight confirmed — May 2026', progress: 75, color: '#ef4444' },{ goal: 'Improve WBC ranking to top 5', detail: 'Currently #7 WBO, #6 WBC', progress: 60, color: '#a855f7' },{ goal: 'Land £250k+ sponsorship deal', detail: 'UA renewal + new partner', progress: 40, color: '#f59e0b' },{ goal: 'Camp discipline — no weight issues', detail: 'Cut protocol in place', progress: 80, color: '#22c55e' },{ goal: 'Grow DAZN audience 40%', detail: '2.1M last PPV — target 3M', progress: 35, color: '#0ea5e9' }]
+  const TIMELINE = [{ year: '2018', event: 'Turned pro — first 4-rounder, TKO2' },{ year: '2019', event: 'Unbeaten run — 8-0, signed by Danny Walsh' },{ year: '2020', event: 'First 10-rounder — UD win, national TV debut' },{ year: '2021', event: 'First loss — SD defeat, valuable learning' },{ year: '2022', event: 'Comeback — 6 straight wins, all by stoppage' },{ year: '2023', event: 'International debut — won WBO European title' },{ year: '2024', event: 'Career high WBC #4 — DAZN deal signed' },{ year: '2025', event: 'WBO mandatory challenger confirmed' }]
+  return (
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold text-white mb-1">🚀 Career Planning</h1><p className="text-xs text-gray-500">1-year, 3-year, 5-year and 10-year goals with progress tracking.</p></div>
+      <div className="grid grid-cols-4 gap-3">{STATS.map((s, i) => (<div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: '#dc2626' }}>{s.value}</div><div className="text-[11px] text-white font-semibold mt-1">{s.label}</div><div className="text-[10px] text-gray-500">{s.sub}</div></div>))}</div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+        <div className="flex border-b border-gray-800">{(['1','3','5','10'] as const).map(h => (<button key={h} onClick={() => setHorizon(h)} className="flex-1 py-3 text-sm font-semibold transition-all" style={{ borderBottom: horizon === h ? '2px solid #dc2626' : '2px solid transparent', color: horizon === h ? '#fff' : '#6B7280', background: horizon === h ? 'rgba(220,38,38,0.06)' : 'transparent' }}>{h} Year</button>))}</div>
+        <div className="p-5 space-y-4">{GOALS[horizon].map((g, i) => (<div key={i}><div className="flex items-center justify-between mb-1"><span className="text-sm text-white font-semibold">{g.goal}</span><div className="flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${g.color}20`, color: g.color }}>{g.status}</span><span className="text-[10px] text-gray-500">{g.target}</span></div></div><div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full transition-all" style={{ width: `${g.progress}%`, backgroundColor: g.color }} /></div></div>))}</div>
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-4">2026 Season Goals</div><div className="space-y-3">{SEASON.map((s, i) => (<div key={i}><div className="flex items-center justify-between mb-1"><span className="text-xs text-white">{s.goal}</span><span className="text-[10px] text-gray-500">{s.detail}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${s.progress}%`, backgroundColor: s.color }} /></div></div>))}</div></div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-4">Career Timeline</div><div className="relative pl-6"><div className="absolute left-2 top-0 bottom-0 w-px" style={{ backgroundColor: '#dc262640' }} />{TIMELINE.map((t, i) => (<div key={i} className="relative mb-4 last:mb-0"><div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ backgroundColor: '#dc2626' }} /><div className="flex items-baseline gap-3"><span className="text-xs font-bold" style={{ color: '#dc2626' }}>{t.year}</span><span className="text-sm text-gray-300">{t.event}</span></div></div>))}</div></div>
+      <BoxingAISection context="rankings" fighter={fighter} session={session} />
+    </div>
+  )
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -7271,6 +7301,7 @@ export function BoxingPortalInner({ session }: { session: SportsDemoSession }) {
       case 'mandatory':       return <MandatoryTrackerView fighter={fighter} session={session} />;
       case 'pathtotitle':     return <PathToTitleView fighter={fighter} session={session} />;
       case 'pursebid':        return <PurseBidAlertsView fighter={fighter} session={session} />;
+      case 'career':          return <BoxingCareerPlanningView fighter={fighter} session={session} />;
       case 'pursesim':        return <PurseSimulatorView fighter={fighter} session={session} />;
       case 'earnings':        return <FightEarningsView fighter={fighter} session={session} />;
       case 'campcosts':       return <CampCostsView fighter={fighter} session={session} />;

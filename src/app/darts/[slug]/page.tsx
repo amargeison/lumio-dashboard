@@ -3325,74 +3325,85 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
 
 // ─── CAREER PLANNING VIEW ─────────────────────────────────────────────────────
 function CareerPlanningView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
+  const [horizon, setHorizon] = useState<'1'|'3'|'5'|'10'>('1')
+  const STATS = [
+    { value: `#${player.pdcRank}`, label: 'Current Ranking', sub: 'PDC Order of Merit' },
+    { value: '#11', label: 'Career High', sub: 'March 2025' },
+    { value: '2021', label: 'Turned Pro', sub: '4 years on tour' },
+    { value: '3', label: 'PDC Titles', sub: 'inc. 1 Euro Tour' },
+  ]
+  const GOALS: Record<string, { goal: string; target: string; status: string; progress: number; color: string }[]> = {
+    '1': [
+      { goal: 'Break into Top 16 PDC', target: 'Dec 2026', status: 'In progress', progress: 72, color: '#22c55e' },
+      { goal: 'Qualify for Premier League', target: 'Jan 2027', status: 'Night player now', progress: 60, color: '#a855f7' },
+      { goal: 'Win a PDC ranking event', target: 'Dec 2026', status: 'SF best so far', progress: 55, color: '#22c55e' },
+      { goal: 'Top 16 OOM — secure seeding', target: 'Dec 2026', status: 'In progress', progress: 68, color: '#f59e0b' },
+      { goal: 'Reach World Championship R3', target: 'Jan 2027', status: 'R2 best so far', progress: 40, color: '#0ea5e9' },
+    ],
+    '3': [
+      { goal: 'Consistent top 10 PDC ranking', target: 'Dec 2028', status: 'On track', progress: 45, color: '#22c55e' },
+      { goal: 'PDC World Championship QF or better', target: 'Jan 2028', status: 'In progress', progress: 35, color: '#a855f7' },
+      { goal: 'Build exhibition network to 60+ events/year', target: 'Dec 2028', status: '28 events this year', progress: 47, color: '#f59e0b' },
+      { goal: 'Grow social following to 150k combined', target: 'Dec 2028', status: '61k now', progress: 41, color: '#0ea5e9' },
+      { goal: '£500k career prize money', target: 'Dec 2028', status: '£187k to date', progress: 37, color: '#22c55e' },
+    ],
+    '5': [
+      { goal: 'PDC World Championship SF', target: 'Jan 2030', status: 'Long-term target', progress: 20, color: '#a855f7' },
+      { goal: 'Top 8 PDC — Premier League full member', target: 'Dec 2030', status: 'Night player now', progress: 15, color: '#22c55e' },
+      { goal: 'Win a Triple Crown event', target: 'Dec 2030', status: 'Not started', progress: 10, color: '#ef4444' },
+      { goal: '£1M career earnings', target: 'Dec 2030', status: '£187k to date', progress: 19, color: '#f59e0b' },
+      { goal: 'Major sponsorship deal (>£50k/yr)', target: 'Dec 2029', status: 'In talks', progress: 25, color: '#0ea5e9' },
+    ],
+    '10': [
+      { goal: 'PDC World Championship title', target: 'Jan 2035', status: 'Career goal', progress: 8, color: '#facc15' },
+      { goal: 'Top 5 PDC all-time prize money list', target: 'Dec 2035', status: 'Long-term', progress: 5, color: '#a855f7' },
+      { goal: 'Premier League champion', target: 'Dec 2034', status: 'Not started', progress: 5, color: '#22c55e' },
+      { goal: 'Grand Slam of Darts title', target: 'Dec 2033', status: 'Not started', progress: 8, color: '#ef4444' },
+      { goal: 'Build coaching/academy business', target: 'Dec 2035', status: 'Future plan', progress: 3, color: '#0ea5e9' },
+    ],
+  }
+  const SEASON = [
+    { goal: 'Break into top 16 Order of Merit', detail: '#19 to 16 needed', progress: 72, color: '#22c55e' },
+    { goal: 'Win at least one major TV event', detail: 'semi-finalist last year', progress: 45, color: '#ef4444' },
+    { goal: 'Qualify for Premier League full season', detail: 'currently night player', progress: 60, color: '#a855f7' },
+    { goal: 'Retain European Tour card (top 24)', detail: '3 titles — on track', progress: 78, color: '#f59e0b' },
+    { goal: '£80k prize money this season', detail: '£31k earned YTD', progress: 39, color: '#0ea5e9' },
+  ]
+  const TIMELINE = [
+    { year: '2019', event: 'Turned pro — won tour card at Q-School' },
+    { year: '2020', event: 'Pro Tour breakthrough — first £50k season' },
+    { year: '2021', event: 'First European Tour win (Prague)' },
+    { year: '2022', event: 'World Championship debut — R2 loss vs MvG' },
+    { year: '2023', event: 'Premier League debut (night player x 6)' },
+    { year: '2024', event: 'Career high ranking #11 — UK Open SF' },
+    { year: '2025', event: 'First ranking event title — Players Championship 8' },
+    { year: '2026', event: 'World Championship R2 — targeting R3 this year' },
+  ]
   return (
     <div className="space-y-6">
-
-      <SectionHeader icon="🚀" title="Career Planning" subtitle="Short-term goals, medium-term strategy, and career timeline." />
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Short-Term Goals (This Season)</div>
-        <div className="space-y-2">
-          {[
-            'Break into top 16 Order of Merit (target: +£94k)',
-            'Win at least one major TV event (semi-finalist last year)',
-            'Qualify for Premier League full season (currently night player)',
-            'Retain European Tour card (top 24)',
-          ].map((g, i) => (
-            <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-800/50 text-sm text-gray-300">
-              <Target className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />{g}
-            </div>
-          ))}
+      <SectionHeader icon="🚀" title="Career Planning" subtitle="1-year, 3-year, 5-year and 10-year goals with progress tracking." />
+      <div className="grid grid-cols-4 gap-3">
+        {STATS.map((s, i) => (<div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: '#dc2626' }}>{s.value}</div><div className="text-[11px] text-white font-semibold mt-1">{s.label}</div><div className="text-[10px] text-gray-500">{s.sub}</div></div>))}
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+        <div className="flex border-b border-gray-800">
+          {(['1','3','5','10'] as const).map(h => (<button key={h} onClick={() => setHorizon(h)} className="flex-1 py-3 text-sm font-semibold transition-all" style={{ borderBottom: horizon === h ? '2px solid #dc2626' : '2px solid transparent', color: horizon === h ? '#fff' : '#6B7280', background: horizon === h ? 'rgba(220,38,38,0.06)' : 'transparent' }}>{h} Year</button>))}
+        </div>
+        <div className="p-5 space-y-4">
+          {GOALS[horizon].map((g, i) => (<div key={i}><div className="flex items-center justify-between mb-1"><span className="text-sm text-white font-semibold">{g.goal}</span><div className="flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${g.color}20`, color: g.color }}>{g.status}</span><span className="text-[10px] text-gray-500">{g.target}</span></div></div><div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full transition-all" style={{ width: `${g.progress}%`, backgroundColor: g.color }} /></div></div>))}
         </div>
       </div>
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Medium-Term (2–3 Years)</div>
-        <div className="space-y-2">
-          {[
-            'Consistent top 10 PDC ranking',
-            'PDC World Championship quarter-finalist or better',
-            'Build exhibition network to 60+ events/year',
-            'Grow social following to 150k combined',
-          ].map((g, i) => (
-            <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-800/50 text-sm text-gray-300">
-              <TrendingUp className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />{g}
-            </div>
-          ))}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+        <div className="text-sm font-bold text-white mb-4">2026 Season Goals</div>
+        <div className="space-y-3">
+          {SEASON.map((s, i) => (<div key={i}><div className="flex items-center justify-between mb-1"><span className="text-xs text-white">{s.goal}</span><span className="text-[10px] text-gray-500">{s.detail}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${s.progress}%`, backgroundColor: s.color }} /></div></div>))}
         </div>
       </div>
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Career Timeline</div>
-        <div className="space-y-2">
-          {[
-            { year: '2019', event: 'Turned pro — won tour card at Q-School' },
-            { year: '2020', event: 'Pro Tour breakthrough — first £50k season' },
-            { year: '2021', event: 'First European Tour win (Prague)' },
-            { year: '2022', event: 'World Championship debut — R2 loss vs MvG' },
-            { year: '2023', event: 'Premier League debut (night player × 6)' },
-            { year: '2024', event: 'Career high #12 ranking — World Matchplay QF' },
-            { year: '2025', event: 'Targeting top 16 + Premier League full season' },
-          ].map((t, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
-              <span className="text-xs text-red-400 font-bold w-10">{t.year}</span>
-              <span className="text-sm text-gray-300">{t.event}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Post-Playing Career Options</div>
-        <div className="space-y-2 text-sm text-gray-400">
-          {[
-            'PDC commentary / analysis (building media profile now)',
-            'Darts academy / coaching (Phil coaching relationship)',
-            'Red Dragon ambassador role (negotiate into contract)',
-            'Exhibition circuit (already established — £68k this season)',
-          ].map((o, i) => (
-            <div key={i} className="py-1.5 border-b border-gray-800/50"><ChevronRight className="w-3 h-3 inline mr-1 text-gray-600" />{o}</div>
-          ))}
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+        <div className="text-sm font-bold text-white mb-4">Career Timeline</div>
+        <div className="relative pl-6">
+          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ backgroundColor: '#dc262640' }} />
+          {TIMELINE.map((t, i) => (<div key={i} className="relative mb-4 last:mb-0"><div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ backgroundColor: '#dc2626' }} /><div className="flex items-baseline gap-3"><span className="text-xs font-bold" style={{ color: '#dc2626' }}>{t.year}</span><span className="text-sm text-gray-300">{t.event}</span></div></div>))}
         </div>
       </div>
       <DartsAISection context="default" player={player} session={session} />
