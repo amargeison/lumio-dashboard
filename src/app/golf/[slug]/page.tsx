@@ -5694,7 +5694,8 @@ export default function GolfTourPage() {
 export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const activeRole = session.role;
+  const [roleOverride, setRoleOverride] = useState(session.role || 'player');
+  const activeRole = roleOverride;
   const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   const player = DEMO_PLAYER;
@@ -5733,7 +5734,7 @@ export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
   const isHidden = (key: string) => hiddenItems.includes(key)
 
   // Role config
-  const currentRole = (session.role || 'player') as keyof typeof GOLF_ROLE_CONFIG
+  const currentRole = (roleOverride || 'player') as keyof typeof GOLF_ROLE_CONFIG
   const roleConfig = GOLF_ROLE_CONFIG[currentRole] ?? GOLF_ROLE_CONFIG.player
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
@@ -6048,6 +6049,7 @@ export function GolfPortalInner({ session }: { session: SportsDemoSession }) {
           roles={GOLF_ROLES}
           accentColor="#15803D"
           onRoleChange={(role) => {
+            setRoleOverride(role)
             const key = 'lumio_golf_demo_session'
             const stored = localStorage.getItem(key)
             if (stored) { const parsed = JSON.parse(stored); localStorage.setItem(key, JSON.stringify({ ...parsed, role })) }
