@@ -10,7 +10,7 @@ import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',    href: '/sports-product' },
-  { label: 'Our AI',     href: '/ai', badge: 'NEW' },
+  { label: 'Our AI',     href: '/ai' },
   { label: 'Football',   href: '/football' },
   { label: 'Womens FC',  href: '/womens-football' },
   { label: 'Rugby',      href: '/rugby' },
@@ -268,7 +268,7 @@ function Nav() {
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#8B5CF6' }}>
                 Apply for founding access
               </Link>
-              <Link href="/tennis/tennis-demo"
+              <Link href="/sports/try-demo"
                 className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
                 style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)' }}
@@ -349,7 +349,7 @@ function Nav() {
                   className="text-sm font-semibold py-2 text-center rounded-lg"
                   style={{ backgroundColor: '#8B5CF6', color: '#F9FAFB' }}
                   onClick={() => setMobileOpen(false)}>Apply for founding access</Link>
-                <Link href="/tennis/tennis-demo"
+                <Link href="/sports/try-demo"
                   className="text-sm font-semibold py-2 text-center rounded-lg"
                   style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
                   onClick={() => setMobileOpen(false)}>Try a demo</Link>

@@ -555,6 +555,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [photoSrc, setPhotoSrc] = useState<string | null>(null)
@@ -797,7 +798,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                       <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing reads your entire day back to you — opponent stats, travel confirmed, sponsor deadlines, practice schedule. In 60 seconds.</p>
                       <div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(249,115,22,0.2)' }}>
                         <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(249,115,22,0.06)' }}>
-                          <span>✨</span><span className="text-sm font-semibold text-white">AI Morning Summary</span>
+                          <span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span>
                           <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span>
                         </div>
                         <div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>
@@ -1217,7 +1218,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ color: '#8B5CF6' }}>✨</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>AI Morning Summary</p>
+                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {dartsSummary && <button onClick={() => { setDartsSummary(null); setDartsSummaryLoading(false) }} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6B7280', border: '1px solid #374151' }}>↻</button>}
