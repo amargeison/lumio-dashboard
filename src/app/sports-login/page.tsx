@@ -1,161 +1,168 @@
 'use client'
 
-// Lumio Sports portal sign-in.
-//
-// Email + password via Supabase Auth. On success, look up the
-// sports_profiles row for the user and route them to /{sport}/app.
+// Lumio Sports portal sign-in — passwordless OTP via Supabase Auth.
+// Email → send magic code → 6-digit OTP → verify → redirect to /{sport}/app.
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
-const ACCENT = '#8B5CF6'
-const ALLOWED_SPORTS = new Set([
-  'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens',
-])
+function getSupabase() {
+  return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+}
 
 function SportsLoginForm() {
   const router = useRouter()
   const params = useSearchParams()
   const intendedRedirect = params.get('redirectTo') || ''
-  const showResetBanner = params.get('reset') === 'true'
 
+  const [step, setStep] = useState<'email' | 'otp'>('email')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [resetMessage, setResetMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [resendCountdown, setResendCountdown] = useState(0)
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
+  useEffect(() => {
+    if (resendCountdown <= 0) return
+    const t = setTimeout(() => setResendCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendCountdown])
 
-  const handleSignIn = async () => {
-    if (!email || !password) { setError('Enter your email and password.'); return }
-    setLoading(true)
-    setError('')
-    setResetMessage('')
+  const sendOtp = async () => {
+    if (!email || !email.includes('@')) { setError('Enter a valid email.'); return }
+    setLoading(true); setError('')
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw signInError
-      if (!data.user) throw new Error('No user returned from sign-in')
+      const supabase = getSupabase()
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      })
+      if (otpError) throw otpError
+      setStep('otp')
+      setResendCountdown(30)
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not send code. Is your account registered?')
+    }
+    setLoading(false)
+  }
 
-      // Honour explicit redirectTo first
-      if (intendedRedirect && intendedRedirect.startsWith('/')) {
-        router.push(intendedRedirect)
-        return
-      }
+  const verifyOtp = async () => {
+    const code = digits.join('')
+    if (code.length < 6) { setError('Enter the 6-digit code.'); return }
+    setLoading(true); setError('')
+    try {
+      const supabase = getSupabase()
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email',
+      })
+      if (verifyError) throw verifyError
+      if (!data.session) throw new Error('Verification failed — no session returned.')
 
-      // Look up the user's sport
-      const { data: profile, error: profileError } = await supabase
+      // Honour explicit redirectTo
+      if (intendedRedirect) { router.push(intendedRedirect); return }
+
+      // Look up sport from profile
+      const { data: profile } = await supabase
         .from('sports_profiles')
         .select('sport')
-        .eq('id', data.user.id)
+        .eq('id', data.session.user.id)
         .maybeSingle()
 
-      if (profileError) throw profileError
-      if (!profile || !ALLOWED_SPORTS.has(profile.sport)) {
-        // No profile yet — send to signup completion fallback
-        router.push('/sports-signup')
-        return
-      }
-
+      if (!profile) { router.push('/sports-signup'); return }
       router.push(`/${profile.sport}/app`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign-in failed.')
-      setLoading(false)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Invalid or expired code.')
+    }
+    setLoading(false)
+  }
+
+  const handleDigitChange = (index: number, value: string) => {
+    const char = value.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[index] = char
+    setDigits(next)
+    if (char && index < 5) inputRefs.current[index + 1]?.focus()
+    if (next.every(d => d) && next.join('').length === 6) {
+      setTimeout(() => verifyOtp(), 50)
     }
   }
 
-  const handleForgotPassword = async () => {
-    if (!email) { setError('Enter your email first, then click forgot password.'); return }
-    setError('')
-    setResetMessage('')
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: typeof window !== 'undefined'
-          ? `${window.location.origin}/sports-login?reset=true`
-          : undefined,
-      })
-      if (resetError) throw resetError
-      setResetMessage('Check your email for a reset link.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send reset email.')
+  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src="/Lumio_Sports_logo.png" alt="Lumio Sports" style={{ height: 56, margin: '0 auto', objectFit: 'contain' }} />
-          <h1 className="text-xl font-bold text-white mt-5">Sign in to your portal</h1>
-          <p className="text-xs mt-1.5" style={{ color: '#6B7280' }}>Welcome back, founding member.</p>
-        </div>
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ width: '100%', maxWidth: 420, background: '#0d1117', border: '1px solid #1F2937', borderRadius: 20, padding: 40 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/lumio_logo_ultra_clean.png" alt="Lumio Sports" style={{ height: 56, margin: '0 auto 24px', display: 'block' }} />
+        <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, textAlign: 'center', marginBottom: 4 }}>
+          {step === 'email' ? 'Sign in to Lumio Sports' : 'Enter your code'}
+        </h1>
+        <p style={{ color: '#6B7280', fontSize: 13, textAlign: 'center', marginBottom: 28 }}>
+          {step === 'email' ? 'We\'ll send a 6-digit code to your email.' : `Code sent to ${email}`}
+        </p>
 
-        {showResetBanner && (
-          <div className="mb-4 p-3 rounded-xl text-xs" style={{ background: `${ACCENT}15`, border: `1px solid ${ACCENT}40`, color: '#E5E7EB' }}>
-            Password reset link opened. You can sign in with your new password below.
-          </div>
+        {step === 'email' && (
+          <>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') sendOtp() }}
+              placeholder="you@example.com" autoFocus
+              style={{ width: '100%', background: '#111318', border: '1px solid #374151', borderRadius: 12, padding: '12px 16px', color: '#fff', fontSize: 14, marginBottom: 12, boxSizing: 'border-box' }}
+            />
+            {error && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 12 }}>{error}</p>}
+            <button onClick={sendOtp} disabled={loading}
+              style={{ width: '100%', background: '#8B5CF6', color: '#fff', border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+              {loading ? 'Sending...' : 'Send sign-in code'}
+            </button>
+          </>
         )}
 
-        <div className="rounded-2xl p-7 space-y-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-          <div>
-            <label className="text-[11px] uppercase tracking-wider mb-1.5 block" style={{ color: '#6B7280' }}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-              placeholder="your@email.com"
-              autoFocus
-              className="w-full px-4 py-3 rounded-xl text-sm text-white focus:outline-none"
-              style={{ backgroundColor: '#111318', border: '1px solid #374151' }}
-            />
-          </div>
-          <div>
-            <label className="text-[11px] uppercase tracking-wider mb-1.5 block" style={{ color: '#6B7280' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-              placeholder="Your password"
-              className="w-full px-4 py-3 rounded-xl text-sm text-white focus:outline-none"
-              style={{ backgroundColor: '#111318', border: '1px solid #374151' }}
-            />
-          </div>
+        {step === 'otp' && (
+          <>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 16 }}>
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={el => { inputRefs.current[i] = el }}
+                  type="text" inputMode="numeric" maxLength={1}
+                  value={d}
+                  onChange={e => handleDigitChange(i, e.target.value)}
+                  onKeyDown={e => handleDigitKeyDown(i, e)}
+                  style={{ width: 48, height: 56, textAlign: 'center', fontSize: 22, fontWeight: 800, background: '#111318', border: d ? '1px solid #8B5CF6' : '1px solid #374151', borderRadius: 12, color: '#fff', outline: 'none' }}
+                />
+              ))}
+            </div>
+            {error && <p style={{ color: '#ef4444', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{error}</p>}
+            <button onClick={verifyOtp} disabled={loading}
+              style={{ width: '100%', background: '#8B5CF6', color: '#fff', border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1, marginBottom: 12 }}>
+              {loading ? 'Verifying...' : 'Verify code'}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              {resendCountdown > 0 ? (
+                <span style={{ color: '#6B7280', fontSize: 12 }}>Resend in {resendCountdown}s</span>
+              ) : (
+                <button onClick={() => { setDigits(['','','','','','']); setError(''); sendOtp() }}
+                  style={{ background: 'none', border: 'none', color: '#8B5CF6', fontSize: 12, cursor: 'pointer' }}>
+                  Resend code
+                </button>
+              )}
+            </div>
+          </>
+        )}
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          {resetMessage && <p className="text-xs" style={{ color: '#10b981' }}>{resetMessage}</p>}
-
-          <button
-            onClick={handleSignIn}
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
-            style={{ background: loading ? '#374151' : ACCENT }}
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleForgotPassword}
-            className="w-full text-xs hover:underline"
-            style={{ color: '#9CA3AF' }}
-          >
-            Forgot your password?
-          </button>
-        </div>
-
-        <div className="text-center mt-5 space-y-2">
-          <Link href="/sports-signup" className="text-xs hover:underline block" style={{ color: ACCENT }}>
-            Don&apos;t have an account? Apply for founding access →
-          </Link>
-          <Link href="/sports" className="text-[11px] hover:underline block" style={{ color: '#6B7280' }}>
-            ← Back to Lumio Sports
+        <div style={{ marginTop: 24, textAlign: 'center', borderTop: '1px solid #1F2937', paddingTop: 20 }}>
+          <Link href="/sports-signup" style={{ color: '#6B7280', fontSize: 13, textDecoration: 'none' }}>
+            Don&apos;t have an account? <span style={{ color: '#8B5CF6', fontWeight: 600 }}>Sign up free</span>
           </Link>
         </div>
       </div>
@@ -164,9 +171,5 @@ function SportsLoginForm() {
 }
 
 export default function SportsLoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <SportsLoginForm />
-    </Suspense>
-  )
+  return <Suspense><SportsLoginForm /></Suspense>
 }

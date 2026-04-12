@@ -89,7 +89,6 @@ export default function SportsSignupPage() {
   // Step 1
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [step1Error, setStep1Error] = useState('')
 
   // Step 2
@@ -118,7 +117,6 @@ export default function SportsSignupPage() {
   const advanceFromStep1 = () => {
     if (!name.trim()) { setStep1Error('Please enter your full name.'); return }
     if (!email.includes('@')) { setStep1Error('Please enter a valid email.'); return }
-    if (password.length < 8) { setStep1Error('Password must be at least 8 characters.'); return }
     setStep1Error('')
     setDisplayName(name) // pre-fill display name
     // Skip sport selection if pre-selected from /join
@@ -155,7 +153,6 @@ export default function SportsSignupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          password,
           displayName: displayName.trim() || name.trim(),
           nickname: nickname.trim() || null,
           sport,
@@ -234,17 +231,6 @@ export default function SportsSignupPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none"
-                  style={{ backgroundColor: '#111318', border: '1px solid #374151' }}
-                />
-              </div>
-              <div>
-                <label className="text-[11px] uppercase tracking-wider mb-1.5 block" style={{ color: '#6B7280' }}>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
                   className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none"
                   style={{ backgroundColor: '#111318', border: '1px solid #374151' }}
                 />
