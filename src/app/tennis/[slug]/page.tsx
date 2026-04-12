@@ -970,7 +970,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
     : ''
-  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl) : null
+  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl || 'https://ui-avatars.com/api/?name=Alex+Thompson&background=a855f7&color=fff&size=200&bold=true') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -10038,7 +10038,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
             <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-              Apply for your free founding access → lumiosports.com/sports-signup
+              Get founding access →
             </a>
           </div>
         )}

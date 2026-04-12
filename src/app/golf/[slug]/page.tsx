@@ -836,7 +836,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   const displayPlayerName = isPlayerRole
     ? (liveProfileName || session.userName || player.name)
     : player.name
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl) : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || 'https://ui-avatars.com/api/?name=James+Hargreaves&background=16a34a&color=fff&size=200&bold=true') : null
   const firstName = displayPlayerName.split(' ')[0] || 'James'
   // Speech state — morning briefing TTS
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -6079,7 +6079,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             style={{ backgroundColor: '#15803D', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
             <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-              Apply for your free founding access → lumiosports.com/sports-signup
+              Get founding access →
             </a>
           </div>
         )}

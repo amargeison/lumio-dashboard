@@ -549,7 +549,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
     : `"${player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl) : null
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || 'https://ui-avatars.com/api/?name=Jake+Morrison&background=22c55e&color=fff&size=200&bold=true') : null
   const firstName = displayPlayerName.split(' ')[0] || 'Jake'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -8317,7 +8317,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
+            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Get founding access →</a>
           </div>
         )}
         {currentRole !== 'player' && !isSponsor && roleConfig.message && (
