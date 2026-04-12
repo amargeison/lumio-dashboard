@@ -857,9 +857,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   })
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
-    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_photo_frame') : null } catch { return null }
-  })
+  const [photoSrc, setPhotoSrc] = useState<string | null>(null)
 
   // Morning Roundup state
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null)
@@ -1315,13 +1313,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 <span className="text-sm font-bold text-white">🖼️ Personal Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_boxing_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
-                  {photoSrc && <button onClick={() => { localStorage.removeItem('lumio_boxing_photo_frame'); setPhotoSrc(null) }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  {photoSrc && <button onClick={() => setPhotoSrc(null)} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
                   <input ref={photoInputRef} key={photoSrc ? 'has' : 'no'} type="file" accept="image/*" className="hidden" onChange={e => {
                     const file = e.target.files?.[0]; if (!file) return
                     const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400
                     const ctx = canvas.getContext('2d')!; const img = new Image()
-                    img.onload = () => { const size = Math.min(img.width, img.height); ctx.drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, 400, 400); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_boxing_photo_frame', dataUrl) } catch {} setPhotoSrc(dataUrl) }
+                    img.onload = () => { const size = Math.min(img.width, img.height); ctx.drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, 400, 400); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); setPhotoSrc(dataUrl) }
                     img.src = URL.createObjectURL(file)
                   }} />
                 </div>
