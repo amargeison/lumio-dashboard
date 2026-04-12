@@ -1191,7 +1191,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           <div className="space-y-4">
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">📸 Photo Frame</span>
+                <span className="text-sm font-bold text-white">📸 Personal Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_darts_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
@@ -1205,7 +1205,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
                   : session.photoDataUrl
                     ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${photoFit}`} />
-                    : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Add your photo in settings</div></div>}
+                    : <div className="text-center"><div className="text-4xl mb-2">🎯</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (

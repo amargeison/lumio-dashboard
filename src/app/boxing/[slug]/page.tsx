@@ -1312,7 +1312,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           <div className="space-y-4">
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">🖼️ Personal Frame</span>
+                <span className="text-sm font-bold text-white">🖼️ Personal Photo Frame</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_boxing_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   {photoSrc && <button onClick={() => { localStorage.removeItem('lumio_boxing_photo_frame'); setPhotoSrc(null) }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
@@ -1329,7 +1329,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
                 {photoSrc
                   ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
+                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (
