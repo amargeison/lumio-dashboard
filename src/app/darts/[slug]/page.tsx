@@ -1477,7 +1477,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           'James Wright': '/James_Wright.jpg',
           'Steve Morris': '/Carlos_Mendez.jpg',
           'Dr Paul Reid': '/Dr_Paul_Reid.jpg',
-          'Red Dragon': '/red_dragon.png',
+          'Red Dragon': '/red_dragon.jpg',
           'Marcos Silva': '/alex_thompson.jpg',
         }
         const TEAM_MEMBERS = [
