@@ -395,6 +395,7 @@ interface TennisAISectionProps {
 }
 
 function TennisAISection({ context, player, session }: TennisAISectionProps) {
+  if (context !== 'insights') return null
   const isDemoShell = session.isDemoShell !== false
   const demoContent = isDemoShell ? getDemoAISummary('tennis', context) : null
   const [summary, setSummary]   = useState<string | null>(null)

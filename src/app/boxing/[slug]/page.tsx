@@ -428,6 +428,7 @@ interface BoxingAISectionProps {
 }
 
 function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
+  if (context !== 'dashboard') return null
   const isDemoShell = session.isDemoShell !== false
   const demoContent = isDemoShell ? getDemoAISummary('boxing', context) : null
   const [summary, setSummary]     = useState<string | null>(null)

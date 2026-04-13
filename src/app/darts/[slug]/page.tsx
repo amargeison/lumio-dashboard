@@ -268,6 +268,7 @@ interface DartsAISectionProps {
 }
 
 function DartsAISection({ context, player, session }: DartsAISectionProps) {
+  if (context !== 'dashboard') return null
   const isDemoShell = session.isDemoShell !== false
   const demoContent = isDemoShell ? getDemoAISummary('darts', context) : null
   const [summary, setSummary]     = useState<string | null>(null)

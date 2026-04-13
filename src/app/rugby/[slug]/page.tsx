@@ -2919,6 +2919,7 @@ interface RugbyAISectionProps {
 }
 
 function RugbyAISection({ context, club, session, rugbyCode }: RugbyAISectionProps) {
+  if (context !== 'dashboard') return null
   const [summary, setSummary] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState(false)

@@ -392,6 +392,7 @@ interface GolfAISectionProps {
 }
 
 function GolfAISection({ context, player, session }: GolfAISectionProps) {
+  if (context !== 'dashboard') return null
   const isDemoShell = session.isDemoShell !== false
   const demoContent = isDemoShell ? getDemoAISummary('golf', context) : null
   const [summary, setSummary] = useState<string | null>(null)
