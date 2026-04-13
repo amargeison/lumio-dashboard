@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
         await resend.emails.send({
-          from: 'Lumio <hello@lumiocms.com>',
+          from: 'Lumio Sports <hello@lumiocms.com>',
           to: email,
           subject: `Welcome to your Lumio ${sportNames[sport] ?? 'Sports'} demo`,
           html: `<!DOCTYPE html><html><body style="background:#07080F;font-family:DM Sans,Arial,sans-serif;margin:0;padding:40px 20px;">
