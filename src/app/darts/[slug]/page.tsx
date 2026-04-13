@@ -8074,30 +8074,35 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         </div>
       );
     }
+    // Gate demo content — founding members (/app, isDemoShell===false) see empty states
+    const isFounder = session.isDemoShell === false
+    const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
+      isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
+
     switch (activeSection) {
       case 'dashboard':     return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
-      case 'morning':       return <MorningBriefingView player={player} session={session} />;
-      case 'performance':   return <DartsPerformanceView player={player} session={session} onNavigate={setActiveSection} />;
-      case 'orderofmerit':  return <OrderOfMeritView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'schedule':      return <TournamentScheduleView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'averages':      return <ThreeDartAverageView player={player} onNavigate={setActiveSection} session={session} />;
-      case 'checkout':      return <CheckoutAnalysisView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'opponentintel': return <OpponentIntelView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'practicelog':   return <PracticeLogView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'matchreports':  return <MatchReportsView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'video':         return <VideoLibraryView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'teamhub':       return <TeamHubView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'mental':        return <MentalPerformanceView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'sponsorship':   return <SponsorshipView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'exhibitions':   return <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'media':         return <MediaContentView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'financial':     return <FinancialDashboardView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'agent':         return <AgentPipelineView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'travel':        return <TravelLogisticsView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'tourcard':      return <TourCardQSchoolView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'equipment':     return <EquipmentSetupView player={player} session={session} />;
-      case 'career':        return <CareerPlanningView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'datahub':       return <DataHubView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'morning':       return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
+      case 'performance':   return gate('📈', 'No performance data yet', 'Connect your stats to unlock this', <DartsPerformanceView player={player} session={session} onNavigate={setActiveSection} />);
+      case 'orderofmerit':  return gate('📊', 'No ranking data', 'Connect your PDC feed to unlock this', <OrderOfMeritView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'schedule':      return gate('📅', 'No tournaments loaded', 'Connect your tour feed to unlock this', <TournamentScheduleView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'averages':      return gate('🎯', 'No average data', 'Connect your stats to unlock this', <ThreeDartAverageView player={player} onNavigate={setActiveSection} session={session} />);
+      case 'checkout':      return gate('🔢', 'No checkout data', 'Connect your stats to unlock this', <CheckoutAnalysisView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'opponentintel': return gate('🔍', 'No opponent data', 'Connect your data to unlock this', <OpponentIntelView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'practicelog':   return gate('🎯', 'No practice sessions logged', 'Connect your data to unlock this', <PracticeLogView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'matchreports':  return gate('📋', 'No match reports', 'Connect your data to unlock this', <MatchReportsView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'video':         return gate('🎥', 'No video data', 'Connect your data to unlock this', <VideoLibraryView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'teamhub':       return gate('👥', 'No team added yet', 'Add your team during onboarding or in Settings', <TeamHubView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'mental':        return gate('🧘', 'No sessions logged', 'Connect your data to unlock this', <MentalPerformanceView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'sponsorship':   return gate('💼', 'No sponsors added', 'Connect your data to unlock this', <SponsorshipView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'exhibitions':   return gate('🎪', 'No exhibitions booked', 'Connect your data to unlock this', <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'media':         return gate('📱', 'No media logged', 'Connect your data to unlock this', <MediaContentView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'financial':     return gate('💰', 'No financial data', 'Connect your data to unlock this', <FinancialDashboardView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'agent':         return gate('🤝', 'No agent pipeline', 'Connect your data to unlock this', <AgentPipelineView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'travel':        return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <TravelLogisticsView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'tourcard':      return gate('🃏', 'No tour card data', 'Connect your data to unlock this', <TourCardQSchoolView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'equipment':     return gate('🎯', 'No equipment logged', 'Connect your data to unlock this', <EquipmentSetupView player={player} session={session} />);
+      case 'career':        return gate('🗺️', 'No career plan yet', 'Connect your data to unlock this', <CareerPlanningView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'datahub':       return gate('📊', 'No data connected', 'Connect your integrations to unlock this', <DataHubView onNavigate={setActiveSection} player={player} session={session} />);
       case 'settings':      return (
         <SportsSettings
           sport="darts"
@@ -8197,34 +8202,34 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       );
       case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} player={player} session={session} />;
       case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'womens-darts':  return <WomensDartsView onNavigate={setActiveSection} player={player} session={session} />;
-      case 'merit-forecaster':  return <MeritForecasterView player={player} session={session} />;
-      case 'entry-manager':     return <EntryManagerView player={player} session={session} />;
-      case 'live-scores':       return <LiveScoresView player={player} session={session} />;
-      case 'draw-bracket':      return <DrawBracketView player={player} session={session} />;
-      case 'advanced-stats':    return <AdvancedStatsView player={player} session={session} />;
-      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} session={session} />;
-      case 'pressure-analysis': return <PressureAnalysisView player={player} session={session} />;
-      case 'match-prep':        return <MatchPrepView player={player} session={session} />;
-      case 'physio-recovery':   return <PhysioRecoveryView player={player} session={session} />;
-      case 'walk-on-music':     return <WalkOnMusicView player={player} session={session} />;
-      case 'pairs-events':      return <PairsEventsView player={player} session={session} />;
-      case 'tour-card-monitor': return <TourCardMonitorView player={player} session={session} />;
-      case 'prize-forecaster':  return <PrizeForecastView player={player} session={session} />;
-      case 'academy-dev':       return <AcademyDevView player={player} session={session} />;
-      case 'practice-games':    return <PracticeGamesView player={player} session={session} />;
-      case 'performance-rating': return <PerformanceRatingView player={player} session={session} />;
-      case 'nine-dart-tracker':  return <NineDartTrackerView player={player} session={session} />;
-      case 'premier-league':     return <PremierLeagueView player={player} session={session} />;
-      case 'world-series':       return <WorldSeriesView player={player} session={session} />;
-      case 'team-comms':         return <TeamCommsView player={player} session={session} />;
-      case 'fan-engagement':     return <FanEngagementView player={player} session={session} />;
-      case 'nutrition-log':      return <NutritionLogView player={player} session={session} />;
-      case 'board-booking':      return <BoardBookingView player={player} session={session} />;
-      case 'accreditations':     return <AccreditationsView player={player} session={session} />;
-      case 'county-darts':       return <CountyDartsView player={player} session={session} />;
-      case 'dartcam':            return <DartCamView player={player} session={session} />;
-      case 'practice':           return <DartsPracticeView player={player} session={session} />;
+      case 'womens-darts':  return gate('⭐', 'No data yet', 'Connect your data to unlock this', <WomensDartsView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'merit-forecaster':  return gate('📊', 'No ranking data', 'Connect your PDC feed to unlock this', <MeritForecasterView player={player} session={session} />);
+      case 'entry-manager':     return gate('📋', 'No entries loaded', 'Connect your tour feed to unlock this', <EntryManagerView player={player} session={session} />);
+      case 'live-scores':       return gate('🔴', 'No live scores', 'Connect your data to unlock this', <LiveScoresView player={player} session={session} />);
+      case 'draw-bracket':      return gate('🏆', 'No draw loaded', 'Connect your data to unlock this', <DrawBracketView player={player} session={session} />);
+      case 'advanced-stats':    return gate('📈', 'No stats data', 'Connect your data to unlock this', <AdvancedStatsView player={player} session={session} />);
+      case 'dartboard-heatmap': return gate('🎯', 'No heatmap data', 'Connect your data to unlock this', <DartboardHeatmapView player={player} session={session} />);
+      case 'pressure-analysis': return gate('📊', 'No pressure data', 'Connect your data to unlock this', <PressureAnalysisView player={player} session={session} />);
+      case 'match-prep':        return gate('🧠', 'No match data', 'Connect your data to unlock this', <MatchPrepView player={player} session={session} />);
+      case 'physio-recovery':   return gate('🏥', 'No physio records', 'Connect your data to unlock this', <PhysioRecoveryView player={player} session={session} />);
+      case 'walk-on-music':     return gate('🎵', 'No walk-on music set', 'Connect your data to unlock this', <WalkOnMusicView player={player} session={session} />);
+      case 'pairs-events':      return gate('🤝', 'No pairs data', 'Connect your data to unlock this', <PairsEventsView player={player} session={session} />);
+      case 'tour-card-monitor': return gate('🃏', 'No tour card data', 'Connect your data to unlock this', <TourCardMonitorView player={player} session={session} />);
+      case 'prize-forecaster':  return gate('💰', 'No prize data', 'Connect your data to unlock this', <PrizeForecastView player={player} session={session} />);
+      case 'academy-dev':       return gate('🎓', 'No academy data', 'Connect your data to unlock this', <AcademyDevView player={player} session={session} />);
+      case 'practice-games':    return gate('🎯', 'No practice games', 'Connect your data to unlock this', <PracticeGamesView player={player} session={session} />);
+      case 'performance-rating': return gate('📈', 'No rating data', 'Connect your data to unlock this', <PerformanceRatingView player={player} session={session} />);
+      case 'nine-dart-tracker':  return gate('🎯', 'No 9-dart data', 'Connect your data to unlock this', <NineDartTrackerView player={player} session={session} />);
+      case 'premier-league':     return gate('🏆', 'No Premier League data', 'Connect your data to unlock this', <PremierLeagueView player={player} session={session} />);
+      case 'world-series':       return gate('🌍', 'No World Series data', 'Connect your data to unlock this', <WorldSeriesView player={player} session={session} />);
+      case 'team-comms':         return gate('💬', 'No messages yet', 'Connect your data to unlock this', <TeamCommsView player={player} session={session} />);
+      case 'fan-engagement':     return gate('⭐', 'No fan data yet', 'Connect your data to unlock this', <FanEngagementView player={player} session={session} />);
+      case 'nutrition-log':      return gate('🥗', 'No nutrition data', 'Connect your data to unlock this', <NutritionLogView player={player} session={session} />);
+      case 'board-booking':      return gate('🎯', 'No bookings', 'Connect your data to unlock this', <BoardBookingView player={player} session={session} />);
+      case 'accreditations':     return gate('🪪', 'No accreditations', 'Connect your data to unlock this', <AccreditationsView player={player} session={session} />);
+      case 'county-darts':       return gate('🏛️', 'No county data', 'Connect your data to unlock this', <CountyDartsView player={player} session={session} />);
+      case 'dartcam':            return gate('🎥', 'No dart cam data', 'Connect your data to unlock this', <DartCamView player={player} session={session} />);
+      case 'practice':           return gate('🎯', 'No practice sessions logged', 'Connect your data to unlock this', <DartsPracticeView player={player} session={session} />);
       default:              return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
     }
   };
