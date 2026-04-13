@@ -493,7 +493,10 @@ export default function SportsDemoGate({
       sport,
       verifiedAt: new Date().toISOString(),
     }
-    // Persist nickname to localStorage for the portal to pick up
+    // Persist name + nickname to localStorage for the portal to pick up
+    if (resolvedUserName) {
+      try { localStorage.setItem(`lumio_${sport}_name`, resolvedUserName) } catch {}
+    }
     if (resolvedNickname) {
       try { localStorage.setItem(`lumio_${sport}_nickname`, resolvedNickname) } catch {}
     }
