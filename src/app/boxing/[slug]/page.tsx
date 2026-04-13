@@ -2609,7 +2609,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
   const rankings: Record<string, { name: string; country: string; record: string; isMarcus?: boolean }[]> = {
     WBC: [
       { name: 'Tyson Fury', country: '🇬🇧', record: '34-1-1 (24 KO)' },
-      { name: 'Zhilei Zhang', country: '🇨🇳', record: '27-2-1 (22 KO)' },
+      { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Viktor Petrov', country: '🇷🇺', record: '28-2 (24 KO)' },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
       { name: 'Filip Hrgovic', country: '🇭🇷', record: '17-1 (14 KO)' },
@@ -2620,7 +2620,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
     WBA: [
       { name: 'Oleksandr Usyk', country: '🇺🇦', record: '22-0 (14 KO)' },
       { name: 'Daniel Dubois', country: '🇬🇧', record: '22-2 (21 KO)' },
-      { name: 'Zhilei Zhang', country: '🇨🇳', record: '27-2-1 (22 KO)' },
+      { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Agit Kabayel', country: '🇩🇪', record: '24-0 (17 KO)' },
       { name: 'Frank Sanchez', country: '🇨🇺', record: '24-1 (17 KO)' },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
@@ -2631,7 +2631,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
     WBO: [
       { name: 'Oleksandr Usyk', country: '🇺🇦', record: '22-0 (14 KO)' },
       { name: 'Tyson Fury', country: '🇬🇧', record: '34-1-1 (24 KO)' },
-      { name: 'Zhilei Zhang', country: '🇨🇳', record: '27-2-1 (22 KO)' },
+      { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Jared Anderson', country: '🇺🇸', record: '17-0 (15 KO)' },
       { name: 'Marcus Cole', country: '🇬🇧', record: '22-1 (18 KO)', isMarcus: true },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
@@ -2643,7 +2643,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
       { name: 'Filip Hrgovic', country: '🇭🇷', record: '17-1 (14 KO)' },
       { name: 'Agit Kabayel', country: '🇩🇪', record: '24-0 (17 KO)' },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
-      { name: 'Zhilei Zhang', country: '🇨🇳', record: '27-2-1 (22 KO)' },
+      { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Viktor Petrov', country: '🇷🇺', record: '28-2 (24 KO)' },
       { name: 'Jared Anderson', country: '🇺🇸', record: '17-0 (15 KO)' },
       { name: 'Demsey McKean', country: '🇦🇺', record: '24-1 (14 KO)' },
@@ -2788,7 +2788,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         <div className="text-xs text-gray-400 mb-4">4 belts needed — current holder status and mandatory timelines</div>
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[
-            { belt: 'WBC', champion: 'Tyson Fury', flag: '🇬🇧', record: '34-1-1', mandatoryNext: 'Zhang (ordered)', marcusRanking: '#5', timelineTo: '~24 months', color: 'border-green-600/30 bg-green-900/10' },
+            { belt: 'WBC', champion: 'Tyson Fury', flag: '🇬🇧', record: '34-1-1', mandatoryNext: 'Chen (ordered)', marcusRanking: '#5', timelineTo: '~24 months', color: 'border-green-600/30 bg-green-900/10' },
             { belt: 'WBA', champion: 'Oleksandr Usyk', flag: '🇺🇦', record: '22-0', mandatoryNext: 'Vacant (Super)', marcusRanking: '#9', timelineTo: '~30 months', color: 'border-purple-600/30 bg-purple-900/10' },
             { belt: 'WBO', champion: 'Oleksandr Usyk', flag: '🇺🇦', record: '22-0', mandatoryNext: 'Dubois or Anderson', marcusRanking: '#5', timelineTo: '~18 months', color: 'border-blue-600/30 bg-blue-900/10' },
             { belt: 'IBF', champion: 'Daniel Dubois', flag: '🇬🇧', record: '22-2', mandatoryNext: 'Hrgovic (Jun 2026)', marcusRanking: '#12', timelineTo: '~36 months', color: 'border-red-600/30 bg-red-900/10' },
@@ -2814,7 +2814,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         <div className="space-y-2">
           {[
             { step: 1, action: 'Beat Petrov (WBC #3)', timeline: 'May 2026', result: 'Move to WBC #3 / WBO #2', status: 'upcoming' },
-            { step: 2, action: 'WBC Eliminator vs Zhang or #4', timeline: 'Q4 2026', result: 'WBC Mandatory contender', status: 'future' },
+            { step: 2, action: 'WBC Eliminator vs Chen or #4', timeline: 'Q4 2026', result: 'WBC Mandatory contender', status: 'future' },
             { step: 3, action: 'WBO Title shot (Usyk or successor)', timeline: '2027', result: 'First belt — WBO Champion', status: 'future' },
             { step: 4, action: 'Unification — WBC/WBO', timeline: '2027-28', result: 'Two-belt holder', status: 'future' },
             { step: 5, action: 'Undisputed — all 4 belts', timeline: '2028-29', result: '🏆 Undisputed Heavyweight Champion', status: 'goal' },
@@ -2840,7 +2840,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const mandatories = [
-    { body: 'WBC', champion: 'Tyson Fury', mandatory: 'Zhilei Zhang (#2)', status: 'Ordered', deadline: 'Sep 2026', relevance: 'If Zhang wins, creates opening at #2. If Fury vacates, #1 vs #2 for vacant.' },
+    { body: 'WBC', champion: 'Tyson Fury', mandatory: 'Wei Liang Chen (#2)', status: 'Ordered', deadline: 'Sep 2026', relevance: 'If Chen wins, creates opening at #2. If Fury vacates, #1 vs #2 for vacant.' },
     { body: 'WBA', champion: 'Oleksandr Usyk', mandatory: 'Daniel Dubois (#2)', status: 'Negotiations', deadline: 'Jul 2026', relevance: 'Dubois rematch clause active. Marcus needs to be #5 or higher to enter eliminators.' },
     { body: 'WBO', champion: 'Oleksandr Usyk', mandatory: 'Tyson Fury (#2)', status: 'Rematch clause', deadline: 'Aug 2026', relevance: 'If Fury loses again, Marcus at #5 could enter eliminator for mandatory spot.' },
     { body: 'IBF', champion: 'Daniel Dubois', mandatory: 'Filip Hrgovic (#2)', status: 'Purse bid', deadline: 'Jun 2026', relevance: 'Long path — Marcus at #12 needs 2-3 top wins to reach mandatory position.' },
@@ -2848,7 +2848,7 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   const eliminators = [
     { body: 'WBC', fight: '#4 Bakole vs #5 Hrgovic', date: 'May 10, 2026', significance: 'Winner likely gets mandatory shot. If both ranked fighters lose stock, opens door for Marcus.' },
-    { body: 'WBO', fight: '#3 Zhang vs #4 Anderson', date: 'Jun 2026 (TBD)', significance: 'Winner enters mandatory queue. Marcus at #5 could be called for eliminator if one withdraws.' },
+    { body: 'WBO', fight: '#3 Chen vs #4 Anderson', date: 'Jun 2026 (TBD)', significance: 'Winner enters mandatory queue. Marcus at #5 could be called for eliminator if one withdraws.' },
   ];
 
   return (
@@ -3055,7 +3055,7 @@ function PurseBidAlertsView({ fighter, session }: { fighter: BoxingFighter; sess
         <div className="text-sm font-semibold text-white mb-4">Active Mandatory Proceedings</div>
         <div className="space-y-3">
           {[
-            { belt: 'WBC', matchup: 'Cole (#5) vs Zhang (#2)', status: 'Ordered', deadline: 'Q4 2026', notes: 'WBC executive committee voted May 2026. 60 days to negotiate, then purse bid.', urgent: false },
+            { belt: 'WBC', matchup: 'Cole (#5) vs Chen (#2)', status: 'Ordered', deadline: 'Q4 2026', notes: 'WBC executive committee voted May 2026. 60 days to negotiate, then purse bid.', urgent: false },
             { belt: 'WBO', matchup: 'Cole (#5) vs Anderson (#4)', status: 'Possible', deadline: 'Dubois must defend first', notes: 'If Dubois beats Hrgovic in June, eliminator between #4 and #5 likely ordered Q3 2026.', urgent: false },
           ].map((p, i) => (
             <div key={i} className={`p-4 rounded-xl border ${p.urgent ? 'border-red-600/30 bg-red-900/10' : 'border-gray-700 bg-[#0a0c14]'}`}>
@@ -3744,7 +3744,7 @@ function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; sessio
 function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const fightOffers = [
     { opponent: 'Viktor Petrov', purse: '£800,000', broadcast: 'DAZN PPV', venue: 'Millennium Dome, London', status: 'SIGNED', date: 'May 22, 2026', notes: 'WBC eliminator implications' },
-    { opponent: 'Zhilei Zhang', purse: '£1,200,000 (projected)', broadcast: 'DAZN / Apex Sports Network', venue: 'TBD', status: 'Informal enquiry', date: 'Q4 2026', notes: 'If Marcus beats Petrov — massive fight' },
+    { opponent: 'Wei Liang Chen', purse: '£1,200,000 (projected)', broadcast: 'DAZN / Apex Sports Network', venue: 'TBD', status: 'Informal enquiry', date: 'Q4 2026', notes: 'If Marcus beats Petrov — massive fight' },
     { opponent: 'Jared Anderson', purse: '£500,000', broadcast: 'DAZN', venue: 'USA (MSG or Barclays)', status: 'Declined', date: 'N/A', notes: 'Timing wrong — mid Petrov camp' },
   ];
 
@@ -4357,7 +4357,7 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pipeline = [
     { opponent: 'Viktor Petrov', promoter: 'Matchroom/Top Rank co-promote', purse: '£800,000', date: 'May 22, 2026', stage: 'Signed', broadcast: 'DAZN PPV', notes: 'Fight contracts exchanged. Camp underway.' },
-    { opponent: 'Zhilei Zhang', promoter: 'Matchroom/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'DAZN / Continental Sport', notes: 'Conditional on Petrov win. Eddie Hearn has opened dialogue with Frank Warren\'s team.' },
+    { opponent: 'Wei Liang Chen', promoter: 'Matchroom/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'DAZN / Continental Sport', notes: 'Conditional on Petrov win. Eddie Hearn has opened dialogue with Frank Warren\'s team.' },
     { opponent: 'WBC Eliminator TBD', promoter: 'Matchroom', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'DAZN', notes: 'If Marcus beats Petrov and enters top 3. Eliminator likely ordered Q4 2026.' },
     { opponent: 'Title Shot', promoter: 'TBD', purse: '£3m+ (projected)', date: '2027', stage: 'Long-term target', broadcast: 'PPV', notes: 'Depends on route. WBC or WBO most likely first title opportunity.' },
   ];
@@ -4416,7 +4416,7 @@ function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session:
   const intel = [
     { source: 'Industry contact (Top Rank)', date: 'Apr 3, 2026', content: 'Petrov\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Sam Jones loss closely. Petrov has been sparring with Efe Ajagba to simulate a taller, more technical opponent.' },
     { source: 'Boxing Scene report', date: 'Apr 2, 2026', content: 'WBC expected to order eliminator between #3 and #5 if Petrov loses. This means a Marcus win could skip the eliminator stage entirely and go straight to mandatory position, depending on how WBC executive committee votes.' },
-    { source: 'Matchroom insider', date: 'Apr 1, 2026', content: 'Eddie Hearn has privately indicated that a Marcus victory over Petrov would trigger immediate discussions with Queensberry for a co-promoted fight with Zhang (WBC #2). Potential venue: Tottenham Hotspur Stadium, summer 2026.' },
+    { source: 'Matchroom insider', date: 'Apr 1, 2026', content: 'Eddie Hearn has privately indicated that a Marcus victory over Petrov would trigger immediate discussions with Queensberry for a co-promoted fight with Chen (WBC #2). Potential venue: Tottenham Hotspur Stadium, summer 2026.' },
     { source: 'DAZN analytics team', date: 'Mar 28, 2026', content: 'Marcus Cole fight content is trending 34% higher engagement than this time last year. DAZN very keen on building toward a PPV headliner — willing to increase marketing spend if Petrov fight delivers.' },
     { source: 'BBBofC source', date: 'Mar 25, 2026', content: 'Referee for Petrov fight expected to be Marcus McDonnell. He tends to let fighters work inside and breaks clinches quickly — advantages Marcus\'s boxing ability over Petrov\'s mauling style.' },
   ];
@@ -4589,7 +4589,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
 
   const scoutedFighters = [
     { name: 'Viktor Petrov', flag: '🇷🇺', record: '28-2 (24 KO)', ranking: 'WBC #3', threat: 'High', notes: 'Next opponent. Currently in Big Bear camp. New conditioning coach. Working body shots more than usual.' },
-    { name: 'Zhilei Zhang', flag: '🇨🇳', record: '27-2-1 (22 KO)', ranking: 'WBC #2', threat: 'High', notes: 'Potential future opponent if Petrov win secured. Massive power. Slow feet. Age a factor (43).' },
+    { name: 'Wei Liang Chen', flag: '🇨🇳', record: '27-2-1 (22 KO)', ranking: 'WBC #2', threat: 'High', notes: 'Potential future opponent if Petrov win secured. Massive power. Slow feet. Age a factor (43).' },
     { name: 'Jared Anderson', flag: '🇺🇸', record: '17-0 (15 KO)', ranking: 'WBO #4', threat: 'Medium', notes: 'Rising American prospect. Fast hands but untested at elite level. Possible WBO eliminator opponent.' },
     { name: 'Martin Bakole', flag: '🇨🇩', record: '21-1 (16 KO)', ranking: 'WBC #4', threat: 'Medium', notes: 'Physical and relentless. Awkward style. Possible WBC eliminator if Marcus beats Petrov.' },
     { name: 'Daniel Dubois', flag: '🇬🇧', record: '22-2 (21 KO)', ranking: 'IBF Champion', threat: 'High', notes: 'IBF champion. Massive puncher but questionable chin. Big domestic fight possibility.' },
@@ -4606,7 +4606,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
             <div className="text-sm font-semibold text-white mb-1">🤖 AI Scout + GPS Ring Strategy</div>
             <select value={scoutTarget} onChange={e => setScoutTarget(e.target.value)}
               className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
-              {['Viktor Petrov','Zhilei Zhang','Jared Anderson','Martin Bakole','Daniel Dubois'].map(f=><option key={f}>{f}</option>)}
+              {['Viktor Petrov','Wei Liang Chen','Jared Anderson','Martin Bakole','Daniel Dubois'].map(f=><option key={f}>{f}</option>)}
             </select>
           </div>
           <button onClick={generateScoutReport} disabled={scoutLoading}
@@ -4638,7 +4638,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard label="Fighters Scouted" value={scoutedFighters.length} sub="Active reports" color="red" />
         <StatCard label="Primary Target" value="Petrov" sub="Next fight — 48 days" color="orange" />
-        <StatCard label="High Threats" value="3" sub="Petrov, Zhang, Dubois" color="yellow" />
+        <StatCard label="High Threats" value="3" sub="Petrov, Chen, Dubois" color="yellow" />
       </div>
 
       <div className="space-y-4">
@@ -4671,7 +4671,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
 function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const broadcasts = [
     { fight: 'Cole vs Petrov', date: 'May 22, 2026', broadcaster: 'DAZN PPV', territory: 'Global', estimated_viewers: '800k-1.2m', card_position: 'Main Event', notes: 'First PPV headliner. DAZN investing heavily in promotion.' },
-    { fight: 'Fury vs Zhang', date: 'TBD 2026', broadcaster: 'Continental Sport / Apex Sports Network+', territory: 'UK & US', estimated_viewers: '2-3m', card_position: 'N/A', notes: 'Key fight to watch — impacts WBC rankings.' },
+    { fight: 'Fury vs Chen', date: 'TBD 2026', broadcaster: 'Continental Sport / Apex Sports Network+', territory: 'UK & US', estimated_viewers: '2-3m', card_position: 'N/A', notes: 'Key fight to watch — impacts WBC rankings.' },
     { fight: 'Dubois vs Hrgovic', date: 'Jun 2026', broadcaster: 'DAZN', territory: 'Global', estimated_viewers: '500k', card_position: 'N/A', notes: 'IBF mandatory — could reshape IBF rankings.' },
     { fight: 'Usyk vs TBD', date: 'Q3 2026', broadcaster: 'TBD', territory: 'TBD', estimated_viewers: 'TBD', card_position: 'N/A', notes: 'Undisputed champion defence — all belts at stake.' },
   ];
@@ -4740,7 +4740,7 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const news = [
     { date: 'Apr 4, 2026', headline: 'WBC to order eliminator between #3 and #5 by end of summer', source: 'Boxing Scene', relevance: 'Direct', summary: 'If Marcus beats Petrov and takes the #3 spot, he could be in line for a mandatory eliminator by Q4 2026. The WBC executive committee will vote at their May convention.' },
-    { date: 'Apr 3, 2026', headline: 'Fury considering retirement after Zhang fight', source: 'Apex Sports Network', relevance: 'High', summary: 'If Fury retires, the WBC title could become vacant, significantly accelerating the path to a title shot for top contenders including Marcus.' },
+    { date: 'Apr 3, 2026', headline: 'Fury considering retirement after Chen fight', source: 'Apex Sports Network', relevance: 'High', summary: 'If Fury retires, the WBC title could become vacant, significantly accelerating the path to a title shot for top contenders including Marcus.' },
     { date: 'Apr 2, 2026', headline: 'DAZN signs new multi-year deal with Matchroom Boxing', source: 'Variety', relevance: 'Medium', summary: 'Extended partnership ensures Marcus\'s fights will continue to be broadcast on DAZN. The deal includes increased investment in fighter promotion and marketing.' },
     { date: 'Apr 1, 2026', headline: 'Saudi Arabia PIF exploring heavyweight boxing investments', source: 'Financial Times', relevance: 'Medium', summary: 'Saudi PIF reportedly looking to host major heavyweight fights in 2026-2027. Could create lucrative site fee opportunities for top contenders.' },
     { date: 'Mar 30, 2026', headline: 'IBF mandates Dubois vs Hrgovic by June 2026', source: 'Ring Magazine', relevance: 'Low', summary: 'IBF forces mandatory defence. While Marcus is IBF #12, this fight could reshuffle the top 10 and create movement opportunities.' },

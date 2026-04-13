@@ -98,7 +98,7 @@ function DashboardMockup() {
   return (
     <MockupFrame>
       <div style={{ background: `linear-gradient(135deg, ${RED}, ${RED_LIGHT})`, borderRadius: 10, padding: 10, marginBottom: 10, color: '#fff' }}>
-        <div style={{ fontSize: 10, fontWeight: 900 }}>Tonight&apos;s match — vs Gerwyn Price · 20:00 · Board 4</div>
+        <div style={{ fontSize: 10, fontWeight: 900 }}>Tonight&apos;s match — vs Darren Merrick · 20:00 · Board 4</div>
         <div style={{ display: 'flex', gap: 10, fontSize: 8, marginTop: 4, opacity: 0.9 }}>
           <span>London 12:00</span><span>Dortmund 13:00</span><span>Melbourne 21:00</span><span>Las Vegas 04:00</span>
         </div>
@@ -118,7 +118,7 @@ function DashboardMockup() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 8 }}>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Tonight&apos;s Match</div>
-          <div style={{ fontSize: 10, color: TEXT }}>Jake Morrison <span style={{ color: MUTED }}>vs</span> G. Price</div>
+          <div style={{ fontSize: 10, color: TEXT }}>Jake Morrison <span style={{ color: MUTED }}>vs</span> D. Merrick</div>
           <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>#19 PDC vs #7 PDC · European Ch. R1 · Dortmund</div>
           <div style={{ fontSize: 9, color: '#10B981', marginTop: 6, fontWeight: 800 }}>H2H: 8-3 in your favour</div>
         </div>
@@ -145,7 +145,7 @@ function DashboardMockup() {
         </div>
       </div>
       <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <Badge color="#EF4444" bg="rgba(239,68,68,0.15)">LIVE · vs G. Price</Badge>
+        <Badge color="#EF4444" bg="rgba(239,68,68,0.15)">LIVE · vs D. Merrick</Badge>
         <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">£12.4k drops off week</Badge>
         <Badge color={RED_LIGHT} bg="rgba(239,68,85,0.15)">Vanta Sports content 16:00</Badge>
       </div>
@@ -179,7 +179,7 @@ function BriefingMockup() {
           <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: RED, color: '#fff', border: 'none' }}>▶ Play Briefing</button>
         </div>
         <p style={{ fontSize: 9, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          &ldquo;Good morning, Jake. You&apos;re ranked 19th on the PDC Order of Merit. Tonight you play Gerwyn Price in the European Championship first round — your H2H is 8–3 in your favour. £12,400 drops off your OoM this week from Players Championship 8 last year. Vanta Sports content shoot at 16:00 before you travel to Dortmund...&rdquo;
+          &ldquo;Good morning, Jake. You&apos;re ranked 19th on the PDC Order of Merit. Tonight you play Darren Merrick in the European Championship first round — your H2H is 8–3 in your favour. £12,400 drops off your OoM this week from Players Championship 8 last year. Vanta Sports content shoot at 16:00 before you travel to Dortmund...&rdquo;
         </p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
@@ -306,7 +306,7 @@ function SponsorshipMockup() {
       obligations: ['Use RD barrels in all matches', 'Wear RD logo on shirt', 'Content posts 4/month'],
       bonuses: ['Top 16 +£15k', 'Major QF +£7.5k', 'TV final +£10k'] },
     { name: 'Crown Wagers — Ambassador', status: 'Active', statusColor: '#10B981', value: '£60,000/yr', expires: 'Expires Jun 2026' },
-    { name: 'Ladbrokes — Odds partner', status: 'Renewal due', statusColor: '#F59E0B', value: '£32,000/yr', expires: 'Expires May 2025 (18d)' },
+    { name: 'Crown Wagers — Odds partner', status: 'Renewal due', statusColor: '#F59E0B', value: '£32,000/yr', expires: 'Expires May 2025 (18d)' },
   ]
   return (
     <MockupFrame>

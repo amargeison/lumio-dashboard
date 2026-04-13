@@ -599,7 +599,7 @@ function generateQuickMatchPDF(playerName = 'Alex Rivera', ranking = 67, points 
   <h1>🎾 Match Report</h1>
   <div class="meta">${playerName} · ATP #${ranking} · ${points.toLocaleString()} pts · ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL — Team Only</div>
   <div class="grid2">
-    <div class="box"><div class="box-label">Match</div><input style="border:none;font-size:14px;font-weight:600;width:100%;outline:none" placeholder="e.g. vs Cerundolo · Monte-Carlo R2"/></div>
+    <div class="box"><div class="box-label">Match</div><input style="border:none;font-size:14px;font-weight:600;width:100%;outline:none" placeholder="e.g. vs Caballero · Monte-Carlo R2"/></div>
     <div class="box"><div class="box-label">Result</div><input style="border:none;font-size:14px;font-weight:600;width:100%;outline:none" placeholder="e.g. Won 6-4 4-6 7-5"/></div>
   </div>
   <h2>Serve Statistics</h2>
@@ -1947,7 +1947,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               { type: 'ALERT', icon: '⚠️', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', title: '312 ranking points expiring', desc: 'After Monte-Carlo this week. A QF exit loses 180 pts from last year. Win tonight to defend and push to #58.', action: 'View ranking forecast →', section: 'performance' },
               { type: 'OPPORTUNITY', icon: '💡', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', title: 'Crown Wagers ambassador offer', desc: 'New approach via James Wright — £85k/yr. No competing betting sponsor. Decision needed by end of month.', action: 'View pipeline →', section: 'pipeline' },
               { type: 'TREND', icon: '📈', color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', title: 'First serve % up 6 points', desc: 'Last 5 matches: 64% vs 58% season average. Kick serve improvement on clay is working — continue focus in practice.', action: 'View serve stats →', section: 'performance' },
-              { type: 'ACHIEVEMENT', icon: '🏆', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', title: 'Monte-Carlo QF — best clay result', desc: 'First Masters QF on clay. Beating Shelton (#14) in R3 was a statement win. Media interest is high.', action: 'View match report →', section: 'performance' },
+              { type: 'ACHIEVEMENT', icon: '🏆', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', title: 'Monte-Carlo QF — best clay result', desc: 'First Masters QF on clay. Beating Sutton (#14) in R3 was a statement win. Media interest is high.', action: 'View match report →', section: 'performance' },
             ].map((tile, i) => (
               <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -2602,8 +2602,8 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
         <div className="text-sm font-semibold text-white mb-4">Race to Turin — Current Standing</div>
         <div className="space-y-2">
           {[
-            { rank: 1, name: 'J. Sinner', pts: 9240, flag: '🇮🇹', qualified: true },
-            { rank: 2, name: 'C. Alcaraz', pts: 7850, flag: '🇪🇸', qualified: true },
+            { rank: 1, name: 'L. Brenner', pts: 9240, flag: '🇮🇹', qualified: true },
+            { rank: 2, name: 'C. Valdez', pts: 7850, flag: '🇪🇸', qualified: true },
             { rank: 3, name: 'A. Zverev', pts: 6120, flag: '🇩🇪', qualified: false },
             { rank: 4, name: 'H. Rune', pts: 5480, flag: '🇩🇰', qualified: false },
             { rank: 5, name: 'J. Draper', pts: 4930, flag: '🇬🇧', qualified: false },
@@ -2857,7 +2857,7 @@ function PerformanceView({ player, session }: { player: TennisPlayer; session: S
     { tournament: 'Miami Open', cat: 'Masters 1000', surface: 'Hard', result: 'R3', opponent: 'Mensik', score: '4-6, 6-3, 2-6', wl: 'L' },
     { tournament: 'Dubai ATP 500', cat: 'ATP 500', surface: 'Hard', result: 'SF', opponent: 'Tsitsipas', score: '6-7, 3-6', wl: 'L' },
     { tournament: 'Rotterdam ATP 500', cat: 'ATP 500', surface: 'Indoor', result: 'W', opponent: 'Paul', score: '6-4, 7-6', wl: 'W' },
-    { tournament: 'Australian Open', cat: 'Grand Slam', surface: 'Hard', result: 'R4', opponent: 'Sinner', score: '3-6, 4-6, 7-5, 2-6', wl: 'L' },
+    { tournament: 'Australian Open', cat: 'Grand Slam', surface: 'Hard', result: 'R4', opponent: 'Brenner', score: '3-6, 4-6, 7-5, 2-6', wl: 'L' },
   ];
 
   return (
@@ -4066,12 +4066,12 @@ function SwingVisionCards() {
 function VideoLibraryView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const videos = [
     { title: 'Monte-Carlo R2 vs Hurkacz', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
-    { title: 'Monte-Carlo R1 vs Cerundolo', category: 'Match Footage', date: '7 Apr 2026', duration: '1h 18m', tags: ['clay', 'win', 'M1000'] },
+    { title: 'Monte-Carlo R1 vs Caballero', category: 'Match Footage', date: '7 Apr 2026', duration: '1h 18m', tags: ['clay', 'win', 'M1000'] },
     { title: 'Serve Pattern Drill — Body %', category: 'Practice Clips', date: '9 Apr 2026', duration: '12m', tags: ['serve', 'drill'] },
     { title: 'Rotterdam Final Highlights', category: 'Highlight Reels', date: '18 Feb 2026', duration: '8m', tags: ['indoor', 'title', 'ATP500'] },
     { title: 'Post-Match Debrief — Indian Wells QF', category: 'Post-match Debrief', date: '15 Mar 2026', duration: '22m', tags: ['hard', 'loss', 'debrief'] },
     { title: 'Martinez Clay Footage (2025)', category: 'Opponent Analysis', date: '5 Apr 2026', duration: '34m', tags: ['opponent', 'clay'] },
-    { title: 'Australian Open R4 vs Sinner', category: 'Match Footage', date: '22 Jan 2026', duration: '2h 48m', tags: ['hard', 'loss', 'GS'] },
+    { title: 'Australian Open R4 vs Brenner', category: 'Match Footage', date: '22 Jan 2026', duration: '2h 48m', tags: ['hard', 'loss', 'GS'] },
     { title: 'Movement Patterns — Luis Session', category: 'Practice Clips', date: '5 Apr 2026', duration: '15m', tags: ['fitness', 'movement'] },
   ];
 
@@ -5407,7 +5407,7 @@ function AgentPipelineView({ player, session }: { player: TennisPlayer; session:
 function MediaView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [pressLoading, setPressLoading] = useState(false);
   const [pressResult, setPressResult] = useState<{press_quote: string; social_instagram: string; social_x: string} | null>(null);
-  const [matchResult, setMatchResult] = useState('Won 6-4 4-6 7-5 vs Cerundolo');
+  const [matchResult, setMatchResult] = useState('Won 6-4 4-6 7-5 vs Caballero');
   const [moment1, setMoment1] = useState('Broke serve 3 times in deciding set');
   const [moment2, setMoment2] = useState('Saved 4 break points in set 2');
   const [moment3, setMoment3] = useState('First career win over a top-20 player on clay');
@@ -5910,7 +5910,7 @@ function AcademyView({ player, session }: { player: TennisPlayer; session: Sport
           {[
             { name: 'Jack Draper', ranking: '#15', note: 'Active ATP tour' },
             { name: 'Emma Raducanu', ranking: '#28', note: 'Active WTA tour' },
-            { name: 'Cameron Norrie', ranking: '#42', note: 'Active ATP tour' },
+            { name: 'Cameron Hadley', ranking: '#42', note: 'Active ATP tour' },
             { name: 'Dan Evans', ranking: '#78', note: 'Active ATP tour' },
           ].map((a, i) => (
             <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50 text-sm">
@@ -6376,7 +6376,7 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
 // ─── LIVE SCORES VIEW ──────────────────────────────────────────────────────────
 const LiveScoresView = ({ liveScores, fixtures, player, session }: { liveScores: any[]; fixtures: any[]; player: TennisPlayer; session: SportsDemoSession }) => {
   const DEMO_MATCHES = [
-    { p1: 'J. Sinner [1]', p2: 'C. Alcaraz [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
+    { p1: 'L. Brenner [1]', p2: 'C. Valdez [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
     { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
     { p1: 'A. Rivera [67]', p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
     { p1: 'C. Ruud [7]', p2: 'S. Tsitsipas [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
@@ -6585,7 +6585,7 @@ const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: S
       { p1: 'T. Nakashima [1]', p2: 'Qualifier', score: '6-3 6-4', winner: 1 },
       { p1: 'L. Musetti [8]', p2: 'M. Cressy', score: '7-6 6-4', winner: 1 },
       { p1: 'J. Draper [3]', p2: 'D. Shapovalov', score: '6-2 7-5', winner: 1 },
-      { p1: 'B. Shelton [5]', p2: 'F. Cerundolo', score: '4-6 6-3 7-6', winner: 1 },
+      { p1: 'B. Sutton [5]', p2: 'F. Caballero', score: '4-6 6-3 7-6', winner: 1 },
       { p1: 'A. Fils [4]', p2: 'L. Djere', score: '6-1 6-3', winner: 1 },
       { p1: 'A. Rivera [6]', p2: 'R. Carballes', score: '6-4 6-2', winner: 1 },
       { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1 },
@@ -6594,7 +6594,7 @@ const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: S
     // QF (4 matches)
     [
       { p1: 'T. Nakashima [1]', p2: 'L. Musetti [8]', score: '', winner: 0 },
-      { p1: 'J. Draper [3]', p2: 'B. Shelton [5]', score: '', winner: 0 },
+      { p1: 'J. Draper [3]', p2: 'B. Sutton [5]', score: '', winner: 0 },
       { p1: 'A. Fils [4]', p2: 'A. Rivera [6]', score: '', winner: 0 },
       { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0 },
     ],
@@ -7016,12 +7016,12 @@ const MatchReportsView = ({ player, session }: { player: TennisPlayer; session: 
   const [reportContent, setReportContent] = useState<Record<string, string>>({});
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   const matches = [
-    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'QF', score: '4-6 6-3 7-6(5)', surface: 'Clay', result: 'W', date: '14 Apr' },
+    { id: 'm1', opponent: 'C. Valdez', oppRank: 3, tournament: 'Madrid Open', round: 'QF', score: '4-6 6-3 7-6(5)', surface: 'Clay', result: 'W', date: '14 Apr' },
     { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'R16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr' },
-    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
-    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo Masters', round: 'SF', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr' },
-    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
-    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'R32', score: '6-7(4) 4-6', surface: 'Clay', result: 'L', date: '22 Mar' },
+    { id: 'm3', opponent: 'F. Caballero', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
+    { id: 'm4', opponent: 'L. Brenner', oppRank: 1, tournament: 'Monte Carlo Masters', round: 'SF', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr' },
+    { id: 'm5', opponent: 'B. Sutton', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
+    { id: 'm6', opponent: 'C. Hadley', oppRank: 45, tournament: 'Barcelona Open', round: 'R32', score: '6-7(4) 4-6', surface: 'Clay', result: 'L', date: '22 Mar' },
   ];
 
   async function generateReport(m: typeof matches[0]) {
@@ -7503,7 +7503,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
       </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">SwingVision — Shot Analysis</div></div><div className="p-5"><div className="grid grid-cols-5 gap-3 mb-5">{[{ l:'1st Serve %', v:'68%' },{ l:'Winners', v:'14' },{ l:'Unforced Errors', v:'8' },{ l:'Avg Rally', v:'4.2' },{ l:'Net Pts Won', v:'71%' }].map(s => (<div key={s.l} className="text-center p-2 rounded-lg" style={{ backgroundColor: '#0a0c14' }}><div className="text-base font-black" style={{ color: '#06b6d4' }}>{s.v}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</div></div>))}</div><div className="text-xs font-bold text-white mb-2">Shot Type Breakdown</div><div className="space-y-1.5">{[{ type:'Forehand Winner', count:6, color:'#22C55E' },{ type:'Backhand Winner', count:4, color:'#22C55E' },{ type:'Serve Winner', count:4, color:'#22C55E' },{ type:'Volley Winner', count:2, color:'#22C55E' },{ type:'Forehand Error', count:5, color:'#EF4444' },{ type:'Backhand Error', count:3, color:'#EF4444' }].map(s => (<div key={s.type} className="flex items-center gap-3"><span className="text-xs w-28" style={{ color: '#9CA3AF' }}>{s.type}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${(s.count/6)*100}%`, backgroundColor: s.color }} /></div><span className="text-xs w-6 text-right font-bold" style={{ color: s.color }}>{s.count}</span></div>))}</div></div></div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span></div><div className="px-5 py-4">{gpsAiLoading && <div className="text-sm" style={{ color: '#06b6d4' }}>Analysing your session data...</div>}{gpsAiBrief && !gpsAiLoading && <div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{gpsAiBrief}</div>}</div></div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">Session History</div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{[{ date:'09 Apr', surface:'Clay', coverage:'3.8km', load:68, speed:'27.1km/h', outcome:'W vs Ruud', win:true },{ date:'07 Apr', surface:'Clay', coverage:'4.1km', load:79, speed:'29.2km/h', outcome:'W vs Zverev', win:true },{ date:'05 Apr', surface:'Clay', coverage:'2.9km', load:51, speed:'25.8km/h', outcome:'Practice', win:null },{ date:'03 Apr', surface:'Hard', coverage:'4.4km', load:82, speed:'30.1km/h', outcome:'L vs Sinner', win:false },{ date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null }].map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div></div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">Session History</div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{[{ date:'09 Apr', surface:'Clay', coverage:'3.8km', load:68, speed:'27.1km/h', outcome:'W vs Lindqvist', win:true },{ date:'07 Apr', surface:'Clay', coverage:'4.1km', load:79, speed:'29.2km/h', outcome:'W vs Kellner', win:true },{ date:'05 Apr', surface:'Clay', coverage:'2.9km', load:51, speed:'25.8km/h', outcome:'Practice', win:null },{ date:'03 Apr', surface:'Hard', coverage:'4.4km', load:82, speed:'30.1km/h', outcome:'L vs Brenner', win:false },{ date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null }].map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div></div>
       <TennisAISection context="default" player={player} session={session} />
     </div>
   )
@@ -8749,7 +8749,7 @@ function TennisPracticeCourt({ onClose, session }: { onClose: () => void; sessio
             <div><label className="text-xs text-gray-500 mb-2 block">Surface</label><div className="flex flex-wrap gap-2">{SURFACES.map(s => (<button key={s} onClick={() => setSurface(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: surface === s ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)', border: surface === s ? '1px solid #22C55E' : '1px solid #1F2937', color: surface === s ? '#22C55E' : '#9CA3AF' }}>{s}</button>))}</div></div>
             <div><label className="text-xs text-gray-500 mb-2 block">Duration</label><div className="flex flex-wrap gap-2">{DURATIONS.map(d => (<button key={d} onClick={() => setDuration(d)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: duration === d ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)', border: duration === d ? '1px solid #22C55E' : '1px solid #1F2937', color: duration === d ? '#22C55E' : '#9CA3AF' }}>{d}</button>))}</div></div>
           </div>
-          <div><label className="text-xs text-gray-500 mb-1 block">Practice partner (optional)</label><input value={partner} onChange={e => setPartner(e.target.value)} placeholder="e.g. Carlos Alcaraz, hitting partner..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Practice partner (optional)</label><input value={partner} onChange={e => setPartner(e.target.value)} placeholder="e.g. Carlos Valdez, hitting partner..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
           <button onClick={submit} disabled={!date} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: date ? '#22C55E' : '#374151' }}>📧 Send court request →</button>
         </>) : (
           <div className="text-center py-8"><div className="text-5xl mb-3">✅</div><div className="text-base font-bold text-white mb-2">Request sent</div><div className="text-sm mb-4" style={{ color: '#6B7280' }}>Court request for {date} at {time} sent to tournament desk. They&apos;ll confirm within the hour.</div><button onClick={onClose} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#22C55E' }}>Done</button></div>
@@ -9348,7 +9348,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   const [debriefLoading, setDebriefLoading] = useState(false);
   const [debrief, setDebrief] = useState<{headline: string; serve_analysis: string; return_analysis: string; gps_fatigue: string; pattern_insight: string; next_week: string} | null>(null);
-  const [selectedMatch, setSelectedMatch] = useState('Monte-Carlo R2 vs Cerundolo');
+  const [selectedMatch, setSelectedMatch] = useState('Monte-Carlo R2 vs Caballero');
 
   const generateDebrief = async () => {
     setDebriefLoading(true);
@@ -9377,12 +9377,12 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
   };
 
   const matches = [
-    { id: 'm1', opponent: 'C. Alcaraz', oppRank: 3, tournament: 'Madrid Open', round: 'Quarter-Final', score: '4-6 6-3 7-6', surface: 'Clay', result: 'W', date: '14 Apr 2025' },
+    { id: 'm1', opponent: 'C. Valdez', oppRank: 3, tournament: 'Madrid Open', round: 'Quarter-Final', score: '4-6 6-3 7-6', surface: 'Clay', result: 'W', date: '14 Apr 2025' },
     { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'Round of 16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr 2025' },
-    { id: 'm3', opponent: 'F. Cerundolo', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
-    { id: 'm4', opponent: 'J. Sinner', oppRank: 1, tournament: 'Monte Carlo', round: 'Semi-Final', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr 2025' },
-    { id: 'm5', opponent: 'B. Shelton', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
-    { id: 'm6', opponent: 'C. Norrie', oppRank: 45, tournament: 'Barcelona Open', round: 'Round of 32', score: '6-7 4-6', surface: 'Clay', result: 'L', date: '22 Mar 2025' },
+    { id: 'm3', opponent: 'F. Caballero', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
+    { id: 'm4', opponent: 'L. Brenner', oppRank: 1, tournament: 'Monte Carlo', round: 'Semi-Final', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr 2025' },
+    { id: 'm5', opponent: 'B. Sutton', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
+    { id: 'm6', opponent: 'C. Hadley', oppRank: 45, tournament: 'Barcelona Open', round: 'Round of 32', score: '6-7 4-6', surface: 'Clay', result: 'L', date: '22 Mar 2025' },
   ];
 
   const handleGenerateReport = async (match: typeof matches[0]) => {
@@ -9423,7 +9423,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
             <div className="text-xs text-gray-500 mb-1">Match</div>
             <select value={selectedMatch} onChange={e=>setSelectedMatch(e.target.value)}
               className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
-              {['Monte-Carlo R2 vs Cerundolo','Monte-Carlo R1 vs Qualifier','Barcelona R2 vs Davidovich Fokina'].map(m=><option key={m}>{m}</option>)}
+              {['Monte-Carlo R2 vs Caballero','Monte-Carlo R1 vs Qualifier','Barcelona R2 vs Alvarez Romero'].map(m=><option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
