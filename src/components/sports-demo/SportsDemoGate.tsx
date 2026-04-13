@@ -554,11 +554,11 @@ export default function SportsDemoGate({
   const Overlay = ({ children: inner }: { children: React.ReactNode }) => (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'} alt={sport} style={{ width: 72, height: 72, objectFit: 'contain', marginBottom: 12 }} />
-          <div className="text-xl font-bold text-white">{sportLabel}</div>
-          <div className="text-sm text-gray-500 mt-1">Interactive demo</div>
+          <img src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'} alt={sport} style={{ width: 72, height: 72, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }} />
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
+          <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>Interactive demo</p>
         </div>
         {inner}
       </div>

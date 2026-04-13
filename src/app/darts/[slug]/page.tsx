@@ -7464,13 +7464,14 @@ function DartsFlightFinder({ onClose, player, session }: { onClose: () => void; 
 // ─── MODAL: HOTEL FINDER ─────────────────────────────────────────────────────
 function DartsHotelFinder({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<1|2|3|4>(1)
-  const [destination, setDestination] = useState('Prague')
+  const [destination, setDestination] = useState('')
   const [checkin, setCheckin] = useState('')
   const [checkout, setCheckout] = useState('')
   const [budget, setBudget] = useState('mid')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<{name:string;price:string;rating:string;distance:string}[]>([])
   const [selectedHotel, setSelectedHotel] = useState<string|null>(null)
+  const [searchError, setSearchError] = useState('')
   const preferences = ['Near venue', 'Gym', 'Late checkout', 'Quiet room', 'Restaurant', 'Parking']
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>(['Near venue'])
   const tournamentChips = [
@@ -7482,8 +7483,16 @@ function DartsHotelFinder({ onClose }: { onClose: () => void }) {
     { label: 'Grand Prix — Oct (Citywest, Dublin)', dest: 'Citywest Hotel, Dublin' },
   ]
 
+  const fallbackHotels = [
+    { name: `Premier Inn ${destination || 'City Centre'}`, price: '£79/night', rating: '3*', distance: '0.8km from venue' },
+    { name: `Travelodge ${destination || 'Central'}`, price: '£55/night', rating: '2*', distance: '1.2km from venue' },
+    { name: `Holiday Inn ${destination || 'City Centre'}`, price: '£110/night', rating: '4*', distance: '1.5km from venue' },
+    { name: `ibis ${destination || 'Centre'}`, price: '£68/night', rating: '3*', distance: '2.1km from venue' },
+  ]
+
   const search = async () => {
-    setLoading(true); setStep(2)
+    if (!destination.trim()) { setSearchError('Please enter a destination or select a tournament'); return }
+    setSearchError(''); setLoading(true); setStep(2)
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -7491,8 +7500,8 @@ function DartsHotelFinder({ onClose }: { onClose: () => void }) {
       })
       const data = await res.json()
       const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
-      try { setResults(JSON.parse(text)) } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' },{ name:'NH Prague City', price:'£98/night', rating:'4*', distance:'1.5km' }]) }
-    } catch { setResults([{ name:'Hotel Duo Prague', price:'£89/night', rating:'4*', distance:'1.2km' },{ name:'Hilton Prague', price:'£145/night', rating:'5*', distance:'0.8km' },{ name:'ibis Prague Centre', price:'£62/night', rating:'3*', distance:'2.1km' },{ name:'NH Prague City', price:'£98/night', rating:'4*', distance:'1.5km' }]) }
+      try { setResults(JSON.parse(text)) } catch { setResults(fallbackHotels) }
+    } catch { setResults(fallbackHotels) }
     setLoading(false); setStep(3)
   }
 
@@ -7513,7 +7522,8 @@ function DartsHotelFinder({ onClose }: { onClose: () => void }) {
       <div className="p-6 pt-0 space-y-4">
         {step === 1 && (<>
           <div><label className="text-xs text-gray-400 block mb-1">Tournament Quick Select</label><div className="flex flex-wrap gap-2">{tournamentChips.map(t => (<button key={t.label} onClick={() => setDestination(t.dest)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${destination === t.dest ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{t.label}</button>))}</div></div>
-          <div><label className="text-xs text-gray-400 block mb-1">Destination</label><input value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Destination</label><input value={destination} onChange={e => { setDestination(e.target.value); setSearchError('') }} placeholder="e.g. Blackpool, Dublin, Milton Keynes" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          {searchError && <p style={{ color: '#ef4444', fontSize: 12 }}>{searchError}</p>}
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-gray-400 block mb-1">Check-in</label><input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
             <div><label className="text-xs text-gray-400 block mb-1">Check-out</label><input type="date" value={checkout} onChange={e => setCheckout(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white" /></div>
