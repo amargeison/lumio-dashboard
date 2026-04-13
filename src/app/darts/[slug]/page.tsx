@@ -1292,7 +1292,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       )}
 
       {/* QUICK WINS */}
-      {dashTab === 'quickwins' && (() => {
+      {dashTab === 'quickwins' && (session.isDemoShell === false ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" /> : (() => {
         const quickWins = [
           { id:'qw1', title:'Practice D16 checkout before warm-up', impact:'high' as const, effort:'10min', cat:'Performance', icon:'🎯', action:'Log practice', modal:'practice' as string|undefined, description:'Double 16 is your weakest checkout route — 10 minutes of focused practice before warm-up.' },
           { id:'qw2', title:'Reply to Paddy Power ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined, description:'Agent flagged urgency — competitor also in talks. Quick reply keeps deal alive.' },
@@ -1326,10 +1326,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             ))}
           </div>
         )
-      })()}
+      })())}
 
       {/* DAILY TASKS */}
-      {dashTab === 'dailytasks' && (() => {
+      {dashTab === 'dailytasks' && (session.isDemoShell === false ? <EmptyState icon="✅" title="No tasks loaded" sub="Connect your data to unlock daily tasks" /> : (() => {
         const ALL_TASKS = [
           { id:'t1', time:'09:00', task:'AI Morning Briefing',             cat:'Routine',    priority:'low' as const,  modal:undefined as string|undefined },
           { id:'t2', time:'10:00', task:'Practice — D16 checkout routes',  cat:'Training',   priority:'high' as const, modal:'practice' as string|undefined },
@@ -1379,10 +1379,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           })}
         </div>
         )
-      })()}
+      })())}
 
       {/* INSIGHTS */}
-      {dashTab === 'insights' && (
+      {dashTab === 'insights' && (session.isDemoShell === false ? <EmptyState icon="📊" title="No insights yet" sub="Connect your data to unlock performance insights" /> :
         <div className="space-y-6">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -1424,7 +1424,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       )}
 
       {/* DON'T MISS */}
-      {dashTab === 'dontmiss' && (() => {
+      {dashTab === 'dontmiss' && (session.isDemoShell === false ? <EmptyState icon="🔴" title="Nothing to flag" sub="Alerts will appear here once your data is connected" /> : (() => {
         const DONT_MISS_ITEMS = [
           { id:'dm1', urgency:'TONIGHT', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Match', deadline:'Tonight 20:00', title:'Match vs G. Price — European Championship R1', desc:'20:00 Westfalenhallen, Dortmund. H2H 3-4 Price. His checkout 39.8% vs yours — start strong on the opening leg.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep →', section:'matchprep', modal:'matchreport' as string|undefined },
           { id:'dm2', urgency:'TODAY', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Sponsor', deadline:'Today 12:00', title:'Red Dragon content shoot — prep kit and backdrop', desc:'Contract obligation with penalty clause. Barrel review video required. Bring backup set.', consequence:'Penalty clause applies if missed — contract breach risk', action:'Open brief →', section:'sponsor', modal:'sponsor' as string|undefined },
@@ -1468,7 +1468,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           ))}
         </div>
         )
-      })()}
+      })())}
 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
