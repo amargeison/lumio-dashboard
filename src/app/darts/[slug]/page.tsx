@@ -67,6 +67,17 @@ function useDartsBrandLogo(): string {
   return logo
 }
 
+// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+function EmptyState({ icon, title, sub }: { icon: string; title: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', textAlign: 'center', border: '1px dashed #1F2937', borderRadius: 12, background: '#0a0c14' }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
+      <div style={{ color: '#6B7280', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{title}</div>
+      {sub && <div style={{ color: '#374151', fontSize: 12 }}>{sub}</div>}
+    </div>
+  )
+}
+
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
@@ -1044,7 +1055,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div>
               <span className="text-[10px] text-gray-600">Since you were last here</span>
             </div>
-            <div className="space-y-2">
+            {session.isDemoShell === false ? <EmptyState icon="📬" title="No messages yet" sub="Connect your agent, manager and tour accounts to unlock" /> : <div className="space-y-2">
               {(roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_CHANNELS).map((ch, idx) => (
                 <div key={ch.label} draggable
                   onDragStart={() => setDragIdx(idx)}
@@ -1107,12 +1118,15 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   )}
                 </div>
               ))}
-            </div>
+            </div>}
           </div>
 
           {/* MIDDLE: Tonight's match + schedule */}
           <div className="space-y-4">
-            <div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
+            {session.isDemoShell === false ? (<>
+              <EmptyState icon="🎯" title="No match tonight" sub="Match data will appear here once your tour feed is connected" />
+              <EmptyState icon="📅" title="No schedule loaded" sub="Your tournament schedule will appear here once connected" />
+            </>) : <><div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
               <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">TONIGHT — PDC EUROPEAN CHAMPIONSHIP R1</div>
               <div className="flex items-center justify-between">
                 <div className="text-center">
@@ -1186,6 +1200,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Darts</span></div>
               </div>
             </div>
+          </>}
           </div>
 
           {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
@@ -1243,7 +1258,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             </div>
 
             {/* Performance Intelligence — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your stats to unlock AI performance intelligence" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span>⚡</span>
@@ -1268,7 +1285,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
         </div>
         </div>
