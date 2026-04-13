@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { trackSportsEvent } from '@/lib/sports-events'
+import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 
 function getSupabase() {
   return createClient(
@@ -84,21 +85,8 @@ export async function POST(req: NextRequest) {
         await resend.emails.send({
           from: 'Lumio Sports <hello@lumiocms.com>',
           to: email,
-          subject: `Welcome to your Lumio ${sportNames[sport] ?? 'Sports'} demo`,
-          html: `<!DOCTYPE html><html><body style="background:#07080F;font-family:DM Sans,Arial,sans-serif;margin:0;padding:40px 20px;">
-            <div style="max-width:480px;margin:0 auto;background:#0d1117;border:1px solid #1f2937;border-radius:16px;padding:40px;">
-              <p style="color:#9ca3af;font-size:15px;line-height:1.6;">
-                Hi ${userName ?? 'there'},<br/><br/>
-                Your <strong style="color:#fff">Lumio ${sportNames[sport] ?? 'Sports'}</strong> demo is ready.
-                ${clubName ? `We've set it up as <strong style="color:#fff">${clubName}</strong>.` : ''}
-                <br/><br/>
-                Explore everything — GPS, AI briefings, analytics, and more.
-                When you're ready to build your real portal, reply to this email.
-                <br/><br/>
-                — The Lumio team
-              </p>
-            </div>
-          </body></html>`,
+          subject: `Your Lumio ${sportNames[sport] ?? 'Sports'} demo is ready — here's what you're about to see`,
+          html: generateSportsWelcomeEmail(userName || 'there', sport, 'demo', email),
         })
       } catch (emailErr) {
         console.error('[sports-demo/verify-otp] Welcome email error:', emailErr)

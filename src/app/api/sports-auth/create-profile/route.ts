@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Welcome to Lumio Sports, ${displayName.split(' ')[0]} 🎉`,
-        html: generateSportsWelcomeEmail(displayName, sport, null, email),
+        html: generateSportsWelcomeEmail(displayName, sport, 'founder', email),
       })
     } catch (emailErr) {
       console.error('[sports-auth] Welcome email failed (non-fatal):', emailErr)
