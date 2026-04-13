@@ -139,15 +139,17 @@ export default function SportsSignupPage() {
                     return (
                       <button key={s.id} onClick={() => isLive && setSport(s.id)}
                         style={{
-                          padding: '10px 4px', borderRadius: 10, textAlign: 'center', cursor: isLive ? 'pointer' : 'default',
-                          background: selected ? s.color + '22' : '#111318',
-                          border: `1px solid ${selected ? s.color : '#1F2937'}`,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          padding: '12px 8px', borderRadius: 12, textAlign: 'center', gap: 6,
+                          cursor: isLive ? 'pointer' : 'default',
+                          background: selected ? s.color + '15' : '#0d1117',
+                          border: `2px solid ${selected ? s.color : '#1F2937'}`,
                           opacity: isLive ? 1 : 0.4, transition: 'all 0.15s',
                         }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={s.logo} alt={s.label} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 2 }} />
-                        <div style={{ color: selected ? s.color : '#9CA3AF', fontSize: 10, fontWeight: 600 }}>{s.label}</div>
-                        {!isLive && <div style={{ color: '#4B5563', fontSize: 8, fontWeight: 700, marginTop: 2 }}>SOON</div>}
+                        <img src={s.logo} alt={s.label} style={{ width: 48, height: 48, objectFit: 'contain', display: 'block' }} />
+                        <div style={{ color: selected ? s.color : '#fff', fontSize: 12, fontWeight: 600 }}>{s.label}</div>
+                        {!isLive && <div style={{ color: '#4B5563', fontSize: 10 }}>SOON</div>}
                       </button>
                     )
                   })}
