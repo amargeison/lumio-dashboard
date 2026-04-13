@@ -538,6 +538,14 @@ export default function SportsDemoGate({
       localStorage.removeItem(sessionKey(sport))
       localStorage.removeItem(`lumio_${sport}_demo_active`)
       localStorage.removeItem(`lumio_${sport}_photos`)
+      localStorage.removeItem(`lumio_${sport}_name`)
+      localStorage.removeItem(`lumio_${sport}_nickname`)
+      localStorage.removeItem(`lumio_${sport}_brand_name`)
+      localStorage.removeItem(`lumio_${sport}_brand_logo`)
+      localStorage.removeItem(`lumio_${sport}_profile_photo`)
+      localStorage.removeItem(`lumio_${sport}_photo_fit`)
+      const email = session?.email
+      if (email) localStorage.removeItem(`lumio_demo_photo_${email.toLowerCase()}`)
     } catch { /* ignore */ }
     setSession(null); setStep(isDevHost ? 'club' : 'email'); setEmail(''); setCode('')
     setUserName(''); setClubName(defaultClubName)
