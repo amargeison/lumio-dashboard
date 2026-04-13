@@ -10,17 +10,17 @@ import { createBrowserClient } from '@supabase/ssr'
 
 type SportId = 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens'
 
-const SPORTS: { id: SportId; label: string; icon: string; color: string }[] = [
-  { id: 'tennis', label: 'Tennis', icon: '🎾', color: '#7C3AED' },
-  { id: 'golf', label: 'Golf', icon: '⛳', color: '#15803D' },
-  { id: 'darts', label: 'Darts', icon: '🎯', color: '#dc2626' },
-  { id: 'boxing', label: 'Boxing', icon: '🥊', color: '#dc2626' },
-  { id: 'cricket', label: 'Cricket', icon: '🏏', color: '#10b981' },
-  { id: 'rugby', label: 'Rugby', icon: '🏉', color: '#f97316' },
-  { id: 'football', label: 'Football Pro', icon: '⚽', color: '#2563eb' },
-  { id: 'nonleague', label: 'Non-League', icon: '⚽', color: '#f59e0b' },
-  { id: 'grassroots', label: 'Grassroots', icon: '⚽', color: '#22c55e' },
-  { id: 'womens', label: "Women's FC", icon: '⚽', color: '#ec4899' },
+const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
+  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', color: '#7C3AED' },
+  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', color: '#15803D' },
+  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
+  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', color: '#dc2626' },
+  { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', color: '#10b981' },
+  { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', color: '#f97316' },
+  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
+  { id: 'nonleague', label: 'Non-League', logo: '/football_logo.png', color: '#f59e0b' },
+  { id: 'grassroots', label: 'Grassroots', logo: '/football_logo.png', color: '#22c55e' },
+  { id: 'womens', label: "Women's FC", logo: '/womens_fc_logo.png', color: '#ec4899' },
 ]
 
 const LIVE_SPORTS = new Set<SportId>(['tennis', 'golf', 'darts', 'boxing'])
@@ -144,7 +144,8 @@ export default function SportsSignupPage() {
                           border: `1px solid ${selected ? s.color : '#1F2937'}`,
                           opacity: isLive ? 1 : 0.4, transition: 'all 0.15s',
                         }}>
-                        <div style={{ fontSize: 22, marginBottom: 2 }}>{s.icon}</div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={s.logo} alt={s.label} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 2 }} />
                         <div style={{ color: selected ? s.color : '#9CA3AF', fontSize: 10, fontWeight: 600 }}>{s.label}</div>
                         {!isLive && <div style={{ color: '#4B5563', fontSize: 8, fontWeight: 700, marginTop: 2 }}>SOON</div>}
                       </button>

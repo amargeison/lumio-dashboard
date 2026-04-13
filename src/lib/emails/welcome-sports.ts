@@ -6,6 +6,19 @@ const SPORT_LABELS: Record<string, string> = {
   nonleague: 'Non-League', grassroots: 'Grassroots', womens: "Women's FC",
 }
 
+const SPORT_LOGOS: Record<string, string> = {
+  tennis: 'https://www.lumiosports.com/tennis_logo.png',
+  darts: 'https://www.lumiosports.com/darts_logo.png',
+  golf: 'https://www.lumiosports.com/golf_logo.png',
+  boxing: 'https://www.lumiosports.com/boxing_logo.png',
+  cricket: 'https://www.lumiosports.com/cricket_logo.png',
+  rugby: 'https://www.lumiosports.com/rugby_logo.png',
+  football: 'https://www.lumiosports.com/football_logo.png',
+  nonleague: 'https://www.lumiosports.com/football_logo.png',
+  grassroots: 'https://www.lumiosports.com/football_logo.png',
+  womens: 'https://www.lumiosports.com/womens_fc_logo.png',
+}
+
 const DEMO_SLUGS: Record<string, string> = {
   tennis: 'tennis-demo', golf: 'golf-demo', darts: 'darts-demo',
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
@@ -24,12 +37,14 @@ export function generateSportsWelcomeEmail(
   const demoSlug = DEMO_SLUGS[sport] || `${sport}-demo`
   const demoUrl = `https://www.lumiosports.com/${sport}/${demoSlug}`
   const appUrl = `https://www.lumiosports.com/${sport}/app`
+  const sportLogoHtml = `<img src="${SPORT_LOGOS[sport] || SPORT_LOGOS.tennis}" width="48" height="48" style="object-fit:contain;margin-bottom:12px;" alt="${sportLabel}" />`
   const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}&redirectTo=/${sport}/app`
 
   if (setupType === 'lumio') {
     return emailLayout({
       preheader: `Welcome to Lumio Sports, ${firstName}. Our team will set up your ${sportLabel} portal.`,
       body: `
+${sportLogoHtml}
 <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#ffffff;">You&rsquo;re in, ${firstName}. Welcome to Lumio Sports.</h1>
 <p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
   You&rsquo;re now a founding member of Lumio ${sportLabel}. That means 3 months completely free, and we build what you ask for.
@@ -63,6 +78,7 @@ ${ctaButton(`Explore the ${sportLabel} demo &rarr;`, demoUrl)}
     return emailLayout({
       preheader: `Your ${sportLabel} portal is ready — sign in now.`,
       body: `
+${sportLogoHtml}
 <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#ffffff;">Your ${sportLabel} portal is ready, ${firstName}.</h1>
 <p style="margin:0 0 28px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
   Everything is set up and waiting for you. Sign in any time to access your AI morning briefing, match prep, travel tools, and more.
@@ -80,6 +96,7 @@ ${ctaButton(`Sign in to your portal &rarr;`, loginUrl)}
   return emailLayout({
     preheader: `Welcome to Lumio Sports, ${firstName}. Complete your ${sportLabel} portal setup.`,
     body: `
+${sportLogoHtml}
 <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#ffffff;">Welcome to Lumio Sports, ${firstName}.</h1>
 <p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
   You&rsquo;re registered as a Lumio ${sportLabel} founding member. That means 3 months completely free &mdash; no card, no commitment.
