@@ -649,10 +649,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">
             {[
-              { icon:'📊', value:`#${player.pdcRank}`, label:'PDC Rank', color:'#dc2626' },
-              { icon:'🎯', value:String(player.threeDartAverage), label:'3-Dart Avg', color:'#F97316' },
-              { icon:'✅', value:`${player.checkoutPercent}%`, label:'Checkout', color:'#22C55E' },
-              { icon:'🏆', value:'#12', label:'Career High', color:'#8B5CF6' },
+              { icon:'📊', value: session.isDemoShell === false ? '—' : `#${player.pdcRank}`, label:'PDC Rank', color:'#dc2626' },
+              { icon:'🎯', value: session.isDemoShell === false ? '—' : String(player.threeDartAverage), label:'3-Dart Avg', color:'#F97316' },
+              { icon:'✅', value: session.isDemoShell === false ? '—' : `${player.checkoutPercent}%`, label:'Checkout', color:'#22C55E' },
+              { icon:'🏆', value: session.isDemoShell === false ? '—' : '#12', label:'Career High', color:'#8B5CF6' },
             ].map((s, i) => (
               <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
                 style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
