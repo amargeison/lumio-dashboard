@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, memo } from 'react'
+import { useState, useRef, useCallback, useEffect, memo } from 'react'
 
 // ── TYPES ──────────────────────────────────────────────────────────────────
 export interface SportsDemoSession {
@@ -344,14 +344,46 @@ export default function SportsDemoGate({
     } catch { return null }
   })()
 
+  // Check for ?restore=true from smart sign-in flow
+  const restoredFromParams = (() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const url = new URL(window.location.href)
+      if (url.searchParams.get('restore') !== 'true') return null
+      const restoreName = url.searchParams.get('name')
+      if (!restoreName) return null
+      const restored: SportsDemoSession = {
+        email: '',
+        userName: restoreName,
+        clubName: url.searchParams.get('club') || defaultClubName,
+        role: url.searchParams.get('role') || roles[0]?.id || 'player',
+        photoDataUrl: null,
+        logoDataUrl: null,
+        sport,
+        verifiedAt: new Date().toISOString(),
+      }
+      // Persist so future visits don't need restore params
+      saveSession(sport, restored)
+      // Clean URL
+      url.searchParams.delete('restore')
+      url.searchParams.delete('name')
+      url.searchParams.delete('club')
+      url.searchParams.delete('role')
+      window.history.replaceState({}, '', url.pathname)
+      return restored
+    } catch { return null }
+  })()
+
+  const initialSession = restoredFromParams || existingSession
+
   const isDevHost = typeof window !== 'undefined' && (
     window.location.hostname.includes('vercel.app') ||
     window.location.hostname.includes('dev.') ||
     window.location.hostname === 'localhost'
   )
 
-  const [session, setSession] = useState<SportsDemoSession | null>(existingSession)
-  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(existingSession ? 'done' : isDevHost ? 'club' : 'email')
+  const [session, setSession] = useState<SportsDemoSession | null>(initialSession)
+  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(initialSession ? 'done' : isDevHost ? 'club' : 'email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [selectedRole, setSelectedRole] = useState(roles[0]?.id ?? '')
