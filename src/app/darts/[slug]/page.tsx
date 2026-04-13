@@ -8,6 +8,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
+import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -267,10 +268,12 @@ interface DartsAISectionProps {
 }
 
 function DartsAISection({ context, player, session }: DartsAISectionProps) {
+  const isDemoShell = session.isDemoShell !== false
+  const demoContent = isDemoShell ? getDemoAISummary('darts', context) : null
   const [summary, setSummary]     = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [generated, setGenerated] = useState(false)
-  const hasGenerated = useRef(false)
+  const [error, setError]         = useState<string | null>(null)
 
   const HIGHLIGHTS: Record<string, string[]> = {
     dashboard:      ['Match tonight — European Championship R1. Win = £110,000 + ranking points', 'Red Dragon sponsor post due before tonight — agent chasing', '3-dart average up 0.8 this week — form trending well', 'Dortmund venue: 14°C overcast — travel confirmed', 'Practice session at 10:00 — focus on D16 checkout'],
@@ -319,16 +322,17 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
         b.type === 'text' ? b.text : '').join('') || ''
       setSummary(cleanResponse(raw))
       setGenerated(true)
-    } catch { setSummary('Unable to generate summary.') }
+      setError(null)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'BUSY') setError('AI is briefly busy — try again in a moment.')
+      else if (msg === 'AUTH') setError('AI service unavailable. Please contact support.')
+      else setError('Could not generate summary. Try again.')
+    }
     setLoading(false)
   }
 
-  useEffect(() => {
-    if (hasGenerated.current || summary || loading) return
-    hasGenerated.current = true
-    generateSummary()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // No auto-fire — demo uses static content, real users click Generate
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
