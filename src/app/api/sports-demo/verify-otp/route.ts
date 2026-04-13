@@ -12,7 +12,7 @@ function getSupabase() {
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
   try {
-    const { email, code, sport, clubName, userName, role } = await req.json()
+    const { email, code, sport, clubName, userName, role, nickname } = await req.json()
 
     if (!email || !code || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
         sport,
         club_name: clubName || null,
         user_name: userName || null,
+        nickname: nickname || null,
         role: role || null,
         first_seen: new Date().toISOString(),
         last_seen: new Date().toISOString(),

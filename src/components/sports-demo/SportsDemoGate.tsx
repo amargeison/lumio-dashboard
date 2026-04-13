@@ -113,11 +113,12 @@ const ClubStep = memo(function ClubStep({
 })
 
 const ProfileStep = memo(function ProfileStep({
-  userNameRef, photoDataUrl, setPhotoDataUrl, photoInputRef, handlePhotoUpload,
+  userNameRef, nicknameRef, photoDataUrl, setPhotoDataUrl, photoInputRef, handlePhotoUpload,
   accentColor, sport, sportLabel, sportEmoji, roles, selectedRole, defaultUserName,
   onContinue, onSkip,
 }: {
   userNameRef: React.RefObject<HTMLInputElement | null>
+  nicknameRef: React.RefObject<HTMLInputElement | null>
   photoDataUrl: string | null
   setPhotoDataUrl: (v: string) => void
   photoInputRef: React.RefObject<HTMLInputElement | null>
@@ -132,6 +133,7 @@ const ProfileStep = memo(function ProfileStep({
   onContinue: () => void
   onSkip: () => void
 }) {
+  const [liveNickname, setLiveNickname] = useState('')
   const initials = (defaultUserName || 'DU').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   return (
@@ -188,6 +190,7 @@ const ProfileStep = memo(function ProfileStep({
           </div>
           <div className="text-center">
             <div className="text-base font-black text-white uppercase tracking-wide">{defaultUserName || 'YOUR NAME'}</div>
+            {liveNickname && <div style={{ color: accentColor, fontSize: 10, fontWeight: 600 }}>&quot;{liveNickname}&quot;</div>}
             <div className="text-xs mt-0.5" style={{ color: accentColor }}>{roles.find(r => r.id === selectedRole)?.label ?? 'Player'}</div>
           </div>
           <div className="w-full grid grid-cols-2 gap-x-4 text-[10px]">
@@ -204,6 +207,12 @@ const ProfileStep = memo(function ProfileStep({
       <div>
         <input ref={userNameRef} type="text" defaultValue={defaultUserName} placeholder="Your name"
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500" />
+        <input ref={nicknameRef} type="text" value={liveNickname}
+          onChange={e => setLiveNickname(e.target.value)}
+          placeholder='e.g. "The Hammer", "The Arrow"'
+          className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500"
+          style={{ marginTop: 8 }} />
+        <p style={{ color: '#4B5563', fontSize: 11, marginTop: 4, marginBottom: 0 }}>Optional — your playing nickname</p>
         <p style={{ color: '#4B5563', fontSize: 12, textAlign: 'center', marginTop: 8, marginBottom: 0 }}>
           No photo or name? No problem — we&apos;ll load demo player data so you can still explore the full portal.
         </p>
@@ -405,6 +414,7 @@ export default function SportsDemoGate({
   const logoInputRef = useRef<HTMLInputElement>(null)
   const clubNameRef = useRef<HTMLInputElement>(null)
   const userNameRef = useRef<HTMLInputElement>(null)
+  const nicknameRef = useRef<HTMLInputElement>(null)
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
     const file = e.target.files?.[0]
@@ -471,7 +481,7 @@ export default function SportsDemoGate({
   const finaliseSession = () => {
     const resolvedUserName = userName.trim() || userNameRef.current?.value?.trim() || ''
     const resolvedClubName = clubName.trim() || clubNameRef.current?.value?.trim() || defaultClubName
-    console.log('finaliseSession called', { email, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, logoDataUrl })
+    const resolvedNickname = nicknameRef.current?.value?.trim() || ''
 
     const newSession: SportsDemoSession = {
       email: email || 'dev@lumio.test',
@@ -482,6 +492,10 @@ export default function SportsDemoGate({
       logoDataUrl,
       sport,
       verifiedAt: new Date().toISOString(),
+    }
+    // Persist nickname to localStorage for the portal to pick up
+    if (resolvedNickname) {
+      try { localStorage.setItem(`lumio_${sport}_nickname`, resolvedNickname) } catch {}
     }
     try {
       localStorage.setItem(sessionKey(sport), JSON.stringify(newSession))
@@ -495,7 +509,7 @@ export default function SportsDemoGate({
     if (email) {
       fetch('/api/sports-demo/get-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, sport, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole }),
+        body: JSON.stringify({ email, sport, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, nickname: resolvedNickname }),
       }).catch(() => {})
     }
     setSession(newSession)
@@ -595,6 +609,7 @@ export default function SportsDemoGate({
     <Overlay>
       <ProfileStep
         userNameRef={userNameRef}
+        nicknameRef={nicknameRef}
         photoDataUrl={photoDataUrl}
         setPhotoDataUrl={setPhotoDataUrl}
         photoInputRef={photoInputRef}
