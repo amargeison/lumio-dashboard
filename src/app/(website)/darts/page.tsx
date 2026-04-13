@@ -21,7 +21,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🎯', title: 'Match Prep & Opponent Intel', desc: 'H2H records, opponent tendency cards, 3-phase game plan, checkout routes, AI briefing generator. Walk to the oche prepared.' },
   { icon: '🌅', title: 'AI Morning Briefing', desc: 'Role-specific daily briefings for player, coach, agent and physio. Voice-delivered via ElevenLabs before first session.' },
   { icon: '💰', title: 'Financial Dashboard', desc: 'Prize money ledger, PDPA levy tracker, agent commission, net income forecast. Exportable for your accountant.' },
-  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Red Dragon, Crown Wagers — all tracked automatically.' },
+  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Vanta Sports, Crown Wagers — all tracked automatically.' },
   { icon: '✈️', title: 'Travel & Logistics', desc: 'Event-by-event flight planning, hotel contacts, practice board booking across Euro Tour venues. 40+ events a year, organised.' },
   { icon: '⭐', title: 'Performance Rating & Stats', desc: 'First 9 average, checkout %, 180s per match, bust rate. A composite Performance Rating updated after every match.' },
   { icon: '🔥', title: 'Dartboard Heatmap', desc: 'Interactive SVG board with heat overlay per segment. See exactly where your darts land — by scenario and by double.' },
@@ -147,7 +147,7 @@ function DashboardMockup() {
       <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <Badge color="#EF4444" bg="rgba(239,68,68,0.15)">LIVE · vs G. Price</Badge>
         <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">£12.4k drops off week</Badge>
-        <Badge color={RED_LIGHT} bg="rgba(239,68,85,0.15)">Red Dragon content 16:00</Badge>
+        <Badge color={RED_LIGHT} bg="rgba(239,68,85,0.15)">Vanta Sports content 16:00</Badge>
       </div>
     </MockupFrame>
   )
@@ -179,7 +179,7 @@ function BriefingMockup() {
           <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: RED, color: '#fff', border: 'none' }}>▶ Play Briefing</button>
         </div>
         <p style={{ fontSize: 9, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          &ldquo;Good morning, Jake. You&apos;re ranked 19th on the PDC Order of Merit. Tonight you play Gerwyn Price in the European Championship first round — your H2H is 8–3 in your favour. £12,400 drops off your OoM this week from Players Championship 8 last year. Red Dragon content shoot at 16:00 before you travel to Dortmund...&rdquo;
+          &ldquo;Good morning, Jake. You&apos;re ranked 19th on the PDC Order of Merit. Tonight you play Gerwyn Price in the European Championship first round — your H2H is 8–3 in your favour. £12,400 drops off your OoM this week from Players Championship 8 last year. Vanta Sports content shoot at 16:00 before you travel to Dortmund...&rdquo;
         </p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
@@ -248,7 +248,7 @@ function EquipmentMockup() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>Tournament — The Hammer SE</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Active setup · Sponsored by Red Dragon</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Active setup · Sponsored by Vanta Sports</div>
         </div>
         <Badge color="#10B981" bg="rgba(16,185,129,0.2)">Active</Badge>
       </div>
@@ -262,7 +262,7 @@ function EquipmentMockup() {
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: RED_LIGHT, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>🎯 Barrel</div>
           <div style={{ fontSize: 9, color: TEXT, lineHeight: 1.6 }}>
-            Red Dragon &ldquo;The Hammer&rdquo; SE<br />
+            Vanta Sports &ldquo;The Hammer&rdquo; SE<br />
             <span style={{ color: MUTED }}>24.0g · 97% Tungsten · Torpedo</span><br />
             <span style={{ color: MUTED }}>Micro grip · 52mm</span>
           </div>
@@ -302,7 +302,7 @@ function EquipmentMockup() {
 
 function SponsorshipMockup() {
   const deals = [
-    { name: 'Red Dragon — Equipment & Content', status: 'Active', statusColor: '#10B981', value: '£85,000/yr + bonuses', expires: 'Expires Dec 2025 (23d)',
+    { name: 'Vanta Sports — Equipment & Content', status: 'Active', statusColor: '#10B981', value: '£85,000/yr + bonuses', expires: 'Expires Dec 2025 (23d)',
       obligations: ['Use RD barrels in all matches', 'Wear RD logo on shirt', 'Content posts 4/month'],
       bonuses: ['Top 16 +£15k', 'Major QF +£7.5k', 'TV final +£10k'] },
     { name: 'Crown Wagers — Ambassador', status: 'Active', statusColor: '#10B981', value: '£60,000/yr', expires: 'Expires Jun 2026' },
@@ -344,7 +344,7 @@ function TeamHubMockup() {
   const team = [
     { name: 'Marco Rossi', role: 'Lead Coach', status: 'On-site Dortmund', statusColor: '#10B981', note: 'Match prep uploaded · 07:45 today' },
     { name: 'Dr. Anita Singh', role: 'Physio', status: 'Cleared for play', statusColor: '#10B981', note: 'Shoulder treatment complete · 08:30' },
-    { name: 'James Whitfield', role: 'Agent', status: 'Red Dragon call Thu', statusColor: '#F59E0B', note: 'Renewal terms drafted · Wed evening' },
+    { name: 'James Whitfield', role: 'Agent', status: 'Vanta Sports call Thu', statusColor: '#F59E0B', note: 'Renewal terms drafted · Wed evening' },
     { name: 'Sarah Keane', role: 'Mental Coach', status: 'Pre-match call 18:00', statusColor: RED_LIGHT, note: 'Breathing anchor routine updated' },
     { name: 'Mike Lawrence', role: 'Massage Therapist', status: 'Confirmed 13:00', statusColor: '#10B981', note: 'Deep tissue session booked' },
     { name: 'Rachel Keane', role: 'Nutritionist', status: 'Match-day menu sent', statusColor: '#3B82F6', note: 'Pre-match meal at 15:00 confirmed' },
