@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { BoxingPortalInner } from '../[slug]/page'
+import OnboardingWizard from '@/components/sports/OnboardingWizard'
 
 const SPORT = 'boxing'
 
@@ -15,6 +16,7 @@ export default function BoxingAppPage() {
   const router = useRouter()
   const [session, setSession] = useState<SportsDemoSession | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [onboardingDone, setOnboardingDone] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -31,7 +33,7 @@ export default function BoxingAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -40,6 +42,7 @@ export default function BoxingAppPage() {
       if (!profile) { router.replace('/sports-signup'); return }
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
+      setOnboardingDone(profile.onboarding_complete ?? false)
       setSession({
         email: user.email ?? '',
         userName: profile.display_name ?? '',
@@ -81,5 +84,8 @@ export default function BoxingAppPage() {
     router.push('/sports-login')
   }
 
+  if (!onboardingDone) {
+    return <OnboardingWizard sport="boxing" accentColor="#ef4444" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={() => setOnboardingDone(true)} />
+  }
   return <BoxingPortalInner session={session} onSignOut={handleSignOut} />
 }
