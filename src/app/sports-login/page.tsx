@@ -9,10 +9,12 @@ function getSupabase() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 }
 
-type UserType = 'founder' | 'demo' | 'unknown' | null
+type UserType = 'founder' | 'demo' | 'both' | 'unknown' | null
 interface IdentifyResult {
   type: UserType
   sport?: string
+  founderSport?: string
+  demoSport?: string
   userName?: string
   clubName?: string
   role?: string
@@ -24,7 +26,8 @@ function SportsLoginForm() {
   const intendedRedirect = params.get('redirectTo') || ''
   const prefillEmail = params.get('email') || ''
 
-  const [step, setStep] = useState<'email' | 'otp' | 'unknown'>('email')
+  const [step, setStep] = useState<'email' | 'otp' | 'choose' | 'unknown'>('email')
+  const [chosenPath, setChosenPath] = useState<'founder' | 'demo' | null>(null)
   const [email, setEmail] = useState(prefillEmail)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -63,8 +66,12 @@ function SportsLoginForm() {
         setStep('otp')
         setResendCountdown(30)
         setTimeout(() => inputRefs.current[0]?.focus(), 100)
+      } else if (data.type === 'both') {
+        // Both accounts — let user choose
+        setStep('choose')
       } else if (data.type === 'demo') {
         // Send demo OTP
+        setChosenPath('demo')
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -83,13 +90,35 @@ function SportsLoginForm() {
     setLoading(false)
   }
 
+  // Proceed after choosing founder or demo path
+  const proceedWithChoice = async (path: 'founder' | 'demo') => {
+    setChosenPath(path)
+    setLoading(true); setError('')
+    try {
+      if (path === 'founder') {
+        const supabase = getSupabase()
+        const { error: otpError } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+        if (otpError) throw otpError
+      } else {
+        const sport = userInfo.demoSport || userInfo.sport || 'darts'
+        const otpRes = await fetch('/api/sports-demo/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim(), sport }) })
+        if (!otpRes.ok) throw new Error('Failed to send demo code')
+      }
+      setStep('otp')
+      setResendCountdown(30)
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to send code.') }
+    setLoading(false)
+  }
+
   // Step 2: Verify OTP
   const verifyOtp = async () => {
     const code = digits.join('')
     if (code.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true); setError('')
     try {
-      if (userInfo.type === 'founder') {
+      const effectiveType = userInfo.type === 'both' ? chosenPath : userInfo.type
+      if (effectiveType === 'founder') {
         const supabase = getSupabase()
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           email: email.trim(),
@@ -108,7 +137,7 @@ function SportsLoginForm() {
           .maybeSingle()
 
         router.push(profile ? `/${profile.sport}/app` : '/sports-signup')
-      } else if (userInfo.type === 'demo') {
+      } else if (effectiveType === 'demo') {
         const res = await fetch('/api/sports-demo/verify-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -125,7 +154,7 @@ function SportsLoginForm() {
         if (!data.success && !data.verified) throw new Error(data.error || 'Invalid code')
 
         // Redirect to demo with restore params
-        const sport = userInfo.sport || 'tennis'
+        const sport = userInfo.demoSport || userInfo.sport || 'tennis'
         const restoreParams = new URLSearchParams({
           restore: 'true',
           ...(userInfo.userName ? { name: userInfo.userName } : {}),
@@ -251,6 +280,43 @@ function SportsLoginForm() {
                 </button>
               )}
             </div>
+          </>
+        )}
+
+        {/* STEP: Choose — both accounts exist */}
+        {step === 'choose' && (
+          <>
+            <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, textAlign: 'center', marginBottom: 8 }}>
+              We found two accounts
+            </h1>
+            <p style={{ color: '#6B7280', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
+              <strong style={{ color: '#9CA3AF' }}>{email}</strong> has both a founding member portal and a demo session.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button onClick={() => proceedWithChoice('founder')} disabled={loading}
+                style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: 'pointer', background: '#8B5CF615', border: '2px solid #8B5CF6', transition: 'all 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontSize: 20 }}>🏆</span>
+                  <span style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>Founding Member Portal</span>
+                </div>
+                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Access your private {userInfo.founderSport} portal</div>
+                <div style={{ color: '#8B5CF6', fontSize: 13, fontWeight: 600, marginTop: 8 }}>Sign in as founding member →</div>
+              </button>
+              <button onClick={() => proceedWithChoice('demo')} disabled={loading}
+                style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: 'pointer', background: '#111318', border: '2px solid #1F2937', transition: 'all 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontSize: 20 }}>🎯</span>
+                  <span style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>Demo Account</span>
+                </div>
+                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Continue exploring the {userInfo.demoSport} demo</div>
+                <div style={{ color: '#6B7280', fontSize: 13, fontWeight: 600, marginTop: 8 }}>Load my demo →</div>
+              </button>
+            </div>
+            {error && <p style={{ color: '#ef4444', fontSize: 12, marginTop: 12 }}>{error}</p>}
+            <button onClick={() => { setStep('email'); setError(''); setUserInfo({ type: null }); setChosenPath(null) }}
+              style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 12, cursor: 'pointer', marginTop: 16, display: 'block', width: '100%', textAlign: 'center' }}>
+              ← Use a different email
+            </button>
           </>
         )}
 
