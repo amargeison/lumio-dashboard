@@ -5327,8 +5327,8 @@ function AgentPipelineView({ player, session }: { player: TennisPlayer; session:
 
   const watchlist = [
     { brand: 'Apex Performance', sector: 'Apparel', potential: 'GBP 90k', notes: 'Expanding tennis portfolio' },
-    { brand: 'Technogym', sector: 'Fitness', potential: 'GBP 20k', notes: 'Product + small fee' },
-    { brand: 'Bose', sector: 'Audio', potential: 'GBP 35k', notes: 'Athlete programme open' },
+    { brand: 'Technivus Equipment', sector: 'Fitness', potential: 'GBP 20k', notes: 'Product + small fee' },
+    { brand: 'Linea Systems', sector: 'Audio', potential: 'GBP 35k', notes: 'Athlete programme open' },
     { brand: 'Kinetix Hydration', sector: 'Energy', potential: 'GBP 100k', notes: 'Need top 50 for consideration' },
   ];
 
@@ -8558,9 +8558,9 @@ function TennisSponsorDashboard({ session, player }: { session: SportsDemoSessio
   ]
 
   const EVENTS = [
-    { event:'Monte-Carlo Masters QF', date:'Today', venue:'Monte-Carlo CC', broadcast:'Eurosport, Northbridge Sport', exposure:'Est. 2.4M viewers' },
-    { event:'Madrid Open', date:'26 Apr', venue:'Caja Mágica', broadcast:'Eurosport, Apex Tennis Network', exposure:'Est. 3.1M viewers' },
-    { event:'Roland-Garros', date:'25 May', venue:'Stade Roland-Garros', broadcast:'ITV, Eurosport', exposure:'Est. 8.2M viewers' },
+    { event:'Monte-Carlo Masters QF', date:'Today', venue:'Monte-Carlo CC', broadcast:'Continental Sport, Northbridge Sport', exposure:'Est. 2.4M viewers' },
+    { event:'Madrid Open', date:'26 Apr', venue:'Caja Mágica', broadcast:'Continental Sport, Apex Tennis Network', exposure:'Est. 3.1M viewers' },
+    { event:'Roland-Garros', date:'25 May', venue:'Stade Roland-Garros', broadcast:'Crown TV, Continental Sport', exposure:'Est. 8.2M viewers' },
     { event:'Wimbledon', date:'29 Jun', venue:'All England Club', broadcast:'Crown Broadcasting, Apex Sports Network', exposure:'Est. 14.5M viewers' },
   ]
 

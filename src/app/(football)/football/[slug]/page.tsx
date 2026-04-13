@@ -3576,7 +3576,7 @@ function MediaView() {
                 { outlet: 'Crown Broadcasting', type: 'Interview', subject: 'Pre-match preview', deadline: 'Thu PM', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
                 { outlet: 'Northbridge Sport', type: 'Comment', subject: 'Diallo transfer rumour', deadline: 'Today', status: 'Urgent', rec: 'No comment', recColor: '#EF4444' },
                 { outlet: 'Local Gazette', type: 'Access', subject: 'Fan forum coverage', deadline: 'Thu Eve', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
-                { outlet: 'TalkSport', type: 'Phone-in', subject: 'Weekend preview', deadline: 'Fri AM', status: 'New', rec: 'Decline — schedule clash', recColor: '#F59E0B' },
+                { outlet: 'Northbridge Talk', type: 'Phone-in', subject: 'Weekend preview', deadline: 'Fri AM', status: 'New', rec: 'Decline — schedule clash', recColor: '#F59E0B' },
               ].map((r, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.outlet}</td>

@@ -602,7 +602,7 @@ const ACTIONS: Record<string, ActionDef> = {
     steps: ['Configure', 'Review', 'Results', 'Action'],
     fields: [
       { type: 'select', key: 'person', label: 'Person Requested', options: [...SQUAD_NAMES, 'Manager'] },
-      { type: 'select', key: 'outlet', label: 'Outlet', options: ['Crown Broadcasting','Northbridge Sport','ITV','TalkSport','Local Media','Online','Print','Other'] },
+      { type: 'select', key: 'outlet', label: 'Outlet', options: ['Crown Broadcasting','Northbridge Sport','Crown TV','Northbridge Talk','Local Media','Online','Print','Other'] },
       { type: 'input', key: 'topic', label: 'Topic', placeholder: 'e.g. Season form and transfer plans' },
       { type: 'date', key: 'dateRequested', label: 'Date Requested' },
       { type: 'select', key: 'duration', label: 'Duration', options: ['5 min','10 min','15 min','30 min'] },

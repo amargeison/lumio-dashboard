@@ -4407,8 +4407,8 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
         <h2 className="text-white font-medium mb-3">Broadcaster approval status</h2>
         <div className="grid grid-cols-5 gap-2 text-sm">
           {[
-            { b: 'Northbridge Sport', ok: true }, { b: 'DAZN', ok: true }, { b: 'ITV', ok: true },
-            { b: 'Crown Broadcasting', ok: true }, { b: 'RTL (DE)', ok: true },
+            { b: 'Northbridge Sport', ok: true }, { b: 'DAZN', ok: true }, { b: 'Crown TV', ok: true },
+            { b: 'Crown Broadcasting', ok: true }, { b: 'Continental DE', ok: true },
           ].map((s, i) => (
             <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3 text-center">
               <div className="text-[10px] text-gray-500 uppercase tracking-wide">{s.b}</div>
@@ -4423,7 +4423,7 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
           <span className="text-[10px] text-amber-400 uppercase tracking-wide">Partially approved</span>
         </div>
         <div className="text-gray-300 text-sm">"Eye of the Tiger" — Survivor</div>
-        <div className="text-xs text-gray-500 mt-1">Northbridge Sport ✓ · ITV ✓ · Crown Broadcasting ✓ · DAZN ⏳ Pending · RTL ✓</div>
+        <div className="text-xs text-gray-500 mt-1">Northbridge Sport ✓ · Crown TV ✓ · Crown Broadcasting ✓ · DAZN ⏳ Pending · Continental DE ✓</div>
       </div>
       <div className="bg-amber-950/40 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
         ⚠ DAZN backup approval still pending — submit by <strong className="text-amber-100">May 1</strong> for Grand Slam eligibility.
@@ -4442,7 +4442,7 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
             { ev: 'Grand Slam of Darts', date: 'Nov 8', br: 'Northbridge Sport', st: '✓ Approved' },
             { ev: 'Premier League Night 14', date: 'May 2', br: 'Northbridge Sport + DAZN', st: '⏳ DAZN pending' },
             { ev: 'World Matchplay', date: 'Jul 19', br: 'Northbridge Sport', st: '✓ Approved' },
-            { ev: 'German Masters', date: 'Oct 4', br: 'RTL', st: '✓ Approved' },
+            { ev: 'German Masters', date: 'Oct 4', br: 'Continental DE', st: '✓ Approved' },
           ].map((e, i) => (
             <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
               <span className="text-white">{e.ev}</span>
