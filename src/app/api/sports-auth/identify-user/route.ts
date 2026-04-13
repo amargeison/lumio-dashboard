@@ -17,16 +17,14 @@ export async function POST(req: NextRequest) {
     const { data: authUsers } = await supabase.auth.admin.listUsers()
     const authUser = authUsers?.users?.find(u => u.email === normalised)
 
+    let founderSport: string | null = null
     if (authUser) {
       const { data: profile } = await supabase
         .from('sports_profiles')
         .select('sport')
         .eq('id', authUser.id)
-        .single()
-
-      if (profile) {
-        return NextResponse.json({ type: 'founder', sport: profile.sport })
-      }
+        .maybeSingle()
+      if (profile) founderSport = profile.sport
     }
 
     // Check 2: Is this a demo user? (exists in sports_demo_leads)
@@ -34,9 +32,25 @@ export async function POST(req: NextRequest) {
       .from('sports_demo_leads')
       .select('sport, user_name, club_name, role')
       .eq('email', normalised)
-      .order('created_at', { ascending: false })
+      .order('last_seen', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    // Both accounts exist
+    if (founderSport && demoLead) {
+      return NextResponse.json({
+        type: 'both',
+        founderSport,
+        demoSport: demoLead.sport,
+        userName: demoLead.user_name,
+        clubName: demoLead.club_name,
+        role: demoLead.role,
+      })
+    }
+
+    if (founderSport) {
+      return NextResponse.json({ type: 'founder', sport: founderSport })
+    }
 
     if (demoLead) {
       return NextResponse.json({
