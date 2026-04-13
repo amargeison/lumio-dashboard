@@ -8,6 +8,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
+import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -172,10 +173,10 @@ const DEMO_PLAYER: DartsPlayer = {
   plan: 'Premier League · £279/mo',
   manager: 'Dave Harris (DH Sports Management)',
   coach: 'Phil "The Power" Coaching Academy',
-  sponsor1: 'Red Dragon Darts',
-  sponsor2: 'Ladbrokes',
+  sponsor1: 'Vanta Sports Darts',
+  sponsor2: 'Crown Wagers',
   walkOnMusic: 'Enter Sandman — Metallica',
-  dartSetup: { barrelWeight: '24g', flightShape: 'Standard', shaftLength: 'Medium', boardSetup: 'Winmau Blade 6 — 9ft oche' },
+  dartSetup: { barrelWeight: '24g', flightShape: 'Standard', shaftLength: 'Medium', boardSetup: 'Vanta Sports Blade 6 — 9ft oche' },
   careerEarnings: 687420,
   thisYearEarnings: 124800,
   careerTitles: 8,
@@ -267,23 +268,26 @@ interface DartsAISectionProps {
 }
 
 function DartsAISection({ context, player, session }: DartsAISectionProps) {
+  if (context !== 'dashboard') return null
+  const isDemoShell = session.isDemoShell !== false
+  const demoContent = isDemoShell ? getDemoAISummary('darts', context) : null
   const [summary, setSummary]     = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [generated, setGenerated] = useState(false)
-  const hasGenerated = useRef(false)
+  const [error, setError]         = useState<string | null>(null)
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard:      ['Match tonight — European Championship R1. Win = £110,000 + ranking points', 'Red Dragon sponsor post due before tonight — agent chasing', '3-dart average up 0.8 this week — form trending well', 'Dortmund venue: 14°C overcast — travel confirmed', 'Practice session at 10:00 — focus on D16 checkout'],
+    dashboard:      ['Match tonight — European Championship R1. Win = £110,000 + ranking points', 'Vanta Sports sponsor post due before tonight — agent chasing', '3-dart average up 0.8 this week — form trending well', 'Dortmund venue: 14°C overcast — travel confirmed', 'Practice session at 10:00 — focus on D16 checkout'],
     orderofmerit:   ['Currently #19 PDC Order of Merit — up 2 this week', '£12,400 drops off after Players Ch. 8 (Apr 2023)', 'Win tonight: hold at #19. Loss: risk dropping to #22', 'Top-16 OOM qualifies for World Matchplay — currently inside', 'Madrid deadline: must win at least one match to stay safe'],
     averages:       ['3-dart avg 97.8 — top-10 PDC level', 'Checkout % 38.2% — above tour average (35%)', '180s per match: 4.2 — strong', 'First 9-dart attempt this season: Prague Open leg 3', 'Floor average (97.3) above TV average (99.1) — reverse the trend'],
-    checkout:       ['D16 success rate: 62% — below your D20 (78%)', 'Checkout on D4 only 44% — needs focused practice', 'High checkout (141+): 8 this season, 3 this month', 'Opponent tonight: G. Price averages 41.2% checkout', 'Recommend: start on D20/D18 more often — data supports it'],
-    opponentintel:  ['G. Price: averages 101.2 on TV — 4pts above you', 'Price weakness: slow start legs — lead early', 'Price checkout: 39.8% — similar to yours', 'H2H: 3–4 in Price\'s favour. Last 3: 2–1 to you', 'Price under pressure: tends to miss doubles in deciding legs'],
+    checkout:       ['D16 success rate: 62% — below your D20 (78%)', 'Checkout on D4 only 44% — needs focused practice', 'High checkout (141+): 8 this season, 3 this month', 'Opponent tonight: D. Merrick averages 41.2% checkout', 'Recommend: start on D20/D18 more often — data supports it'],
+    opponentintel:  ['D. Merrick: averages 101.2 on TV — 4pts above you', 'Merrick weakness: slow start legs — lead early', 'Merrick checkout: 39.8% — similar to yours', 'H2H: 3–4 in Merrick\'s favour. Last 3: 2–1 to you', 'Merrick under pressure: tends to miss doubles in deciding legs'],
     practicelog:    ['14 sessions this week — highest in 3 weeks', 'D16 practice sessions flagged by coach: 3 booked', 'Average practice 3DA: 99.4 — above match average', '10:00 session today — focus D16, checkout routes', 'Mental coach review Thursday — pressure darts focus'],
-    sponsorship:    ['Red Dragon: barrel content shoot today 16:00', 'Paddy Power ambassador inquiry — agent reviewing', '2 social posts outstanding for Betway', 'Winmau board deal up for renewal — Jun 2026', 'Total sponsor income YTD: £84,200'],
+    sponsorship:    ['Vanta Sports: barrel content shoot today 16:00', 'Crown Wagers ambassador inquiry — agent reviewing', '2 social posts outstanding for Crown Wagers', 'Vanta Sports board deal up for renewal — Jun 2026', 'Total sponsor income YTD: £84,200'],
     travel:         ['Tonight: Dortmund Westfalenhallen — 14°C overcast', 'Next: Prague Open — flights needed Mon 14 Apr', 'Bahrain Masters: visa application submitted', 'Madrid Premier League: hotel confirmed 3 May', 'Travel budget remaining: £8,400 of £24k season allocation'],
     financial:      ['Prize money YTD: £187,420', 'European Ch. R1 prize: £10,000 (W) / £3,000 (L)', 'Agent commission: 15% of gross prize money', 'Tax instalment due 31 Jul — accountant briefed', 'Camp costs this month: £4,200 — on budget'],
-    mental:         ['Pre-match routine: 45-min focused warm-up confirmed', 'Pressure darts session Thursday with Marcos', 'G. Price: known to be disruptive pre-match — stay focused', 'Last 3 deciding legs vs top-16: won 2 of 3 — improving', 'Breathing protocol review requested by coach'],
-    default:        ['Match tonight — European Championship R1', 'Red Dragon content shoot today 16:00', 'D16 checkout rate below target — practice today', 'Prague Open flights needed this week', 'OOM: #19 PDC — hold position tonight'],
+    mental:         ['Pre-match routine: 45-min focused warm-up confirmed', 'Pressure darts session Thursday with Marcos', 'D. Merrick: known to be disruptive pre-match — stay focused', 'Last 3 deciding legs vs top-16: won 2 of 3 — improving', 'Breathing protocol review requested by coach'],
+    default:        ['Match tonight — European Championship R1', 'Vanta Sports content shoot today 16:00', 'D16 checkout rate below target — practice today', 'Prague Open flights needed this week', 'OOM: #19 PDC — hold position tonight'],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -306,7 +310,7 @@ Generate a concise AI department summary for the "${context}" section.
 Player context:
 - PDC Ranking: #${player.pdcRank}
 - 3-dart average: ${player.threeDartAverage}
-- Tonight's match: European Championship R1 vs G. Price (#7) in Dortmund
+- Tonight's match: European Championship R1 vs D. Merrick (#7) in Dortmund
 - Checkout %: ${player.checkoutPercent}%
 
 Write 4-5 bullet points covering the most important insight for ${context}.
@@ -314,21 +318,27 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
           }]
         })
       })
+      if (!res.ok) {
+        if (res.status === 529) throw new Error('BUSY')
+        if (res.status === 401) throw new Error('AUTH')
+        throw new Error('GENERIC')
+      }
       const data = await res.json()
       const raw = data.content?.map((b: {type:string;text?:string}) =>
         b.type === 'text' ? b.text : '').join('') || ''
       setSummary(cleanResponse(raw))
       setGenerated(true)
-    } catch { setSummary('Unable to generate summary.') }
+      setError(null)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'BUSY') setError('AI is briefly busy — try again in a moment.')
+      else if (msg === 'AUTH') setError('AI service unavailable. Please contact support.')
+      else setError('Could not generate summary. Try again.')
+    }
     setLoading(false)
   }
 
-  useEffect(() => {
-    if (hasGenerated.current || summary || loading) return
-    hasGenerated.current = true
-    generateSummary()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // No auto-fire — demo uses static content, real users click Generate
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -336,6 +346,14 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
         <span>{line}</span>
       </div>
     ))
+
+  // Demo shell: static content, no API calls
+  const displaySummary = isDemoShell ? (demoContent?.summary || null) : summary
+  const displayHighlights = isDemoShell ? (demoContent?.highlights || highlights) : highlights
+
+  if (isDemoShell && !demoContent) {
+    console.warn(`[DartsAISection] No demo content for darts/${context}`)
+  }
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-800/60">
@@ -349,19 +367,28 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
               <span>✨</span>
               <span className="text-sm font-bold text-white">AI Summary</span>
             </div>
-            <div className="flex items-center gap-2">
-              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
-              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
-            </div>
+            {isDemoShell ? (
+              <span className="text-[10px] text-gray-600">Generated just now</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+                {generated && <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>}
+              </div>
+            )}
           </div>
-          {!summary && !loading && (
-            <button onClick={generateSummary}
-              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
-              Generate AI summary for this section →
-            </button>
-          )}
-          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
-          {summary && !loading && <div>{renderSummary(summary)}</div>}
+          {isDemoShell ? (
+            displaySummary ? <div>{renderSummary(displaySummary)}</div> : <div className="text-xs text-gray-500">AI Summary</div>
+          ) : (<>
+            {!summary && !loading && !error && (
+              <button onClick={generateSummary}
+                className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
+                Generate AI summary for this section →
+              </button>
+            )}
+            {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+            {error && <div className="text-xs text-red-400 mb-2">{error} <button onClick={generateSummary} className="underline ml-1">Retry</button></div>}
+            {summary && !loading && <div>{renderSummary(summary)}</div>}
+          </>)}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
@@ -369,7 +396,7 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
             <span className="text-[10px] text-red-400 cursor-pointer">Performance</span>
           </div>
           <div className="space-y-2">
-            {highlights.map((h, i) => (
+            {displayHighlights.map((h, i) => (
               <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
                 <span className="text-xs text-red-400 font-bold flex-shrink-0 w-4">{i+1}</span>
                 <span className="text-xs text-gray-300">{h}</span>
@@ -397,7 +424,7 @@ function DartsSendMessage({ onClose, player, session }: { onClose: () => void; p
     { name: 'Steve Morris', role: 'Coach', icon: '📋' },
     { name: 'Dr Paul Reid', role: 'Physiotherapist', icon: '⚕️' },
     { name: 'James Wright', role: 'Agent', icon: '💼' },
-    { name: 'Red Dragon', role: 'Equipment Sponsor', icon: '🐉' },
+    { name: 'Vanta Sports', role: 'Equipment Sponsor', icon: '🐉' },
     { name: 'Marcos Silva', role: 'Sports Psychologist', icon: '🧠' },
   ]
   const CHANNELS = [
@@ -508,10 +535,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     const scheduleRaw = [
       { id:'s1', time:'09:00', label:'AI Morning Briefing',        highlight:false },
       { id:'s2', time:'10:00', label:'Practice — D16 checkout',    highlight:false },
-      { id:'s3', time:'12:00', label:'Red Dragon content shoot',   highlight:false },
+      { id:'s3', time:'12:00', label:'Vanta Sports content shoot',   highlight:false },
       { id:'s4', time:'14:00', label:'Physio — shoulder & elbow',  highlight:false },
       { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
-      { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
+      { id:'s6', time:'20:00', label:'Match vs D. Merrick — R1',     highlight:true },
       { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
     ]
     const greetingPrefix = `${hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'}, ${firstName}. `
@@ -519,7 +546,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       now: new Date(),
       playerName: displayPlayerName,
       schedule: buildScheduleItems(scheduleRaw, scheduleChecked, {}),
-      match: { opponent: 'G. Price', time: '20:00', result: null },
+      match: { opponent: 'D. Merrick', time: '20:00', result: null },
       roundupSummary: buildRoundupSummary(ROUNDUP_CHANNELS),
       sport: 'darts',
       timezone: getUserTimezone(),
@@ -549,7 +576,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   useEffect(() => {
     if (dartsSummary || dartsSummaryLoading) return
     setDartsSummaryLoading(true)
-    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for ${displayPlayerName}, professional darts player ranked #${player.pdcRank} on the PDC tour${displayPlayerNickname ? `, known as ${displayPlayerNickname}` : ''}. Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Gerwyn Price (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Price leads 3-4) and the key tactical note (Price's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
+    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for ${displayPlayerName}, professional darts player ranked #${player.pdcRank} on the PDC tour${displayPlayerNickname ? `, known as ${displayPlayerNickname}` : ''}. Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Darren Merrick (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Merrick leads 3-4) and the key tactical note (Merrick's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
       .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -591,8 +618,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   })
   const ROUNDUP_CHANNELS = [
     { label: 'Agent Messages',     icon: '📞', count: 2, color: '#0D9488', urgent: false, messages: [
-      { from: 'James Wright', text: 'Paddy Power want an answer by Friday — shall I push for better terms?', time: '08:12' },
-      { from: 'James Wright', text: 'Red Dragon renewal call confirmed Thursday 14:00', time: '07:45' },
+      { from: 'James Wright', text: 'Crown Wagers want an answer by Friday — shall I push for better terms?', time: '08:12' },
+      { from: 'James Wright', text: 'Vanta Sports renewal call confirmed Thursday 14:00', time: '07:45' },
     ]},
     { label: 'Tournament Desk',    icon: '🏆', count: 3, color: '#D97706', urgent: true, messages: [
       { from: 'PDC Entry Desk', text: 'Prague Open entry deadline: Apr 19. Please confirm.', time: '09:00' },
@@ -600,11 +627,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       { from: 'PDC Scheduling', text: 'European Ch. R1 board assignment: Board 4, 20:00', time: '07:00' },
     ]},
     { label: 'Sponsor Messages',   icon: '🤝', count: 2, color: '#7C3AED', urgent: false, messages: [
-      { from: 'Betway', text: '2 social posts outstanding — please submit by Thursday', time: '10:15' },
-      { from: 'Ladbrokes', text: 'Quarter promo asset approved. Going live Friday.', time: '09:30' },
+      { from: 'Crown Wagers', text: '2 social posts outstanding — please submit by Thursday', time: '10:15' },
+      { from: 'Crown Wagers', text: 'Quarter promo asset approved. Going live Friday.', time: '09:30' },
     ]},
-    { label: 'Red Dragon',         icon: '🐉', count: 1, color: '#EA580C', urgent: true, messages: [
-      { from: 'Red Dragon Team', text: 'Content shoot today 12:00 — barrel review video. Bring backup set.', time: '08:00' },
+    { label: 'Vanta Sports',         icon: '🐉', count: 1, color: '#EA580C', urgent: true, messages: [
+      { from: 'Vanta Sports Team', text: 'Content shoot today 12:00 — barrel review video. Bring backup set.', time: '08:00' },
     ]},
     { label: 'Coach / Manager',    icon: '🎯', count: 2, color: '#EA580C', urgent: false, messages: [
       { from: 'Steve Morris', text: 'Pre-match brief at 16:30. Focus: D16 under pressure.', time: '07:30' },
@@ -621,7 +648,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       { from: 'Fan - Tom S.', text: 'Great performance last week! Can you sign my shirt at Prague?', time: '11:00' },
       { from: 'Fan - Emma K.', text: 'My son loves watching you play. Any chance of a video message?', time: '10:30' },
       { from: 'Darts Forum', text: 'Thread: Jake Morrison form analysis — 47 replies', time: '09:15' },
-      { from: 'Fan - Mike R.', text: 'Good luck tonight against Price!', time: '08:45' },
+      { from: 'Fan - Mike R.', text: 'Good luck tonight against Merrick!', time: '08:45' },
     ]},
   ]
 
@@ -799,7 +826,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                           ))}
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
-                          <div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next match:</span> <span className="text-white font-semibold">vs G. Price — 20:00 Dortmund</span></div>
+                          <div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next match:</span> <span className="text-white font-semibold">vs D. Merrick — 20:00 Dortmund</span></div>
                           <div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">OOM standing:</span> <span className="text-white font-semibold">#19 — £312,400</span></div>
                         </div>
                       </div>
@@ -819,9 +846,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                         </div>
                         <div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>
                           {[
-                            { icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%.' },
-                            { icon:'🤝', text:'Red Dragon content shoot at 12:00 — penalty clause. Kit prepped.' },
-                            { icon:'📬', text:'2 urgent messages: Paddy Power £85k/yr offer + Prague Open entry deadline.' },
+                            { icon:'🎯', text:'Tonight vs D. Merrick (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Merrick. His checkout 39.8% vs yours 44%.' },
+                            { icon:'🤝', text:'Vanta Sports content shoot at 12:00 — penalty clause. Kit prepped.' },
+                            { icon:'📬', text:'2 urgent messages: Crown Wagers £85k/yr offer + Prague Open entry deadline.' },
                             { icon:'✈️', text:'Travel to Dortmund confirmed. Return flight 23:30 via Düsseldorf.' },
                           ].map((item, i) => (
                             <div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
@@ -918,8 +945,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                         {[
                           { name:'Dave Askew', role:'Manager', status:'Confirmed travel to Dortmund', color:'#dc2626' },
                           { name:'Steve Morris', role:'Coach', status:'Pre-match briefing at 16:30', color:'#F97316' },
-                          { name:'Red Dragon', role:'Sponsor', status:'Content shoot 12:00 today', color:'#EA580C' },
-                          { name:'James Wright', role:'Agent', status:'Paddy Power response pending', color:'#0ea5e9' },
+                          { name:'Vanta Sports', role:'Sponsor', status:'Content shoot 12:00 today', color:'#EA580C' },
+                          { name:'James Wright', role:'Agent', status:'Crown Wagers response pending', color:'#0ea5e9' },
                         ].map((m, i) => (
                           <div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
                             <div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div>
@@ -941,11 +968,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                       <h2 className="text-xl font-black text-white mb-2">AI that actually helps you win.</h2>
                       <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Match Report AI analyses your last match. Opponent Scout AI breaks down who you&apos;re playing tonight. Mental Prep AI builds your pre-match routine. All powered by Claude — the world&apos;s most advanced AI.</p>
                       <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}>
-                        <div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Opponent Scout AI — G. Price</span></div>
+                        <div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Opponent Scout AI — D. Merrick</span></div>
                         <div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}>
-                          <p>Tonight vs G. Price (PDC #7): His checkout is 39.8% vs your {player.checkoutPercent}% — you have the edge on doubles.</p>
+                          <p>Tonight vs D. Merrick (PDC #7): His checkout is 39.8% vs your {player.checkoutPercent}% — you have the edge on doubles.</p>
                           <p>He struggles on D16 under pressure — 28% conversion rate in deciding legs. Your D16 is 52%.</p>
-                          <p>Start strong on the opening leg. Price&apos;s first-3 average drops 6 points when he loses leg 1.</p>
+                          <p>Start strong on the opening leg. Merrick&apos;s first-3 average drops 6 points when he loses leg 1.</p>
                         </div>
                         <div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using live PDC match data · Claude AI</div>
                       </div>
@@ -957,12 +984,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                     {/* ── Step 8: Sponsors ── */}
                     {step.preview === 'sponsor' && (<>
                       <h2 className="text-xl font-black text-white mb-2">Never miss a sponsor deadline again.</h2>
-                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Red Dragon content shoots, social media obligations, post-match appearances — all tracked. Social Media AI writes the caption, you approve it, one click posts it.</p>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Vanta Sports content shoots, social media obligations, post-match appearances — all tracked. Social Media AI writes the caption, you approve it, one click posts it.</p>
                       <div className="space-y-2 mb-4">
                         {[
-                          { name:'Red Dragon', status:'Content shoot 12:00 today', badge:'DUE NOW', badgeColor:'#EF4444', value:'£48k/yr' },
-                          { name:'Betway', status:'2 social posts outstanding', badge:'OVERDUE', badgeColor:'#F59E0B', value:'£22k/yr' },
-                          { name:'Paddy Power', status:'Ambassador inquiry — respond by Apr 25', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£40k/yr' },
+                          { name:'Vanta Sports', status:'Content shoot 12:00 today', badge:'DUE NOW', badgeColor:'#EF4444', value:'£48k/yr' },
+                          { name:'Crown Wagers', status:'2 social posts outstanding', badge:'OVERDUE', badgeColor:'#F59E0B', value:'£22k/yr' },
+                          { name:'Crown Wagers', status:'Ambassador inquiry — respond by Apr 25', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£40k/yr' },
                         ].map((s, i) => (
                           <div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
                             <div className="flex-1 min-w-0">
@@ -984,10 +1011,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                       <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything urgent — ranking points dropping off, sponsor deadlines, visa expiry, entry deadlines. Sorted by financial impact so you always know what matters most.</p>
                       <div className="space-y-2 mb-4">
                         {[
-                          { badge:'TONIGHT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Match vs G. Price — Euro Ch. R1. 20:00 Dortmund.', sub:'Miss = lose £110,000 + ranking points' },
-                          { badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Red Dragon content shoot at 12:00. Penalty clause applies.', sub:'Contract breach risk' },
+                          { badge:'TONIGHT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Match vs D. Merrick — Euro Ch. R1. 20:00 Dortmund.', sub:'Miss = lose £110,000 + ranking points' },
+                          { badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Vanta Sports content shoot at 12:00. Penalty clause applies.', sub:'Contract breach risk' },
                           { badge:'THIS WK', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'Prague Open flights — prices rising £8/day.', sub:'Save £80+ booking now' },
-                          { badge:'14 DAYS', bg:'rgba(139,92,246,0.15)', color:'#8B5CF6', text:'Paddy Power ambassador — £40k/yr. Respond by Apr 25.', sub:'Competitor also in talks' },
+                          { badge:'14 DAYS', bg:'rgba(139,92,246,0.15)', color:'#8B5CF6', text:'Crown Wagers ambassador — £40k/yr. Respond by Apr 25.', sub:'Competitor also in talks' },
                         ].map((d, i) => (
                           <div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}>
                             <span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span>
@@ -1148,12 +1175,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 </div>
                 <div className="text-center">
                   <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">GP</div>
-                  <div className="text-xs font-bold text-white">G. Price</div>
+                  <div className="text-xs font-bold text-white">D. Merrick</div>
                   <div className="text-[10px] text-gray-500">#7 PDC</div>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-amber-400">
-                H2H: 3–4 Price. His checkout 39.8% vs yours {player.checkoutPercent}% — close match. Start strong.
+                H2H: 3–4 Merrick. His checkout 39.8% vs yours {player.checkoutPercent}% — close match. Start strong.
               </div>
             </div>
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
@@ -1162,10 +1189,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 {[
                   { id:'s1', time:'09:00', label:'AI Morning Briefing',        highlight:false },
                   { id:'s2', time:'10:00', label:'Practice — D16 checkout',    highlight:false },
-                  { id:'s3', time:'12:00', label:'Red Dragon content shoot',   highlight:false },
+                  { id:'s3', time:'12:00', label:'Vanta Sports content shoot',   highlight:false },
                   { id:'s4', time:'14:00', label:'Physio — shoulder & elbow',  highlight:false },
                   { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
-                  { id:'s6', time:'20:00', label:'Match vs G. Price — R1',     highlight:true },
+                  { id:'s6', time:'20:00', label:'Match vs D. Merrick — R1',     highlight:true },
                   { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
                 ].map((s) => {
                   const done = scheduleChecked[s.id]
@@ -1202,7 +1229,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">20:00</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£110,000</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£30,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Darts</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Northbridge Sport Darts</span></div>
               </div>
             </div>
           </>}
@@ -1251,10 +1278,10 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 {dartsSummaryLoading && <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{ width: `${60 + i * 12}%` }} />)}</div>}
                 {dartsSummary && !dartsSummaryLoading && <div className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{dartsSummary}</div>}
                 {!dartsSummary && !dartsSummaryLoading && <div className="space-y-3">{[
-                  { icon:'🎯', text:'Tonight vs G. Price (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Price. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
-                  { icon:'📬', text:'2 urgent messages: Paddy Power ambassador offer via agent (£85k/yr) + Red Dragon flagging content deadline for 12:00 shoot.' },
-                  { icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Red Dragon shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
-                  { icon:'🤝', text:'Red Dragon content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
+                  { icon:'🎯', text:'Tonight vs D. Merrick (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Merrick. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
+                  { icon:'📬', text:'2 urgent messages: Crown Wagers ambassador offer via agent (£85k/yr) + Vanta Sports flagging content deadline for 12:00 shoot.' },
+                  { icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Vanta Sports shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
+                  { icon:'🤝', text:'Vanta Sports content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
                   { icon:'✈️', text:'Prague Open flights selling fast — save £80+ booking now. Return flight to Gatwick confirmed 23:30 via Düsseldorf.' },
                 ].map((item, i) => (
                   <div key={i} className="flex gap-3 text-xs"><span className="text-base flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
@@ -1300,11 +1327,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {dashTab === 'quickwins' && (session.isDemoShell === false ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" /> : (() => {
         const quickWins = [
           { id:'qw1', title:'Practice D16 checkout before warm-up', impact:'high' as const, effort:'10min', cat:'Performance', icon:'🎯', action:'Log practice', modal:'practice' as string|undefined, description:'Double 16 is your weakest checkout route — 10 minutes of focused practice before warm-up.' },
-          { id:'qw2', title:'Reply to Paddy Power ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined, description:'Agent flagged urgency — competitor also in talks. Quick reply keeps deal alive.' },
+          { id:'qw2', title:'Reply to Crown Wagers ambassador inquiry', impact:'high' as const, effort:'5min', cat:'Commercial', icon:'🤝', action:'View messages', modal:undefined, description:'Agent flagged urgency — competitor also in talks. Quick reply keeps deal alive.' },
           { id:'qw3', title:'Book Prague Open flights — prices rising', impact:'high' as const, effort:'2min', cat:'Travel', icon:'✈️', action:'Search flights', modal:'flights' as string|undefined, description:'Cheapest seats selling fast — save £80+ booking now.' },
-          { id:'qw4', title:'Red Dragon content shoot prep — 12:00', impact:'high' as const, effort:'5min', cat:'Sponsor', icon:'🐉', action:'Open brief', modal:'sponsor' as string|undefined, description:'Contract obligation — penalty clause applies. Prep kit and backdrop.' },
-          { id:'qw5', title:'Review G. Price checkout patterns', impact:'medium' as const, effort:'15min', cat:'Match Prep', icon:'📊', action:'View scout', modal:'matchreport' as string|undefined, description:'Tonight\'s opponent — understand his favourite doubles and set-up shots.' },
-          { id:'qw6', title:'Submit Betway social posts — 2 outstanding', impact:'medium' as const, effort:'5min', cat:'Commercial', icon:'📱', action:'View obligation', modal:'sponsor' as string|undefined, description:'Agent chasing — sponsor relationship at risk if not submitted today.' },
+          { id:'qw4', title:'Vanta Sports content shoot prep — 12:00', impact:'high' as const, effort:'5min', cat:'Sponsor', icon:'🐉', action:'Open brief', modal:'sponsor' as string|undefined, description:'Contract obligation — penalty clause applies. Prep kit and backdrop.' },
+          { id:'qw5', title:'Review D. Merrick checkout patterns', impact:'medium' as const, effort:'15min', cat:'Match Prep', icon:'📊', action:'View scout', modal:'matchreport' as string|undefined, description:'Tonight\'s opponent — understand his favourite doubles and set-up shots.' },
+          { id:'qw6', title:'Submit Crown Wagers social posts — 2 outstanding', impact:'medium' as const, effort:'5min', cat:'Commercial', icon:'📱', action:'View obligation', modal:'sponsor' as string|undefined, description:'Agent chasing — sponsor relationship at risk if not submitted today.' },
           { id:'qw7', title:'Confirm hotel for Madrid Premier League', impact:'medium' as const, effort:'5min', cat:'Travel', icon:'🏨', action:'Find hotel', modal:'hotel' as string|undefined, description:'Preferred hotel may sell out — Premier League week demand.' },
         ]
         return (
@@ -1339,11 +1366,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           { id:'t1', time:'09:00', task:'AI Morning Briefing',             cat:'Routine',    priority:'low' as const,  modal:undefined as string|undefined },
           { id:'t2', time:'10:00', task:'Practice — D16 checkout routes',  cat:'Training',   priority:'high' as const, modal:'practice' as string|undefined },
           { id:'t3', time:'11:00', task:'Physio — elbow treatment',        cat:'Wellness',   priority:'medium' as const, modal:'physio' as string|undefined },
-          { id:'t4', time:'12:00', task:'Red Dragon content shoot',        cat:'Sponsor',    priority:'high' as const, modal:'sponsor' as string|undefined },
-          { id:'t5', time:'14:00', task:'Agent call — Paddy Power inquiry',cat:'Commercial', priority:'medium' as const, modal:undefined as string|undefined },
+          { id:'t4', time:'12:00', task:'Vanta Sports content shoot',        cat:'Sponsor',    priority:'high' as const, modal:'sponsor' as string|undefined },
+          { id:'t5', time:'14:00', task:'Agent call — Crown Wagers inquiry',cat:'Commercial', priority:'medium' as const, modal:undefined as string|undefined },
           { id:'t6', time:'16:30', task:'Pre-match warm-up routine',       cat:'Prep',       priority:'high' as const, modal:'mental' as string|undefined },
           { id:'t7', time:'19:30', task:'Walk-on — Dortmund Westfalenhallen', cat:'Match',  highlight:true, priority:'critical' as const, modal:undefined as string|undefined },
-          { id:'t8', time:'20:00', task:'Match vs G. Price — EC R1',       cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
+          { id:'t8', time:'20:00', task:'Match vs D. Merrick — EC R1',       cat:'Match',     highlight:true, priority:'critical' as const, modal:'matchreport' as string|undefined },
           { id:'t9', time:'22:30', task:'Post-match media duties',         cat:'Media',      priority:'medium' as const, modal:'media' as string|undefined },
         ]
         const filtered = taskFilter === 'all' ? ALL_TASKS : ALL_TASKS.filter(t => t.priority === taskFilter)
@@ -1410,7 +1437,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { type:'ALERT', value:'£12,400 at risk', title:'Points dropping off', description:'Your Players Championship 8 earnings (£12,400) drop off after this week. Win tonight to cover the gap and hold #19.', action:'View OOM breakdown', color:'#EF4444' },
-              { type:'OPPORTUNITY', value:'£40k/yr', title:'Paddy Power ambassador deal', description:'Your agent flagged a Paddy Power ambassador inquiry worth an estimated £40k/yr. A competitor is also in talks — respond by Apr 25.', action:'View inquiry details', color:'#22C55E' },
+              { type:'OPPORTUNITY', value:'£40k/yr', title:'Crown Wagers ambassador deal', description:'Your agent flagged a Crown Wagers ambassador inquiry worth an estimated £40k/yr. A competitor is also in talks — respond by Apr 25.', action:'View inquiry details', color:'#22C55E' },
               { type:'TREND', value:'+0.8 avg', title:'3-dart average rising', description:'Your 3-dart average has risen 0.8 points over the last 3 weeks. First-9 average (101.4) is at a career high. Sustaining TV form.', action:'View trend chart', color:'#3B82F6' },
               { type:'ACHIEVEMENT', value:'8 titles', title:'Career titles milestone', description:'Your win at Players Championship 6 brought your career title count to 8. One more puts you in the all-time PDC top-50 winners list.', action:'View career stats', color:'#F59E0B' },
             ].map((tile, i) => (
@@ -1431,11 +1458,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* DON'T MISS */}
       {dashTab === 'dontmiss' && (session.isDemoShell === false ? <EmptyState icon="🔴" title="Nothing to flag" sub="Alerts will appear here once your data is connected" /> : (() => {
         const DONT_MISS_ITEMS = [
-          { id:'dm1', urgency:'TONIGHT', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Match', deadline:'Tonight 20:00', title:'Match vs G. Price — European Championship R1', desc:'20:00 Westfalenhallen, Dortmund. H2H 3-4 Price. His checkout 39.8% vs yours — start strong on the opening leg.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep →', section:'matchprep', modal:'matchreport' as string|undefined },
-          { id:'dm2', urgency:'TODAY', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Sponsor', deadline:'Today 12:00', title:'Red Dragon content shoot — prep kit and backdrop', desc:'Contract obligation with penalty clause. Barrel review video required. Bring backup set.', consequence:'Penalty clause applies if missed — contract breach risk', action:'Open brief →', section:'sponsor', modal:'sponsor' as string|undefined },
+          { id:'dm1', urgency:'TONIGHT', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Match', deadline:'Tonight 20:00', title:'Match vs D. Merrick — European Championship R1', desc:'20:00 Westfalenhallen, Dortmund. H2H 3-4 Merrick. His checkout 39.8% vs yours — start strong on the opening leg.', consequence:'Miss = lose £110k prize + ranking points drop', action:'View match prep →', section:'matchprep', modal:'matchreport' as string|undefined },
+          { id:'dm2', urgency:'TODAY', urgencyBg:'rgba(220,38,38,0.15)', urgencyColor:'#EF4444', category:'Sponsor', deadline:'Today 12:00', title:'Vanta Sports content shoot — prep kit and backdrop', desc:'Contract obligation with penalty clause. Barrel review video required. Bring backup set.', consequence:'Penalty clause applies if missed — contract breach risk', action:'Open brief →', section:'sponsor', modal:'sponsor' as string|undefined },
           { id:'dm3', urgency:'THIS WK', urgencyBg:'rgba(245,158,11,0.15)', urgencyColor:'#F59E0B', category:'Travel', deadline:'Mon 14 Apr', title:'Prague Open flights — prices rising fast', desc:'Depart Mon 14 Apr. BA from £189 — cheapest seats selling fast. Save £80+ booking now.', consequence:'Prices increase daily — £80+ savings lost if delayed', action:'Search flights →', section:'flights', modal:'flights' as string|undefined },
-          { id:'dm4', urgency:'THIS WK', urgencyBg:'rgba(245,158,11,0.15)', urgencyColor:'#F59E0B', category:'Sponsor', deadline:'Thu deadline', title:'2 Betway social posts outstanding', desc:'Agent chasing — James flagged urgency. Sponsor relationship at risk.', consequence:'Sponsor relationship at risk — repeat offence', action:'Create post →', section:'socialmedia', modal:'sponsor' as string|undefined },
-          { id:'dm5', urgency:'14 DAYS', urgencyBg:'rgba(139,92,246,0.15)', urgencyColor:'#8B5CF6', category:'Commercial', deadline:'25 Apr', title:'Paddy Power ambassador decision', desc:'Respond to agent by 25 Apr. Estimated £40k/yr deal — competitor also in talks.', consequence:'Estimated £40k/yr deal — competitor also in talks', action:'View inquiry →', section:'commercial', modal:undefined as string|undefined },
+          { id:'dm4', urgency:'THIS WK', urgencyBg:'rgba(245,158,11,0.15)', urgencyColor:'#F59E0B', category:'Sponsor', deadline:'Thu deadline', title:'2 Crown Wagers social posts outstanding', desc:'Agent chasing — James flagged urgency. Sponsor relationship at risk.', consequence:'Sponsor relationship at risk — repeat offence', action:'Create post →', section:'socialmedia', modal:'sponsor' as string|undefined },
+          { id:'dm5', urgency:'14 DAYS', urgencyBg:'rgba(139,92,246,0.15)', urgencyColor:'#8B5CF6', category:'Commercial', deadline:'25 Apr', title:'Crown Wagers ambassador decision', desc:'Respond to agent by 25 Apr. Estimated £40k/yr deal — competitor also in talks.', consequence:'Estimated £40k/yr deal — competitor also in talks', action:'View inquiry →', section:'commercial', modal:undefined as string|undefined },
           { id:'dm6', urgency:'MAY 3', urgencyBg:'rgba(75,85,99,0.15)', urgencyColor:'#6B7280', category:'Travel', deadline:'3 May', title:'Madrid Premier League hotel not confirmed', desc:'Deadline approaching. Preferred hotel may sell out — Premier League week.', consequence:'Preferred hotel may sell out', action:'Find hotel →', section:'hotel', modal:'hotel' as string|undefined },
         ]
         const visible = DONT_MISS_ITEMS.filter(d => !dismissedAlerts.has(d.id))
@@ -1482,15 +1509,15 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           'James Wright': '/James_Wright.jpg',
           'Steve Morris': '/Carlos_Mendez.jpg',
           'Dr Paul Reid': '/Dr_Paul_Reid.jpg',
-          'Red Dragon': '/red_dragon.jpg',
+          'Vanta Sports': '/red_dragon.jpg',
           'Marcos Silva': '/alex_thompson.jpg',
         }
         const TEAM_MEMBERS = [
           { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA', phone:'+44 7700 900123', email:'dave@dhsports.com', since:'2021', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'42 events managed', stat2:'98% satisfaction' },
           { name:'Steve Morris',    role:'Coach',              status:'Pre-match briefing at 16:30',     available:true,  initials:'SM', phone:'+44 7700 900456', email:'steve@dartscoach.com', since:'2022', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'PDC Level 3 Coach', stat2:'+4.2 avg improvement' },
           { name:'Dr Paul Reid',    role:'Physiotherapist',    status:'Elbow treatment 11:00 today',     available:true,  initials:'PR', phone:'+44 7700 900789', email:'paul@sportsphysio.com', since:'2023', nationality:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', stat1:'BSc Sports Therapy', stat2:'12 athletes' },
-          { name:'Red Dragon',      role:'Equipment Sponsor',  status:'Content shoot 12:00 today',       available:true,  initials:'RD', phone:'N/A', email:'athletes@reddragon.co.uk', since:'2020', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'Primary sponsor', stat2:'£45k/yr deal' },
-          { name:'James Wright',    role:'Agent',              status:'Paddy Power response pending',    available:true,  initials:'JW', phone:'+44 7700 900321', email:'james@sportsmgmt.com', since:'2020', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'15% commission', stat2:'£84k deals YTD' },
+          { name:'Vanta Sports',      role:'Equipment Sponsor',  status:'Content shoot 12:00 today',       available:true,  initials:'RD', phone:'N/A', email:'athletes@reddragon.co.uk', since:'2020', nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', stat1:'Primary sponsor', stat2:'£45k/yr deal' },
+          { name:'James Wright',    role:'Agent',              status:'Crown Wagers response pending',    available:true,  initials:'JW', phone:'+44 7700 900321', email:'james@sportsmgmt.com', since:'2020', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'15% commission', stat2:'£84k deals YTD' },
           { name:'Marcos Silva',    role:'Sports Psychologist',status:'Pre-match call 15:00',            available:true,  initials:'MS', phone:'+44 7700 900654', email:'marcos@mindset.com', since:'2024', nationality:'🇧🇷', stat1:'PhD Sports Psychology', stat2:'Pressure specialist' },
         ]
         return (
@@ -1560,7 +1587,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                     {[
                       { name:'Dr Paul Reid', role:'Physio' },
                       { name:'Marcos Silva', role:'Psychologist' },
-                      { name:'Red Dragon', role:'Sponsor' },
+                      { name:'Vanta Sports', role:'Sponsor' },
                     ].map((m, i) => (
                       <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-center">
                         <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 border border-gray-700 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
@@ -1657,20 +1684,20 @@ function MorningBriefingView({ player, session }: { player: DartsPlayer; session
   const [expanded, setExpanded] = useState<string | null>(null);
   const briefingItems = [
     { id: 'match', icon: '🎯', title: "Tonight's match", urgent: true,
-      summary: 'European Championship R1 vs Gerwyn Price (#7) · 20:00 · Dortmund · Board 4',
-      detail: "H2H: Jake leads 8–3. Price averages 96.2 this season, starts slowly. Jake's avg vs Price: 99.4. Win probability: 62%. Prize if win: £11,000. → Match Prep has full briefing ready." },
+      summary: 'European Championship R1 vs Darren Merrick (#7) · 20:00 · Dortmund · Board 4',
+      detail: "H2H: Jake leads 8–3. Merrick averages 96.2 this season, starts slowly. Jake's avg vs Merrick: 99.4. Win probability: 62%. Prize if win: £11,000. → Match Prep has full briefing ready." },
     { id: 'oom', icon: '📊', title: 'Order of Merit', urgent: false,
       summary: '#19 PDC · £687,420 · £12,400 drops off this week',
       detail: 'You need to earn £12,400 this week to hold #19. A R1 win tonight (£11,000) plus any PC earnings will cover the drop. Buffer above 64th place: £189,420 — you are safe.' },
     { id: 'messages', icon: '💬', title: 'Team messages', urgent: false,
       summary: '4 messages — Marco, James, Dr. Singh, Sarah',
-      detail: 'Marco: "Focus on T20 cluster tightness — pulling left under pressure." James: "Red Dragon renewal call Thursday 14:00." Dr. Singh: "Shoulder treatment confirmed 08:30 tomorrow." Sarah: "Pre-match routine updated — check Match Prep."' },
+      detail: 'Marco: "Focus on T20 cluster tightness — pulling left under pressure." James: "Vanta Sports renewal call Thursday 14:00." Dr. Singh: "Shoulder treatment confirmed 08:30 tomorrow." Sarah: "Pre-match routine updated — check Match Prep."' },
     { id: 'weather', icon: '🌤️', title: 'Dortmund weather', urgent: false,
       summary: '14°C · Overcast · Wind 8km/h SW',
       detail: 'Venue: Westfalenhallen, Dortmund. Indoor event — weather does not affect play. Travel tip: light jacket for evening travel to venue.' },
     { id: 'sponsors', icon: '🤝', title: 'Sponsor obligations', urgent: true,
-      summary: 'Red Dragon content shoot today 16:00',
-      detail: 'Barrel review video required before travel to Dortmund. 2 posts due this week total. Contract renewal in 23 days — James to call Thursday. Paddy Power ambassador post due Friday.' },
+      summary: 'Vanta Sports content shoot today 16:00',
+      detail: 'Barrel review video required before travel to Dortmund. 2 posts due this week total. Contract renewal in 23 days — James to call Thursday. Crown Wagers ambassador post due Friday.' },
     { id: 'entries', icon: '📋', title: 'Entry deadlines', urgent: true,
       summary: 'Prague Open closes Apr 19 — 6 days',
       detail: 'You are auto-qualified via OoM #19. Entry is recommended — Prague has been good for you historically (avg 99.2 in 2024). German Masters deadline Apr 26. Both require manual confirmation in Entry Manager.' },
@@ -1688,7 +1715,7 @@ function MorningBriefingView({ player, session }: { player: DartsPlayer; session
       </div>
       <div className="bg-gradient-to-r from-red-950/40 to-gray-900/40 rounded-xl border border-red-500/20 p-5">
         <p className="text-xs text-red-400 font-medium uppercase tracking-wide mb-3">✦ AI Morning Summary</p>
-        <p className="text-gray-200 text-sm leading-relaxed">Big night ahead, Jake. You play Gerwyn Price at 20:00 in Dortmund — your H2H is 8–3 in your favour and you average 99.4 against him. Price starts slowly so applying pressure in the first three legs is key. Watch your doubles under pressure — your checkout % drops 7.4 points in deciding legs. The Red Dragon content shoot at 16:00 means you need to leave for the venue by 17:30 at the latest. Prague Open entry closes in 6 days — confirm with James today.</p>
+        <p className="text-gray-200 text-sm leading-relaxed">Big night ahead, Jake. You play Darren Merrick at 20:00 in Dortmund — your H2H is 8–3 in your favour and you average 99.4 against him. Merrick starts slowly so applying pressure in the first three legs is key. Watch your doubles under pressure — your checkout % drops 7.4 points in deciding legs. The Vanta Sports content shoot at 16:00 means you need to leave for the venue by 17:30 at the latest. Prague Open entry closes in 6 days — confirm with James today.</p>
       </div>
       <div className="space-y-2">
         {briefingItems.map(item => (
@@ -1720,9 +1747,9 @@ function MorningBriefingView({ player, session }: { player: DartsPlayer; session
           {[
             { time: '10:00', event: 'Practice session — doubles finishing (90 min)', urgent: false },
             { time: '12:30', event: 'Physio: shoulder treatment (Dr. Singh)', urgent: false },
-            { time: '14:00', event: 'Red Dragon content shoot — barrel review video', urgent: true },
+            { time: '14:00', event: 'Vanta Sports content shoot — barrel review video', urgent: true },
             { time: '16:00', event: 'Travel to Dortmund (flight BA1234)', urgent: false },
-            { time: '20:00', event: 'PDC European Championship R1 vs G. Price', urgent: true },
+            { time: '20:00', event: 'PDC European Championship R1 vs D. Merrick', urgent: true },
           ].map((item, i) => (
             <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${item.urgent ? 'bg-red-950/20' : ''}`}>
               <span className="text-gray-500 w-10 flex-shrink-0 text-xs">{item.time}</span>
@@ -1793,7 +1820,7 @@ function OrderOfMeritView({ onNavigate, player, session }: { onNavigate: (id: st
               { rank: 1, name: 'Luke Humphries', money: '£2,847,200' },
               { rank: 2, name: 'Luke Littler', money: '£2,641,800' },
               { rank: 3, name: 'Michael van Gerwen', money: '£2,198,400' },
-              { rank: 4, name: 'Gerwyn Price', money: '£1,847,600' },
+              { rank: 4, name: 'Darren Merrick', money: '£1,847,600' },
               { rank: 5, name: 'Jonny Clayton', money: '£1,623,400' },
               { rank: 19, name: 'Jake Morrison ←', money: '£687,420' },
             ].map((p, i) => (
@@ -1901,7 +1928,7 @@ function TournamentScheduleView({ onNavigate, player, session }: { onNavigate: (
 function ThreeDartAverageView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   const matchAvgs = [
     { opp: 'Hump', avg: 94.2 }, { opp: 'Lit', avg: 99.8 }, { opp: 'MvG', avg: 96.1 },
-    { opp: 'Price', avg: 101.4 }, { opp: 'Clay', avg: 98.7 }, { opp: 'Rock', avg: 103.2 },
+    { opp: 'Merrick', avg: 101.4 }, { opp: 'Clay', avg: 98.7 }, { opp: 'Rock', avg: 103.2 },
     { opp: 'Bunt', avg: 95.4 }, { opp: 'Nopb', avg: 97.8 }, { opp: 'Smi', avg: 100.1 }, { opp: 'Wrig', avg: 96.8 },
   ];
   const chartW = 500, chartH = 180, padL = 35, padR = 100, padT = 15, padB = 30;
@@ -2092,7 +2119,7 @@ function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: s
         <div className="flex items-center gap-4 mb-3">
           <div className="w-14 h-14 rounded-full bg-red-600/20 border-2 border-red-500/40 flex items-center justify-center text-2xl">🏴󠁧󠁢󠁷󠁬󠁳󠁿</div>
           <div>
-            <div className="text-white font-bold text-lg">Gerwyn Price (#7 PDC)</div>
+            <div className="text-white font-bold text-lg">Darren Merrick (#7 PDC)</div>
             <div className="text-gray-400 text-sm">&quot;The Iceman&quot; — Welsh</div>
           </div>
         </div>
@@ -2111,12 +2138,12 @@ function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: s
 
       {/* H2H */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">H2H — Jake vs Price (Last 7)</div>
+        <div className="text-sm font-semibold text-white mb-3">H2H — Jake vs Merrick (Last 7)</div>
         <div className="text-lg text-white font-bold mb-2">Jake leads 4-3</div>
         <div className="space-y-1 text-xs text-gray-400">
-          <div className="py-1 border-b border-gray-800/50">Last: Price won 6-4 · Players Championship · Oct 2024</div>
+          <div className="py-1 border-b border-gray-800/50">Last: Merrick won 6-4 · Players Championship · Oct 2024</div>
           <div className="py-1 border-b border-gray-800/50">Jake won 6-5 · European Tour · Sep 2024</div>
-          <div className="py-1 border-b border-gray-800/50">Price won 6-3 · World Matchplay · Jul 2024</div>
+          <div className="py-1 border-b border-gray-800/50">Merrick won 6-3 · World Matchplay · Jul 2024</div>
         </div>
       </div>
 
@@ -2125,9 +2152,9 @@ function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: s
         <div className="text-sm font-semibold text-white mb-3">Tactical Briefing</div>
         <div className="space-y-3">
           {[
-            { title: 'Attack early', detail: 'Price\'s average in legs 1-3 of a set drops when opponent leads. Win the first 2 legs of each set aggressively.' },
-            { title: 'Target D16 in checkout', detail: 'Price leaves this double poorly when under pressure. Force him to a double he\'s uncomfortable with by leaving 32s.' },
-            { title: 'Maintain your own pace', detail: 'Price uses slow deliberate throws to disrupt rhythm. Stick to your 18-second routine regardless of his tempo.' },
+            { title: 'Attack early', detail: 'Merrick\'s average in legs 1-3 of a set drops when opponent leads. Win the first 2 legs of each set aggressively.' },
+            { title: 'Target D16 in checkout', detail: 'Merrick leaves this double poorly when under pressure. Force him to a double he\'s uncomfortable with by leaving 32s.' },
+            { title: 'Maintain your own pace', detail: 'Merrick uses slow deliberate throws to disrupt rhythm. Stick to your 18-second routine regardless of his tempo.' },
           ].map((t, i) => (
             <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
               <div className="text-sm text-white font-medium mb-1">{t.title}</div>
@@ -2180,7 +2207,7 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
     { date: 'Apr 14', type: 'Doubles Finishing', duration: '90 min', avg: '98.4', doubles: '44%', e180: '12', notes: 'Good session, D20 feeling reliable. D8 still inconsistent under pressure.' },
     { date: 'Apr 13', type: 'Scoring Practice', duration: '60 min', avg: '101.2', doubles: '—', e180: '—', notes: 'Excellent scoring session. Ready for European Championship.' },
     { date: 'Apr 12', type: 'Full match sim', duration: '120 min', avg: '96.8', doubles: '—', e180: '—', notes: 'Solid preparation. Keep first-9 above 72 consistently.' },
-    { date: 'Apr 11', type: 'Mental prep', duration: '30 min', avg: '—', doubles: '—', e180: '—', notes: 'Session with Dr. Reed — focused on Price match mental prep.' },
+    { date: 'Apr 11', type: 'Mental prep', duration: '30 min', avg: '—', doubles: '—', e180: '—', notes: 'Session with Dr. Reed — focused on Merrick match mental prep.' },
     { date: 'Apr 10', type: 'Checkout clinic', duration: '75 min', avg: '—', doubles: '51%', e180: '—', notes: 'Best checkout session in 3 weeks. D16 clicking well.' },
   ];
 
@@ -2297,7 +2324,7 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
     { id: 'dm3', opp: 'Stephen Bunting', rank: 15, event: 'Euro Championship R1', score: '6-2', avg: '99.2', result: 'W', date: '8 Apr' },
     { id: 'dm4', opp: 'Luke Littler', rank: 2, event: 'German Masters SF', score: '3-6', avg: '94.1', result: 'L', date: '3 Apr' },
     { id: 'dm5', opp: 'Callan Rydz', rank: 28, event: 'German Masters QF', score: '6-1', avg: '103.8', result: 'W', date: '2 Apr' },
-    { id: 'dm6', opp: 'Gerwyn Price', rank: 7, event: 'Players Ch.', score: '4-6', avg: '96.2', result: 'L', date: '28 Mar' },
+    { id: 'dm6', opp: 'Darren Merrick', rank: 7, event: 'Players Ch.', score: '4-6', avg: '96.2', result: 'L', date: '28 Mar' },
   ];
 
   const handleGenerate = async (m: typeof matches[0]) => {
@@ -2379,7 +2406,7 @@ function VideoLibraryView({ onNavigate, player, session }: { onNavigate: (id: st
             { title: 'Euro Ch. QF vs Clayton', date: 'Apr 10', dur: '38 min', note: 'Avg 101.4 · 6-3 win' },
             { title: 'German Masters SF vs Littler', date: 'Apr 3', dur: '52 min', note: 'Avg 94.1 · 3-6 loss' },
             { title: 'World Ch. R2 vs Smith', date: 'Jan 8', dur: '44 min', note: 'Avg 97.8 · 6-4 loss' },
-            { title: 'Players Ch. vs Price', date: 'Mar 28', dur: '31 min', note: 'Avg 96.2 · 4-6 loss' },
+            { title: 'Players Ch. vs Merrick', date: 'Mar 28', dur: '31 min', note: 'Avg 96.2 · 4-6 loss' },
           ].map((v, i) => (
             <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
               <div className="h-28 flex items-center justify-center text-4xl" style={{ background: 'linear-gradient(135deg, rgba(185,28,28,0.15) 0%, rgba(234,88,12,0.1) 100%)' }}>🎬</div>
@@ -2462,9 +2489,9 @@ function TeamHubView({ onNavigate, player, session }: { onNavigate: (id: string)
     { name: 'Tom Wilkins', role: 'Physio', contact: 'tom@sportsphysio.com', detail: 'On-call' },
   ];
   const comms = [
-    { msg: 'Match prep complete — Price analysis sent to Jake. Good luck tonight!', from: 'Dave', time: '2h ago' },
+    { msg: 'Match prep complete — Merrick analysis sent to Jake. Good luck tonight!', from: 'Dave', time: '2h ago' },
     { msg: 'Shoulder feeling much better after this morning\'s session.', from: 'Jake', time: '4h ago' },
-    { msg: 'Red Dragon confirmed the barrel review shoot at 14:00 today.', from: 'Dave', time: '5h ago' },
+    { msg: 'Vanta Sports confirmed the barrel review shoot at 14:00 today.', from: 'Dave', time: '5h ago' },
     { msg: 'Mental prep session scheduled for 11:30 before travel.', from: 'Dr. Reed', time: 'Yesterday' },
     { msg: 'New 24g barrels arrived — try them in practice today.', from: 'Tom', time: 'Yesterday' },
   ];
@@ -2548,7 +2575,7 @@ function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (i
         <div className="text-sm font-semibold text-white mb-3">Dr. Reed — Recent Sessions</div>
         <div className="space-y-2">
           {[
-            { date: 'Apr 11', note: 'Pre-match visualisation for Price. Focus on own process, not scoreboard.' },
+            { date: 'Apr 11', note: 'Pre-match visualisation for Merrick. Focus on own process, not scoreboard.' },
             { date: 'Mar 20', note: 'Reviewed German Masters loss vs Littler. Reset confidence after 3-6.' },
             { date: 'Feb 14', note: 'Performance anxiety under lights — crowd management techniques.' },
           ].map((s, i) => (
@@ -2573,8 +2600,8 @@ function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: str
 
       {/* Active Sponsors */}
       {[
-        { name: 'Red Dragon Darts', value: '£48,000/yr', renewal: '23 days remaining', renewalUrgent: true, obligations: 'Barrel use (required), 2 social posts/month, 4 content videos/yr', contentDue: 'Barrel review video (today 14:00) — SCHEDULED', nextPayment: 'May 1 (£4,000)', contact: 'Sarah Mills — sarah@reddragon.com' },
-        { name: 'Ladbrokes', value: '£24,000/yr', renewal: '8 months', renewalUrgent: false, obligations: 'Odds graphic shares (PDC events), 1 interview/quarter', contentDue: 'Post-match interview tonight (if Jake wins)', nextPayment: 'Jun 1 (£6,000)', contact: 'Ben Clarke — ben@ladbrokes.com' },
+        { name: 'Vanta Sports Darts', value: '£48,000/yr', renewal: '23 days remaining', renewalUrgent: true, obligations: 'Barrel use (required), 2 social posts/month, 4 content videos/yr', contentDue: 'Barrel review video (today 14:00) — SCHEDULED', nextPayment: 'May 1 (£4,000)', contact: 'Sarah Mills — sarah@reddragon.com' },
+        { name: 'Crown Wagers', value: '£24,000/yr', renewal: '8 months', renewalUrgent: false, obligations: 'Odds graphic shares (PDC events), 1 interview/quarter', contentDue: 'Post-match interview tonight (if Jake wins)', nextPayment: 'Jun 1 (£6,000)', contact: 'Ben Clarke — ben@ladbrokes.com' },
       ].map((s, i) => (
         <div key={i} className={`bg-[#0d0f1a] border ${s.renewalUrgent ? 'border-red-600/30' : 'border-gray-800'} rounded-xl p-5`}>
           <div className="flex items-center justify-between mb-3">
@@ -2596,7 +2623,7 @@ function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: str
         <div className="text-sm font-semibold text-white mb-3">Pipeline</div>
         <div className="space-y-3">
           {[
-            { name: 'Unicorn Darts', detail: 'Approached Jake\'s manager in March. Offer pending: £35k/yr barrel + accessories deal' },
+            { name: 'Vanta Sports Darts', detail: 'Approached Jake\'s manager in March. Offer pending: £35k/yr barrel + accessories deal' },
             { name: 'Flutter/Betfair', detail: 'Pre-match stats partnership — £8k/event for 4 major TV events. Under review.' },
           ].map((p, i) => (
             <div key={i} className="py-2 border-b border-gray-800/50">
@@ -2612,10 +2639,10 @@ function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: str
         <div className="text-sm font-semibold text-white mb-3">Content Calendar This Month</div>
         <div className="space-y-2">
           {[
-            { week: 'Week 1', content: 'Red Dragon barrel review', status: 'TODAY ✓ scheduled' },
+            { week: 'Week 1', content: 'Vanta Sports barrel review', status: 'TODAY ✓ scheduled' },
             { week: 'Week 2', content: 'Behind-the-scenes European Championship', status: 'pending' },
             { week: 'Week 3', content: 'Practice routine walkthrough — YouTube', status: 'planned' },
-            { week: 'Week 4', content: 'Ladbrokes odds reaction video', status: 'planned' },
+            { week: 'Week 4', content: 'Crown Wagers odds reaction video', status: 'planned' },
           ].map((c, i) => (
             <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
               <span className="text-xs text-gray-500 w-16">{c.week}</span>
@@ -2721,11 +2748,11 @@ function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: st
         <div className="text-sm font-semibold text-white mb-3">Upcoming Media Obligations</div>
         <div className="space-y-2">
           {[
-            { date: 'TODAY', item: 'Red Dragon barrel review video (14:00) — YouTube' },
-            { date: 'Tonight', item: 'Ladbrokes post-match interview (if wins)' },
-            { date: 'Apr 18', item: 'Sky Sports preview piece submission' },
+            { date: 'TODAY', item: 'Vanta Sports barrel review video (14:00) — YouTube' },
+            { date: 'Tonight', item: 'Crown Wagers post-match interview (if wins)' },
+            { date: 'Apr 18', item: 'Northbridge Sport preview piece submission' },
             { date: 'Apr 22', item: 'PDC player profile update' },
-            { date: 'Apr 28', item: 'Red Dragon social post (Prague Open week)' },
+            { date: 'Apr 28', item: 'Vanta Sports social post (Prague Open week)' },
           ].map((o, i) => (
             <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
               <span className={`text-xs font-medium w-16 ${o.date === 'TODAY' || o.date === 'Tonight' ? 'text-red-400' : 'text-gray-500'}`}>{o.date}</span>
@@ -2747,7 +2774,7 @@ function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: st
         <div className="space-y-3">
           {[
             { title: 'Behind the scenes: European Championship', status: 'In progress', due: 'Apr 26' },
-            { title: 'My dart setup explained — Red Dragon collab', status: 'Scheduled', due: 'TODAY 14:00' },
+            { title: 'My dart setup explained — Vanta Sports collab', status: 'Scheduled', due: 'TODAY 14:00' },
             { title: 'Practice routine walkthrough', status: 'Planned', due: 'May 1' },
             { title: 'Tournament life vlog — Dortmund', status: 'Filming tonight', due: '' },
           ].map((c, i) => (
@@ -2765,8 +2792,8 @@ function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: st
         <div className="space-y-2">
           {[
             { headline: 'Morrison targets top 16 with strong European Tour form', source: 'DartsNews.com', date: 'Apr 12' },
-            { headline: 'The Hammer\'s rise: How Jake Morrison became a PDC contender', source: 'Sky Sports', date: 'Mar 28' },
-            { headline: 'Morrison signs extended Red Dragon deal amid Premier League push', source: 'DartsWorld', date: 'Feb 15' },
+            { headline: 'The Hammer\'s rise: How Jake Morrison became a PDC contender', source: 'Northbridge Sport', date: 'Mar 28' },
+            { headline: 'Morrison signs extended Vanta Sports deal amid Premier League push', source: 'DartsWorld', date: 'Feb 15' },
           ].map((a, i) => (
             <div key={i} className="py-2 border-b border-gray-800/50">
               <div className="text-sm text-gray-200">{a.headline}</div>
@@ -2864,14 +2891,14 @@ function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: s
 
       <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
         <div className="text-white font-bold">Dave Harris — DH Sports Management</div>
-        <div className="text-xs text-gray-400 mt-1">15% commission · Active deals: Red Dragon (£48k), Ladbrokes (£24k)</div>
+        <div className="text-xs text-gray-400 mt-1">15% commission · Active deals: Vanta Sports (£48k), Crown Wagers (£24k)</div>
       </div>
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="text-sm font-semibold text-white mb-3">Pipeline Deals</div>
         <div className="space-y-3">
           {[
-            { name: 'Unicorn Darts', stage: 'Offer stage', value: '£35k/yr', note: 'Counter-offer sent Apr 10' },
+            { name: 'Vanta Sports Darts', stage: 'Offer stage', value: '£35k/yr', note: 'Counter-offer sent Apr 10' },
             { name: 'Flutter/Betfair', stage: 'Negotiation', value: '£8k/event', note: 'Legal review in progress' },
             { name: 'Beer brand (unnamed)', stage: 'Initial contact', value: 'TBC', note: 'Dave meeting reps Apr 20' },
             { name: 'Gym/fitness brand', stage: 'Prospecting', value: 'TBC', note: 'Approached via Instagram DM' },
@@ -2894,7 +2921,7 @@ function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: s
             { date: 'Apr 14', activity: 'Dave submitted counter-offer to Unicorn — awaiting response' },
             { date: 'Apr 12', activity: 'Jake approved Flutter NDA for signing' },
             { date: 'Apr 10', activity: 'Dave confirmed Edinburgh exhibition fee (£3,500)' },
-            { date: 'Apr 8', activity: 'Red Dragon renewal meeting scheduled for May 2' },
+            { date: 'Apr 8', activity: 'Vanta Sports renewal meeting scheduled for May 2' },
           ].map((a, i) => (
             <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
               <span className="text-xs text-red-400 font-medium w-14">{a.date}</span>
@@ -3031,7 +3058,7 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       isActive: true,
       isTournament: true,
       isSponsored: true,
-      sponsorName: 'Red Dragon Darts',
+      sponsorName: 'Vanta Sports Darts',
       contentRequired: true,
       playerRating: 9,
       matchesPlayed: 47,
@@ -3039,9 +3066,9 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       checkoutPct: 42.3,
       dateIntroduced: 'Mar 2024',
       notes: 'Primary tournament setup. All PDC televised events and Euro Tour.',
-      barrel: { brand: 'Red Dragon', model: 'Morrison "The Hammer" SE', weight: 24.0, material: '97% Tungsten', shape: 'Torpedo', grip: 'Micro', lengthMm: 52.0, diameterMm: 6.4, productCode: 'RD3879' as string | null },
-      shaft: { brand: 'Red Dragon', model: 'Nitrotech Titanium', length: 'Medium', lengthMm: 41.0, material: 'Titanium', angle: 'Straight', colour: 'Gunmetal' },
-      flight: { brand: 'Red Dragon', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black/Red', design: 'The Hammer signature' },
+      barrel: { brand: 'Vanta Sports', model: 'Morrison "The Hammer" SE', weight: 24.0, material: '97% Tungsten', shape: 'Torpedo', grip: 'Micro', lengthMm: 52.0, diameterMm: 6.4, productCode: 'RD3879' as string | null },
+      shaft: { brand: 'Vanta Sports', model: 'Nitrotech Titanium', length: 'Medium', lengthMm: 41.0, material: 'Titanium', angle: 'Straight', colour: 'Gunmetal' },
+      flight: { brand: 'Vanta Sports', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black/Red', design: 'The Hammer signature' },
       point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
     },
     {
@@ -3050,7 +3077,7 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       isActive: true,
       isTournament: false,
       isSponsored: true,
-      sponsorName: 'Red Dragon Darts',
+      sponsorName: 'Vanta Sports Darts',
       contentRequired: false,
       playerRating: 8,
       matchesPlayed: 0,
@@ -3058,9 +3085,9 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       checkoutPct: 44.1,
       dateIntroduced: 'Jan 2024',
       notes: '2g lighter than tournament setup. Slim flights for tighter T20 grouping. Doubles practice only.',
-      barrel: { brand: 'Red Dragon', model: 'Morrison Practice Edition', weight: 22.0, material: '90% Tungsten', shape: 'Straight', grip: 'Ringed', lengthMm: 48.0, diameterMm: 6.2, productCode: null as string | null },
+      barrel: { brand: 'Vanta Sports', model: 'Morrison Practice Edition', weight: 22.0, material: '90% Tungsten', shape: 'Straight', grip: 'Ringed', lengthMm: 48.0, diameterMm: 6.2, productCode: null as string | null },
       shaft: { brand: 'Condor', model: 'Standard', length: 'Short', lengthMm: 34.0, material: 'Polycarbonate', angle: 'Straight', colour: 'Black' },
-      flight: { brand: 'Winmau', shape: 'Slim', material: 'Standard polyester', thicknessMicron: 100, colour: 'Black', design: 'Plain' },
+      flight: { brand: 'Vanta Sports', shape: 'Slim', material: 'Standard polyester', thicknessMicron: 100, colour: 'Black', design: 'Plain' },
       point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
     },
     {
@@ -3069,7 +3096,7 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       isActive: false,
       isTournament: true,
       isSponsored: true,
-      sponsorName: 'Red Dragon Darts',
+      sponsorName: 'Vanta Sports Darts',
       contentRequired: false,
       playerRating: 7,
       matchesPlayed: 32,
@@ -3077,9 +3104,9 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
       checkoutPct: 40.8,
       dateIntroduced: 'Sep 2023',
       notes: 'Retired Mar 2024. Knurled grip caused T20 pull-left under pressure. Kept as emergency backup.',
-      barrel: { brand: 'Red Dragon', model: 'Morrison "The Hammer" v1', weight: 24.0, material: '95% Tungsten', shape: 'Torpedo', grip: 'Knurled', lengthMm: 51.0, diameterMm: 6.5, productCode: 'RD3712' as string | null },
-      shaft: { brand: 'Red Dragon', model: 'Standard', length: 'Medium', lengthMm: 41.0, material: 'Nylon', angle: 'Straight', colour: 'Black' },
-      flight: { brand: 'Red Dragon', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black', design: 'Plain' },
+      barrel: { brand: 'Vanta Sports', model: 'Morrison "The Hammer" v1', weight: 24.0, material: '95% Tungsten', shape: 'Torpedo', grip: 'Knurled', lengthMm: 51.0, diameterMm: 6.5, productCode: 'RD3712' as string | null },
+      shaft: { brand: 'Vanta Sports', model: 'Standard', length: 'Medium', lengthMm: 41.0, material: 'Nylon', angle: 'Straight', colour: 'Black' },
+      flight: { brand: 'Vanta Sports', shape: 'Standard', material: 'Heavy duty', thicknessMicron: 150, colour: 'Black', design: 'Plain' },
       point: { type: 'Steel tip', length: 'Medium (36mm)', style: 'Smooth' },
     },
   ];
@@ -3336,7 +3363,7 @@ function EquipmentSetupView({ player, session }: { player: DartsPlayer; session:
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-950/20 border border-amber-700/20 rounded-xl text-sm">
           <span className="text-amber-400">🤝</span>
           <span className="text-gray-300">
-            <span className="font-medium">Red Dragon</span>
+            <span className="font-medium">Vanta Sports</span>
             <span className="text-gray-500"> requires content for this setup — barrel review video due today 16:00.</span>
           </span>
           <button className="ml-auto text-red-400 text-xs hover:text-red-300 whitespace-nowrap">→ Sponsorship</button>
@@ -3627,7 +3654,7 @@ function PDCLiveView({ onNavigate, player, session }: { onNavigate: (id: string)
         <div className="grid grid-cols-3 gap-3 text-xs">
           <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">L. Humphries 6-3 R. Smith</span></div>
           <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">M. van Gerwen vs J. Henderson</span><span className="text-red-400 ml-2">LIVE 4-2</span></div>
-          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">G. Price vs J. Morrison</span><span className="text-gray-600 ml-2">20:00</span></div>
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">D. Merrick vs J. Morrison</span><span className="text-gray-600 ml-2">20:00</span></div>
         </div>
       </div>
 
@@ -4088,7 +4115,7 @@ function AdvancedStatsView({ player, session }: { player: DartsPlayer; session: 
     { opp: 'Luke Humphries', rank: 3, w: 3, l: 2, avg: 97.8 },
     { opp: 'Nathan Aspinall', rank: 4, w: 4, l: 3, avg: 98.2 },
     { opp: 'Rob Cross', rank: 9, w: 4, l: 4, avg: 97.1 },
-    { opp: 'Gerwyn Price', rank: 7, w: 8, l: 3, avg: 99.4 },
+    { opp: 'Darren Merrick', rank: 7, w: 8, l: 3, avg: 99.4 },
     { opp: 'Gary Anderson', rank: 14, w: 5, l: 4, avg: 98.7 },
     { opp: 'Michael Smith', rank: 6, w: 3, l: 5, avg: 96.8 },
   ];
@@ -4198,7 +4225,7 @@ function AdvancedStatsView({ player, session }: { player: DartsPlayer; session: 
 // ─── MATCH PREP VIEW ──────────────────────────────────────────────────────────
 function MatchPrepView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [step, setStep] = useState(1)
-  const [opponent, setOpponent] = useState('Gerwyn Price')
+  const [opponent, setOpponent] = useState('Darren Merrick')
   const [recentForm, setRecentForm] = useState<string[]>(['W','L','W'])
   const [oppAvg, setOppAvg] = useState('96.2')
   const [format, setFormat] = useState('Best of 11 legs')
@@ -4279,7 +4306,7 @@ Write concisely. Max 250 words. No markdown formatting. Plain text only. Start e
       {step === 1 && (
         <div className="space-y-4">
           <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 space-y-4">
-            <div><label className="text-xs text-gray-400 block mb-1">Opponent Name</label><input value={opponent} onChange={e => setOpponent(e.target.value)} placeholder="e.g. Gerwyn Price" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Opponent Name</label><input value={opponent} onChange={e => setOpponent(e.target.value)} placeholder="e.g. Darren Merrick" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
             <div><label className="text-xs text-gray-400 block mb-1">Opponent Recent Form (click to toggle)</label>
               <div className="flex gap-2">
                 {formChips.map((r, i) => {
@@ -4381,8 +4408,8 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
         <h2 className="text-white font-medium mb-3">Broadcaster approval status</h2>
         <div className="grid grid-cols-5 gap-2 text-sm">
           {[
-            { b: 'Sky Sports', ok: true }, { b: 'DAZN', ok: true }, { b: 'ITV', ok: true },
-            { b: 'BBC', ok: true }, { b: 'RTL (DE)', ok: true },
+            { b: 'Northbridge Sport', ok: true }, { b: 'DAZN', ok: true }, { b: 'Crown TV', ok: true },
+            { b: 'Crown Broadcasting', ok: true }, { b: 'Continental DE', ok: true },
           ].map((s, i) => (
             <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3 text-center">
               <div className="text-[10px] text-gray-500 uppercase tracking-wide">{s.b}</div>
@@ -4397,14 +4424,14 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
           <span className="text-[10px] text-amber-400 uppercase tracking-wide">Partially approved</span>
         </div>
         <div className="text-gray-300 text-sm">"Eye of the Tiger" — Survivor</div>
-        <div className="text-xs text-gray-500 mt-1">Sky ✓ · ITV ✓ · BBC ✓ · DAZN ⏳ Pending · RTL ✓</div>
+        <div className="text-xs text-gray-500 mt-1">Northbridge Sport ✓ · Crown TV ✓ · Crown Broadcasting ✓ · DAZN ⏳ Pending · Continental DE ✓</div>
       </div>
       <div className="bg-amber-950/40 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
         ⚠ DAZN backup approval still pending — submit by <strong className="text-amber-100">May 1</strong> for Grand Slam eligibility.
       </div>
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
         <h2 className="text-white font-medium mb-2">Brand identity notes</h2>
-        <p className="text-gray-400 text-sm leading-relaxed">"Iron" aligns with the Red Dragon sponsor palette and Jake&apos;s aggressive throwing style. Cadence sits well with the 2m walk-on window. Alternatives must match 130+ BPM and avoid explicit language for broadcast clearance.</p>
+        <p className="text-gray-400 text-sm leading-relaxed">"Iron" aligns with the Vanta Sports sponsor palette and Jake&apos;s aggressive throwing style. Cadence sits well with the 2m walk-on window. Alternatives must match 130+ BPM and avoid explicit language for broadcast clearance.</p>
       </div>
       <div>
         <h2 className="text-white font-medium mb-3">Upcoming televised events — music required</h2>
@@ -4413,10 +4440,10 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
             <span>Event</span><span>Date</span><span>Broadcaster</span><span>Status</span>
           </div>
           {[
-            { ev: 'Grand Slam of Darts', date: 'Nov 8', br: 'Sky Sports', st: '✓ Approved' },
-            { ev: 'Premier League Night 14', date: 'May 2', br: 'Sky + DAZN', st: '⏳ DAZN pending' },
-            { ev: 'World Matchplay', date: 'Jul 19', br: 'Sky Sports', st: '✓ Approved' },
-            { ev: 'German Masters', date: 'Oct 4', br: 'RTL', st: '✓ Approved' },
+            { ev: 'Grand Slam of Darts', date: 'Nov 8', br: 'Northbridge Sport', st: '✓ Approved' },
+            { ev: 'Premier League Night 14', date: 'May 2', br: 'Northbridge Sport + DAZN', st: '⏳ DAZN pending' },
+            { ev: 'World Matchplay', date: 'Jul 19', br: 'Northbridge Sport', st: '✓ Approved' },
+            { ev: 'German Masters', date: 'Oct 4', br: 'Continental DE', st: '✓ Approved' },
           ].map((e, i) => (
             <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
               <span className="text-white">{e.ev}</span>
@@ -4773,7 +4800,7 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
   const [tournament, setTournament] = useState<'european' | 'grand-slam' | 'matchplay' | 'uk-open'>('european');
   const [showFull, setShowFull] = useState(false);
   const path = [
-    { round: 'R1', opp: 'Gerwyn Price (#7)', prize: '£25,000', status: 'tonight' },
+    { round: 'R1', opp: 'Darren Merrick (#7)', prize: '£25,000', status: 'tonight' },
     { round: 'R2', opp: 'Winner M. Smith/R. Cross', prize: '£35,000', status: 'pending' },
     { round: 'QF', opp: 'Projected: L. Humphries (#3)', prize: '£50,000', status: 'pending' },
     { round: 'SF', opp: 'Projected: L. Littler (#1)', prize: '£80,000', status: 'pending' },
@@ -4803,7 +4830,7 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
           <div className="bg-red-600/20 border border-red-500/50 rounded-lg p-3">
             <div className="text-red-300 font-semibold">LIVE TONIGHT</div>
             <div className="text-white mt-1">Jake Morrison (#19)</div>
-            <div className="text-gray-400">vs Gerwyn Price (#7)</div>
+            <div className="text-gray-400">vs Darren Merrick (#7)</div>
           </div>
           {[
             { top: 'Michael Smith', bot: 'Rob Cross' },
@@ -4841,7 +4868,7 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
         {showFull && (
           <div className="px-5 pb-5">
             <div className="grid grid-cols-4 gap-2 text-xs">
-              {['L. Littler', 'M. Smith', 'R. Cross', 'J. Wade', 'G. Anderson', 'D. van Duijvenbode', 'J. Morrison', 'G. Price', 'L. Humphries', 'D. Gurney', 'M. van Gerwen', 'D. Chisnall', 'N. Aspinall', 'P. Wright', 'D. Noppert', 'G. Clayton'].map((p, i) => (
+              {['L. Littler', 'M. Smith', 'R. Cross', 'J. Wade', 'G. Anderson', 'D. van Duijvenbode', 'J. Morrison', 'D. Merrick', 'L. Humphries', 'D. Gurney', 'M. van Gerwen', 'D. Chisnall', 'N. Aspinall', 'P. Wright', 'D. Noppert', 'G. Clayton'].map((p, i) => (
                 <div key={i} className="bg-black/30 border border-white/5 rounded px-2 py-1.5 text-gray-400">{p}</div>
               ))}
             </div>
@@ -5011,7 +5038,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
     { p1: 'Luke Littler', r1: 2, p2: 'Martin Schindler', r2: 0, avg1: 108.2, avg2: 94.1, status: 'live', board: 1, round: 'R1' },
     { p1: 'Michael van Gerwen', r1: 1, p2: 'Niels Zonneveld', r2: 1, avg1: 99.4, avg2: 97.8, status: 'live', board: 2, round: 'R1' },
     { p1: 'Luke Humphries', r1: 2, p2: 'Ricky Evans', r2: 0, avg1: 104.1, avg2: 91.2, status: 'live', board: 3, round: 'R1' },
-    { p1: 'Jake Morrison', r1: 1, p2: 'Gerwyn Price', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
+    { p1: 'Jake Morrison', r1: 1, p2: 'Darren Merrick', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
     { p1: 'Rob Cross', r1: 1, p2: 'Danny Noppert', r2: 0, avg1: 96.8, avg2: 95.1, status: 'live', board: 5, round: 'R1' },
     { p1: 'Nathan Aspinall', r1: 0, p2: 'Florian Hempel', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 6, round: 'R1', time: '21:00' },
     { p1: 'Michael Smith', r1: 0, p2: 'Kevin Doets', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 7, round: 'R1', time: '21:00' },
@@ -5081,7 +5108,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
                 </div>
               </div>
               <div>
-                <p className="text-white font-medium">Gerwyn Price 🏴󠁧󠁢󠁷󠁬󠁳󠁿</p>
+                <p className="text-white font-medium">Darren Merrick 🏴󠁧󠁢󠁷󠁬󠁳󠁿</p>
                 <p className="text-xs text-gray-500 mb-3">#7 PDC</p>
                 <p className="text-5xl font-medium text-gray-400">0</p>
                 <p className="text-xs text-gray-500 mt-1">legs</p>
@@ -5095,7 +5122,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
             <h2 className="text-white font-medium mb-3">Current leg — visit by visit</h2>
             <div className="rounded-xl border border-white/5 overflow-hidden">
               <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-900/80 text-[11px] text-gray-500 uppercase tracking-wide">
-                <span>Visit</span><span>Jake</span><span>Jake left</span><span>Price</span><span>Price left</span>
+                <span>Visit</span><span>Jake</span><span>Jake left</span><span>Merrick</span><span>Merrick left</span>
               </div>
               {jakeVisits.map((v, i) => (
                 <div key={i} className="grid grid-cols-5 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
@@ -5117,7 +5144,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
           </div>
 
           <div className="px-4 py-3 bg-gray-900/60 rounded-xl border border-white/5 text-sm text-gray-400">
-            H2H: Jake leads <span className="text-white font-medium">8–3</span> · Jake&apos;s avg vs Price: <span className="text-white font-medium">99.4</span> · Win probability tonight: <span className="text-green-400 font-medium">62%</span>
+            H2H: Jake leads <span className="text-white font-medium">8–3</span> · Jake&apos;s avg vs Merrick: <span className="text-white font-medium">99.4</span> · Win probability tonight: <span className="text-green-400 font-medium">62%</span>
           </div>
         </div>
       )}
@@ -6500,13 +6527,13 @@ function TeamCommsView({ player, session }: { player: DartsPlayer; session: Spor
   const threads = [
     { id: 'marco', name: 'Marco', role: 'Coach', unread: 1, messages: [
       { from: 'Marco', time: '07:45', text: 'Focus on T20 cluster tightness today — pulling left under pressure. Work on it in your practice session.' },
-      { from: 'Marco', time: '06:30', text: 'Watched Price\'s last 5 matches. He is slow to start — take the first two legs aggressively.' },
+      { from: 'Marco', time: '06:30', text: 'Watched Merrick\'s last 5 matches. He is slow to start — take the first two legs aggressively.' },
       { from: first, time: 'Yesterday', text: 'Understood. Will focus on the doubles session on D16 and D18 today.' },
     ] },
     { id: 'james', name: 'James', role: 'Agent', unread: 2, messages: [
-      { from: 'James', time: '08:10', text: 'Red Dragon renewal call scheduled Thursday 14:00. I\'ll send over their proposed terms by Wednesday evening.' },
-      { from: 'James', time: 'Yesterday', text: 'Paddy Power ambassador inquiry — they want to discuss expanding the deal.' },
-      { from: first, time: 'Yesterday', text: 'Good news on Paddy Power. Thursday call confirmed.' },
+      { from: 'James', time: '08:10', text: 'Vanta Sports renewal call scheduled Thursday 14:00. I\'ll send over their proposed terms by Wednesday evening.' },
+      { from: 'James', time: 'Yesterday', text: 'Crown Wagers ambassador inquiry — they want to discuss expanding the deal.' },
+      { from: first, time: 'Yesterday', text: 'Good news on Crown Wagers. Thursday call confirmed.' },
     ] },
     { id: 'singh', name: 'Dr. Singh', role: 'Physio', unread: 0, messages: [
       { from: 'Dr. Singh', time: '08:00', text: 'Shoulder treatment confirmed 08:30 tomorrow. Will also check the elbow.' },
@@ -6516,7 +6543,7 @@ function TeamCommsView({ player, session }: { player: DartsPlayer; session: Spor
     { id: 'sarah', name: 'Sarah', role: 'Mental coach', unread: 1, messages: [
       { from: 'Sarah', time: '07:00', text: 'Pre-match routine updated — check the Match Prep page. Added a breathing anchor for pressure checkouts.' },
       { from: first, time: 'Yesterday', text: 'Will do. Feeling good about tonight.' },
-      { from: 'Sarah', time: 'Yesterday', text: 'Your data is strong. You average 99.4 vs Price — trust the process.' },
+      { from: 'Sarah', time: 'Yesterday', text: 'Your data is strong. You average 99.4 vs Merrick — trust the process.' },
     ] },
   ];
   const active = threads.find(t => t.id === activeThread) || threads[0];
@@ -6576,7 +6603,7 @@ function FanEngagementView({ player, session }: { player: DartsPlayer; session: 
   const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
   const topPosts = [
     { platform: 'TikTok', content: 'Walk-on entrance at European Championship', views: '284k', likes: '18.2k', date: 'Tonight' },
-    { platform: 'Instagram', content: 'Red Dragon barrel reveal video', views: '41k', likes: '3.1k', date: '2 days ago' },
+    { platform: 'Instagram', content: 'Vanta Sports barrel reveal video', views: '41k', likes: '3.1k', date: '2 days ago' },
     { platform: 'Twitter/X', content: 'Post-match reaction — Players Ch. 12 win', views: '89k', likes: '4.8k', date: '3 weeks ago' },
     { platform: 'YouTube', content: '9-dart finish compilation + analysis', views: '67k', likes: '2.3k', date: '1 month ago' },
   ];
@@ -6739,7 +6766,7 @@ function BoardBookingView({ player, session }: { player: DartsPlayer; session: S
       { name: 'Dart-Sport Dortmund', distance: '3.4km', boards: 12, contact: 'info@dartsport-do.de', notes: 'Dedicated darts venue. Open 14:00–22:00. €15/hr.' },
     ],
     Prague: [
-      { name: 'O2 Arena Practice Hall', distance: '0km — at venue', boards: 6, contact: 'PDC venue manager', notes: 'Players only — Euro Tour entry required' },
+      { name: 'Fortuna Arena Practice Hall', distance: '0km — at venue', boards: 6, contact: 'PDC venue manager', notes: 'Players only — Euro Tour entry required' },
       { name: 'Hotel Clarion Congress', distance: '0.3km', boards: 1, contact: '+420 211 131 111', notes: 'Board in sports lounge. Request from front desk.' },
       { name: 'Sports Bar Darts Prague', distance: '2.1km', boards: 6, contact: 'info@dartsprague.cz', notes: 'Walk-in or book. Open daily 12:00–24:00.' },
     ],
@@ -6805,7 +6832,7 @@ function AccreditationsView({ player, session }: { player: DartsPlayer; session:
     { venue: 'Westfalenhallen', event: 'European Championship (tonight)', status: 'active', expires: 'Tonight', badge: 'Player pass — Board 4', notes: 'Collect from PDC desk on arrival at the venue.' },
     { venue: 'Wolverhampton Civic Hall', event: 'Grand Slam of Darts', status: 'pending', expires: 'Nov 2025', badge: 'TBC — qualification pending', notes: 'Issued if Jake qualifies. OoM Top 24 required.' },
     { venue: 'Minehead Butlins', event: 'World Pairs Championship', status: 'active', expires: 'Aug 2025', badge: 'Player + partner pass', notes: 'Shared with Mark Webb. Confirm partner details by Jul 1.' },
-    { venue: 'O2 Arena, Prague', event: 'Prague Open', status: 'pending', expires: 'Apr 25', badge: 'Player pass', notes: 'Issued on confirmed entry. Confirm by Apr 19.' },
+    { venue: 'Fortuna Arena, Prague', event: 'Prague Open', status: 'pending', expires: 'Apr 25', badge: 'Player pass', notes: 'Issued on confirmed entry. Confirm by Apr 19.' },
   ];
   const statusConfig: Record<AccredStatus, { label: string; dot: string; bg: string }> = {
     active: { label: '✅ Active', dot: 'bg-green-500', bg: '' },
@@ -7264,7 +7291,7 @@ const DARTS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: s
 
 function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession; player: DartsPlayer }) {
   const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
-  const sponsorName = session.clubName || 'Red Dragon'
+  const sponsorName = session.clubName || 'Vanta Sports'
   const sponsorColor = '#dc2626'
   const sponsorLogo = session.logoDataUrl
   const tabs = [
@@ -7608,7 +7635,7 @@ function DartsMatchReport({ onClose, player }: { onClose: () => void; player: Da
       <DartsModalHeader icon="📋" title="AI Match Report" subtitle="Generate professional match reports" onClose={onClose} />
       <div className="p-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs text-gray-400 block mb-1">Opponent</label><input value={form.opponent} onChange={e => setForm({...form, opponent: e.target.value})} placeholder="e.g. G. Price" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
+          <div><label className="text-xs text-gray-400 block mb-1">Opponent</label><input value={form.opponent} onChange={e => setForm({...form, opponent: e.target.value})} placeholder="e.g. D. Merrick" className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
           <div><label className="text-xs text-gray-400 block mb-1">Tournament</label><input value={form.tournament} onChange={e => setForm({...form, tournament: e.target.value})} placeholder="e.g. European Ch." className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600" /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -7632,8 +7659,8 @@ function DartsEquipmentCheck({ onClose }: { onClose: () => void }) {
     { item: 'Barrels', detail: '24g Target Vapor8', replace: false, notes: '' },
     { item: 'Flights', detail: 'Target Pro Ultra Standard', replace: false, notes: '' },
     { item: 'Shafts', detail: 'Target Pro Grip Medium', replace: true, notes: 'Slight wobble — replace before Prague' },
-    { item: 'Board', detail: 'Winmau Blade 6', replace: false, notes: '' },
-    { item: 'Oche mat', detail: 'Red Dragon Pro mat (9ft)', replace: false, notes: '' },
+    { item: 'Board', detail: 'Vanta Sports Blade 6', replace: false, notes: '' },
+    { item: 'Oche mat', detail: 'Vanta Sports Pro mat (9ft)', replace: false, notes: '' },
     { item: 'Case', detail: 'Target Takoma XL', replace: false, notes: '' },
   ])
 
@@ -7712,7 +7739,7 @@ function DartsPrizeTracker({ onClose }: { onClose: () => void }) {
 
 // ─── MODAL: SPONSOR POST ─────────────────────────────────────────────────────
 function DartsSponsorPost({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
-  const [sponsor, setSponsor] = useState('Red Dragon')
+  const [sponsor, setSponsor] = useState('Vanta Sports')
   const [postType, setPostType] = useState('Product review')
   const [platform, setPlatform] = useState('Instagram')
   const [includeStats, setIncludeStats] = useState(true)
@@ -7736,7 +7763,7 @@ function DartsSponsorPost({ onClose, player }: { onClose: () => void; player: Da
     <div>
       <DartsModalHeader icon="📱" title="AI Sponsor Post" subtitle="Generate sponsor content for social media" onClose={onClose} />
       <div className="p-6 space-y-4">
-        <div><label className="text-xs text-gray-400 block mb-1">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Red Dragon</option><option>Paddy Power</option><option>Betway</option><option>Ladbrokes</option><option>Winmau</option></select></div>
+        <div><label className="text-xs text-gray-400 block mb-1">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Vanta Sports</option><option>Crown Wagers</option><option>Crown Wagers</option><option>Crown Wagers</option><option>Vanta Sports</option></select></div>
         <div><label className="text-xs text-gray-400 block mb-1">Post type</label><select value={postType} onChange={e => setPostType(e.target.value)} className="w-full bg-[#0a0c14] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white"><option>Product review</option><option>Match day</option><option>Training session</option><option>Behind the scenes</option><option>Giveaway</option></select></div>
         <div><label className="text-xs text-gray-400 block mb-1">Platform</label><div className="flex gap-2">{['Instagram','Twitter','Facebook','TikTok'].map(p => (<button key={p} onClick={() => setPlatform(p)} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${platform === p ? 'bg-red-600/20 text-red-400 border border-red-600/40' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>{p}</button>))}</div></div>
         <div className="flex items-center gap-2"><button onClick={() => setIncludeStats(!includeStats)} className={`w-9 h-5 rounded-full transition-all ${includeStats ? 'bg-red-600' : 'bg-gray-700'}`}><div className={`w-4 h-4 rounded-full bg-white transition-all ${includeStats ? 'ml-4' : 'ml-0.5'}`} /></button><span className="text-xs text-gray-400">Include performance stats</span></div>
@@ -7750,10 +7777,10 @@ function DartsSponsorPost({ onClose, player }: { onClose: () => void; player: Da
 // ─── MODAL: MEDIA MANAGER ────────────────────────────────────────────────────
 function DartsMediaManager({ onClose }: { onClose: () => void }) {
   const [obligations, setObligations] = useState([
-    { id: '1', title: 'Red Dragon barrel review video', due: 'Today 12:00', done: false, type: 'Content shoot' },
-    { id: '2', title: 'Betway Instagram story — match day', due: 'Today 19:00', done: false, type: 'Social post' },
-    { id: '3', title: 'Betway Twitter post — pre-match', due: 'Today 18:00', done: false, type: 'Social post' },
-    { id: '4', title: 'Sky Sports post-match interview', due: 'Tonight ~22:30', done: false, type: 'Interview' },
+    { id: '1', title: 'Vanta Sports barrel review video', due: 'Today 12:00', done: false, type: 'Content shoot' },
+    { id: '2', title: 'Crown Wagers Instagram story — match day', due: 'Today 19:00', done: false, type: 'Social post' },
+    { id: '3', title: 'Crown Wagers Twitter post — pre-match', due: 'Today 18:00', done: false, type: 'Social post' },
+    { id: '4', title: 'Northbridge Sport post-match interview', due: 'Tonight ~22:30', done: false, type: 'Interview' },
   ])
   const [newTitle, setNewTitle] = useState('')
 
@@ -7786,7 +7813,7 @@ function DartsMediaManager({ onClose }: { onClose: () => void }) {
 
 // ─── MODAL: MENTAL PREP ──────────────────────────────────────────────────────
 function DartsMentalPrep({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
-  const [opponent, setOpponent] = useState('G. Price')
+  const [opponent, setOpponent] = useState('D. Merrick')
   const [venue, setVenue] = useState('Westfalenhallen, Dortmund')
   const [feeling, setFeeling] = useState(7)
   const [concern, setConcern] = useState('Doubles under pressure')
@@ -8145,7 +8172,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           }}
           configFields={[
             { id: 'pdcId', label: 'PDC Player ID', description: 'For live ranking and tour data', kind: 'text', placeholder: 'e.g. PDC-0019' },
-            { id: 'boardSetup', label: 'Board Setup', kind: 'select', options: ['Winmau','Target','Unicorn'], defaultValue: 'Winmau' },
+            { id: 'boardSetup', label: 'Board Setup', kind: 'select', options: ['Vanta Sports','Target Pro','Precision'], defaultValue: 'Vanta Sports' },
             { id: 'dartWeight', label: 'Dart Weight Preference', kind: 'select', options: ['21g','22g','23g','24g','25g','26g'], defaultValue: player.dartSetup?.barrelWeight || '23g' },
           ]}
           integrationGroups={[
@@ -8464,7 +8491,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 <span className="text-red-400 font-medium text-[10px] uppercase tracking-wide">Live Tonight</span>
               </div>
               <div className="text-xs text-red-400 font-medium">European Ch. R1</div>
-              <div className="text-xs text-gray-300 mt-1">vs G. Price (#7)</div>
+              <div className="text-xs text-gray-300 mt-1">vs D. Merrick (#7)</div>
               <div className="text-xs text-gray-500">20:00 · Dortmund</div>
               <div className="mt-2 text-xs text-yellow-400">Win = £110,000</div>
             </div>
@@ -8479,7 +8506,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Alerts</div>
               <div className="space-y-1.5">
-                <div className="text-xs text-red-400">Red Dragon shoot — confirm logistics</div>
+                <div className="text-xs text-red-400">Vanta Sports shoot — confirm logistics</div>
                 <div className="text-xs text-yellow-400">Prague Open entry — closes Apr 19</div>
                 <div className="text-xs text-yellow-400">Sponsor renewal — agent chasing</div>
                 <div className="text-xs text-red-400">PDC media — confirm tomorrow</div>

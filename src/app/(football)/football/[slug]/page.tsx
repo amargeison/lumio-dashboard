@@ -313,8 +313,8 @@ const FOOTBALL_ROUNDUP_ITEMS = [
     id: 'media', icon: '📰', label: 'Media & Press', count: 4, urgent: false,
     color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',
     messages: [
-      { id: 'm1', from: 'BBC Sport', avatar: 'BB', subject: 'Pre-match interview request', preview: 'We\'d like to arrange a 15-minute pre-match interview for Saturday\'s game. Available Thursday PM?', time: '8:45am', urgent: false, read: false },
-      { id: 'm2', from: 'Sky Sports', avatar: 'SS', subject: 'Transfer rumours — comment?', preview: 'We\'re running a piece on your interest in Aaron Collins. Any comment from the club?', time: '8:00am', urgent: false, read: false },
+      { id: 'm1', from: 'Crown Broadcasting', avatar: 'BB', subject: 'Pre-match interview request', preview: 'We\'d like to arrange a 15-minute pre-match interview for Saturday\'s game. Available Thursday PM?', time: '8:45am', urgent: false, read: false },
+      { id: 'm2', from: 'Northbridge Sport', avatar: 'SS', subject: 'Transfer rumours — comment?', preview: 'We\'re running a piece on your interest in Aaron Collins. Any comment from the club?', time: '8:00am', urgent: false, read: false },
       { id: 'm3', from: 'Local Gazette', avatar: 'LG', subject: 'Fan forum coverage', preview: 'We\'re covering the fan forum on Thursday evening. Will the manager be attending?', time: 'Yesterday', urgent: false, read: true },
       { id: 'm4', from: 'Press Officer', avatar: 'PO', subject: 'Press conference at 2pm', preview: 'Reminder: pre-match presser at 2pm today in the media suite. AI briefing notes attached.', time: '7:30am', urgent: false, read: false },
     ]
@@ -3573,10 +3573,10 @@ function MediaView() {
             </thead>
             <tbody>
               {[
-                { outlet: 'BBC Sport', type: 'Interview', subject: 'Pre-match preview', deadline: 'Thu PM', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
-                { outlet: 'Sky Sports', type: 'Comment', subject: 'Diallo transfer rumour', deadline: 'Today', status: 'Urgent', rec: 'No comment', recColor: '#EF4444' },
+                { outlet: 'Crown Broadcasting', type: 'Interview', subject: 'Pre-match preview', deadline: 'Thu PM', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
+                { outlet: 'Northbridge Sport', type: 'Comment', subject: 'Diallo transfer rumour', deadline: 'Today', status: 'Urgent', rec: 'No comment', recColor: '#EF4444' },
                 { outlet: 'Local Gazette', type: 'Access', subject: 'Fan forum coverage', deadline: 'Thu Eve', status: 'Pending', rec: 'Accept', recColor: '#22C55E' },
-                { outlet: 'TalkSport', type: 'Phone-in', subject: 'Weekend preview', deadline: 'Fri AM', status: 'New', rec: 'Decline — schedule clash', recColor: '#F59E0B' },
+                { outlet: 'Northbridge Talk', type: 'Phone-in', subject: 'Weekend preview', deadline: 'Fri AM', status: 'New', rec: 'Decline — schedule clash', recColor: '#F59E0B' },
               ].map((r, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.outlet}</td>

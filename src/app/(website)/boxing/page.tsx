@@ -202,7 +202,7 @@ function BriefingMockup() {
         </div>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: '#3B82F6', marginBottom: 3 }}>🤝 OBLIGATIONS</div>
-          <div style={{ fontSize: 9, color: MUTED }}>DAZN shoot in 8 days · Under Armour post due</div>
+          <div style={{ fontSize: 9, color: MUTED }}>DAZN shoot in 8 days · Apex Performance post due</div>
         </div>
       </div>
       <button style={{ width: '100%', marginTop: 10, fontSize: 10, fontWeight: 800, padding: '8px 12px', borderRadius: 8, backgroundColor: RED, color: '#fff', border: 'none' }}>▶ Play voice briefing (1m 58s)</button>

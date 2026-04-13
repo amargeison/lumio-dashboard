@@ -21,7 +21,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🎯', title: 'Match Prep & Opponent Scout', desc: 'H2H records, surface breakdowns, opponent weakness cards, tactical coach notes. Walk on court prepared.' },
   { icon: '🌅', title: 'AI Morning Briefing', desc: 'Role-specific daily briefings for player, coach, agent and physio. Voice-delivered via ElevenLabs before first session.' },
   { icon: '💰', title: 'Financial Dashboard', desc: 'Prize money ledger, endorsement tracker, expense log, multi-currency. Exportable for your accountant.' },
-  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Wilson, Rolex, Lululemon — all tracked automatically.' },
+  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Vanta Sports, Meridian Watches, Apex Performance — all tracked automatically.' },
   { icon: '✈️', title: 'Travel & Logistics', desc: 'Event-by-event flight planning, hotel contacts, court access, team movement. 30+ weeks on tour, organised.' },
   { icon: '📊', title: 'Performance Stats & Rating', desc: 'Serve %, break point conversion, win rate trend. A composite performance rating updated after every match.' },
   { icon: '🔥', title: 'Court Shot Heatmaps', desc: 'Visual serve placement, return zones, groundstroke patterns. See exactly where you\u2019re winning and losing points.' },
@@ -147,8 +147,8 @@ function DashboardMockup() {
       </div>
       <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <Badge color="#EF4444" bg="rgba(239,68,68,0.15)">LIVE · vs C. Martinez</Badge>
-        <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">Rolex renewal 47d</Badge>
-        <Badge color={PURPLE_LIGHT} bg="rgba(168,85,247,0.15)">Lululemon post due</Badge>
+        <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">Meridian Watches renewal 47d</Badge>
+        <Badge color={PURPLE_LIGHT} bg="rgba(168,85,247,0.15)">Apex Performance post due</Badge>
       </div>
     </MockupFrame>
   )
@@ -245,11 +245,11 @@ function RankingsMockup() {
 
 function SponsorshipMockup() {
   const deals = [
-    { name: 'Wilson — Racket & Equipment', status: 'Active', statusColor: '#10B981', value: 'GBP 45,000/yr + bonuses', expires: 'Expires Dec 2027',
-      obligations: ['Use Wilson frames in all matches', 'Wear Wilson bag', 'Social mentions 2/month'],
+    { name: 'Vanta Sports — Racket & Equipment', status: 'Active', statusColor: '#10B981', value: 'GBP 45,000/yr + bonuses', expires: 'Expires Dec 2027',
+      obligations: ['Use Vanta Sports frames in all matches', 'Wear Vanta Sports bag', 'Social mentions 2/month'],
       bonuses: ['Top 50 +£10k', 'GS QF +£5k'] },
-    { name: 'Lululemon — Apparel', status: 'Active', statusColor: '#10B981', value: 'GBP 65,000/yr', expires: 'Expires Jun 2027' },
-    { name: 'Rolex — Watch/Luxury', status: 'Renewal due', statusColor: '#F59E0B', value: 'GBP 120,000/yr', expires: 'Expires May 2026 (47d)' },
+    { name: 'Apex Performance — Apparel', status: 'Active', statusColor: '#10B981', value: 'GBP 65,000/yr', expires: 'Expires Jun 2027' },
+    { name: 'Meridian Watches — Watch/Luxury', status: 'Renewal due', statusColor: '#F59E0B', value: 'GBP 120,000/yr', expires: 'Expires May 2026 (47d)' },
   ]
   return (
     <MockupFrame>
@@ -257,8 +257,8 @@ function SponsorshipMockup() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 12 }}>
         <KPI value="GBP 285k+" label="Total Value" color={PURPLE} />
         <KPI value="6" label="Active Deals" color="#10B981" />
-        <KPI value="47 days" label="Rolex Renewal" color="#F59E0B" />
-        <KPI value="1 today" label="Obligations Due" sub="Lululemon post" color={PURPLE_LIGHT} />
+        <KPI value="47 days" label="Meridian Renewal" color="#F59E0B" />
+        <KPI value="1 today" label="Obligations Due" sub="Apex Performance post" color={PURPLE_LIGHT} />
       </div>
       {deals.map(d => (
         <div key={d.name} style={{ backgroundColor: '#0A0B10', border: `1px solid ${d.statusColor}55`, borderRadius: 10, padding: 12, marginBottom: 8 }}>
@@ -288,7 +288,7 @@ function TeamHubMockup() {
     { name: 'Marco Bianchi', role: 'Lead Coach', status: 'On-site Monte-Carlo', statusColor: '#10B981', note: 'Match prep uploaded · 08:15 today' },
     { name: 'Sarah Okafor', role: 'Physio', status: 'Cleared for play', statusColor: '#10B981', note: 'Shoulder treatment complete · 08:30' },
     { name: 'Luis Santos', role: 'Fitness Trainer', status: 'Remote', statusColor: '#3B82F6', note: 'Weekly conditioning plan uploaded' },
-    { name: 'James Whitfield', role: 'Agent', status: 'Lululemon post pending', statusColor: '#F59E0B', note: 'Caption drafted for Lululemon post' },
+    { name: 'James Whitfield', role: 'Agent', status: 'Apex Performance post pending', statusColor: '#F59E0B', note: 'Caption drafted for Apex Performance post' },
     { name: 'Carlos Mendez', role: 'Stringer', status: 'Confirmed 11:45', statusColor: '#10B981', note: 'Clay setup sheet received' },
     { name: 'Dr. Aisha Patel', role: 'Mental Performance Coach', status: 'Session tonight', statusColor: PURPLE_LIGHT, note: 'Post-match session booked' },
   ]

@@ -85,7 +85,7 @@ const DEPT_CONTEXT: Record<string, string> = {
   'academy': 'Current academy data: 42 academy players, U21s won 3-0 (Collins hat-trick), 3 first-team ready, 4 scholarship offers out, EPPP audit next month.',
   'transfers': 'Current transfer data: £4.2m budget remaining, 1 bid submitted (Diallo — Genk countered at £2.1m), window closes in 11 days.',
   'analytics': 'Current analytics data: xG 42.6 (overperforming +5.4), xGA 28.3, 58% possession avg, 84% pass accuracy, right-side attacks 43% of chances.',
-  'media': 'Current media data: press conference at 2pm today, 4 media requests pending (BBC, Sky, local gazette), social followers 124k (+18% engagement).',
+  'media': 'Current media data: press conference at 2pm today, 4 media requests pending (Crown Broadcasting, Northbridge Sport, local gazette), social followers 124k (+18% engagement).',
   'matchday': 'Current matchday data: Riverside United at home Saturday 3pm, expected attendance 8,200, corporate hospitality 94% full, 14/22 ops checklist items done.',
   'training': 'Current training data: tactical session at 10am (pressing triggers), set pieces at 11:30, recovery group (3 players) in gym from 9am, avg load 72%.',
   'finance-football': 'Current club finance data: £4.2m transfer budget, £2.1m/yr wage bill (62% of revenue, target 60%), £3.4m revenue YTD, matchday revenue up 8%.',

@@ -111,7 +111,7 @@ export default function DartsOnboardingPage() {
               </div>
               <div>
                 <label className={labelClass}>Dart setup</label>
-                <input className={inputClass} placeholder="e.g. Red Dragon 22g Tungsten" value={data.dartSetup} onChange={e => update('dartSetup', e.target.value)} />
+                <input className={inputClass} placeholder="e.g. Vanta Sports 22g Tungsten" value={data.dartSetup} onChange={e => update('dartSetup', e.target.value)} />
               </div>
             </>
           )}
@@ -120,11 +120,11 @@ export default function DartsOnboardingPage() {
             <>
               <div>
                 <label className={labelClass}>Primary sponsor</label>
-                <input className={inputClass} placeholder="e.g. Red Dragon Darts" value={data.sponsor1} onChange={e => update('sponsor1', e.target.value)} />
+                <input className={inputClass} placeholder="e.g. Vanta Sports Darts" value={data.sponsor1} onChange={e => update('sponsor1', e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Secondary sponsor</label>
-                <input className={inputClass} placeholder="e.g. Paddy Power" value={data.sponsor2} onChange={e => update('sponsor2', e.target.value)} />
+                <input className={inputClass} placeholder="e.g. Crown Wagers" value={data.sponsor2} onChange={e => update('sponsor2', e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Walk-on music</label>

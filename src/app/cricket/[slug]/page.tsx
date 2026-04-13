@@ -237,7 +237,7 @@ const CRICKET_COMMS=[
   {id:1,author:'Ottis Gibson',role:'Head Coach',time:'08:12',msg:'Team meeting 9:30 in the pavilion — selection for Friday announced.'},
   {id:2,author:'Kunle Odetoyinbo',role:'Physio',time:'Yesterday',msg:'Leech scan results in — 4 week rehab, no return-to-play before 5 May.'},
   {id:3,author:'Darren Gough',role:'DoC',time:'Yesterday',msg:'Brook available full season — ECB rest window confirmed.'},
-  {id:4,author:'Comms',role:'Media',time:'2 days ago',msg:'Sky Sports will broadcast the Lancashire opener. Media training Thu 2pm.'},
+  {id:4,author:'Comms',role:'Media',time:'2 days ago',msg:'Northbridge Sport will broadcast the Lancashire opener. Media training Thu 2pm.'},
 ];
 
 const CHAMPIONSHIP_TABLE=[
@@ -2427,7 +2427,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
             {t:'07:00',e:'Gym & S&C — main squad'},
             {t:'09:30',e:'Team meeting — selection announce'},
             {t:'10:30',e:'Nets — batters + spinners'},
-            {t:'13:00',e:'Media session (Sky Sports)'},
+            {t:'13:00',e:'Media session (Northbridge Sport)'},
             {t:'15:00',e:'Fielding session'},
             {t:'17:30',e:'Physio clinic'},
           ].map((s,i)=>(
@@ -3374,7 +3374,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
               {[
                 {i:'Match bats (Gray-Nicolls)',s:'Gray-Nicolls',st:24,status:'ok'},
                 {i:'Training bats',s:'Gunn & Moore',st:38,status:'ok'},
-                {i:'Whites (XL)',s:'Adidas',st:6,status:'low'},
+                {i:'Whites (XL)',s:'Apex Performance',st:6,status:'low'},
                 {i:'Pads, batting',s:'Masuri',st:22,status:'ok'},
                 {i:'Pads, wicket-keeping',s:'Masuri',st:4,status:'ok'},
                 {i:'Helmets',s:'Masuri',st:18,status:'ok'},
@@ -3392,7 +3392,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
           <Card>
             <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Supplier Contracts</div>
-            {[{s:'Adidas',val:180000,e:'Dec 2027'},{s:'Gray-Nicolls',val:65000,e:'Sep 2026'},{s:'Masuri',val:28000,e:'Mar 2027'}].map((c,i,a)=>(
+            {[{s:'Apex Performance',val:180000,e:'Dec 2027'},{s:'Gray-Nicolls',val:65000,e:'Sep 2026'},{s:'Masuri',val:28000,e:'Mar 2027'}].map((c,i,a)=>(
               <div key={c.s} style={{padding:'6px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
                 <div style={{fontSize:12,color:C.text}}>{c.s}</div>
                 <div style={{fontSize:10,color:C.dim}}>{fmt(c.val)} · exp {c.e}</div>
@@ -3588,8 +3588,8 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
           </Card>
           <Card>
             <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Broadcast</div>
-            <div style={{fontSize:12,color:C.muted}}>Sky Sports · Lancs (H) · Day 1 live</div>
-            <div style={{fontSize:12,color:C.muted}}>BBC Radio Leeds · all home matches</div>
+            <div style={{fontSize:12,color:C.muted}}>Northbridge Sport · Lancs (H) · Day 1 live</div>
+            <div style={{fontSize:12,color:C.muted}}>Crown Broadcasting Radio · all home matches</div>
           </Card>
         </div>
       </div>
@@ -3759,7 +3759,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <Card>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Outstanding Invoices</div>
-          {[{c:'Midlands Bank',v:60000,d:'Q1 activation'},{c:'Apex Construction',v:22500,d:'Quarterly'},{c:'Sky Sports',v:18000,d:'Filming access'}].map((inv,i,a)=>(
+          {[{c:'Midlands Bank',v:60000,d:'Q1 activation'},{c:'Apex Construction',v:22500,d:'Quarterly'},{c:'Northbridge Sport',v:18000,d:'Filming access'}].map((inv,i,a)=>(
             <div key={inv.c} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
               <div><div style={{fontSize:12,color:C.text}}>{inv.c}</div><div style={{fontSize:10,color:C.dim}}>{inv.d}</div></div>
               <div style={{fontSize:13,color:C.amber,fontWeight:500}}>{fmt(inv.v)}</div>
@@ -4340,7 +4340,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     }
     const previousReports = [
       { date:'18 Mar 2026', opp:'Durham MCCU', result:'W', text:'Yorkshire opened their pre-season with an emphatic performance at Headingley, thanks largely to Harry Brook\u2019s patient 124. Coad led the bowling with 4-62 in a disciplined red-ball display.' },
-      { date:'03 Mar 2026', opp:'Lancashire XI', result:'D', text:'A rain-affected draw at Emirates Old Trafford saw Yorkshire declare on 380/6 before weather intervened. Bairstow contributed 87 from number five.' },
+      { date:'03 Mar 2026', opp:'Lancashire XI', result:'D', text:'A rain-affected draw at Old Trafford saw Yorkshire declare on 380/6 before weather intervened. Bairstow contributed 87 from number five.' },
       { date:'22 Feb 2026', opp:'MCC', result:'W', text:'Gibson\u2019s five-wicket haul was the standout of a commanding 6-wicket win at Lord\u2019s. Yorkshire chased down 210 in 42 overs with Lyth anchoring the innings.' },
     ];
     return (
