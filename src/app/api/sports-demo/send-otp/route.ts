@@ -47,31 +47,32 @@ export async function POST(req: NextRequest) {
     }
 
     // Sport-specific branding
-    const sportConfig: Record<string, { emoji: string; name: string; color: string }> = {
-      rugby:      { emoji: '🏉', name: 'Lumio Rugby',       color: '#7C3AED' },
-      football:   { emoji: '⚽', name: 'Lumio Football',    color: '#1d4ed8' },
-      nonleague:  { emoji: '⚽', name: 'Lumio Non League',  color: '#D97706' },
-      grassroots: { emoji: '⚽', name: 'Lumio Grassroots',  color: '#16a34a' },
-      womens:     { emoji: '⚽', name: "Lumio Women's FC",  color: '#DB2777' },
-      golf:       { emoji: '⛳', name: 'Lumio Golf',        color: '#15803D' },
-      tennis:     { emoji: '🎾', name: 'Lumio Tennis',      color: '#0ea5e9' },
-      cricket:    { emoji: '🏏', name: 'Lumio Cricket',     color: '#b45309' },
-      darts:      { emoji: '🎯', name: 'Lumio Darts',       color: '#dc2626' },
+    const sportConfig: Record<string, { logo: string; name: string; color: string }> = {
+      rugby:      { logo: 'https://www.lumiosports.com/rugby_logo.png',      name: 'Lumio Rugby',       color: '#7C3AED' },
+      football:   { logo: 'https://www.lumiosports.com/football_logo.png',   name: 'Lumio Football',    color: '#1d4ed8' },
+      nonleague:  { logo: 'https://www.lumiosports.com/football_logo.png',   name: 'Lumio Non League',  color: '#D97706' },
+      grassroots: { logo: 'https://www.lumiosports.com/football_logo.png',   name: 'Lumio Grassroots',  color: '#16a34a' },
+      womens:     { logo: 'https://www.lumiosports.com/womens_fc_logo.png',  name: "Lumio Women's FC",  color: '#DB2777' },
+      golf:       { logo: 'https://www.lumiosports.com/golf_logo.png',       name: 'Lumio Golf',        color: '#15803D' },
+      tennis:     { logo: 'https://www.lumiosports.com/tennis_logo.png',     name: 'Lumio Tennis',      color: '#0ea5e9' },
+      cricket:    { logo: 'https://www.lumiosports.com/cricket_logo.png',    name: 'Lumio Cricket',     color: '#b45309' },
+      darts:      { logo: 'https://www.lumiosports.com/darts_logo.png',      name: 'Lumio Darts',       color: '#dc2626' },
+      boxing:     { logo: 'https://www.lumiosports.com/boxing_logo.png',     name: 'Lumio Boxing',      color: '#dc2626' },
     }
-    const cfg = sportConfig[sport] ?? { emoji: '🏟️', name: 'Lumio Sports', color: '#7C3AED' }
+    const cfg = sportConfig[sport] ?? { logo: 'https://www.lumiosports.com/Lumio_Sports_logo.png', name: 'Lumio Sports', color: '#7C3AED' }
 
     // Send OTP email via Resend
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: 'Lumio <hello@lumiocms.com>',
+        from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Your ${cfg.name} demo code — ${code}`,
         html: `<!DOCTYPE html><html><body style="background:#07080F;font-family:DM Sans,Arial,sans-serif;margin:0;padding:40px 20px;">
           <div style="max-width:480px;margin:0 auto;background:#0d1117;border:1px solid #1f2937;border-radius:16px;padding:40px;">
             <div style="text-align:center;margin-bottom:32px;">
-              <div style="font-size:48px;margin-bottom:12px;">${cfg.emoji}</div>
+              <img src="${cfg.logo}" width="64" height="64" style="display:block;margin:0 auto 12px;object-fit:contain;" alt="${cfg.name}" />
               <div style="font-size:20px;font-weight:700;color:#ffffff;">${cfg.name}</div>
               <div style="font-size:13px;color:#6b7280;margin-top:4px;">Demo access</div>
             </div>
@@ -97,9 +98,9 @@ export async function POST(req: NextRequest) {
         await notifier.emails.send({
           from: 'Lumio Sports <noreply@lumiosports.com>',
           to: 'tennis@lumiosports.com',
-          subject: `${cfg.emoji} New ${cfg.name} Demo Signup — ${email}`,
+          subject: `New ${cfg.name} Demo Signup — ${email}`,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px;padding:24px;background:#0f0f1a;color:#fff;border-radius:12px;">
-            <h2 style="color:${cfg.color};margin-bottom:8px;">New Demo Signup ${cfg.emoji}</h2>
+            <h2 style="color:${cfg.color};margin-bottom:8px;">New Demo Signup — ${cfg.name}</h2>
             <p style="color:#94a3b8;margin-bottom:24px;">Someone just signed up for the ${cfg.name} demo.</p>
             <table style="width:100%;border-collapse:collapse;">
               <tr><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#94a3b8;width:140px;">Email</td><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#fff;font-weight:bold;">${email}</td></tr>
