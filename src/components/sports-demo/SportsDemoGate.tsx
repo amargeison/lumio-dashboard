@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
+import { SPORT_STATS } from '@/lib/sports/cardStats'
 
 // ── TYPES ──────────────────────────────────────────────────────────────────
 export interface SportsDemoSession {
@@ -113,7 +114,7 @@ const ClubStep = memo(function ClubStep({
 
 const ProfileStep = memo(function ProfileStep({
   userNameRef, photoDataUrl, setPhotoDataUrl, photoInputRef, handlePhotoUpload,
-  accentColor, sportLabel, sportEmoji, roles, selectedRole, defaultUserName,
+  accentColor, sport, sportLabel, sportEmoji, roles, selectedRole, defaultUserName,
   onContinue, onSkip,
 }: {
   userNameRef: React.RefObject<HTMLInputElement | null>
@@ -121,6 +122,7 @@ const ProfileStep = memo(function ProfileStep({
   setPhotoDataUrl: (v: string) => void
   photoInputRef: React.RefObject<HTMLInputElement | null>
   handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => void
+  sport: string
   accentColor: string
   sportLabel: string
   sportEmoji: string
@@ -189,7 +191,7 @@ const ProfileStep = memo(function ProfileStep({
             <div className="text-xs mt-0.5" style={{ color: accentColor }}>{roles.find(r => r.id === selectedRole)?.label ?? 'Player'}</div>
           </div>
           <div className="w-full grid grid-cols-2 gap-x-4 text-[10px]">
-            {[{ label: 'PAC', value: 87 }, { label: 'DRI', value: 76 }, { label: 'SHO', value: 79 }, { label: 'DEF', value: 71 }, { label: 'PAS', value: 84 }, { label: 'PHY', value: 83 }].map(s => (
+            {(SPORT_STATS[sport] || SPORT_STATS.football).map(s => (
               <div key={s.label} className="flex items-center justify-between py-0.5" style={{ borderBottom: `1px solid ${accentColor}20` }}>
                 <span className="font-black text-white">{s.value}</span>
                 <span style={{ color: accentColor }}>{s.label}</span>
@@ -202,6 +204,9 @@ const ProfileStep = memo(function ProfileStep({
       <div>
         <input ref={userNameRef} type="text" defaultValue={defaultUserName} placeholder="Your name"
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500" />
+        <p style={{ color: '#4B5563', fontSize: 12, textAlign: 'center', marginTop: 8, marginBottom: 0 }}>
+          No photo or name? No problem — we&apos;ll load demo player data so you can still explore the full portal.
+        </p>
       </div>
       <div className="flex items-center gap-3">
         <button onClick={onContinue} className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all" style={{ background: accentColor }}>Continue →</button>
@@ -595,6 +600,7 @@ export default function SportsDemoGate({
         photoInputRef={photoInputRef}
         handlePhotoUpload={handlePhotoUpload}
         accentColor={accentColor}
+        sport={sport}
         sportLabel={sportLabel}
         sportEmoji={sportEmoji || '⚽'}
         roles={roles}

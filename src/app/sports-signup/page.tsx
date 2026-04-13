@@ -19,6 +19,7 @@
 import { useState, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { SPORT_STATS } from '@/lib/sports/cardStats'
 
 type SportId =
   | 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket'
@@ -304,42 +305,30 @@ export default function SportsSignupPage() {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 3 && (() => {
+            const cardStats = SPORT_STATS[sport as string] || SPORT_STATS.football
+            return (
             <div className="space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-white">Your profile</h2>
                 <p className="text-xs mt-1" style={{ color: '#6B7280' }}>This is how you&apos;ll appear inside Lumio.</p>
               </div>
 
-              {/* Photo upload */}
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  className="relative group"
-                >
-                  <div
-                    className="w-24 h-24 rounded-full flex items-center justify-center cursor-pointer transition-all overflow-hidden"
-                    style={{ background: `${accent}15`, border: `2px dashed ${accent}60` }}
-                  >
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold" style={{ color: accent }}>
-                        Upload
-                      </span>
-                    )}
-                  </div>
-                </button>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => handlePhotoUpload(e, setAvatarUrl)}
-                />
-                <span className="text-[10px]" style={{ color: '#6B7280' }}>Profile photo · optional · 2 MB max</span>
+              {/* FIFA card preview */}
+              <div style={{ width: 160, margin: '0 auto 8px', background: 'linear-gradient(135deg, #1a1a2e, #16213e)', border: `2px solid ${accent}`, borderRadius: 14, padding: 14, textAlign: 'center' }}>
+                <div style={{ color: '#fff', fontSize: 22, fontWeight: 900, lineHeight: 1 }}>92</div>
+                <div style={{ color: accent, fontSize: 9, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>{sport || 'PLAYER'}</div>
+                <div onClick={() => photoInputRef.current?.click()} style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 10px', cursor: 'pointer', border: `2px solid ${accent}`, overflow: 'hidden', background: '#1F2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: accent, fontSize: 20, fontWeight: 800 }}>{(displayName || 'Y')[0].toUpperCase()}</span>}
+                </div>
+                <div style={{ color: '#fff', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>{displayName ? displayName.toUpperCase().split(' ')[0] : 'YOUR'}</div>
+                <div style={{ color: '#fff', fontSize: 11, fontWeight: 800 }}>{displayName ? (displayName.toUpperCase().split(' ')[1] || '') : 'NAME'}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', marginTop: 8 }}>
+                  {cardStats.map(s => (<div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}><span style={{ color: accent, fontWeight: 700 }}>{s.value}</span><span style={{ color: '#9CA3AF' }}>{s.label}</span></div>))}
+                </div>
               </div>
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, setAvatarUrl)} />
+              <p className="text-center text-[10px]" style={{ color: '#6B7280' }}>Click the photo circle to upload · optional</p>
 
               <div>
                 <label className="text-[11px] uppercase tracking-wider mb-1.5 block" style={{ color: '#6B7280' }}>Player / brand name</label>
@@ -427,7 +416,8 @@ export default function SportsSignupPage() {
                 </button>
               </div>
             </div>
-          )}
+            )
+          })()}
         </div>
 
         <div className="text-center mt-5 space-y-2">
