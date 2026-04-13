@@ -392,7 +392,7 @@ function DartsSendMessage({ onClose, player, session }: { onClose: () => void; p
   const [isUrgent, setIsUrgent] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [loading, setLoading] = useState(false)
-  const TEAM = [
+  const TEAM = session.isDemoShell === false ? [] : [
     { name: 'Dave Askew', role: 'Manager', icon: '💼' },
     { name: 'Steve Morris', role: 'Coach', icon: '📋' },
     { name: 'Dr Paul Reid', role: 'Physiotherapist', icon: '⚕️' },
@@ -437,7 +437,7 @@ function DartsSendMessage({ onClose, player, session }: { onClose: () => void; p
         })}
       </div>
       <div className="p-6">
-        {step === 'who' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-2">{TEAM.map(m => (<button key={m.name} onClick={() => togglePerson(m.name)} className="flex items-center gap-3 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: selectedPeople.includes(m.name) ? 'rgba(217,119,6,0.15)' : '#111318', border: selectedPeople.includes(m.name) ? '1px solid rgba(217,119,6,0.5)' : '1px solid #1F2937' }}><span className="text-lg">{m.icon}</span><div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</div></div>{selectedPeople.includes(m.name) && <span style={{ color: '#D97706' }}>✓</span>}</button>))}</div><div><input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>{allRecipients.length > 0 && <div className="flex flex-wrap gap-1.5">{allRecipients.map(n => <span key={n} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: 'rgba(217,119,6,0.2)', color: '#F59E0B' }}>{n}</span>)}</div>}<button onClick={() => setStep('how')} disabled={allRecipients.length === 0} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all" style={{ backgroundColor: allRecipients.length > 0 ? '#D97706' : '#374151' }}>Next — choose channels →</button></div>)}
+        {step === 'who' && (<div className="space-y-4">{TEAM.length === 0 && <div style={{ textAlign: 'center', padding: 24, color: '#6B7280' }}><div style={{ fontSize: 32, marginBottom: 8 }}>👥</div><div style={{ fontWeight: 600, marginBottom: 4 }}>No team added yet</div><div style={{ fontSize: 12 }}>Add your team in Settings, or type a name below</div></div>}<div className="grid grid-cols-2 gap-2">{TEAM.map(m => (<button key={m.name} onClick={() => togglePerson(m.name)} className="flex items-center gap-3 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: selectedPeople.includes(m.name) ? 'rgba(217,119,6,0.15)' : '#111318', border: selectedPeople.includes(m.name) ? '1px solid rgba(217,119,6,0.5)' : '1px solid #1F2937' }}><span className="text-lg">{m.icon}</span><div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{m.role}</div></div>{selectedPeople.includes(m.name) && <span style={{ color: '#D97706' }}>✓</span>}</button>))}</div><div><input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name..." className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>{allRecipients.length > 0 && <div className="flex flex-wrap gap-1.5">{allRecipients.map(n => <span key={n} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: 'rgba(217,119,6,0.2)', color: '#F59E0B' }}>{n}</span>)}</div>}<button onClick={() => setStep('how')} disabled={allRecipients.length === 0} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all" style={{ backgroundColor: allRecipients.length > 0 ? '#D97706' : '#374151' }}>Next — choose channels →</button></div>)}
         {step === 'how' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{CHANNELS.map(ch => (<button key={ch.id} onClick={() => toggleChannel(ch.id)} className="flex items-center gap-3 rounded-xl p-4 text-left transition-all" style={{ backgroundColor: channels.includes(ch.id) ? 'rgba(217,119,6,0.15)' : '#111318', border: channels.includes(ch.id) ? '1px solid rgba(217,119,6,0.5)' : '1px solid #1F2937' }}><span className="text-2xl">{ch.icon}</span><span className="text-sm font-semibold text-white">{ch.label}</span>{channels.includes(ch.id) && <span className="ml-auto" style={{ color: '#D97706' }}>✓</span>}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep('who')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button><button onClick={() => setStep('message')} disabled={channels.length === 0} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: channels.length > 0 ? '#D97706' : '#374151' }}>Next — write message →</button></div></div>)}
         {step === 'message' && (<div className="space-y-4"><div className="flex flex-wrap gap-1.5 mb-2"><span className="text-xs" style={{ color: '#6B7280' }}>To:</span>{allRecipients.map(n => <span key={n} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(217,119,6,0.15)', color: '#F59E0B' }}>{n}</span>)}<span className="text-xs" style={{ color: '#6B7280' }}>via</span>{channels.map(id => <span key={id} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{CHANNELS.find(c => c.id === id)?.label}</span>)}</div><textarea value={messageText} onChange={e => setMessageText(e.target.value)} rows={5} placeholder="Type your message..." className="w-full px-4 py-3 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} autoFocus /><div className="flex gap-3"><button onClick={() => setStep('how')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button><button onClick={() => handleSend(false)} disabled={!messageText.trim() || loading} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: messageText.trim() ? '#D97706' : '#374151' }}>{loading ? '⏳ Drafting...' : 'Send →'}</button><button onClick={() => handleSend(true)} disabled={!messageText.trim() || loading} className="py-2.5 px-4 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: messageText.trim() ? '#EF4444' : '#374151' }}>🚨 URGENT</button></div></div>)}
         {step === 'preview' && (<div className="space-y-4">{isUrgent && <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}><span>🚨</span><span className="text-xs font-bold" style={{ color: '#EF4444' }}>URGENT — sending to ALL channels simultaneously</span></div>}<div className="rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{aiDraft}</div><div className="flex gap-3"><button onClick={() => { setStep('message'); setAiDraft('') }} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Edit</button><button onClick={() => setStep('sent')} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: isUrgent ? '#EF4444' : '#D97706' }}>✓ Confirm Send</button></div></div>)}
@@ -711,7 +711,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
-          {[
+          {(session.isDemoShell === false ? [
+            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#dc2626', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#dc2626', hot:true },
+            { id:'mental', label:'Mental Prep AI', icon:'🧠', color:'#8B5CF6', hot:true },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
+          ] : [
             { id:'sendmessage', label:'Send Message', icon:'📨', color:'#dc2626', hot:false },
             { id:'flights', label:'Smart Flights', icon:'✈️', color:'#dc2626', hot:true },
             { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#dc2626', hot:true },
@@ -726,7 +731,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
             { id:'expense', label:'Log Expense', icon:'🧾', color:'#6B7280', hot:false },
             { id:'exhibition', label:'Exhibitions', icon:'🎪', color:'#D97706', hot:false },
             { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-          ].map(a => (
+          ]).map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
               style={{ backgroundColor: '#D97706', color: '#FFFFFF' }}>
@@ -8407,17 +8412,17 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 </div>
                 {/* Stat bars */}
                 <div className="space-y-1.5 mb-2">
-                  {[{ label:'Doubles %', pct:38.2, max:60, color:'bg-amber-500' },{ label:'TV avg', pct:((99.1-90)/15)*100, max:100, color:'bg-red-500' },{ label:'Floor avg', pct:((97.3-90)/15)*100, max:100, color:'bg-orange-500' },{ label:'180s/match', pct:(4.2/8)*100, max:100, color:'bg-purple-500' }].map((s, i) => (
+                  {[{ label:'Doubles %', pct:38.2, color:'bg-amber-500', val:'38.2%' },{ label:'TV avg', pct:((99.1-90)/15)*100, color:'bg-red-500', val:'99.1' },{ label:'Floor avg', pct:((97.3-90)/15)*100, color:'bg-orange-500', val:'97.3' },{ label:'180s/match', pct:(4.2/8)*100, color:'bg-purple-500', val:'4.2' }].map((s, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                       <div className="text-[8px] text-gray-500 w-16">{s.label}</div>
-                      <div className="flex-1 bg-gray-800 rounded-full h-1.5"><div className={`${s.color} h-1.5 rounded-full`} style={{ width: `${Math.min(100, s.pct)}%` }} /></div>
-                      <div className="text-[9px] text-gray-400 w-8 text-right">{s.label === 'Doubles %' ? '38.2%' : s.label === 'TV avg' ? '99.1' : s.label === 'Floor avg' ? '97.3' : '4.2'}</div>
+                      <div className="flex-1 bg-gray-800 rounded-full h-1.5">{session.isDemoShell !== false && <div className={`${s.color} h-1.5 rounded-full`} style={{ width: `${Math.min(100, s.pct)}%` }} />}</div>
+                      <div className="text-[9px] text-gray-400 w-8 text-right">{session.isDemoShell === false ? '—' : s.val}</div>
                     </div>
                   ))}
                 </div>
                 {/* Bottom stats row */}
                 <div className="grid grid-cols-3 gap-1 mb-2">
-                  {[{ val:'42.3', label:'CHKOUT%' },{ val:'97.8', label:'AVG' },{ val:'19', label:'RANK' }].map((s, i) => (
+                  {[{ val: session.isDemoShell === false ? '—' : '42.3', label:'CHKOUT%' },{ val: session.isDemoShell === false ? '—' : '97.8', label:'AVG' },{ val: session.isDemoShell === false ? '—' : '19', label:'RANK' }].map((s, i) => (
                     <div key={i} className="text-center bg-black/20 rounded p-1.5">
                       <div className="text-white font-black text-base leading-none">{s.val}</div>
                       <div className="text-[9px] text-gray-400 mt-0.5">{s.label}</div>
@@ -8427,8 +8432,8 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 {/* Form */}
                 <div className="flex items-center justify-center gap-1.5 mb-2">
                   <span className="text-[8px] text-gray-600 mr-1">FORM:</span>
-                  {['W','L','W','W','L'].map((r, i) => (
-                    <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${r === 'W' ? 'bg-teal-600/40 text-teal-400' : 'bg-red-600/30 text-red-400'}`}>{r}</div>
+                  {(session.isDemoShell === false ? ['—','—','—','—','—'] : ['W','L','W','W','L']).map((r, i) => (
+                    <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${r === 'W' ? 'bg-teal-600/40 text-teal-400' : r === 'L' ? 'bg-red-600/30 text-red-400' : 'bg-gray-800 text-gray-600'}`}>{r}</div>
                   ))}
                 </div>
                 {/* Tour badge */}
@@ -8441,6 +8446,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 <div className="text-[9px] font-bold text-white/80 uppercase tracking-widest">LUMIO DARTS</div>
               </div>
             </div>
+            {session.isDemoShell !== false && (<>
             {/* Live Match */}
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="flex items-center gap-1.5 text-xs mb-1">
@@ -8469,6 +8475,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 <div className="text-xs text-red-400">PDC media — confirm tomorrow</div>
               </div>
             </div>
+            </>)}
           </div>
         </div>
         )}
