@@ -1473,12 +1473,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
         const demoStaffPhotos: Record<string, string> = {
-          'Dave Askew': '/Marcus_Webb.jpg',
+          'Dave Askew': '/Dave_Askew.jpg',
+          'James Wright': '/James_Wright.jpg',
           'Steve Morris': '/Carlos_Mendez.jpg',
-          'Dr Paul Reid': '/Sarah_Lee.jpg',
-          'James Wright': '/Marcus_Webb.jpg',
-          'Red Dragon': '/Rick_Dalton.jpg',
-          'Marcos Silva': '/Elena_Russo.jpg',
+          'Dr Paul Reid': '/Dr_Paul_Reid.jpg',
+          'Red Dragon': '/red_dragon.png',
+          'Marcos Silva': '/alex_thompson.jpg',
         }
         const TEAM_MEMBERS = [
           { name:'Dave Askew',      role:'Manager',            status:'Confirmed travel to Dortmund',    available:true,  initials:'DA', phone:'+44 7700 900123', email:'dave@dhsports.com', since:'2021', nationality:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stat1:'42 events managed', stat2:'98% satisfaction' },

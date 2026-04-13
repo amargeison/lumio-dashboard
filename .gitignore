@@ -69,4 +69,8 @@ next-env.d.ts
 !public/alex_thompson.jpg
 !public/james_hargreaves.jpg
 !public/marcus_reid.jpg
+!public/Dave_Askew.jpg
+!public/James_Wright.jpg
+!public/Dr_Paul_Reid.jpg
+!public/red_dragon.png
 .env*.local
