@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { SPORT_FEATURES, ALWAYS_ON } from '@/lib/sports/features'
+import { SPORT_STATS } from '@/lib/sports/cardStats'
 import { Check, Upload, Plus, X } from 'lucide-react'
 
 type Props = {
@@ -75,13 +76,23 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
         {step === 1 && (<div>
           <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Create your player card</h2>
           <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 28 }}>This is how you&apos;ll appear in your portal.</p>
-          <div style={{ width: 180, margin: '0 auto 28px', background: 'linear-gradient(135deg, #1a1a2e, #16213e)', border: `2px solid ${accentColor}`, borderRadius: 16, padding: 16, textAlign: 'center' }}>
-            <div onClick={() => photoRef.current?.click()} style={{ width: 80, height: 80, borderRadius: '50%', margin: '0 auto 12px', cursor: 'pointer', background: photoDataUrl ? 'transparent' : '#1F2937', border: `2px solid ${accentColor}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 180, margin: '0 auto 28px', background: 'linear-gradient(135deg, #1a0a0a, #2d1a0a)', border: `2px solid ${accentColor}`, borderRadius: 16, padding: '14px 12px', textAlign: 'center', position: 'relative' }}>
+            <div style={{ color: '#fff', fontSize: 28, fontWeight: 900, lineHeight: 1, marginBottom: 2 }}>92</div>
+            <div style={{ color: accentColor, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10, textTransform: 'uppercase' }}>{sport}</div>
+            <div onClick={() => photoRef.current?.click()} style={{ width: 72, height: 72, borderRadius: '50%', margin: '0 auto 10px', cursor: 'pointer', border: `2px solid ${accentColor}`, overflow: 'hidden', background: '#1F2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {photoDataUrl ? <img src={photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Upload size={20} color={accentColor} />}
             </div>
-            <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>{displayName || 'Your Name'}</div>
-            {nickname && <div style={{ color: accentColor, fontSize: 11, fontWeight: 600, marginTop: 2 }}>&quot;{nickname}&quot;</div>}
-            <div style={{ marginTop: 8, padding: '2px 8px', borderRadius: 4, background: accentColor + '22', display: 'inline-block' }}><span style={{ color: accentColor, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>{sport}</span></div>
+            <div style={{ color: '#fff', fontSize: 13, fontWeight: 800, letterSpacing: 1, lineHeight: 1.2, textTransform: 'uppercase' }}>{displayName ? displayName.toUpperCase().split(' ')[0] : 'YOUR'}</div>
+            <div style={{ color: '#fff', fontSize: 13, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>{displayName ? (displayName.toUpperCase().split(' ')[1] || '') : 'NAME'}</div>
+            {nickname && <div style={{ color: accentColor, fontSize: 10, fontWeight: 600, marginTop: 2 }}>&quot;{nickname}&quot;</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 8px', marginTop: 10, padding: '8px 4px 0', borderTop: `1px solid ${accentColor}30` }}>
+              {(SPORT_STATS[sport] || SPORT_STATS.darts).map((stat: { label: string; value: number }) => (
+                <div key={stat.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
+                  <span style={{ color: accentColor, fontWeight: 700 }}>{stat.value}</span>
+                  <span style={{ color: '#9CA3AF' }}>{stat.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
           <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && compressImage(e.target.files[0], 400).then(setPhotoDataUrl)} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -105,7 +116,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
         {step === 3 && (<div>
           <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Choose your features</h2>
           <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 8 }}>Select what appears in your portal. Change anytime in Settings.</p>
-          <p style={{ color: '#4B5563', fontSize: 12, marginBottom: 24 }}>{enabledFeatures.length} features selected</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}><p style={{ color: '#4B5563', fontSize: 12, margin: 0 }}>{enabledFeatures.length} features selected</p><button onClick={() => { const allIds = features.map(f => f.id); if (allIds.every(id => enabledFeatures.includes(id))) { setEnabledFeatures([...ALWAYS_ON]) } else { setEnabledFeatures([...new Set([...ALWAYS_ON, ...allIds])]) } }} style={{ background: 'none', border: `1px solid ${accentColor}`, borderRadius: 8, padding: '4px 12px', color: accentColor, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{features.every(f => enabledFeatures.includes(f.id)) ? 'Deselect all' : 'Select all'}</button></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxHeight: 420, overflowY: 'auto' }}>
             {Object.entries(featureGroups).map(([group, gf]) => (<div key={group}><div style={{ color: '#4B5563', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{group}</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{gf.map(f => { const isOn = enabledFeatures.includes(f.id); const isLocked = ALWAYS_ON.includes(f.id); return (<button key={f.id} onClick={() => toggleFeature(f.id)} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isLocked ? 'default' : 'pointer', border: `1px solid ${isOn ? accentColor : '#374151'}`, background: isOn ? accentColor + '22' : '#111318', color: isOn ? accentColor : '#6B7280', display: 'flex', alignItems: 'center', gap: 6 }}><span>{f.icon}</span><span>{f.label}</span>{isOn && !isLocked && <Check size={12} />}{isLocked && <span style={{ fontSize: 9, opacity: 0.6 }}>always on</span>}</button>) })}</div></div>))}
           </div>
