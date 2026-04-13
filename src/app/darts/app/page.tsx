@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { DartsPortalInner } from '../[slug]/page'
+import OnboardingWizard from '@/components/sports/OnboardingWizard'
 
 const SPORT = 'darts'
 
@@ -21,6 +22,7 @@ export default function DartsAppPage() {
   const router = useRouter()
   const [session, setSession] = useState<SportsDemoSession | null>(null)
   const [slug, setSlug] = useState<string>('player')
+  const [onboardingDone, setOnboardingDone] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function DartsAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -48,6 +50,7 @@ export default function DartsAppPage() {
       if (profile.sport !== SPORT) { router.replace(`/${profile.sport}/app`); return }
 
       setSlug(slugify(profile.display_name || 'player'))
+      setOnboardingDone(profile.onboarding_complete ?? false)
       setSession({
         email: user.email ?? '',
         userName: profile.display_name ?? '',
@@ -87,6 +90,9 @@ export default function DartsAppPage() {
     const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await supabase.auth.signOut()
     router.push('/sports-login')
+  }
+  if (!onboardingDone) {
+    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={() => setOnboardingDone(true)} />
   }
   return <DartsPortalInner slug={slug} session={session} onSignOut={handleSignOut} />
 }

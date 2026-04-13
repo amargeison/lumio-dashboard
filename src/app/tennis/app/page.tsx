@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { TennisPortalInner } from '../[slug]/page'
+import OnboardingWizard from '@/components/sports/OnboardingWizard'
 
 const SPORT = 'tennis'
 
@@ -18,6 +19,7 @@ export default function TennisAppPage() {
   const router = useRouter()
   const [session, setSession] = useState<SportsDemoSession | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [onboardingDone, setOnboardingDone] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -34,7 +36,7 @@ export default function TennisAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -52,6 +54,7 @@ export default function TennisAppPage() {
         return
       }
 
+      setOnboardingDone(profile.onboarding_complete ?? false)
       const built: SportsDemoSession = {
         email: user.email ?? '',
         userName: profile.display_name ?? '',
@@ -94,5 +97,8 @@ export default function TennisAppPage() {
     router.push('/sports-login')
   }
 
+  if (!onboardingDone) {
+    return <OnboardingWizard sport="tennis" accentColor="#a855f7" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={() => setOnboardingDone(true)} />
+  }
   return <TennisPortalInner session={session} onSignOut={handleSignOut} />
 }
