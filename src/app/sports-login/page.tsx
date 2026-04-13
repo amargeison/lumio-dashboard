@@ -144,7 +144,7 @@ function SportsLoginForm() {
           body: JSON.stringify({
             email: email.trim(),
             code,
-            sport: userInfo.sport,
+            sport: userInfo.demoSport || userInfo.sport || 'darts',
             userName: userInfo.userName,
             clubName: userInfo.clubName,
             role: userInfo.role,
@@ -154,7 +154,7 @@ function SportsLoginForm() {
         if (!data.success && !data.verified) throw new Error(data.error || 'Invalid code')
 
         // Redirect to demo with restore params
-        const sport = userInfo.demoSport || userInfo.sport || 'tennis'
+        const sport = userInfo.demoSport || userInfo.sport || 'darts'
         const restoreParams = new URLSearchParams({
           restore: 'true',
           ...(userInfo.userName ? { name: userInfo.userName } : {}),
