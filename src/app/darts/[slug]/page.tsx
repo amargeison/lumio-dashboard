@@ -8106,7 +8106,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           entity="player"
           accentColour="#dc2626"
           accentLight="#ef4444"
-          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl }}
+          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl, email: session?.email }}
           storagePrefix="lumio_darts_"
           brandNameValue={liveBrandName}
           brandLogoUrl={liveBrandLogo}

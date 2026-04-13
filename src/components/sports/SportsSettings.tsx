@@ -55,7 +55,7 @@ export interface SportsSettingsProps {
   entity: PortalEntity
   accentColour: string
   accentLight?: string
-  session: { userName?: string; photoDataUrl?: string | null }
+  session: { userName?: string; photoDataUrl?: string | null; email?: string }
   profile: ProfileLabels
   configFields: SportConfigField[]
   integrationGroups?: IntegrationGroup[]
@@ -471,6 +471,13 @@ export default function SportsSettings(props: SportsSettingsProps) {
               </button>
             </div>
           </div>
+
+          {session.email && (
+            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div><div style={{ color: '#9CA3AF', fontSize: 14 }}>Email</div><div style={{ color: '#4B5563', fontSize: 12 }}>Your sign-in email address</div></div>
+              <div style={{ color: '#6B7280', fontSize: 14, fontFamily: 'monospace' }}>{session.email}</div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <span className="text-sm" style={{ color: '#9CA3AF' }}>Name</span>
