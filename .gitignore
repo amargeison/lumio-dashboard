@@ -72,5 +72,5 @@ next-env.d.ts
 !public/Dave_Askew.jpg
 !public/James_Wright.jpg
 !public/Dr_Paul_Reid.jpg
-!public/red_dragon.png
+!public/red_dragon.jpg
 .env*.local
