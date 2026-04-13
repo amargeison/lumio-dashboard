@@ -317,6 +317,11 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
           }]
         })
       })
+      if (!res.ok) {
+        if (res.status === 529) throw new Error('BUSY')
+        if (res.status === 401) throw new Error('AUTH')
+        throw new Error('GENERIC')
+      }
       const data = await res.json()
       const raw = data.content?.map((b: {type:string;text?:string}) =>
         b.type === 'text' ? b.text : '').join('') || ''
@@ -341,6 +346,14 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
       </div>
     ))
 
+  // Demo shell: static content, no API calls
+  const displaySummary = isDemoShell ? (demoContent?.summary || null) : summary
+  const displayHighlights = isDemoShell ? (demoContent?.highlights || highlights) : highlights
+
+  if (isDemoShell && !demoContent) {
+    console.warn(`[DartsAISection] No demo content for darts/${context}`)
+  }
+
   return (
     <div className="mt-8 pt-6 border-t border-gray-800/60">
       <div className="flex items-center gap-2 mb-4">
@@ -353,19 +366,28 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
               <span>✨</span>
               <span className="text-sm font-bold text-white">AI Summary</span>
             </div>
-            <div className="flex items-center gap-2">
-              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
-              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
-            </div>
+            {isDemoShell ? (
+              <span className="text-[10px] text-gray-600">Generated just now</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+                {generated && <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>}
+              </div>
+            )}
           </div>
-          {!summary && !loading && (
-            <button onClick={generateSummary}
-              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
-              Generate AI summary for this section →
-            </button>
-          )}
-          {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
-          {summary && !loading && <div>{renderSummary(summary)}</div>}
+          {isDemoShell ? (
+            displaySummary ? <div>{renderSummary(displaySummary)}</div> : <div className="text-xs text-gray-500">AI Summary</div>
+          ) : (<>
+            {!summary && !loading && !error && (
+              <button onClick={generateSummary}
+                className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
+                Generate AI summary for this section →
+              </button>
+            )}
+            {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+            {error && <div className="text-xs text-red-400 mb-2">{error} <button onClick={generateSummary} className="underline ml-1">Retry</button></div>}
+            {summary && !loading && <div>{renderSummary(summary)}</div>}
+          </>)}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
@@ -373,7 +395,7 @@ Start each line with a relevant emoji. Be specific. Max 180 words. No headers. P
             <span className="text-[10px] text-red-400 cursor-pointer">Performance</span>
           </div>
           <div className="space-y-2">
-            {highlights.map((h, i) => (
+            {displayHighlights.map((h, i) => (
               <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
                 <span className="text-xs text-red-400 font-bold flex-shrink-0 w-4">{i+1}</span>
                 <span className="text-xs text-gray-300">{h}</span>

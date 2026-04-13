@@ -8,6 +8,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
+import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -394,10 +395,12 @@ interface TennisAISectionProps {
 }
 
 function TennisAISection({ context, player, session }: TennisAISectionProps) {
+  const isDemoShell = session.isDemoShell !== false
+  const demoContent = isDemoShell ? getDemoAISummary('tennis', context) : null
   const [summary, setSummary]   = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
   const [generated, setGenerated] = useState(false)
-  const hasGenerated = useRef(false)
+  const [error, setError]         = useState<string | null>(null)
 
   const HIGHLIGHTS: Record<string, string[]> = {
     dashboard: ['ATP Ranking: #67 — up 4 this clay swing', 'Clay win rate: 68% — above ATP tour avg (61%)', 'Serve %: 64% last 5 matches — up 6% from season avg', '312 ranking points expiring after Monte-Carlo', 'Race to Turin: #54 — top 8 qualifies'],
@@ -465,100 +468,86 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
           }]
         })
       })
-      const data = await res.json()
-      if (data.error) {
-        setSummary(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`)
-      } else {
-        const text = cleanResponse(data.content?.map((b: {type:string;text?:string}) =>
-          b.type === 'text' ? b.text : ''
-        ).join('') || '')
-        setSummary(text || '⚠️ No response from AI. Check API key in Settings → Developer Tools.')
+      if (!res.ok) {
+        if (res.status === 529) throw new Error('BUSY')
+        if (res.status === 401) throw new Error('AUTH')
+        throw new Error('GENERIC')
       }
+      const data = await res.json()
+      const raw = data.content?.map((b: {type:string;text?:string}) =>
+        b.type === 'text' ? b.text : ''
+      ).join('') || ''
+      setSummary(cleanResponse(raw))
       setGenerated(true)
-    } catch {
-      setSummary('Unable to generate summary. Check API connection.')
+      setError(null)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'BUSY') setError('AI is briefly busy — try again in a moment.')
+      else if (msg === 'AUTH') setError('AI service unavailable. Please contact support.')
+      else setError('Could not generate summary. Try again.')
     }
     setLoading(false)
   }
 
-  // Auto-generate on mount
-  useEffect(() => {
-    if (hasGenerated.current) return
-    hasGenerated.current = true
-    generateSummary()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // No auto-fire — demo uses static content, real users click Generate
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
       <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0">
-        <span className="flex-shrink-0">{/^[\u{1F300}-\u{1FAFF}]/u.test(line) ? '' : '•'}</span>
         <span>{line}</span>
       </div>
     ))
+
+  // Demo shell: static content, no API calls
+  const displaySummary = isDemoShell ? (demoContent?.summary || null) : summary
+  const displayHighlights = isDemoShell ? (demoContent?.highlights || highlights) : highlights
+
+  if (isDemoShell && !demoContent) {
+    console.warn(`[TennisAISection] No demo content for tennis/${context}`)
+  }
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-800/60">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">🤖 AI Department Intelligence</span>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span>✨</span>
-                <span className="text-sm font-bold text-white">AI Summary</span>
-              </div>
-              <div className="text-[10px] mt-0.5" style={{ color: '#4B5563' }}>Today&apos;s briefing — operational</div>
-            </div>
             <div className="flex items-center gap-2">
-              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
-              <button onClick={generateSummary} disabled={loading}
-                className="text-gray-600 hover:text-gray-400 text-sm">
-                {loading ? '⟳' : '↺'}
-              </button>
+              <span>✨</span>
+              <span className="text-sm font-bold text-white">AI Summary</span>
             </div>
+            {isDemoShell ? (
+              <span className="text-[10px] text-gray-600">Generated just now</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+                {generated && <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>}
+              </div>
+            )}
           </div>
-
-          {!summary && !loading && (
-            <button onClick={generateSummary}
-              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-[#0ea5e9]/40 hover:text-[#0ea5e9] transition-all">
-              Generate AI summary for this section →
-            </button>
-          )}
-
-          {loading && (
-            <div className="space-y-2">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />
-              ))}
-            </div>
-          )}
-
-          {summary && !loading && (
-            <div className="space-y-0">
-              {renderSummary(summary)}
-            </div>
-          )}
-
-          {summary && summary.toLowerCase().includes('watch') && (
-            <div className="mt-3 p-2.5 bg-amber-600/10 border border-amber-600/20 rounded-lg">
-              <span className="text-[10px] text-amber-400">⚠ Watch out — see AI note above</span>
-            </div>
-          )}
+          {isDemoShell ? (
+            displaySummary ? <div>{renderSummary(displaySummary)}</div> : <div className="text-xs text-gray-500">AI Summary</div>
+          ) : (<>
+            {!summary && !loading && !error && (
+              <button onClick={generateSummary}
+                className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-[#0ea5e9]/40 hover:text-[#0ea5e9] transition-all">
+                Generate AI summary for this section →
+              </button>
+            )}
+            {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+            {error && <div className="text-xs text-red-400 mb-2">{error} <button onClick={generateSummary} className="underline ml-1">Retry</button></div>}
+            {summary && !loading && <div>{renderSummary(summary)}</div>}
+          </>)}
         </div>
-
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span>⚡</span>
-              <span className="text-sm font-bold text-white">Performance Intelligence</span>
-            </div>
+            <div className="flex items-center gap-2"><span>⚡</span><span className="text-sm font-bold text-white">Performance Intelligence</span></div>
             <span className="text-[10px] text-[#0ea5e9] cursor-pointer hover:underline">Data</span>
           </div>
           <div className="space-y-2">
-            {highlights.map((h, i) => (
+            {displayHighlights.map((h, i) => (
               <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
                 <span className="text-xs text-[#0ea5e9] font-bold flex-shrink-0 w-4">{i+1}</span>
                 <span className="text-xs text-gray-300">{h}</span>

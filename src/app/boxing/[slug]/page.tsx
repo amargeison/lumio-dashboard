@@ -7,6 +7,7 @@ import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
+import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -427,10 +428,12 @@ interface BoxingAISectionProps {
 }
 
 function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
+  const isDemoShell = session.isDemoShell !== false
+  const demoContent = isDemoShell ? getDemoAISummary('boxing', context) : null
   const [summary, setSummary]     = useState<string | null>(null)
   const [loading, setLoading]     = useState(false)
   const [generated, setGenerated] = useState(false)
-  const hasGenerated = useRef(false)
+  const [error, setError]         = useState<string | null>(null)
 
   const HIGHLIGHTS: Record<string, string[]> = {
     dashboard:    [`Fight Night in ${fighter.next_fight.days_away} days — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking})`, `Weight on track: ${fighter.current_weight}kg — cut to ${fighter.target_weight}kg manageable`, 'Sparring this week: 8 rounds logged — no incidents', 'Purse bid deadline: IBF mandatory — 30 Apr', 'GPS load: ACWR 1.25 — manage carefully, near upper limit'],
@@ -475,37 +478,27 @@ Cover the four or five most important insights for the ${context} section in one
           }]
         })
       })
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || `HTTP ${res.status}`)
-        console.error('[BoxingAISection] API error:', errMsg, data)
-        setSummary(`⚠️ AI service error: ${errMsg}. Check ANTHROPIC_API_KEY in Settings → Developer Tools.`)
-        setGenerated(true)
-        setLoading(false)
-        return
+      if (!res.ok) {
+        if (res.status === 529) throw new Error('BUSY')
+        if (res.status === 401) throw new Error('AUTH')
+        throw new Error('GENERIC')
       }
+      const data = await res.json()
       const raw = data.content?.map((b: {type:string;text?:string}) =>
         b.type === 'text' ? b.text : '').join('') || ''
-      if (!raw.trim()) {
-        console.warn('[BoxingAISection] Empty response from API:', data)
-        setSummary('⚠️ AI returned an empty response. Try again or check API key configuration.')
-      } else {
-        setSummary(cleanResponse(raw) || raw)
-      }
+      setSummary(cleanResponse(raw))
       setGenerated(true)
+      setError(null)
     } catch (err) {
-      console.error('[BoxingAISection] Fetch failed:', err)
-      setSummary('⚠️ Unable to reach AI service. Check your network connection.')
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'BUSY') setError('AI is briefly busy — try again in a moment.')
+      else if (msg === 'AUTH') setError('AI service unavailable. Please contact support.')
+      else setError('Could not generate summary. Try again.')
     }
     setLoading(false)
   }
 
-  useEffect(() => {
-    if (hasGenerated.current) return
-    hasGenerated.current = true
-    generateSummary()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // No auto-fire — demo uses static content, real users click Generate
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
@@ -513,6 +506,14 @@ Cover the four or five most important insights for the ${context} section in one
         <span>{line}</span>
       </div>
     ))
+
+  // Demo shell: static content, no API calls
+  const displaySummary = isDemoShell ? (demoContent?.summary || null) : summary
+  const displayHighlights = isDemoShell ? (demoContent?.highlights || highlights) : highlights
+
+  if (isDemoShell && !demoContent) {
+    console.warn(`[BoxingAISection] No demo content for boxing/${context}`)
+  }
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-800/60">
@@ -526,24 +527,28 @@ Cover the four or five most important insights for the ${context} section in one
               <span>✨</span>
               <span className="text-sm font-bold text-white">AI Summary</span>
             </div>
-            <div className="flex items-center gap-2">
-              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
-              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
-            </div>
+            {isDemoShell ? (
+              <span className="text-[10px] text-gray-600">Generated just now</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+                {generated && <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>}
+              </div>
+            )}
           </div>
-          {!summary && !loading && (
-            <button onClick={generateSummary}
-              className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
-              Generate AI summary for this section →
-            </button>
-          )}
-          {loading && (
-            <div>
-              <div className="text-[10px] text-gray-600 mb-2">Generating AI summary…</div>
-              <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>
-            </div>
-          )}
-          {summary && !loading && <div>{renderSummary(summary)}</div>}
+          {isDemoShell ? (
+            displaySummary ? <div>{renderSummary(displaySummary)}</div> : <div className="text-xs text-gray-500">AI Summary</div>
+          ) : (<>
+            {!summary && !loading && !error && (
+              <button onClick={generateSummary}
+                className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-red-500/40 hover:text-red-400 transition-all">
+                Generate AI summary for this section →
+              </button>
+            )}
+            {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+            {error && <div className="text-xs text-red-400 mb-2">{error} <button onClick={generateSummary} className="underline ml-1">Retry</button></div>}
+            {summary && !loading && <div>{renderSummary(summary)}</div>}
+          </>)}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
@@ -551,7 +556,7 @@ Cover the four or five most important insights for the ${context} section in one
             <span className="text-[10px] text-red-400 cursor-pointer">Performance</span>
           </div>
           <div className="space-y-2">
-            {highlights.map((h, i) => (
+            {displayHighlights.map((h, i) => (
               <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
                 <span className="text-xs text-red-400 font-bold flex-shrink-0 w-4">{i+1}</span>
                 <span className="text-xs text-gray-300">{h}</span>
@@ -6679,7 +6684,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
         })
       })
       const data = await res.json()
-      if (data.error) { setPlan(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      if (data.error) { setPlan(`⚠️ AI service temporarily unavailable. Try again.`); setLoading(false); return }
       const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
       setPlan(cleanResponse(raw) || '⚠️ No response from AI.')
     } catch (err) { console.error('[BoxingWeightCutAI] fetch error:', err); setPlan('⚠️ Unable to reach AI service.') }
@@ -6746,7 +6751,7 @@ function BoxingOpponentScout({ onClose, fighter }: { onClose: () => void; fighte
         })
       })
       const data = await res.json()
-      if (data.error) { setReport(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      if (data.error) { setReport(`⚠️ AI service temporarily unavailable. Try again.`); setLoading(false); return }
       const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
       setReport(cleanResponse(raw) || '⚠️ No response from AI.')
     } catch (err) { console.error('[BoxingOpponentScout] fetch error:', err); setReport('⚠️ Unable to reach AI service.') }
@@ -6804,7 +6809,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
         })
       })
       const data = await res.json()
-      if (data.error) { setResult(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      if (data.error) { setResult(`⚠️ AI service temporarily unavailable. Try again.`); setLoading(false); return }
       const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
       setResult(cleanResponse(raw) || '⚠️ No response from AI.')
     } catch (err) { console.error('[BoxingVADACheck] fetch error:', err); setResult('⚠️ Unable to reach AI service.') }
@@ -6921,7 +6926,7 @@ function BoxingRankingsTracker({ onClose, session, fighter }: { onClose: () => v
         })
       })
       const data = await res.json()
-      if (data.error) { setReport(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      if (data.error) { setReport(`⚠️ AI service temporarily unavailable. Try again.`); setLoading(false); return }
       const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
       setReport(cleanResponse(raw) || '⚠️ No response from AI.')
     } catch (err) { console.error('[BoxingRankingsTracker] fetch error:', err); setReport('⚠️ Unable to reach AI service.') }
@@ -6982,7 +6987,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
         })
       })
       const data = await res.json()
-      if (data.error) { setContent(`⚠️ AI service error. Check ANTHROPIC_API_KEY in Settings.`); setLoading(false); return }
+      if (data.error) { setContent(`⚠️ AI service temporarily unavailable. Try again.`); setLoading(false); return }
       const raw = data.content?.filter((b: {type:string}) => b.type === 'text').map((b: {text:string}) => b.text).join('\n') || ''
       setContent(cleanResponse(raw) || '⚠️ No response from AI.')
     } catch (err) { console.error('[BoxingCampContent] fetch error:', err); setContent('⚠️ Unable to reach AI service.') }

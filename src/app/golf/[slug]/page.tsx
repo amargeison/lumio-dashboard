@@ -8,6 +8,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
+import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -391,10 +392,12 @@ interface GolfAISectionProps {
 }
 
 function GolfAISection({ context, player, session }: GolfAISectionProps) {
+  const isDemoShell = session.isDemoShell !== false
+  const demoContent = isDemoShell ? getDemoAISummary('golf', context) : null
   const [summary, setSummary] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState(false)
-  const hasGenerated = useRef(false)
+  const [error, setError]         = useState<string | null>(null)
 
   const SECTION_PROMPTS: Record<string, string> = {
     dashboard: 'Overview of today\'s priorities: tee time, OWGR movement, key obligations, and any alerts.',
@@ -445,41 +448,39 @@ Cover the four or five most important insights for this section in one flowing p
           }]
         })
       })
+      if (!res.ok) {
+        if (res.status === 529) throw new Error('BUSY')
+        if (res.status === 401) throw new Error('AUTH')
+        throw new Error('GENERIC')
+      }
       const data = await res.json()
-      if (!res.ok || data.error) {
-        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || `HTTP ${res.status}`)
-        console.error('[GolfAISection] API error:', errMsg, data)
-        setSummary(`⚠️ AI service error: ${errMsg}. Check ANTHROPIC_API_KEY in Settings → Developer Tools.`)
-        setGenerated(true)
-        setLoading(false)
-        return
-      }
       const raw = data.content?.map((b: {type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
-      if (!raw.trim()) {
-        console.warn('[GolfAISection] Empty response from API:', data)
-        setSummary('⚠️ AI returned an empty response. Try again or check API key configuration.')
-      } else {
-        setSummary(cleanResponse(raw) || raw)
-      }
+      setSummary(cleanResponse(raw))
       setGenerated(true)
+      setError(null)
     } catch (err) {
-      console.error('[GolfAISection] Fetch failed:', err)
-      setSummary('⚠️ Unable to reach AI service. Check your network connection.')
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'BUSY') setError('AI is briefly busy — try again in a moment.')
+      else if (msg === 'AUTH') setError('AI service unavailable. Please contact support.')
+      else setError('Could not generate summary. Try again.')
     }
     setLoading(false)
   }
 
-  useEffect(() => {
-    if (hasGenerated.current) return
-    hasGenerated.current = true
-    generateSummary()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // No auto-fire — demo uses static content, real users click Generate
 
   const renderSummary = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((line, i) => (
       <div key={i} className="flex gap-2 text-xs text-gray-300 py-1 border-b border-gray-800/40 last:border-0"><span>{line}</span></div>
     ))
+
+  // Demo shell: static content, no API calls
+  const displaySummary = isDemoShell ? (demoContent?.summary || null) : summary
+  const displayHighlights = isDemoShell ? (demoContent?.highlights || highlights) : highlights
+
+  if (isDemoShell && !demoContent) {
+    console.warn(`[GolfAISection] No demo content for golf/${context}`)
+  }
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-800/60">
@@ -490,23 +491,27 @@ Cover the four or five most important insights for this section in one flowing p
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2"><span>✨</span><span className="text-sm font-bold text-white">AI Summary</span></div>
-            <div className="flex items-center gap-2">
-              {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
-              <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>
-            </div>
+            {isDemoShell ? (
+              <span className="text-[10px] text-gray-600">Generated just now</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {generated && <span className="text-[10px] text-gray-600">Generated just now</span>}
+                {generated && <button onClick={generateSummary} disabled={loading} className="text-gray-600 hover:text-gray-400 text-sm">{loading ? '⟳' : '↺'}</button>}
+              </div>
+            )}
           </div>
-          {!summary && !loading && (
-            <button onClick={generateSummary} className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-green-600/40 hover:text-green-500 transition-all">
-              Generate AI summary for this section →
-            </button>
-          )}
-          {loading && (
-            <div>
-              <div className="text-[10px] text-gray-600 mb-2">Generating AI summary…</div>
-              <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>
-            </div>
-          )}
-          {summary && !loading && <div>{renderSummary(summary)}</div>}
+          {isDemoShell ? (
+            displaySummary ? <div>{renderSummary(displaySummary)}</div> : <div className="text-xs text-gray-500">AI Summary</div>
+          ) : (<>
+            {!summary && !loading && !error && (
+              <button onClick={generateSummary} className="w-full py-3 rounded-xl text-xs font-semibold border border-gray-800 text-gray-500 hover:border-green-600/40 hover:text-green-500 transition-all">
+                Generate AI summary for this section →
+              </button>
+            )}
+            {loading && <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{width:`${70+i*7}%`}} />)}</div>}
+            {error && <div className="text-xs text-red-400 mb-2">{error} <button onClick={generateSummary} className="underline ml-1">Retry</button></div>}
+            {summary && !loading && <div>{renderSummary(summary)}</div>}
+          </>)}
         </div>
         <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
@@ -514,7 +519,7 @@ Cover the four or five most important insights for this section in one flowing p
             <span className="text-[10px] text-green-500 cursor-pointer">Performance</span>
           </div>
           <div className="space-y-2">
-            {highlights.map((h, i) => (
+            {displayHighlights.map((h, i) => (
               <div key={i} className="flex gap-3 py-1.5 border-b border-gray-800/40 last:border-0">
                 <span className="text-xs text-green-500 font-bold flex-shrink-0 w-4">{i+1}</span>
                 <span className="text-xs text-gray-300">{h}</span>
