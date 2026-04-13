@@ -9,7 +9,7 @@ type Props = {
   sport: string
   accentColor: string
   profile: { id: string; display_name?: string; email?: string }
-  onComplete: (enabledFeatures: string[]) => void
+  onComplete: (enabledFeatures: string[], portalSlug?: string) => void
 }
 type Invite = { name: string; email: string; role: string }
 
@@ -56,7 +56,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
           body: JSON.stringify({ name: displayName, sport, email: profile.email, clubName, location, portalSlug, setupType })
         }).catch(() => {})
       }
-      onComplete(enabledFeatures)
+      onComplete(enabledFeatures, portalSlug)
     } catch (e) { console.error(e) }
     setSaving(false)
   }
