@@ -208,7 +208,7 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
 const TourBadge = ({ tier }: { tier: string }) => {
   const colors: Record<string, string> = {
     'Major': 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
-    'Rolex Series': 'bg-purple-600/20 text-purple-400 border border-purple-600/30',
+    'Meridian Series': 'bg-purple-600/20 text-purple-400 border border-purple-600/30',
     'DP World Tour': 'bg-blue-600/20 text-blue-400 border border-blue-600/30',
     'Co-sanctioned': 'bg-teal-600/20 text-teal-400 border border-teal-600/30',
     'Challenge Tour': 'bg-gray-600/20 text-gray-400 border border-gray-600/30',
@@ -294,7 +294,7 @@ const SGRadar = () => {
 };
 
 const PrizeMoneyChart = () => {
-  const cats = [{ label: 'Majors', val: 45, color: '#EAB308' }, { label: 'Rolex Series', val: 78, color: '#6C3FC5' }, { label: 'DP World Tour', val: 124, color: '#0D9488' }, { label: 'Pro-Ams', val: 38, color: '#3B82F6' }];
+  const cats = [{ label: 'Majors', val: 45, color: '#EAB308' }, { label: 'Meridian Series', val: 78, color: '#6C3FC5' }, { label: 'DP World Tour', val: 124, color: '#0D9488' }, { label: 'Pro-Ams', val: 38, color: '#3B82F6' }];
   const total = cats.reduce((a, b) => a + b.val, 0);
   let offset = 0;
   return (
@@ -412,16 +412,16 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
   }
 
   const HIGHLIGHTS: Record<string, string[]> = {
-    dashboard:    [`Tee time: 09:42 tomorrow — BMW International, Hole 1`, `OWGR #${player.owgr} — ${player.owgr_points} pts avg, 285pts defending this week`, `SG: Putting -1.18 — critical focus for today's session`, `Caddie Mick confirmed: course strategy notes updated`, `Callaway renewal due in 18 days — agent Sarah has proposal`],
+    dashboard:    [`Tee time: 09:42 tomorrow — Halden Motors International, Hole 1`, `OWGR #${player.owgr} — ${player.owgr_points} pts avg, 285pts defending this week`, `SG: Putting -1.18 — critical focus for today's session`, `Caddie Mick confirmed: course strategy notes updated`, `Vanta Sports renewal due in 18 days — agent Sarah has proposal`],
     owgr:         [`Current OWGR: #${player.owgr} — up 3 this week`, `285 pts defending this week — need T20+ to hold position`, `Career high #${player.career_high_owgr} achievable with strong summer swing`, `Top-50 OWGR locks Masters 2027 invitation`, `Race to Dubai #${player.race_to_dubai_pos} — need +260pts to reach cut line`],
     strokes:      [`SG: Off the Tee +0.41 — consistent strength this season`, `SG: Putting -1.18 — critical weakness from 8-15ft`, `SG: Approach -0.28 — 7-iron carry 4yd shorter than assumed`, `SG: Around Green +0.15 — bunker technique improving`, `Tee-to-green strong (+0.28) but putting cancels gains`],
     coursefit:     [`Eichenried: 8.1/10 course fit — approach game suits layout`, `Wentworth: 9.0/10 — best course fit on tour for this profile`, `Royal Birkdale: 6.8/10 — links putting historically weak`, `Crans-sur-Sierre: 8.8/10 — altitude approach play is elite`, `Course fit weighted by SG profile vs historical demands`],
     practicelog:  [`Today: 120 min putting session — 8-15ft focus with Pete`, `Short game with Dave yesterday: bunker technique improved`, `TrackMan: 7-iron carry 168yd — corrected to 6-iron from 172yd`, `Course walk with Mick: holes 7 and 15 identified as scoring holes`, `Pre-round routine: 45 min confirmed for tomorrow AM`],
-    sponsorship:  [`Callaway renewal: 18-day deadline — Sarah has proposal ready`, `Callaway content: 2 posts this month (0 done) — post due today`, `BMW Pro-Am: hospitality partner confirmed for tomorrow`, `TaylorMade call at 16:00 — equipment review discussion`, `Puma apparel obligation confirmed for this event`],
-    travel:       [`Munich hotel: confirmed 3 nights (Mon-Thu)`, `Next event: Scottish Open — Edinburgh, 10-13 Jul`, `Caddie Mick: flights confirmed and reimbursed`, `European leg: 4 events confirmed Jul-Sep`, `BMW PGA: Wentworth accommodation via BMW partner deal`],
-    financial:    [`Prize money YTD: £367,000`, `This week's purse: $4.5M — cut = £18k, win = £1.32M`, `Agent commission: 10% of endorsement income`, `Multi-jurisdiction tax: 20+ countries, accountant briefed`, `Equipment: TaylorMade + Callaway cover most costs`],
+    sponsorship:  [`Vanta Sports renewal: 18-day deadline — Sarah has proposal ready`, `Vanta Sports content: 2 posts this month (0 done) — post due today`, `Halden Motors Pro-Am: hospitality partner confirmed for tomorrow`, `Vanta Sports call at 16:00 — equipment review discussion`, `Apex Performance apparel obligation confirmed for this event`],
+    travel:       [`Munich hotel: confirmed 3 nights (Mon-Thu)`, `Next event: Scottish Open — Edinburgh, 10-13 Jul`, `Caddie Mick: flights confirmed and reimbursed`, `European leg: 4 events confirmed Jul-Sep`, `Halden Motors Championship: Wentworth accommodation via Halden Motors partner deal`],
+    financial:    [`Prize money YTD: £367,000`, `This week's purse: $4.5M — cut = £18k, win = £1.32M`, `Agent commission: 10% of endorsement income`, `Multi-jurisdiction tax: 20+ countries, accountant briefed`, `Equipment: Vanta Sports + Vanta Sports cover most costs`],
     mental:       [`Pre-round routine: focus word "committed" — Dr. Reed`, `Putting anxiety cycle identified — tension is the problem, not the putts`, `Last 3 final rounds: 67, 72, 69 — solid closing ability`, `3-breath reset between shots — part of on-course protocol`, `Video call with Dr. Reed tonight at 20:00 — pre-tournament check-in`],
-    default:      [`BMW International Open — Munich — R1 tomorrow 09:42`, `OWGR #${player.owgr} — 285pts defending this week`, `SG: Putting -1.18 — today's primary practice focus`, `Callaway renewal due in 18 days`, `Caddie course notes ready for review`],
+    default:      [`Halden Motors International Open — Munich — R1 tomorrow 09:42`, `OWGR #${player.owgr} — 285pts defending this week`, `SG: Putting -1.18 — today's primary practice focus`, `Vanta Sports renewal due in 18 days`, `Caddie course notes ready for review`],
   }
 
   const highlights = HIGHLIGHTS[context] ?? HIGHLIGHTS.default
@@ -442,7 +442,7 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
 
 Generate a concise AI department summary for the "${context}" section. Focus: ${sectionContext}
 
-Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos} (${player.race_to_dubai_points} pts), career high #${player.career_high_owgr}, SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Current event: BMW International Open, Munich. Coach: ${player.coach}, Caddie: ${player.caddie}.
+Player context: OWGR #${player.owgr}, OWGR points avg ${player.owgr_points}, Race to Dubai #${player.race_to_dubai_pos} (${player.race_to_dubai_points} pts), career high #${player.career_high_owgr}, SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Current event: Halden Motors International Open, Munich. Coach: ${player.coach}, Caddie: ${player.caddie}.
 
 Cover the four or five most important insights for this section in one flowing paragraph. Around 120–160 words. Plain prose only — no bullet points, no dashes, no numbered lists, no emoji at the start of lines, no bold, no headers, no markdown.`
           }]
@@ -537,7 +537,7 @@ Cover the four or five most important insights for this section in one flowing p
 const POINTS_EXPIRY = [
   { event: 'Genesis Scottish Open', pos: 'T6', points: 330, expires: 'Jul 12 2026', urgency: 'high' },
   { event: 'KLM Open', pos: 'T3', points: 480, expires: 'Jun 7 2026', urgency: 'medium' },
-  { event: 'BMW PGA Championship', pos: 'T14', points: 88, expires: 'Sep 6 2026', urgency: 'low' },
+  { event: 'Halden Motors Championship', pos: 'T14', points: 88, expires: 'Sep 6 2026', urgency: 'low' },
   { event: 'Austrian Alpine Open', pos: 'T31', points: 42, expires: 'May 31 2026', urgency: 'medium' },
   { event: 'Hero Indian Open', pos: 'T22', points: 38, expires: 'Mar 29 2026', urgency: 'high' },
 ]
@@ -641,7 +641,7 @@ function GolfSendMessage({ onClose, player, session }: { onClose: () => void; pl
     { name: 'Dr Sarah Lee', role: 'Physiotherapist', icon: '⚕️' },
     { name: 'James Wright', role: 'Agent', icon: '💼' },
     { name: 'Petra Novak', role: 'Nutritionist', icon: '🥗' },
-    { name: 'TaylorMade', role: 'Equipment Sponsor', icon: '🏌️' },
+    { name: 'Vanta Sports', role: 'Equipment Sponsor', icon: '🏌️' },
   ]
 
   const CHANNELS = [
@@ -919,7 +919,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     setShowAddTask(false)
   };
   const recentForm = [
-    { event: 'BMW PGA', pos: '14', points: 88, prize: '£42k' },
+    { event: 'Halden Motors Championship', pos: '14', points: 88, prize: '£42k' },
     { event: 'Scottish Open', pos: '6', points: 330, prize: '£198k' },
     { event: 'US Open', pos: 'MC', points: 0, prize: '£0' },
     { event: 'KLM Open', pos: '3', points: 480, prize: '£124k' },
@@ -929,21 +929,21 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   // ─── MORNING ROUNDUP DATA ──────────────────────────────────────────────────
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
     { id: 'agent', label: 'Agent Messages', icon: '📞', count: 2, urgent: true, color: '#8B5CF6', messages: [
-      { id: 'ag1', from: 'James Crawford', text: 'Callaway want to extend the deal — new terms attached. £65k/yr + equipment. Need your sign-off by Friday.', time: '08:12' },
-      { id: 'ag2', from: 'James Crawford', text: 'BMW Pro-Am appearance fee confirmed: £12,000 + travel. Hospitality tent tomorrow 14:30.', time: '07:45' },
+      { id: 'ag1', from: 'James Crawford', text: 'Vanta Sports want to extend the deal — new terms attached. £65k/yr + equipment. Need your sign-off by Friday.', time: '08:12' },
+      { id: 'ag2', from: 'James Crawford', text: 'Halden Motors Pro-Am appearance fee confirmed: £12,000 + travel. Hospitality tent tomorrow 14:30.', time: '07:45' },
     ]},
     { id: 'tournament', label: 'Tournament Desk', icon: '🏆', count: 3, urgent: true, color: '#D97706', messages: [
       { id: 'td1', from: 'DP World Tour', text: 'R2 tee time confirmed: 09:24, Hole 1, with R. McIlroy & S. Scheffler.', time: '06:30' },
       { id: 'td2', from: 'Entry Desk', text: 'Scottish Open entry deadline closes TODAY at 17:00. Your entry is pending.', time: '07:00' },
-      { id: 'td3', from: 'BMW International', text: 'Practice range opens 06:00 tomorrow. Pin positions for R2 posted to caddie app.', time: '08:00' },
+      { id: 'td3', from: 'Halden Motors International', text: 'Practice range opens 06:00 tomorrow. Pin positions for R2 posted to caddie app.', time: '08:00' },
     ]},
     { id: 'caddie', label: 'Caddie Notes', icon: '🏌️', count: 2, urgent: false, color: '#15803D', messages: [
       { id: 'cn1', from: 'Mick Sullivan', text: 'Updated hole 7 strategy — 9-iron not 8 from the new tee. Pin back-left, aim 15ft right.', time: '08:30' },
       { id: 'cn2', from: 'Mick Sullivan', text: 'Yardage book corrections for holes 12 and 15. Wind forecast changed — switching to low ball flight plan.', time: '07:15' },
     ]},
     { id: 'sponsor', label: 'Media & Sponsor', icon: '📱', count: 3, urgent: false, color: '#EA580C', messages: [
-      { id: 'sp1', from: 'Sarah Chen', text: 'Callaway post due before 18:00 — caption drafted and attached. Just need your photo from the range.', time: '09:00' },
-      { id: 'sp2', from: 'Sarah Chen', text: 'Sky Sports interview request for post-round — 5 min, greenside. Confirmed tentatively.', time: '08:45' },
+      { id: 'sp1', from: 'Sarah Chen', text: 'Vanta Sports post due before 18:00 — caption drafted and attached. Just need your photo from the range.', time: '09:00' },
+      { id: 'sp2', from: 'Sarah Chen', text: 'Northbridge Sport interview request for post-round — 5 min, greenside. Confirmed tentatively.', time: '08:45' },
       { id: 'sp3', from: 'Carlos Mendez', text: 'Range session notes sent — focus on 7-iron carry distance today. TrackMan data attached.', time: '07:30' },
     ]},
     { id: 'physio', label: 'Physio & Medical', icon: '⚕️', count: 1, urgent: true, color: '#EF4444', messages: [
@@ -990,7 +990,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
       { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
       { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
-      { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+      { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
       { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
     ]
     const scheduleForBriefing = buildScheduleItems(
@@ -1186,14 +1186,14 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
                     {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your golf OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. World rankings, tournament schedule, TrackMan data, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next event:</span> <span className="text-white font-semibold">Masters — Augusta National</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Tee time:</span> <span className="text-white font-semibold">09:24 R2 — Hole 1</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#15803D' }}>⛳</span> <span style={{ color: '#9CA3AF' }}>Used by DP World Tour and PGA Tour players to manage their season end to end.</span></div></>)}
-                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every tournament week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers today&apos;s tee time, course conditions, caddie notes, sponsor obligations and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(21,128,61,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(21,128,61,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(21,128,61,0.12)', color: '#15803D' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⛳', text:'Tee time 09:24 R2 Augusta National. Wind 14mph SW — affects Amen Corner significantly.' },{ icon:'🤝', text:'Callaway content post due by 12:00 — Instagram photo needed. Penalty clause.' },{ icon:'✈️', text:'Madrid hotel confirmed for next week. Transfer from airport arranged.' },{ icon:'📊', text:'Cut line projected +2. You are -3 after R1. GIR% yesterday: 72% — above season avg.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up on the range.</span></div></>)}
+                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every tournament week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers today&apos;s tee time, course conditions, caddie notes, sponsor obligations and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(21,128,61,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(21,128,61,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(21,128,61,0.12)', color: '#15803D' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⛳', text:'Tee time 09:24 R2 Augusta National. Wind 14mph SW — affects Amen Corner significantly.' },{ icon:'🤝', text:'Vanta Sports content post due by 12:00 — Instagram photo needed. Penalty clause.' },{ icon:'✈️', text:'Madrid hotel confirmed for next week. Transfer from airport arranged.' },{ icon:'📊', text:'Cut line projected +2. You are -3 after R1. GIR% yesterday: 72% — above season avg.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up on the range.</span></div></>)}
                     {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — book the cheapest flights, log a TrackMan session, get caddie notes AI-generated, file a physio report, post sponsor content.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Course Notes AI', icon:'🗺️', hot:true },{ label:'Log Round', icon:'📋', hot:false },{ label:'TrackMan Session', icon:'📡', hot:true },{ label:'Caddie Brief', icon:'⛳', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#16A34A' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#16A34A' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🗺️</span> <span style={{ color: '#0ea5e9' }}>Course Notes AI pulls the latest course data, pin positions and weather forecast and briefs your caddie in 10 seconds.</span></div></>)}
                     {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Tour travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every DP World Tour and PGA Tour venue. Smart Hotel finds the best course-adjacent hotels.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Delta · DL 417</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£687 return</span></div><div className="text-[10px] text-gray-400">London LHR → Augusta Regional · 9h 45m · 1 stop ATL</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Augusta Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£189/night</span></div><div className="text-[10px] text-gray-400">1.2km from Augusta National · Driving range ✅ · 8.7 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Tour players using Smart Flights save an average of £890 per tournament. That&apos;s £18k over a 20-event season.</span></div></>)}
                     {step.preview === 'performance' && (<><h2 className="text-xl font-black text-white mb-2">Every shot tracked. Every ranking point counted.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>OWGR ranking, Race to Dubai standing, scoring average, GIR%, driving distance, putting average — all updated after every round.</p><div className="grid grid-cols-2 gap-3 mb-4">{[{ label:'OWGR', value:`#${player.owgr}`, sub:'↑ 4 this month', color:'#15803D' },{ label:'Race to Dubai', value:`#${player.race_to_dubai_pos}`, sub:`${player.owgr_points.toFixed(0)} pts`, color:'#0D9488' },{ label:'Scoring Avg', value:'70.2', sub:'Tour avg: 71.1', color:'#F97316' },{ label:'Form (last 5)', value:'MC-6-3-1-MC', sub:'2 top-10s', color:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-[10px] text-gray-500 mb-1">{s.label}</div><div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📈</span> <span style={{ color: '#9CA3AF' }}>The Ranking Simulator shows you exactly what you need to finish this week to break into the top 50.</span></div></>)}
-                    {step.preview === 'team' && (<><h2 className="text-xl font-black text-white mb-2">Your team. Always in the loop.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Caddie, coach, physio, agent, equipment sponsor — all connected. Message the whole team in one tap.</p><div className="space-y-2 mb-4">{[{ name:'Mick Sullivan', role:'Caddie', status:'Course notes sent for R2', color:'#15803D' },{ name:'Carlos Mendez', role:'Coach', status:'Swing review at 17:00', color:'#0D9488' },{ name:'James Wright', role:'Agent', status:'Callaway renewal pending', color:'#F59E0B' },{ name:'Dr Sarah Lee', role:'Physio', status:'Back treatment 18:00', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div><div className="text-[10px] text-gray-500">{m.status}</div></div><div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📨</span> <span style={{ color: '#9CA3AF' }}>Your caddie book syncs automatically with the course notes AI. No more WhatsApp chains the night before.</span></div></>)}
+                    {step.preview === 'team' && (<><h2 className="text-xl font-black text-white mb-2">Your team. Always in the loop.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Caddie, coach, physio, agent, equipment sponsor — all connected. Message the whole team in one tap.</p><div className="space-y-2 mb-4">{[{ name:'Mick Sullivan', role:'Caddie', status:'Course notes sent for R2', color:'#15803D' },{ name:'Carlos Mendez', role:'Coach', status:'Swing review at 17:00', color:'#0D9488' },{ name:'James Wright', role:'Agent', status:'Vanta Sports renewal pending', color:'#F59E0B' },{ name:'Dr Sarah Lee', role:'Physio', status:'Back treatment 18:00', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div><div className="text-[10px] text-gray-500">{m.status}</div></div><div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📨</span> <span style={{ color: '#9CA3AF' }}>Your caddie book syncs automatically with the course notes AI. No more WhatsApp chains the night before.</span></div></>)}
                     {step.preview === 'ai' && (<><h2 className="text-xl font-black text-white mb-2">AI analysis that actually improves your game.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Course Notes AI pulls pin positions, wind history and green speed. TrackMan AI spots patterns. Caddie Brief AI writes the full hole-by-hole strategy.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}><div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Course Notes AI — Augusta National R2</span></div><div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}><p>Back 9 playing 2.1 shots harder than front. Wind 14mph SW — affects 11, 12, 13 significantly.</p><p>Your GIR% on par 5s this season: 89%. Attack 15 in 2 — you&apos;re 4 for 5 this season.</p><p>Avoid short-left on 12. Pin is back-right today — bail-out centre is the play.</p></div><div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using course data, weather API and TrackMan history · Claude AI</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}><span style={{ color: '#A78BFA' }}>🤖</span> <span style={{ color: '#A78BFA' }}>Powered by Claude AI · Anthropic · The same AI trusted by Fortune 500 companies.</span></div></>)}
-                    {step.preview === 'sponsor' && (<><h2 className="text-xl font-black text-white mb-2">Never miss a sponsor obligation again.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Content shoots, Instagram posts, appearance fees, equipment contracts — all tracked. Social Media AI writes the post, you approve it, one click posts it.</p><div className="space-y-2 mb-4">{[{ name:'Callaway', status:'Instagram post due today — photo needed before 12:00', badge:'DUE NOW', badgeColor:'#EF4444', value:'£120k/yr' },{ name:'Rolex', status:'Renewal meeting Apr 25 — agent handling', badge:'RENEWAL', badgeColor:'#F59E0B', value:'£85k/yr' },{ name:'Dubai Tourism', status:'Appearance inquiry — £45k — respond by Apr 30', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£45k' }].map((s, i) => (<div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{s.name}</span><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${s.badgeColor}20`, color: s.badgeColor }}>{s.badge}</span></div><div className="text-[10px] text-gray-500 mt-0.5">{s.status}</div></div><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.value}</span></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📱</span> <span style={{ color: '#9CA3AF' }}>Sponsor Post AI generates the Instagram caption in your voice. Takes 8 seconds.</span></div></>)}
-                    {step.preview === 'dontmiss' && (<><h2 className="text-xl font-black text-white mb-2">Nothing falls through the cracks.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything — entry deadlines, world ranking points dropping off, visa expiry, sponsor deadlines.</p><div className="space-y-2 mb-4">{[{ badge:'ALERT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'180 OWGR points drop off after this event. Finish T20 or better to hold #87.', sub:'Miss = drop to #94 — lose exemptions' },{ badge:'8 DAYS', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'The Open Championship entry deadline closes.', sub:'Lumio flagged this 30 days out' },{ badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Callaway Instagram post due by 12:00. Penalty clause.', sub:'Content obligation — contractual' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}><span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span><div><div className="text-[11px] text-white">{d.text}</div><div className="text-[10px] italic mt-0.5" style={{ color: '#EF4444' }}>{d.sub}</div></div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📋</span> <span style={{ color: '#9CA3AF' }}>Entry deadline for The Open Championship closes in 8 days. Lumio flagged this 30 days out.</span></div></>)}
+                    {step.preview === 'sponsor' && (<><h2 className="text-xl font-black text-white mb-2">Never miss a sponsor obligation again.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Content shoots, Instagram posts, appearance fees, equipment contracts — all tracked. Social Media AI writes the post, you approve it, one click posts it.</p><div className="space-y-2 mb-4">{[{ name:'Vanta Sports', status:'Instagram post due today — photo needed before 12:00', badge:'DUE NOW', badgeColor:'#EF4444', value:'£120k/yr' },{ name:'Meridian Watches', status:'Renewal meeting Apr 25 — agent handling', badge:'RENEWAL', badgeColor:'#F59E0B', value:'£85k/yr' },{ name:'Dubai Tourism', status:'Appearance inquiry — £45k — respond by Apr 30', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£45k' }].map((s, i) => (<div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{s.name}</span><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${s.badgeColor}20`, color: s.badgeColor }}>{s.badge}</span></div><div className="text-[10px] text-gray-500 mt-0.5">{s.status}</div></div><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.value}</span></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📱</span> <span style={{ color: '#9CA3AF' }}>Sponsor Post AI generates the Instagram caption in your voice. Takes 8 seconds.</span></div></>)}
+                    {step.preview === 'dontmiss' && (<><h2 className="text-xl font-black text-white mb-2">Nothing falls through the cracks.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything — entry deadlines, world ranking points dropping off, visa expiry, sponsor deadlines.</p><div className="space-y-2 mb-4">{[{ badge:'ALERT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'180 OWGR points drop off after this event. Finish T20 or better to hold #87.', sub:'Miss = drop to #94 — lose exemptions' },{ badge:'8 DAYS', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'The Open Championship entry deadline closes.', sub:'Lumio flagged this 30 days out' },{ badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Vanta Sports Instagram post due by 12:00. Penalty clause.', sub:'Content obligation — contractual' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}><span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span><div><div className="text-[11px] text-white">{d.text}</div><div className="text-[10px] italic mt-0.5" style={{ color: '#EF4444' }}>{d.sub}</div></div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📋</span> <span style={{ color: '#9CA3AF' }}>Entry deadline for The Open Championship closes in 8 days. Lumio flagged this 30 days out.</span></div></>)}
                     {step.preview === 'cta' && (<><h2 className="text-xl font-black text-white mb-2">Run your golf career like a business.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Rankings, travel, TrackMan data, sponsors, team, AI analysis — all in one place. Built for DP World Tour and PGA Tour professionals.</p><div className="grid grid-cols-3 gap-2 mb-4">{[{ icon:'📊', label:'OWGR Rankings', desc:'Live tracking' },{ icon:'✈️', label:'Smart Travel', desc:'Flights + hotels' },{ icon:'🤖', label:'AI Analysis', desc:'Course + caddie' },{ icon:'🤝', label:'Sponsors', desc:'Obligations tracked' },{ icon:'👥', label:'Team Hub', desc:'Everyone connected' },{ icon:'📡', label:'TrackMan', desc:'Session data' }].map((f, i) => (<div key={i} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl mb-1">{f.icon}</div><div className="text-[10px] font-bold text-white">{f.label}</div><div className="text-[9px] text-gray-500">{f.desc}</div></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.1), rgba(13,148,136,0.1))', border: '1px solid rgba(21,128,61,0.25)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-[11px] mb-3" style={{ color: '#9CA3AF' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><div className="flex justify-center gap-2"><button onClick={goLive} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#15803D' }}>Go to my dashboard →</button><button className="px-4 py-2 rounded-xl text-xs font-bold" style={{ border: '1px solid #374151', color: '#9CA3AF' }}>Invite my caddie →</button></div></div><div className="rounded-lg p-3 mt-4 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>🏆</span> <span style={{ color: '#F59E0B' }}>You&apos;re one of our first 20 founding members. We&apos;ll build what you ask for.</span></div></>)}
                   </div>
                   <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
@@ -1354,7 +1354,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
                   { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
                   { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
-                  { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+                  { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
                   { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
                 ].filter(s => !scheduleCancelled[s.id]).map((s) => (
                   <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${scheduleChecked[s.id] ? 'opacity-50' : ''} ${s.highlight ? 'text-green-400' : ''}`}>
@@ -1379,7 +1379,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 <div className="flex justify-between text-gray-400"><span>Yardage:</span><span className="text-white">7,545 yd · Par 72</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.32M</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">Cut line · £0</span></div>
-                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Sky Sports Golf</span></div>
+                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Northbridge Sport</span></div>
               </div>
             </div>
           </div>
@@ -1423,7 +1423,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 {[
                   { type:'round',    icon:'⛳', text:'R2 today at Golfclub München Eichenried — 09:24 tee with McIlroy & Scheffler. Course fit 8.1/10. Pin positions favour draw off the tee on 1, 7 and 14.' },
                   { type:'caddie',   icon:'📋', text:'Mick updated hole 7 strategy — new wind data and pin position means 9-iron from the repositioned tee. Review caddie brief before warm-up.' },
-                  { type:'sponsor',  icon:'🤝', text:'Callaway post due 18:00 today — Carlos needs caption and round-day kit photo. Penalty clause applies if missed.' },
+                  { type:'sponsor',  icon:'🤝', text:'Vanta Sports post due 18:00 today — Carlos needs caption and round-day kit photo. Penalty clause applies if missed.' },
                   { type:'travel',   icon:'✈️', text:'Scottish Open hotel prices rising — preferred rooms filling fast. Book today to lock in Renfield Hotel rate before it goes.' },
                   { type:'ranking',  icon:'📊', text:`OWGR #${player.owgr} — 285 points defending this week. T20+ needed to hold. Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points.toLocaleString()} pts.` },
                 ].map((item, i) => (
@@ -1449,7 +1449,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   { n:1, trend:'↑', color:'#22C55E', text:`SG: Approach +0.72 this season — well above tour avg. Iron play is the strength, keep working the set-up with Mick.` },
                   { n:2, trend:'⚠', color:'#EF4444', text:'Putting SG -1.18 — 8-15ft the weakest range. 15 minutes on the short putting green before warm-up, focus on pace not line.' },
                   { n:3, trend:'↑', color:'#22C55E', text:`Course fit 8.1/10 — best of the season so far. Historic play here: 2 top 10s in 3 starts. Trust the game plan.` },
-                  { n:4, trend:'→', color:'#4ade80', text:`Race to Dubai: #${player.race_to_dubai_pos}. Top 50 needed for Tour Championship — BMW and Scottish Open are the key points events left.` },
+                  { n:4, trend:'→', color:'#4ade80', text:`Race to Dubai: #${player.race_to_dubai_pos}. Top 50 needed for Tour Championship — Halden Motors and Scottish Open are the key points events left.` },
                   { n:5, trend:'↓', color:'#F59E0B', text:'Driving accuracy down to 58% on last 4 starts — below season avg. Fairways first off the tee today, especially on doglegs 3 and 12.' },
                 ].map((item, i) => (
                   <div key={i} className="flex gap-3 text-xs">
@@ -1470,7 +1470,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         <div className="space-y-3">
           {[
             { id:'qw1', title:'Log R2 round score before leaderboard closes', priority:'critical' as const, category:'Performance', action:'Log round', modal:'loground', effort:'2min', description:'Leaderboard closes at 18:00 — log your R2 score to maintain live tracking.' },
-            { id:'qw2', title:'Callaway post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost', effort:'5min', description:'Contractual sponsor post obligation. AI can generate caption in your voice.' },
+            { id:'qw2', title:'Vanta Sports post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost', effort:'5min', description:'Contractual sponsor post obligation. AI can generate caption in your voice.' },
             { id:'qw3', title:'Book Scottish Open hotel — prices rising', priority:'high' as const, category:'Travel', action:'Find hotel', modal:'hotel', effort:'2min', description:'Preferred hotels filling up fast. Book now to save.' },
             { id:'qw4', title:'Mick updated hole 7 strategy — review before R3', priority:'high' as const, category:'Prep', action:'Open caddie brief', modal:'caddiebriefai', effort:'5min', description:'Caddie notes updated with new wind data and pin positions.' },
             { id:'qw5', title:'OWGR points update — check ranking movement', priority:'medium' as const, category:'Rankings', action:'Simulate', modal:'ranking', effort:'2min', description:'Points recalculated after this week — check projected movement.' },
@@ -1507,7 +1507,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high', category:'Medical', action:'Log medical', modal:'injury' },
           { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium', category:'Performance', action:'Open TrackMan', modal:'trackman' },
           { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical', category:'Entries', action:'Enter now', modal:'' },
-          { id:'dt6', time:'18:00', title:'Callaway sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
+          { id:'dt6', time:'18:00', title:'Vanta Sports sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
           { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium', category:'Finance', action:'Log expense', modal:'expense' },
         ]
         const ALL_TASKS = [...BASE_TASKS, ...dashTasks]
@@ -1574,7 +1574,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { type:'ALERT',       value:'285 pts at risk',  title:'Ranking points expiring',     description:'You are defending 285 OWGR points from this event last year. T20+ this week holds your #87 spot. Miss the cut and you drop to ~#104.', action:'View OWGR breakdown', color:'#EF4444' },
-              { type:'OPPORTUNITY', value:'£65k/yr',          title:'Callaway renewal terms',      description:'Your agent James has new Callaway terms — £65k/yr + equipment for 2 more years. Renewal decision due Friday. Competitor interest from TaylorMade.', action:'View offer details', color:'#22C55E' },
+              { type:'OPPORTUNITY', value:'£65k/yr',          title:'Vanta Sports renewal terms',      description:'Your agent James has new Vanta Sports terms — £65k/yr + equipment for 2 more years. Renewal decision due Friday. Competitor interest from Vanta Sports.', action:'View offer details', color:'#22C55E' },
               { type:'TREND',       value:'-0.6 avg',         title:'Scoring average improving',   description:'Your scoring average has dropped from 70.8 to 70.2 over the last 6 events. SG: Putting still the drag (-1.18) — fix this and you break 70.', action:'View trend chart',    color:'#3B82F6' },
               { type:'ACHIEVEMENT', value:'T3 finish',        title:'KLM Open top-3',              description:'Your T3 at the KLM Open was your best finish of the season — 480 points and £124k. Confirms the tee-to-green work with Carlos is paying off.', action:'View event stats',    color:'#F59E0B' },
             ].map((tile, i) => (
@@ -1597,8 +1597,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         <div className="space-y-3">
           {[
             { id:'dm1', urgency:'CRITICAL', urgencyColor:'#EF4444', category:'Match', when:'09:24 today', title:'R2 tee time — McIlroy & Scheffler group', consequence:'If missed: disqualified', action:'Open caddie brief →', modal:'caddiebriefai' },
-            { id:'dm2', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Sponsor', when:'Before 18:00', title:'Callaway post — contractual obligation', consequence:'If missed: contract penalty clause', action:'Generate post →', modal:'sponsorpost' },
-            { id:'dm3', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Entries', when:'17:00', title:'Scottish Open entry closes today', consequence:'If missed: miss Rolex Series event', action:'Enter now →', modal:'' },
+            { id:'dm2', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Sponsor', when:'Before 18:00', title:'Vanta Sports post — contractual obligation', consequence:'If missed: contract penalty clause', action:'Generate post →', modal:'sponsorpost' },
+            { id:'dm3', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Entries', when:'17:00', title:'Scottish Open entry closes today', consequence:'If missed: miss Meridian Series event', action:'Enter now →', modal:'' },
             { id:'dm4', urgency:'THIS WEEK', urgencyColor:'#3B82F6', category:'Travel', when:'Friday', title:'The Open hotel — book now or lose allocation', consequence:'If missed: St Andrews no rooms within 30 miles', action:'Find hotel →', modal:'hotel' },
             { id:'dm5', urgency:'THIS WEEK', urgencyColor:'#3B82F6', category:'Rankings', when:'Sunday', title:'Race to Dubai — 3 events left for top 50', consequence:'If missed: lose Tour card', action:'Check ranking →', modal:'ranking' },
           ].map(dm => (
@@ -1654,7 +1654,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 { name: 'James Crawford', role: 'Agent', status: 'Scottish Open sponsor call 14:00', dot: '#F59E0B' },
                 { name: 'Dr Anna Price', role: 'Physiotherapist', status: 'Back treatment 13:00 confirmed', dot: '#22C55E' },
                 { name: 'Carlos Mendez', role: 'Head Coach', status: 'Range session notes sent', dot: '#22C55E' },
-                { name: 'Sarah Chen', role: 'Sponsor Manager', status: 'Callaway post due 18:00 — caption ready', dot: '#F59E0B' },
+                { name: 'Sarah Chen', role: 'Sponsor Manager', status: 'Vanta Sports post due 18:00 — caption ready', dot: '#F59E0B' },
                 { name: 'Dave Morton', role: 'Mental Coach', status: 'Pre-round call 08:30', dot: '#22C55E' },
               ].map((m, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1689,7 +1689,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               </div>
               <div className="w-px h-4 bg-gray-700" />
               <div className="flex gap-4">
-                {[{ name: 'James Crawford', role: 'Agent', color: '#F59E0B' }, { name: 'Callaway', role: 'Equipment Sponsor', color: '#8B5CF6' }].map((p, i) => (
+                {[{ name: 'James Crawford', role: 'Agent', color: '#F59E0B' }, { name: 'Vanta Sports', role: 'Equipment Sponsor', color: '#8B5CF6' }].map((p, i) => (
                   <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 160 }}>
                     <div className="text-xs font-bold text-white">{p.name}</div>
                     <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
@@ -1767,7 +1767,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 ['Season earnings', '£367,000 (target £450k)'],
                 ['Wins this season', '0 (2 top 5s)'],
                 ['Majors played', '3 (best: T22 The Open 2024)'],
-                ['Equipment', 'Callaway (full bag)'],
+                ['Equipment', 'Vanta Sports (full bag)'],
                 ['Coach', 'Carlos Mendez (since 2022)'],
                 ['Caddie', 'Mick Sullivan (since 2020)'],
                 ['Home club', 'Wentworth Golf Club'],
@@ -1789,7 +1789,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 function RoundPrepView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'prep'|'debrief'|'scorecard'>('prep');
   const [form, setForm] = useState({
-    tournament: 'BMW International Open',
+    tournament: 'Halden Motors International Open',
     round: 'R1',
     score: '',
     fairways: '',
@@ -2161,7 +2161,7 @@ function MorningBriefingView({ player, session }: { player: GolfPlayer; session:
     setLoading(true);
     setError(null);
     try {
-      const prompt = `You are Lumio AI, the golf performance assistant for ${player.name}. Generate four morning briefings (player, caddie, coach, agent) for today. Context: OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos}, current event BMW International Open Munich, tee time 09:42 Thursday, SG Putting -1.18 (critical weakness from 8-15ft), Callaway post due today, TaylorMade call 16:00, sponsor renewal in 18 days. Respond ONLY with valid JSON: { "player": "...", "caddie": "...", "coach": "...", "agent": "..." } — each value is a 2-3 sentence briefing, no markdown.`;
+      const prompt = `You are Lumio AI, the golf performance assistant for ${player.name}. Generate four morning briefings (player, caddie, coach, agent) for today. Context: OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos}, current event Halden Motors International Open Munich, tee time 09:42 Thursday, SG Putting -1.18 (critical weakness from 8-15ft), Vanta Sports post due today, Vanta Sports call 16:00, sponsor renewal in 18 days. Respond ONLY with valid JSON: { "player": "...", "caddie": "...", "coach": "...", "agent": "..." } — each value is a 2-3 sentence briefing, no markdown.`;
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2365,12 +2365,12 @@ function RollingExpiryCalendar({ points }: { points: ExpiryEntry[] }) {
 
 function OWGRView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const scenarios = [
-    { result: 'Win', event: 'BMW International', newOWGR: 71, change: '+16', rtd: 'T35' },
-    { result: 'T2–T5', event: 'BMW International', newOWGR: 79, change: '+8', rtd: 'T41' },
-    { result: 'T6–T10', event: 'BMW International', newOWGR: 83, change: '+4', rtd: 'T42' },
-    { result: 'T11–T20', event: 'BMW International', newOWGR: 86, change: '+1', rtd: 'T43' },
-    { result: 'T21–T40', event: 'BMW International', newOWGR: 88, change: '-1', rtd: 'T44' },
-    { result: 'MC', event: 'BMW International', newOWGR: 92, change: '-5', rtd: 'T46' },
+    { result: 'Win', event: 'Halden Motors International', newOWGR: 71, change: '+16', rtd: 'T35' },
+    { result: 'T2–T5', event: 'Halden Motors International', newOWGR: 79, change: '+8', rtd: 'T41' },
+    { result: 'T6–T10', event: 'Halden Motors International', newOWGR: 83, change: '+4', rtd: 'T42' },
+    { result: 'T11–T20', event: 'Halden Motors International', newOWGR: 86, change: '+1', rtd: 'T43' },
+    { result: 'T21–T40', event: 'Halden Motors International', newOWGR: 88, change: '-1', rtd: 'T44' },
+    { result: 'MC', event: 'Halden Motors International', newOWGR: 92, change: '-5', rtd: 'T46' },
   ];
   const pointsExpiry = POINTS_EXPIRY;
   return (
@@ -2412,7 +2412,7 @@ function OWGRView({ player, session }: { player: GolfPlayer; session: SportsDemo
       </div>
       {/* Scenario modelling */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">🎯 Scenario Modelling — BMW International Open</div>
+        <div className="text-sm font-semibold text-white mb-4">🎯 Scenario Modelling — Halden Motors International Open</div>
         <div className="space-y-2">
           {scenarios.map((s, i) => (
             <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${s.result === 'Win' ? 'bg-yellow-600/10 border-yellow-600/30' : s.result.includes('T2') ? 'bg-teal-600/10 border-teal-600/30' : s.result === 'MC' ? 'bg-red-600/10 border-red-600/30' : 'bg-gray-900/20 border-gray-800'}`}>
@@ -2484,7 +2484,7 @@ function ScheduleOptimiser() {
           system: 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
           messages: [{
             role: 'user',
-            content: 'Optimise the tournament schedule for James Harrington. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: BMW International 8.1, BMW PGA 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: BMW International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
+            content: 'Optimise the tournament schedule for James Harrington. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: Halden Motors International 8.1, Halden Motors Championship 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: Halden Motors International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
           }],
         }),
       });
@@ -2640,21 +2640,21 @@ function CompetitorTracker() {
 function ScheduleView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'calendar' | 'competitors'>('calendar');
   const calendar = [
-    { date: '3–6 Jul',   event: 'BMW International Open',         tier: 'DP World Tour',  venue: 'Golfclub München Eichenried, Munich',    status: 'active',   entered: true, prize: '$4.5M' },
+    { date: '3–6 Jul',   event: 'Halden Motors International Open',         tier: 'DP World Tour',  venue: 'Golfclub München Eichenried, Munich',    status: 'active',   entered: true, prize: '$4.5M' },
     { date: '10–13 Jul', event: 'Estrella Damm N.A. Challenge',   tier: 'DP World Tour',  venue: 'Club de Golf Terramar, Barcelona',         status: 'upcoming', entered: true, prize: '$2M' },
-    { date: '10–13 Jul', event: 'Genesis Scottish Open',           tier: 'Rolex Series',   venue: 'The Renaissance Club, North Berwick',     status: 'upcoming', entered: true, prize: '$9M' },
+    { date: '10–13 Jul', event: 'Genesis Scottish Open',           tier: 'Meridian Series',   venue: 'The Renaissance Club, North Berwick',     status: 'upcoming', entered: true, prize: '$9M' },
     { date: '17–20 Jul', event: 'The 154th Open Championship',     tier: 'Major',          venue: 'Royal Birkdale, Southport',               status: 'upcoming', entered: true, prize: '£17M' },
     { date: '14–17 Aug', event: 'Danish Golf Championship',        tier: 'DP World Tour',  venue: 'Great Northern, Funen, Denmark',          status: 'upcoming', entered: false, prize: '$2M' },
     { date: '28–31 Aug', event: 'British Masters (Belfry)',        tier: 'DP World Tour',  venue: 'The Belfry, Sutton Coldfield',            status: 'upcoming', entered: true, prize: '$2.5M' },
     { date: '4–7 Sep',   event: 'Omega European Masters',          tier: 'DP World Tour',  venue: 'Crans-sur-Sierre, Switzerland',           status: 'upcoming', entered: true, prize: '$3M' },
-    { date: '17–20 Sep', event: 'BMW PGA Championship',            tier: 'Rolex Series',   venue: 'Wentworth Club, Surrey',                  status: 'upcoming', entered: true, prize: '$9M' },
+    { date: '17–20 Sep', event: 'Halden Motors Championship',            tier: 'Meridian Series',   venue: 'Wentworth Club, Surrey',                  status: 'upcoming', entered: true, prize: '$9M' },
     { date: '1–4 Oct',   event: 'Alfred Dunhill Links Championship', tier: 'DP World Tour', venue: 'St Andrews / Carnoustie / Kingsbarns',  status: 'upcoming', entered: true, prize: '$5M' },
-    { date: '6–9 Nov',   event: 'Abu Dhabi Championship',          tier: 'Rolex Series',   venue: 'Yas Links, Abu Dhabi',                    status: 'upcoming', entered: false, prize: '$9M' },
-    { date: '19–22 Nov', event: 'DP World Tour Championship',      tier: 'Rolex Series',   venue: 'Jumeirah Golf Estates, Dubai',            status: 'upcoming', entered: false, prize: '$10M+' },
+    { date: '6–9 Nov',   event: 'Abu Dhabi Championship',          tier: 'Meridian Series',   venue: 'Yas Links, Abu Dhabi',                    status: 'upcoming', entered: false, prize: '$9M' },
+    { date: '19–22 Nov', event: 'DP World Tour Championship',      tier: 'Meridian Series',   venue: 'Jumeirah Golf Estates, Dubai',            status: 'upcoming', entered: false, prize: '$10M+' },
   ];
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🗓️" title="Tournament Schedule" subtitle="2026 season calendar — DP World Tour, Majors, Rolex Series, and co-sanctioned events." />
+      <SectionHeader icon="🗓️" title="Tournament Schedule" subtitle="2026 season calendar — DP World Tour, Majors, Meridian Series, and co-sanctioned events." />
       <div className="flex gap-2 border-b border-gray-800">
         {(['calendar', 'competitors'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
@@ -2949,8 +2949,8 @@ function StrokesGainedView({ player, session }: { player: GolfPlayer; session: S
 
 function CourseFitView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const courses = [
-    { event: 'BMW International Open', venue: 'Golfclub München Eichenried', fit: 8.1, ott: 9.2, atg: 7.4, putting: 6.8, prevResult: 'T14 (2024)', note: 'Approach from 150–175 is elite. Putting surface suits right-to-left readers.' },
-    { event: 'BMW PGA Championship', venue: 'Wentworth', fit: 9.0, ott: 8.8, atg: 9.1, putting: 7.2, prevResult: 'T6 (2024)', note: 'Best course fit on tour. Long course favours his driving distance.' },
+    { event: 'Halden Motors International Open', venue: 'Golfclub München Eichenried', fit: 8.1, ott: 9.2, atg: 7.4, putting: 6.8, prevResult: 'T14 (2024)', note: 'Approach from 150–175 is elite. Putting surface suits right-to-left readers.' },
+    { event: 'Halden Motors Championship', venue: 'Wentworth', fit: 9.0, ott: 8.8, atg: 9.1, putting: 7.2, prevResult: 'T6 (2024)', note: 'Best course fit on tour. Long course favours his driving distance.' },
     { event: 'Genesis Scottish Open', venue: 'The Renaissance Club', fit: 7.2, ott: 8.1, atg: 7.8, putting: 5.8, prevResult: 'T6 (2025)', note: 'Links putting has been inconsistent. Approach game excels in firm conditions.' },
     { event: 'The Open Championship', venue: 'Royal Birkdale', fit: 6.8, ott: 8.4, atg: 6.2, putting: 5.5, prevResult: 'MC (2024)', note: 'Major championship stress often affects putting. Focus on ball-striking and manage expectations.' },
     { event: 'Omega European Masters', venue: 'Crans-sur-Sierre', fit: 8.8, ott: 7.6, atg: 9.4, putting: 7.9, prevResult: 'T3 (2023)', note: 'High-altitude approach play suits his 150–175 game. Second-best fit on tour.' },
@@ -3118,7 +3118,7 @@ function TeamHubView({ player, session }: { player: GolfPlayer; session: SportsD
     { role: 'Caddie', name: 'Mick O\'Brien', flag: '🇮🇪', status: 'On-site Munich', statusColor: 'green', lastNote: 'Strategy notes updated · 07:45', desc: 'Shot selection, yardage book, on-course support' },
     { role: 'Physio', name: 'Tom Walsh', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'Treatment at 13:00', statusColor: 'yellow', lastNote: 'Lower back flagged mild · Cleared to play', desc: 'Treatment, injury management, recovery protocols' },
     { role: 'Fitness Trainer', name: 'Jake Portman', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'London (remote)', statusColor: 'blue', lastNote: 'Weekly conditioning plan sent', desc: 'Strength, power, mobility, periodisation' },
-    { role: 'Agent', name: 'Sarah Mitchell', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'TaylorMade renewal!', statusColor: 'red', lastNote: 'Callaway caption drafted — awaiting approval', desc: 'Sponsorship, appearances, schedule, commercial' },
+    { role: 'Agent', name: 'Sarah Mitchell', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'Vanta Sports renewal!', statusColor: 'red', lastNote: 'Vanta Sports caption drafted — awaiting approval', desc: 'Sponsorship, appearances, schedule, commercial' },
     { role: 'Mental Coach', name: 'Dr. Alison Reed', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'Video call 20:00', statusColor: 'purple', lastNote: 'Pre-round routine shared · 09:00', desc: 'Pressure management, focus, routine, mindset' },
     { role: 'Accountant', name: 'Chris Davies (PwC)', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'Q2 filing due', statusColor: 'yellow', lastNote: 'Jurisdiction report requested for June earnings', desc: 'Multi-jurisdiction tax, prize money, financial planning' },
   ];
@@ -3207,23 +3207,23 @@ function PhysioView({ player, session }: { player: GolfPlayer; session: SportsDe
 
 function EquipmentView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const bag = [
-    { club: 'Driver', brand: 'TaylorMade Qi10 Max', loft: '9.5°', shaft: 'Graphite Design Tour AD XC', flex: 'X', notes: 'Main gaming driver — 3 available' },
-    { club: '3-Wood', brand: 'TaylorMade Qi10', loft: '15°', shaft: 'Mitsubishi Diamana Blue', flex: 'X', notes: 'Used for tight tee shots and second shots' },
-    { club: '5-Wood', brand: 'TaylorMade Qi10', loft: '19°', shaft: 'Mitsubishi Diamana Blue', flex: 'X', notes: 'Used on long par-5 second shots' },
-    { club: '4-Iron', brand: 'TaylorMade P·790', loft: '23°', shaft: 'Dynamic Gold X100', flex: 'X', notes: 'Punchy iron in driving conditions' },
-    { club: '5–PW', brand: 'TaylorMade P·770', loft: 'Standard', shaft: 'Dynamic Gold X100', flex: 'X', notes: 'Core irons — stock specs' },
-    { club: '50° GW', brand: 'Callaway Jaws Raw', loft: '50°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Callaway endorsement — gap wedge' },
-    { club: '54° SW', brand: 'Callaway Jaws Raw', loft: '54°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Sand & rough — most used wedge' },
-    { club: '60° LW', brand: 'Callaway Jaws Raw', loft: '60°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Flop and bunker shots' },
+    { club: 'Driver', brand: 'Vanta Sports Qi10 Max', loft: '9.5°', shaft: 'Graphite Design Tour AD XC', flex: 'X', notes: 'Main gaming driver — 3 available' },
+    { club: '3-Wood', brand: 'Vanta Sports Qi10', loft: '15°', shaft: 'Mitsubishi Diamana Blue', flex: 'X', notes: 'Used for tight tee shots and second shots' },
+    { club: '5-Wood', brand: 'Vanta Sports Qi10', loft: '19°', shaft: 'Mitsubishi Diamana Blue', flex: 'X', notes: 'Used on long par-5 second shots' },
+    { club: '4-Iron', brand: 'Vanta Sports P·790', loft: '23°', shaft: 'Dynamic Gold X100', flex: 'X', notes: 'Punchy iron in driving conditions' },
+    { club: '5–PW', brand: 'Vanta Sports P·770', loft: 'Standard', shaft: 'Dynamic Gold X100', flex: 'X', notes: 'Core irons — stock specs' },
+    { club: '50° GW', brand: 'Vanta Sports Jaws Raw', loft: '50°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Vanta Sports endorsement — gap wedge' },
+    { club: '54° SW', brand: 'Vanta Sports Jaws Raw', loft: '54°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Sand & rough — most used wedge' },
+    { club: '60° LW', brand: 'Vanta Sports Jaws Raw', loft: '60°', shaft: 'Dynamic Gold Spinner', flex: 'S', notes: 'Flop and bunker shots' },
     { club: 'Putter', brand: 'Scotty Cameron X5.5', loft: '3°', shaft: 'Stock', flex: 'N/A', notes: 'Tournament putter — has backup' },
-    { club: 'Ball', brand: 'Callaway Chrome Tour X', loft: '—', shaft: '—', flex: '—', notes: 'Callaway endorsement — 2 dozen per round' },
+    { club: 'Ball', brand: 'Vanta Sports Chrome Tour X', loft: '—', shaft: '—', flex: '—', notes: 'Vanta Sports endorsement — 2 dozen per round' },
   ];
   return (
     <div className="space-y-6">
       <SectionHeader icon="🛍️" title="Equipment & Bag" subtitle="Full bag setup, club specifications, and ball contract details." />
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">TaylorMade</div><div className="text-xs text-gray-400 mt-1">Clubs (irons, woods)</div><div className="text-xs text-teal-400 mt-1">Active — expires Dec 2026</div></div>
-        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">Callaway</div><div className="text-xs text-gray-400 mt-1">Wedges + Ball</div><div className="text-xs text-teal-400 mt-1">Active — 18 days to renewal</div></div>
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">Vanta Sports</div><div className="text-xs text-gray-400 mt-1">Clubs (irons, woods)</div><div className="text-xs text-teal-400 mt-1">Active — expires Dec 2026</div></div>
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">Vanta Sports</div><div className="text-xs text-gray-400 mt-1">Wedges + Ball</div><div className="text-xs text-teal-400 mt-1">Active — 18 days to renewal</div></div>
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4"><div className="text-white font-bold">Scotty Cameron</div><div className="text-xs text-gray-400 mt-1">Putter (personal)</div><div className="text-xs text-gray-500 mt-1">Not sponsored — personal</div></div>
       </div>
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
@@ -3292,11 +3292,11 @@ function MentalView({ player, session }: { player: GolfPlayer; session: SportsDe
 
 function SponsorshipView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const deals = [
-    { sponsor: 'TaylorMade', cat: 'Clubs', value: '£80k/yr + bonuses', status: 'Active', expiry: 'Dec 2026', days: 275, obligations: ['Use TaylorMade driver, woods, irons in all events', 'Social: 1 post/month minimum', 'Attend 1 TaylorMade event/yr'], bonuses: ['Win bonus: +£15k', 'Top 50 OWGR: +£10k'] },
-    { sponsor: 'Callaway', cat: 'Wedges + Ball', value: '£55k/yr', status: 'Renewal due', expiry: 'Jul 26 2026', days: 18, obligations: ['Callaway wedges in all events', 'Chrome Tour X ball mandatory', 'Social: 2 posts/month', 'Appear in 1 campaign/yr'], bonuses: ['Top 10 this week: +£8.5k'] },
-    { sponsor: 'Rolex', cat: 'Watch / Luxury', value: '£45k/yr', status: 'Active', expiry: 'Jan 2027', days: 292, obligations: ['Wear Rolex in all press conferences', 'Ranking report monthly to Rolex brand team'], bonuses: [] },
-    { sponsor: 'BMW', cat: 'Vehicle / Title Sponsor', value: 'Vehicle + £30k/yr', status: 'Active', expiry: 'Dec 2026', days: 275, obligations: ['Pro-am partner appearances at BMW events', 'Logo on bag', 'Post-win interview mention'], bonuses: [] },
-    { sponsor: 'Puma Golf', cat: 'Apparel', value: '£40k/yr', status: 'Active', expiry: 'Jun 2027', days: 450, obligations: ['Full Puma apparel on course', '2 social posts/month', 'Style shoot once/yr'], bonuses: [] },
+    { sponsor: 'Vanta Sports', cat: 'Clubs', value: '£80k/yr + bonuses', status: 'Active', expiry: 'Dec 2026', days: 275, obligations: ['Use Vanta Sports driver, woods, irons in all events', 'Social: 1 post/month minimum', 'Attend 1 Vanta Sports event/yr'], bonuses: ['Win bonus: +£15k', 'Top 50 OWGR: +£10k'] },
+    { sponsor: 'Vanta Sports', cat: 'Wedges + Ball', value: '£55k/yr', status: 'Renewal due', expiry: 'Jul 26 2026', days: 18, obligations: ['Vanta Sports wedges in all events', 'Chrome Tour X ball mandatory', 'Social: 2 posts/month', 'Appear in 1 campaign/yr'], bonuses: ['Top 10 this week: +£8.5k'] },
+    { sponsor: 'Meridian Watches', cat: 'Watch / Luxury', value: '£45k/yr', status: 'Active', expiry: 'Jan 2027', days: 292, obligations: ['Wear Meridian Watches in all press conferences', 'Ranking report monthly to Meridian Watches brand team'], bonuses: [] },
+    { sponsor: 'Halden Motors', cat: 'Vehicle / Title Sponsor', value: 'Vehicle + £30k/yr', status: 'Active', expiry: 'Dec 2026', days: 275, obligations: ['Pro-am partner appearances at Halden Motors events', 'Logo on bag', 'Post-win interview mention'], bonuses: [] },
+    { sponsor: 'Apex Performance', cat: 'Apparel', value: '£40k/yr', status: 'Active', expiry: 'Jun 2027', days: 450, obligations: ['Full Apex Performance apparel on course', '2 social posts/month', 'Style shoot once/yr'], bonuses: [] },
     { sponsor: 'Hublot', cat: 'Watch (Alt.)', value: 'Product only', status: 'Under review', expiry: '—', days: 0, obligations: ['Agent in negotiation — no current obligations'], bonuses: [] },
   ];
   return (
@@ -3305,8 +3305,8 @@ function SponsorshipView({ player, session }: { player: GolfPlayer; session: Spo
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Annual Value" value="£250k+" sub="Confirmed contracts" color="yellow" />
         <StatCard label="Active Deals" value="5" sub="1 renewal critical" color="green" />
-        <StatCard label="Callaway Renewal" value="18 days" sub="⚠️ Action required" color="red" />
-        <StatCard label="Obligations Today" value="1" sub="Callaway post due" color="orange" />
+        <StatCard label="Vanta Sports Renewal" value="18 days" sub="⚠️ Action required" color="red" />
+        <StatCard label="Obligations Today" value="1" sub="Vanta Sports post due" color="orange" />
       </div>
       <div className="space-y-3">
         {deals.map((deal, i) => (
@@ -3329,22 +3329,22 @@ function FinancialView({ player, session }: { player: GolfPlayer; session: Sport
   const prizeMoney = [
     { event: 'KLM Open', pos: 'T3', amount_eur: 124000, amount_gbp: 104000, tour: 'DP World Tour' },
     { event: 'Austrian Alpine Open', pos: 'T31', amount_eur: 18000, amount_gbp: 15000, tour: 'DP World Tour' },
-    { event: 'BMW PGA Championship', pos: 'T14', amount_eur: 42000, amount_gbp: 35000, tour: 'Rolex Series' },
+    { event: 'Halden Motors Championship', pos: 'T14', amount_eur: 42000, amount_gbp: 35000, tour: 'Meridian Series' },
     { event: 'US Open (MC)', pos: 'MC', amount_eur: 0, amount_gbp: 0, tour: 'Major' },
-    { event: 'Genesis Scottish Open', pos: 'T6', amount_eur: 198000, amount_gbp: 166000, tour: 'Rolex Series' },
+    { event: 'Genesis Scottish Open', pos: 'T6', amount_eur: 198000, amount_gbp: 166000, tour: 'Meridian Series' },
     { event: 'Soudal Open', pos: 'T8', amount_eur: 56000, amount_gbp: 47000, tour: 'DP World Tour' },
   ];
   const totalGBP = prizeMoney.reduce((a, b) => a + b.amount_gbp, 0);
   const taxJurisdictions = [
     { country: '🇬🇧 UK', amount: '£201,000', events: '6 events', status: 'Filed' },
-    { country: '🇩🇪 Germany', amount: '€42,000', events: '1 event (BMW)', status: 'Pending' },
+    { country: '🇩🇪 Germany', amount: '€42,000', events: '1 event (Halden Motors)', status: 'Pending' },
     { country: '🇺🇸 USA', amount: '$0', events: 'MC — no liability', status: 'N/A' },
     { country: '🇳🇱 Netherlands', amount: '€124,000', events: '1 event (KLM)', status: 'Open' },
     { country: '🇦🇹 Austria', amount: '€18,000', events: '1 event (Alpine)', status: 'Open' },
   ];
   const earningsBars = [
     { cat: 'Majors',          amount: 45000 },
-    { cat: 'Rolex Series',    amount: 78000 },
+    { cat: 'Meridian Series',    amount: 78000 },
     { cat: 'DP World Tour',   amount: 124000 },
     { cat: 'Pro-Ams',         amount: 38000 },
   ];
@@ -3480,7 +3480,7 @@ ${barHtml}
         <div className="space-y-2">
           {[
             { country: '🇬🇧 UK', income: '£201,000', events: '6 events', status: 'Filed', rate: '45% (additional)' },
-            { country: '🇩🇪 Germany', income: '€42,000', events: '1 event (BMW)', status: 'Pending', rate: '25%' },
+            { country: '🇩🇪 Germany', income: '€42,000', events: '1 event (Halden Motors)', status: 'Pending', rate: '25%' },
             { country: '🇺🇸 USA', income: '$0', events: 'MC — no liability', status: 'N/A', rate: '—' },
             { country: '🇳🇱 Netherlands', income: '€124,000', events: '1 event (KLM)', status: 'Open', rate: '25%' },
             { country: '🇦🇹 Austria', income: '€18,000', events: '1 event (Alpine)', status: 'Open', rate: '25%' },
@@ -3505,18 +3505,18 @@ function CareerView({ player, session }: { player: GolfPlayer; session: SportsDe
     '1yr': {
       title: '2026 Season Targets',
       goals: ['Break into OWGR Top 50 by year-end', 'Win on DP World Tour (first title)', 'Qualify for all 4 Majors 2027 via OWGR', 'Race to Dubai top 30 — qualify for Play-Offs', 'Make cut at The Open Championship (minimum)'],
-      financial: ['Prize money target: £450k+', 'Total income (incl. endorsements): £700k', 'Negotiate Callaway renewal: target £65k/yr', 'Explore new financial services or watch partner'],
-      milestones: ['Wentworth top 10 (BMW PGA — best course fit)', 'Crans-Montana podium (Omega European Masters)', 'Ryder Cup conversation begins if OWGR hits top 50'],
+      financial: ['Prize money target: £450k+', 'Total income (incl. endorsements): £700k', 'Negotiate Vanta Sports renewal: target £65k/yr', 'Explore new financial services or watch partner'],
+      milestones: ['Wentworth top 10 (Halden Motors Championship — best course fit)', 'Crans-Montana podium (Omega European Masters)', 'Ryder Cup conversation begins if OWGR hits top 50'],
     },
     '3yr': {
       title: '2026–2028 Career Arc',
-      goals: ['Establish OWGR top 30 by end of 2028', 'Win a Rolex Series event', 'Win a Major Championship (stretch target)', 'PGA Tour co-sanction starts — build FedEx Cup presence'],
-      financial: ['Annual income target: £1.5M+ (prize + endorsements)', 'Extend TaylorMade to 2030 or find elite upgrade', 'Explore PGA Tour elite tier pricing (£600–800k/yr value)'],
+      goals: ['Establish OWGR top 30 by end of 2028', 'Win a Meridian Series event', 'Win a Major Championship (stretch target)', 'PGA Tour co-sanction starts — build FedEx Cup presence'],
+      financial: ['Annual income target: £1.5M+ (prize + endorsements)', 'Extend Vanta Sports to 2030 or find elite upgrade', 'Explore PGA Tour elite tier pricing (£600–800k/yr value)'],
       milestones: ['Race to Dubai winner contention by 2028', 'Ryder Cup selection (if OWGR holds)', 'First PGA Tour card via world ranking'],
     },
     '5yr': {
       title: '2026–2031 Peak Window',
-      goals: ['Sustained OWGR top 20', 'Multiple Rolex Series wins', 'Grand Slam appearance in final round', 'Ryder Cup selection at minimum one cycle', 'Consideration for DP World Tour Captaincy later in career'],
+      goals: ['Sustained OWGR top 20', 'Multiple Meridian Series wins', 'Grand Slam appearance in final round', 'Ryder Cup selection at minimum one cycle', 'Consideration for DP World Tour Captaincy later in career'],
       financial: ['Annual income target: £2M+ at peak', 'Explore global non-endemic deals (lifestyle, finance)', 'Property portfolio active — career earnings invested'],
       milestones: ['Age 34 at season end 2031 — peak career window', 'LIV Golf decision point by 2029', 'Media presence growing — broadcast / content plans'],
     },
@@ -3601,11 +3601,11 @@ function ExemptionsView({ player, session }: { player: GolfPlayer; session: Spor
 
 function ProAmView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const appearances = [
-    { event: 'BMW International Open Pro-Am', date: 'Wed 2 Jul', type: 'Title Sponsor', fee: 'Included (BMW deal)', partners: 'BMW AG executives — briefed', status: 'Tomorrow' },
-    { event: 'Callaway Golf Day (Wentworth)', date: '15 Sep', type: 'Equipment partner', fee: '£5,000', partners: 'TBC — agent to confirm', status: 'Confirmed' },
+    { event: 'Halden Motors International Open Pro-Am', date: 'Wed 2 Jul', type: 'Title Sponsor', fee: 'Included (Halden Motors deal)', partners: 'Halden Motors AG executives — briefed', status: 'Tomorrow' },
+    { event: 'Vanta Sports Golf Day (Wentworth)', date: '15 Sep', type: 'Equipment partner', fee: '£5,000', partners: 'TBC — agent to confirm', status: 'Confirmed' },
     { event: 'Charity Pro-Am (LTA)', date: '12 Aug', type: 'Charity — LTA', fee: 'No fee (LTA obligation)', partners: 'Mixed celebrity and LTA sponsors', status: 'Confirmed' },
     { event: 'Corporate Day — Barclays', date: '8 Oct', type: 'Corporate appearance', fee: '£22,000', partners: 'Barclays senior management', status: 'Pending contract' },
-    { event: 'Abu Dhabi HSBC Pro-Am', date: '4 Nov', type: 'Tournament (Rolex)', fee: 'Included', partners: 'TBC — Abu Dhabi hospitality', status: 'Not yet confirmed' },
+    { event: 'Abu Dhabi Northbridge Pro-Am', date: '4 Nov', type: 'Tournament (Meridian)', fee: 'Included', partners: 'TBC — Abu Dhabi hospitality', status: 'Not yet confirmed' },
   ];
   return (
     <div className="space-y-6">
@@ -3613,7 +3613,7 @@ function ProAmView({ player, session }: { player: GolfPlayer; session: SportsDem
       <div className="grid grid-cols-3 gap-4">
         <StatCard label="Appearance Fee Income" value="£38k" sub="YTD 2026" color="green" />
         <StatCard label="Events Committed" value="5" sub="2026 remaining" color="teal" />
-        <StatCard label="Next Commitment" value="Tomorrow" sub="BMW International Pro-Am" color="orange" />
+        <StatCard label="Next Commitment" value="Tomorrow" sub="Halden Motors International Pro-Am" color="orange" />
       </div>
       <div className="space-y-3">
         {appearances.map((a, i) => (
@@ -3732,8 +3732,8 @@ function PlaceholderView({ title, icon, description, player, session }: { title:
 function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sgFeed = [
-    { date: 'Jul 5 — R2 BMW International', ott: 0.6, atg: 0.8, arg: 0.2, putt: -1.4, total: 0.2, rounds: 1 },
-    { date: 'Jul 4 — R1 BMW International', ott: 0.4, atg: 1.1, arg: -0.1, putt: -0.9, total: 0.5, rounds: 1 },
+    { date: 'Jul 5 — R2 Halden Motors International', ott: 0.6, atg: 0.8, arg: 0.2, putt: -1.4, total: 0.2, rounds: 1 },
+    { date: 'Jul 4 — R1 Halden Motors International', ott: 0.4, atg: 1.1, arg: -0.1, putt: -0.9, total: 0.5, rounds: 1 },
     { date: 'Jul 2 — Practice (Eichenried)', ott: null, atg: null, arg: null, putt: -1.2, total: null, rounds: 0 },
     { date: 'Jun 29 — R4 KLM Open', ott: 0.9, atg: 1.3, arg: 0.4, putt: -0.8, total: 1.8, rounds: 1 },
     { date: 'Jun 28 — R3 KLM Open', ott: 0.3, atg: 0.7, arg: 0.2, putt: -1.6, total: -0.4, rounds: 1 },
@@ -4049,7 +4049,7 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
 function ShotLinkView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const phases = [
     { phase: 'Phase 1 (Now)', label: 'DP World Tour — Arccos + DataGolf', desc: 'Arccos sensors provide on-course shot data. DataGolf API provides round-level SG benchmarks. No ShotLink required — DP World Tour doesn\'t use it.', status: 'active', icon: '✓' },
-    { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — DataGolf SG', desc: 'Scottish Open, BMW International, and other co-sanctioned events have PGA Tour fields. DataGolf\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
+    { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — DataGolf SG', desc: 'Scottish Open, Halden Motors International, and other co-sanctioned events have PGA Tour fields. DataGolf\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
     { phase: 'Phase 3 (2027+)', label: 'PGA Tour Elite — Full ShotLink Integration', desc: 'Direct ShotLink partnership for PGA Tour Elite tier (£699/mo). Every shot tracked at every PGA Tour event. 256,000 data points per tournament week. Full hole strategy intelligence.', status: 'future', icon: '🔗' },
   ];
   const shotlinkData = [
@@ -4127,7 +4127,7 @@ function ShotLinkView({ player, session }: { player: GolfPlayer; session: Sports
 function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [activeTab, setActiveTab] = useState<'overview'|'rankings'|'schedule'|'roadmap'>('overview');
   const lpgaTours = [
-    { tour: 'LPGA Tour', players: '~170 active', rankings: 'Rolex Women\'s World Golf Rankings (RWGR)', analytic: 'No dedicated analytics platform', platform: 'Nothing beyond LPGA.com portal' },
+    { tour: 'LPGA Tour', players: '~170 active', rankings: 'Meridian Women\'s World Golf Rankings (RWGR)', analytic: 'No dedicated analytics platform', platform: 'Nothing beyond LPGA.com portal' },
     { tour: 'Ladies European Tour (LET)', players: '~200 active', rankings: 'RWGR + LET Order of Merit', analytic: 'No analytics platform', platform: 'Nothing beyond LET portal' },
     { tour: 'LPGA Epson Tour (Dev)', players: '~120 active', rankings: 'RWGR', analytic: 'No analytics platform', platform: 'Spreadsheets and email' },
     { tour: 'Symetra Tour', players: 'Merged into Epson', rankings: 'Historical', analytic: 'No analytics platform', platform: 'Dissolved' },
@@ -4136,8 +4136,8 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
     { event: 'AIG Women\'s Open', cat: 'Major', venue: 'Lytham & St Annes', date: 'Aug 2026', rwgr: '100 pts (winner)', prize: '$10M' },
     { event: 'Chevron Championship', cat: 'Major', venue: 'The Club at Carlton Woods', date: 'Apr 2026', rwgr: '100 pts', prize: '$10M' },
     { event: 'US Women\'s Open', cat: 'Major', venue: 'Quaker Ridge GC', date: 'Jun 2026', rwgr: '100 pts', prize: '$12M' },
-    { event: 'The Annika (Rolex Series)', cat: 'LPGA Rolex', venue: 'Pelican GC, Florida', date: 'Nov 2026', rwgr: '65 pts', prize: '$4M' },
-    { event: 'BMW Ladies Championship', cat: 'LET Rolex', venue: 'Seomjin River CC, Korea', date: 'Oct 2026', rwgr: '60 pts', prize: '$3.25M' },
+    { event: 'The Annika (Meridian Series)', cat: 'LPGA Meridian', venue: 'Pelican GC, Florida', date: 'Nov 2026', rwgr: '65 pts', prize: '$4M' },
+    { event: 'Halden Motors Ladies Championship', cat: 'LET Meridian', venue: 'Seomjin River CC, Korea', date: 'Oct 2026', rwgr: '60 pts', prize: '$3.25M' },
   ];
   const arccosWomen = [
     { name: 'Nelly Korda', flag: '🇺🇸', rank: '#1 RWGR', note: 'Full Arccos Pro analytics suite' },
@@ -4192,7 +4192,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
       {activeTab === 'rankings' && (
         <div className="space-y-4">
           <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-            <div className="text-sm font-semibold text-white mb-3">Rolex Women's World Golf Rankings (RWGR)</div>
+            <div className="text-sm font-semibold text-white mb-3">Meridian Women's World Golf Rankings (RWGR)</div>
             <div className="space-y-2 text-sm text-gray-300">
               <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Updated weekly (Monday). Same 104-week rolling average system as OWGR — identical calculation framework.</span></div>
               <div className="flex items-start gap-2"><span className="text-green-500 mt-0.5">•</span><span>Points awarded based on field strength and finishing position. Major winners earn 100 points. LET wins earn proportionally less.</span></div>
@@ -4379,7 +4379,7 @@ type PipelineColumn = { key: string; title: string; cards: PipelineCard[] };
 
 const PIPELINE: PipelineColumn[] = [
   { key: 'prospect', title: 'Prospect', cards: [
-    { brand: 'Oakley', category: 'Eyewear', value: '£35k/yr', next: 'Intro email — draft ready' },
+    { brand: 'Ridgeline Optics', category: 'Eyewear', value: '£35k/yr', next: 'Intro email — draft ready' },
   ]},
   { key: 'discussion', title: 'In Discussion', cards: [
     { brand: 'Hublot', category: 'Watch', value: '£180k/yr', next: 'Follow-up call Thu 15:00' },
@@ -4408,7 +4408,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
     setLoading(true);
     setError(null);
     try {
-      const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Harrington. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: TaylorMade (clubs), Callaway (wedges/ball), Rolex (watch), BMW (vehicle), Puma (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
+      const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Harrington. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: Vanta Sports (clubs), Vanta Sports (wedges/ball), Meridian Watches (watch), Halden Motors (vehicle), Apex Performance (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4482,7 +4482,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
             <h3 className="text-sm font-bold text-white">Pitch Brief</h3>
             <div>
               <label className={lbl}>Brand</label>
-              <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Oakley" className={inp} />
+              <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Ridgeline Optics" className={inp} />
             </div>
             <div>
               <label className={lbl}>Category</label>
@@ -4599,7 +4599,7 @@ function StepIndicator({ steps, current }: { steps: string[]; current: number })
 function GolfFlightFinder({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
   const [step, setStep] = useState<'configure'|'searching'|'results'|'book'>('configure')
   const [from, setFrom] = useState('London Heathrow (LHR)')
-  const [to, setTo] = useState('Munich (MUC) — BMW International')
+  const [to, setTo] = useState('Munich (MUC) — Halden Motors International')
   const [depart, setDepart] = useState('')
   const [returnDate, setReturnDate] = useState('')
   const [cabinClass, setCabinClass] = useState('Business')
@@ -4608,11 +4608,11 @@ function GolfFlightFinder({ onClose, session, player }: { onClose: () => void; s
   const [selectedFlight, setSelectedFlight] = useState<typeof results[0] | null>(null)
 
   const UPCOMING = [
-    { label: 'BMW International — 3 Jul', to: 'Munich (MUC)', date: '2026-07-02' },
+    { label: 'Halden Motors International — 3 Jul', to: 'Munich (MUC)', date: '2026-07-02' },
     { label: 'Scottish Open — 10 Jul', to: 'Edinburgh (EDI)', date: '2026-07-09' },
     { label: 'The Open — 17 Jul', to: 'Liverpool (LPL)', date: '2026-07-16' },
     { label: 'British Masters — 28 Aug', to: 'Birmingham (BHX)', date: '2026-08-27' },
-    { label: 'BMW PGA — 17 Sep', to: 'London Heathrow (LHR)', date: '2026-09-16' },
+    { label: 'Halden Motors Championship — 17 Sep', to: 'London Heathrow (LHR)', date: '2026-09-16' },
   ]
 
   const FALLBACK_RESULTS = [
@@ -4780,7 +4780,7 @@ function GolfMatchPrepAI({ onClose, session, player }: { onClose: () => void; se
 }
 
 function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
-  const [sponsor, setSponsor] = useState('Callaway')
+  const [sponsor, setSponsor] = useState('Vanta Sports')
   const [postType, setPostType] = useState('Tournament arrival')
   const [platform, setPlatform] = useState('Instagram')
   const [scorePos, setScorePos] = useState('')
@@ -4795,7 +4795,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 500,
-          messages: [{ role: 'user', content: `Generate a social media post for James Harrington (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at BMW International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
+          messages: [{ role: 'user', content: `Generate a social media post for James Harrington (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at Halden Motors International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
         })
       })
       const data = await res.json()
@@ -4810,7 +4810,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
       <div className="p-6 space-y-4">
         {!post && !loading && (<>
           <div><label className="text-xs text-gray-500 mb-2 block">Sponsor</label>
-            <div className="flex flex-wrap gap-2">{['Callaway','Rolex','Other'].map(s => (
+            <div className="flex flex-wrap gap-2">{['Vanta Sports','Meridian Watches','Other'].map(s => (
               <button key={s} onClick={() => setSponsor(s)} className="text-xs px-3 py-1.5 rounded-full transition-all" style={{ backgroundColor: sponsor === s ? 'rgba(21,128,61,0.2)' : 'rgba(255,255,255,0.05)', border: sponsor === s ? '1px solid #15803D' : '1px solid #1F2937', color: sponsor === s ? '#15803D' : '#9CA3AF' }}>{s}</button>
             ))}</div>
           </div>
@@ -4840,7 +4840,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
 
 function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player: GolfPlayer }) {
   const [result, setResult] = useState('Win')
-  const [event, setEvent] = useState('BMW International Open')
+  const [event, setEvent] = useState('Halden Motors International Open')
   const [loading, setLoading] = useState(false)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const scenarios: Record<string, { owgr: number; change: string; r2d: number; r2dPts: number; prize: string }> = {
@@ -5003,7 +5003,7 @@ function GolfSocialMediaAI({ onClose, session, player }: { onClose: () => void; 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          messages: [{ role: 'user', content: `You are the social media manager for ${session.userName || player.name}, a professional golfer on the ${player.tour} (OWGR #${player.owgr}). Current event: BMW International Open, Munich. Generate social media content about: "${topic || 'tournament prep day'}". Platforms: ${platforms.join(', ')}. Tone: ${tone}. Include hashtags, emojis, and platform-specific formatting. For Instagram include a caption. For Twitter/X keep under 280 chars. For LinkedIn be more professional. Respond in plain text only — no markdown formatting.` }]
+          messages: [{ role: 'user', content: `You are the social media manager for ${session.userName || player.name}, a professional golfer on the ${player.tour} (OWGR #${player.owgr}). Current event: Halden Motors International Open, Munich. Generate social media content about: "${topic || 'tournament prep day'}". Platforms: ${platforms.join(', ')}. Tone: ${tone}. Include hashtags, emojis, and platform-specific formatting. For Instagram include a caption. For Twitter/X keep under 280 chars. For LinkedIn be more professional. Respond in plain text only — no markdown formatting.` }]
         })
       })
       const data = await res.json()
@@ -5043,8 +5043,8 @@ function GolfSocialMediaAI({ onClose, session, player }: { onClose: () => void; 
 
 function GolfVisaCheck({ onClose }: { onClose: () => void }) {
   const COUNTRIES = [
-    { country: '🇩🇪 Germany (BMW International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free', urgent: false },
-    { country: '🇬🇧 UK (British Masters, BMW PGA)', visa: 'Home', note: 'No requirements — home country', urgent: false },
+    { country: '🇩🇪 Germany (Halden Motors International)', visa: 'Not required', note: 'UK passport — Schengen zone, 90-day tourist visa-free', urgent: false },
+    { country: '🇬🇧 UK (British Masters, Halden Motors Championship)', visa: 'Home', note: 'No requirements — home country', urgent: false },
     { country: '🇨🇭 Switzerland (Omega Euro Masters)', visa: 'Not required', note: 'Schengen zone — 90-day visa-free', urgent: false },
     { country: '🇦🇪 UAE (Abu Dhabi, Dubai)', visa: 'Visa on arrival', note: '30-day tourist visa on arrival for UK passport holders', urgent: false },
     { country: '🇺🇸 USA (US Open, Masters)', visa: '⚠️ ESTA required', note: 'Apply 72h before travel — $21 fee, valid 2 years', urgent: true },
@@ -5087,7 +5087,7 @@ function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: S
     { label: 'The Open (Royal Liverpool)', destination: 'Royal Liverpool, Hoylake, UK' },
     { label: 'US Open (Pinehurst)', destination: 'Pinehurst, North Carolina, USA' },
     { label: 'Ryder Cup (Bethpage)', destination: 'Bethpage, New York, USA' },
-    { label: 'BMW International (Munich)', destination: 'Munich, Germany' },
+    { label: 'Halden Motors International (Munich)', destination: 'Munich, Germany' },
   ]
 
   const search = async () => {
@@ -5242,7 +5242,7 @@ function GolfCourseStrategyAI({ onClose, session }: { onClose: () => void; sessi
 }
 
 function GolfRoundLogger({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ tournament: 'BMW International Open', round: 'R2', course: 'Golfclub München Eichenried', score: '', fairways: '', gir: '', putts: '', drivingDist: '', sgOtt: '', sgApp: '', sgArg: '', sgPutt: '', bestHole: '', worstHole: '', notes: '' })
+  const [form, setForm] = useState({ tournament: 'Halden Motors International Open', round: 'R2', course: 'Golfclub München Eichenried', score: '', fairways: '', gir: '', putts: '', drivingDist: '', sgOtt: '', sgApp: '', sgArg: '', sgPutt: '', bestHole: '', worstHole: '', notes: '' })
   const [saved, setSaved] = useState(false)
   const [rounds, setRounds] = useState<Array<{tournament:string;round:string;score:string;putts:string;date:string}>>([])
   const upd = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -5357,7 +5357,7 @@ function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => voi
 }
 
 function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
-  const [tournament, setTournament] = useState('BMW International Open')
+  const [tournament, setTournament] = useState('Halden Motors International Open')
   const [round, setRound] = useState('R2')
   const [teeTime, setTeeTime] = useState('09:24')
   const [partners, setPartners] = useState('R. McIlroy, S. Scheffler')
@@ -5430,7 +5430,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
                 { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
                 { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
                 { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
-                { id:'gs7', time:'18:00', label:'Callaway sponsor post — caption due', highlight:false },
+                { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
                 { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
               ]
               const checkedState: Record<string,boolean> = JSON.parse(localStorage.getItem('golf_schedule_checked') || '{}')
@@ -5457,7 +5457,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
                 roundupSummary: buildRoundupSummary(roundupChannels),
                 sport: 'golf',
                 timezone: getUserTimezone(),
-                extra: `OWGR number ${player.owgr}. BMW International Open, Munich.`,
+                extra: `OWGR number ${player.owgr}. Halden Motors International Open, Munich.`,
               })
             }
             const utterance = new SpeechSynthesisUtterance(speechText)
@@ -5473,7 +5473,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
 }
 
 function GolfMentalPrepAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
-  const [tournament, setTournament] = useState('BMW International Open')
+  const [tournament, setTournament] = useState('Halden Motors International Open')
   const [round, setRound] = useState('R2')
   const [teeTime, setTeeTime] = useState('09:24')
   const [position, setPosition] = useState('')
@@ -5534,30 +5534,30 @@ function GolfMentalPrepAI({ onClose, session, player }: { onClose: () => void; s
 // ─── GOLF SPONSOR DASHBOARD ─────────────────────────────────────────────────
 function GolfSponsorDashboard({ session, player }: { session: SportsDemoSession; player: GolfPlayer }) {
   const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
-  const sponsorName = session.clubName || 'Callaway'
+  const sponsorName = session.clubName || 'Vanta Sports'
   const sponsorColor = '#D4AF37'
   const sponsorLogo = session.logoDataUrl
 
   const OBLIGATIONS = [
-    { id:'o1', title:'Instagram post — Callaway Chrome Tour X', due:'Today', status:'pending', platform:'Instagram', reach:'95k' },
+    { id:'o1', title:'Instagram post — Vanta Sports Chrome Tour X', due:'Today', status:'pending', platform:'Instagram', reach:'95k' },
     { id:'o2', title:'Twitter round recap with equipment mention', due:'Today', status:'pending', platform:'Twitter', reach:'62k' },
-    { id:'o3', title:'The Open pre-tournament Callaway post', due:'14 Jul', status:'scheduled', platform:'Instagram', reach:'120k' },
-    { id:'o4', title:'BMW PGA brand activation shoot', due:'15 Sep', status:'upcoming', platform:'Multi', reach:'200k' },
+    { id:'o3', title:'The Open pre-tournament Vanta Sports post', due:'14 Jul', status:'scheduled', platform:'Instagram', reach:'120k' },
+    { id:'o4', title:'Halden Motors Championship brand activation shoot', due:'15 Sep', status:'upcoming', platform:'Multi', reach:'200k' },
     { id:'o5', title:'Ryder Cup selection campaign content', due:'Oct', status:'upcoming', platform:'Multi', reach:'350k' },
     { id:'o6', title:'Year-end highlights reel', due:'30 Nov', status:'upcoming', platform:'Multi', reach:'180k' },
   ]
 
   const CONTENT = [
     { title:'Practice range session with Jaws Raw wedges', date:'1 Jul', type:'Photo', platform:'Instagram', likes:'3.8k', reach:'88k' },
-    { title:'BMW International Pro-Am hospitality', date:'2 Jul', type:'Story', platform:'Instagram', likes:'1.9k', reach:'52k' },
+    { title:'Halden Motors International Pro-Am hospitality', date:'2 Jul', type:'Story', platform:'Instagram', likes:'1.9k', reach:'52k' },
     { title:'Pre-round warm-up with Chrome Tour X', date:'Today', type:'Video', platform:'TikTok', likes:'6.2k', reach:'180k' },
   ]
 
   const EVENTS = [
-    { event:'BMW International Open R1', date:'Today', venue:'Golfclub München Eichenried', broadcast:'Sky Sports Golf, DP World Tour+', exposure:'Est. 1.8M viewers' },
-    { event:'Genesis Scottish Open', date:'10 Jul', venue:'The Renaissance Club', broadcast:'Sky Sports, NBC', exposure:'Est. 3.2M viewers' },
-    { event:'The 154th Open Championship', date:'17 Jul', venue:'Royal Birkdale', broadcast:'Sky Sports, BBC, NBC', exposure:'Est. 12.4M viewers' },
-    { event:'BMW PGA Championship', date:'17 Sep', venue:'Wentworth Club', broadcast:'Sky Sports, DP World Tour+', exposure:'Est. 4.8M viewers' },
+    { event:'Halden Motors International Open R1', date:'Today', venue:'Golfclub München Eichenried', broadcast:'Northbridge Sport, DP World Tour+', exposure:'Est. 1.8M viewers' },
+    { event:'Genesis Scottish Open', date:'10 Jul', venue:'The Renaissance Club', broadcast:'Northbridge Sport, NBC', exposure:'Est. 3.2M viewers' },
+    { event:'The 154th Open Championship', date:'17 Jul', venue:'Royal Birkdale', broadcast:'Northbridge Sport, Crown Broadcasting, NBC', exposure:'Est. 12.4M viewers' },
+    { event:'Halden Motors Championship', date:'17 Sep', venue:'Wentworth Club', broadcast:'Northbridge Sport, DP World Tour+', exposure:'Est. 4.8M viewers' },
   ]
 
   return (
@@ -5610,7 +5610,7 @@ function GolfSponsorDashboard({ session, player }: { session: SportsDemoSession;
               </div>
             )}
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || player.name} is competing at BMW International Open R1</p></div>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || player.name} is competing at Halden Motors International Open R1</p></div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[{ label:'Expected TV viewers', value:'1.8M', icon:'📺', color:sponsorColor }, { label:'Social following', value:'142k', icon:'📱', color:'#15803D' }, { label:'Press accredited', value:'68', icon:'📰', color:'#8B5CF6' }].map((s,i) => (
                   <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}><div className="text-2xl mb-1">{s.icon}</div><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
@@ -5821,11 +5821,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   useEffect(() => {
     if (toastDismissed) return;
     const hour = new Date().getHours();
-    // Demo deals — the most urgent is Callaway (renewal due, content obligation today).
+    // Demo deals — the most urgent is Vanta Sports (renewal due, content obligation today).
     const deals = [
-      { sponsor: 'Callaway', status: 'Renewal due', days: 18, dailyObligation: true },
-      { sponsor: 'Titleist', status: 'Active', days: 82, dailyObligation: false },
-      { sponsor: 'Rolex', status: 'Active', days: 146, dailyObligation: false },
+      { sponsor: 'Vanta Sports', status: 'Renewal due', days: 18, dailyObligation: true },
+      { sponsor: 'Vanta Sports', status: 'Active', days: 82, dailyObligation: false },
+      { sponsor: 'Meridian Watches', status: 'Active', days: 146, dailyObligation: false },
     ];
     const dailyDue = deals.find(d => d.dailyObligation);
     const renewalSoon = deals.find(d => d.days <= 18);
@@ -6146,23 +6146,23 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">This Week</div>
               <div className="text-xs text-green-400 font-medium">● In Progress</div>
-              <div className="text-xs text-gray-300 mt-1">BMW International Open</div>
+              <div className="text-xs text-gray-300 mt-1">Halden Motors International Open</div>
               <div className="text-xs text-gray-500">Munich · R1 Thu 09:42</div>
               <div className="mt-2 text-xs text-yellow-400">Win = £1.32M · 1,335 pts</div>
             </div>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Next Events</div>
-              {['Scottish Open (Rolex)', 'The Open (Major)', 'British Masters', 'Omega Euro Masters'].map((t, i) => (
+              {['Scottish Open (Meridian Series)', 'The Open (Major)', 'British Masters', 'Omega Euro Masters'].map((t, i) => (
                 <div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50 last:border-0">{t}</div>
               ))}
             </div>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Alerts</div>
               <div className="space-y-1.5">
-                <div className="text-xs text-red-400">🔴 Callaway renewal: 18d</div>
+                <div className="text-xs text-red-400">🔴 Vanta Sports renewal: 18d</div>
                 <div className="text-xs text-yellow-400">⚠️ 330 pts expire Jul 12</div>
-                <div className="text-xs text-yellow-400">⚠️ Callaway post due today</div>
-                <div className="text-xs text-blue-400">📞 TaylorMade call: 16:00</div>
+                <div className="text-xs text-yellow-400">⚠️ Vanta Sports post due today</div>
+                <div className="text-xs text-blue-400">📞 Vanta Sports call: 16:00</div>
               </div>
             </div>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">

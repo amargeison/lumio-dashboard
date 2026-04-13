@@ -174,20 +174,20 @@ const SOURCE_ICON: Record<string, string> = {
 
 const TENNIS_QUICK_WINS: TennisQuickWin[] = [
   { id: 'tqw-1', title: 'Book Madrid flights — prices rising daily', description: 'Departing 26 Apr. Business class now £340 vs £280 last week.', impact: 'high', effort: '2min', category: 'Travel', action: 'Search flights →', actionSection: 'travel', source: 'Travel Desk' },
-  { id: 'tqw-2', title: 'Reply to Rolex renewal inquiry', description: 'Agent James Wright sent the renewal brief 3 days ago. Decision needed this week.', impact: 'high', effort: '5min', category: 'Commercial', action: 'Open sponsorship →', actionSection: 'sponsorship', source: 'Agent' },
-  { id: 'tqw-3', title: 'Lululemon post overdue today', description: 'Carlos needs kit photo before 12:00 for today\'s obligation.', impact: 'high', effort: '2min', category: 'Sponsor', action: 'View obligation →', actionSection: 'sponsorship', source: 'Lululemon' },
+  { id: 'tqw-2', title: 'Reply to Meridian Watches renewal inquiry', description: 'Agent James Wright sent the renewal brief 3 days ago. Decision needed this week.', impact: 'high', effort: '5min', category: 'Commercial', action: 'Open sponsorship →', actionSection: 'sponsorship', source: 'Agent' },
+  { id: 'tqw-3', title: 'Apex Performance post overdue today', description: 'Carlos needs kit photo before 12:00 for today\'s obligation.', impact: 'high', effort: '2min', category: 'Sponsor', action: 'View obligation →', actionSection: 'sponsorship', source: 'Apex Performance' },
   { id: 'tqw-4', title: 'Hamburg 500 wildcard — deadline today', description: 'Tournament director needs answer by 5pm. Clashes with Eastbourne.', impact: 'high', effort: '5min', category: 'Entries', action: 'Manage entries →', actionSection: 'entries', source: 'ATP Entry' },
   { id: 'tqw-5', title: 'Review Martinez serve patterns', description: 'Match today at 13:00. Analysis team uploaded 3 tagged clips.', impact: 'medium', effort: '10min', category: 'Match Prep', action: 'View match prep →', actionSection: 'matchprep', source: 'Analysis' },
   { id: 'tqw-6', title: 'Roland-Garros hotel deposit due 1 May', description: 'Apartment owner requesting €800 deposit. Travel desk waiting.', impact: 'medium', effort: '5min', category: 'Travel', action: 'Search hotels →', actionSection: 'travel', source: 'Travel Desk' },
-  { id: 'tqw-7', title: '2 Nike posts outstanding — March obligation', description: 'Nike partnership requires 4 posts per season. 2 overdue since March.', impact: 'medium', effort: '5min', category: 'Commercial', action: 'View obligation →', actionSection: 'sponsorship', source: 'Nike' },
+  { id: 'tqw-7', title: '2 Apex Performance posts outstanding — March obligation', description: 'Apex Performance partnership requires 4 posts per season. 2 overdue since March.', impact: 'medium', effort: '5min', category: 'Commercial', action: 'View obligation →', actionSection: 'sponsorship', source: 'Apex Performance' },
 ]
 
 const TENNIS_TASKS: TennisTask[] = [
   { id: 't1', title: 'Reply to Tournament Desk — court time moved 30 min', description: 'URGENT: Confirm receipt of court schedule change. Court 4 now 13:30.', due: '10:00', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Reply now', actionSection: 'morning' },
   { id: 't2', title: 'See Dr Lee for shoulder — pre-match', description: 'Physio flagged inflammation. Ice 20 min + treatment before warm-up.', due: '12:30', priority: 'high', category: 'Medical', source: 'lumio', done: false, overdue: false, action: 'View physio', actionSection: 'physio-recovery' },
   { id: 't3', title: 'Practice session — serve patterns', description: 'Focus: kick serve to backhand on deuce court. 90 min max.', due: '10:00', priority: 'high', category: 'Training', source: 'lumio', done: false, overdue: false, action: 'Log practice', actionModal: 'notes' },
-  { id: 't4', title: 'Stringing with Carlos — 2x Wilson Luxilon ALU', description: 'Clay tensions confirmed. Pick up from string room at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false, action: 'String order', actionModal: 'strings' },
-  { id: 't5', title: 'Lululemon kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false, action: 'View obligation', actionSection: 'sponsorship' },
+  { id: 't4', title: 'Stringing with Carlos — 2x Vanta Sports Luxe Pro', description: 'Clay tensions confirmed. Pick up from string room at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false, action: 'String order', actionModal: 'strings' },
+  { id: 't5', title: 'Apex Performance kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false, action: 'View obligation', actionSection: 'sponsorship' },
   { id: 't6', title: 'Respond to Hamburg 500 wildcard offer', description: 'Deadline 5pm today. Clashes with Eastbourne.', due: '17:00', priority: 'high', category: 'Entries', source: 'atp', done: false, overdue: false, action: 'Entry manager', actionModal: 'entries' },
   { id: 't7', title: 'Match vs C. Martinez — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Match prep', actionModal: 'matchprep' },
 ]
@@ -412,11 +412,11 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
     matchprep: ['Martinez H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez first serve wide on deuce: 68% tendency', 'His BH breakdown rate under pressure: 61%', 'Your winning shot vs Martinez: inside-out FH (42% of winners)', 'His double fault rate on clay: 3.1/match — above average'],
     opponentintel: ['Martinez first serve: 68% wide on deuce court (clay)', 'Martinez return: 71% forehand-dominant — exploit BH side', 'H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez break point conversion: 41% — below average', 'Martinez ATP ranking: #34 — career high #28'],
     practicelog: ['Sessions this week: 4 of 5 planned — on track', 'Serve speed peak in practice: 124mph — 3mph above match avg', 'Average practice 3DA: 99.4 — above match average', 'Footwork drills completed this month: 18 of 20 target', 'Forehand cross-court consistency: +8% last week'],
-    sponsorship: ['Rolex deal value: £240,000/yr — renewal in 47 days', 'Lululemon: 2 posts outstanding (March + today)', 'Nike: 0/2 posts completed this month', 'Estimated sponsor reach YTD: 14.2M across all platforms', 'Total commercial income YTD: £84,200'],
+    sponsorship: ['Meridian Watches deal value: £240,000/yr — renewal in 47 days', 'Apex Performance: 2 posts outstanding (March + today)', 'Apex Performance: 0/2 posts completed this month', 'Estimated sponsor reach YTD: 14.2M across all platforms', 'Total commercial income YTD: £84,200'],
     financial: ['Prize money YTD: £387,420', 'Season expenses to date: £42,800', 'Net earnings YTD: £344,620 (before tax/agent)', 'Agent commission (15%): £58,113 YTD', 'Tax instalment due: 31 Jul — accountant briefed'],
     travel: ['Flights booked: 4 of 7 remaining tournaments', 'Travel budget used: £18,400 of £36,000 season allocation', 'Hotels confirmed: Monte-Carlo, Madrid, Paris', 'Roland-Garros apartment deposit outstanding: €800', 'Next unbooked: Halle Open — depart 13 Jun'],
-    agent: ['Paddy Power ambassador inquiry: £85k/yr offer pending', 'Hamburg wildcard: decision deadline today 5pm', 'Rolex renewal: 47 days — agent has draft terms', 'Madrid wild card: accepted (no action needed)', 'Wimbledon entry: not yet submitted — deadline 26 May'],
-    teamhub: ['Team today: 5 of 6 confirmed present in Monte-Carlo', 'Marcos Silva (psychologist): remote — call at 15:00', 'Coach session: 10:00 serve patterns — 90 min', 'Dr Lee: 12:30 shoulder treatment — confirmed', 'Tom Ellis (stringer): 11:45 — Wilson Luxilon ALU ready'],
+    agent: ['Crown Wagers ambassador inquiry: £85k/yr offer pending', 'Hamburg wildcard: decision deadline today 5pm', 'Meridian Watches renewal: 47 days — agent has draft terms', 'Madrid wild card: accepted (no action needed)', 'Wimbledon entry: not yet submitted — deadline 26 May'],
+    teamhub: ['Team today: 5 of 6 confirmed present in Monte-Carlo', 'Marcos Silva (psychologist): remote — call at 15:00', 'Coach session: 10:00 serve patterns — 90 min', 'Dr Lee: 12:30 shoulder treatment — confirmed', 'Tom Ellis (stringer): 11:45 — Vanta Sports Luxe Pro ready'],
     schedule: ['Next 5: MC QF today, Madrid, Roland-Garros, Halle, Wimbledon', 'Points available next 4 weeks: 1,800 pts (SF+) across all', 'Hard deadline next: Roland-Garros entries — 3 May', 'Hamburg vs Eastbourne clash: decision needed today', 'Race to Turin impact: need 2 SF results to break top-20'],
     video: ['Unreviewed match clips this week: 3', 'Martinez clay footage: 2 matches tagged and ready', 'Coach added 4 tactical notes to Barcelona SF clip', 'Serve analysis session: booked Thursday with Carlos', 'Season highlight reel: 67% complete'],
     media: ['Press conference today: post-match (win or lose)', 'L\'Equipe interview request: 15 min — awaiting response', 'Social following: 207k total (IG: 142k, TW: 65k)', 'Engagement rate this week: 4.2% — above 3.1% avg', 'Press mentions this month: 23 articles'],
@@ -1093,8 +1093,8 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
     { id:'agent', label:'Agent Messages', icon:'📞', count:2, urgent:false, color:'#a855f7', messages: [
-      { id:'a1', from:'James Wright', text:'Rolex renewal — they want a response by end of week. Call me.', time:'8:14am' },
-      { id:'a2', from:'James Wright', text:'Paddy Power inquiry — new ambassador deal. £85k/yr. Interested?', time:'7:52am' },
+      { id:'a1', from:'James Wright', text:'Meridian Watches renewal — they want a response by end of week. Call me.', time:'8:14am' },
+      { id:'a2', from:'James Wright', text:'Crown Wagers inquiry — new ambassador deal. £85k/yr. Interested?', time:'7:52am' },
     ]},
     { id:'tournament', label:'Tournament Desk', icon:'🏆', count:3, urgent:true, color:'#f59e0b', messages: [
       { id:'t1', from:'Monte-Carlo Masters', text:'URGENT: Court 4 time moved to 13:30 (30 min delay). Confirm receipt.', time:'9:01am' },
@@ -1102,10 +1102,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       { id:'t3', from:'Hamburg 500', text:'Wildcard confirmation for Hamburg 500 — deadline today 5pm.', time:'7:30am' },
     ]},
     { id:'sponsor', label:'Media & Sponsor', icon:'📱', count:4, urgent:false, color:'#3b82f6', messages: [
-      { id:'s1', from:'Lululemon', text:'Lululemon post due TODAY — Carlos needs kit photo before 12:00.', time:'8:30am' },
-      { id:'s2', from:'Nike', text:'Nike obligation: 1 post outstanding from March. Please prioritise.', time:'Yesterday' },
+      { id:'s1', from:'Apex Performance', text:'Apex Performance post due TODAY — Carlos needs kit photo before 12:00.', time:'8:30am' },
+      { id:'s2', from:'Apex Performance', text:'Apex Performance obligation: 1 post outstanding from March. Please prioritise.', time:'Yesterday' },
       { id:'s3', from:"L'Equipe", text:'Interview request: L\'Equipe — 15 min post-match. Yes/no?', time:'8:05am' },
-      { id:'s4', from:'Rolex', text:'Rolex content calendar attached — next shoot: Paris May 20.', time:'7:48am' },
+      { id:'s4', from:'Meridian Watches', text:'Meridian Watches content calendar attached — next shoot: Paris May 20.', time:'7:48am' },
     ]},
     { id:'physio', label:'Physio & Medical', icon:'⚕️', count:1, urgent:true, color:'#ef4444', messages: [
       { id:'p1', from:'Dr Sarah Lee', text:'URGENT: Shoulder inflammation — recommend ice 20 min pre-match. See me at 12:30.', time:'9:15am' },
@@ -1343,9 +1343,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
                   {step.preview === 'travel' && (<div className="space-y-2"><div className="text-xs font-bold mb-2" style={{ color: '#4B5563' }}>✈️ LHR → MAD · 26 Apr · Business · 2 pax</div>{[{ airline:'British Airways', dep:'07:20', arr:'10:35', dur:'2h15m', stops:'Direct', price:312, score:96, badge:'Best value', badgeColor:'#0ea5e9' },{ airline:'easyJet', dep:'06:05', arr:'09:20', dur:'2h15m', stops:'Direct', price:187, score:88, badge:'Cheapest', badgeColor:'#22C55E' },{ airline:'Vueling', dep:'11:30', arr:'14:45', dur:'2h15m', stops:'Direct', price:224, score:85, badge:null, badgeColor:'' }].map((f, i) => (<div key={i} className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: i === 0 ? 'rgba(14,165,233,0.08)' : '#111318', border: i === 0 ? '1px solid rgba(14,165,233,0.3)' : '1px solid #1F2937' }}><div><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{f.airline}</span>{f.badge && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badgeColor }}>{f.badge}</span>}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.dep} → {f.arr} · {f.dur} · {f.stops}</div></div><div className="text-right"><div className="text-sm font-black text-white">£{f.price * 2}</div><div className="text-[10px]" style={{ color: '#22C55E' }}>Score {f.score}/100</div></div></div>))}<div className="text-[10px] text-center mt-1" style={{ color: '#374151' }}>AI searched BA, easyJet, Ryanair, Vueling, Air France + more</div></div>)}
 
-                  {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Rolex · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Rolex. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#RolexAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Rolex', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Lululemon', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Nike', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
+                  {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Meridian Watches · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Meridian Watches. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#Meridian WatchesAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Meridian Watches', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Apex Performance', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Apex Performance', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
 
-                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Martinez — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Lululemon kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Rolex sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
+                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Martinez — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Apex Performance kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Meridian Watches sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
 
                   {step.preview === 'gps_video' && (<div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -1630,7 +1630,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
                       <span style={{ color: '#6B7280' }}>TV</span>
-                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Tennis Channel / Amazon Prime</span>
+                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Apex Tennis Network / Amazon Prime</span>
                     </div>
                   </div>
                 </div>
@@ -1696,7 +1696,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     { type: 'match',    icon: '🎾', text: 'Match today vs C. Martinez — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
                     { type: 'messages', icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
                     { type: 'schedule', icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
-                    { type: 'sponsor',  icon: '🤝', text: 'Lululemon post due today — Carlos needs kit photo before 12:00. Reply to agent about Rolex renewal this week.' },
+                    { type: 'sponsor',  icon: '🤝', text: 'Apex Performance post due today — Carlos needs kit photo before 12:00. Reply to agent about Meridian Watches renewal this week.' },
                     { type: 'travel',   icon: '✈️', text: 'Madrid hotel confirmed (NH Eurobuilding, 26 Apr). Roland-Garros apartment deposit due 1 May — travel desk waiting.' },
                   ].map((item, i) => (
                     <div key={i} className="flex gap-3 text-xs">
@@ -1944,7 +1944,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { type: 'ALERT', icon: '⚠️', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', title: '312 ranking points expiring', desc: 'After Monte-Carlo this week. A QF exit loses 180 pts from last year. Win tonight to defend and push to #58.', action: 'View ranking forecast →', section: 'performance' },
-              { type: 'OPPORTUNITY', icon: '💡', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', title: 'Paddy Power ambassador offer', desc: 'New approach via James Wright — £85k/yr. No competing betting sponsor. Decision needed by end of month.', action: 'View pipeline →', section: 'pipeline' },
+              { type: 'OPPORTUNITY', icon: '💡', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', title: 'Crown Wagers ambassador offer', desc: 'New approach via James Wright — £85k/yr. No competing betting sponsor. Decision needed by end of month.', action: 'View pipeline →', section: 'pipeline' },
               { type: 'TREND', icon: '📈', color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', title: 'First serve % up 6 points', desc: 'Last 5 matches: 64% vs 58% season average. Kick serve improvement on clay is working — continue focus in practice.', action: 'View serve stats →', section: 'performance' },
               { type: 'ACHIEVEMENT', icon: '🏆', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', title: 'Monte-Carlo QF — best clay result', desc: 'First Masters QF on clay. Beating Shelton (#14) in R3 was a statement win. Media interest is high.', action: 'View match report →', section: 'performance' },
             ].map((tile, i) => (
@@ -1995,11 +1995,11 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {dashTab === 'dontmiss' && (() => {
         const DONT_MISS_ITEMS = [
           { id: 'dm-1', urgency: 'CRITICAL', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Match', deadline: 'Today 13:30', title: 'Match vs C. Martinez — Court 4', desc: 'Monte-Carlo Masters QF. H2H 3-1. Clay court. Your best Masters result on clay.', consequence: 'Miss this and you drop 180 ranking points.', action: 'View match prep →', section: 'matchprep' },
-          { id: 'dm-2', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Sponsor', deadline: 'Before 12:00', title: 'Lululemon kit photo due', desc: 'Carlos needs the photo for today\'s contractual obligation post.', consequence: 'Breach of sponsor contract — penalty clause.', action: 'Open brief →', section: 'sponsorship' },
+          { id: 'dm-2', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Sponsor', deadline: 'Before 12:00', title: 'Apex Performance kit photo due', desc: 'Carlos needs the photo for today\'s contractual obligation post.', consequence: 'Breach of sponsor contract — penalty clause.', action: 'Open brief →', section: 'sponsorship' },
           { id: 'dm-3', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Entries', deadline: 'By 17:00', title: 'Hamburg 500 wildcard — respond today', desc: 'Tournament director needs answer. Clashes with Eastbourne prep week.', consequence: 'Wildcard offer expires. Next opportunity: Winston-Salem (Aug).', action: 'Manage entries →', section: 'entries' },
-          { id: 'dm-4', urgency: '47 DAYS', urgencyColor: '#F59E0B', urgencyBg: 'rgba(245,158,11,0.12)', category: 'Commercial', deadline: '25 May', title: 'Rolex sponsorship renewal deadline', desc: 'Agent James Wright has the brief. 3-year deal worth 120k/yr. Competitor interest from TAG Heuer.', consequence: 'Auto-renewal at current terms if not renegotiated.', action: 'View contract →', section: 'sponsorship' },
+          { id: 'dm-4', urgency: '47 DAYS', urgencyColor: '#F59E0B', urgencyBg: 'rgba(245,158,11,0.12)', category: 'Commercial', deadline: '25 May', title: 'Meridian Watches sponsorship renewal deadline', desc: 'Agent James Wright has the brief. 3-year deal worth 120k/yr. Competitor interest from TAG Heuer.', consequence: 'Auto-renewal at current terms if not renegotiated.', action: 'View contract →', section: 'sponsorship' },
           { id: 'dm-5', urgency: '1 MAY', urgencyColor: '#6B7280', urgencyBg: 'rgba(107,114,128,0.12)', category: 'Travel', deadline: '1 May', title: 'Roland-Garros apartment deposit', desc: 'Owner requesting deposit. Travel desk has the details. 3-bed apartment near Porte d\'Auteuil.', consequence: 'Apartment released to next tenant. Hotel costs 3x more.', action: 'View travel →', section: 'travel' },
-          { id: 'dm-6', urgency: '1 MAY', urgencyColor: '#6B7280', urgencyBg: 'rgba(107,114,128,0.12)', category: 'Commercial', deadline: 'This month', title: '2 Nike posts outstanding from March', desc: 'Nike partnership requires 4 posts per season. 2 overdue. Agent flagged yesterday.', consequence: 'Sponsor satisfaction score drops. Renewal at risk.', action: 'View obligation →', section: 'sponsorship' },
+          { id: 'dm-6', urgency: '1 MAY', urgencyColor: '#6B7280', urgencyBg: 'rgba(107,114,128,0.12)', category: 'Commercial', deadline: 'This month', title: '2 Apex Performance posts outstanding from March', desc: 'Apex Performance partnership requires 4 posts per season. 2 overdue. Agent flagged yesterday.', consequence: 'Sponsor satisfaction score drops. Renewal at risk.', action: 'View obligation →', section: 'sponsorship' },
         ]
         const visible = DONT_MISS_ITEMS.filter(d => !dismissedAlerts.has(d.id))
         return (
@@ -2403,9 +2403,9 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
   };
 
   const briefings = {
-    player: `Good morning, ${player.name.split(' ')[0]}. You're ranked ${player.ranking}th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average of 65%. Today you're facing Carlos Martinez, ranked 34th. He favours the inside-out forehand on break points on clay — Marco has left a full breakdown in your match prep. Stringing is at 11:45 with Carlos at your usual clay tensions — Luxilon ALU at 24kg mains, 23kg crosses. Your Lululemon Instagram post is due today — James has drafted a caption for your review. First match is at 13:00 on Court 4. You've beaten Martinez 3 times on clay. Everything is ready.`,
+    player: `Good morning, ${player.name.split(' ')[0]}. You're ranked ${player.ranking}th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average of 65%. Today you're facing Carlos Martinez, ranked 34th. He favours the inside-out forehand on break points on clay — Marco has left a full breakdown in your match prep. Stringing is at 11:45 with Carlos at your usual clay tensions — Luxilon ALU at 24kg mains, 23kg crosses. Your Apex Performance Instagram post is due today — James has drafted a caption for your review. First match is at 13:00 on Court 4. You've beaten Martinez 3 times on clay. Everything is ready.`,
     coach: `Morning briefing for Marco Bianchi. Alex's recovery score is 82 out of 100 — shoulder flagged as mild yesterday by Sarah. Practice plan for 10am: 45 minutes serve patterns focusing on body serve percentages, then 45 minutes return drill — Carlos Martinez's second serve sits wide on the deuce side 68% of the time. H2H against Martinez: Alex leads 3-1 overall, 3-0 on clay. Main tactical note: Martinez breaks down mentally after losing the first set. Apply pressure early. Stringing confirmed 11:45. Alex's meal plan from Luis is in the system.`,
-    agent: `Morning briefing for James Whitfield. Lululemon Instagram post is due today — draft is in the sponsorship tab awaiting Alex's approval. The Rolex deal renewal is 47 days out — agenda item for Friday's call. Performance bonus trigger: if Alex reaches the semi-final this week, the Wilson performance clause activates — GBP 8,500 bonus. Race standing is 54th — 312 points behind the cut-off for the 8-man Turin field. Next ranking report to Rolex is due end of month. No press obligations today.`,
+    agent: `Morning briefing for James Whitfield. Apex Performance Instagram post is due today — draft is in the sponsorship tab awaiting Alex's approval. The Meridian Watches deal renewal is 47 days out — agenda item for Friday's call. Performance bonus trigger: if Alex reaches the semi-final this week, the Vanta Sports performance clause activates — GBP 8,500 bonus. Race standing is 54th — 312 points behind the cut-off for the 8-man Turin field. Next ranking report to Meridian Watches is due end of month. No press obligations today.`,
     physio: `Morning briefing for Sarah Okafor. Alex's WHOOP recovery score is 82. Right shoulder flagged mild yesterday — completed 20-minute treatment this morning, strapping applied, cleared for full practice. Pre-match treatment window is 12:00-12:30 before the 13:00 match. Watch for serve load during warm-up — cap at 40 serves in practice. Travel departs Saturday — next event is Barcelona ATP 500, clay, 13-19 April. No new injury flags from the training log.`,
   };
 
@@ -2765,7 +2765,7 @@ function ScheduleView({ player, session }: { player: TennisPlayer; session: Spor
   const calendar = [
     { date: '6-12 Apr',   tournament: 'Monte-Carlo Masters',              cat: 'Masters 1000',  surface: 'Clay',        location: '🇲🇨 Monaco',    status: 'active',   points: 215, entered: true },
     { date: '13-19 Apr',  tournament: 'Barcelona Open',                   cat: 'ATP 500',       surface: 'Clay',        location: '🇪🇸 Barcelona', status: 'upcoming', points: 0,   entered: true },
-    { date: '13-19 Apr',  tournament: 'BMW Open Munich',                  cat: 'ATP 500',       surface: 'Clay',        location: '🇩🇪 Munich',    status: 'upcoming', points: 0,   entered: false },
+    { date: '13-19 Apr',  tournament: 'Halden Motors Open Munich',                  cat: 'ATP 500',       surface: 'Clay',        location: '🇩🇪 Munich',    status: 'upcoming', points: 0,   entered: false },
     { date: '22 Apr-3 May',tournament: 'Madrid Open',                     cat: 'Masters 1000',  surface: 'Clay',        location: '🇪🇸 Madrid',    status: 'upcoming', points: 0,   entered: true },
     { date: '6-17 May',   tournament: 'Rome Masters',                     cat: 'Masters 1000',  surface: 'Clay',        location: '🇮🇹 Rome',      status: 'upcoming', points: 0,   entered: true },
     { date: '18-24 May',  tournament: 'Hamburg Open',                     cat: 'ATP 500',       surface: 'Clay',        location: '🇩🇪 Hamburg',   status: 'upcoming', points: 0,   entered: false },
@@ -4180,8 +4180,8 @@ function TeamHubView({ player, session }: { player: TennisPlayer; session: Sport
     },
     {
       role: 'Agent', name: 'James Whitfield', flag: '🇬🇧',
-      location: 'London (remote)', status: 'Lululemon post pending', statusColor: 'yellow',
-      lastNote: 'Caption drafted for Lululemon post',
+      location: 'London (remote)', status: 'Apex Performance post pending', statusColor: 'yellow',
+      lastNote: 'Caption drafted for Apex Performance post',
       responsibilities: ['Sponsorship negotiation & management', 'Schedule & appearance advice', 'Media & press coordination', 'Team assembly & contracts'],
     },
     {
@@ -4664,11 +4664,11 @@ function RacketView({ player, session }: { player: TennisPlayer; session: Sports
   ];
 
   const inventory = [
-    { id: 'Frame A', model: 'Wilson Blade 98 v9', weight: '305g strung', balance: '32cm', grip: 'L3', status: 'Match', location: 'On-site bag' },
-    { id: 'Frame B', model: 'Wilson Blade 98 v9', weight: '306g strung', balance: '32cm', grip: 'L3', status: 'Match', location: 'On-site bag' },
-    { id: 'Frame C', model: 'Wilson Blade 98 v9', weight: '304g strung', balance: '31.5cm', grip: 'L3', status: 'Practice', location: 'On-site bag' },
-    { id: 'Frame D', model: 'Wilson Blade 98 v9', weight: '305g strung', balance: '32cm', grip: 'L3', status: 'Spare', location: 'Hotel room' },
-    { id: 'Frame E', model: 'Wilson Blade 98 v9', weight: '303g strung', balance: '31cm', grip: 'L3', status: 'Transit', location: 'En route Barcelona' },
+    { id: 'Frame A', model: 'Vanta Sports Blade 98 v9', weight: '305g strung', balance: '32cm', grip: 'L3', status: 'Match', location: 'On-site bag' },
+    { id: 'Frame B', model: 'Vanta Sports Blade 98 v9', weight: '306g strung', balance: '32cm', grip: 'L3', status: 'Match', location: 'On-site bag' },
+    { id: 'Frame C', model: 'Vanta Sports Blade 98 v9', weight: '304g strung', balance: '31.5cm', grip: 'L3', status: 'Practice', location: 'On-site bag' },
+    { id: 'Frame D', model: 'Vanta Sports Blade 98 v9', weight: '305g strung', balance: '32cm', grip: 'L3', status: 'Spare', location: 'Hotel room' },
+    { id: 'Frame E', model: 'Vanta Sports Blade 98 v9', weight: '303g strung', balance: '31cm', grip: 'L3', status: 'Transit', location: 'En route Barcelona' },
   ];
 
   return (
@@ -5007,23 +5007,23 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
 function SponsorshipView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const deals = [
     {
-      sponsor: 'Wilson', category: 'Racket & Equipment', type: 'Equipment + Bonus', value: 'GBP 45,000/yr + bonuses', status: 'Active', expiry: 'Dec 2027', daysLeft: 638,
-      obligations: ['Use Wilson frames in all ATP/WTA matches', 'Wear Wilson bag', 'Social media mentions: 2/month'],
+      sponsor: 'Vanta Sports', category: 'Racket & Equipment', type: 'Equipment + Bonus', value: 'GBP 45,000/yr + bonuses', status: 'Active', expiry: 'Dec 2027', daysLeft: 638,
+      obligations: ['Use Vanta Sports frames in all ATP/WTA matches', 'Wear Vanta Sports bag', 'Social media mentions: 2/month'],
       bonuses: ['Top 50 year-end: +GBP 10,000', 'Grand Slam QF: +GBP 5,000', 'Top 30: +GBP 20,000'],
     },
     {
-      sponsor: 'Lululemon', category: 'Apparel', type: 'Kit + Fee', value: 'GBP 65,000/yr', status: 'Active', expiry: 'Jun 2027', daysLeft: 455,
-      obligations: ['Wear Lululemon on court (all events)', 'Instagram post: 2/month minimum', 'Attend 1 brand event/yr'],
+      sponsor: 'Apex Performance', category: 'Apparel', type: 'Kit + Fee', value: 'GBP 65,000/yr', status: 'Active', expiry: 'Jun 2027', daysLeft: 455,
+      obligations: ['Wear Apex Performance on court (all events)', 'Instagram post: 2/month minimum', 'Attend 1 brand event/yr'],
       bonuses: [],
     },
     {
-      sponsor: 'Rolex', category: 'Watch / Luxury', type: 'Cash + Watch allocation', value: 'GBP 120,000/yr', status: 'Renewal due', expiry: 'May 2026', daysLeft: 47,
-      obligations: ['Wear Rolex in all press conferences', 'Appear in 1 Rolex campaign/yr', 'Ranking report monthly to brand team'],
+      sponsor: 'Meridian Watches', category: 'Watch / Luxury', type: 'Cash + Watch allocation', value: 'GBP 120,000/yr', status: 'Renewal due', expiry: 'May 2026', daysLeft: 47,
+      obligations: ['Wear Meridian Watches in all press conferences', 'Appear in 1 Meridian Watches campaign/yr', 'Ranking report monthly to brand team'],
       bonuses: [],
     },
     {
-      sponsor: 'HSBC', category: 'Financial Services', type: 'Platform partnership', value: 'GBP 30,000/yr', status: 'Active', expiry: 'Jan 2027', daysLeft: 295,
-      obligations: ['Logo on hat (left side)', 'Post-tournament quote for HSBC social: 4/yr', '1 commercial appearance/yr'],
+      sponsor: 'Northbridge Financial', category: 'Financial Services', type: 'Platform partnership', value: 'GBP 30,000/yr', status: 'Active', expiry: 'Jan 2027', daysLeft: 295,
+      obligations: ['Logo on hat (left side)', 'Post-tournament quote for Northbridge Financial social: 4/yr', '1 commercial appearance/yr'],
       bonuses: [],
     },
     {
@@ -5039,11 +5039,11 @@ function SponsorshipView({ player, session }: { player: TennisPlayer; session: S
   ];
 
   const contentCalendar = [
-    { date: 'Today', platform: 'Instagram', brand: 'Lululemon', type: 'Match-day post', status: 'Due', draft: true },
-    { date: 'This week', platform: 'Instagram', brand: 'HSBC', type: 'Post-match quote graphic', status: 'Upcoming', draft: false },
-    { date: '21 Apr', platform: 'Instagram', brand: 'Lululemon', type: 'Monthly content post', status: 'Upcoming', draft: false },
-    { date: '30 Apr', platform: 'Various', brand: 'Rolex', type: 'Monthly ranking report', status: 'Upcoming', draft: false },
-    { date: 'Jun 2026', platform: 'TBD', brand: 'Rolex', type: 'Annual campaign shoot', status: 'Renewal pending', draft: false },
+    { date: 'Today', platform: 'Instagram', brand: 'Apex Performance', type: 'Match-day post', status: 'Due', draft: true },
+    { date: 'This week', platform: 'Instagram', brand: 'Northbridge Financial', type: 'Post-match quote graphic', status: 'Upcoming', draft: false },
+    { date: '21 Apr', platform: 'Instagram', brand: 'Apex Performance', type: 'Monthly content post', status: 'Upcoming', draft: false },
+    { date: '30 Apr', platform: 'Various', brand: 'Meridian Watches', type: 'Monthly ranking report', status: 'Upcoming', draft: false },
+    { date: 'Jun 2026', platform: 'TBD', brand: 'Meridian Watches', type: 'Annual campaign shoot', status: 'Renewal pending', draft: false },
   ];
 
   return (
@@ -5054,8 +5054,8 @@ function SponsorshipView({ player, session }: { player: TennisPlayer; session: S
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Annual Value" value="GBP 285k+" sub="Confirmed contracts" color="yellow" />
         <StatCard label="Active Deals" value="6" sub="1 renewal due" color="green" />
-        <StatCard label="Rolex Renewal" value="47 days" sub="Action required" color="red" />
-        <StatCard label="Obligations Due" value="1 today" sub="Lululemon post" color="orange" />
+        <StatCard label="Meridian Watches Renewal" value="47 days" sub="Action required" color="red" />
+        <StatCard label="Obligations Due" value="1 today" sub="Apex Performance post" color="orange" />
       </div>
 
       {/* Deal Tracker */}
@@ -5317,19 +5317,19 @@ function ExhibitionView({ player, session }: { player: TennisPlayer; session: Sp
 // ─── AGENT PIPELINE VIEW ───────────────────────────────────────────────────────
 function AgentPipelineView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const deals = [
-    { sponsor: 'Nike', value: 'GBP 150k/yr', stage: 'Negotiating', nextStep: 'Counter-offer due 15 Apr', category: 'Apparel (potential switch)' },
+    { sponsor: 'Apex Performance', value: 'GBP 150k/yr', stage: 'Negotiating', nextStep: 'Counter-offer due 15 Apr', category: 'Apparel (potential switch)' },
     { sponsor: 'Porsche', value: 'GBP 80k/yr', stage: 'Contacted', nextStep: 'Intro meeting scheduled 22 Apr', category: 'Automotive' },
     { sponsor: 'Therabody', value: 'GBP 25k/yr', stage: 'Prospect', nextStep: 'Agent to reach out', category: 'Recovery / Wellness' },
-    { sponsor: 'Hublot', value: 'GBP 200k/yr', stage: 'Legal', nextStep: 'Contract review by 20 Apr', category: 'Watch (Rolex replacement option)' },
+    { sponsor: 'Hublot', value: 'GBP 200k/yr', stage: 'Legal', nextStep: 'Contract review by 20 Apr', category: 'Watch (Meridian Watches replacement option)' },
   ];
 
   const stages = ['Prospect', 'Contacted', 'Negotiating', 'Legal', 'Signed'];
 
   const watchlist = [
-    { brand: 'Under Armour', sector: 'Apparel', potential: 'GBP 90k', notes: 'Expanding tennis portfolio' },
+    { brand: 'Apex Performance', sector: 'Apparel', potential: 'GBP 90k', notes: 'Expanding tennis portfolio' },
     { brand: 'Technogym', sector: 'Fitness', potential: 'GBP 20k', notes: 'Product + small fee' },
     { brand: 'Bose', sector: 'Audio', potential: 'GBP 35k', notes: 'Athlete programme open' },
-    { brand: 'Red Bull', sector: 'Energy', potential: 'GBP 100k', notes: 'Need top 50 for consideration' },
+    { brand: 'Kinetix Hydration', sector: 'Energy', potential: 'GBP 100k', notes: 'Need top 50 for consideration' },
   ];
 
   const stageColors: Record<string, string> = {
@@ -5349,7 +5349,7 @@ function AgentPipelineView({ player, session }: { player: TennisPlayer; session:
         <StatCard label="Active Negotiations" value="4" sub="In pipeline" color="purple" />
         <StatCard label="Pipeline Value" value="GBP 455k" sub="Total potential annual" color="yellow" />
         <StatCard label="Watchlist" value="4" sub="Potential sponsors" color="blue" />
-        <StatCard label="Next Action" value="15 Apr" sub="Nike counter-offer" color="orange" />
+        <StatCard label="Next Action" value="15 Apr" sub="Apex Performance counter-offer" color="orange" />
       </div>
 
       {/* Pipeline Stages */}
@@ -5431,8 +5431,8 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
   const pressLog = [
     { event: 'Monte-Carlo R2 post-match', type: 'Press conference', status: 'Done', date: '8 Apr', notes: 'ATP mandatory — completed' },
     { event: 'Monte-Carlo QF post-match', type: 'Press conference', status: 'Upcoming', date: 'Today (post-match)', notes: 'ATP mandatory' },
-    { event: 'Sky Sports UK (live)', type: 'Broadcast interview', status: 'Confirmed', date: 'Tomorrow 09:00', notes: '10-minute live slot — James briefing beforehand' },
-    { event: 'Evening Standard feature', type: 'Print interview', status: 'TBC', date: 'Late April', notes: 'Agent to confirm scheduling' },
+    { event: 'Northbridge Sport UK (live)', type: 'Broadcast interview', status: 'Confirmed', date: 'Tomorrow 09:00', notes: '10-minute live slot — James briefing beforehand' },
+    { event: 'Capital Herald feature', type: 'Print interview', status: 'TBC', date: 'Late April', notes: 'Agent to confirm scheduling' },
   ];
 
   return (
@@ -5477,7 +5477,7 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
       <div className="grid grid-cols-3 gap-4">
         <StatCard label="Instagram Followers" value="184k" sub="^2.1k this month" color="purple" />
         <StatCard label="Avg Engagement" value="4.2%" sub="Above tour avg (2.8%)" color="teal" />
-        <StatCard label="Posts This Month" value="3/4" sub="Lululemon: 2/2" color="blue" />
+        <StatCard label="Posts This Month" value="3/4" sub="Apex Performance: 2/2" color="blue" />
       </div>
 
       {/* Press Log */}
@@ -5500,10 +5500,10 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
         <div className="text-sm font-semibold text-white mb-3">Brand Usage Guidelines</div>
         <div className="space-y-2 text-sm">
           {[
-            { brand: 'Lululemon', rule: 'On-court: full Lululemon kit. No competitor logos visible. Training wear must also be Lululemon when filmed.' },
-            { brand: 'Rolex', rule: 'Must wear Rolex Submariner in all press conferences and official ATP player events. Not required on court.' },
-            { brand: 'Wilson', rule: 'Wilson bag visible at all ATP/WTA events. Wilson racket in all match play.' },
-            { brand: 'HSBC', rule: 'HSBC logo on hat left panel. Must appear in all official ATP tournament photos.' },
+            { brand: 'Apex Performance', rule: 'On-court: full Apex Performance kit. No competitor logos visible. Training wear must also be Apex Performance when filmed.' },
+            { brand: 'Meridian Watches', rule: 'Must wear Meridian Watches Submariner in all press conferences and official ATP player events. Not required on court.' },
+            { brand: 'Vanta Sports', rule: 'Vanta Sports bag visible at all ATP/WTA events. Vanta Sports racket in all match play.' },
+            { brand: 'Northbridge Financial', rule: 'Northbridge Financial logo on hat left panel. Must appear in all official ATP tournament photos.' },
           ].map((b, i) => (
             <div key={i} className="py-2 border-b border-gray-800/50">
               <div className="text-yellow-400 text-xs font-semibold mb-0.5">{b.brand}</div>
@@ -8128,7 +8128,7 @@ function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; 
 }
 
 function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
-  const [sponsor, setSponsor] = useState('Rolex')
+  const [sponsor, setSponsor] = useState('Meridian Watches')
   const [platform, setPlatform] = useState('Instagram')
   const [context, setContext] = useState('Monte-Carlo Masters QF day')
   const [tone, setTone] = useState('Professional')
@@ -8155,7 +8155,7 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
       <div className="p-6 space-y-4">
         {!post ? (<>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Rolex','Lululemon','Nike','Wilson','Red Bull'].map(s => <option key={s}>{s}</option>)}</select></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Sponsor</label><select value={sponsor} onChange={e => setSponsor(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Meridian Watches','Apex Performance','Apex Performance','Vanta Sports','Kinetix Hydration'].map(s => <option key={s}>{s}</option>)}</select></div>
             <div><label className="text-xs text-gray-500 mb-1 block">Platform</label><select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Instagram','Twitter/X','Facebook','LinkedIn','TikTok'].map(p => <option key={p}>{p}</option>)}</select></div>
           </div>
           <div><label className="text-xs text-gray-500 mb-1 block">Context</label><textarea value={context} onChange={e => setContext(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl text-sm text-white resize-none" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
@@ -8292,7 +8292,7 @@ function TennisExpenseLogger({ onClose }: { onClose: () => void }) {
 }
 
 function TennisStringOrder({ onClose }: { onClose: () => void }) {
-  const [stringType, setStringType] = useState('Wilson Luxilon ALU Power')
+  const [stringType, setStringType] = useState('Vanta Sports Luxe Pro')
   const [tension, setTension] = useState('24kg')
   const [quantity, setQuantity] = useState(4)
   const [submitted, setSubmitted] = useState(false)
@@ -8300,7 +8300,7 @@ function TennisStringOrder({ onClose }: { onClose: () => void }) {
     <ModalHeader icon="🎵" title="String Order" subtitle="Order strings for your next tournament" onClose={onClose} />
     <div className="p-6 space-y-4">
       {!submitted ? (<>
-        <div><label className="text-xs text-gray-500 mb-1 block">String</label><select value={stringType} onChange={e => setStringType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Wilson Luxilon ALU Power','Babolat RPM Blast','Head Hawk Touch','Tecnifibre Black Code'].map(s => <option key={s}>{s}</option>)}</select></div>
+        <div><label className="text-xs text-gray-500 mb-1 block">String</label><select value={stringType} onChange={e => setStringType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }}>{['Vanta Sports Luxe Pro','Babolat RPM Blast','Head Hawk Touch','Tecnifibre Black Code'].map(s => <option key={s}>{s}</option>)}</select></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="text-xs text-gray-500 mb-1 block">Tension</label><input value={tension} onChange={e => setTension(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} /></div>
           <div><label className="text-xs text-gray-500 mb-1 block">Packs</label><div className="flex items-center gap-3 pt-1"><button onClick={() => setQuantity(Math.max(1,quantity-1))} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>−</button><span className="text-sm font-bold text-white">{quantity}</span><button onClick={() => setQuantity(quantity+1)} className="w-8 h-8 rounded-lg font-bold text-white" style={{backgroundColor:'#1F2937'}}>+</button></div></div>
@@ -8538,7 +8538,7 @@ const TENNIS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: 
 
 function TennisSponsorDashboard({ session, player }: { session: SportsDemoSession; player: TennisPlayer }) {
   const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
-  const sponsorName = session.clubName || 'Rolex'
+  const sponsorName = session.clubName || 'Meridian Watches'
   const sponsorColor = '#D4AF37'
   const sponsorLogo = session.logoDataUrl
 
@@ -8558,10 +8558,10 @@ function TennisSponsorDashboard({ session, player }: { session: SportsDemoSessio
   ]
 
   const EVENTS = [
-    { event:'Monte-Carlo Masters QF', date:'Today', venue:'Monte-Carlo CC', broadcast:'Eurosport, Sky Sports', exposure:'Est. 2.4M viewers' },
-    { event:'Madrid Open', date:'26 Apr', venue:'Caja Mágica', broadcast:'Eurosport, Tennis Channel', exposure:'Est. 3.1M viewers' },
+    { event:'Monte-Carlo Masters QF', date:'Today', venue:'Monte-Carlo CC', broadcast:'Eurosport, Northbridge Sport', exposure:'Est. 2.4M viewers' },
+    { event:'Madrid Open', date:'26 Apr', venue:'Caja Mágica', broadcast:'Eurosport, Apex Tennis Network', exposure:'Est. 3.1M viewers' },
     { event:'Roland-Garros', date:'25 May', venue:'Stade Roland-Garros', broadcast:'ITV, Eurosport', exposure:'Est. 8.2M viewers' },
-    { event:'Wimbledon', date:'29 Jun', venue:'All England Club', broadcast:'BBC, ESPN', exposure:'Est. 14.5M viewers' },
+    { event:'Wimbledon', date:'29 Jun', venue:'All England Club', broadcast:'Crown Broadcasting, Apex Sports Network', exposure:'Est. 14.5M viewers' },
   ]
 
   return (
@@ -9285,8 +9285,8 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
     const hour = new Date().getHours();
     if (hour >= 9) {
       const obligations = [
-        'Rolex content post due today — Carlos needs kit photo before 12:00',
-        'BMW post-match content — story required within 6 hours of match end',
+        'Meridian Watches content post due today — Carlos needs kit photo before 12:00',
+        'Halden Motors post-match content — story required within 6 hours of match end',
       ];
       setSponsorToast(obligations[0]);
     }
@@ -10073,8 +10073,8 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Alerts</div>
               <div className="space-y-1.5">
-                <div className="text-xs text-yellow-400">Rolex renewal: 47d</div>
-                <div className="text-xs text-yellow-400">Lululemon post due</div>
+                <div className="text-xs text-yellow-400">Meridian Watches renewal: 47d</div>
+                <div className="text-xs text-yellow-400">Apex Performance post due</div>
                 <div className="text-xs text-red-400">125 pts expire today</div>
               </div>
             </div>

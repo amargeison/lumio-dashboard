@@ -361,7 +361,7 @@ export const BOXING_QUOTES = [
   { text: "No one remembers second place.", author: "Unknown" },
   { text: "Fear is a liar.", author: "Unknown" },
   { text: "Train insane or remain the same.", author: "Unknown" },
-  { text: "What I do in the dark puts me in the light.", author: "Under Armour" },
+  { text: "What I do in the dark puts me in the light.", author: "Apex Performance" },
   { text: "Champions are defined by their consistency.", author: "Unknown" },
   { text: "Eat clean. Train dirty.", author: "Unknown" },
   { text: "Sweat today. Shine tomorrow.", author: "Unknown" },

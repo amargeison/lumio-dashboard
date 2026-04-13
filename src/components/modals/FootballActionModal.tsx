@@ -602,7 +602,7 @@ const ACTIONS: Record<string, ActionDef> = {
     steps: ['Configure', 'Review', 'Results', 'Action'],
     fields: [
       { type: 'select', key: 'person', label: 'Person Requested', options: [...SQUAD_NAMES, 'Manager'] },
-      { type: 'select', key: 'outlet', label: 'Outlet', options: ['BBC','Sky Sports','ITV','TalkSport','Local Media','Online','Print','Other'] },
+      { type: 'select', key: 'outlet', label: 'Outlet', options: ['Crown Broadcasting','Northbridge Sport','ITV','TalkSport','Local Media','Online','Print','Other'] },
       { type: 'input', key: 'topic', label: 'Topic', placeholder: 'e.g. Season form and transfer plans' },
       { type: 'date', key: 'dateRequested', label: 'Date Requested' },
       { type: 'select', key: 'duration', label: 'Duration', options: ['5 min','10 min','15 min','30 min'] },
@@ -1674,7 +1674,7 @@ function renderResults(id: string, _vals: Record<string, string>) {
           <ResultCard title="Request Summary">
             <div className="space-y-2">
               {[
-                { l: 'Outlet', v: _vals.outlet || 'BBC' },
+                { l: 'Outlet', v: _vals.outlet || 'Crown Broadcasting' },
                 { l: 'Person', v: _vals.person || 'Manager' },
                 { l: 'Topic', v: _vals.topic || 'Season form' },
                 { l: 'Duration', v: _vals.duration || '15 min' },
@@ -1692,7 +1692,7 @@ function renderResults(id: string, _vals: Record<string, string>) {
               <span className="text-xs" style={{ color: '#6B7280' }}>Recommendation</span>
               <StatusBadge status="Approve" color="#22C55E" />
             </div>
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>BBC is a trusted outlet. Topic is low-sensitivity. Recommend approval with standard media guidelines.</p>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>Crown Broadcasting is a trusted outlet. Topic is low-sensitivity. Recommend approval with standard media guidelines.</p>
           </ResultCard>
         </div>
       )

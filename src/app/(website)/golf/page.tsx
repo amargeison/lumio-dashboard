@@ -116,7 +116,7 @@ function DashboardMockup() {
       </div>
       <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
         <div className="font-semibold" style={{ color: '#F9FAFB' }}>R1 · Thu 09:42 · Hole 1</div>
-        <div className="text-[10px] mt-0.5" style={{ color: MUTED }}>BMW International Open · Course fit 8.1/10</div>
+        <div className="text-[10px] mt-0.5" style={{ color: MUTED }}>Halden Motors International Open · Course fit 8.1/10</div>
       </div>
     </div>
   )
@@ -132,7 +132,7 @@ function OWGRMockup() {
   ]
   return (
     <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
-      <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ACCENT }}>BMW International — Scenarios</div>
+      <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ACCENT }}>Halden Motors International — Scenarios</div>
       <div className="space-y-1.5 mb-4">
         {rows.map((r, i) => (
           <div key={i} className="flex items-center gap-3 rounded px-3 py-2 text-xs" style={{ backgroundColor: '#0A0B12', border: `1px solid ${BORDER}` }}>
@@ -213,9 +213,9 @@ function StrokesGainedMockup() {
 
 function SponsorshipMockup() {
   const deals = [
-    { brand: 'TaylorMade',  cat: 'Clubs',          value: '£80k/yr + bonuses', status: 'Active',         statusColor: ACCENT, expiry: 'Dec 2026', note: 'Use TaylorMade driver, woods, irons' },
-    { brand: 'Callaway',    cat: 'Wedges + Ball',  value: '£55k/yr',           status: 'Renewal due 🔴', statusColor: '#F87171', expiry: '18 days', note: 'Chrome Tour X ball mandatory · Post due today' },
-    { brand: 'Rolex',       cat: 'Watch',          value: '£45k/yr',           status: 'Active',         statusColor: ACCENT, expiry: 'Jan 2027', note: 'Wear at all press conferences' },
+    { brand: 'Vanta Sports',  cat: 'Clubs',          value: '£80k/yr + bonuses', status: 'Active',         statusColor: ACCENT, expiry: 'Dec 2026', note: 'Use Vanta Sports driver, woods, irons' },
+    { brand: 'Vanta Sports',    cat: 'Wedges + Ball',  value: '£55k/yr',           status: 'Renewal due 🔴', statusColor: '#F87171', expiry: '18 days', note: 'Chrome Tour X ball mandatory · Post due today' },
+    { brand: 'Meridian Watches',       cat: 'Watch',          value: '£45k/yr',           status: 'Active',         statusColor: ACCENT, expiry: 'Jan 2027', note: 'Wear at all press conferences' },
   ]
   return (
     <div className="rounded-2xl p-6 shadow-2xl" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, boxShadow: `0 30px 80px rgba(13,148,136,0.15)` }}>
@@ -245,7 +245,7 @@ function TeamHubMockup() {
   const team = [
     { name: 'Pete Larsen',       role: 'Lead Coach',   status: 'On-site Munich',       statusColor: ACCENT,     note: 'Practice session notes uploaded · 08:30' },
     { name: "Mick O'Brien",      role: 'Caddie',       status: 'On-site Munich',       statusColor: ACCENT,     note: 'Strategy notes updated · 07:45' },
-    { name: 'Sarah Mitchell',    role: 'Agent',        status: 'TaylorMade renewal!',  statusColor: '#F87171',  note: 'Callaway caption drafted — awaiting approval' },
+    { name: 'Sarah Mitchell',    role: 'Agent',        status: 'Vanta Sports renewal!',  statusColor: '#F87171',  note: 'Vanta Sports caption drafted — awaiting approval' },
     { name: 'Dr. Alison Reed',   role: 'Mental Coach', status: 'Video call 20:00',     statusColor: '#A78BFA',  note: 'Pre-round routine shared · 09:00' },
   ]
   return (

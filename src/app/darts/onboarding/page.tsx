@@ -124,7 +124,7 @@ export default function DartsOnboardingPage() {
               </div>
               <div>
                 <label className={labelClass}>Secondary sponsor</label>
-                <input className={inputClass} placeholder="e.g. Paddy Power" value={data.sponsor2} onChange={e => update('sponsor2', e.target.value)} />
+                <input className={inputClass} placeholder="e.g. Crown Wagers" value={data.sponsor2} onChange={e => update('sponsor2', e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Walk-on music</label>

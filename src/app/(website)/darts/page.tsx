@@ -21,7 +21,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🎯', title: 'Match Prep & Opponent Intel', desc: 'H2H records, opponent tendency cards, 3-phase game plan, checkout routes, AI briefing generator. Walk to the oche prepared.' },
   { icon: '🌅', title: 'AI Morning Briefing', desc: 'Role-specific daily briefings for player, coach, agent and physio. Voice-delivered via ElevenLabs before first session.' },
   { icon: '💰', title: 'Financial Dashboard', desc: 'Prize money ledger, PDPA levy tracker, agent commission, net income forecast. Exportable for your accountant.' },
-  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Red Dragon, Paddy Power — all tracked automatically.' },
+  { icon: '💛', title: 'Sponsorship Manager', desc: 'Every deal, every obligation, every deadline. Red Dragon, Crown Wagers — all tracked automatically.' },
   { icon: '✈️', title: 'Travel & Logistics', desc: 'Event-by-event flight planning, hotel contacts, practice board booking across Euro Tour venues. 40+ events a year, organised.' },
   { icon: '⭐', title: 'Performance Rating & Stats', desc: 'First 9 average, checkout %, 180s per match, bust rate. A composite Performance Rating updated after every match.' },
   { icon: '🔥', title: 'Dartboard Heatmap', desc: 'Interactive SVG board with heat overlay per segment. See exactly where your darts land — by scenario and by double.' },
@@ -305,7 +305,7 @@ function SponsorshipMockup() {
     { name: 'Red Dragon — Equipment & Content', status: 'Active', statusColor: '#10B981', value: '£85,000/yr + bonuses', expires: 'Expires Dec 2025 (23d)',
       obligations: ['Use RD barrels in all matches', 'Wear RD logo on shirt', 'Content posts 4/month'],
       bonuses: ['Top 16 +£15k', 'Major QF +£7.5k', 'TV final +£10k'] },
-    { name: 'Paddy Power — Ambassador', status: 'Active', statusColor: '#10B981', value: '£60,000/yr', expires: 'Expires Jun 2026' },
+    { name: 'Crown Wagers — Ambassador', status: 'Active', statusColor: '#10B981', value: '£60,000/yr', expires: 'Expires Jun 2026' },
     { name: 'Ladbrokes — Odds partner', status: 'Renewal due', statusColor: '#F59E0B', value: '£32,000/yr', expires: 'Expires May 2025 (18d)' },
   ]
   return (

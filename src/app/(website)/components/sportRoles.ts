@@ -351,7 +351,7 @@ export const GOLF_ROLES: SportRole[] = [
       'Kanban deal pipeline with 4 negotiation stages',
       'AI sponsor pitch email in your agency voice',
       'Prize money ledger with accountant PDF export',
-      'Earnings by category — Majors, Rolex, DP World, Pro-Ams',
+      'Earnings by category — Majors, Meridian Series, DP World, Pro-Ams',
       'Tax jurisdiction tracker across multiple territories',
     ],
   },

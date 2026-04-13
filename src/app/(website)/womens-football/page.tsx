@@ -164,7 +164,7 @@ function ClubDashboardMockup() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Sponsorship Pipeline</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Nike <span style={{ color: PINK }}>£420k</span> · Active</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Apex Performance <span style={{ color: PINK }}>£420k</span> · Active</div>
           <div style={{ fontSize: 9, color: MUTED }}>Barclays <span style={{ color: PINK }}>£85k</span> · Active</div>
           <div style={{ fontSize: 9, color: MUTED }}>Local Energy · Renewal due</div>
         </div>
@@ -176,7 +176,7 @@ function ClubDashboardMockup() {
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Upcoming</div>
           <div style={{ fontSize: 9, color: MUTED }}>Brighton Women WSL</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Board meeting · Nike review</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Board meeting · Apex Performance review</div>
           <div style={{ fontSize: 9, color: MUTED }}>Registration closes</div>
         </div>
       </div>
@@ -215,8 +215,8 @@ function FSRMockup() {
       <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Bundled Sponsorship Attribution</div>
         {[
-          { name: 'Emirates (Shared)', total: 'Total £12M', allocated: '£180k', pct: '1.5%' },
-          { name: 'Nike (Kit standalone)', total: '', allocated: '£420k', pct: '100%' },
+          { name: 'Skyward Atlantic (Shared)', total: 'Total £12M', allocated: '£180k', pct: '1.5%' },
+          { name: 'Apex Performance (Kit standalone)', total: '', allocated: '£420k', pct: '100%' },
           { name: 'Local Energy Co (Women-only)', total: '', allocated: '£35k', pct: '100%' },
         ].map(s => (
           <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: MUTED, marginTop: 4 }}>

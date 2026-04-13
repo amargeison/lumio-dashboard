@@ -227,7 +227,7 @@ function BriefingMockup() {
         </div>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>📋 ECB &amp; COMMERCIAL</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Wage cap due 30 Apr · Nike activation Fri</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Wage cap due 30 Apr · Apex Performance activation Fri</div>
         </div>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 8 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: '#3B82F6', marginBottom: 3 }}>🎯 OPPOSITION</div>
