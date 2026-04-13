@@ -310,7 +310,7 @@ function Nav() {
               Free 14 day trial
             </button>
           )}
-          <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
+          <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : isSports ? '/sports-login' : '/login'}
             className={isSchools ? 'px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors' : 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors'}
             style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#374151' }}
@@ -375,7 +375,7 @@ function Nav() {
                 className="text-sm font-semibold py-2 text-center rounded-lg"
                 style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Free 14 day trial</button>
             )}
-            <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : '/login'}
+            <Link href={isSchools ? '/login?type=school' : isFootball ? '/login?type=football' : isSports ? '/sports-login' : '/login'}
               className="text-sm font-semibold py-2 text-center rounded-lg"
               style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
               onClick={() => setMobileOpen(false)}>Sign In</Link>
