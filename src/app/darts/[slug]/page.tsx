@@ -5,6 +5,7 @@ import { use, useState, useEffect, useRef } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
@@ -7367,6 +7368,71 @@ function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function DartsPortalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('sports_profiles')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug')
+            .eq('id', user.id)
+            .maybeSingle()
+
+          if (profile && profile.sport === 'darts') {
+            if (!profile.onboarding_complete) {
+              window.location.href = '/darts/app'
+              return
+            }
+            setAuthSession({
+              email: user.email ?? '',
+              userName: profile.display_name ?? '',
+              clubName: profile.brand_name ?? '',
+              role: 'player',
+              photoDataUrl: profile.avatar_url ?? null,
+              logoDataUrl: profile.brand_logo_url ?? null,
+              sport: 'darts',
+              verifiedAt: new Date().toISOString(),
+              isDemoShell: false,
+              enabledFeatures: profile.enabled_features || [],
+            })
+          }
+        }
+      } catch {
+        // Auth check failed — fall through to demo gate
+      } finally {
+        setAuthChecked(true)
+      }
+    })()
+  }, [])
+
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 11, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
+      </div>
+    )
+  }
+
+  if (authSession) {
+    const handleSignOut = async () => {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
+      await supabase.auth.signOut()
+      window.location.href = '/sports-login'
+    }
+    return <DartsPortalInner slug={slug} session={authSession} onSignOut={handleSignOut} />
+  }
+
   return (
     <SportsDemoGate
       sport="darts"

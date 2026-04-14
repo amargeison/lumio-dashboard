@@ -35,11 +35,102 @@ const SPORT_CREDENTIALS: Record<string, { name: string; why: string; powers: str
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, sport, email, clubName, location, portalSlug, setupType } = await req.json()
+    const { name, sport, email, phone, clubName, location, portalSlug, setupType, integrations } = await req.json()
     if (!process.env.RESEND_API_KEY) return NextResponse.json({ ok: true })
 
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
+
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v)
+      return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+    }
+    const dash = '<span style="color:#374151">—</span>'
+    const val = (v: unknown) => (v && String(v).trim()) ? esc(v) : dash
+    const sectionStart = (title: string) => `
+      <div style="margin-top:24px">
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#22c55e;margin-bottom:8px">${esc(title)}</p>
+        <table style="width:100%;border-collapse:collapse">`
+    const sectionEnd = `</table></div>`
+    const row = (label: string, value: string) => `<tr><td style="padding:6px 0;font-size:13px;color:#9CA3AF;width:40%">${esc(label)}</td><td style="padding:6px 0;font-size:13px;color:#F5F5F5">${value}</td></tr>`
+
+    let integrationsHtml = ''
+    if (integrations && typeof integrations === 'object') {
+      const ig = integrations as {
+        fields?: Record<string, string>;
+        airport?: string; airportName?: string; gymLocation?: string;
+        tracker?: string; sanctioningBodies?: string[]; weightClass?: string;
+        walkon?: string; bpm?: string;
+        caddieeName?: string; caddiePhone?: string;
+        email?: string; phone?: string;
+        team?: { name: string; role: string }[];
+        sponsors?: { name: string; email: string; cat: string }[];
+      }
+      const contactEmail = ig.email || email
+      const contactPhone = ig.phone || phone
+      const bpmVal = (ig.bpm && String(ig.bpm).trim())
+        ? esc(ig.bpm)
+        : `${dash} <span style="color:#6B7280;font-size:12px">auto-detect on setup</span>`
+
+      integrationsHtml += sectionStart('Contact details')
+        + row('Email', val(contactEmail))
+        + row('Phone', val(contactPhone))
+        + sectionEnd
+
+      const sportRows: string[] = []
+      if (ig.fields && typeof ig.fields === 'object') {
+        for (const [k, v] of Object.entries(ig.fields)) {
+          sportRows.push(row(k, val(v)))
+        }
+      }
+      if (ig.airport) {
+        const airportDisplay = ig.airportName ? `${esc(ig.airport)} (${esc(ig.airportName)})` : esc(ig.airport)
+        sportRows.push(row('Home airport', airportDisplay))
+      } else if (ig.gymLocation) {
+        sportRows.push(row('Home gym', val(ig.gymLocation)))
+      }
+      if (Array.isArray(ig.sanctioningBodies) && ig.sanctioningBodies.length > 0) {
+        sportRows.push(row('Sanctioning bodies', esc(ig.sanctioningBodies.join(', '))))
+      }
+      if (ig.weightClass) {
+        sportRows.push(row('Weight class', val(ig.weightClass)))
+      }
+      if (ig.tracker) {
+        sportRows.push(row('Practice tracker', val(ig.tracker)))
+      }
+      if (sportRows.length > 0) {
+        integrationsHtml += sectionStart('Sport & Setup') + sportRows.join('') + sectionEnd
+      }
+
+      if (ig.walkon) {
+        integrationsHtml += sectionStart('Walk-on music')
+          + row('Track', val(ig.walkon))
+          + row('BPM', bpmVal)
+          + sectionEnd
+      }
+
+      if (ig.caddieeName) {
+        integrationsHtml += sectionStart('Caddie')
+          + row('Name', val(ig.caddieeName))
+          + row('Phone', val(ig.caddiePhone))
+          + sectionEnd
+      }
+
+      if (Array.isArray(ig.team) && ig.team.length > 0) {
+        integrationsHtml += sectionStart('Team members')
+          + ig.team.map(t => row(t.role, esc(t.name))).join('')
+          + sectionEnd
+      }
+      if (Array.isArray(ig.sponsors) && ig.sponsors.length > 0) {
+        integrationsHtml += sectionStart('Sponsors')
+          + ig.sponsors.map(s => row(s.cat, `${esc(s.name)}${s.email ? ` <span style="color:#6B7280">(${esc(s.email)})</span>` : ''}`)).join('')
+          + sectionEnd
+      }
+      integrationsHtml += `
+        <div style="margin-top:32px;padding:16px;background:#0d1117;border-radius:10px;border:1px solid #1F2937">
+          <p style="font-size:12px;color:#6B7280;margin:0">Setup checklist — mark off as you complete each integration during onboarding.</p>
+        </div>`
+    }
 
     // EMAIL 1 — Internal notification to support
     await resend.emails.send({
@@ -61,6 +152,7 @@ export async function POST(req: NextRequest) {
             <tr><td style="color:#6B7280;padding:8px 0;">Signed up</td><td style="color:#fff;padding:8px 0;">${new Date().toLocaleString('en-GB')}</td></tr>
           </table>
           <a href="https://lumiosports.com/sports-admin/users" style="display:inline-block;margin-top:24px;background:#6C3FC5;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View in Sports Admin →</a>
+          ${integrationsHtml}
         </div>
       `
     })

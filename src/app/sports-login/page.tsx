@@ -153,8 +153,30 @@ function SportsLoginForm() {
         const data = await res.json()
         if (!data.success && !data.verified) throw new Error(data.error || 'Invalid code')
 
-        // Redirect to demo with restore params
         const sport = userInfo.demoSport || userInfo.sport || 'darts'
+
+        // Check if returning demo user has a completed profile — skip the gate
+        const supabase = getSupabase()
+        const { data: lead } = await supabase
+          .from('sports_demo_leads')
+          .select('user_name, nickname, club_name, role')
+          .eq('email', email.trim().toLowerCase())
+          .eq('sport', sport)
+          .maybeSingle()
+
+        if (lead?.user_name) {
+          const restoreParams = new URLSearchParams({
+            restore: 'true',
+            name: lead.user_name,
+            ...(lead.club_name ? { club: lead.club_name } : {}),
+            ...(lead.nickname ? { nickname: lead.nickname } : {}),
+            ...(lead.role ? { role: lead.role } : {}),
+          }).toString()
+          router.push(`/${sport}/${sport}-demo?${restoreParams}`)
+          return
+        }
+
+        // New user — fall through to normal restore with whatever we know from identify
         const restoreParams = new URLSearchParams({
           restore: 'true',
           ...(userInfo.userName ? { name: userInfo.userName } : {}),
