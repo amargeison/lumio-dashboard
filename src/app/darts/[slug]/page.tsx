@@ -159,7 +159,7 @@ const SIDEBAR_ITEMS = [
 // ─── DEMO PLAYER ──────────────────────────────────────────────────────────────
 const DEMO_PLAYER: DartsPlayer = {
   name: 'Jake Morrison',
-  nickname: 'The Hammer',
+  nickname: 'Shooter',
   nationality: 'English',
   nationalityFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
   pdcRank: 19,
@@ -1553,6 +1553,11 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
             {teamSubTab === 'today' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-4 bg-[#0d1117] border border-amber-600/30 rounded-xl p-4">
+                  <img src="/morrison_darts_logo.svg" alt="Morrison Darts" className="w-10 h-10 rounded-lg object-contain flex-shrink-0" />
+                  <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-white">Morrison Darts</div><div className="text-[10px] text-amber-400">Player Brand</div><div className="text-[10px] text-gray-500 mt-0.5">Brand setup in progress</div></div>
+                  <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                </div>
                 {TEAM_MEMBERS.map((m, i) => (
                   <div key={i} className="flex items-center gap-4 bg-[#0d1117] border border-gray-800 rounded-xl p-4">
                     <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/30 flex items-center justify-center text-xs font-bold text-red-400 flex-shrink-0 overflow-hidden">
@@ -1579,7 +1584,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                     </div>
                     <div className="text-sm font-bold text-white">{displayPlayerName}</div>
                     {displayPlayerNickname && <div className="text-[10px] text-gray-500 italic">{displayPlayerNickname}</div>}
-                    <div className="text-[10px] text-red-400">Player — #{player.pdcRank} PDC</div>
+                    <div className="text-[10px] text-red-400">Player — #{player.pdcRank} PDC · Morrison Darts</div>
                   </div>
                   <div className="w-px h-6 bg-gray-700" />
                   <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
@@ -2233,7 +2238,7 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for Jake Morrison (PDC #19, 97.8 avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for Jake "Shooter" Morrison (Morrison Darts, PDC #19, 97.8 avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
       });
       const data = await res.json();
       setAiAnalysis(prev => ({ ...prev, [idx]: { loading: false, result: data.content?.[0]?.text || 'No response.' } }));
@@ -2348,7 +2353,7 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for Jake 'The Hammer' Morrison (PDC #19) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for Jake "Shooter" Morrison (Morrison Darts, PDC #19) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
       });
       const data = await res.json();
       setReportContent(prev => ({ ...prev, [m.id]: data.content?.[0]?.text ?? 'No response' }));
@@ -2807,7 +2812,7 @@ function MediaContentView({ onNavigate, player, session }: { onNavigate: (id: st
         <div className="space-y-2">
           {[
             { headline: 'Morrison targets top 16 with strong European Tour form', source: 'DartsNews.com', date: 'Apr 12' },
-            { headline: 'The Hammer\'s rise: How Jake Morrison became a PDC contender', source: 'Northbridge Sport', date: 'Mar 28' },
+            { headline: 'Shooter\'s rise: How Jake Morrison became a PDC contender', source: 'Northbridge Sport', date: 'Mar 28' },
             { headline: 'Morrison signs extended Vanta Sports deal amid Premier League push', source: 'DartsWorld', date: 'Feb 15' },
           ].map((a, i) => (
             <div key={i} className="py-2 border-b border-gray-800/50">
@@ -8312,15 +8317,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
 
         <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {liveBrandLogo
-              ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
-              : session.logoDataUrl
-                ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+            {(liveBrandLogo || session.logoDataUrl || isDemoOuter)
+              ? <img src={liveBrandLogo || session.logoDataUrl || '/morrison_darts_logo.svg'} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
                     style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>🎯</div>
             }
             {sidebarExpanded && (
-              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>{liveBrandName || 'Lumio Darts'}</span>
+              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>{liveBrandName || (isDemoOuter ? 'Morrison Darts' : 'Lumio Darts')}</span>
             )}
           </div>
           {sidebarExpanded && (
@@ -8456,7 +8459,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{pn.split(' ')[0]}</div>
                 <div className="text-red-300 font-bold text-xs uppercase tracking-widest text-center mb-1">{pn.split(' ').slice(1).join(' ')}</div>
                 </>)})()}
-                {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null; return nn ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{nn}&quot;</div> : <div className="mb-2" /> })()}
+                {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null; const showNn = nn || (isDemoOuter ? player.nickname : null); return showNn ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{showNn}&quot;</div> : <div className="mb-2" /> })()}
                 {/* PDC Ranking badge */}
                 <div className="flex justify-center mb-2">
                   <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>
