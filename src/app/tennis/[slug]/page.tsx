@@ -177,7 +177,7 @@ const TENNIS_QUICK_WINS: TennisQuickWin[] = [
   { id: 'tqw-2', title: 'Reply to Meridian Watches renewal inquiry', description: 'Agent James Wright sent the renewal brief 3 days ago. Decision needed this week.', impact: 'high', effort: '5min', category: 'Commercial', action: 'Open sponsorship →', actionSection: 'sponsorship', source: 'Agent' },
   { id: 'tqw-3', title: 'Apex Performance post overdue today', description: 'Carlos needs kit photo before 12:00 for today\'s obligation.', impact: 'high', effort: '2min', category: 'Sponsor', action: 'View obligation →', actionSection: 'sponsorship', source: 'Apex Performance' },
   { id: 'tqw-4', title: 'Hamburg 500 wildcard — deadline today', description: 'Tournament director needs answer by 5pm. Clashes with Eastbourne.', impact: 'high', effort: '5min', category: 'Entries', action: 'Manage entries →', actionSection: 'entries', source: 'ATP Entry' },
-  { id: 'tqw-5', title: 'Review Martinez serve patterns', description: 'Match today at 13:00. Analysis team uploaded 3 tagged clips.', impact: 'medium', effort: '10min', category: 'Match Prep', action: 'View match prep →', actionSection: 'matchprep', source: 'Analysis' },
+  { id: 'tqw-5', title: 'Review Vega serve patterns', description: 'Match today at 13:00. Analysis team uploaded 3 tagged clips.', impact: 'medium', effort: '10min', category: 'Match Prep', action: 'View match prep →', actionSection: 'matchprep', source: 'Analysis' },
   { id: 'tqw-6', title: 'Roland-Garros hotel deposit due 1 May', description: 'Apartment owner requesting €800 deposit. Travel desk waiting.', impact: 'medium', effort: '5min', category: 'Travel', action: 'Search hotels →', actionSection: 'travel', source: 'Travel Desk' },
   { id: 'tqw-7', title: '2 Apex Performance posts outstanding — March obligation', description: 'Apex Performance partnership requires 4 posts per season. 2 overdue since March.', impact: 'medium', effort: '5min', category: 'Commercial', action: 'View obligation →', actionSection: 'sponsorship', source: 'Apex Performance' },
 ]
@@ -189,7 +189,7 @@ const TENNIS_TASKS: TennisTask[] = [
   { id: 't4', title: 'Stringing with Carlos — 2x Vanta Sports Luxe Pro', description: 'Clay tensions confirmed. Pick up from string room at 11:30.', due: '11:45', priority: 'medium', category: 'Equipment', source: 'lumio', done: false, overdue: false, action: 'String order', actionModal: 'strings' },
   { id: 't5', title: 'Apex Performance kit photo — send to Carlos before 12:00', description: 'Sponsor obligation. Carlos has the brief.', due: '11:30', priority: 'high', category: 'Commercial', source: 'workflow', linkedWorkflow: 'SP-03', done: false, overdue: false, action: 'View obligation', actionSection: 'sponsorship' },
   { id: 't6', title: 'Respond to Hamburg 500 wildcard offer', description: 'Deadline 5pm today. Clashes with Eastbourne.', due: '17:00', priority: 'high', category: 'Entries', source: 'atp', done: false, overdue: false, action: 'Entry manager', actionModal: 'entries' },
-  { id: 't7', title: 'Match vs C. Martinez — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Match prep', actionModal: 'matchprep' },
+  { id: 't7', title: 'Match vs C. Vega — Court 4', description: 'Monte-Carlo Masters QF. H2H 3–1.', due: '13:30', priority: 'critical', category: 'Match', source: 'atp', done: false, overdue: false, action: 'Match prep', actionModal: 'matchprep' },
 ]
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
@@ -410,8 +410,8 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
     forecaster: ['Win title: projected #58 (+9 places)', 'QF exit: holds at #67 (0 change)', 'R1 loss: drops to #71 (−4 places)', 'Points available at Madrid M1000: 500', 'Roland-Garros points available: 2000 (Grand Slam)'],
     physiorecovery: ['Shoulder inflammation flagged — see Dr Lee 12:30 today', 'GPS load this week: 4,820 AU — within optimal range', 'ACWR: 1.12 — green zone (ideal 0.8–1.3)', 'Recovery score today: 81/100 — good baseline for match', 'Last deep tissue session: Tuesday — 5 days ago'],
     mental: ['Pre-match routine: 45 min protocol confirmed with Marcos', 'Pressure darts score last session: 8.4/10 — improving', 'Deciding-set win rate: 67% on clay this season', 'Average between-point routine: 22 seconds — on target', 'Visualisation sessions this week: 4 of 5 completed'],
-    matchprep: ['Martinez H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez first serve wide on deuce: 68% tendency', 'His BH breakdown rate under pressure: 61%', 'Your winning shot vs Martinez: inside-out FH (42% of winners)', 'His double fault rate on clay: 3.1/match — above average'],
-    opponentintel: ['Martinez first serve: 68% wide on deuce court (clay)', 'Martinez return: 71% forehand-dominant — exploit BH side', 'H2H: 3–1 in your favour — last 3 on clay all won', 'Martinez break point conversion: 41% — below average', 'Martinez ATP ranking: #34 — career high #28'],
+    matchprep: ['Vega H2H: 3–1 in your favour — last 3 on clay all won', 'Vega first serve wide on deuce: 68% tendency', 'His BH breakdown rate under pressure: 61%', 'Your winning shot vs Vega: inside-out FH (42% of winners)', 'His double fault rate on clay: 3.1/match — above average'],
+    opponentintel: ['Vega first serve: 68% wide on deuce court (clay)', 'Vega return: 71% forehand-dominant — exploit BH side', 'H2H: 3–1 in your favour — last 3 on clay all won', 'Vega break point conversion: 41% — below average', 'Vega ATP ranking: #34 — career high #28'],
     practicelog: ['Sessions this week: 4 of 5 planned — on track', 'Serve speed peak in practice: 124mph — 3mph above match avg', 'Average practice 3DA: 99.4 — above match average', 'Footwork drills completed this month: 18 of 20 target', 'Forehand cross-court consistency: +8% last week'],
     sponsorship: ['Meridian Watches deal value: £240,000/yr — renewal in 47 days', 'Apex Performance: 2 posts outstanding (March + today)', 'Apex Performance: 0/2 posts completed this month', 'Estimated sponsor reach YTD: 14.2M across all platforms', 'Total commercial income YTD: £84,200'],
     financial: ['Prize money YTD: £387,420', 'Season expenses to date: £42,800', 'Net earnings YTD: £344,620 (before tax/agent)', 'Agent commission (15%): £58,113 YTD', 'Tax instalment due: 31 Jul — accountant briefed'],
@@ -419,7 +419,7 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
     agent: ['Crown Wagers ambassador inquiry: £85k/yr offer pending', 'Hamburg wildcard: decision deadline today 5pm', 'Meridian Watches renewal: 47 days — agent has draft terms', 'Madrid wild card: accepted (no action needed)', 'Wimbledon entry: not yet submitted — deadline 26 May'],
     teamhub: ['Team today: 5 of 6 confirmed present in Monte-Carlo', 'Marcos Silva (psychologist): remote — call at 15:00', 'Coach session: 10:00 serve patterns — 90 min', 'Dr Lee: 12:30 shoulder treatment — confirmed', 'Tom Ellis (stringer): 11:45 — Vanta Sports Luxe Pro ready'],
     schedule: ['Next 5: MC QF today, Madrid, Roland-Garros, Halle, Wimbledon', 'Points available next 4 weeks: 1,800 pts (SF+) across all', 'Hard deadline next: Roland-Garros entries — 3 May', 'Hamburg vs Eastbourne clash: decision needed today', 'Race to Turin impact: need 2 SF results to break top-20'],
-    video: ['Unreviewed match clips this week: 3', 'Martinez clay footage: 2 matches tagged and ready', 'Coach added 4 tactical notes to Barcelona SF clip', 'Serve analysis session: booked Thursday with Carlos', 'Season highlight reel: 67% complete'],
+    video: ['Unreviewed match clips this week: 3', 'Vega clay footage: 2 matches tagged and ready', 'Coach added 4 tactical notes to Barcelona SF clip', 'Serve analysis session: booked Thursday with Carlos', 'Season highlight reel: 67% complete'],
     media: ['Press conference today: post-match (win or lose)', 'L\'Equipe interview request: 15 min — awaiting response', 'Social following: 207k total (IG: 142k, TW: 65k)', 'Engagement rate this week: 4.2% — above 3.1% avg', 'Press mentions this month: 23 articles'],
     default: ['ATP Ranking: #67 — up 4 this clay swing', 'Clay win rate: 68% — above tour avg (61%)', 'Serve %: 64% (last 5 matches)', 'Prize money YTD: £387,420', 'Race to Turin: #54 of 8 qualification spots'],
   }
@@ -660,7 +660,7 @@ const WaveBanner = ({ player }: { player: TennisPlayer }) => (
       </button>
       <div>
         <div className="text-xs text-gray-400">Today's match</div>
-        <div className="text-sm text-white font-medium">vs Martinez, 13:00, Court 4</div>
+        <div className="text-sm text-white font-medium">vs Vega, 13:00, Court 4</div>
       </div>
     </div>
     <div className="flex items-center gap-5 text-xs text-gray-400">
@@ -985,7 +985,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       { id:'s2', time:'08:30', label:'Physio — right shoulder',    highlight:false },
       { id:'s3', time:'10:00', label:'Practice — serve patterns',  highlight:false },
       { id:'s4', time:'11:45', label:'Stringing with Carlos',      highlight:false },
-      { id:'s5', time:'13:00', label:'Match vs C. Martinez',       highlight:true  },
+      { id:'s5', time:'13:00', label:'Match vs C. Vega',       highlight:true  },
       { id:'s6', time:'15:30', label:'Post-match physio',          highlight:false },
       { id:'s7', time:'17:00', label:'Coach debrief',              highlight:false },
     ]
@@ -993,7 +993,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       now: new Date(),
       playerName: displayPlayerName,
       schedule: buildScheduleItems(scheduleRaw, completedItems, cancelledItems),
-      match: { opponent: 'C. Martinez', time: '13:00', result: null },
+      match: { opponent: 'C. Vega', time: '13:00', result: null },
       roundupSummary: buildRoundupSummary(ROUNDUP_ITEMS),
       sport: 'tennis',
       timezone: getUserTimezone(),
@@ -1305,7 +1305,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
                   <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.description}</p>
 
-                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Martinez · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
+                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Vega · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
                   {/* Brand Colours — only in step 1 detail */}
                   <div className="mt-4 space-y-3">
                     <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div>
@@ -1340,13 +1340,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
                   {step.preview === 'team' && (<div className="grid grid-cols-2 gap-3">{[{ initials:'CM', name:'Carlos Mendez', role:'Head Coach', status:'Match notes ready', color:'#22C55E' },{ initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', status:'12:30 treatment', color:'#EF4444' },{ initials:'JW', name:'James Wright', role:'Agent', status:'3 inquiries pending', color:'#F59E0B' },{ initials:'TE', name:'Tom Ellis', role:'Stringer', status:'11:45 confirmed', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#4B5563' }}>{m.status}</div></div><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#22C55E' }} /></div>))}</div>)}
 
-                  {step.preview === 'match_prep' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,197,94,0.3)' }}><div className="px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.2)' }}><div className="text-xs font-bold" style={{ color: '#22C55E' }}>🎾 Match Prep AI — C. Martinez · Clay</div></div><div className="p-4 text-xs space-y-2" style={{ backgroundColor: '#111318', color: '#D1D5DB' }}>{['🎯 SERVE PATTERNS: 68% wide on deuce court, 71% body on ad court. Second serve: kick to backhand.','🔄 RETURN GAME: Positions 2 steps left of centre. Strong forehand return — attack his BH side.','⚡ TACTICAL: Lead with inside-out FH. Force him wide, attack with DTL BH. Avoid extended rallies.','📊 H2H: 3–1 in your favour. Won last 3 on clay. He struggles when behind early.'].map((line, i) => (<div key={i} className="py-1.5" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : 'none' }}>{line}</div>))}</div><div className="px-4 py-2 text-[10px]" style={{ backgroundColor: '#0a0c14', color: '#4B5563' }}>Generated using web_search · ATP data · real-time opponent stats</div></div>)}
+                  {step.preview === 'match_prep' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,197,94,0.3)' }}><div className="px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.2)' }}><div className="text-xs font-bold" style={{ color: '#22C55E' }}>🎾 Match Prep AI — C. Vega · Clay</div></div><div className="p-4 text-xs space-y-2" style={{ backgroundColor: '#111318', color: '#D1D5DB' }}>{['🎯 SERVE PATTERNS: 68% wide on deuce court, 71% body on ad court. Second serve: kick to backhand.','🔄 RETURN GAME: Positions 2 steps left of centre. Strong forehand return — attack his BH side.','⚡ TACTICAL: Lead with inside-out FH. Force him wide, attack with DTL BH. Avoid extended rallies.','📊 H2H: 3–1 in your favour. Won last 3 on clay. He struggles when behind early.'].map((line, i) => (<div key={i} className="py-1.5" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : 'none' }}>{line}</div>))}</div><div className="px-4 py-2 text-[10px]" style={{ backgroundColor: '#0a0c14', color: '#4B5563' }}>Generated using web_search · ATP data · real-time opponent stats</div></div>)}
 
                   {step.preview === 'travel' && (<div className="space-y-2"><div className="text-xs font-bold mb-2" style={{ color: '#4B5563' }}>✈️ LHR → MAD · 26 Apr · Business · 2 pax</div>{[{ airline:'British Airways', dep:'07:20', arr:'10:35', dur:'2h15m', stops:'Direct', price:312, score:96, badge:'Best value', badgeColor:'#0ea5e9' },{ airline:'easyJet', dep:'06:05', arr:'09:20', dur:'2h15m', stops:'Direct', price:187, score:88, badge:'Cheapest', badgeColor:'#22C55E' },{ airline:'Vueling', dep:'11:30', arr:'14:45', dur:'2h15m', stops:'Direct', price:224, score:85, badge:null, badgeColor:'' }].map((f, i) => (<div key={i} className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: i === 0 ? 'rgba(14,165,233,0.08)' : '#111318', border: i === 0 ? '1px solid rgba(14,165,233,0.3)' : '1px solid #1F2937' }}><div><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{f.airline}</span>{f.badge && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badgeColor }}>{f.badge}</span>}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.dep} → {f.arr} · {f.dur} · {f.stops}</div></div><div className="text-right"><div className="text-sm font-black text-white">£{f.price * 2}</div><div className="text-[10px]" style={{ color: '#22C55E' }}>Score {f.score}/100</div></div></div>))}<div className="text-[10px] text-center mt-1" style={{ color: '#374151' }}>AI searched BA, easyJet, Ryanair, Vueling, Air France + more</div></div>)}
 
                   {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Meridian Watches · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Meridian Watches. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#Meridian WatchesAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Meridian Watches', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Apex Performance', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Apex Performance', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
 
-                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Martinez — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Apex Performance kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Meridian Watches sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
+                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Vega — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Apex Performance kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Meridian Watches sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
 
                   {step.preview === 'gps_video' && (<div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -1545,7 +1545,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     </div>
                     <div className="text-center">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-1" style={{ background: '#1F2937', color: '#9CA3AF' }}>CM</div>
-                      <div className="text-xs font-bold text-white">C. Martinez</div>
+                      <div className="text-xs font-bold text-white">C. Vega</div>
                       <div className="text-[10px]" style={{ color: '#6B7280' }}>#34 ATP</div>
                     </div>
                   </div>
@@ -1565,7 +1565,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     { id:'s2', time:'08:30', label:'Physio — right shoulder',    highlight:false },
                     { id:'s3', time:'10:00', label:'Practice — serve patterns',  highlight:false },
                     { id:'s4', time:'11:45', label:'Stringing with Carlos',      highlight:false },
-                    { id:'s5', time:'13:00', label:'Match vs C. Martinez',       highlight:true  },
+                    { id:'s5', time:'13:00', label:'Match vs C. Vega',       highlight:true  },
                     { id:'s6', time:'15:30', label:'Post-match physio',          highlight:false },
                     { id:'s7', time:'17:00', label:'Coach debrief',              highlight:false },
                   ].map((s) => {
@@ -1694,7 +1694,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 </div>
                 <div className="px-5 py-4 space-y-3">
                   {[
-                    { type: 'match',    icon: '🎾', text: 'Match today vs C. Martinez — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
+                    { type: 'match',    icon: '🎾', text: 'Match today vs C. Vega — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
                     { type: 'messages', icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
                     { type: 'schedule', icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
                     { type: 'sponsor',  icon: '🤝', text: 'Apex Performance post due today — Carlos needs kit photo before 12:00. Reply to agent about Meridian Watches renewal this week.' },
@@ -1995,7 +1995,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* DON'T MISS TAB */}
       {dashTab === 'dontmiss' && (() => {
         const DONT_MISS_ITEMS = [
-          { id: 'dm-1', urgency: 'CRITICAL', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Match', deadline: 'Today 13:30', title: 'Match vs C. Martinez — Court 4', desc: 'Monte-Carlo Masters QF. H2H 3-1. Clay court. Your best Masters result on clay.', consequence: 'Miss this and you drop 180 ranking points.', action: 'View match prep →', section: 'matchprep' },
+          { id: 'dm-1', urgency: 'CRITICAL', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Match', deadline: 'Today 13:30', title: 'Match vs C. Vega — Court 4', desc: 'Monte-Carlo Masters QF. H2H 3-1. Clay court. Your best Masters result on clay.', consequence: 'Miss this and you drop 180 ranking points.', action: 'View match prep →', section: 'matchprep' },
           { id: 'dm-2', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Sponsor', deadline: 'Before 12:00', title: 'Apex Performance kit photo due', desc: 'Carlos needs the photo for today\'s contractual obligation post.', consequence: 'Breach of sponsor contract — penalty clause.', action: 'Open brief →', section: 'sponsorship' },
           { id: 'dm-3', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Entries', deadline: 'By 17:00', title: 'Hamburg 500 wildcard — respond today', desc: 'Tournament director needs answer. Clashes with Eastbourne prep week.', consequence: 'Wildcard offer expires. Next opportunity: Winston-Salem (Aug).', action: 'Manage entries →', section: 'entries' },
           { id: 'dm-4', urgency: '47 DAYS', urgencyColor: '#F59E0B', urgencyBg: 'rgba(245,158,11,0.12)', category: 'Commercial', deadline: '25 May', title: 'Meridian Watches sponsorship renewal deadline', desc: 'Agent James Wright has the brief. 3-year deal worth 120k/yr. Competitor interest from TAG Heuer.', consequence: 'Auto-renewal at current terms if not renegotiated.', action: 'View contract →', section: 'sponsorship' },
@@ -2404,8 +2404,8 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
   };
 
   const briefings = {
-    player: `Good morning, ${player.name.split(' ')[0]}. You're ranked ${player.ranking}th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average of 65%. Today you're facing Carlos Martinez, ranked 34th. He favours the inside-out forehand on break points on clay — Marco has left a full breakdown in your match prep. Stringing is at 11:45 with Carlos at your usual clay tensions — Luxilon ALU at 24kg mains, 23kg crosses. Your Apex Performance Instagram post is due today — James has drafted a caption for your review. First match is at 13:00 on Court 4. You've beaten Martinez 3 times on clay. Everything is ready.`,
-    coach: `Morning briefing for Marco Bianchi. Alex's recovery score is 82 out of 100 — shoulder flagged as mild yesterday by Sarah. Practice plan for 10am: 45 minutes serve patterns focusing on body serve percentages, then 45 minutes return drill — Carlos Martinez's second serve sits wide on the deuce side 68% of the time. H2H against Martinez: Alex leads 3-1 overall, 3-0 on clay. Main tactical note: Martinez breaks down mentally after losing the first set. Apply pressure early. Stringing confirmed 11:45. Alex's meal plan from Luis is in the system.`,
+    player: `Good morning, ${player.name.split(' ')[0]}. You're ranked ${player.ranking}th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average of 65%. Today you're facing Carlos Vega, ranked 34th. He favours the inside-out forehand on break points on clay — Marco has left a full breakdown in your match prep. Stringing is at 11:45 with Carlos at your usual clay tensions — Luxilon ALU at 24kg mains, 23kg crosses. Your Apex Performance Instagram post is due today — James has drafted a caption for your review. First match is at 13:00 on Court 4. You've beaten Vega 3 times on clay. Everything is ready.`,
+    coach: `Morning briefing for Marco Bianchi. Alex's recovery score is 82 out of 100 — shoulder flagged as mild yesterday by Sarah. Practice plan for 10am: 45 minutes serve patterns focusing on body serve percentages, then 45 minutes return drill — Carlos Vega's second serve sits wide on the deuce side 68% of the time. H2H against Vega: Alex leads 3-1 overall, 3-0 on clay. Main tactical note: Vega breaks down mentally after losing the first set. Apply pressure early. Stringing confirmed 11:45. Alex's meal plan from Luis is in the system.`,
     agent: `Morning briefing for James Whitfield. Apex Performance Instagram post is due today — draft is in the sponsorship tab awaiting Alex's approval. The Meridian Watches deal renewal is 47 days out — agenda item for Friday's call. Performance bonus trigger: if Alex reaches the semi-final this week, the Vanta Sports performance clause activates — GBP 8,500 bonus. Race standing is 54th — 312 points behind the cut-off for the 8-man Turin field. Next ranking report to Meridian Watches is due end of month. No press obligations today.`,
     physio: `Morning briefing for Sarah Okafor. Alex's WHOOP recovery score is 82. Right shoulder flagged mild yesterday — completed 20-minute treatment this morning, strapping applied, cleared for full practice. Pre-match treatment window is 12:00-12:30 before the 13:00 match. Watch for serve load during warm-up — cap at 40 serves in practice. Travel departs Saturday — next event is Barcelona ATP 500, clay, 13-19 April. No new injury flags from the training log.`,
   };
@@ -2427,7 +2427,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
           { l: 'Ranking', v: `#${player.ranking}`, s: `${player.ranking_points} pts` },
           { l: 'ACWR', v: GPS_SESSIONS_TENNIS[GPS_SESSIONS_TENNIS.length-1].acwr.toFixed(2), s: 'Latest session' },
           { l: 'Pts Expiring', v: '125', s: 'in 7 days' },
-          { l: 'Next Match', v: 'vs Martinez', s: '13:00 · Court 4' },
+          { l: 'Next Match', v: 'vs Vega', s: '13:00 · Court 4' },
         ].map(k => (
           <div key={k.l} className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
             <div className="text-xs text-gray-500">{k.l}</div>
@@ -3159,7 +3159,7 @@ function PerformanceView({ player, session }: { player: TennisPlayer; session: S
           </div>
           <div className="bg-[#0d0f1a] border border-purple-600/20 rounded-xl p-4 flex items-start gap-3">
             <span className="text-lg flex-shrink-0">💡</span>
-            <p className="text-xs text-gray-300 leading-relaxed">Your tiebreak record is elite — 71% is top 20 on tour. Biggest pressure leak is first serve percentage dropping under pressure. Coach Martinez has flagged a pre-serve routine reset for next session.</p>
+            <p className="text-xs text-gray-300 leading-relaxed">Your tiebreak record is elite — 71% is top 20 on tour. Biggest pressure leak is first serve percentage dropping under pressure. Coach Bianchi has flagged a pre-serve routine reset for next session.</p>
           </div>
         </div>
       )}
@@ -3596,14 +3596,14 @@ function PerformanceRatingView({ player, session }: { player: TennisPlayer; sess
 }
 function MatchPrepView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const opponent = {
-    name: 'Carlos Martinez',
+    name: 'Carlos Vega',
     flag: '🇪🇸',
     ranking: 34,
     age: 26,
     height: '6\'1"',
     plays: 'Right-handed',
     backhand: 'One-handed',
-    coach: 'Toni Nadal Jr.',
+    coach: 'Luis Ferrer',
     careerHigh: 18,
     surface: 'Clay',
     h2h: { overall: '3-1', clay: '3-0', hard: '0-1', grass: '0-0' },
@@ -3681,7 +3681,7 @@ function MatchPrepView({ player, session }: { player: TennisPlayer; session: Spo
           <span className="text-xs text-gray-600">Updated today 08:15</span>
         </div>
         <div className="text-gray-300 text-sm leading-relaxed space-y-3">
-          <p>Martinez is beatable on clay if you control the centre. His inside-out forehand is dangerous but he telegraphs it — if you step left early on break points, you can redirect down the line and he has no time.</p>
+          <p>Vega is beatable on clay if you control the centre. His inside-out forehand is dangerous but he telegraphs it — if you step left early on break points, you can redirect down the line and he has no time.</p>
           <p>Target his backhand in long rallies. Above 8 shots, his win rate drops significantly. Avoid short-ball patterns — he punishes anything above the knee on the forehand side.</p>
           <p>Second serve out wide in the deuce court is the play. He returns crosscourt almost every time. Set up the next ball inside-in forehand. We have drilled this 40 times this week.</p>
           <p className="text-teal-400">Key: win the first set. He mentally disengages if he loses it.</p>
@@ -3699,7 +3699,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
 
   const sessions = [
     { date: '9 Apr', type: 'On-court', partner: 'J. Draper', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
-    { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Martinez deuce court patterns.' },
+    { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Vega deuce court patterns.' },
     { date: '7 Apr', type: 'Ball Machine', partner: '—', duration: '45 min', coachNotes: 'Forehand inside-in drill. 200 balls at match intensity.' },
     { date: '6 Apr', type: 'On-court', partner: 'C. Ruud', duration: '90 min', coachNotes: 'Match-play set. Won 6-4. Good clay movement.' },
     { date: '5 Apr', type: 'Movement', partner: '—', duration: '60 min', coachNotes: 'Movement patterns with Luis. Lateral agility focus.' },
@@ -3908,7 +3908,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
               {[
                 { rec: 'Increase clay-specific slide drills to 3 sessions/week ahead of Barcelona and Madrid swing', priority: 'High', icon: '🏟️' },
                 { rec: 'Add 15 minutes of second-serve kick practice per on-court session — current 2nd serve win% of 53% needs to improve for clay', priority: 'High', icon: '🎾' },
-                { rec: 'Schedule one practice set per week against a left-hander to prepare for potential Nadal/Rafa Jr matchup in Madrid', priority: 'Medium', icon: '🎯' },
+                { rec: 'Schedule one practice set per week against a left-hander to prepare for potential left-handed matchup in Madrid', priority: 'Medium', icon: '🎯' },
               ].map((r, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
                   <span className="text-lg flex-shrink-0">{r.icon}</span>
@@ -4070,7 +4070,7 @@ function VideoLibraryView({ player, session }: { player: TennisPlayer; session: 
     { title: 'Serve Pattern Drill — Body %', category: 'Practice Clips', date: '9 Apr 2026', duration: '12m', tags: ['serve', 'drill'] },
     { title: 'Rotterdam Final Highlights', category: 'Highlight Reels', date: '18 Feb 2026', duration: '8m', tags: ['indoor', 'title', 'ATP500'] },
     { title: 'Post-Match Debrief — Indian Wells QF', category: 'Post-match Debrief', date: '15 Mar 2026', duration: '22m', tags: ['hard', 'loss', 'debrief'] },
-    { title: 'Martinez Clay Footage (2025)', category: 'Opponent Analysis', date: '5 Apr 2026', duration: '34m', tags: ['opponent', 'clay'] },
+    { title: 'Vega Clay Footage (2025)', category: 'Opponent Analysis', date: '5 Apr 2026', duration: '34m', tags: ['opponent', 'clay'] },
     { title: 'Australian Open R4 vs Brenner', category: 'Match Footage', date: '22 Jan 2026', duration: '2h 48m', tags: ['hard', 'loss', 'GS'] },
     { title: 'Movement Patterns — Luis Session', category: 'Practice Clips', date: '5 Apr 2026', duration: '15m', tags: ['fitness', 'movement'] },
   ];
@@ -7735,7 +7735,7 @@ function TennisSocialMedia({ onClose, session, player }: { onClose: () => void; 
   const [posted, setPosted] = useState(false)
 
   const TOPICS = [
-    { id:'match', label:'🎾 Match Result', example:'Won 6-4, 7-5 vs Martinez in Monte-Carlo QF. Great match on clay.' },
+    { id:'match', label:'🎾 Match Result', example:'Won 6-4, 7-5 vs Vega in Monte-Carlo QF. Great match on clay.' },
     { id:'training', label:'🏋️ Training Day', example:'Solid session today — serve practice and movement drills on clay.' },
     { id:'travel', label:'✈️ Tournament Travel', example:'Heading to Madrid for the next Masters event. Clay season continues.' },
     { id:'achievement', label:'🏆 Achievement', example:'Career-high ranking reached — climbing the ATP ladder.' },
@@ -8080,7 +8080,7 @@ function TennisFlightFinder({ onClose, session, player }: { onClose: () => void;
 }
 
 function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
-  const [opponent, setOpponent] = useState('C. Martinez')
+  const [opponent, setOpponent] = useState('C. Vega')
   const [surface, setSurface] = useState('Clay')
   const [tournament, setTournament] = useState('Monte-Carlo Masters')
   const [loading, setLoading] = useState(false)
@@ -8173,7 +8173,7 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
 
 function TennisPressStatement({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
   const [result, setResult] = useState<'win'|'loss'>('win')
-  const [opponent, setOpponent] = useState('C. Martinez')
+  const [opponent, setOpponent] = useState('C. Vega')
   const [score, setScore] = useState('6-4, 6-3')
   const [ctx, setCtx] = useState('Monte-Carlo Masters QF')
   const [loading, setLoading] = useState(false)
@@ -8336,7 +8336,7 @@ function TennisVisaCheck({ onClose }: { onClose: () => void }) {
 
 function TennisMatchNotes({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: TennisPlayer }) {
   const [note, setNote] = useState('')
-  const [opponent, setOpponent] = useState('C. Martinez')
+  const [opponent, setOpponent] = useState('C. Vega')
   const [saved, setSaved] = useState(false)
   return (<>
     <ModalHeader icon="📝" title="Match Notes" subtitle="Quick notes saved to your match log" onClose={onClose} />
@@ -10061,7 +10061,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Live Match</div>
               <div className="text-xs text-teal-400 font-medium">In Progress</div>
-              <div className="text-xs text-gray-300 mt-1">vs C. Martinez</div>
+              <div className="text-xs text-gray-300 mt-1">vs C. Vega</div>
               <div className="text-xs text-gray-500">Court 4 . 13:00</div>
               <div className="mt-2 text-xs text-yellow-400">QF — EUR 47,500</div>
             </div>
