@@ -372,17 +372,17 @@ export default function SportsDemoGate({
     } catch { return null }
   })()
 
-  // Check for ?restore=true from smart sign-in flow
+  // Check for ?restore=true from smart sign-in flow (or new-browser OTP)
+  // Case 3: no localStorage, but OTP just completed → initialise fresh session
   const restoredFromParams = (() => {
     if (typeof window === 'undefined') return null
     try {
       const url = new URL(window.location.href)
       if (url.searchParams.get('restore') !== 'true') return null
-      const restoreName = url.searchParams.get('name')
-      if (!restoreName) return null
+      // Create session from URL params — name may be empty for fresh users
       const restored: SportsDemoSession = {
         email: '',
-        userName: restoreName,
+        userName: url.searchParams.get('name') || '',
         clubName: url.searchParams.get('club') || defaultClubName,
         role: url.searchParams.get('role') || roles[0]?.id || 'player',
         photoDataUrl: null,
@@ -392,7 +392,7 @@ export default function SportsDemoGate({
       }
       // Persist so future visits don't need restore params
       saveSession(sport, restored)
-      // Clean URL
+      // Clean URL — strip all restore params
       url.searchParams.delete('restore')
       url.searchParams.delete('name')
       url.searchParams.delete('club')
