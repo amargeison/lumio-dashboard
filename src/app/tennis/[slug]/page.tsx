@@ -3603,7 +3603,7 @@ function MatchPrepView({ player, session }: { player: TennisPlayer; session: Spo
     height: '6\'1"',
     plays: 'Right-handed',
     backhand: 'One-handed',
-    coach: 'Luis Ferrer',
+    coach: 'Luis Castaño',
     careerHigh: 18,
     surface: 'Clay',
     h2h: { overall: '3-1', clay: '3-0', hard: '0-1', grass: '0-0' },
