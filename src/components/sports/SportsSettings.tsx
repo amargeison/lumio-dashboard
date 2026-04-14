@@ -454,6 +454,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       try { localStorage.setItem(profilePhotoKey, compressed) } catch {}
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       setCurrentPhoto(compressed)
+                      fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avatar_url: compressed }) }).catch(() => {})
                       props.onPhotoChange?.(compressed)
                     }
                     img.src = ev.target?.result as string
@@ -501,6 +502,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   onClick={() => {
                     localStorage.setItem(nameKey, nameValue)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ display_name: nameValue }) }).catch(() => {})
                     setEditingName(false)
                   }}
                   style={{
@@ -575,6 +577,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   onClick={() => {
                     localStorage.setItem(nicknameKey, nicknameValue)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nickname: nicknameValue }) }).catch(() => {})
                     setEditingNickname(false)
                   }}
                   style={{
@@ -650,6 +653,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   onClick={() => {
                     localStorage.setItem(brandNameKey, brandNameLocal)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
+                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand_name: brandNameLocal }) }).catch(() => {})
                     props.onBrandNameChange?.(brandNameLocal)
                     setEditingBrandName(false)
                   }}
@@ -710,6 +714,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
                       try { localStorage.setItem(brandLogoKey, dataUrl) } catch {}
                       setBrandLogoLocal(dataUrl)
+                      fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand_logo_url: dataUrl }) }).catch(() => {})
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       props.onBrandLogoChange?.(dataUrl)
                     }
