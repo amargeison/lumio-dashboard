@@ -246,7 +246,8 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
       }).catch(() => {})
     } finally {
       setISaving(false)
-      onComplete(enabledFeatures, portalSlug)
+      const finalSlug = portalSlug.trim() || slugify(displayName)
+      onComplete(enabledFeatures, finalSlug)
     }
   }
 
@@ -260,16 +261,18 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
   const slugify = (val: string) => val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
   const saveAndComplete = async () => {
+    const finalSlug = portalSlug.trim() || slugify(displayName)
+    if (!finalSlug) return
     setSaving(true)
     try {
       await supabase.from('sports_profiles').update({
-        display_name: displayName, nickname, avatar_url: photoDataUrl, portal_slug: portalSlug,
+        display_name: displayName, nickname, avatar_url: photoDataUrl, portal_slug: finalSlug,
         club_name: clubName, location, brand_logo_url: brandLogoDataUrl, enabled_features: enabledFeatures,
         invites: invites.filter(i => i.email), setup_type: setupType, onboarding_complete: true,
       }).eq('id', profile.id)
       if (setupType === 'lumio') {
         fetch('/api/sports-auth/notify-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: displayName, sport, email: profile.email, clubName, location, portalSlug, setupType })
+          body: JSON.stringify({ name: displayName, sport, email: profile.email, clubName, location, portalSlug: finalSlug, setupType })
         }).catch(() => {})
       }
     } catch (e) { console.error(e) }
@@ -277,7 +280,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
     if (setupType === 'lumio') {
       setPhase('integrations')
     } else {
-      onComplete(enabledFeatures, portalSlug)
+      onComplete(enabledFeatures, finalSlug)
     }
   }
 
@@ -523,7 +526,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <button onClick={() => onComplete(enabledFeatures, portalSlug)} style={{ background: 'none', border: 'none', color: '#4B5563', fontSize: 13, cursor: 'pointer' }}>Skip — go to portal →</button>
+                <button onClick={() => { const fs = portalSlug.trim() || slugify(displayName); onComplete(enabledFeatures, fs) }} style={{ background: 'none', border: 'none', color: '#4B5563', fontSize: 13, cursor: 'pointer' }}>Skip — go to portal →</button>
                 <button onClick={submitIntegrations} disabled={iSaving} style={{ padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, border: 'none', cursor: iSaving ? 'default' : 'pointer', background: iSaving ? '#374151' : accentColor, color: '#fff' }}>{iSaving ? 'Submitting...' : 'Submit & go to portal →'}</button>
               </div>
             )}

@@ -92,7 +92,17 @@ export default function DartsAppPage() {
     router.push('/sports-login')
   }
   if (!onboardingDone) {
-    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={(_features, portalSlug) => { if (portalSlug) { router.push(`/darts/${portalSlug}`); return } setOnboardingDone(true) }} />
+    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={(_features, portalSlug) => {
+      if (portalSlug?.trim()) { setTimeout(() => router.push(`/darts/${portalSlug.trim()}`), 800); return }
+      const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      sb.auth.getUser().then(({ data: { user } }) => {
+        if (!user) { setOnboardingDone(true); return }
+        sb.from('sports_profiles').select('portal_slug').eq('id', user.id).maybeSingle().then(({ data }) => {
+          if (data?.portal_slug) { setTimeout(() => router.push(`/darts/${data.portal_slug}`), 800) }
+          else { setOnboardingDone(true) }
+        })
+      })
+    }} />
   }
   return <DartsPortalInner slug={slug} session={session} onSignOut={handleSignOut} />
 }
