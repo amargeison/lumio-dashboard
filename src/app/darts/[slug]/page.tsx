@@ -479,6 +479,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  const isDemoShellDash = session.isDemoShell !== false
   const [tourStep, setTourStep] = useState(0)
   const [scheduleChecked, setScheduleChecked] = useState<Record<string,boolean>>(() => {
     try { return JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('darts_schedule_checked') : null) || '{}') } catch { return {} }
@@ -589,8 +590,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
     : `"${player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg') : null
-  const firstName = displayPlayerName.split(' ')[0] || 'Jake'
+  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || (isDemoShellDash ? '/jake_morrison.jpg' : null)) : null
+  const firstName = displayPlayerName.split(' ')[0] || (isDemoShellDash ? 'Jake' : '')
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
@@ -821,7 +822,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                       <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
                         <div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div>
                         <div className="grid grid-cols-4 gap-2">
-                          {[{ icon:'📊', v:`#${player.pdcRank}`, label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v:String(player.threeDartAverage), label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v:`£${Math.round(player.careerEarnings/1000)}k`, label:'Career', c:'#F59E0B' },{ icon:'🏆', v:'Tonight', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
+                          {[{ icon:'📊', v: isDemoShellDash ? `#${player.pdcRank}` : '—', label:'PDC Rank', c:'#dc2626' },{ icon:'🎯', v: isDemoShellDash ? String(player.threeDartAverage) : '—', label:'3-Dart Avg', c:'#F97316' },{ icon:'💰', v: isDemoShellDash ? `£${Math.round(player.careerEarnings/1000)}k` : '—', label:'Career', c:'#F59E0B' },{ icon:'🏆', v: isDemoShellDash ? 'Tonight' : '—', label:'Euro Ch.', c:'#22C55E' }].map((s, i) => (
                             <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>
                           ))}
                         </div>
@@ -1504,6 +1505,20 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
+        if (!isDemoShellDash) return (
+          <div className="pt-4 space-y-4">
+            <div className="flex gap-2">
+              {([{id:'today' as const,label:'👥 Team Today'},{id:'orgchart' as const,label:'🏢 Org Chart'},{id:'info' as const,label:'🃏 Team Info'},{id:'tour' as const,label:'🗺️ Tour Info'}]).map(t=>(
+                <button key={t.id} onClick={()=>setTeamSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
+                  style={{ backgroundColor: teamSubTab===t.id ? '#dc2626' : '#111318', color: teamSubTab===t.id ? '#F9FAFB' : '#6B7280', border: teamSubTab===t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+              ))}
+            </div>
+            {teamSubTab === 'today' && <EmptyState icon="👥" title="No team members added yet" sub="Add your manager, agent, coach and physio in Settings" />}
+            {teamSubTab === 'orgchart' && <EmptyState icon="🏢" title="Build your team to see your org chart" sub="Add team members in Settings first" />}
+            {teamSubTab === 'info' && <EmptyState icon="🃏" title="No information added yet" sub="Team info will appear once members are added" />}
+            {teamSubTab === 'tour' && <EmptyState icon="🗺️" title="No information added yet" sub="Tour info will appear once connected" />}
+          </div>
+        )
         const demoStaffPhotos: Record<string, string> = {
           'Dave Askew': '/Dave_Askew.jpg',
           'James Wright': '/James_Wright.jpg',
@@ -8043,13 +8058,14 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
     return () => window.removeEventListener('lumio-visibility-changed', handler)
   }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo')?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg' : null } catch { return null } })
+  const isDemoOuter = session.isDemoShell !== false
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo')?.trim() || session.photoDataUrl?.trim() || (isDemoOuter ? '/jake_morrison.jpg' : null) : null } catch { return null } })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useDartsProfileName()
   const liveProfilePhotoOuter = useDartsProfilePhoto()
   const liveBrandName = useDartsBrandName()
   const liveBrandLogo = useDartsBrandLogo()
-  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg' }
+  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter?.trim() || session.photoDataUrl?.trim() || (isDemoOuter ? '/jake_morrison.jpg' : null) }
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
@@ -8433,7 +8449,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                   style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.2), rgba(249,115,22,0.2))', border: '1px solid rgba(220,38,38,0.3)' }}>
                   {currentPhoto ? <img src={currentPhoto} alt="Player" className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <span className="text-5xl">🎯</span>}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg"><span className="text-white text-xs font-bold">📷 Change photo</span></div>
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const compressed = r.result as string; localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed); if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated')) }; r.readAsDataURL(f) }} />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const reader = new FileReader(); reader.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed); window.dispatchEvent(new Event('lumio-profile-updated')) } catch { alert('Photo too large — please use a smaller image') } }; img.src = ev.target?.result as string }; reader.readAsDataURL(f) }} />
                 </label>
                 {/* Name */}
                 {(() => { const pn = (typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name; return (<>

@@ -92,7 +92,7 @@ export default function DartsAppPage() {
     router.push('/sports-login')
   }
   if (!onboardingDone) {
-    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={() => setOnboardingDone(true)} />
+    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={(_features, portalSlug) => { if (portalSlug) { router.push(`/darts/${portalSlug}`); return } setOnboardingDone(true) }} />
   }
   return <DartsPortalInner slug={slug} session={session} onSignOut={handleSignOut} />
 }
