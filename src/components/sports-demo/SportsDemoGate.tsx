@@ -148,7 +148,8 @@ const ProfileStep = memo(function ProfileStep({
   onSkip: () => void
 }) {
   const [liveNickname, setLiveNickname] = useState('')
-  const initials = (defaultUserName || 'DU').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const [liveName, setLiveName] = useState(defaultUserName || '')
+  const initials = (liveName || defaultUserName || 'DU').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   return (
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
@@ -203,9 +204,9 @@ const ProfileStep = memo(function ProfileStep({
             )}
           </div>
           <div className="text-center">
-            <div className="text-base font-black text-white uppercase tracking-wide">{defaultUserName || 'YOUR NAME'}</div>
+            <div style={{ color: '#fff', fontSize: 13, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1.2 }}>{liveName ? liveName.toUpperCase().split(' ')[0] : 'YOUR'}</div>
+            <div style={{ color: '#fff', fontSize: 13, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' }}>{liveName ? (liveName.toUpperCase().split(' ').slice(1).join(' ') || '') : 'NAME'}</div>
             {liveNickname && <div style={{ color: accentColor, fontSize: 10, fontWeight: 600 }}>&quot;{liveNickname}&quot;</div>}
-            <div className="text-xs mt-0.5" style={{ color: accentColor }}>{roles.find(r => r.id === selectedRole)?.label ?? 'Player'}</div>
           </div>
           <div className="w-full grid grid-cols-2 gap-x-4 text-[10px]">
             {(SPORT_STATS[sport] || SPORT_STATS.football).map(s => (
@@ -219,7 +220,7 @@ const ProfileStep = memo(function ProfileStep({
       </div>
 
       <div>
-        <input ref={userNameRef} type="text" defaultValue={defaultUserName} placeholder="Your name"
+        <input ref={userNameRef} type="text" value={liveName} onChange={e => setLiveName(e.target.value)} placeholder="Your name"
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500" />
         <input ref={nicknameRef} type="text" value={liveNickname}
           onChange={e => setLiveNickname(e.target.value)}
@@ -380,11 +381,15 @@ export default function SportsDemoGate({
       const url = new URL(window.location.href)
       if (url.searchParams.get('restore') !== 'true') return null
       // Create session from URL params — name may be empty for fresh users
+      const restoredName = (url.searchParams.get('name') || '').replace(/\+/g, ' ')
+      const restoredClub = (url.searchParams.get('club') || '').replace(/\+/g, ' ')
+      const restoredNickname = (url.searchParams.get('nickname') || '').replace(/\+/g, ' ')
+      const restoredRole = url.searchParams.get('role') || roles[0]?.id || 'player'
       const restored: SportsDemoSession = {
         email: '',
-        userName: url.searchParams.get('name') || '',
-        clubName: url.searchParams.get('club') || defaultClubName,
-        role: url.searchParams.get('role') || roles[0]?.id || 'player',
+        userName: restoredName,
+        clubName: restoredClub || defaultClubName,
+        role: restoredRole,
         photoDataUrl: null,
         logoDataUrl: null,
         sport,
@@ -392,11 +397,17 @@ export default function SportsDemoGate({
       }
       // Persist so future visits don't need restore params
       saveSession(sport, restored)
+      try {
+        if (restoredName) localStorage.setItem(`lumio_${sport}_name`, restoredName)
+        if (restoredNickname) localStorage.setItem(`lumio_${sport}_nickname`, restoredNickname)
+        localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+      } catch {}
       // Clean URL — strip all restore params
       url.searchParams.delete('restore')
       url.searchParams.delete('name')
       url.searchParams.delete('club')
       url.searchParams.delete('role')
+      url.searchParams.delete('nickname')
       window.history.replaceState({}, '', url.pathname)
       return restored
     } catch { return null }
