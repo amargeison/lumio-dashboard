@@ -214,6 +214,17 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
   async function submitIntegrations() {
     setISaving(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const mergedInvites = [
+          ...invites.filter(i => i.name.trim()),
+          ...teamMembers.map(m => ({ name: m.name, role: m.role, email: '' })),
+        ]
+        await supabase.from('sports_profiles').update({
+          invites: mergedInvites,
+          updated_at: new Date().toISOString(),
+        }).eq('id', user.id)
+      }
       const fieldsEntries: Record<string, string> = {}
       if (cfg.step2Fields[0]) fieldsEntries[cfg.step2Fields[0].label] = field1
       if (cfg.step2Fields[1]) fieldsEntries[cfg.step2Fields[1].label] = field2
@@ -274,6 +285,9 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
         fetch('/api/sports-auth/notify-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: displayName, sport, email: profile.email, clubName, location, portalSlug: finalSlug, setupType })
         }).catch(() => {})
+      }
+      if (typeof window !== 'undefined' && finalSlug) {
+        window.history.replaceState(null, '', window.location.pathname.replace('/app', `/${finalSlug}`))
       }
     } catch (e) { console.error(e) }
     setSaving(false)

@@ -34,6 +34,7 @@ export interface SportsDemoSession {
    */
   isDemoShell?: boolean
   enabledFeatures?: string[]
+  invites?: { name: string; role: string; email?: string }[]
 }
 
 export type SportKey =
