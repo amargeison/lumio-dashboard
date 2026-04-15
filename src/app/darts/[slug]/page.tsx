@@ -304,7 +304,7 @@ function DartsAISection({ context, player, session }: DartsAISectionProps) {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `You are the AI performance analyst for ${session.userName || player.name}, PDC #${player.pdcRank} professional darts player nicknamed "${player.nickname}".
+            content: `You are the AI performance analyst for ${session.userName || player.name}, PDC #${player.pdcRank} professional darts player nicknamed "${session.nickname || player.nickname}".
 
 Generate a concise AI department summary for the "${context}" section.
 
@@ -590,7 +590,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     : player.name
   const displayPlayerNickname = isPlayerRole
     ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
-    : `"${player.nickname}"`
+    : `"${session.nickname || player.nickname}"`
   const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || (isDemoShellDash ? '/jake_morrison.jpg' : null)) : null
   const firstName = displayPlayerName.split(' ')[0] || (isDemoShellDash ? 'Jake' : '')
   const hour = new Date().getHours()
@@ -598,7 +598,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
 
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [photoSrc, setPhotoSrc] = useState<string | null>(null)
+  const [photoSrc, setPhotoSrc] = useState<string | null>(() => {
+    try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_photo_frame') : null } catch { return null }
+  })
   const [photoFit, setPhotoFit] = useState<'cover'|'contain'>(() => {
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_darts_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
   })
@@ -1245,9 +1247,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                 <div className="flex items-center gap-2">
                   <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_darts_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
                   <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                  {photoSrc && <button onClick={() => setPhotoSrc(null)} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
+                  {photoSrc && <button onClick={() => { setPhotoSrc(null); try { localStorage.removeItem('lumio_darts_photo_frame') } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
                   <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
-                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); setPhotoSrc(compressed) }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
+                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); setPhotoSrc(compressed); try { localStorage.setItem('lumio_darts_photo_frame', compressed) } catch {} }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
@@ -2282,7 +2284,7 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for Jake "Shooter" Morrison (Morrison Darts, PDC #19, 97.8 avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}, ${player.threeDartAverage} avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
       });
       const data = await res.json();
       setAiAnalysis(prev => ({ ...prev, [idx]: { loading: false, result: data.content?.[0]?.text || 'No response.' } }));
@@ -2397,7 +2399,7 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for Jake "Shooter" Morrison (Morrison Darts, PDC #19) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
       });
       const data = await res.json();
       setReportContent(prev => ({ ...prev, [m.id]: data.content?.[0]?.text ?? 'No response' }));
@@ -4307,7 +4309,7 @@ function MatchPrepView({ player, session }: { player: DartsPlayer; session: Spor
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `You are the AI tactical analyst for ${session.userName || player.name} "${player.nickname}", PDC #${player.pdcRank} professional darts player.
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `You are the AI tactical analyst for ${session.userName || player.name} "${session.nickname || player.nickname}", PDC #${player.pdcRank} professional darts player.
 
 Generate a detailed match preparation game plan.
 
@@ -6999,7 +7001,7 @@ function DartCamView({ player, session }: { player: DartsPlayer; session: Sports
 
   useEffect(() => {
     setAiLoading(true)
-    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the AI dart cam analyst for ${session.userName || player.name} "${player.nickname}" (PDC #${player.pdcRank}). Analyse this practice session: 3-dart avg 98.4, checkout 44.1%, first 9 avg 102.3, 18/41 doubles hit, 6 x 180s. Favourite doubles: D16 (67%), D8 (58%), D20 (54%). Give a concise post-session brief: 3 positives, 2 areas to work on, 1 recommendation for next session. Max 150 words. Plain text. No markdown.` }] }) })
+    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the AI dart cam analyst for ${session.userName || player.name} "${session.nickname || player.nickname}" (PDC #${player.pdcRank}). Analyse this practice session: 3-dart avg 98.4, checkout 44.1%, first 9 avg 102.3, 18/41 doubles hit, 6 x 180s. Favourite doubles: D16 (67%), D8 (58%), D20 (54%). Give a concise post-session brief: 3 positives, 2 areas to work on, 1 recommendation for next session. Max 150 words. Plain text. No markdown.` }] }) })
       .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiBrief(t ? cleanResponse(t) : 'Unable to generate brief.') }).catch(() => setAiBrief('Unable to generate brief.')).finally(() => setAiLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -7446,6 +7448,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
               isDemoShell: false,
               enabledFeatures: profile.enabled_features || [],
               invites: profile.invites || [],
+              nickname: profile.nickname ?? null,
             })
           }
         }
@@ -8567,9 +8570,15 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 {/* Name */}
                 {(() => { const pn = (typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name; return (<>
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{pn.split(' ')[0]}</div>
-                <div className="text-red-300 font-bold text-xs uppercase tracking-widest text-center mb-1">{pn.split(' ').slice(1).join(' ')}</div>
+                <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-1">{pn.split(' ').slice(1).join(' ')}</div>
                 </>)})()}
-                {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null; const showNn = nn || (isDemoOuter ? player.nickname : null); return showNn ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{showNn}&quot;</div> : <div className="mb-2" /> })()}
+                {(() => {
+                  const lsNick = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null
+                  const showNn = lsNick || session.nickname || (isDemoOuter ? player.nickname : null)
+                  return showNn
+                    ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{showNn}&quot;</div>
+                    : <div className="mb-2" />
+                })()}
                 {/* PDC Ranking badge */}
                 <div className="flex justify-center mb-2">
                   <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>

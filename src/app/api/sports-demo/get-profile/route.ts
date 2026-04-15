@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabase()
     const { data } = await supabase
       .from('sports_demo_leads')
-      .select('user_name, club_name, role')
+      .select('user_name, club_name, role, nickname, avatar_url, logo_url')
       .eq('email', email.toLowerCase())
       .eq('sport', sport)
       .maybeSingle()

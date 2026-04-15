@@ -63,6 +63,7 @@ export default function DartsAppPage() {
         isDemoShell: false,
         enabledFeatures: profile.enabled_features || [],
         invites: profile.invites || [],
+        nickname: profile.nickname ?? null,
       })
       // Track login event
       fetch('/api/sports-events', { method: 'POST', headers: { 'Content-Type': 'application/json' },
