@@ -168,6 +168,7 @@ function SportsLoginForm() {
           const restoreParams = new URLSearchParams({
             restore: 'true',
             name: lead.user_name,
+            email: email.trim(),
             ...(lead.club_name ? { club: lead.club_name } : {}),
             ...(lead.nickname ? { nickname: lead.nickname } : {}),
             ...(lead.role ? { role: lead.role } : {}),

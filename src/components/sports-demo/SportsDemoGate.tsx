@@ -35,6 +35,7 @@ export interface SportsDemoSession {
   isDemoShell?: boolean
   enabledFeatures?: string[]
   invites?: { name: string; role: string; email?: string }[]
+  nickname?: string | null
 }
 
 export type SportKey =
@@ -358,6 +359,17 @@ const InviteStep = memo(function InviteStep({
   )
 })
 
+const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'}
+      alt={sport}
+      style={{ width: 72, height: 72, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+    />
+  )
+})
+
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
@@ -370,7 +382,11 @@ export default function SportsDemoGate({
     try {
       const raw = localStorage.getItem(sessionKey(sport))
       if (!raw) return null
-      return JSON.parse(raw) as SportsDemoSession
+      const parsed = JSON.parse(raw) as SportsDemoSession
+      if (parsed.nickname) {
+        try { localStorage.setItem(`lumio_${sport}_nickname`, parsed.nickname) } catch {}
+      }
+      return parsed
     } catch { return null }
   })()
 
@@ -385,14 +401,16 @@ export default function SportsDemoGate({
       const restoredName = (url.searchParams.get('name') || '').replace(/\+/g, ' ')
       const restoredClub = (url.searchParams.get('club') || '').replace(/\+/g, ' ')
       const restoredNickname = (url.searchParams.get('nickname') || '').replace(/\+/g, ' ')
+      const restoredEmail = (url.searchParams.get('email') || '').trim()
       const restoredRole = url.searchParams.get('role') || roles[0]?.id || 'player'
       const restored: SportsDemoSession = {
-        email: '',
+        email: restoredEmail,
         userName: restoredName,
         clubName: restoredClub || defaultClubName,
         role: restoredRole,
         photoDataUrl: null,
         logoDataUrl: null,
+        nickname: restoredNickname || null,
         sport,
         verifiedAt: new Date().toISOString(),
       }
@@ -409,6 +427,7 @@ export default function SportsDemoGate({
       url.searchParams.delete('club')
       url.searchParams.delete('role')
       url.searchParams.delete('nickname')
+      url.searchParams.delete('email')
       window.history.replaceState({}, '', url.pathname)
       return restored
     } catch { return null }
@@ -422,6 +441,7 @@ export default function SportsDemoGate({
     window.location.hostname === 'localhost'
   )
 
+  const restoredEmailForFetch = restoredFromParams?.email || ''
   const [session, setSession] = useState<SportsDemoSession | null>(initialSession)
   const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(initialSession ? 'done' : isDevHost ? 'club' : 'email')
   const [email, setEmail] = useState('')
@@ -435,6 +455,35 @@ export default function SportsDemoGate({
   const [error, setError] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [inviteEmails, setInviteEmails] = useState(['', '', '', '', ''])
+
+  useEffect(() => {
+    if (!restoredEmailForFetch) return
+    fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(restoredEmailForFetch)}&sport=${sport}`)
+      .then(r => r.json())
+      .then(data => {
+        const p = data?.profile || data
+        if (!p || (!p.avatar_url && !p.logo_url && !p.nickname)) return
+        setSession(prev => prev ? {
+          ...prev,
+          photoDataUrl: p.avatar_url || prev.photoDataUrl,
+          logoDataUrl: p.logo_url || prev.logoDataUrl,
+          nickname: p.nickname || prev.nickname,
+        } : prev)
+        try {
+          if (p.avatar_url) localStorage.setItem(`lumio_demo_photo_${restoredEmailForFetch.toLowerCase()}`, p.avatar_url)
+          const raw = localStorage.getItem(sessionKey(sport))
+          if (raw) {
+            const parsed = JSON.parse(raw) as SportsDemoSession
+            parsed.photoDataUrl = p.avatar_url || parsed.photoDataUrl
+            parsed.logoDataUrl = p.logo_url || parsed.logoDataUrl
+            parsed.nickname = p.nickname || parsed.nickname
+            localStorage.setItem(sessionKey(sport), JSON.stringify(parsed))
+          }
+          if (p.nickname) localStorage.setItem(`lumio_${sport}_nickname`, p.nickname)
+        } catch {}
+      })
+      .catch(() => {})
+  }, [restoredEmailForFetch, sport])
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -480,19 +529,27 @@ export default function SportsDemoGate({
         const profileRes = await fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`)
         const profileData = await profileRes.json()
         if (profileData.profile?.user_name) {
-          // Restore saved photo from localStorage keyed by email
+          const p = profileData.profile
           const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) : null
           const restored: SportsDemoSession = {
             email,
-            userName: profileData.profile.user_name,
-            clubName: profileData.profile.club_name || defaultClubName,
-            role: profileData.profile.role || 'player',
-            photoDataUrl: savedPhoto || null,
-            logoDataUrl: null,
+            userName: p.user_name,
+            clubName: p.club_name || defaultClubName,
+            role: p.role || 'player',
+            photoDataUrl: p.avatar_url || savedPhoto || null,
+            logoDataUrl: p.logo_url || null,
+            nickname: p.nickname || null,
             sport,
             verifiedAt: new Date().toISOString(),
           }
-          try { localStorage.setItem(sessionKey(sport), JSON.stringify(restored)); localStorage.setItem(`lumio_${sport}_demo_active`, 'true') } catch {}
+          try {
+            localStorage.setItem(sessionKey(sport), JSON.stringify(restored))
+            localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+            if (p.nickname) localStorage.setItem(`lumio_${sport}_nickname`, p.nickname)
+            if (p.avatar_url) localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, p.avatar_url)
+          } catch {}
+          if (p.logo_url) setLogoDataUrl(p.logo_url)
+          if (p.avatar_url) setPhotoDataUrl(p.avatar_url)
           setSession(restored)
           setStep('done')
           setLoading(false)
@@ -508,14 +565,16 @@ export default function SportsDemoGate({
     const resolvedUserName = userName.trim() || userNameRef.current?.value?.trim() || ''
     const resolvedClubName = clubName.trim() || clubNameRef.current?.value?.trim() || defaultClubName
     const resolvedNickname = nicknameRef.current?.value?.trim() || ''
+    const effectiveEmail = email || restoredFromParams?.email || ''
 
     const newSession: SportsDemoSession = {
-      email: email || 'dev@lumio.test',
+      email: effectiveEmail || 'dev@lumio.test',
       userName: resolvedUserName,
       clubName: resolvedClubName,
       role: selectedRole,
       photoDataUrl,
       logoDataUrl,
+      nickname: resolvedNickname || null,
       sport,
       verifiedAt: new Date().toISOString(),
     }
@@ -530,15 +589,26 @@ export default function SportsDemoGate({
       localStorage.setItem(sessionKey(sport), JSON.stringify(newSession))
       localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
       // Save photo keyed by email for cross-session persistence
-      if (photoDataUrl && email) localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, photoDataUrl)
+      if (photoDataUrl && effectiveEmail) localStorage.setItem(`lumio_demo_photo_${effectiveEmail.toLowerCase()}`, photoDataUrl)
     } catch (e) {
       console.warn('localStorage unavailable, proceeding without persistence', e)
     }
     // Update demo lead with profile data (non-blocking)
-    if (email) {
+    if (effectiveEmail) {
       fetch('/api/sports-demo/get-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, sport, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, nickname: resolvedNickname }),
+        body: JSON.stringify({ email: effectiveEmail, sport, userName: resolvedUserName, clubName: resolvedClubName, role: selectedRole, nickname: resolvedNickname }),
+      }).catch(() => {})
+      // Persist photo/logo/nickname to sports_demo_leads for cross-device restore
+      fetch('/api/sports-demo/update-lead', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: effectiveEmail,
+          sport,
+          nickname: resolvedNickname,
+          avatar_url: photoDataUrl || null,
+          logo_url: logoDataUrl || null,
+        }),
       }).catch(() => {})
     }
     setSession(newSession)
@@ -575,8 +645,7 @@ export default function SportsDemoGate({
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
       <div className="w-full max-w-md">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'} alt={sport} style={{ width: 72, height: 72, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }} />
+          <PortalLogo sport={sport} />
           <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
           <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>Interactive demo</p>
         </div>
