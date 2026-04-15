@@ -1506,20 +1506,63 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
       {/* TEAM */}
       {dashTab === 'team' && (() => {
-        if (!isDemoShellDash) return (
-          <div className="pt-4 space-y-4">
-            <div className="flex gap-2">
-              {([{id:'today' as const,label:'👥 Team Today'},{id:'orgchart' as const,label:'🏢 Org Chart'},{id:'info' as const,label:'🃏 Team Info'},{id:'tour' as const,label:'🗺️ Tour Info'}]).map(t=>(
-                <button key={t.id} onClick={()=>setTeamSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
-                  style={{ backgroundColor: teamSubTab===t.id ? '#dc2626' : '#111318', color: teamSubTab===t.id ? '#F9FAFB' : '#6B7280', border: teamSubTab===t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
-              ))}
+        if (!isDemoShellDash) {
+          const realTeam = session.invites || []
+          const playerName = session.userName || 'You'
+          return (
+            <div className="pt-4 space-y-4">
+              <div className="flex gap-2">
+                {([{id:'today' as const,label:'👥 Team Today'},{id:'orgchart' as const,label:'🏢 Org Chart'},{id:'info' as const,label:'🃏 Team Info'},{id:'tour' as const,label:'🗺️ Tour Info'}]).map(t=>(
+                  <button key={t.id} onClick={()=>setTeamSubTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
+                    style={{ backgroundColor: teamSubTab===t.id ? '#dc2626' : '#111318', color: teamSubTab===t.id ? '#F9FAFB' : '#6B7280', border: teamSubTab===t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+                ))}
+              </div>
+              {teamSubTab === 'today' && (
+                realTeam.length === 0
+                  ? <EmptyState icon="👥" title="No team members yet" sub="Add your manager, coach and agent in Settings" />
+                  : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      {realTeam.map((member, i) => (
+                        <div key={i} style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1F2937', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#22c55e' }}>
+                            {(member.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{member.name}</div>
+                            <div style={{ color: '#22c55e', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{member.role}</div>
+                          </div>
+                          <div style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
+                        </div>
+                      ))}
+                    </div>
+                  )
+              )}
+              {teamSubTab === 'orgchart' && (
+                realTeam.length === 0
+                  ? <EmptyState icon="🏢" title="Build your team to see your org chart" sub="Add team members in Settings first" />
+                  : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, paddingTop: 24 }}>
+                      <div style={{ background: '#0d1117', border: '1px solid #22c55e40', borderRadius: 14, padding: '14px 22px', textAlign: 'center' }}>
+                        <div style={{ color: '#22c55e', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Player</div>
+                        <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginTop: 4 }}>{playerName}</div>
+                      </div>
+                      <div style={{ width: 1, height: 20, background: '#1F2937' }} />
+                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(realTeam.length, 4)}, 1fr)`, gap: 12 }}>
+                        {realTeam.map((member, i) => (
+                          <div key={i} style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 12, padding: '12px 14px', textAlign: 'center', minWidth: 140 }}>
+                            <div style={{ color: '#22c55e', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{member.role}</div>
+                            <div style={{ color: '#fff', fontSize: 13, fontWeight: 600, marginTop: 4 }}>{member.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+              )}
+              {teamSubTab === 'info' && <EmptyState icon="🃏" title="No information added yet" sub="Team info will appear once members are added" />}
+              {teamSubTab === 'tour' && <EmptyState icon="🗺️" title="No information added yet" sub="Tour info will appear once connected" />}
             </div>
-            {teamSubTab === 'today' && <EmptyState icon="👥" title="No team members added yet" sub="Add your manager, agent, coach and physio in Settings" />}
-            {teamSubTab === 'orgchart' && <EmptyState icon="🏢" title="Build your team to see your org chart" sub="Add team members in Settings first" />}
-            {teamSubTab === 'info' && <EmptyState icon="🃏" title="No information added yet" sub="Team info will appear once members are added" />}
-            {teamSubTab === 'tour' && <EmptyState icon="🗺️" title="No information added yet" sub="Tour info will appear once connected" />}
-          </div>
-        )
+          )
+        }
         const demoStaffPhotos: Record<string, string> = {
           'Dave Askew': '/Dave_Askew.jpg',
           'James Wright': '/James_Wright.jpg',
@@ -7382,7 +7425,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
         if (user) {
           const { data: profile } = await supabase
             .from('sports_profiles')
-            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug, invites')
             .eq('id', user.id)
             .maybeSingle()
 
@@ -7402,6 +7445,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
               verifiedAt: new Date().toISOString(),
               isDemoShell: false,
               enabledFeatures: profile.enabled_features || [],
+              invites: profile.invites || [],
             })
           }
         }
@@ -8505,11 +8549,11 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 {/* Ranking badges */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="text-center">
-                    <div className="text-3xl font-black text-white leading-none">{player.pdcRank}</div>
+                    <div className="text-3xl font-black text-white leading-none">{isDemoOuter ? player.pdcRank : '—'}</div>
                     <div className="text-[10px] text-red-300 font-medium uppercase tracking-wider">PDC Rank</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-black text-gray-400 leading-none">£{Math.round(player.careerEarnings/1000)}k</div>
+                    <div className="text-lg font-black text-gray-400 leading-none">{isDemoOuter ? `£${Math.round(player.careerEarnings/1000)}k` : '—'}</div>
                     <div className="text-[9px] text-gray-500 font-medium uppercase tracking-wider">Career</div>
                   </div>
                 </div>
@@ -8529,7 +8573,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 {/* PDC Ranking badge */}
                 <div className="flex justify-center mb-2">
                   <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>
-                    <span style={{ color:'#f59e0b', fontSize:'12px', fontWeight:'700' }}>PDC #{player.pdcRank}</span>
+                    <span style={{ color:'#f59e0b', fontSize:'12px', fontWeight:'700' }}>PDC {isDemoOuter ? `#${player.pdcRank}` : '—'}</span>
                   </div>
                 </div>
                 {/* Stat bars */}

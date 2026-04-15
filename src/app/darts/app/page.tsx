@@ -40,7 +40,7 @@ export default function DartsAppPage() {
       }
       const { data: profile, error } = await supabase
         .from('sports_profiles')
-        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete')
+        .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, invites')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -62,6 +62,7 @@ export default function DartsAppPage() {
         verifiedAt: new Date().toISOString(),
         isDemoShell: false,
         enabledFeatures: profile.enabled_features || [],
+        invites: profile.invites || [],
       })
       // Track login event
       fetch('/api/sports-events', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -92,7 +93,18 @@ export default function DartsAppPage() {
     router.push('/sports-login')
   }
   if (!onboardingDone) {
-    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={(_features, portalSlug) => { if (portalSlug) { router.push(`/darts/${portalSlug}`); return } setOnboardingDone(true) }} />
+    return <OnboardingWizard sport="darts" accentColor="#22c55e" profile={{ id: session.email, display_name: session.userName, email: session.email }} onComplete={(_features, portalSlug) => {
+      const slug = portalSlug?.trim()
+      if (slug) { router.replace(`/darts/${slug}`); return }
+      const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      sb.auth.getUser().then(({ data: { user } }) => {
+        if (!user) { setOnboardingDone(true); return }
+        sb.from('sports_profiles').select('portal_slug').eq('id', user.id).maybeSingle().then(({ data }) => {
+          if (data?.portal_slug) router.replace(`/darts/${data.portal_slug}`)
+          else setOnboardingDone(true)
+        })
+      })
+    }} />
   }
   return <DartsPortalInner slug={slug} session={session} onSignOut={handleSignOut} />
 }
