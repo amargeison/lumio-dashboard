@@ -3,6 +3,7 @@ const withPWA = require('next-pwa')
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   turbopack: {},
   images: {
     remotePatterns: [
@@ -13,10 +14,8 @@ const nextConfig: NextConfig = {
   redirects: async () => [
     { source: '/sales-crm', destination: '/sales', permanent: true },
     { source: '/crm/:path*', destination: 'https://app.lumiocms.com/crm/:path*', permanent: false, has: [{ type: 'host', value: 'lumiocms.com' }] },
-    // Football portal redirects — old URLs → new separate portals
     { source: '/demo/football/:slug', destination: '/football/pro/:slug', permanent: true },
     { source: '/demo/football-amateur/:slug', destination: '/football/grassroots/:slug', permanent: true },
-    // Non-league and grassroots → new lumiosports.com route groups
     { source: '/football/nonleague/:slug', destination: '/nonleague/:slug', permanent: true },
     { source: '/football/grassroots/:slug', destination: '/grassroots/:slug', permanent: true },
   ],
