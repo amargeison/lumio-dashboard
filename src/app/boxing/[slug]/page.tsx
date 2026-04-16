@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
@@ -6268,6 +6269,55 @@ function BoxingHotelFinder({ onClose, fighter }: { onClose: () => void; fighter:
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function BoxingPortalPage() {
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('sports_profiles')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug, invites')
+            .eq('id', user.id)
+            .maybeSingle()
+          if (profile && profile.sport === 'boxing') {
+            if (!profile.onboarding_complete) { window.location.href = '/boxing/app'; return }
+            setAuthSession({
+              email: user.email ?? '',
+              userName: profile.display_name ?? '',
+              clubName: profile.brand_name ?? '',
+              role: 'player',
+              photoDataUrl: profile.avatar_url ?? null,
+              logoDataUrl: profile.brand_logo_url ?? null,
+              sport: 'boxing',
+              verifiedAt: new Date().toISOString(),
+              isDemoShell: false,
+              enabledFeatures: profile.enabled_features || [],
+              invites: profile.invites || [],
+              nickname: profile.nickname ?? null,
+            })
+          }
+        }
+      } catch {} finally { setAuthChecked(true) }
+    })()
+  }, [])
+
+  if (!authChecked) return (
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 11, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
+    </div>
+  )
+  if (authSession) {
+    const handleSignOut = async () => {
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      await supabase.auth.signOut()
+      window.location.href = '/sports-login'
+    }
+    return <BoxingPortalInner session={authSession} onSignOut={handleSignOut} />
+  }
   return (
     <SportsDemoGate
       sport="boxing"
