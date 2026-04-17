@@ -6,6 +6,7 @@ import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2, Target, Zap, Calendar, FileText, DollarSign, Award } from 'lucide-react'
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface WomensClub {
@@ -51,7 +52,7 @@ const SIDEBAR_ITEMS = [
   { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
   { id: 'board',        label: 'Board Suite',         icon: '🏛️', group: 'COMMERCIAL' },
   { id: 'financial',    label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
-  { id: 'media',        label: 'Media & PR',          icon: '📣', group: 'COMMERCIAL' },
+  { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
   { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
   { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
@@ -4337,7 +4338,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
       case 'financial':   return <FinancialPlanningView club={club} />
-      case 'media':       return <MediaPRView club={club} />
+      case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} />
       case 'social':      return <SocialMediaView club={club} />
       case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <StaffDirectoryView />

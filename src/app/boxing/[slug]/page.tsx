@@ -9,6 +9,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -153,7 +154,7 @@ const SIDEBAR_ITEMS = [
   { id: 'trainernotes',    label: 'Trainer Notes',       icon: '📝', group: 'TEAM HUB' },
   { id: 'managerdash',     label: 'Manager Dashboard',   icon: '💼', group: 'TEAM HUB' },
   { id: 'sponsorships',    label: 'Sponsorships',        icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'media',           label: 'Media Obligations',   icon: '📱', group: 'COMMERCIAL' },
+  { id: 'media',           label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
   { id: 'appearances',     label: 'Appearance Fees',     icon: '🎤', group: 'COMMERCIAL' },
   { id: 'contracts',       label: 'Contract Tracker',    icon: '📑', group: 'COMMERCIAL' },
   { id: 'fightrecord',     label: 'Fight Record',        icon: '📜', group: 'CAREER' },
@@ -7413,7 +7414,15 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'trainernotes':    return <TrainerNotesView fighter={fighter} session={session} />;
       case 'managerdash':     return <ManagerDashboardView fighter={fighter} session={session} />;
       case 'sponsorships':    return <SponsorshipsView fighter={fighter} session={session} />;
-      case 'media':           return <MediaObligationsView fighter={fighter} session={session} />;
+      case 'media':           return session.isDemoShell !== false
+        ? <MediaContentModule
+            sport="boxing"
+            accentColor="#ef4444"
+            existingContentIn="sponsors"
+            existingContentLabel="Boxing — Fight-Camp Media Obligations"
+            existingContent={<MediaObligationsView fighter={fighter} session={session} />}
+          />
+        : <MediaObligationsView fighter={fighter} session={session} />;
       case 'appearances':     return <AppearanceFeesView fighter={fighter} session={session} />;
       case 'contracts':       return <ContractTrackerView fighter={fighter} session={session} />;
       case 'fightrecord':     return <FightRecordView fighter={fighter} session={session} />;
@@ -7509,7 +7518,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             { key: 'medical', label: 'Medical Record', emoji: '🏥' },
             { key: 'rankings', label: 'World Rankings', emoji: '🌍' },
             { key: 'sponsorships', label: 'Sponsorships', emoji: '🤝' },
-            { key: 'media', label: 'Media Obligations', emoji: '📱' },
+            { key: 'media', label: 'Media & Content', emoji: '📱' },
             { key: 'earnings', label: 'Fight Earnings', emoji: '💰' },
           ]}
           featureItems={[

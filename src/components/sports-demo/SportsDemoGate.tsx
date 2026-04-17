@@ -377,77 +377,13 @@ export default function SportsDemoGate({
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
 
-  const existingSession = (() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const raw = localStorage.getItem(sessionKey(sport))
-      if (!raw) return null
-      const parsed = JSON.parse(raw) as SportsDemoSession
-      if (parsed.nickname) {
-        try { localStorage.setItem(`lumio_${sport}_nickname`, parsed.nickname) } catch {}
-      }
-      return parsed
-    } catch { return null }
-  })()
-
-  // Check for ?restore=true from smart sign-in flow (or new-browser OTP)
-  // Case 3: no localStorage, but OTP just completed → initialise fresh session
-  const restoredFromParams = (() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const url = new URL(window.location.href)
-      if (url.searchParams.get('restore') !== 'true') return null
-      // Create session from URL params — name may be empty for fresh users
-      const restoredName = (url.searchParams.get('name') || '').replace(/\+/g, ' ')
-      const restoredClub = (url.searchParams.get('club') || '').replace(/\+/g, ' ')
-      const restoredNickname = (url.searchParams.get('nickname') || '').replace(/\+/g, ' ')
-      const restoredEmail = (url.searchParams.get('email') || '').trim()
-      const restoredRole = url.searchParams.get('role') || roles[0]?.id || 'player'
-      const restored: SportsDemoSession = {
-        email: restoredEmail,
-        userName: restoredName,
-        clubName: restoredClub || defaultClubName,
-        role: restoredRole,
-        photoDataUrl: null,
-        logoDataUrl: null,
-        nickname: restoredNickname || null,
-        sport,
-        verifiedAt: new Date().toISOString(),
-      }
-      // Persist so future visits don't need restore params
-      saveSession(sport, restored)
-      try {
-        if (restoredName) localStorage.setItem(`lumio_${sport}_name`, restoredName)
-        if (restoredNickname) localStorage.setItem(`lumio_${sport}_nickname`, restoredNickname)
-        localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
-      } catch {}
-      // Clean URL — strip all restore params
-      url.searchParams.delete('restore')
-      url.searchParams.delete('name')
-      url.searchParams.delete('club')
-      url.searchParams.delete('role')
-      url.searchParams.delete('nickname')
-      url.searchParams.delete('email')
-      window.history.replaceState({}, '', url.pathname)
-      return restored
-    } catch { return null }
-  })()
-
-  const initialSession = restoredFromParams || existingSession
-
-  const isDevHost = typeof window !== 'undefined' && (
-    window.location.hostname.includes('vercel.app') ||
-    window.location.hostname.includes('dev.') ||
-    window.location.hostname === 'localhost'
-  )
-
-  const restoredEmailForFetch = restoredFromParams?.email || ''
-  const [session, setSession] = useState<SportsDemoSession | null>(initialSession)
-  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>(initialSession ? 'done' : isDevHost ? 'club' : 'email')
+  const [session, setSession] = useState<SportsDemoSession | null>(null)
+  const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [selectedRole, setSelectedRole] = useState(roles[0]?.id ?? '')
   const [userName, setUserName] = useState('')
+  const [nickname, setNickname] = useState('')
   const [clubName, setClubName] = useState(defaultClubName)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
@@ -455,10 +391,107 @@ export default function SportsDemoGate({
   const [error, setError] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [inviteEmails, setInviteEmails] = useState(['', '', '', '', ''])
+  const [restoredParamsEmail, setRestoredParamsEmail] = useState('')
+
+  // Mount-only: restore prior session, apply ?restore=... URL params, and pick
+  // the starting step. Kept out of useState initializers so server-rendered HTML
+  // (no window/localStorage) matches the first client render — reading either
+  // at render time produces a hydration mismatch.
+  useEffect(() => {
+    let restored: SportsDemoSession | null = null
+    let restoredEmailFromParams = ''
+
+    try {
+      const url = new URL(window.location.href)
+      if (url.searchParams.get('restore') === 'true') {
+        const restoredName = (url.searchParams.get('name') || '').replace(/\+/g, ' ')
+        const restoredClub = (url.searchParams.get('club') || '').replace(/\+/g, ' ')
+        const restoredNickname = (url.searchParams.get('nickname') || '').replace(/\+/g, ' ')
+        restoredEmailFromParams = (url.searchParams.get('email') || '').trim()
+        const restoredRole = url.searchParams.get('role') || roles[0]?.id || 'player'
+        restored = {
+          email: restoredEmailFromParams,
+          userName: restoredName,
+          clubName: restoredClub || defaultClubName,
+          role: restoredRole,
+          photoDataUrl: null,
+          logoDataUrl: null,
+          nickname: restoredNickname || null,
+          sport,
+          verifiedAt: new Date().toISOString(),
+        }
+        saveSession(sport, restored)
+        try {
+          if (restoredName) localStorage.setItem(`lumio_${sport}_name`, restoredName)
+          if (restoredNickname) localStorage.setItem(`lumio_${sport}_nickname`, restoredNickname)
+          localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+        } catch {}
+        url.searchParams.delete('restore')
+        url.searchParams.delete('name')
+        url.searchParams.delete('club')
+        url.searchParams.delete('role')
+        url.searchParams.delete('nickname')
+        url.searchParams.delete('email')
+        window.history.replaceState({}, '', url.pathname)
+      }
+    } catch {}
+
+    if (!restored) {
+      try {
+        const raw = localStorage.getItem(sessionKey(sport))
+        if (raw) {
+          const parsed = JSON.parse(raw) as SportsDemoSession
+          if (parsed.nickname) {
+            try { localStorage.setItem(`lumio_${sport}_nickname`, parsed.nickname) } catch {}
+          }
+          restored = parsed
+        } else {
+          // Rebuild from surviving customisation keys — makes sign-out/sign-back-in
+          // skip the setup wizard.
+          const savedName = localStorage.getItem(`lumio_${sport}_name`)
+          const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
+          const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
+          const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
+          const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
+          if (savedName || savedPhoto || savedClubName || savedClubLogo) {
+            const rebuilt: SportsDemoSession = {
+              email: '',
+              userName: savedName || '',
+              clubName: savedClubName || defaultClubName,
+              role: roles[0]?.id ?? 'player',
+              photoDataUrl: savedPhoto || null,
+              logoDataUrl: savedClubLogo || null,
+              nickname: savedNickname || null,
+              sport,
+              verifiedAt: new Date().toISOString(),
+            }
+            try {
+              localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
+              localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+            } catch {}
+            restored = rebuilt
+          }
+        }
+      } catch {}
+    }
+
+    if (restored) {
+      setSession(restored)
+      setStep('done')
+      if (restoredEmailFromParams) setRestoredParamsEmail(restoredEmailFromParams)
+      return
+    }
+
+    const isDevHost = window.location.hostname.includes('vercel.app')
+      || window.location.hostname.includes('dev.')
+      || window.location.hostname === 'localhost'
+    if (isDevHost) setStep('club')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
-    if (!restoredEmailForFetch) return
-    fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(restoredEmailForFetch)}&sport=${sport}`)
+    if (!restoredParamsEmail) return
+    fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(restoredParamsEmail)}&sport=${sport}`)
       .then(r => r.json())
       .then(data => {
         const p = data?.profile || data
@@ -470,7 +503,7 @@ export default function SportsDemoGate({
           nickname: p.nickname || prev.nickname,
         } : prev)
         try {
-          if (p.avatar_url) localStorage.setItem(`lumio_demo_photo_${restoredEmailForFetch.toLowerCase()}`, p.avatar_url)
+          if (p.avatar_url) localStorage.setItem(`lumio_demo_photo_${restoredParamsEmail.toLowerCase()}`, p.avatar_url)
           const raw = localStorage.getItem(sessionKey(sport))
           if (raw) {
             const parsed = JSON.parse(raw) as SportsDemoSession
@@ -483,7 +516,7 @@ export default function SportsDemoGate({
         } catch {}
       })
       .catch(() => {})
-  }, [restoredEmailForFetch, sport])
+  }, [restoredParamsEmail, sport])
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -545,8 +578,13 @@ export default function SportsDemoGate({
           try {
             localStorage.setItem(sessionKey(sport), JSON.stringify(restored))
             localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+            if (p.user_name) localStorage.setItem(`lumio_${sport}_name`, p.user_name)
             if (p.nickname) localStorage.setItem(`lumio_${sport}_nickname`, p.nickname)
-            if (p.avatar_url) localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, p.avatar_url)
+            if (p.avatar_url) {
+              localStorage.setItem(`lumio_${sport}_profile_photo`, p.avatar_url)
+              localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, p.avatar_url)
+            }
+            if (p.logo_url) localStorage.setItem(`lumio_${sport}_brand_logo`, p.logo_url)
           } catch {}
           if (p.logo_url) setLogoDataUrl(p.logo_url)
           if (p.avatar_url) setPhotoDataUrl(p.avatar_url)
@@ -564,8 +602,8 @@ export default function SportsDemoGate({
   const finaliseSession = () => {
     const resolvedUserName = userName.trim() || userNameRef.current?.value?.trim() || ''
     const resolvedClubName = clubName.trim() || clubNameRef.current?.value?.trim() || defaultClubName
-    const resolvedNickname = nicknameRef.current?.value?.trim() || ''
-    const effectiveEmail = email || restoredFromParams?.email || ''
+    const resolvedNickname = nickname.trim() || nicknameRef.current?.value?.trim() || ''
+    const effectiveEmail = email || restoredParamsEmail || ''
 
     const newSession: SportsDemoSession = {
       email: effectiveEmail || 'dev@lumio.test',
@@ -578,12 +616,19 @@ export default function SportsDemoGate({
       sport,
       verifiedAt: new Date().toISOString(),
     }
-    // Persist name + nickname to localStorage for the portal to pick up
+    // Persist name + nickname + photo + logo to survivor keys so the portal
+    // (and the gate's sign-out → sign-back-in rebuild path) can restore them.
     if (resolvedUserName) {
       try { localStorage.setItem(`lumio_${sport}_name`, resolvedUserName) } catch {}
     }
     if (resolvedNickname) {
       try { localStorage.setItem(`lumio_${sport}_nickname`, resolvedNickname) } catch {}
+    }
+    if (photoDataUrl) {
+      try { localStorage.setItem(`lumio_${sport}_profile_photo`, photoDataUrl) } catch {}
+    }
+    if (logoDataUrl) {
+      try { localStorage.setItem(`lumio_${sport}_brand_logo`, logoDataUrl) } catch {}
     }
     try {
       localStorage.setItem(sessionKey(sport), JSON.stringify(newSession))
@@ -619,21 +664,13 @@ export default function SportsDemoGate({
     try {
       localStorage.removeItem(sessionKey(sport))
       localStorage.removeItem(`lumio_${sport}_demo_active`)
-      localStorage.removeItem(`lumio_${sport}_photos`)
-      localStorage.removeItem(`lumio_${sport}_name`)
-      localStorage.removeItem(`lumio_${sport}_nickname`)
-      localStorage.removeItem(`lumio_${sport}_brand_name`)
-      localStorage.removeItem(`lumio_${sport}_brand_logo`)
-      localStorage.removeItem(`lumio_${sport}_profile_photo`)
-      localStorage.removeItem(`lumio_${sport}_photo_fit`)
-      const email = session?.email
-      if (email) localStorage.removeItem(`lumio_demo_photo_${email.toLowerCase()}`)
     } catch { /* ignore */ }
-    setSession(null); setStep(isDevHost ? 'club' : 'email'); setEmail(''); setCode('')
-    setUserName(''); setClubName(defaultClubName)
-    setPhotoDataUrl(null); setLogoDataUrl(null)
-    setShowResetConfirm(false); setError('')
-    setInviteEmails(['', '', '', '', ''])
+    setSession(null)
+    setStep(isDevHost ? 'club' : 'email')
+    setEmail('')
+    setCode('')
+    setError('')
+    setShowResetConfirm(false)
   }
 
   // ── AUTHENTICATED ──
@@ -730,10 +767,14 @@ export default function SportsDemoGate({
         defaultUserName={userName}
         onContinue={() => {
           setUserName(userNameRef.current?.value?.trim() || '')
+          // Capture nickname into state before ProfileStep unmounts — the ref
+          // is nulled on unmount, so reading it later in finaliseSession fails.
+          setNickname(nicknameRef.current?.value?.trim() || '')
           setStep('earlyaccess')
         }}
         onSkip={() => {
           setUserName(userNameRef.current?.value?.trim() || '')
+          setNickname(nicknameRef.current?.value?.trim() || '')
           setStep('earlyaccess')
         }}
       />
