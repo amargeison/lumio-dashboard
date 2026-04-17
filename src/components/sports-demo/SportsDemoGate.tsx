@@ -381,12 +381,37 @@ export default function SportsDemoGate({
     if (typeof window === 'undefined') return null
     try {
       const raw = localStorage.getItem(sessionKey(sport))
-      if (!raw) return null
-      const parsed = JSON.parse(raw) as SportsDemoSession
-      if (parsed.nickname) {
-        try { localStorage.setItem(`lumio_${sport}_nickname`, parsed.nickname) } catch {}
+      if (raw) {
+        const parsed = JSON.parse(raw) as SportsDemoSession
+        if (parsed.nickname) {
+          try { localStorage.setItem(`lumio_${sport}_nickname`, parsed.nickname) } catch {}
+        }
+        return parsed
       }
-      return parsed
+      // No session blob — try to rebuild from surviving customisation keys.
+      // This is what makes sign-out/sign-back-in skip the setup wizard.
+      const savedName = localStorage.getItem(`lumio_${sport}_name`)
+      const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
+      const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
+      const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
+      const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
+      if (!savedName && !savedPhoto && !savedClubName && !savedClubLogo) return null
+      const rebuilt: SportsDemoSession = {
+        email: '',
+        userName: savedName || '',
+        clubName: savedClubName || defaultClubName,
+        role: roles[0]?.id ?? 'player',
+        photoDataUrl: savedPhoto || null,
+        logoDataUrl: savedClubLogo || null,
+        nickname: savedNickname || null,
+        sport,
+        verifiedAt: new Date().toISOString(),
+      }
+      try {
+        localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
+        localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+      } catch {}
+      return rebuilt
     } catch { return null }
   })()
 
@@ -619,21 +644,13 @@ export default function SportsDemoGate({
     try {
       localStorage.removeItem(sessionKey(sport))
       localStorage.removeItem(`lumio_${sport}_demo_active`)
-      localStorage.removeItem(`lumio_${sport}_photos`)
-      localStorage.removeItem(`lumio_${sport}_name`)
-      localStorage.removeItem(`lumio_${sport}_nickname`)
-      localStorage.removeItem(`lumio_${sport}_brand_name`)
-      localStorage.removeItem(`lumio_${sport}_brand_logo`)
-      localStorage.removeItem(`lumio_${sport}_profile_photo`)
-      localStorage.removeItem(`lumio_${sport}_photo_fit`)
-      const email = session?.email
-      if (email) localStorage.removeItem(`lumio_demo_photo_${email.toLowerCase()}`)
     } catch { /* ignore */ }
-    setSession(null); setStep(isDevHost ? 'club' : 'email'); setEmail(''); setCode('')
-    setUserName(''); setClubName(defaultClubName)
-    setPhotoDataUrl(null); setLogoDataUrl(null)
-    setShowResetConfirm(false); setError('')
-    setInviteEmails(['', '', '', '', ''])
+    setSession(null)
+    setStep(isDevHost ? 'club' : 'email')
+    setEmail('')
+    setCode('')
+    setError('')
+    setShowResetConfirm(false)
   }
 
   // ── AUTHENTICATED ──
