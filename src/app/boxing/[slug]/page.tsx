@@ -7290,7 +7290,6 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
-  const fighter = DEMO_FIGHTER;
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null } catch { return null } })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useBoxingProfileName()
@@ -7298,6 +7297,20 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   const liveBrandName = useBoxingBrandName()
   const liveBrandLogo = useBoxingBrandLogo()
   const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
+
+  // Founding members (live mode) get their wizard-entered name + nickname on
+  // the fighter card. Demo mode is unchanged — Marcus Cole / "The Machine" is
+  // the intentional persona. Nickname falls all the way through to '' if the
+  // founder left it blank in the wizard — never to "The Machine".
+  const liveBoxingNickname = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null
+  const isFoundingMember = session.isDemoShell === false
+  const fighter: BoxingFighter = isFoundingMember
+    ? {
+        ...DEMO_FIGHTER,
+        name: liveProfileNameOuter || session.userName || DEMO_FIGHTER.name,
+        nickname: liveBoxingNickname || session.nickname || '',
+      }
+    : DEMO_FIGHTER;
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_boxing_profile_photo'))

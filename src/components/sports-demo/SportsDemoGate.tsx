@@ -446,30 +446,35 @@ export default function SportsDemoGate({
           }
           restored = parsed
         } else {
-          // Rebuild from surviving customisation keys — makes sign-out/sign-back-in
-          // skip the setup wizard.
-          const savedName = localStorage.getItem(`lumio_${sport}_name`)
-          const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
-          const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
-          const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
-          const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
-          if (savedName || savedPhoto || savedClubName || savedClubLogo) {
-            const rebuilt: SportsDemoSession = {
-              email: '',
-              userName: savedName || '',
-              clubName: savedClubName || defaultClubName,
-              role: roles[0]?.id ?? 'player',
-              photoDataUrl: savedPhoto || null,
-              logoDataUrl: savedClubLogo || null,
-              nickname: savedNickname || null,
-              sport,
-              verifiedAt: new Date().toISOString(),
+          // Rebuild from surviving customisation keys — only if the user hadn't
+          // explicitly signed out. demo_active is cleared on sign-out; without it
+          // we treat survivors as dormant data (preserved for the next sign-in)
+          // rather than an active session.
+          const demoActive = localStorage.getItem(`lumio_${sport}_demo_active`)
+          if (demoActive === 'true') {
+            const savedName = localStorage.getItem(`lumio_${sport}_name`)
+            const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
+            const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
+            const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
+            const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
+            if (savedName || savedPhoto || savedClubName || savedClubLogo) {
+              const rebuilt: SportsDemoSession = {
+                email: '',
+                userName: savedName || '',
+                clubName: savedClubName || defaultClubName,
+                role: roles[0]?.id ?? 'player',
+                photoDataUrl: savedPhoto || null,
+                logoDataUrl: savedClubLogo || null,
+                nickname: savedNickname || null,
+                sport,
+                verifiedAt: new Date().toISOString(),
+              }
+              try {
+                localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
+                localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+              } catch {}
+              restored = rebuilt
             }
-            try {
-              localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
-              localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
-            } catch {}
-            restored = rebuilt
           }
         }
       } catch {}
