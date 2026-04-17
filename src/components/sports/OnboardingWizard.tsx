@@ -276,11 +276,26 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
     if (!finalSlug) return
     setSaving(true)
     try {
-      await supabase.from('sports_profiles').update({
+      // Resolve the real auth user id — sports_profiles is keyed on the auth
+      // UUID, NOT on email. Earlier callers passed `profile.id = session.email`,
+      // which silently matched zero rows and left onboarding_complete = false,
+      // bouncing users back to the wizard on next mount.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('[OnboardingWizard] saveAndComplete: no auth user; cannot persist profile')
+        setSaving(false)
+        return
+      }
+      const { error: updateError } = await supabase.from('sports_profiles').update({
         display_name: displayName, nickname, avatar_url: photoDataUrl, portal_slug: finalSlug,
         club_name: clubName, location, brand_logo_url: brandLogoDataUrl, enabled_features: enabledFeatures,
         invites: invites.filter(i => i.email), setup_type: setupType, onboarding_complete: true,
-      }).eq('id', profile.id)
+      }).eq('id', user.id)
+      if (updateError) {
+        console.error('[OnboardingWizard] saveAndComplete: profile update failed', updateError)
+        setSaving(false)
+        return
+      }
       if (setupType === 'lumio') {
         fetch('/api/sports-auth/notify-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: displayName, sport, email: profile.email, clubName, location, portalSlug: finalSlug, setupType })

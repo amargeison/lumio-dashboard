@@ -592,6 +592,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   // Auto-generate AI summary
   useEffect(() => {
     if (dartsSummary || dartsSummaryLoading) return
+    // Demo mode: serve the static second-person summary; do NOT call /api/ai/darts.
+    if (isDemoShellDash) {
+      const staticSummary = getDemoAISummary('darts', 'dashboard')?.summary
+      if (staticSummary) setDartsSummary(staticSummary)
+      return
+    }
     setDartsSummaryLoading(true)
     fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for ${displayPlayerName}, professional darts player ranked #${player.pdcRank} on the PDC tour${displayPlayerNickname ? `, known as ${displayPlayerNickname}` : ''}. Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Darren Merrick (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Merrick leads 3-4) and the key tactical note (Merrick's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
       .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
@@ -1288,7 +1294,14 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {dartsSummary && <button onClick={() => { setDartsSummary(null); setDartsSummaryLoading(false) }} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6B7280', border: '1px solid #374151' }}>↻</button>}
+                  {dartsSummary && <button onClick={() => {
+                    if (isDemoShellDash) {
+                      // Demo mode: re-apply the static second-person summary; no live fetch.
+                      setDartsSummary(getDemoAISummary('darts', 'dashboard')?.summary || null)
+                    } else {
+                      setDartsSummary(null); setDartsSummaryLoading(false)
+                    }
+                  }} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6B7280', border: '1px solid #374151' }}>↻</button>}
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
                     {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
                   </span>
@@ -1899,16 +1912,16 @@ function OrderOfMeritView({ onNavigate, player, session }: { onNavigate: (id: st
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">#</th><th className="text-left p-3">Player</th><th className="text-left p-3">Prize Money</th></tr></thead>
           <tbody>
             {[
-              { rank: 1, name: 'Luke Humphries', money: '£2,847,200' },
-              { rank: 2, name: 'Luke Littler', money: '£2,641,800' },
-              { rank: 3, name: 'Michael van Gerwen', money: '£2,198,400' },
-              { rank: 4, name: 'Darren Merrick', money: '£1,847,600' },
-              { rank: 5, name: 'Jonny Clayton', money: '£1,623,400' },
-              { rank: 19, name: 'Jake Morrison ←', money: '£687,420' },
+              { rank: 1, name: 'Luke Humphries', money: '£2,847,200', isYou: false },
+              { rank: 2, name: 'Luke Littler', money: '£2,641,800', isYou: false },
+              { rank: 3, name: 'Michael van Gerwen', money: '£2,198,400', isYou: false },
+              { rank: 4, name: 'Darren Merrick', money: '£1,847,600', isYou: false },
+              { rank: 5, name: 'Jonny Clayton', money: '£1,623,400', isYou: false },
+              { rank: player.pdcRank, name: `${player.name} ←`, money: '£687,420', isYou: true },
             ].map((p, i) => (
-              <tr key={i} className={`border-b border-gray-800/50 ${p.rank === 19 ? 'bg-red-600/5' : ''}`}>
+              <tr key={i} className={`border-b border-gray-800/50 ${p.isYou ? 'bg-red-600/5' : ''}`}>
                 <td className="p-3 text-gray-400">{p.rank}</td>
-                <td className={`p-3 ${p.rank === 19 ? 'text-red-400 font-medium' : 'text-gray-200'}`}>{p.name}</td>
+                <td className={`p-3 ${p.isYou ? 'text-red-400 font-medium' : 'text-gray-200'}`}>{p.name}</td>
                 <td className="p-3 text-gray-300">{p.money}</td>
               </tr>
             ))}
@@ -4907,11 +4920,11 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
         ))}
       </div>
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
-        <h2 className="text-white font-medium mb-4">Jake&apos;s quarter — Round 1</h2>
+        <h2 className="text-white font-medium mb-4">{player.name.split(' ')[0] || 'Your'}&apos;s quarter — Round 1</h2>
         <div className="grid grid-cols-4 gap-3 text-xs">
           <div className="bg-red-600/20 border border-red-500/50 rounded-lg p-3">
             <div className="text-red-300 font-semibold">LIVE TONIGHT</div>
-            <div className="text-white mt-1">Jake Morrison (#19)</div>
+            <div className="text-white mt-1">{player.name} (#{player.pdcRank})</div>
             <div className="text-gray-400">vs Darren Merrick (#7)</div>
           </div>
           {[
@@ -4926,7 +4939,7 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
             </div>
           ))}
         </div>
-        <div className="text-xs text-gray-500 mt-3">Winner of Jake's bracket enters QF Thursday night</div>
+        <div className="text-xs text-gray-500 mt-3">Winner of {player.name.split(' ')[0] || 'your'}&apos;s bracket enters QF Thursday night</div>
       </div>
       <div>
         <h2 className="text-white font-medium mb-3">Path to the title</h2>
@@ -5120,7 +5133,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
     { p1: 'Luke Littler', r1: 2, p2: 'Martin Schindler', r2: 0, avg1: 108.2, avg2: 94.1, status: 'live', board: 1, round: 'R1' },
     { p1: 'Michael van Gerwen', r1: 1, p2: 'Niels Zonneveld', r2: 1, avg1: 99.4, avg2: 97.8, status: 'live', board: 2, round: 'R1' },
     { p1: 'Luke Humphries', r1: 2, p2: 'Ricky Evans', r2: 0, avg1: 104.1, avg2: 91.2, status: 'live', board: 3, round: 'R1' },
-    { p1: 'Jake Morrison', r1: 1, p2: 'Darren Merrick', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
+    { p1: player.name, r1: 1, p2: 'Darren Merrick', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
     { p1: 'Rob Cross', r1: 1, p2: 'Danny Noppert', r2: 0, avg1: 96.8, avg2: 95.1, status: 'live', board: 5, round: 'R1' },
     { p1: 'Nathan Aspinall', r1: 0, p2: 'Florian Hempel', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 6, round: 'R1', time: '21:00' },
     { p1: 'Michael Smith', r1: 0, p2: 'Kevin Doets', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 7, round: 'R1', time: '21:00' },
@@ -5159,7 +5172,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
       <div className="flex rounded-lg border border-white/5 overflow-hidden w-fit">
         {(['jake', 'all', 'upcoming'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-xs font-medium transition-colors border-r border-white/5 last:border-r-0 ${tab === t ? 'bg-red-600/20 text-red-300' : 'bg-gray-900/40 text-gray-500 hover:text-gray-300'}`}>
-            {t === 'jake' ? "Jake's match" : t === 'all' ? 'All matches' : 'Upcoming'}
+            {t === 'jake' ? `${player.name.split(' ')[0] || 'Your'}'s match` : t === 'all' ? 'All matches' : 'Upcoming'}
           </button>
         ))}
       </div>
@@ -5173,8 +5186,8 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
             </div>
             <div className="grid grid-cols-3 gap-4 mt-4 text-center">
               <div>
-                <p className="text-white font-medium">Jake Morrison 🏴󠁧󠁢󠁥󠁮󠁧󠁿</p>
-                <p className="text-xs text-gray-500 mb-3">#19 PDC</p>
+                <p className="text-white font-medium">{player.name} 🏴󠁧󠁢󠁥󠁮󠁧󠁿</p>
+                <p className="text-xs text-gray-500 mb-3">#{player.pdcRank} PDC</p>
                 <p className="text-5xl font-medium text-white">1</p>
                 <p className="text-xs text-gray-500 mt-1">legs</p>
                 <p className="text-2xl font-medium text-red-400 mt-3">81</p>
@@ -8247,12 +8260,32 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   }, [slug]);
 
   const profileNickname = useDartsNickname();
+  const isFoundingMember = session.isDemoShell === false;
+
+  // Resolve the player display name + nickname.
+  //
+  // Founding members (live mode):
+  //   - DEMO_PLAYER's "Jake Morrison" / "Shooter" must NEVER appear on the card.
+  //   - Prefer Settings-edited values (localStorage hooks), then the auth session
+  //     (already populated from `sports_profiles` in DartsPortalPage), then any
+  //     `darts_players` row from Supabase, then empty.
+  //   - Nickname falls all the way through to '' if the founder left it blank
+  //     in the wizard — never to "Shooter".
+  //
+  // Demo mode: behaviour unchanged. Settings localStorage overrides on top of
+  // DEMO_PLAYER. The hardcoded persona display is intentional.
   const basePlayer: DartsPlayer = livePlayer || DEMO_PLAYER;
-  const player: DartsPlayer = {
-    ...basePlayer,
-    ...(liveProfileNameOuter && { name: liveProfileNameOuter }),
-    ...(profileNickname && { nickname: profileNickname }),
-  };
+  const player: DartsPlayer = isFoundingMember
+    ? {
+        ...basePlayer,
+        name: liveProfileNameOuter || session.userName || livePlayer?.name || '',
+        nickname: profileNickname || session.nickname || livePlayer?.nickname || '',
+      }
+    : {
+        ...basePlayer,
+        ...(liveProfileNameOuter && { name: liveProfileNameOuter }),
+        ...(profileNickname && { nickname: profileNickname }),
+      };
   const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
   const renderView = () => {

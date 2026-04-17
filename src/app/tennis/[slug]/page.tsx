@@ -9316,7 +9316,12 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
   }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
 
-  const player = DEMO_PLAYER;
+  // Founding members (live mode) get their wizard-entered name on the player
+  // card. Demo mode is unchanged — the Alex Rivera persona is intentional.
+  const isFoundingMember = session.isDemoShell === false
+  const player: TennisPlayer = isFoundingMember
+    ? { ...DEMO_PLAYER, name: liveProfileName || session.userName || DEMO_PLAYER.name }
+    : DEMO_PLAYER;
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [h2hData, setH2hData] = useState<any[]>([]);
   const [fixtures, setFixtures] = useState<any[]>([]);

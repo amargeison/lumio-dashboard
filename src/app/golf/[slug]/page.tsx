@@ -5800,7 +5800,6 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const activeRole = roleOverride;
   const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
-  const player = DEMO_PLAYER;
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
   const liveProfileNameOuter = useGolfProfileName()
@@ -5808,6 +5807,13 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const liveBrandName = useGolfBrandName()
   const liveBrandLogo = useGolfBrandLogo()
   const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
+
+  // Founding members (live mode) get their wizard-entered name on the player
+  // card. Demo mode is unchanged — the James Harrington persona is intentional.
+  const isFoundingMember = session.isDemoShell === false
+  const player: GolfPlayer = isFoundingMember
+    ? { ...DEMO_PLAYER, name: liveProfileNameOuter || session.userName || DEMO_PLAYER.name }
+    : DEMO_PLAYER;
 
   // Sidebar pin state
   const [sidebarPinned, setSidebarPinned] = useState(false)
