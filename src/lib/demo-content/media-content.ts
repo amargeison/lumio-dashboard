@@ -11,6 +11,18 @@
 
 export type SocialPlatform = 'instagram' | 'x' | 'tiktok' | 'youtube' | 'facebook';
 
+export type SocialPostMedia = {
+  type: 'image' | 'video';
+  // Accepts any valid <img>/<video> src — data URLs (compose-uploaded) or
+  // relative public/ paths (e.g. '/golf_range.jpg' for seeded demo posts).
+  dataUrl: string;
+  name: string;
+  // Optional poster frame URL — used as the <video poster> when dataUrl is a
+  // stand-in that doesn't decode as video (e.g. picsum jpg for a demo post).
+  // Real uploaded videos can omit this; the browser derives a frame.
+  poster?: string;
+};
+
 export type SocialPost = {
   id: string;
   platforms: SocialPlatform[];
@@ -19,6 +31,7 @@ export type SocialPost = {
   caption: string;
   hashtags: string[];
   status: 'scheduled' | 'draft' | 'published' | 'needs-approval';
+  media?: SocialPostMedia[];
 };
 
 export type SponsorObligation = {
@@ -70,6 +83,12 @@ export type MediaContentStats = {
   social:   { scheduledLabel: string; drafts: number; pending: number; reach: string };
   sponsors: { active: number; obligationsThisMonth: number; overdue: number; monthlyValue: string };
   press:    { mentionsThisWeek: number; sentiment: string; topOutlet: string; pendingRequests: number };
+  followers: {
+    x:         { current: string; lastMonth: string };
+    instagram: { current: string; lastMonth: string };
+    tiktok:    { current: string; lastMonth: string };
+    youtube:   { current: string; lastMonth: string };
+  };
   // Mention velocity sparkline: 7 values, oldest → newest
   mentionVelocity: number[];
   // Sentiment donut values: positive, neutral, negative (any scale)
@@ -90,6 +109,12 @@ const TODO_DATA: MediaContentData = {
     social:   { scheduledLabel: 'TODO', drafts: 0, pending: 0, reach: 'TODO' },
     sponsors: { active: 0, obligationsThisMonth: 0, overdue: 0, monthlyValue: 'TODO' },
     press:    { mentionsThisWeek: 0, sentiment: 'TODO', topOutlet: 'TODO', pendingRequests: 0 },
+    followers: {
+      x:         { current: 'TODO', lastMonth: 'TODO' },
+      instagram: { current: 'TODO', lastMonth: 'TODO' },
+      tiktok:    { current: 'TODO', lastMonth: 'TODO' },
+      youtube:   { current: 'TODO', lastMonth: 'TODO' },
+    },
     mentionVelocity: [0, 0, 0, 0, 0, 0, 0],
     sentimentSplit: { positive: 0, neutral: 0, negative: 0 },
   },
@@ -153,6 +178,12 @@ const GOLF: MediaContentData = {
     social:   { scheduledLabel: '12 this week', drafts: 3, pending: 2, reach: '2.4M last 7d' },
     sponsors: { active: 4, obligationsThisMonth: 7, overdue: 1, monthlyValue: '£21.7k/mo' },
     press:    { mentionsThisWeek: 23, sentiment: '87% positive', topOutlet: 'Fairway Quarterly', pendingRequests: 1 },
+    followers: {
+      x:         { current: '182K', lastMonth: '181K' },
+      instagram: { current: '247K', lastMonth: '239K' },
+      tiktok:    { current: '94K',  lastMonth: '82K' },
+      youtube:   { current: '31K',  lastMonth: '30.2K' },
+    },
     mentionVelocity: [2, 3, 1, 5, 4, 6, 2],
     sentimentSplit: { positive: 17, neutral: 4, negative: 2 },
   },
@@ -166,6 +197,10 @@ const GOLF: MediaContentData = {
       caption: 'Final prep day before Halden Motors International Open. Course is running fast — feeling dialled in after a long block with Vanta Sports irons.',
       hashtags: ['HaldenMotorsOpen', 'RoadToDubai', 'VantaSports'],
       status: 'scheduled',
+      media: [
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-course-prep/800/800',  name: 'Course walk — 18th green' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-range-setup/800/800', name: 'Range setup' },
+      ],
     },
     {
       id: 'gs-2',
@@ -184,6 +219,16 @@ const GOLF: MediaContentData = {
       caption: '60-second driver fitting walkthrough with the Vanta Sports team — new shaft spec for Munich conditions.',
       hashtags: ['GolfTok', 'VantaSports', 'Clubfitting'],
       status: 'scheduled',
+      // Stand-in — swap for a real .mp4 in public/ when available
+      // Poster = same image; dataUrl stays as stand-in until a real .mp4 lands.
+      media: [
+        {
+          type: 'video',
+          dataUrl: 'https://picsum.photos/seed/harrington-driver-fitting/800/800',
+          poster:  'https://picsum.photos/seed/harrington-driver-fitting/800/800',
+          name: 'Driver fitting — 60-sec clip',
+        },
+      ],
     },
     {
       id: 'gs-4',
@@ -211,6 +256,9 @@ const GOLF: MediaContentData = {
       caption: 'Post-round reset. Caddie Gareth and I going over the front nine — greens are firmer than Tuesday\'s practice round.',
       hashtags: ['Caddie', 'HaldenMotorsOpen'],
       status: 'draft',
+      media: [
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-caddie-debrief/800/800', name: 'Caddie debrief — Gareth + front nine' },
+      ],
     },
     {
       id: 'gs-7',

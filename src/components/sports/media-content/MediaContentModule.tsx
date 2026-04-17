@@ -15,6 +15,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   getMediaContent,
   type SocialPost,
+  type SocialPostMedia,
   type SocialPlatform,
   type Sponsor,
   type SponsorObligation,
@@ -22,6 +23,9 @@ import {
   type Interview,
   type InterviewPrepStatus,
 } from '@/lib/demo-content/media-content';
+
+const MAX_ATTACHMENTS = 4;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
 
 type TabId = 'social' | 'sponsors' | 'press' | 'interviews';
 
@@ -65,6 +69,33 @@ function rgba(hex: string, a: number) {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
+// ─── persona + AI helpers ────────────────────────────────────────────────────
+type Persona = { name: string; descriptor: string };
+const PERSONA_BY_SPORT: Record<string, Persona> = {
+  golf:       { name: 'James Harrington',          descriptor: 'DP World Tour pro, World #87' },
+  tennis:     { name: 'Alex Rivera',               descriptor: 'British ATP tennis player ranked #67' },
+  boxing:     { name: 'Marcus Cole',               descriptor: 'pro boxer chasing a world title' },
+  darts:      { name: 'Jake "The Hammer" Morrison', descriptor: 'PDC Pro Tour player' },
+  cricket:    { name: 'Sam Whitaker',              descriptor: 'England county cricket all-rounder' },
+  rugby:      { name: 'Tom Bradshaw',              descriptor: 'Premiership rugby flanker' },
+  football:   { name: 'Jamie Lowe',                descriptor: 'Premier League midfielder' },
+  womens:     { name: 'Eve Carter',                descriptor: 'WSL forward' },
+  nonleague:  { name: 'Danny Hart',                descriptor: 'National League striker' },
+  grassroots: { name: 'Ryan Pearce',               descriptor: 'Sunday League captain' },
+};
+
+const FALLBACK_PERSONA: Persona = { name: 'The athlete', descriptor: 'professional athlete' };
+
+// Map sport prop → /api/ai/{slug} route. Most map directly; a few special-case.
+function aiSportSlug(sport: string): string {
+  const map: Record<string, string> = {
+    'football-pro': 'football',
+    'nonleague': 'football',
+    'grassroots': 'football',
+  };
+  return map[sport] ?? sport;
+}
+
 // ─── public component ────────────────────────────────────────────────────────
 export default function MediaContentModule({
   sport,
@@ -103,8 +134,9 @@ export default function MediaContentModule({
       drafts,
       pending,
       reach: seed.stats.social.reach,
+      followers: seed.stats.followers,
     };
-  }, [posts, seed.stats.social.reach]);
+  }, [posts, seed.stats.social.reach, seed.stats.followers]);
 
   const sponsorStats = useMemo(() => {
     const active = sponsors.length;
@@ -183,6 +215,7 @@ export default function MediaContentModule({
       <div role="tabpanel" id={`mc-panel-${tab}`} aria-labelledby={`mc-tab-${tab}`}>
         {tab === 'social' && (
           <SocialTab
+            sport={sport}
             accent={accentColor}
             posts={posts}
             setPosts={setPosts}
@@ -239,40 +272,138 @@ export default function MediaContentModule({
 
 // ═════ SOCIAL TAB ════════════════════════════════════════════════════════════
 function SocialTab({
-  accent, posts, setPosts, stats, onToast,
+  sport, accent, posts, setPosts, stats, onToast,
 }: {
+  sport: string;
   accent: string;
   posts: SocialPost[];
   setPosts: React.Dispatch<React.SetStateAction<SocialPost[]>>;
-  stats: { scheduled: number; drafts: number; pending: number; reach: string };
+  stats: {
+    scheduled: number;
+    drafts: number;
+    pending: number;
+    reach: string;
+    followers: {
+      x:         { current: string; lastMonth: string };
+      instagram: { current: string; lastMonth: string };
+      tiktok:    { current: string; lastMonth: string };
+      youtube:   { current: string; lastMonth: string };
+    };
+  };
   onToast: (s: string) => void;
 }) {
   // Compose panel state
   const [platforms, setPlatforms] = useState<SocialPlatform[]>(['instagram']);
+  const [topic, setTopic] = useState('');
   const [caption, setCaption] = useState('');
-  const [hashtag, setHashtag] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [when, setWhen] = useState('Today 17:00');
+  const [attachments, setAttachments] = useState<SocialPostMedia[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const togglePlatform = (p: SocialPlatform) =>
     setPlatforms(cur => (cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p]));
 
-  const addTag = () => {
-    const t = hashtag.trim().replace(/^#/, '');
-    if (!t) return;
-    if (tags.includes(t)) { setHashtag(''); return; }
-    setTags([...tags, t]);
-    setHashtag('');
-  };
-
   const removeTag = (t: string) => setTags(tags.filter(x => x !== t));
+
+  const removeAttachment = (idx: number) =>
+    setAttachments(cur => cur.filter((_, i) => i !== idx));
+
+  const handleAttachFiles = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    const slotsLeft = MAX_ATTACHMENTS - attachments.length;
+    if (slotsLeft <= 0) {
+      onToast(`Max ${MAX_ATTACHMENTS} attachments per post`);
+      return;
+    }
+    const accepted: File[] = [];
+    let rejectedTooBig = 0;
+    let rejectedWrongType = 0;
+    for (const f of files) {
+      if (accepted.length >= slotsLeft) break;
+      const isImg = f.type.startsWith('image/');
+      const isVid = f.type.startsWith('video/');
+      if (!isImg && !isVid) { rejectedWrongType++; continue; }
+      if (f.size > MAX_ATTACHMENT_BYTES) { rejectedTooBig++; continue; }
+      accepted.push(f);
+    }
+    if (files.length > slotsLeft) onToast(`Only ${slotsLeft} more attachment${slotsLeft === 1 ? '' : 's'} fit`);
+    else if (rejectedTooBig > 0) onToast('Some files exceeded the 10MB limit');
+    else if (rejectedWrongType > 0) onToast('Only images and videos are allowed');
+
+    accepted.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+        if (!dataUrl) return;
+        setAttachments(cur =>
+          cur.length >= MAX_ATTACHMENTS
+            ? cur
+            : [...cur, { type: file.type.startsWith('video/') ? 'video' : 'image', dataUrl, name: file.name }],
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const resetCompose = () => {
     setPlatforms(['instagram']);
+    setTopic('');
     setCaption('');
     setTags([]);
-    setHashtag('');
     setWhen('Today 17:00');
+    setAttachments([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const persona = PERSONA_BY_SPORT[sport] ?? FALLBACK_PERSONA;
+
+  const fallbackGenerate = (t: string): { caption: string; hashtags: string[] } => {
+    const trimmed = t.trim() || 'today';
+    const cap = `${persona.name} here — ${trimmed}. Process over results, every day. More to come.`;
+    return {
+      caption: cap.slice(0, 280),
+      hashtags: [sport, 'training', 'process', 'mindset'].slice(0, 4),
+    };
+  };
+
+  const generateWithAI = async () => {
+    if (!topic.trim()) { onToast('Describe what the post is about first'); return; }
+    setAiLoading(true);
+    const prompt = `Write a social post for ${persona.name} (${persona.descriptor}). Post is about: ${topic.trim()}. Return JSON: {"caption": string (under 280 chars), "hashtags": string[] (3-5 items, no # prefix)}. Tone: confident, specific, match the persona voice. Respond ONLY with the JSON object — no preamble, no code fences.`;
+    try {
+      const res = await fetch(`/api/ai/${aiSportSlug(sport)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 400,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const text: string = data?.content?.[0]?.text ?? '';
+      // Strip code fences if the model added any, then parse
+      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      const parsed = JSON.parse(cleaned) as { caption?: unknown; hashtags?: unknown };
+      const cap = typeof parsed.caption === 'string' ? parsed.caption.slice(0, 280) : '';
+      const hs = Array.isArray(parsed.hashtags)
+        ? parsed.hashtags.filter((h): h is string => typeof h === 'string').map(h => h.replace(/^#/, '').trim()).filter(Boolean).slice(0, 5)
+        : [];
+      if (!cap) throw new Error('empty caption');
+      setCaption(cap);
+      setTags(hs);
+      onToast('Generated');
+    } catch {
+      const fb = fallbackGenerate(topic);
+      setCaption(fb.caption);
+      setTags(fb.hashtags);
+      onToast('AI unavailable — used fallback');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const makePost = (status: SocialPost['status']): SocialPost => ({
@@ -283,6 +414,7 @@ function SocialTab({
     caption: caption.trim() || '(empty caption)',
     hashtags: tags,
     status,
+    ...(attachments.length > 0 ? { media: attachments } : {}),
   });
 
   const schedule = () => {
@@ -317,6 +449,14 @@ function SocialTab({
 
   return (
     <div className="space-y-5">
+      {/* Followers strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <FollowerCard platform="Twitter/X"  value={stats.followers.x}         sub="Followers"   tint="#3b82f6" />
+        <FollowerCard platform="Instagram"  value={stats.followers.instagram} sub="Followers"   tint="#a855f7" />
+        <FollowerCard platform="TikTok"     value={stats.followers.tiktok}    sub="Followers"   tint="#ef4444" />
+        <FollowerCard platform="YouTube"    value={stats.followers.youtube}   sub="Subscribers" tint="#f97316" />
+      </div>
+
       {/* Stats strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCell accent={accent} label="Scheduled this week" value={String(stats.scheduled)} />
@@ -380,38 +520,59 @@ function SocialTab({
           </div>
 
           <div>
+            <div className="text-[10px] text-gray-500 mb-1.5">What&rsquo;s this post about?</div>
+            <input
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !aiLoading) { e.preventDefault(); generateWithAI(); } }}
+              placeholder="e.g. Pro-am with Halden Motors hosts in Munich tomorrow"
+              className="w-full bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
+            />
+            <button
+              onClick={generateWithAI}
+              disabled={aiLoading}
+              className="w-full mt-2 text-xs font-semibold rounded-lg py-2 text-white disabled:opacity-60"
+              style={{ background: accent }}
+            >
+              {aiLoading ? 'Generating…' : '✨ Generate with AI'}
+            </button>
+          </div>
+
+          <div>
             <div className="flex items-center justify-between">
               <div className="text-[10px] text-gray-500 mb-1.5">Caption</div>
               <div className="text-[10px] text-gray-500">{caption.length}/280</div>
             </div>
-            <textarea
-              value={caption}
-              onChange={e => setCaption(e.target.value.slice(0, 280))}
-              rows={4}
-              placeholder="What’s the post?"
-              className="w-full bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
-            />
+            {aiLoading ? (
+              <div className="w-full h-[88px] rounded-lg border border-gray-800 bg-[#0a0c14] overflow-hidden">
+                <div className="h-full w-full animate-pulse space-y-2 p-3">
+                  <div className="h-2 rounded bg-gray-800/80 w-11/12" />
+                  <div className="h-2 rounded bg-gray-800/80 w-10/12" />
+                  <div className="h-2 rounded bg-gray-800/80 w-9/12" />
+                  <div className="h-2 rounded bg-gray-800/80 w-7/12" />
+                </div>
+              </div>
+            ) : (
+              <textarea
+                value={caption}
+                onChange={e => setCaption(e.target.value.slice(0, 280))}
+                rows={4}
+                placeholder="Generate with AI, or write your own."
+                className="w-full bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
+              />
+            )}
           </div>
 
           <div>
             <div className="text-[10px] text-gray-500 mb-1.5">Hashtags</div>
-            <div className="flex gap-1.5">
-              <input
-                value={hashtag}
-                onChange={e => setHashtag(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-                placeholder="type + Enter"
-                className="flex-1 bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
-              />
-              <button
-                onClick={addTag}
-                className="text-[10px] font-semibold rounded-md px-2 border border-gray-700 text-gray-300 hover:text-white"
-              >
-                Add
-              </button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
+            {aiLoading ? (
+              <div className="flex gap-1.5">
+                {[14, 12, 10, 8].map((w, i) => (
+                  <div key={i} className="h-5 rounded-md bg-gray-800/80 animate-pulse" style={{ width: `${w * 6}px` }} />
+                ))}
+              </div>
+            ) : tags.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
                 {tags.map(t => (
                   <button
                     key={t}
@@ -423,6 +584,8 @@ function SocialTab({
                   </button>
                 ))}
               </div>
+            ) : (
+              <div className="text-[10px] text-gray-600 italic">Hashtags will appear after generating.</div>
             )}
           </div>
 
@@ -434,6 +597,62 @@ function SocialTab({
               placeholder="Today 17:00"
               className="w-full bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-[10px] text-gray-500">Attach media</div>
+              <div className="text-[10px] text-gray-600">{attachments.length}/{MAX_ATTACHMENTS}</div>
+            </div>
+            <div
+              onDragOver={e => { e.preventDefault(); }}
+              onDrop={e => { e.preventDefault(); handleAttachFiles(e.dataTransfer.files); }}
+              className="rounded-lg border border-dashed border-gray-700 bg-[#0a0c14] p-3 text-center"
+            >
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={attachments.length >= MAX_ATTACHMENTS}
+                aria-label="Attach photo or video"
+                className="text-[11px] font-semibold rounded-md px-3 py-1.5 border border-gray-700 text-gray-200 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Choose files
+              </button>
+              <div className="text-[10px] text-gray-600 mt-1.5">or drop images / videos here · max 10MB each</div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={e => { handleAttachFiles(e.target.files); if (e.target) e.target.value = ''; }}
+              />
+            </div>
+            {attachments.length > 0 && (
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                {attachments.map((m, i) => (
+                  <div key={i} className="relative group rounded-md overflow-hidden border border-gray-800 aspect-square bg-black">
+                    {m.type === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.dataUrl} alt={m.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <video src={m.dataUrl} poster={m.poster} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                        <div className="absolute bottom-1 left-1 text-[9px] font-bold text-white bg-black/70 rounded px-1.5 py-0.5">▶ Video</div>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(i)}
+                      aria-label={`Remove ${m.name}`}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[11px] leading-none flex items-center justify-center hover:bg-black"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-1">
@@ -501,6 +720,30 @@ function PostCard({
             <div className="text-xs text-gray-200 leading-snug" style={{
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>{post.caption}</div>
+            {post.media && post.media.length > 0 && (
+              <div className="flex gap-1.5 mt-2">
+                {post.media.slice(0, 4).map((m, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { if (typeof window !== 'undefined') window.open(m.dataUrl, '_blank', 'noopener'); }}
+                    aria-label={`Open ${m.name} in a new tab`}
+                    className="relative rounded-md overflow-hidden border border-gray-700 bg-black flex-shrink-0"
+                    style={{ width: 64, height: 64 }}
+                  >
+                    {m.type === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.dataUrl} alt={m.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <video src={m.dataUrl} poster={m.poster} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                        <div className="absolute bottom-0.5 left-0.5 text-[8px] font-bold text-white bg-black/70 rounded px-1 leading-tight">▶</div>
+                      </>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
             {post.hashtags.length > 0 && (
               <div className="text-[10px] mt-1" style={{ color: accent }}>
                 {post.hashtags.map(h => `#${h}`).join(' ')}
@@ -1109,6 +1352,67 @@ function StatCell({ accent, label, value, tone }: { accent: string; label: strin
     <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
       <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
       <div className="text-lg font-bold" style={{ color: tone === 'warn' ? '#f59e0b' : accent }}>{value}</div>
+    </div>
+  );
+}
+
+// Parse display strings like "247K", "30.2K", "1.5M" → raw numbers.
+// Returns NaN for placeholders ("TODO") or anything unparseable — callers
+// must treat NaN as "no delta to show".
+function parseFollowerCount(s: string): number {
+  const m = /^([\d.]+)\s*([KMB]?)\s*$/i.exec(s.trim());
+  if (!m) return NaN;
+  const n = parseFloat(m[1]);
+  if (!Number.isFinite(n)) return NaN;
+  const mult = m[2]?.toUpperCase();
+  if (mult === 'K') return n * 1_000;
+  if (mult === 'M') return n * 1_000_000;
+  if (mult === 'B') return n * 1_000_000_000;
+  return n;
+}
+
+function FollowerCard({ platform, value, sub, tint }: {
+  platform: string;
+  value: { current: string; lastMonth: string };
+  sub: string;
+  tint: string;
+}) {
+  const cur = parseFollowerCount(value.current);
+  const prev = parseFollowerCount(value.lastMonth);
+  const deltaPct = Number.isFinite(cur) && Number.isFinite(prev) && prev > 0
+    ? ((cur - prev) / prev) * 100
+    : null;
+
+  let deltaNode: React.ReactNode = null;
+  if (deltaPct !== null) {
+    const rounded = Math.round(deltaPct * 10) / 10;
+    const absRounded = Math.abs(rounded);
+    const isFlat = absRounded < 0.05;
+    const color = isFlat ? '#9ca3af' : rounded > 0 ? '#22c55e' : '#ef4444';
+    const arrow = isFlat ? '—' : rounded > 0 ? '↑' : '↓';
+    const label = isFlat
+      ? 'flat vs last month'
+      : `${absRounded.toFixed(1)}% vs last month`;
+    deltaNode = (
+      <div className="text-[10px] mt-1 flex items-center gap-1" style={{ color }}>
+        <span>{arrow}</span>
+        <span>{label}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-xl p-4 border"
+      style={{
+        background: `linear-gradient(135deg, ${rgba(tint, 0.18)}, ${rgba(tint, 0.04)})`,
+        borderColor: rgba(tint, 0.3),
+      }}
+    >
+      <div className="text-2xl font-bold text-white leading-none mb-1">{value.current}</div>
+      <div className="text-sm" style={{ color: tint }}>{platform}</div>
+      <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">{sub}</div>
+      {deltaNode}
     </div>
   );
 }
