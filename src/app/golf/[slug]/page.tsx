@@ -9,6 +9,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -5857,7 +5858,9 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       case 'practicelog': return <PracticeLogView player={player} session={session} />;
       case 'exemptions':  return <ExemptionsView player={player} session={session} />;
       case 'matchprep':   return <RoundPrepView player={player} session={session} />;
-      case 'media':       return <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
+      case 'media':       return session.isDemoShell !== false
+        ? <MediaContentModule sport="golf" accentColor="#16a34a" />
+        : <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
       case 'agent':       return <AgentPipelineView player={player} session={session} />;
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." player={player} session={session} />;

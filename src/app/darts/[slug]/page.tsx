@@ -10,6 +10,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -39,6 +40,20 @@ function useDartsProfilePhoto(): string | null {
     return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
   }, [])
   return photo
+}
+function useDartsNickname(): string | null {
+  const [nickname, setNickname] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('lumio_darts_nickname')
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setNickname(localStorage.getItem('lumio_darts_nickname'))
+    window.addEventListener('lumio-profile-updated', sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener('lumio-profile-updated', sync); window.removeEventListener('storage', sync) }
+  }, [])
+  return nickname
 }
 function useDartsBrandName(): string {
   const [name, setName] = useState<string>(() => {
@@ -584,12 +599,13 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   }, [])
   const liveProfileName = useDartsProfileName()
   const liveProfilePhoto = useDartsProfilePhoto()
+  const liveProfileNickname = useDartsNickname()
   const isPlayerRole = !session.role || session.role === 'player'
   const displayPlayerName = isPlayerRole
     ? (liveProfileName || session.userName || player.name)
     : player.name
   const displayPlayerNickname = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null) || '')
+    ? (liveProfileNickname || '')
     : `"${session.nickname || player.nickname}"`
   const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || (isDemoShellDash ? '/jake_morrison.jpg' : null)) : null
   const firstName = displayPlayerName.split(' ')[0] || (isDemoShellDash ? 'Jake' : '')
@@ -8230,7 +8246,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
     return () => { cancelled = true; };
   }, [slug]);
 
-  const player: DartsPlayer = livePlayer || DEMO_PLAYER;
+  const profileNickname = useDartsNickname();
+  const basePlayer: DartsPlayer = livePlayer || DEMO_PLAYER;
+  const player: DartsPlayer = {
+    ...basePlayer,
+    ...(liveProfileNameOuter && { name: liveProfileNameOuter }),
+    ...(profileNickname && { nickname: profileNickname }),
+  };
   const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
 
   const renderView = () => {
@@ -8271,7 +8293,16 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       case 'mental':        return gate('🧘', 'No sessions logged', 'Connect your data to unlock this', <MentalPerformanceView onNavigate={setActiveSection} player={player} session={session} />);
       case 'sponsorship':   return gate('💼', 'No sponsors added', 'Connect your data to unlock this', <SponsorshipView onNavigate={setActiveSection} player={player} session={session} />);
       case 'exhibitions':   return gate('🎪', 'No exhibitions booked', 'Connect your data to unlock this', <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />);
-      case 'media':         return gate('📱', 'No media logged', 'Connect your data to unlock this', <MediaContentView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'media':         return gate('📱', 'No media logged', 'Connect your data to unlock this',
+        session.isDemoShell !== false
+          ? <MediaContentModule
+              sport="darts"
+              accentColor="#22c55e"
+              existingContentLabel="Darts — Obligations, Pipeline & Press (existing)"
+              existingContent={<MediaContentView onNavigate={setActiveSection} player={player} session={session} />}
+            />
+          : <MediaContentView onNavigate={setActiveSection} player={player} session={session} />
+      );
       case 'financial':     return gate('💰', 'No financial data', 'Connect your data to unlock this', <FinancialDashboardView onNavigate={setActiveSection} player={player} session={session} />);
       case 'agent':         return gate('🤝', 'No agent pipeline', 'Connect your data to unlock this', <AgentPipelineView onNavigate={setActiveSection} player={player} session={session} />);
       case 'travel':        return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <TravelLogisticsView onNavigate={setActiveSection} player={player} session={session} />);
@@ -8482,12 +8513,14 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           accentColor="#dc2626"
           onRoleChange={(role) => {
             setRoleOverride(role)
-            const key = 'lumio_darts_demo_session'
-            const stored = localStorage.getItem(key)
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
-            }
+            try {
+              const key = 'lumio_sports_demo_darts'
+              const stored = localStorage.getItem(key)
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+              }
+            } catch {}
           }}
           sidebarCollapsed={!sidebarExpanded}
         />
@@ -8501,10 +8534,8 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         <button onClick={() => {
           if (onSignOut) { onSignOut(); return }
           try {
-            localStorage.removeItem('lumio_darts_demo_session')
             localStorage.removeItem('lumio_sports_demo_darts')
-            const keys = Object.keys(localStorage).filter(k => k.startsWith('lumio_darts_'))
-            keys.forEach(k => localStorage.removeItem(k))
+            localStorage.removeItem('lumio_darts_demo_active')
           } catch {}
           window.location.href = '/darts/darts-demo'
         }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
@@ -8568,17 +8599,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                   <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const reader = new FileReader(); reader.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); try { localStorage.setItem('lumio_darts_profile_photo', compressed); setCurrentPhoto(compressed); window.dispatchEvent(new Event('lumio-profile-updated')) } catch { alert('Photo too large — please use a smaller image') } }; img.src = ev.target?.result as string }; reader.readAsDataURL(f) }} />
                 </label>
                 {/* Name */}
-                {(() => { const pn = (typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_name') : null) || session.userName || player.name; return (<>
+                {(() => { const pn = player.name || session.userName || ''; return (<>
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{pn.split(' ')[0]}</div>
                 <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-1">{pn.split(' ').slice(1).join(' ')}</div>
                 </>)})()}
-                {(() => {
-                  const lsNick = typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_nickname') : null
-                  const showNn = lsNick || session.nickname || (isDemoOuter ? player.nickname : null)
-                  return showNn
-                    ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{showNn}&quot;</div>
-                    : <div className="mb-2" />
-                })()}
+                {player.nickname
+                  ? <div className="text-[10px] text-gray-500 italic text-center mb-2">&quot;{player.nickname}&quot;</div>
+                  : <div className="mb-2" />}
                 {/* PDC Ranking badge */}
                 <div className="flex justify-center mb-2">
                   <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:'999px', padding:'4px 12px', marginTop:'6px' }}>

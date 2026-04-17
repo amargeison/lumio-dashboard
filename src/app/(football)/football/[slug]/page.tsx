@@ -8,6 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { use } from 'react'
 import {
   Users, TrendingUp, Headphones, AlertCircle,
@@ -6599,7 +6600,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
-            {isFootballDemo && activeDept === 'media' && <MediaView />}
+            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} />}
             {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}

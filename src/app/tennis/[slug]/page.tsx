@@ -9,6 +9,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -9756,7 +9757,14 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'partners':     return <PlayingPartnersView player={player} session={session} />;
       case 'doubles':      return <DoublesView player={player} session={session} />;
       case 'sponsorship':  return <SponsorshipView player={player} session={session} />;
-      case 'media':        return <MediaView player={player} session={session} />;
+      case 'media':        return session.isDemoShell !== false
+        ? <MediaContentModule
+            sport="tennis"
+            accentColor="#a855f7"
+            existingContentLabel="Tennis — Statement Generator, Press Log & Brand Guidelines"
+            existingContent={<MediaView player={player} session={session} />}
+          />
+        : <MediaView player={player} session={session} />;
       case 'financial':    return <FinancialView player={player} session={session} />;
       case 'prizeforecast': return <PrizeForecasterView player={player} session={session} />;
       case 'exhibition':   return <ExhibitionView player={player} session={session} />;

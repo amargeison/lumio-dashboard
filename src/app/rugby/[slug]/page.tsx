@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 type RugbyCode = 'union' | 'league'
 
@@ -79,7 +80,7 @@ const SIDEBAR_ITEMS = [
   { id: 'matchdayrev',     label: 'Matchday Revenue',      icon: '💰', group: 'COMMERCIAL' },
   { id: 'stadium',         label: 'Stadium & Venue',       icon: '🏟️', group: 'COMMERCIAL' },
   { id: 'activation',      label: 'Partnership Activation',icon: '🎯', group: 'COMMERCIAL' },
-  { id: 'mediahr',         label: 'Media & PR',            icon: '📣', group: 'COMMERCIAL' },
+  { id: 'mediahr',         label: 'Media & Content',       icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',          label: 'Fan Hub',               icon: '💜', group: 'COMMERCIAL' },
   { id: 'womenssquad',     label: "Women's Squad",         icon: '⭐', group: "WOMEN'S RUGBY" },
   { id: 'pwrcompliance',   label: 'PWR Compliance',        icon: '📋', group: "WOMEN'S RUGBY" },
@@ -4369,7 +4370,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'matchdayrev':     return <MatchdayRevenueView/>;
       case 'stadium':         return <StadiumVenueView club={club}/>;
       case 'activation':      return <PartnershipActivationView/>;
-      case 'mediahr':         return <MediaPRRugbyView club={club}/>;
+      case 'mediahr':         return <MediaContentModule sport="rugby" accentColor="#8b5cf6" existingContentLabel="Rugby — Media & PR (requests, coverage, guidelines)" existingContent={<MediaPRRugbyView club={club}/>} />;
       case 'fanhub':          return <FanHubRugbyView club={club}/>;
       case 'womenssquad':     return <WomensSquadView/>;
       case 'pwrcompliance':   return <PWRComplianceView/>;

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, A
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 
 export const CRICKET_ROLES = [
@@ -4455,7 +4456,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,signings:<SigningPipeline/>,'net-planner':<NetSessionPlanner/>,'match-report':<MatchReport/>,
     'county-championship':<CountyChampionship/>,'vitality-blast':<VitalityBlast/>,'od-cup':<OneDayCup/>,'the-hundred':<TheHundred/>,womens:<Womens/>,academy:<AcademyYouth/>,
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
-    commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContent/>,'ticket-matchday':<TicketMatchDay/>,
+    commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} />,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
     preseason:<CricketPreSeasonView/>,
   };
