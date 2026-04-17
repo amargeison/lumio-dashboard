@@ -6284,6 +6284,22 @@ export default function BoxingPortalPage() {
   )
 }
 
+// Static fight-camp AI content used in demo shells to avoid two live
+// /api/ai/boxing hits when camp is activated. Persona: Marcus Cole vs Viktor
+// Petrov fight camp, Sheffield.
+const DEMO_BOXING_CAMP_SUMMARY = `1. Overall readiness — 68% at 35 days out, on track for peak at 5-day taper, sparring workload where it needs to be.
+2. Strongest areas — right-hand speed up 8% over the last five sparring sessions; body-work compression trending up. Jim has the counter-left hook drill locked in.
+3. Needs work — closing the two-step jab gap Petrov exploits; 6 more dedicated pad rounds this week.
+4. Weight cut — 76.8kg vs 72.6 target, 4.2kg to go across 35 days, fully on plan with the Kinetix nutrition team.
+5. Sparring — 24 rounds logged vs 72-round camp target (33% complete); back on pace after last week's shoulder precaution.
+6. Watch-out — right shoulder flagged one session last Thursday. Monitor closely through the live-contact block; physio review Monday.`
+
+const DEMO_BOXING_CAMP_HIGHLIGHTS = `🥊 Jab-gap closing pad drill — 6 rounds with Jim Monday and Wednesday.
+⚖️ Weight-cut check-in with Kinetix Tuesday — 4.2kg across 35 days, re-baseline the plan.
+🎬 Petrov film study: right-hand tell analysis — 15 min today, cross-check with Jim's Tuesday notes.
+💪 Shoulder mobility with Dr Mitchell Monday morning before sparring — 30-min pre-hab.
+🛏️ Sleep logging all week — 8 hours minimum, phone out of the room from Monday.`
+
 // ─── FIGHT CAMP VIEW ──────────────────────────────────────────────────────────
 function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const CAMP_ACCENT = '#F59E0B'
@@ -6345,10 +6361,15 @@ function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: 
   const campWeeks = Math.ceil(campLength / 7)
   const sparringTarget = campWeeks * 12
 
-  // AI generation on camp active
+  // AI generation on camp active — gated on demo shells (static fallback)
   useEffect(() => {
     if (!campActive || !campConfig || hasGenerated.current) return
     hasGenerated.current = true
+    if (session?.isDemoShell !== false) {
+      setAiSummary(DEMO_BOXING_CAMP_SUMMARY)
+      setAiHighlights(DEMO_BOXING_CAMP_HIGHLIGHTS)
+      return
+    }
     setAiLoading(true)
     fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Generate a fight camp AI summary for a boxer. Camp details: vs ${campConfig.opponent}, ${daysToFight} days remaining, currently in ${phase} phase at ${campConfig.location}. Format as 6 numbered bullet points covering: overall readiness, strongest areas, areas needing work, weight cut status, sparring progress, one watch-out. Be specific and motivating. Max 200 words.` }] })
@@ -6356,6 +6377,7 @@ function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: 
     fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent fight camp action items for a boxer preparing to fight ${campConfig.opponent} in ${daysToFight} days during ${phase} phase. Each item should be one line, specific and actionable. Cover: weight trajectory, sparring gaps, conditioning flags, opponent patterns to drill, recovery priority. Start each with an emoji. Plain text only. No markdown. No bullet points.` }] })
     }).then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiHighlights(t ? cleanResponse(t) : 'Unable to generate.') }).catch(() => setAiHighlights('Unable to generate.'))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campActive])
 
   // Daily checklist items
@@ -7371,6 +7393,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             existingContentIn="sponsors"
             existingContentLabel="Boxing — Fight-Camp Media Obligations"
             existingContent={<MediaObligationsView fighter={fighter} session={session} />}
+            isDemoShell={true}
           />
         : <MediaObligationsView fighter={fighter} session={session} />;
       case 'appearances':     return <AppearanceFeesView fighter={fighter} session={session} />;

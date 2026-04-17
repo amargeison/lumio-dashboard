@@ -10,14 +10,13 @@ import {
   Zap, Star, ChevronDown, ChevronUp, BarChart3, Sparkles,
   X, Plus, Check,
   Home, Settings, Hash, Menu, ChevronLeft,
-  Calendar, FileText, Target, Volume2, Mic,
+  Calendar, FileText, Target, Volume2,
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
-import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -561,8 +560,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void
+function PersonalBanner({ clubName, firstName }: {
+  clubName: string; firstName?: string
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -579,20 +578,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
   }, [])
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
-
-  const { isListening, lastCommand, startListening, stopListening } = useFootballVoiceCommands()
-
-  useEffect(() => {
-    if (!lastCommand) return
-    speak(lastCommand.response)
-    if (lastCommand.action === 'PLAY_BRIEFING') {
-      setTimeout(() => handleBriefing(), 1800)
-    } else if (lastCommand.action === 'STOP_AUDIO') {
-      stop()
-    }
-    if (onVoiceCommand) onVoiceCommand(lastCommand)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastCommand])
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -623,19 +608,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
                   style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(192,57,43,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(192,57,43,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#E74C3C' : '#9CA3AF', animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
                   <Volume2 size={15} strokeWidth={1.75} />
-                </button>
-                <button
-                  onClick={() => isListening ? stopListening() : startListening()}
-                  title={isListening ? 'Listening...' : "Voice Commands — say 'who\\'s fit' or 'transfer budget'"}
-                  className="flex items-center justify-center rounded-lg transition-all"
-                  style={{
-                    width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
-                    backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                    border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                    color: isListening ? '#EF4444' : '#F9FAFB',
-                    animation: isListening ? 'pulse 1.5s infinite' : 'none',
-                  }}>
-                  <Mic size={14} strokeWidth={1.75} />
                 </button>
               </div>
               <p className="text-red-300 text-sm mb-2">{date}</p>
@@ -668,17 +640,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand }: {
           </div>
         </div>
       </div>
-      {isListening && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          backgroundColor: '#111318', border: '1px solid #EF4444',
-          borderRadius: 999, padding: '8px 20px', zIndex: 50,
-          display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
-        }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', animation: 'pulse 1s infinite' }} />
-          Listening... say a command
-        </div>
-      )}
     </>
   )
 }
@@ -1315,7 +1276,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
-              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Red & Gold'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
+              {[['Club','Oakridge FC'],['Founded','1887'],['Nickname','The Oaks'],['Colours','Blue & Yellow'],['Stadium','Oakridge Park (24,000)'],['Training Ground','Oakridge Training Complex'],['League','EFL Championship'],['EPPP Category','Category 2']].map(([l,v]) => (
                 <div key={l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>
               ))}
             </div>
@@ -1388,13 +1349,9 @@ function TabContent({ tab }: { tab: OverviewTab }) {
 function OverviewView({ clubName, firstName, onAction }: { clubName: string; firstName?: string; onAction: (msg: string) => void }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
-  function handleVoiceCommand(cmd: FootballCommandResult) {
-    onAction(cmd.response)
-  }
-
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} />
+      <PersonalBanner clubName={clubName} firstName={firstName} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -3841,7 +3798,7 @@ function ClubProfileView() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Red & Gold' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
+        {[{ l: 'Nickname', v: 'The Oaks' },{ l: 'Colours', v: 'Blue & Yellow' },{ l: 'Stadium', v: 'Oakridge Park' },{ l: 'Capacity', v: '24,000' }].map(s => (
           <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
         ))}
       </div>

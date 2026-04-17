@@ -16,7 +16,7 @@ import {
   Zap, Star, ChevronDown, ChevronUp, BarChart3, Sparkles,
   X, Plus, Check,
   Home, Settings, Hash, Menu, ChevronLeft,
-  Calendar, FileText, Target, Volume2, Mic,
+  Calendar, FileText, Target, Volume2,
   Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
@@ -25,7 +25,6 @@ import {
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
-import { useFootballVoiceCommands, type FootballCommandResult } from '@/hooks/useFootballVoiceCommands'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
@@ -605,8 +604,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
 
 // ─── Personal Banner ─────────────────────────────────────────────────────────
 
-function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDemo = false, clubLogo }: {
-  clubName: string; firstName?: string; onVoiceCommand?: (cmd: FootballCommandResult) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null
+function PersonalBanner({ clubName, firstName, onNavigate, isDemo = false, clubLogo }: {
+  clubName: string; firstName?: string; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null
 }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -623,22 +622,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
   }, [])
 
   useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
-
-  const { isListening, lastCommand, startListening, stopListening } = useFootballVoiceCommands()
-
-  useEffect(() => {
-    if (!lastCommand) return
-    speak(lastCommand.response)
-    if (lastCommand.action === 'PLAY_BRIEFING') {
-      setTimeout(() => handleBriefing(), 1800)
-    } else if (lastCommand.action === 'STOP_AUDIO') {
-      stop()
-    } else if (lastCommand.action === 'NAVIGATE' && lastCommand.data?.dept && onNavigate) {
-      setTimeout(() => onNavigate(lastCommand.data!.dept), 1500)
-    }
-    if (onVoiceCommand) onVoiceCommand(lastCommand)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastCommand])
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -661,8 +644,8 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-yellow-400 rounded-full opacity-10 blur-3xl" />
-        <img src="/badges/afc_wimbledon_badge_studio.png" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
-        <img src="/badges/afc_wimbledon_badge_studio.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
+        <img src="/badges/oakridge_fc_crest.svg" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
+        <img src="/badges/oakridge_fc_crest.svg" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
         <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -671,19 +654,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
                 <button onClick={handleBriefing} title="Morning briefing — squad updates, fixtures, and key items" className="flex items-center justify-center rounded-lg transition-all"
                   style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isPlaying ? 'rgba(0,61,165,0.25)' : 'rgba(255,255,255,0.08)', border: isPlaying ? '1px solid rgba(0,61,165,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isPlaying ? '#F1C40F' : '#9CA3AF' }}>
                   <Volume2 size={15} strokeWidth={1.75} />
-                </button>
-                <button
-                  onClick={() => isListening ? stopListening() : startListening()}
-                  title={isListening ? 'Listening...' : "Voice Commands — say 'who\\'s fit' or 'transfer budget'"}
-                  className="flex items-center justify-center rounded-lg transition-all"
-                  style={{
-                    width: 32, height: 32, flexShrink: 0, cursor: 'pointer',
-                    backgroundColor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                    border: isListening ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                    color: isListening ? '#EF4444' : '#F9FAFB',
-                    
-                  }}>
-                  <Mic size={14} strokeWidth={1.75} />
                 </button>
               </div>
               <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{date}</p>
@@ -716,17 +686,6 @@ function PersonalBanner({ clubName, firstName, onVoiceCommand, onNavigate, isDem
           </div>
         </div>
       </div>
-      {isListening && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          backgroundColor: '#111318', border: '1px solid #EF4444',
-          borderRadius: 999, padding: '8px 20px', zIndex: 50,
-          display: 'flex', alignItems: 'center', gap: 8, color: '#F9FAFB', fontSize: 14,
-        }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />
-          Listening... say a command
-        </div>
-      )}
     </>
   )
 }
@@ -1775,13 +1734,9 @@ function InjuryRoomCard() {
 function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>('today')
 
-  function handleVoiceCommand(cmd: FootballCommandResult) {
-    onAction(cmd.response)
-  }
-
   return (
     <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onVoiceCommand={handleVoiceCommand} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
+      <PersonalBanner clubName={clubName} firstName={firstName} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
       <TabBar tab={tab} onChange={setTab} />
 
       {tab === 'today' ? (
@@ -5437,7 +5392,6 @@ function ApiStatusStrip() {
 
 function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
   const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
-  const [vcOn, setVcOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_voice_commands_enabled') !== 'false' : true)
   const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
   const [zones, setZones] = useState(getStoredZones)
   const localTz = getUserLocalTz()
@@ -5646,13 +5600,6 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
               <p className="text-xs" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</p>
             </div>
             <ToggleButton on={ttsOn} onToggle={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Commands</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>Say &ldquo;who&apos;s fit&rdquo;, &ldquo;transfer budget&rdquo;, or &ldquo;team sheet&rdquo;</p>
-            </div>
-            <ToggleButton on={vcOn} onToggle={() => { const v = !vcOn; setVcOn(v); localStorage.setItem('lumio_voice_commands_enabled', String(v)) }} />
           </div>
         </div>
       </div>
@@ -6480,7 +6427,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   // Set default badge when demo is active — state only, no localStorage
   useEffect(() => {
     if (isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
-      setClubLogo('/badges/afc_wimbledon_badge_studio.png')
+      setClubLogo('/badges/oakridge_fc_crest.svg')
     } else if (!isFootballDemo && !localStorage.getItem('lumio_football_logo')) {
       setClubLogo(null)
     }
@@ -6600,7 +6547,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
-            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} />}
+            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} isDemoShell={session?.isDemoShell !== false} />}
             {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}

@@ -7,7 +7,7 @@ import {
   Users, TrendingUp, AlertCircle, CheckCircle2, Clock, ArrowRight,
   Star, BarChart3, Sparkles, X, Plus, Check,
   Home, Settings, Menu, ChevronLeft, Calendar, FileText, Target,
-  Volume2, Mic, Bell, Activity, Shield, Shirt, Clipboard, Trophy,
+  Volume2, Bell, Activity, Shield, Shirt, Clipboard, Trophy,
   UserPlus, DollarSign, Heart, Eye, MapPin, Briefcase, GraduationCap,
   Newspaper, Phone, MessageSquare, Search, Filter, ArrowUpDown,
   ExternalLink, Car, Wrench, FolderOpen, History, Send, Zap,

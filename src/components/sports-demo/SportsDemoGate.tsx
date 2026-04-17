@@ -665,6 +665,11 @@ export default function SportsDemoGate({
       localStorage.removeItem(sessionKey(sport))
       localStorage.removeItem(`lumio_${sport}_demo_active`)
     } catch { /* ignore */ }
+    const isDevHost = typeof window !== 'undefined' && (
+      window.location.hostname.includes('vercel.app')
+      || window.location.hostname.includes('dev.')
+      || window.location.hostname === 'localhost'
+    )
     setSession(null)
     setStep(isDevHost ? 'club' : 'email')
     setEmail('')

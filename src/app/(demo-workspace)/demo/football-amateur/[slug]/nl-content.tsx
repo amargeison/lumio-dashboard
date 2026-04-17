@@ -12,10 +12,11 @@ import {
   ChevronDown, ChevronUp, Loader2,
   AlertTriangle, CloudRain, Sun,
   CircleDot, Hash, Printer,
-  Handshake, Search, Copy, Zap, BarChart3,
+  Handshake, Search, Copy, Zap, BarChart3, Radio,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
 // ─── Colors (Amber theme for Non-League) ────────────────────────────────────
 
@@ -37,7 +38,7 @@ export type NLDeptId =
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
   | 'nl-gps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
   | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
-  | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance'
+  | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance' | 'nl-media'
   | 'nl-morningroundup' | 'nl-aihalftime'
 
 type NLSection = null | 'Football' | 'Operations' | 'Club'
@@ -69,6 +70,7 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-fundraising',     label: 'Fundraising',             icon: Heart,          section: 'Club' },
   { id: 'nl-insurance',       label: 'Insurance',               icon: Shield,         section: 'Club' },
   { id: 'nl-comms',           label: 'Comms',                   icon: MessageSquare,  section: 'Club' },
+  { id: 'nl-media',           label: 'Media & Content',         icon: Radio,          section: 'Club' },
   { id: 'nl-committee',       label: 'Committee',               icon: Users,          section: 'Club' },
 ]
 
@@ -3635,6 +3637,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-safeguarding' && <NLSafeguardingView />}
       {activeDept === 'nl-matchday' && <NLMatchdayView onToast={onToast} />}
       {activeDept === 'nl-comms' && <NLCommsView onToast={onToast} />}
+      {activeDept === 'nl-media' && <MediaContentModule sport="nonleague" accentColor="#D97706" />}
       {activeDept === 'nl-committee' && <NLCommitteeView />}
       {activeDept === 'nl-gps' && <NLGPSView />}
       {activeDept === 'nl-matchfees' && <NLMatchFeesView />}

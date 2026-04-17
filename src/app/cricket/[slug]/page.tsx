@@ -604,6 +604,11 @@ function CricketPreSeasonView() {
   )
 }
 
+// Static morning briefing used in demo shells to avoid a live /api/ai/cricket
+// hit on every page load. Persona: Yorkshire CCC director, Championship opener
+// vs Lancashire context.
+const DEMO_CRICKET_DASHBOARD_SUMMARY = `Championship opener against Lancashire on Friday, Headingley 10:30 — sitting 2nd in Division One on 61 points. Brook cleared his fitness check Wednesday, Coad bowled twelve overs unbroken in the nets the same evening. Western Terrace gone from Monday's members sale, 94% overall capacity before walk-up opens. Pitch reading seam-friendly under dry April skies; Jennings returns to the Lancashire top order against a nip-backing new-ball plan he's historically struggled with (career avg 17 to the ball that holds). One commercial flag: Northbridge Financial's client-day hospitality suite has three boxes still open for Friday — ~£2,400 of unbooked revenue to tidy up before Thursday lunch.`
+
 function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   const[page,setPage]=useState('dashboard');
 
@@ -2215,11 +2220,16 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   }
   useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
 
-  // Auto-generate AI summary on mount
+  // Auto-generate AI summary on mount — gated on demo shells (static fallback)
   useEffect(() => {
+    if (session?.isDemoShell !== false) {
+      setAiSummary(DEMO_CRICKET_DASHBOARD_SUMMARY)
+      return
+    }
     setAiLoading(true)
     fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Yorkshire CCC director. Division One position: 2nd. Next fixture: vs Lancashire. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
       .then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setAiLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const CRICKET_QUOTES = [
@@ -4456,7 +4466,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,signings:<SigningPipeline/>,'net-planner':<NetSessionPlanner/>,'match-report':<MatchReport/>,
     'county-championship':<CountyChampionship/>,'vitality-blast':<VitalityBlast/>,'od-cup':<OneDayCup/>,'the-hundred':<TheHundred/>,womens:<Womens/>,academy:<AcademyYouth/>,
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
-    commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} />,'ticket-matchday':<TicketMatchDay/>,
+    commercial:<Commercial/>,sponsorship:<SponsorshipPipeline/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} isDemoShell={session?.isDemoShell !== false} />,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
     preseason:<CricketPreSeasonView/>,
   };

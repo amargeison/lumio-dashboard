@@ -37,6 +37,10 @@ export interface MediaContentModuleProps {
   existingContentLabel?: string;
   /** If true, render existingContent in the Sponsors tab instead of Press. */
   existingContentIn?: 'press' | 'sponsors';
+  /** When true, the compose panel's "Generate with AI" button uses a local
+   *  template instead of hitting /api/ai/{sport}. Default true — safe for
+   *  demo portals. Pass false only from real founding-member surfaces. */
+  isDemoShell?: boolean;
 }
 
 // ─── small helpers ────────────────────────────────────────────────────────────
@@ -75,13 +79,13 @@ const PERSONA_BY_SPORT: Record<string, Persona> = {
   golf:       { name: 'James Harrington',          descriptor: 'DP World Tour pro, World #87' },
   tennis:     { name: 'Alex Rivera',               descriptor: 'British ATP tennis player ranked #67' },
   boxing:     { name: 'Marcus Cole',               descriptor: 'pro boxer chasing a world title' },
-  darts:      { name: 'Jake "The Hammer" Morrison', descriptor: 'PDC Pro Tour player' },
-  cricket:    { name: 'Sam Whitaker',              descriptor: 'England county cricket all-rounder' },
-  rugby:      { name: 'Tom Bradshaw',              descriptor: 'Premiership rugby flanker' },
-  football:   { name: 'Jamie Lowe',                descriptor: 'Premier League midfielder' },
-  womens:     { name: 'Eve Carter',                descriptor: 'WSL forward' },
-  nonleague:  { name: 'Danny Hart',                descriptor: 'National League striker' },
-  grassroots: { name: 'Ryan Pearce',               descriptor: 'Sunday League captain' },
+  darts:      { name: 'Jake "Shooter" Morrison',   descriptor: 'PDC Pro Tour player' },
+  cricket:    { name: 'Yorkshire CCC',             descriptor: 'County Championship cricket club based at Headingley — post from the club comms account voice' },
+  rugby:      { name: 'Hartfield RFC',             descriptor: 'Championship rugby club at The Grange — post from the club comms account voice, community-rooted and proud' },
+  football:   { name: 'Oakridge FC',               descriptor: 'Championship football club — post from the club comms account voice, proud, promotion-chasing, community-rooted, blue & yellow' },
+  womens:     { name: 'Oakridge Women FC',         descriptor: 'WSL club — post from the club comms account voice, progressive, inclusive, pathway-first and community-rooted' },
+  nonleague:  { name: 'Harfield FC',               descriptor: 'National League club — post from the club comms account voice, non-league grit, volunteer-supported, community-first' },
+  grassroots: { name: 'Sunday Rovers FC',          descriptor: 'Sunday League grassroots club — post from the club volunteer comms account voice, volunteer-run, family-club warmth, community-first' },
 };
 
 const FALLBACK_PERSONA: Persona = { name: 'The athlete', descriptor: 'professional athlete' };
@@ -103,6 +107,7 @@ export default function MediaContentModule({
   existingContent,
   existingContentLabel,
   existingContentIn = 'press',
+  isDemoShell = true,
 }: MediaContentModuleProps) {
   const seed = useMemo(() => getMediaContent(sport), [sport]);
 
@@ -221,6 +226,7 @@ export default function MediaContentModule({
             setPosts={setPosts}
             stats={socialStats}
             onToast={setToast}
+            isDemoShell={isDemoShell}
           />
         )}
         {tab === 'sponsors' && (
@@ -272,7 +278,7 @@ export default function MediaContentModule({
 
 // ═════ SOCIAL TAB ════════════════════════════════════════════════════════════
 function SocialTab({
-  sport, accent, posts, setPosts, stats, onToast,
+  sport, accent, posts, setPosts, stats, onToast, isDemoShell,
 }: {
   sport: string;
   accent: string;
@@ -291,6 +297,7 @@ function SocialTab({
     };
   };
   onToast: (s: string) => void;
+  isDemoShell: boolean;
 }) {
   // Compose panel state
   const [platforms, setPlatforms] = useState<SocialPlatform[]>(['instagram']);
@@ -369,8 +376,23 @@ function SocialTab({
     };
   };
 
+  // Apply the local template to the compose state. Used by:
+  //   - the demo-shell short-circuit (avoids a live /api/ai/* hit per click)
+  //   - the API-error fallback (existing behaviour)
+  const applyLocalTemplate = (toastMessage: string) => {
+    const fb = fallbackGenerate(topic);
+    setCaption(fb.caption);
+    setTags(fb.hashtags);
+    onToast(toastMessage);
+  };
+
   const generateWithAI = async () => {
     if (!topic.trim()) { onToast('Describe what the post is about first'); return; }
+    if (isDemoShell) {
+      // Demo portals: skip the live API entirely.
+      applyLocalTemplate('Generated (demo)');
+      return;
+    }
     setAiLoading(true);
     const prompt = `Write a social post for ${persona.name} (${persona.descriptor}). Post is about: ${topic.trim()}. Return JSON: {"caption": string (under 280 chars), "hashtags": string[] (3-5 items, no # prefix)}. Tone: confident, specific, match the persona voice. Respond ONLY with the JSON object — no preamble, no code fences.`;
     try {
@@ -397,10 +419,7 @@ function SocialTab({
       setTags(hs);
       onToast('Generated');
     } catch {
-      const fb = fallbackGenerate(topic);
-      setCaption(fb.caption);
-      setTags(fb.hashtags);
-      onToast('AI unavailable — used fallback');
+      applyLocalTemplate('AI unavailable — used fallback');
     } finally {
       setAiLoading(false);
     }

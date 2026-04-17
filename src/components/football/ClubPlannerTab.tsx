@@ -262,7 +262,7 @@ function FiveYear() {
       <Card>
         <div className="relative pl-6">
           <div className="absolute left-[7px] top-0 bottom-0 w-px" style={{ backgroundColor: C.border }} />
-          {['2025: West Stand repairs (£88K) ✅ In progress', '2026: East Stand planning permission submitted', '2027: East Stand build begins (£1.8M, +1,500 → 7,500)', '2028: East Stand opens, 12 hospitality boxes launched', '2029: North Stand redevelopment feasibility study', '2030: Stadium capacity review — target 10,000'].map((m, i) => (
+          {['2025: 24,000 capacity (Oakridge Park) — current ✅', '2026: East Stand redevelopment prep — planning permission secured', '2027: East Stand opens, +1,500 corporate hospitality boxes → 25,500', '2028: North Stand full redevelopment during promotion year, +3,000 → 28,500', '2029: Main Stand upgrade begins; roof completion design phase', '2030: Main Stand upgrade + roof complete — 30,000 capacity achieved 🏆'].map((m, i) => (
             <div key={i} className="relative flex items-start gap-4 pb-3">
               <div className="absolute left-[-18px] w-3 h-3 rounded-full" style={{ backgroundColor: i === 0 ? C.green : i < 3 ? C.amber : C.muted, border: `2px solid ${C.card}`, top: 3 }} />
               <p className="text-xs" style={{ color: C.text }}>{m}</p>
@@ -312,16 +312,16 @@ function TenYear() {
   return (
     <div className="space-y-5">
       <div className="rounded-xl p-6 text-center" style={{ background: `linear-gradient(135deg, ${C.teal}15, ${C.purple}15)`, border: `1px solid ${C.teal}40` }}>
-        <p className="text-base font-black leading-relaxed" style={{ color: C.gold }}>&ldquo;By 2035, Oakridge FC will be an established Football League club with a 10,000-capacity stadium, a nationally recognised academy, and a financially self-sustaining model generating £40M+ annual revenue.&rdquo;</p>
+        <p className="text-base font-black leading-relaxed" style={{ color: C.gold }}>&ldquo;By 2035, Oakridge FC will be an established Premier League club with a 30,000-capacity stadium, a thriving Category 1 academy, and sustained European qualification.&rdquo;</p>
       </div>
 
       <SH text="10-Year Ambitions" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {[
-          { i: '🏆', t: 'On-Pitch', d: 'Football League (League Two) by 2030. League One challenge by 2035.' },
-          { i: '🏟️', t: 'Stadium', d: '10,000 capacity by 2033. Modern facilities. Naming rights deal.' },
-          { i: '🎓', t: 'Academy', d: 'Category 2 status by 2030. 10+ first team graduates by 2035.' },
-          { i: '💰', t: 'Finance', d: '£40M revenue by 2035. Wage ratio <50%. Zero net debt.' },
+          { i: '🏆', t: 'On-Pitch', d: 'Promotion to the Premier League by 2028-29. Established top-half PL club by 2032. First European qualification by 2035.' },
+          { i: '🏟️', t: 'Stadium', d: '30,000 capacity by 2030 (current ground expansion). Women\u2019s senior training base co-located with the men\u2019s by 2033.' },
+          { i: '🎓', t: 'Academy', d: 'Category 1 status by 2032. 15+ first-team graduates by 2035.' },
+          { i: '💰', t: 'Finance', d: '£180M revenue by 2035. Wage ratio <65%. Sustainable PSR headroom.' },
           { i: '🌍', t: 'Community', d: '50,000 registered supporters. Charity arm. Schools programme.' },
           { i: '📱', t: 'Commercial', d: 'National brand recognition. Own streaming platform. Kit sales 20K+/yr.' },
         ].map(a => (
@@ -339,11 +339,11 @@ function TenYear() {
             <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>{['Year', 'Revenue', 'Op. Cost', 'Net', 'Cumulative'].map(h => <th key={h} className="text-left py-2 px-2 font-semibold" style={{ color: C.muted }}>{h}</th>)}</tr></thead>
             <tbody>
               {[
-                ['2025/26', '£9.1M', '£8.7M', '+£0.4M', '+£0.4M'], ['2026/27', '£11.2M', '£10.1M', '+£1.1M', '+£1.5M'],
-                ['2027/28', '£14.8M', '£12.9M', '+£1.9M', '+£3.4M'], ['2028/29', '£18.4M', '£15.2M', '+£3.2M', '+£6.6M'],
-                ['2029/30', '£22.6M', '£18.1M', '+£4.5M', '+£11.1M'], ['2030/31', '£26.8M', '£21.0M', '+£5.8M', '+£16.9M'],
-                ['2031/32', '£30.4M', '£23.5M', '+£6.9M', '+£23.8M'], ['2032/33', '£34.1M', '£26.0M', '+£8.1M', '+£31.9M'],
-                ['2033/34', '£37.8M', '£28.8M', '+£9.0M', '+£40.9M'], ['2034/35', '£41.2M', '£31.0M', '+£10.2M', '+£51.1M'],
+                ['2025/26', '£38M',  '£36M',  '+£2M',  '+£2M'],   ['2026/27', '£41M',  '£38M',  '+£3M',  '+£5M'],
+                ['2027/28', '£52M',  '£49M',  '+£3M',  '+£8M'],   ['2028/29', '£108M', '£96M',  '+£12M', '+£20M'],
+                ['2029/30', '£138M', '£122M', '+£16M', '+£36M'],  ['2030/31', '£152M', '£134M', '+£18M', '+£54M'],
+                ['2031/32', '£164M', '£144M', '+£20M', '+£74M'],  ['2032/33', '£172M', '£152M', '+£20M', '+£94M'],
+                ['2033/34', '£178M', '£158M', '+£20M', '+£114M'], ['2034/35', '£184M', '£162M', '+£22M', '+£136M'],
               ].map(r => (
                 <tr key={r[0]} style={{ borderBottom: `1px solid ${C.border}` }}>
                   {r.map((c, i) => <td key={i} className="py-1.5 px-2" style={{ color: i === 3 ? C.green : i === 4 ? C.teal : i === 0 ? C.text : C.muted, fontWeight: i >= 3 ? 700 : 400 }}>{c}</td>)}
@@ -359,17 +359,17 @@ function TenYear() {
         <div className="relative pl-6">
           <div className="absolute left-[7px] top-0 bottom-0 w-px" style={{ backgroundColor: C.border }} />
           {[
-            { y: '2025', t: 'West Stand repaired. Top 4 push.', s: '🔄' },
-            { y: '2026', t: 'East Stand planning. Summer rebuild.', s: '🎯' },
-            { y: '2027', t: 'Promotion playoff. East Stand build.', s: '🎯' },
-            { y: '2028', t: 'PROMOTED to National League. Stadium 7,500.', s: '🏆' },
-            { y: '2029', t: 'National League consolidation. Academy Cat 2 bid.', s: '🎯' },
-            { y: '2030', t: 'Football League promotion. £22M revenue.', s: '🏆' },
-            { y: '2031', t: 'League Two. New commercial deals. Naming rights.', s: '🎯' },
-            { y: '2032', t: 'League Two mid-table. £30M revenue.', s: '🎯' },
-            { y: '2033', t: 'Stadium 10,000. League One target.', s: '🎯' },
-            { y: '2034', t: 'League One challenge. Academy producing regulars.', s: '🎯' },
-            { y: '2035', t: 'Established Football League club. £40M+ revenue.', s: '🏆' },
+            { y: '2025', t: 'Mid-Championship season. 30,000-seat masterplan submitted.', s: '🔄' },
+            { y: '2026', t: 'Play-off contention; top-6 Championship finish.', s: '🎯' },
+            { y: '2027', t: 'Ground expansion planning permission secured.', s: '🎯' },
+            { y: '2028', t: 'PROMOTED to the Premier League.', s: '🏆' },
+            { y: '2029', t: 'First full Premier League season. Stadium expansion breaks ground.', s: '🎯' },
+            { y: '2030', t: '30,000-seat redevelopment complete.', s: '🎯' },
+            { y: '2031', t: 'Category 1 academy status awarded.', s: '🎯' },
+            { y: '2032', t: 'First top-half Premier League finish. Commercial revenue doubles vs 2025 baseline.', s: '🎯' },
+            { y: '2033', t: 'Women\u2019s senior squad training at co-located facility.', s: '🎯' },
+            { y: '2034', t: 'Oakridge Foundation reaches 10,000 weekly community-programme participants.', s: '🎯' },
+            { y: '2035', t: 'First European qualification.', s: '🏆' },
           ].map((m, i) => (
             <div key={i} className="relative flex items-start gap-4 pb-3">
               <div className="absolute left-[-18px] w-3 h-3 rounded-full" style={{ backgroundColor: m.s === '🏆' ? C.gold : m.s === '🔄' ? C.teal : C.border, border: `2px solid ${C.card}`, top: 3 }} />

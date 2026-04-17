@@ -8300,6 +8300,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
               accentColor="#22c55e"
               existingContentLabel="Darts — Obligations, Pipeline & Press (existing)"
               existingContent={<MediaContentView onNavigate={setActiveSection} player={player} session={session} />}
+              isDemoShell={true}
             />
           : <MediaContentView onNavigate={setActiveSection} player={player} session={session} />
       );

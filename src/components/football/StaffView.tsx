@@ -301,7 +301,7 @@ export default function FootballStaffView() {
               <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Club Details</p>
               {[
                 { l: 'Club Name', v: 'Oakridge FC' }, { l: 'Founded', v: '1887' }, { l: 'Nickname', v: 'The Oaks' },
-                { l: 'Colours', v: 'Red & Gold' }, { l: 'Stadium', v: 'Oakridge Park (24,000)' },
+                { l: 'Colours', v: 'Blue & Yellow' }, { l: 'Stadium', v: 'Oakridge Park (24,000)' },
                 { l: 'Training Ground', v: 'Oakridge Training Complex' }, { l: 'League', v: 'EFL Championship' },
                 { l: 'EPPP Category', v: 'Category 2' },
               ].map(r => (
