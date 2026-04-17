@@ -5909,7 +5909,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       case 'exemptions':  return <ExemptionsView player={player} session={session} />;
       case 'matchprep':   return <RoundPrepView player={player} session={session} />;
       case 'media':       return session.isDemoShell !== false
-        ? <MediaContentModule sport="golf" accentColor="#16a34a" />
+        ? <MediaContentModule sport="golf" accentColor="#16a34a" isDemoShell={true} />
         : <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
       case 'agent':       return <AgentPipelineView player={player} session={session} />;
       case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;

@@ -9813,6 +9813,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             accentColor="#a855f7"
             existingContentLabel="Tennis — Statement Generator, Press Log & Brand Guidelines"
             existingContent={<MediaView player={player} session={session} />}
+            isDemoShell={true}
           />
         : <MediaView player={player} session={session} />;
       case 'financial':    return <FinancialView player={player} session={session} />;

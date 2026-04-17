@@ -3621,7 +3621,23 @@ export default function RugbyPortalPage() {
 }
 
 // ─── PRE-SEASON CAMP MODE ─────────────────────────────────────────────────────
-function PreSeasonView({ club }: { club: RugbyClub }) {
+// Static pre-season AI content used in demo shells to avoid two live
+// /api/ai/rugby hits when a user activates the camp. Persona: Hartfield RFC
+// Director of Rugby / Head Coach brief.
+const DEMO_RUGBY_PRESEASON_SUMMARY = `1. Squad fitness — 24 of 26 players through the bleep test above 13.5, two flagged for monitoring this week.
+2. Contact readiness — live tackle sessions start Monday; scrum prep drills show front-row cohesion at 78%, up from 64% last week.
+3. Scrum + lineout — lineout accuracy 86% over the last ten sessions; scrum penalty conceded rate down to one every 6.1 attempts.
+4. Injuries — two long-term knees (Ellis, Grant) both tracking on timeline; Wilson (calf), Moore (shoulder), Porter (hamstring) all expected back this week.
+5. Key players — Patel and Ellis leading the fitness stats; Whitmore's handling sessions have lifted the backs' offload count by 18%.
+6. Watch-out — contact loading has been conservative to protect the knee group; next week's sessions spike loads, physio briefed to monitor acutely.`
+
+const DEMO_RUGBY_PRESEASON_HIGHLIGHTS = `🏋️ Bleep-test re-ups for the two flagged players — book Tuesday before live contact starts.
+⚕️ Physio-led knee-management session for Ellis + Grant — 90 min, Wednesday before squad trains.
+🛡️ Scrum live-fire session with external coach — lock in Thursday morning, front-row full intensity.
+🎯 Lineout throwing + caller work with Whitmore — three 30-min drills across the week.
+🔄 Recovery protocol spike — load jumps 15% from Monday, schedule ice and nutrition review before the weekend.`
+
+function PreSeasonView({ club, session }: { club: RugbyClub; session?: SportsDemoSession }) {
   const [campActive, setCampActive] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [campConfig, setCampConfig] = useState<{ openerDate: string; opposition: string; squadSize: number; formation: string; activatedAt: string } | null>(null)
@@ -3749,10 +3765,15 @@ function PreSeasonView({ club }: { club: RugbyClub }) {
   const phase = campProgress < 33 ? 'Fitness Block' : campProgress < 66 ? 'Contact Block' : 'Match Sharpness'
   const phaseColor = phase === 'Fitness Block' ? '#3B82F6' : phase === 'Contact Block' ? '#F59E0B' : '#22C55E'
 
-  // AI auto-generate
+  // AI auto-generate — gated on demo shells (static fallback)
   useEffect(() => {
     if (!campActive || !campConfig || hasGenerated.current) return
     hasGenerated.current = true
+    if (session?.isDemoShell !== false) {
+      setAiSummary(DEMO_RUGBY_PRESEASON_SUMMARY)
+      setAiHighlights(DEMO_RUGBY_PRESEASON_HIGHLIGHTS)
+      return
+    }
     fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Generate a rugby pre-season AI summary for a coach. Camp details: opening fixture vs ${campConfig.opposition}, ${daysToOpener} days remaining, ${phase} phase, squad of ${campConfig.squadSize}. 6 bullet points covering: squad fitness, contact readiness, scrum/lineout progress, injury concerns, key players, one watch-out. Be specific. Max 200 words.` }] })
     }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setAiSummary('Unable to generate.'))
@@ -4335,7 +4356,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'insights':        return <InsightsView club={club} activeRole={session.role}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
       case 'calendar':        return <ClubCalendarView/>;
-      case 'preseason':       return <PreSeasonView club={club}/>;
+      case 'preseason':       return <PreSeasonView club={club} session={session}/>;
       case 'capdashboard':    return <CapDashboardView club={club}/>;
       case 'contracts':       return <PlayerContractsView/>;
       case 'scenario':        return <ScenarioModellerView club={club}/>;
@@ -4370,7 +4391,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'matchdayrev':     return <MatchdayRevenueView/>;
       case 'stadium':         return <StadiumVenueView club={club}/>;
       case 'activation':      return <PartnershipActivationView/>;
-      case 'mediahr':         return <MediaContentModule sport="rugby" accentColor="#8b5cf6" existingContentLabel="Rugby — Media & PR (requests, coverage, guidelines)" existingContent={<MediaPRRugbyView club={club}/>} />;
+      case 'mediahr':         return <MediaContentModule sport="rugby" accentColor="#8b5cf6" existingContentLabel="Rugby — Media & PR (requests, coverage, guidelines)" existingContent={<MediaPRRugbyView club={club}/>} isDemoShell={session.isDemoShell !== false} />;
       case 'fanhub':          return <FanHubRugbyView club={club}/>;
       case 'womenssquad':     return <WomensSquadView/>;
       case 'pwrcompliance':   return <PWRComplianceView/>;

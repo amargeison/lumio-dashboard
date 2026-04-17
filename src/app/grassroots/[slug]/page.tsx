@@ -18,6 +18,7 @@ import {
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import GrassrootsTacticsView from '@/components/football/GrassrootsTacticsView'
 import GrassrootsSetPiecesView from '@/components/football/GrassrootsSetPiecesView'
+import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 
@@ -31,7 +32,7 @@ const GRASSROOTS_ROLES = [
 
 type DeptId =
   | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
-  | 'finances' | 'welfare' | 'communications' | 'referee' | 'pitch' | 'kit'
+  | 'finances' | 'welfare' | 'communications' | 'media' | 'referee' | 'pitch' | 'kit'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
   | 'morning-roundup' | 'fa-sunday-cup' | 'halftime-talk' | 'availability' | 'discipline'
   | 'dbs-tracker' | 'subs-tracker' | 'juniors' | 'referee-bookings' | 'preseason'
@@ -76,6 +77,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Club' },
   { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations' },
   { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
+  { id: 'media',            label: 'Media & Content',    icon: Newspaper,      section: 'Operations' },
   { id: 'referee',          label: 'Referees',           icon: Eye,            section: 'Operations' },
   { id: 'volunteers',       label: 'Volunteers',         icon: Users,          section: 'Resources' },
   { id: 'travel',           label: 'Travel',             icon: Car,            section: 'Resources' },
@@ -2721,6 +2723,7 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
               {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
               {activeDept === 'welfare' && <WelfareView />}
               {activeDept === 'communications' && <CommsView onToast={fireToast} />}
+              {activeDept === 'media' && <MediaContentModule sport="grassroots" accentColor="#16a34a" isDemoShell={session.isDemoShell !== false} />}
               {activeDept === 'referee' && <RefereeView onToast={fireToast} />}
               {activeDept === 'pitch' && <PitchView onToast={fireToast} />}
               {activeDept === 'kit' && <KitView />}

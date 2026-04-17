@@ -4338,7 +4338,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
       case 'financial':   return <FinancialPlanningView club={club} />
-      case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} />
+      case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
       case 'social':      return <SocialMediaView club={club} />
       case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <StaffDirectoryView />
