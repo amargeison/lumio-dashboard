@@ -157,7 +157,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
   const ROLES = ['Manager', 'Agent', 'Coach', 'Physio', 'Sponsor', 'Other']
   const TOTAL_STEPS = 5
 
-  const [phase, setPhase] = useState<'onboarding' | 'integrations' | 'integrations-done'>('onboarding')
+  const [phase, setPhase] = useState<'onboarding' | 'integrations' | 'integrations-done' | 'handoff-confirmation'>('onboarding')
   const [iStep, setIStep] = useState(1)
   const ITOTAL = 8
   const [iEmail, setIEmail] = useState('')
@@ -307,13 +307,109 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
     } catch (e) { console.error(e) }
     setSaving(false)
     if (setupType === 'lumio') {
-      setPhase('integrations')
+      // "Set it up for me" — short-circuit. Profile is saved with
+      // onboarding_complete=true, the handoff email has fired (notify-setup
+      // above). Show the confirmation screen instead of dropping the user
+      // into the 8-step config wizard. The 8-step wizard ('integrations'
+      // phase) is preserved for potential future use but no longer reachable
+      // from the primary flow.
+      setPhase('handoff-confirmation')
     } else {
       onComplete(enabledFeatures, finalSlug)
     }
   }
 
   const featureGroups = features.reduce((acc, f) => { if (!acc[f.group]) acc[f.group] = []; acc[f.group].push(f); return acc }, {} as Record<string, typeof features>)
+
+  if (phase === 'handoff-confirmation') {
+    const finalSlug = portalSlug.trim() || slugify(displayName)
+    const labelStyle = { color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }
+    const stillNeed = sport === 'darts' ? [
+      'Contact phone number',
+      'PDC membership ID + DartConnect username',
+      'Practice tracker preference (DartCounter / Lidarts / DartsForData)',
+      'Walk-on music track + BPM',
+      'Team contacts (manager / coach / physio)',
+      'Active sponsor names + contact emails',
+    ] : sport === 'golf' ? [
+      'Contact phone number',
+      'DP World Tour / PGA Tour member ID',
+      'Arccos or Shot Scope account email',
+      'Caddie name + contact',
+      'Active sponsor names + contact emails',
+    ] : sport === 'tennis' ? [
+      'Contact phone number',
+      'ATP / WTA member ID',
+      'SwingVision account email',
+      'Coach + physio contacts',
+      'Active sponsor names + contact emails',
+    ] : sport === 'boxing' ? [
+      'Contact phone number',
+      'BoxRec profile URL',
+      'Promoter + manager / trainer contacts',
+      'Weight class + sanctioning bodies',
+      'Home gym name and location',
+      'Active sponsor names + contact emails',
+    ] : [
+      'Contact phone number',
+      'Sport-specific credentials',
+      'Team contacts (manager / coach / physio)',
+      'Active sponsor names + contact emails',
+    ]
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#07080F', zIndex: 9999, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 16px' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/lumio_logo_ultra_clean.png" alt="Lumio Sports" style={{ height: 48, objectFit: 'contain', marginBottom: 32 }} />
+        <div style={{ width: '100%', maxWidth: 560, background: '#0d1117', border: '1px solid #1F2937', borderRadius: 20, padding: 36 }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: '50%', background: `${accentColor}20`, border: `2px solid ${accentColor}`, marginBottom: 16 }}>
+              <span style={{ fontSize: 28 }}>✓</span>
+            </div>
+            <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, marginBottom: 8 }}>We&rsquo;ve got it from here.</h2>
+            <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.5 }}>Your portal is ready. Our team will reach out within <strong style={{ color: '#fff' }}>2&ndash;3 business days</strong> to complete your set-up using the information below.</p>
+          </div>
+
+          <div style={{ background: '#0a0c14', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>What we have so far</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                <span style={{ color: '#6B7280', fontSize: 13 }}>Display name</span>
+                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'right' }}>{displayName || '—'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                <span style={{ color: '#6B7280', fontSize: 13 }}>Portal URL</span>
+                <span style={{ color: accentColor, fontSize: 13, fontWeight: 600, fontFamily: 'monospace', textAlign: 'right' }}>/{sport}/{finalSlug}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                <span style={{ color: '#6B7280', fontSize: 13 }}>Nickname</span>
+                <span style={{ color: nickname ? '#fff' : '#374151', fontSize: 13, fontWeight: nickname ? 600 : 400, textAlign: 'right' }}>{nickname || '(none)'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: '#0a0c14', border: '1px solid #1F2937', borderRadius: 12, padding: 20, marginBottom: 28 }}>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>What we still need from you</p>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {stillNeed.map((item, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, color: '#D1D5DB', fontSize: 13, lineHeight: 1.5 }}>
+                  <span style={{ color: accentColor, marginTop: 2 }}>•</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p style={{ color: '#6B7280', fontSize: 12, marginTop: 14, marginBottom: 0 }}>We&rsquo;ll email you a checklist — just reply with the details and we&rsquo;ll handle the rest.</p>
+          </div>
+
+          <button
+            onClick={() => onComplete(enabledFeatures, finalSlug)}
+            style={{ width: '100%', padding: '14px 28px', borderRadius: 12, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', background: accentColor, color: '#fff' }}
+          >
+            Go to my portal &rarr;
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (phase === 'integrations') {
     const inputStyle = { width: '100%', marginTop: 6, padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' as const }

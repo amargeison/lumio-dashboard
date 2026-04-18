@@ -628,6 +628,23 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
   const roleConfig = CRICKET_ROLE_CONFIG[currentRole] ?? CRICKET_ROLE_CONFIG.director
   const isDirector = currentRole === 'director'
   const isSponsor = currentRole === 'sponsor'
+
+  // liveSession reflects the LIVE role override so RoleSwitcher's
+  // "Current view" highlight tracks the override (not session.role at mount).
+  const liveSession = session ? { ...session, role: roleOverride } : session
+
+  // Render guard: if `page` falls outside the new role's allowed sidebar after
+  // a role switch, snap back to the first allowed nav item.
+  const allFlatNav = SECTIONED_NAV.flatMap(s => s.items)
+  const allowedPageIds: string[] = roleConfig.sidebar === 'all'
+    ? allFlatNav.map(i => i.id)
+    : roleConfig.sidebar
+  useEffect(() => {
+    if (allowedPageIds.length > 0 && !allowedPageIds.includes(page)) {
+      setPage(allowedPageIds[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleOverride])
   const[battingFmt,setBattingFmt]=useState('All');
   const[bowlingFmt,setBowlingFmt]=useState('All');
   const[videoFilter,setVideoFilter]=useState('All');
@@ -4529,11 +4546,21 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
 
         {session && (
           <RoleSwitcher
-            session={session}
+            session={liveSession ?? session}
             roles={CRICKET_ROLES}
             accentColor="#b45309"
             onRoleChange={(role) => {
               setRoleOverride(role)
+              // Reset `page` to the new role's first allowed nav item so we
+              // never render content from a tab the new role can't see.
+              const newConfig = CRICKET_ROLE_CONFIG[role as keyof typeof CRICKET_ROLE_CONFIG]
+              if (newConfig) {
+                const allFlat = SECTIONED_NAV.flatMap(s => s.items)
+                const firstAllowed = newConfig.sidebar === 'all'
+                  ? allFlat[0]?.id
+                  : newConfig.sidebar[0]
+                if (firstAllowed) setPage(firstAllowed)
+              }
               const key = 'lumio_cricket_demo_session'
               const stored = localStorage.getItem(key)
               if (stored) { const parsed = JSON.parse(stored); localStorage.setItem(key, JSON.stringify({ ...parsed, role })) }
