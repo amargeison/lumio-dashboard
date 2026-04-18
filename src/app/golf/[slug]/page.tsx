@@ -842,11 +842,22 @@ function GolfSendMessage({ onClose, player, session }: { onClose: () => void; pl
 function DashboardView({ player, session, setActiveSection, onOpenModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; onOpenModal: (m: string) => void }) {
   const liveProfileName = useGolfProfileName()
   const liveProfilePhoto = useGolfProfilePhoto()
+  const isDemoShellDash = session.isDemoShell !== false
   const isPlayerRole = !session.role || session.role === 'player'
+  // Founder mode (live) reads Supabase profile values ONLY — never the
+  // lumio_golf_* localStorage survivor keys, which are a demo-mode ergonomic.
+  // A founder who previously visited the demo shell must not see demo photo
+  // / name leaking into their founder view.
   const displayPlayerName = isPlayerRole
-    ? (liveProfileName || session.userName || player.name)
+    ? (isDemoShellDash
+        ? (liveProfileName || session.userName || player.name)
+        : (session.userName || player.name))
     : player.name
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/james_hargreaves.jpg') : null
+  const displayPlayerPhoto = isPlayerRole
+    ? (isDemoShellDash
+        ? (liveProfilePhoto || session.photoDataUrl || '/james_hargreaves.jpg')
+        : (session.photoDataUrl?.trim() || null))
+    : null
   const firstName = displayPlayerName.split(' ')[0] || 'You'
   const aiSummaryLabel = (() => { const h = new Date().getHours(); return h < 12 ? 'AI Morning Summary' : h < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary' })()
   // Speech state — morning briefing TTS
@@ -1685,9 +1696,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="rounded-xl p-4 text-center" style={{ backgroundColor: 'rgba(21,128,61,0.1)', border: '1px solid rgba(21,128,61,0.3)', minWidth: 200 }}>
                 <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                   style={{ background: 'rgba(21,128,61,0.2)', border: '2px solid #15803D', color: '#15803D' }}>
-                  {liveProfilePhoto ? <img src={liveProfilePhoto} alt="" className="w-full h-full object-cover" /> : 'JH'}
+                  {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : 'JH'}
                 </div>
-                <div className="text-sm font-bold text-white">{liveProfileName || session.userName || player.name}</div>
+                <div className="text-sm font-bold text-white">{displayPlayerName}</div>
                 <div className="text-[10px]" style={{ color: '#15803D' }}>Player · OWGR #{player.owgr}</div>
               </div>
               <div className="w-px h-4 bg-gray-700" />

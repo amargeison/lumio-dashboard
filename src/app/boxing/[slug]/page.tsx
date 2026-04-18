@@ -802,14 +802,27 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   })
   const liveProfileName = useBoxingProfileName()
   const liveProfilePhoto = useBoxingProfilePhoto()
+  const isDemoShellDash = session.isDemoShell !== false
   const isPlayerRole = !session.role || session.role === 'fighter'
+  // Founder mode (live) reads Supabase profile values ONLY — never the
+  // lumio_boxing_* localStorage survivor keys, which are a demo-mode ergonomic.
+  // A founder who previously visited the demo shell must not see demo photo /
+  // name / nickname leaking into their founder view.
   const displayPlayerName = isPlayerRole
-    ? (liveProfileName || session.userName || fighter.name)
+    ? (isDemoShellDash
+        ? (liveProfileName || session.userName || fighter.name)
+        : (session.userName || fighter.name))
     : fighter.name
   const displayPlayerNickname = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '')
+    ? (isDemoShellDash
+        ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '')
+        : (session.nickname?.trim() || ''))
     : `"${fighter.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/marcus_reid.jpg') : null
+  const displayPlayerPhoto = isPlayerRole
+    ? (isDemoShellDash
+        ? (liveProfilePhoto || session.photoDataUrl || '/marcus_reid.jpg')
+        : (session.photoDataUrl?.trim() || null))
+    : null
   const firstName = displayPlayerName.split(' ')[0] || 'Marcus'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -1633,9 +1646,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               </div>
               <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-lg font-bold overflow-hidden"
                 style={{background:'rgba(220,38,38,0.2)',border:'2px solid #dc2626',color:'#dc2626'}}>
-                {liveProfilePhoto ? <img src={liveProfilePhoto} alt="" className="w-full h-full object-cover" /> : 'MC'}
+                {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : 'MC'}
               </div>
-              <div className="text-lg font-black text-white">{liveProfileName || session.userName || fighter.name}</div>
+              <div className="text-lg font-black text-white">{displayPlayerName}</div>
               {fighter.nickname && <div className="text-[10px] text-gray-500 italic">&quot;{fighter.nickname}&quot;</div>}
               <div className="text-xs" style={{color:'#dc2626'}}>Fighter — WBC #{fighter.rankings.wbc} Heavyweight</div>
               <div className="flex justify-center gap-6 flex-wrap">
