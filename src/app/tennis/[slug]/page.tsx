@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
@@ -6379,7 +6380,7 @@ const LiveScoresView = ({ liveScores, fixtures, player, session }: { liveScores:
   const DEMO_MATCHES = [
     { p1: 'L. Brenner [1]', p2: 'C. Valdez [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
     { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
-    { p1: 'A. Rivera [67]', p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
+    { p1: `${player.name} [67]`, p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
     { p1: 'C. Ruud [7]', p2: 'S. Tsitsipas [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
     { p1: 'T. Fritz [5]', p2: 'A. Rublev [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
     { p1: 'H. Rune [12]', p2: 'A. De Minaur [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
@@ -6588,16 +6589,16 @@ const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: S
       { p1: 'J. Draper [3]', p2: 'D. Shapovalov', score: '6-2 7-5', winner: 1 },
       { p1: 'B. Sutton [5]', p2: 'F. Caballero', score: '4-6 6-3 7-6', winner: 1 },
       { p1: 'A. Fils [4]', p2: 'L. Djere', score: '6-1 6-3', winner: 1 },
-      { p1: 'A. Rivera [6]', p2: 'R. Carballes', score: '6-4 6-2', winner: 1 },
-      { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1 },
+      { p1: `${player.name} [6]`, p2: 'R. Carballes', score: '6-4 6-2', winner: 1, isYou: true },
+      { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1, isOpponent: true },
       { p1: 'U. Humbert [2]', p2: 'M. Arnaldi', score: '6-3 6-4', winner: 1 },
     ],
     // QF (4 matches)
     [
       { p1: 'T. Nakashima [1]', p2: 'L. Musetti [8]', score: '', winner: 0 },
       { p1: 'J. Draper [3]', p2: 'B. Sutton [5]', score: '', winner: 0 },
-      { p1: 'A. Fils [4]', p2: 'A. Rivera [6]', score: '', winner: 0 },
-      { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0 },
+      { p1: 'A. Fils [4]', p2: `${player.name} [6]`, score: '', winner: 0, isYou: true },
+      { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0, isOpponent: true },
     ],
     // SF
     [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }, { p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
@@ -6630,10 +6631,8 @@ const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: S
                 <div className="text-xs font-semibold text-gray-500 mb-3 text-center">{rounds[ri]}</div>
                 <div className="space-y-3" style={{ marginTop: ri * 24 }}>
                   {round.map((match: any, mi: number) => {
-                    const isAlex = match.p1.includes('Rivera') || match.p2.includes('Rivera');
-                    const isFerreira = match.p1.includes('Ferreira') || match.p2.includes('Ferreira');
                     return (
-                      <div key={mi} className={`bg-[#0d0f1a] border rounded-lg p-2.5 text-xs ${isAlex ? 'border-purple-600/50' : isFerreira ? 'border-amber-600/30' : 'border-gray-800'}`}>
+                      <div key={mi} className={`bg-[#0d0f1a] border rounded-lg p-2.5 text-xs ${match.isYou ? 'border-purple-600/50' : match.isOpponent ? 'border-amber-600/30' : 'border-gray-800'}`}>
                         <div className={`flex justify-between ${match.winner === 1 ? 'font-bold text-white' : 'text-gray-400'}`}>
                           <span className="truncate">{match.p1}</span>
                           {match.score && <span className="ml-2 text-gray-500 whitespace-nowrap">{match.score.split(' ')[0]}</span>}
@@ -6770,7 +6769,7 @@ const AccreditationsView = ({ player, session }: { player: TennisPlayer; session
           <div className="w-20 h-24 bg-gray-800 rounded-lg flex items-center justify-center text-3xl">🎾</div>
           <div>
             <div className="text-xs text-purple-400 font-semibold mb-1">ATP TOUR MEMBER</div>
-            <div className="text-xl font-bold text-white">Alex Rivera</div>
+            <div className="text-xl font-bold text-white">{player.name}</div>
             <div className="text-sm text-gray-400">🇬🇧 British · Right-handed · #67</div>
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
               <span>Member ID: ATP-2018-0847</span>
@@ -7450,6 +7449,55 @@ const TENNIS_ROLES = [
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 export default function TennisTourPage() {
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('sports_profiles')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug, invites')
+            .eq('id', user.id)
+            .maybeSingle()
+          if (profile && profile.sport === 'tennis') {
+            if (!profile.onboarding_complete) { window.location.href = '/tennis/app'; return }
+            setAuthSession({
+              email: user.email ?? '',
+              userName: profile.display_name ?? '',
+              clubName: profile.brand_name ?? '',
+              role: 'player',
+              photoDataUrl: profile.avatar_url ?? null,
+              logoDataUrl: profile.brand_logo_url ?? null,
+              sport: 'tennis',
+              verifiedAt: new Date().toISOString(),
+              isDemoShell: false,
+              enabledFeatures: profile.enabled_features || [],
+              invites: profile.invites || [],
+              nickname: profile.nickname ?? null,
+            })
+          }
+        }
+      } catch {} finally { setAuthChecked(true) }
+    })()
+  }, [])
+
+  if (!authChecked) return (
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 11, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
+    </div>
+  )
+  if (authSession) {
+    const handleSignOut = async () => {
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      await supabase.auth.signOut()
+      window.location.href = '/sports-login'
+    }
+    return <TennisPortalInner session={authSession} onSignOut={handleSignOut} />
+  }
   return (
     <SportsDemoGate
       sport="tennis"
@@ -8578,7 +8626,7 @@ function TennisSponsorDashboard({ session, player }: { session: SportsDemoSessio
             <div>
               <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
               <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
-              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name || 'Alex Rivera'} · ATP #{player.ranking ?? 67}</div>
+              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name || ''} · ATP #{player.ranking ?? 67}</div>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-4">
@@ -8616,7 +8664,7 @@ function TennisSponsorDashboard({ session, player }: { session: SportsDemoSessio
               </div>
             )}
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || 'Alex Rivera'} is competing at Monte-Carlo Masters QF</p></div>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold text-white">Brand visibility today</p><p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{session.userName || player.name || ''} is competing at Monte-Carlo Masters QF</p></div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[{ label:'Expected TV viewers', value:'2.4M', icon:'📺', color:sponsorColor }, { label:'Social following', value:'207k', icon:'📱', color:'#0ea5e9' }, { label:'Press accredited', value:'94', icon:'📰', color:'#8B5CF6' }].map((s,i) => (
                   <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}><div className="text-2xl mb-1">{s.icon}</div><div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>

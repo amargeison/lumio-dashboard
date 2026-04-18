@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
@@ -1634,7 +1635,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 {liveProfilePhoto ? <img src={liveProfilePhoto} alt="" className="w-full h-full object-cover" /> : 'MC'}
               </div>
               <div className="text-lg font-black text-white">{liveProfileName || session.userName || fighter.name}</div>
-              <div className="text-[10px] text-gray-500 italic">&quot;The Machine&quot;</div>
+              {fighter.nickname && <div className="text-[10px] text-gray-500 italic">&quot;{fighter.nickname}&quot;</div>}
               <div className="text-xs" style={{color:'#dc2626'}}>Fighter — WBC #{fighter.rankings.wbc} Heavyweight</div>
               <div className="flex justify-center gap-6 flex-wrap">
                 {[{name:'Jim Bevan',role:'Trainer'},{name:'Dr Mitchell',role:'Doctor'},{name:'Ricky Dunn',role:'Conditioning'},{name:'Tony Malone',role:'Cutman'},{name:'Marcos Silva',role:'Psych'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-bold" style={{background:'rgba(255,255,255,0.05)',border:'1px solid #1F2937',color:'#6B7280'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-[10px] text-white">{p.name}</div><div className="text-[9px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
@@ -2607,14 +2608,14 @@ function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; sessi
 // ─── WORLD RANKINGS VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
-  const rankings: Record<string, { name: string; country: string; record: string; isMarcus?: boolean }[]> = {
+  const rankings: Record<string, { name: string; country: string; record: string; isYou?: boolean }[]> = {
     WBC: [
       { name: 'Tyson Fury', country: '🇬🇧', record: '34-1-1 (24 KO)' },
       { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Viktor Petrov', country: '🇷🇺', record: '28-2 (24 KO)' },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
       { name: 'Filip Hrgovic', country: '🇭🇷', record: '17-1 (14 KO)' },
-      { name: 'Marcus Cole', country: '🇬🇧', record: '22-1 (18 KO)', isMarcus: true },
+      { name: fighter.name, country: '🇬🇧', record: '22-1 (18 KO)', isYou: true },
       { name: 'Daniel Dubois', country: '🇬🇧', record: '22-2 (21 KO)' },
       { name: 'Joe Joyce', country: '🇬🇧', record: '16-3 (15 KO)' },
     ],
@@ -2627,14 +2628,14 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
       { name: 'Jared Anderson', country: '🇺🇸', record: '17-0 (15 KO)' },
       { name: 'Filip Hrgovic', country: '🇭🇷', record: '17-1 (14 KO)' },
-      { name: 'Marcus Cole', country: '🇬🇧', record: '22-1 (18 KO)', isMarcus: true },
+      { name: fighter.name, country: '🇬🇧', record: '22-1 (18 KO)', isYou: true },
     ],
     WBO: [
       { name: 'Oleksandr Usyk', country: '🇺🇦', record: '22-0 (14 KO)' },
       { name: 'Tyson Fury', country: '🇬🇧', record: '34-1-1 (24 KO)' },
       { name: 'Wei Liang Chen', country: '🇨🇳', record: '27-2-1 (22 KO)' },
       { name: 'Jared Anderson', country: '🇺🇸', record: '17-0 (15 KO)' },
-      { name: 'Marcus Cole', country: '🇬🇧', record: '22-1 (18 KO)', isMarcus: true },
+      { name: fighter.name, country: '🇬🇧', record: '22-1 (18 KO)', isYou: true },
       { name: 'Martin Bakole', country: '🇨🇩', record: '21-1 (16 KO)' },
       { name: 'Joseph Parker', country: '🇳🇿', record: '35-3 (23 KO)' },
       { name: 'Daniel Dubois', country: '🇬🇧', record: '22-2 (21 KO)' },
@@ -2651,7 +2652,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
       { name: 'Frank Sanchez', country: '🇨🇺', record: '24-1 (17 KO)' },
       { name: 'Joe Joyce', country: '🇬🇧', record: '16-3 (15 KO)' },
       { name: 'Efe Ajagba', country: '🇳🇬', record: '18-2 (14 KO)' },
-      { name: 'Marcus Cole', country: '🇬🇧', record: '22-1 (18 KO)', isMarcus: true },
+      { name: fighter.name, country: '🇬🇧', record: '22-1 (18 KO)', isYou: true },
     ],
   };
 
@@ -2684,10 +2685,10 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
             </div>
             <div className="space-y-1">
               {fighters.slice(0, 8).map((f, i) => (
-                <div key={i} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${f.isMarcus ? 'bg-red-900/20 border border-red-600/30' : 'hover:bg-gray-800/50'}`}>
+                <div key={i} className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${f.isYou ? 'bg-red-900/20 border border-red-600/30' : 'hover:bg-gray-800/50'}`}>
                   <span className="text-gray-500 w-4 text-right font-mono">{i + 1}</span>
                   <span className="text-sm">{f.country}</span>
-                  <span className={`flex-1 truncate ${f.isMarcus ? 'text-red-400 font-bold' : 'text-gray-300'}`}>{f.name}</span>
+                  <span className={`flex-1 truncate ${f.isYou ? 'text-red-400 font-bold' : 'text-gray-300'}`}>{f.name}</span>
                 </div>
               ))}
             </div>
@@ -2727,7 +2728,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
 
           {/* Marcus status */}
           <div className="px-2 py-2 rounded text-xs bg-gray-800/50 border border-gray-700/50 mb-3">
-            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Marcus Cole</div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{fighter.name}</div>
             <div className="text-gray-500 font-bold">NOT RANKED</div>
             <div className="text-[10px] text-gray-600">Not signed with Zuffa</div>
           </div>
@@ -2811,7 +2812,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
             </div>
           ))}
         </div>
-        <div className="text-xs font-medium text-gray-400 mb-3 uppercase tracking-wide">Marcus Cole&apos;s Fastest Path to Undisputed</div>
+        <div className="text-xs font-medium text-gray-400 mb-3 uppercase tracking-wide">{fighter.name}&apos;s Fastest Path to Undisputed</div>
         <div className="space-y-2">
           {[
             { step: 1, action: 'Beat Petrov (WBC #3)', timeline: 'May 2026', result: 'Move to WBC #3 / WBO #2', status: 'upcoming' },
@@ -3612,7 +3613,7 @@ function TeamOverviewView({ fighter, session }: { fighter: BoxingFighter; sessio
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="👥" title="Team Overview" subtitle={`${team.length} team members supporting Marcus "The Machine" Cole.`} />
+      <SectionHeader icon="👥" title="Team Overview" subtitle={`${team.length} team members supporting ${fighter.name}${fighter.nickname ? ' "' + fighter.nickname + '"' : ''}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Team Size" value={team.length} sub="Active members" color="red" />
@@ -3759,7 +3760,7 @@ function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; se
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="💼" title="Manager Dashboard" subtitle={`Danny Walsh's management overview for Marcus Cole.`} />
+      <SectionHeader icon="💼" title="Manager Dashboard" subtitle={`Danny Walsh's management overview for ${fighter.name}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Next Fight Purse" value="£800k" sub="vs Petrov — signed" color="red" />
@@ -4716,7 +4717,7 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
       </div>
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Marcus Cole — Viewership History</div>
+        <div className="text-sm font-semibold text-white mb-4">{fighter.name} — Viewership History</div>
         <div className="space-y-2">
           {viewerHistory.map((v, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
@@ -6269,6 +6270,55 @@ function BoxingHotelFinder({ onClose, fighter }: { onClose: () => void; fighter:
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function BoxingPortalPage() {
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('sports_profiles')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, portal_slug, invites')
+            .eq('id', user.id)
+            .maybeSingle()
+          if (profile && profile.sport === 'boxing') {
+            if (!profile.onboarding_complete) { window.location.href = '/boxing/app'; return }
+            setAuthSession({
+              email: user.email ?? '',
+              userName: profile.display_name ?? '',
+              clubName: profile.brand_name ?? '',
+              role: 'player',
+              photoDataUrl: profile.avatar_url ?? null,
+              logoDataUrl: profile.brand_logo_url ?? null,
+              sport: 'boxing',
+              verifiedAt: new Date().toISOString(),
+              isDemoShell: false,
+              enabledFeatures: profile.enabled_features || [],
+              invites: profile.invites || [],
+              nickname: profile.nickname ?? null,
+            })
+          }
+        }
+      } catch {} finally { setAuthChecked(true) }
+    })()
+  }, [])
+
+  if (!authChecked) return (
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 11, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
+    </div>
+  )
+  if (authSession) {
+    const handleSignOut = async () => {
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      await supabase.auth.signOut()
+      window.location.href = '/sports-login'
+    }
+    return <BoxingPortalInner session={authSession} onSignOut={handleSignOut} />
+  }
   return (
     <SportsDemoGate
       sport="boxing"

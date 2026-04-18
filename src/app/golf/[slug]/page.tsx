@@ -846,7 +846,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     ? (liveProfileName || session.userName || player.name)
     : player.name
   const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/james_hargreaves.jpg') : null
-  const firstName = displayPlayerName.split(' ')[0] || 'James'
+  const firstName = displayPlayerName.split(' ')[0] || 'You'
   const aiSummaryLabel = (() => { const h = new Date().getHours(); return h < 12 ? 'AI Morning Summary' : h < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary' })()
   // Speech state — morning briefing TTS
   const [isSpeaking, setIsSpeaking] = useState(false)
