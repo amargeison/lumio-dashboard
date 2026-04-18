@@ -76,7 +76,15 @@ export interface SportsSettingsProps {
   entity: PortalEntity
   accentColour: string
   accentLight?: string
-  session: { userName?: string; photoDataUrl?: string | null; email?: string }
+  session: {
+    userName?: string
+    photoDataUrl?: string | null
+    email?: string
+    nickname?: string | null
+    clubName?: string
+    logoDataUrl?: string | null
+    isDemoShell?: boolean
+  }
   profile: ProfileLabels
   configFields: SportConfigField[]
   integrationGroups?: IntegrationGroup[]
@@ -168,6 +176,10 @@ export default function SportsSettings(props: SportsSettingsProps) {
   const ACCENT = accentColour
   const ACCENT_LIGHT = accentLight || accentColour
   const storagePrefix = storagePrefixProp ?? `lumio_${sport}_`
+  // Founders (Supabase-hydrated session) must never read lumio_<sport>_*
+  // survivor keys here — those carry demo-mode values that may leak into
+  // the founder Settings page. Demo-mode reads are unchanged.
+  const isFounder = session?.isDemoShell === false
 
   const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
     if (typeof window === 'undefined') return []
@@ -191,28 +203,35 @@ export default function SportsSettings(props: SportsSettingsProps) {
   const demoActiveKey = `${storagePrefix}demo_active`
 
   // ─── State (all hooks at top, no conditionals) ──────────────────────────
-  const [currentPhoto, setCurrentPhoto] = useState<string>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem(profilePhotoKey) || '' : ''
-  )
+  const [currentPhoto, setCurrentPhoto] = useState<string>(() => {
+    if (typeof window === 'undefined') return session?.photoDataUrl || ''
+    if (isFounder) return session?.photoDataUrl || ''
+    return localStorage.getItem(profilePhotoKey) || session?.photoDataUrl || ''
+  })
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState<string>(() => {
     if (typeof window === 'undefined') return session?.userName || profile.name || ''
+    if (isFounder) return session?.userName || profile.name || ''
     return localStorage.getItem(nameKey) || session?.userName || profile.name || ''
   })
   const [editingNickname, setEditingNickname] = useState(false)
-  const [nicknameValue, setNicknameValue] = useState<string>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem(nicknameKey) || '' : ''
-  )
+  const [nicknameValue, setNicknameValue] = useState<string>(() => {
+    if (typeof window === 'undefined') return session?.nickname || ''
+    if (isFounder) return session?.nickname || ''
+    return localStorage.getItem(nicknameKey) || session?.nickname || ''
+  })
   const [editingBrandName, setEditingBrandName] = useState(false)
   const [brandNameLocal, setBrandNameLocal] = useState<string>(() => {
     if (props.brandNameValue !== undefined) return props.brandNameValue
-    if (typeof window === 'undefined') return ''
-    return localStorage.getItem(brandNameKey) || ''
+    if (typeof window === 'undefined') return session?.clubName || ''
+    if (isFounder) return session?.clubName || ''
+    return localStorage.getItem(brandNameKey) || session?.clubName || ''
   })
   const [brandLogoLocal, setBrandLogoLocal] = useState<string>(() => {
     if (props.brandLogoUrl !== undefined) return props.brandLogoUrl
-    if (typeof window === 'undefined') return ''
-    return localStorage.getItem(brandLogoKey) || ''
+    if (typeof window === 'undefined') return session?.logoDataUrl || ''
+    if (isFounder) return session?.logoDataUrl || ''
+    return localStorage.getItem(brandLogoKey) || session?.logoDataUrl || ''
   })
   // Sync with parent if controlled
   useEffect(() => {

@@ -7854,7 +7854,15 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
           entity="player"
           accentColour="#dc2626"
           accentLight="#ef4444"
-          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl, email: session?.email }}
+          session={{
+            userName: session?.userName,
+            photoDataUrl: session?.photoDataUrl,
+            email: session?.email,
+            nickname: session?.nickname,
+            clubName: session?.clubName,
+            logoDataUrl: session?.logoDataUrl,
+            isDemoShell: session?.isDemoShell,
+          }}
           storagePrefix="lumio_boxing_"
           brandNameValue={liveBrandName}
           brandLogoUrl={liveBrandLogo}
@@ -7880,20 +7888,20 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             {
               title: 'DATA PROVIDERS',
               items: [
-                { name: 'BoxRec', desc: 'Fight history & records', connected: true },
-                { name: 'WBC Rankings', desc: 'World Boxing Council ratings', connected: true },
-                { name: 'WBA Rankings', desc: 'World Boxing Association ratings', connected: true },
+                { name: 'BoxRec', desc: 'Fight history & records', connected: !isFoundingMember },
+                { name: 'WBC Rankings', desc: 'World Boxing Council ratings', connected: !isFoundingMember },
+                { name: 'WBA Rankings', desc: 'World Boxing Association ratings', connected: !isFoundingMember },
                 { name: 'WBO Rankings', desc: 'World Boxing Organization ratings' },
                 { name: 'IBF Rankings', desc: 'International Boxing Federation ratings' },
                 { name: 'STATSports', desc: 'Movement & load tracking' },
                 { name: 'Veo', desc: 'Sparring video capture & analysis' },
-                { name: 'Compubox', desc: 'Live punch stats', connected: true },
+                { name: 'Compubox', desc: 'Live punch stats', connected: !isFoundingMember },
               ],
             },
             {
               title: 'COMMUNICATION',
               items: [
-                { name: 'Slack', desc: 'Team messaging & alerts', connected: true },
+                { name: 'Slack', desc: 'Team messaging & alerts', connected: !isFoundingMember },
                 { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
                 { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
                 { name: 'WhatsApp Business', desc: 'Fighter & manager messaging' },
@@ -7910,14 +7918,16 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             staffCount: 1,
             pendingInvites: 0,
             roleOptions: ['Trainer','Cutman','Strength Coach','Nutritionist','Physio','Manager'],
-            members: [
-              { name: fighter.trainer, role: 'Trainer', access: 'Full' },
-              { name: fighter.manager, role: 'Manager', access: 'Commercial' },
-              { name: fighter.cutman, role: 'Cutman', access: 'Limited' },
-              { name: fighter.strength_coach, role: 'Strength & Conditioning', access: 'Limited' },
-              { name: fighter.nutritionist, role: 'Nutritionist', access: 'Limited' },
-              { name: fighter.physio, role: 'Physio', access: 'Limited' },
-            ],
+            members: isFoundingMember
+              ? []
+              : [
+                  { name: fighter.trainer, role: 'Trainer', access: 'Full' },
+                  { name: fighter.manager, role: 'Manager', access: 'Commercial' },
+                  { name: fighter.cutman, role: 'Cutman', access: 'Limited' },
+                  { name: fighter.strength_coach, role: 'Strength & Conditioning', access: 'Limited' },
+                  { name: fighter.nutritionist, role: 'Nutritionist', access: 'Limited' },
+                  { name: fighter.physio, role: 'Physio', access: 'Limited' },
+                ],
           }}
           navItems={[
             { key: 'training', label: 'Training Log', emoji: '🥊' },

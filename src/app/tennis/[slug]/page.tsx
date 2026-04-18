@@ -10132,7 +10132,15 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           entity="player"
           accentColour="#0ea5e9"
           accentLight="#38bdf8"
-          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl, email: session?.email }}
+          session={{
+            userName: session?.userName,
+            photoDataUrl: session?.photoDataUrl,
+            email: session?.email,
+            nickname: session?.nickname,
+            clubName: session?.clubName,
+            logoDataUrl: session?.logoDataUrl,
+            isDemoShell: session?.isDemoShell,
+          }}
           storagePrefix="lumio_tennis_"
           brandNameValue={liveBrandName}
           brandLogoUrl={liveBrandLogo}
