@@ -3031,53 +3031,318 @@ function AgentPipelineView({ onNavigate, player, session }: { onNavigate: (id: s
 }
 
 // ─── TRAVEL LOGISTICS VIEW ────────────────────────────────────────────────────
+// Inline types for the Travel Researcher (mirrors the tennis pattern).
+interface DartsFlightResult { airline: string; flightNo: string; departure: string; arrival: string; duration: string; stops: string; price: number; class: string; bookingUrl?: string; score: number }
+interface DartsHotelResult  { name: string; stars: number; area: string; distanceToVenue: string; pricePerNight: number; totalPrice: number; rating: number; amenities: string[]; bookingUrl?: string; score: number }
+
 function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
+  // Landing mode — overview by default; clicking "Plan new trip" enters the researcher.
+  const [travelTabMode, setTravelTabMode] = useState<'overview' | 'researcher'>('overview')
+  const [tStep,setTStep]=useState<1|2|3|4>(1)
+  const [searching,setSearching]=useState(false)
+  const [searchPhase,setSearchPhase]=useState('')
+  const [flightResults,setFlightResults]=useState<DartsFlightResult[]>([])
+  const [hotelResults,setHotelResults]=useState<DartsHotelResult[]>([])
+  const [selectedFlight,setSelectedFlight]=useState<DartsFlightResult|null>(null)
+  const [selectedHotel,setSelectedHotel]=useState<DartsHotelResult|null>(null)
+  const [bookingEmail,setBookingEmail]=useState('')
+  const [emailSent,setEmailSent]=useState(false)
+  const [aiNarrative,setAiNarrative]=useState('')
+  const [trOrigin,setTrOrigin]=useState('London (LHR)')
+  const [trDest,setTrDest]=useState('')
+  const [trTourney,setTrTourney]=useState('')
+  const [trDepart,setTrDepart]=useState('')
+  const [trReturn,setTrReturn]=useState('')
+  const [trCabin,setTrCabin]=useState<'economy'|'premium_economy'|'business'>('economy')
+  const [trMaxFlight,setTrMaxFlight]=useState('')
+  const [trHotelBudget,setTrHotelBudget]=useState('')
+  const trNights=4,trPax=1
+  const [trGym,setTrGym]=useState(false)
+  const [trVenue,setTrVenue]=useState(true)
+  const [trEarly,setTrEarly]=useState(false)
+  const [travelMode,setTravelMode]=useState<'full'|'flights'|'rooms'>('full')
+  const [trBudgetTier,setTrBudgetTier]=useState<'budget'|'mid'|'luxe'>('mid')
+  const [trKitchen,setTrKitchen]=useState(false)
+  const [trShared,setTrShared]=useState(false)
+  const [trSpa,setTrSpa]=useState(false)
+
+  const UPCOMING=[
+    {name:'European Championship',  dest:'Dortmund (DTM)',     dates:'14–17 Apr · Westfalenhallen'},
+    {name:'Players Championship 9', dest:'Milton Keynes (MK)', dates:'Sat 26 Apr · Marshall Arena'},
+    {name:'Players Championship 10',dest:'Milton Keynes (MK)', dates:'Sun 27 Apr · Marshall Arena'},
+    {name:'European Tour — Prague', dest:'Prague (PRG)',       dates:'28 Apr – 1 May'},
+    {name:'World Matchplay',        dest:'Blackpool (BLK)',    dates:'19–27 Jul · Winter Gardens'},
+    {name:'PDC World Championship', dest:'London (LHR)',       dates:'Dec 2026 · Alexandra Palace'},
+  ]
+
+  const FLIGHT_FALLBACK:DartsFlightResult[]=[
+    {airline:'British Airways',flightNo:'BA0942',departure:'14:30 LHR',arrival:'17:15 DTM',duration:'1h 45m',stops:'Direct',price:142,class:trCabin,bookingUrl:'https://www.britishairways.com',score:92},
+    {airline:'Lufthansa',      flightNo:'LH0903',departure:'09:55 LHR',arrival:'12:35 DTM',duration:'1h 40m',stops:'Direct',price:168,class:trCabin,bookingUrl:'https://www.lufthansa.com',score:88},
+    {airline:'easyJet',        flightNo:'EZY8021',departure:'16:40 LGW',arrival:'19:25 DTM',duration:'1h 45m',stops:'Direct',price:78,class:trCabin,bookingUrl:'https://www.easyjet.com',score:81},
+    {airline:'Eurowings',      flightNo:'EW7311',departure:'07:15 LHR',arrival:'09:55 DTM',duration:'1h 40m',stops:'Direct',price:96,class:trCabin,bookingUrl:'https://www.eurowings.com',score:74},
+    {airline:'Ryanair',        flightNo:'FR1882',departure:'06:00 STN',arrival:'08:50 DTM',duration:'1h 50m',stops:'Direct',price:48,class:trCabin,bookingUrl:'https://www.ryanair.com',score:62},
+  ]
+  const HOTEL_FALLBACKS:Record<'budget'|'mid'|'luxe',DartsHotelResult[]>={
+    budget:[
+      {name:'B&B Hotel Dortmund-City',          stars:2,area:'City Centre',  distanceToVenue:'10 min taxi',pricePerNight:48, totalPrice:192, rating:7.9,amenities:['WiFi','Breakfast'],                       bookingUrl:'https://www.booking.com',     score:84},
+      {name:'Airbnb private room — Westfalenhalle',stars:0,area:'Westfalen',   distanceToVenue:'5 min walk', pricePerNight:42, totalPrice:168, rating:4.6,amenities:['Kitchen','WiFi','Self check-in'],     bookingUrl:'https://www.airbnb.com',      score:81},
+      {name:'IBIS Dortmund West',               stars:3,area:'Hörde',         distanceToVenue:'14 min taxi',pricePerNight:62, totalPrice:248, rating:8.1,amenities:['WiFi','Restaurant'],                  bookingUrl:'https://www.ibis.com',        score:78},
+      {name:'Holiday Inn Express Dortmund',     stars:3,area:'City Centre',  distanceToVenue:'9 min taxi', pricePerNight:74, totalPrice:296, rating:8.0,amenities:['Breakfast','WiFi','Gym'],            bookingUrl:'https://www.ihg.com',         score:75},
+    ],
+    mid:[
+      {name:'Pullman Dortmund',                 stars:4,area:'City Centre',  distanceToVenue:'8 min taxi', pricePerNight:148,totalPrice:592, rating:8.7,amenities:['Gym','Restaurant','Bar','WiFi'],     bookingUrl:'https://www.booking.com',     score:91},
+      {name:'Steigenberger Dortmund',           stars:4,area:'Westenhellweg',distanceToVenue:'10 min taxi',pricePerNight:165,totalPrice:660, rating:8.8,amenities:['Gym','Spa','Restaurant'],            bookingUrl:'https://www.steigenberger.com',score:89},
+      {name:'NH Dortmund',                      stars:4,area:'Westfalen',     distanceToVenue:'6 min taxi', pricePerNight:135,totalPrice:540, rating:8.5,amenities:['Gym','Bar','WiFi'],                  bookingUrl:'https://www.booking.com',     score:86},
+      {name:'Mercure Hotel Dortmund Centrum',   stars:3,area:'City Centre',  distanceToVenue:'12 min taxi',pricePerNight:96, totalPrice:384, rating:8.0,amenities:['WiFi','Restaurant'],                  bookingUrl:'https://www.booking.com',     score:73},
+    ],
+    luxe:[
+      {name:'L\'Arrivée Hotel & Spa',          stars:5,area:'South Dortmund',distanceToVenue:'18 min taxi',pricePerNight:295,totalPrice:1180,rating:9.2,amenities:['Spa','Pool','Concierge','Restaurant'],bookingUrl:'https://www.booking.com',     score:93},
+      {name:'Schlosshotel Bensberg',            stars:5,area:'Bergisch Gladbach (1h)',distanceToVenue:'1h drive',pricePerNight:340,totalPrice:1360,rating:9.4,amenities:['Spa','Pool','Suite','Concierge'], bookingUrl:'https://www.althoffcollection.com',score:90},
+      {name:'Steigenberger Parkhotel Düsseldorf',stars:5,area:'Düsseldorf (45 min)',distanceToVenue:'45 min drive',pricePerNight:265,totalPrice:1060,rating:9.0,amenities:['Spa','Pool','Restaurant'],     bookingUrl:'https://www.steigenberger.com',score:87},
+      {name:'Hyatt Regency Düsseldorf',         stars:5,area:'Düsseldorf (45 min)',distanceToVenue:'45 min drive',pricePerNight:225,totalPrice:900, rating:8.9,amenities:['Pool','Bar','Restaurant'],      bookingUrl:'https://www.hyatt.com',       score:84},
+    ],
+  }
+
+  const includeFlights = travelMode !== 'rooms'
+  const includeHotels  = travelMode !== 'flights'
+
+  const runSearch=async()=>{
+    setSearching(true);setTStep(2);setFlightResults([]);setHotelResults([]);setAiNarrative('')
+    try{
+      if(includeFlights){
+        setSearchPhase('✈️ Searching flights from '+trOrigin+' to '+trDest+'...')
+        await new Promise(r=>setTimeout(r,800))
+        setSearchPhase('💰 Comparing fares...')
+        // Demo mode: skip the live API and use the local fallback. Real founders
+        // (isDemoShell === false) hit the API as before.
+        if(session.isDemoShell !== false){
+          setFlightResults(FLIGHT_FALLBACK)
+        } else {
+          try{
+            const fr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a PDC tournament. Sort by score desc.`}]})})
+            const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+            setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))
+          }catch{setFlightResults(FLIGHT_FALLBACK)}
+        }
+      }
+      if(includeHotels){
+        setSearchPhase('🏨 Searching hotels...')
+        await new Promise(r=>setTimeout(r,700))
+        if(travelMode==='rooms'){
+          setHotelResults(HOTEL_FALLBACKS[trBudgetTier])
+        } else if(session.isDemoShell !== false){
+          setHotelResults(HOTEL_FALLBACKS.mid)
+        } else {
+          try{
+            const hr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, near venue.'} Need: ${[trGym&&'Gym',trVenue&&'Venue-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+            const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+            setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))
+          }catch{setHotelResults(HOTEL_FALLBACKS.mid)}
+        }
+      }
+      const f0 = includeFlights ? (flightResults[0] ?? FLIGHT_FALLBACK[0]) : null
+      const h0 = includeHotels ? (hotelResults[0] ?? (travelMode==='rooms' ? HOTEL_FALLBACKS[trBudgetTier][0] : HOTEL_FALLBACKS.mid[0])) : null
+      if(f0 && h0)      setAiNarrative(`Best: ${f0.airline} £${f0.price} + ${h0.name} £${h0.pricePerNight}/night. Total est: £${(f0.price*trPax+h0.totalPrice).toLocaleString()}.`)
+      else if(f0)       setAiNarrative(`Best flight: ${f0.airline} £${f0.price}. Direct ${f0.duration} ${f0.departure}→${f0.arrival}.`)
+      else if(h0)       setAiNarrative(`Best ${trBudgetTier === 'budget' ? 'budget room' : trBudgetTier === 'luxe' ? 'flagship hotel' : 'hotel'}: ${h0.name} £${h0.pricePerNight}/night. Total ${trNights} nights: £${h0.totalPrice.toLocaleString()}.`)
+      setTStep(3)
+    }catch(e){console.error(e)}
+    setSearching(false);setSearchPhase('')
+  }
+
+  const genEmail=()=>{if(!selectedFlight&&!selectedHotel)return;setBookingEmail([`Subject: Travel — ${trTourney||trDest} — ${session.userName||player.name}`,'',`Hi Dave,`,'',`Please book the following for ${session.userName||player.name} (PDC #${player.pdcRank}):`,selectedFlight?`\n✈️ ${selectedFlight.airline} (${selectedFlight.flightNo})\n${trOrigin} → ${trDest}\nDepart: ${trDepart}\nClass: ${selectedFlight.class}\nPrice: £${selectedFlight.price*trPax}\nBook: ${selectedFlight.bookingUrl}`:'',selectedHotel?`\n🏨 ${selectedHotel.name} (${selectedHotel.stars>0?selectedHotel.stars+'★':'Airbnb'})\nCheck-in: ${trDepart}\nNights: ${trNights}\nPrice: £${selectedHotel.totalPrice}\nBook: ${selectedHotel.bookingUrl}${trEarly?'\nEarly check-in requested.':''}`:'',`\nTotal: £${((selectedFlight?.price??0)*trPax+(selectedHotel?.totalPrice??0)).toLocaleString()}`,'','Cheers',session.userName||player.name].filter(Boolean).join('\n'));setTStep(4)}
+
+  const ScBadge=({s}:{s:number})=><div className={`text-[10px] px-2 py-1 rounded-full font-bold ${s>=90?'bg-green-600/20 text-green-400':s>=75?'bg-red-600/20 text-red-400':s>=60?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{s} Lumio</div>
+
+  const bookingComUrl = `https://www.booking.com/search.html?ss=${encodeURIComponent(trDest)}${trDepart?`&checkin=${trDepart}`:''}${trReturn?`&checkout=${trReturn}`:''}`
+  const airbnbUrl     = `https://www.airbnb.com/s/${encodeURIComponent(trDest)}/homes${trDepart?`?checkin=${trDepart}`:''}${trReturn?`${trDepart?'&':'?'}checkout=${trReturn}`:''}`
+
+  const ROOM_DEST_CHIPS = ['Dortmund','Milton Keynes','Blackpool','Wigan','Prague','London','Las Vegas','Sydney']
+
+  const cta = travelMode === 'flights' ? '🔍 Search flights →' : travelMode === 'rooms' ? '🔍 Search rooms →' : '🔍 Search flights & hotels →'
+  const searchDisabled = !trDest || !trDepart
+
+  // ─── OVERVIEW (landing) ───────────────────────────────────────────────────
+  if (travelTabMode === 'overview') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <SectionHeader icon="✈️" title="Travel & Logistics" subtitle="Flights, hotels, and tour-week travel planning." />
+          <button
+            onClick={() => setTravelTabMode('researcher')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-all hover:opacity-90"
+            style={{ background: '#dc2626', boxShadow: '0 4px 14px rgba(220,38,38,0.35)' }}
+          >
+            <span>✈️</span><span>Plan new trip</span>
+          </button>
+        </div>
+
+        <div className="bg-gradient-to-r from-red-900/30 to-orange-900/20 border border-red-600/30 rounded-xl p-5">
+          <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">TODAY&apos;S TRAVEL</div>
+          <div className="text-white font-bold text-lg">In Dortmund — European Championship R1 vs D. Merrick tonight</div>
+          <div className="text-sm text-gray-400 mt-1">Flight in: <span className="text-red-300 font-semibold">BA0942 LHR → DTM (Sun, completed)</span> · Pullman Dortmund check-in done.</div>
+          <div className="text-sm text-gray-400 mt-1">Tournament transport: PDC coach pickup from hotel 18:00 for 20:00 walk-on (Board 4).</div>
+          <div className="text-sm text-gray-400 mt-1">Return flight: BA0945 DTM → LHR Fri 18 Apr 13:55 (post-elimination or post-final, whichever).</div>
+        </div>
+
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">This Month&rsquo;s Travel</div>
+          <div className="space-y-2">
+            {[
+              { date: 'Apr 14', route: 'London → Dortmund (LHR → DTM)',         reason: 'European Championship' },
+              { date: 'Apr 18', route: 'Dortmund → London',                     reason: 'After Euro Champ' },
+              { date: 'Apr 25', route: 'London → Milton Keynes (drive)',        reason: 'Players Championship 9 + 10' },
+              { date: 'Apr 27', route: 'Milton Keynes → London',                reason: 'Sun evening return' },
+              { date: 'Apr 28', route: 'London → Prague (LHR → PRG)',           reason: 'European Tour event' },
+              { date: 'May 2',  route: 'Prague → London',                       reason: 'Post-Prague reset' },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 last:border-0">
+                <span className="text-xs text-red-400 font-medium w-14">{t.date}</span>
+                <span className="text-sm text-gray-200 flex-1">{t.route}</span>
+                <span className="text-xs text-gray-500">{t.reason}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard label="Flights"      value="18" sub="This season" color="red" />
+          <StatCard label="Countries"    value="9"  sub="Visited"     color="teal" />
+          <StatCard label="Hotel Nights" value="47" sub="YTD"         color="orange" />
+        </div>
+
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">Visa &amp; Entry Requirements</div>
+          <div className="space-y-2 text-xs text-gray-400">
+            <div className="py-1.5 border-b border-gray-800/50">European Tour events (Dortmund, Prague, Hildesheim, Riesa): GBR passport — no visa, 90/180 day rule applies. Track cumulative days.</div>
+            <div className="py-1.5 border-b border-gray-800/50">USA — World Series of Darts Las Vegas (Dec 2026): ESTA required — apply at least 72h before. Fee ~$21.</div>
+            <div className="py-1.5 border-b border-gray-800/50">Australia — World Series Sydney (Aug 2026): ETA required — apply 6 weeks ahead. £15.</div>
+            <div className="py-1.5">New Zealand — World Series Auckland (Aug 2026): NZeTA required — apply 72h before. NZ$23.</div>
+          </div>
+        </div>
+
+        <DartsAISection context="travel" player={player} session={session} />
+      </div>
+    )
+  }
+
+  // ─── RESEARCHER (4-step wizard, 3-mode switcher) ──────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
+      <button onClick={() => setTravelTabMode('overview')} className="text-xs text-gray-500 hover:text-red-400 flex items-center gap-1.5 transition-colors">
+        <span>&larr;</span><span>Back to travel overview</span>
+      </button>
+      <div><div className="flex items-center gap-2 mb-1"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest bg-gray-800 px-2 py-0.5 rounded">TR-FLIGHTS-01</span><span className="text-[10px] font-bold text-red-400 bg-red-600/10 px-2 py-0.5 rounded border border-red-600/30">AI Research Agent</span></div><h2 className="text-xl font-black text-white">Travel Researcher</h2><p className="text-sm text-gray-400">Flights, hotels, and a booking email in under 60 seconds.</p></div>
+      <div className="flex items-center gap-2 mb-4">{[{n:1,l:'Configure'},{n:2,l:'Research'},{n:3,l:'Results'},{n:4,l:'Book'}].map((s,i)=><div key={s.n} className="flex items-center gap-2"><div className="flex flex-col items-center gap-1"><div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${tStep===s.n?'bg-red-600 text-white':tStep>s.n?'bg-green-500 text-white':'bg-gray-800 text-gray-500'}`}>{tStep>s.n?'✓':s.n}</div><span className={`text-[10px] ${tStep===s.n?'text-red-400 font-semibold':'text-gray-600'}`}>{s.l}</span></div>{i<3&&<div className={`h-px w-12 mb-4 ${tStep>s.n?'bg-green-500':'bg-gray-800'}`}/>}</div>)}</div>
 
-      <SectionHeader icon="✈️" title="Travel & Logistics" subtitle="Flights, hotels, and travel planning." />
+      {tStep===1 && (
+        <div className="space-y-6">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-2 grid grid-cols-3 gap-1">
+            {([
+              { id:'full' as const,    icon:'✈️🏨', label:'Full trip',    sub:'Flights + hotel' },
+              { id:'flights' as const, icon:'✈️',   label:'Flights only', sub:'Skip the hotel' },
+              { id:'rooms' as const,   icon:'🏨',   label:'Room only',    sub:'Hotel / Airbnb only' },
+            ]).map(m => (
+              <button key={m.id} onClick={() => setTravelMode(m.id)}
+                className={`px-3 py-3 rounded-xl text-xs text-center border transition-all ${travelMode===m.id ? 'border-red-500 bg-red-600/10 text-white' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                <div className="text-base mb-0.5">{m.icon}</div>
+                <div className="font-bold">{m.label}</div>
+                <div className="text-[10px] opacity-70 mt-0.5">{m.sub}</div>
+              </button>
+            ))}
+          </div>
 
-      <div className="bg-gradient-to-r from-blue-900/30 to-teal-900/20 border border-blue-600/30 rounded-xl p-5">
-        <div className="text-xs text-blue-400 font-semibold uppercase tracking-wider mb-2">TODAY&apos;S TRAVEL</div>
-        <div className="text-white font-bold text-lg">BA1234 · London Heathrow → Dortmund</div>
-        <div className="text-sm text-gray-400">16:30 departure · Terminal 5 · Gate TBC (check 3h before)</div>
-        <div className="text-sm text-gray-400 mt-1">Hotel: Pullman Dortmund · Confirmation: PDC2025-JAK19</div>
-        <div className="text-sm text-gray-400 mt-1">PDC tournament transport: Coach pickup from hotel 18:00</div>
-      </div>
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-1">Which tournament?</h3><div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">{UPCOMING.map(t=><button key={t.name} onClick={()=>{setTrTourney(t.name);setTrDest(t.dest)}} className={`px-4 py-3 rounded-xl text-left text-xs border ${trTourney===t.name?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-400 hover:text-white'}`}><div className="font-semibold">{t.name}</div><div className="text-[10px] text-gray-600 mt-0.5">{t.dates}</div></button>)}</div></div>
+          )}
 
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">This Month&apos;s Travel</div>
-        <div className="space-y-2">
-          {[
-            { date: 'Apr 14', route: 'London → Dortmund', reason: 'European Ch.' },
-            { date: 'Apr 17', route: 'Dortmund → London', reason: 'After European Ch.' },
-            { date: 'Apr 22', route: 'London → Preston', reason: 'Exhibition (drive)' },
-            { date: 'Apr 28', route: 'London → Prague', reason: 'European Tour' },
-            { date: 'May 1', route: 'Prague → London', reason: '' },
-          ].map((t, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
-              <span className="text-xs text-blue-400 font-medium w-14">{t.date}</span>
-              <span className="text-sm text-gray-200 flex-1">{t.route}</span>
-              <span className="text-xs text-gray-500">{t.reason}</span>
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">Route &amp; dates</h3><div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">From</label><input defaultValue={trOrigin} onBlur={e=>setTrOrigin(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">To</label><input value={trDest} onChange={e=>setTrDest(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Depart</label><input type="date" value={trDepart} onChange={e=>setTrDepart(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Return</label><input type="date" value={trReturn} onChange={e=>setTrReturn(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div></div></div>
+          )}
+
+          {travelMode === 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6 space-y-5">
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">Destination &amp; dates</h3>
+                <p className="text-[11px] text-gray-500 mb-3">City, neighbourhood, or venue name. No tournament needed.</p>
+                <div className="flex flex-wrap gap-2 mb-3">{ROOM_DEST_CHIPS.map(c => <button key={c} onClick={()=>setTrDest(c)} className={`px-3 py-1.5 rounded-lg text-xs border ${trDest===c?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-500 hover:text-white'}`}>{c}</button>)}</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Where</label><input value={trDest} onChange={e=>setTrDest(e.target.value)} placeholder="City or venue" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Check-in</label><input type="date" value={trDepart} onChange={e=>setTrDepart(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Check-out</label><input type="date" value={trReturn} onChange={e=>setTrReturn(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase mb-2 block">Budget tier</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id:'budget' as const, label:'Budget',  sub:'£30-£60/night',  hint:'Hostels, Airbnb private rooms, budget chains' },
+                    { id:'mid' as const,    label:'Mid',     sub:'£90-£180/night', hint:'Standard 3-4★ hotels' },
+                    { id:'luxe' as const,   label:'Luxe',    sub:'£250+/night',    hint:'Flagship hotels, suites' },
+                  ]).map(t => (
+                    <button key={t.id} onClick={()=>setTrBudgetTier(t.id)} className={`px-3 py-3 rounded-xl text-left border text-xs ${trBudgetTier===t.id?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-500 hover:text-white'}`}>
+                      <div className="font-bold">{t.label}</div>
+                      <div className="text-[10px] mt-0.5 opacity-70">{t.sub}</div>
+                      <div className="text-[10px] mt-1 opacity-50">{t.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase mb-2 block">Preferences</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {(trBudgetTier==='budget'
+                    ? [{v:trShared,s:setTrShared,l:'Shared room OK'},{v:trKitchen,s:setTrKitchen,l:'Kitchen access'},{v:trEarly,s:setTrEarly,l:'Early check-in'},{v:trVenue,s:setTrVenue,l:'Near venue'}]
+                    : trBudgetTier==='luxe'
+                      ? [{v:trSpa,s:setTrSpa,l:'Spa'},{v:trVenue,s:setTrVenue,l:'Near venue'},{v:trGym,s:setTrGym,l:'Gym'},{v:trEarly,s:setTrEarly,l:'Suite preferred'}]
+                      : [{v:trGym,s:setTrGym,l:'Gym'},{v:trVenue,s:setTrVenue,l:'Near venue'},{v:trEarly,s:setTrEarly,l:'Late check-out'},{v:trKitchen,s:setTrKitchen,l:'Workspace'}]
+                  ).map(r=>
+                    <button key={r.l} onClick={()=>r.s(!r.v)} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs border text-left ${r.v?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-500'}`}><span>{r.v?'✓':'○'}</span>{r.l}</button>
+                  )}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Flights" value="18" sub="This season" color="blue" />
-        <StatCard label="Countries" value="9" sub="Visited" color="teal" />
-        <StatCard label="Hotel Nights" value="47" color="orange" />
-      </div>
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">Preferences</h3><div className={`grid ${travelMode==='full' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}><div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Cabin</label>{([{id:'economy' as const,l:'Economy'},{id:'premium_economy' as const,l:'Premium Econ'},{id:'business' as const,l:'Business'}]).map(c=><button key={c.id} onClick={()=>setTrCabin(c.id)} className={`w-full mb-1.5 px-3 py-2 rounded-xl text-xs text-left border ${trCabin===c.id?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-400'}`}>{c.l}</button>)}</div><div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Flight max (£)</label><input type="number" defaultValue={trMaxFlight} onBlur={e=>setTrMaxFlight(e.target.value)} placeholder="200" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white mb-3"/>{travelMode==='full' && <><label className="text-[10px] text-gray-500 uppercase mb-2 block">Hotel (£/night)</label><input type="number" defaultValue={trHotelBudget} onBlur={e=>setTrHotelBudget(e.target.value)} placeholder="150" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></>}</div>{travelMode==='full' && <div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Hotel needs</label>{[{v:trVenue,s:setTrVenue,l:'Near venue'},{v:trGym,s:setTrGym,l:'Gym'},{v:trEarly,s:setTrEarly,l:'Early check-in'}].map(r=><button key={r.l} onClick={()=>r.s(!r.v)} className={`w-full mb-1.5 flex items-center gap-2 px-3 py-2 rounded-xl text-xs border text-left ${r.v?'border-red-500 bg-red-600/10 text-white':'border-gray-800 text-gray-500'}`}><span>{r.v?'✓':'○'}</span>{r.l}</button>)}</div>}</div></div>
+          )}
 
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Visa & Entry Requirements</div>
-        <div className="space-y-2 text-xs text-gray-400">
-          <div className="py-1.5 border-b border-gray-800/50">EU events: No visa required (GBR passport)</div>
-          <div className="py-1.5 border-b border-gray-800/50">Australia (World Series, Nov): ETA required — apply 6 weeks before</div>
-          <div className="py-1.5">USA (Las Vegas, Dec): ESTA required — apply 72h before</div>
+          <button onClick={runSearch} disabled={searchDisabled} className="w-full py-4 rounded-2xl text-sm font-bold text-white disabled:opacity-40" style={{background:searchDisabled?'#374151':'linear-gradient(135deg, #dc2626, #b91c1c)'}}>{cta}</button>
         </div>
-      </div>
+      )}
+
+      {tStep===2&&searching&&(<div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-12 text-center"><div className="text-4xl mb-6 animate-bounce">{travelMode==='rooms'?'🏨':'✈️'}</div><h3 className="text-lg font-bold text-white mb-2">Searching...</h3><p className="text-sm text-red-400 mb-4">{searchPhase}</p></div>)}
+
+      {tStep===3 && (
+        <div className="space-y-6">
+          {aiNarrative && <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 flex items-start gap-3"><span>🤖</span><div><div className="text-xs font-bold text-red-400 mb-1">AI Recommendation</div><p className="text-xs text-gray-300">{aiNarrative}</p></div></div>}
+          {includeFlights && (
+            <div><h3 className="text-sm font-bold text-white mb-3">✈️ Flights — {trOrigin} → {trDest}</h3><div className="space-y-2">{flightResults.map((f,i)=><button key={i} onClick={()=>setSelectedFlight(selectedFlight?.flightNo===f.flightNo?null:f)} className={`w-full text-left rounded-xl border p-4 ${selectedFlight?.flightNo===f.flightNo?'border-red-500 bg-red-600/10':'border-gray-800 bg-[#0d1117] hover:border-gray-700'}`}><div className="flex items-center justify-between"><div className="flex items-center gap-4"><div className={`w-4 h-4 rounded-full border ${selectedFlight?.flightNo===f.flightNo?'bg-red-500 border-red-500':'border-gray-600'}`}/><div><div className="text-xs font-bold text-white">{f.airline}</div><div className="text-[10px] text-gray-500">{f.flightNo} · {f.stops}</div></div><div className="text-xs text-gray-300">{f.departure}→{f.arrival}</div><div className="text-xs text-gray-500">{f.duration}</div></div><div className="flex items-center gap-3"><ScBadge s={f.score}/><div className="text-sm font-black text-white">£{f.price}</div>{i===0&&<span className="text-[9px] px-2 py-0.5 rounded-full bg-green-600/20 text-green-400 font-bold">Best</span>}</div></div></button>)}</div></div>
+          )}
+          {includeHotels && (
+            <div>
+              <h3 className="text-sm font-bold text-white mb-3">🏨 {travelMode==='rooms' ? (trBudgetTier==='budget' ? 'Budget rooms' : trBudgetTier==='luxe' ? 'Flagship hotels' : 'Hotels') : 'Hotels'} — {trDest}</h3>
+              <div className="grid grid-cols-2 gap-3">{hotelResults.map((h,i)=><button key={i} onClick={()=>setSelectedHotel(selectedHotel?.name===h.name?null:h)} className={`text-left rounded-xl border p-4 ${selectedHotel?.name===h.name?'border-red-500 bg-red-600/10':'border-gray-800 bg-[#0d1117] hover:border-gray-700'}`}><div className="flex items-start justify-between mb-2"><div className="flex items-center gap-2"><div className={`w-4 h-4 rounded-full border mt-0.5 ${selectedHotel?.name===h.name?'bg-red-500 border-red-500':'border-gray-600'}`}/><div><div className="text-xs font-bold text-white">{h.name}</div><div className="text-[10px] text-gray-500">{h.stars>0?'★'.repeat(h.stars):'Airbnb'} · {h.area}</div></div></div><ScBadge s={h.score}/></div><div className="text-[10px] text-gray-500 ml-6 mb-2">📍 {h.distanceToVenue} · ⭐ {h.rating}</div><div className="flex flex-wrap gap-1 ml-6 mb-2">{h.amenities.map((a,j)=><span key={j} className={`text-[9px] px-1.5 py-0.5 rounded ${a==='Gym'||a==='Spa'||a==='Concierge'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500'}`}>{a}</span>)}</div><div className="flex justify-between ml-6"><span className="text-[10px] text-gray-500">£{h.pricePerNight}/night</span><span className="text-sm font-black text-white">£{h.totalPrice.toLocaleString()}</span></div>{i===0&&<div className="mt-2 ml-6 text-[9px] text-green-400 font-bold">✓ Recommended</div>}</button>)}</div>
+              {travelMode === 'rooms' && (
+                <div className="mt-4 bg-[#0d0f1a] border border-red-600/30 rounded-xl p-4">
+                  <div className="text-xs font-bold text-white mb-3">Or browse direct</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <a href={bookingComUrl} target="_blank" rel="noreferrer" className="text-center py-3 rounded-xl border border-blue-600/30 bg-blue-600/5 text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 text-xs font-semibold">🔍 Search on booking.com →</a>
+                    <a href={airbnbUrl}     target="_blank" rel="noreferrer" className="text-center py-3 rounded-xl border border-pink-600/30 bg-pink-600/5 text-pink-400 hover:bg-pink-600/10 hover:text-pink-300 text-xs font-semibold">🔍 Search on Airbnb →</a>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-2">Pre-populated with your destination{trDepart && ' + check-in'}{trReturn && ' + check-out'}.</div>
+                </div>
+              )}
+            </div>
+          )}
+          {(selectedFlight||selectedHotel) && <div className="bg-[#0d1117] border border-red-600/30 rounded-xl p-4 flex items-center justify-between"><div><div className="text-xs font-bold text-white">Selected</div><div className="text-[10px] text-gray-500">{selectedFlight&&`✈️ ${selectedFlight.airline} £${selectedFlight.price*trPax}`}{selectedFlight&&selectedHotel&&' + '}{selectedHotel&&`🏨 ${selectedHotel.name} £${selectedHotel.totalPrice}`}</div></div><div className="text-2xl font-black text-white">£{((selectedFlight?.price??0)*trPax+(selectedHotel?.totalPrice??0)).toLocaleString()}</div></div>}
+          <div className="flex gap-3"><button onClick={genEmail} disabled={!selectedFlight&&!selectedHotel} className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{background:(!selectedFlight&&!selectedHotel)?'#374151':'#dc2626'}}>📧 Booking email →</button><button onClick={()=>{setTStep(1);setFlightResults([]);setHotelResults([]);setSelectedFlight(null);setSelectedHotel(null)}} className="px-4 py-3 rounded-xl text-xs border border-gray-700 text-gray-400 hover:text-white">↺ New</button></div>
+        </div>
+      )}
+
+      {tStep===4&&(<div className="space-y-5"><div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">📧 Booking email</h3><textarea value={bookingEmail} onChange={e=>setBookingEmail(e.target.value)} rows={16} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs text-gray-300 font-mono resize-none"/></div>{emailSent?<div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 text-center"><span className="text-2xl">✅</span><div className="text-sm font-bold text-green-400 mt-2">Email opened</div></div>:<div className="flex gap-3"><button onClick={()=>{window.open(`mailto:dave@dhsportsmanagement.co.uk?subject=${encodeURIComponent(`Travel — ${trTourney||trDest}`)}&body=${encodeURIComponent(bookingEmail)}`);setEmailSent(true)}} className="flex-1 py-4 rounded-xl text-sm font-bold text-white" style={{background:'#dc2626'}}>📧 Send →</button><button onClick={()=>navigator.clipboard?.writeText(bookingEmail)} className="px-4 py-4 rounded-xl text-xs border border-gray-700 text-gray-400">📋 Copy</button></div>}<button onClick={()=>{setTStep(1);setFlightResults([]);setHotelResults([]);setSelectedFlight(null);setSelectedHotel(null);setBookingEmail('');setEmailSent(false)}} className="text-xs text-gray-600 hover:text-gray-400 block mx-auto">← New search</button></div>)}
+
       <DartsAISection context="travel" player={player} session={session} />
     </div>
   );
@@ -7387,53 +7652,241 @@ const DARTS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: s
 function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession; player: DartsPlayer }) {
   const [activeTab, setActiveTab] = useState<'overview'|'obligations'|'content'|'events'|'roi'>('overview')
   const sponsorName = session.clubName || 'Vanta Sports'
-  const sponsorColor = '#dc2626'
+  const sponsorColor = '#0ea5e9'  // Vanta Sports brand sky-blue (per media-content.ts)
   const sponsorLogo = session.logoDataUrl
-  const tabs = [
-    { id: 'overview' as const, label: 'Overview', icon: '📊' },
-    { id: 'obligations' as const, label: 'Obligations', icon: '📋' },
-    { id: 'content' as const, label: 'Content', icon: '📱' },
-    { id: 'events' as const, label: 'Events', icon: '🏆' },
-    { id: 'roi' as const, label: 'ROI', icon: '💰' },
+  const playerDisplayName = session.userName || player.name
+
+  // Anchored on the Vanta Sports / Jake Morrison demo deal — the default sponsor
+  // session for /darts/darts-demo. Modest sponsor demands tier-appropriate for
+  // a PDC #19 player; £48k is a meaningful deal at this level.
+  const OBLIGATIONS = [
+    { id:'o1', title:'Barrel review video shoot — Sarah Mills on-site',  due:'Today',         status:'pending',   platform:'TikTok / Instagram', reach:'52k' },
+    { id:'o2', title:'Pre-walk-on Instagram story — Vanta 24g spec card', due:'Today',         status:'pending',   platform:'Instagram',          reach:'62k' },
+    { id:'o3', title:'European Championship walk-on banner placement',     due:'Tonight 19:30', status:'scheduled', platform:'Sky Sports / Stage', reach:'1.8M' },
+    { id:'o4', title:'Practice routine vlog — Vanta board cameo',         due:'Sun 21 Apr',    status:'scheduled', platform:'YouTube',            reach:'18k' },
+    { id:'o5', title:'Players Championship 9 — Vanta polo + bag visible', due:'Sat 26 Apr',    status:'upcoming',  platform:'PDC.tv / Stage',     reach:'420k' },
+    { id:'o6', title:'Q2 content shoot day at Vanta HQ',                  due:'Wed 14 May',    status:'upcoming',  platform:'Multi',              reach:'—' },
   ]
+
+  const CONTENT = [
+    { title:'Vanta 24g barrel deep-dive — slow-mo grip review',  date:'14 Apr', type:'Video', platform:'TikTok',    likes:'8.4k',  reach:'124k' },
+    { title:'Practice routine — 1,000 doubles drill',             date:'10 Apr', type:'Video', platform:'YouTube',   likes:'1.2k',  reach:'18k'  },
+    { title:'Players Champ 8 vlog — Wigan to the final',          date:'4 Apr',  type:'Video', platform:'YouTube',   likes:'2.1k',  reach:'31k'  },
+    { title:'Walk-on music reveal — Vanta logo card',             date:'28 Mar', type:'Story', platform:'Instagram', likes:'4.8k',  reach:'62k'  },
+    { title:'New Vanta Blade 6 board unboxing',                   date:'18 Mar', type:'Photo', platform:'Instagram', likes:'3.6k',  reach:'58k'  },
+  ]
+
+  const EVENTS = [
+    { event:'PDC European Championship — R1 vs D. Merrick', date:'Tonight',      venue:'Westfalenhallen, Dortmund',  broadcast:'Sky Sports, ITV4, DAZN', exposure:'Est. 1.8M TV viewers' },
+    { event:'Players Championship 9',                        date:'Sat 26 Apr',   venue:'Marshall Arena, Milton Keynes', broadcast:'PDC.tv stream',          exposure:'Est. 420k stream views' },
+    { event:'Players Championship 10',                       date:'Sun 27 Apr',   venue:'Marshall Arena, Milton Keynes', broadcast:'PDC.tv stream',          exposure:'Est. 380k stream views' },
+    { event:'World Matchplay',                               date:'Sat 19 Jul',   venue:'Winter Gardens, Blackpool',     broadcast:'Sky Sports, DAZN',       exposure:'Est. 2.4M TV viewers' },
+    { event:'PDC World Championship (if qualified)',         date:'Dec 2026',     venue:'Alexandra Palace, London',       broadcast:'Sky Sports, ITV4',       exposure:'Est. 4.1M TV viewers' },
+  ]
+
+  const pendingCount = OBLIGATIONS.filter(o => o.status === 'pending').length
+  const scheduledCount = OBLIGATIONS.filter(o => o.status === 'scheduled').length
+  const upcomingCount = OBLIGATIONS.filter(o => o.status === 'upcoming').length
+
   return (
     <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Hero banner */}
       <div className="relative px-8 py-6" style={{ background: `linear-gradient(135deg, ${sponsorColor}25 0%, rgba(0,0,0,0.8) 60%, #0d1117 100%)`, borderBottom: `1px solid ${sponsorColor}30` }}>
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
-            {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `${sponsorColor}20`, border: `2px solid ${sponsorColor}40` }}>
+              {sponsorLogo ? <img src={sponsorLogo} alt={sponsorName} className="w-full h-full object-contain p-1" /> : <span className="text-2xl font-black" style={{ color: sponsorColor }}>{sponsorName.slice(0,2).toUpperCase()}</span>}
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
+              <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
+              <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {playerDisplayName} · PDC #{player.pdcRank}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: sponsorColor }}>Partner Portal</div>
-            <h1 className="text-2xl font-black text-white">{sponsorName}</h1>
-            <div className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Official partner of {session.userName || player.name} · PDC #{player.pdcRank}</div>
-          </div>
-        </div>
-      </div>
-      <div className="flex gap-1 px-6 pt-4 border-b border-gray-800">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${activeTab === t.id ? 'border-red-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            <span>{t.icon}</span>{t.label}
-          </button>
-        ))}
-      </div>
-      <div className="p-6">
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[{ label:'Obligations', value:'4 total', sub:'1 due today', color:'#EF4444' },{ label:'Est. reach', value:'8.2M', sub:'this season', color:sponsorColor },{ label:'Deal value', value:'£45k/yr', sub:'renewal Jun 2026', color:'#22C55E' },{ label:'PDC ranking', value:`#${player.pdcRank}`, sub:'current', color:'#dc2626' }].map((s,i) => (
-              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="hidden md:flex items-center gap-4">
+            {[
+              { label:'Obligations', value:`${OBLIGATIONS.length} total`, sub:`${pendingCount} due today`,  color:'#EF4444' },
+              { label:'TV exposure', value:'1.8M',                        sub:'Euro Champ tonight',         color:sponsorColor },
+              { label:'Deal value',  value:'£48k/yr',                     sub:'renewal Jun 2026',           color:'#22C55E' },
+              { label:'PDC ranking', value:`#${player.pdcRank}`,          sub:'up 2 this week',             color:'#dc2626' },
+            ].map((s,i) => (
+              <div key={i} className="text-center px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs text-white font-semibold mt-1">{s.label}</div>
+                <div className="text-[10px] text-white font-semibold">{s.label}</div>
                 <div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.sub}</div>
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0 border-b px-6 overflow-x-auto" style={{ borderColor: '#1F2937', backgroundColor: '#0d1117' }}>
+        {([
+          { id:'overview' as const,    label:'Overview',     icon:'🏠' },
+          { id:'obligations' as const, label:'Obligations',  icon:'📋' },
+          { id:'content' as const,     label:'Content',      icon:'📱' },
+          { id:'events' as const,      label:'Events',       icon:'🎯' },
+          { id:'roi' as const,         label:'ROI & Reach',  icon:'📊' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="flex items-center gap-1.5 px-5 py-3 text-xs font-semibold border-b-2 transition-all -mb-px whitespace-nowrap" style={{ borderColor: activeTab === t.id ? sponsorColor : 'transparent', color: activeTab === t.id ? '#FFFFFF' : '#6B7280' }}><span>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {pendingCount > 0 && (
+              <div className="rounded-xl p-5" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <div className="flex items-center gap-2 mb-3"><span>🔴</span><span className="text-sm font-bold text-white">{pendingCount} obligations due today</span></div>
+                {OBLIGATIONS.filter(o => o.status === 'pending').map(o => (
+                  <div key={o.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+                    <div><div className="text-sm text-white">{o.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{o.platform} · Est. reach {o.reach}</div></div>
+                    <span className="text-xs px-2 py-1 rounded font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>Due {o.due}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white">Brand visibility — European Championship tonight</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{playerDisplayName} vs D. Merrick at Westfalenhallen, Dortmund — Sky Sports / ITV4 / DAZN</p>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label:'Expected TV viewers', value:'1.8M',  icon:'📺', color:sponsorColor },
+                  { label:'Combined social',     value:'195k',  icon:'📱', color:'#dc2626' },
+                  { label:'Press accredited',    value:'80+',   icon:'📰', color:'#8B5CF6' },
+                ].map((s,i) => (
+                  <div key={i} className="text-center p-4 rounded-xl" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}>
+                    <div className="text-2xl mb-1">{s.icon}</div>
+                    <div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Season obligations</p>
+                <div className="flex items-center gap-3 mb-2"><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width:'33%', backgroundColor: sponsorColor }} /></div><span className="text-xs font-bold" style={{ color: sponsorColor }}>2/{OBLIGATIONS.length}</span></div>
+                <div className="space-y-1 text-xs">
+                  {[['Pending', pendingCount, '#EF4444'],['Scheduled', scheduledCount, '#0ea5e9'],['Upcoming', upcomingCount, '#6B7280']].map(([l,v,c]) => (
+                    <div key={l as string} className="flex justify-between" style={{ color: '#6B7280' }}><span>{l as string}</span><span style={{ color: c as string }}>{v as number}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <p className="text-sm font-bold text-white mb-3">Deal summary</p>
+                {[
+                  ['Partner since', 'July 2023'],
+                  ['Deal value',    '£48,000/yr + win bonuses'],
+                  ['Renewal date',  'Jun 2026 (~70 days)'],
+                  ['Equipment',     '24g barrels · Blade 6 board · Luxe Pro string'],
+                  ['Obligations',   '6 activations / season'],
+                ].map(([l,v]) => (
+                  <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #1F2937' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-bold text-white">{v}</span></div>
+                ))}
+                <div className="mt-3 pt-2"><button className="w-full py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: sponsorColor }}>Discuss renewal →</button></div>
+              </div>
+            </div>
+          </div>
         )}
-        {activeTab === 'obligations' && <div className="text-sm text-gray-400">Sponsor obligations tracking — content shoots, social posts, renewals.</div>}
-        {activeTab === 'content' && <div className="text-sm text-gray-400">Content calendar and performance metrics for sponsored posts.</div>}
-        {activeTab === 'events' && <div className="text-sm text-gray-400">Tournament schedule with broadcast exposure and viewer estimates.</div>}
-        {activeTab === 'roi' && <div className="text-sm text-gray-400">Return on investment analytics — reach, engagement, brand value.</div>}
+
+        {/* OBLIGATIONS */}
+        {activeTab === 'obligations' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Obligations</h2>
+            {OBLIGATIONS.map(o => (
+              <div key={o.id} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: `1px solid ${o.status==='pending'?'rgba(239,68,68,0.3)':'#1F2937'}` }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1"><span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: o.status==='pending'?'rgba(239,68,68,0.15)':o.status==='scheduled'?'rgba(14,165,233,0.15)':'rgba(107,114,128,0.15)', color: o.status==='pending'?'#EF4444':o.status==='scheduled'?'#0ea5e9':'#6B7280' }}>{o.status==='pending'?'⏰ Due today':o.status==='scheduled'?'📅 Scheduled':'⏳ Upcoming'}</span><span className="text-xs" style={{ color: '#6B7280' }}>{o.platform}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{o.title}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>Due: {o.due} · Est. reach: {o.reach}</div>
+                  </div>
+                  {o.status === 'pending' && <button className="text-xs px-3 py-1.5 rounded-lg font-bold text-white flex-shrink-0" style={{ backgroundColor: '#EF4444' }}>Chase player →</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        {activeTab === 'content' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Content Gallery</h2>
+            {CONTENT.map((c,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${sponsorColor}15`, border: `1px solid ${sponsorColor}30` }}>{c.type==='Photo'?'📸':c.type==='Story'?'📱':'🎬'}</div>
+                    <div><div className="text-sm font-bold text-white">{c.title}</div><div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{c.platform} · {c.date} · {c.type}</div></div>
+                  </div>
+                  <div className="text-right"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{c.reach} reach</div><div className="text-xs" style={{ color: '#6B7280' }}>{c.likes} likes</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EVENTS */}
+        {activeTab === 'events' && (
+          <div className="space-y-4 max-w-3xl">
+            <h2 className="text-xl font-black text-white">Tournament Calendar &amp; Exposure</h2>
+            {EVENTS.map((e,i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">{i===0 && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#EF4444' }}>LIVE TONIGHT</span>}<span className="text-xs" style={{ color: '#6B7280' }}>{e.date}</span></div>
+                    <h3 className="font-bold text-sm text-white mb-1">{e.event}</h3>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>📍 {e.venue}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6B7280' }}>📺 {e.broadcast}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0"><div className="text-sm font-bold" style={{ color: sponsorColor }}>{e.exposure}</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ROI */}
+        {activeTab === 'roi' && (
+          <div className="space-y-5 max-w-3xl">
+            <h2 className="text-xl font-black text-white">ROI &amp; Reach</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label:'Total reach YTD',     value:'3.4M', color:sponsorColor },
+                { label:'TV impressions',      value:'1.8M', color:'#dc2626' },
+                { label:'Social engagements',  value:'68k',  color:'#22C55E' },
+                { label:'Press mentions',      value:'42',   color:'#8B5CF6' },
+              ].map((s,i) => (
+                <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>
+              ))}
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <p className="text-sm font-bold text-white mb-4">Estimated brand value breakdown</p>
+              {[
+                { label:'TV / broadcast exposure (Sky / ITV4 / DAZN)', value:'£28,000', pct:58, color:sponsorColor },
+                { label:'Walk-on banner & on-stage equipment',          value:'£9,000',  pct:19, color:'#dc2626' },
+                { label:'Social media reach (Twitter / TikTok)',        value:'£7,000',  pct:15, color:'#0ea5e9' },
+                { label:'Press conference & interview backdrop',        value:'£4,000',  pct:8,  color:'#8B5CF6' },
+              ].map((r,i) => (
+                <div key={i} className="mb-4"><div className="flex justify-between mb-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{r.label}</span><span className="text-xs font-bold" style={{ color: r.color }}>{r.value}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{ width: `${r.pct}%`, backgroundColor: r.color }} /></div></div>
+              ))}
+              <div className="flex justify-between pt-3 mt-2" style={{ borderTop: '1px solid #1F2937' }}><span className="text-sm font-bold text-white">Total estimated value</span><span className="text-sm font-black" style={{ color: sponsorColor }}>£48,000</span></div>
+            </div>
+            <div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${sponsorColor}20, rgba(0,0,0,0.4))`, border: `1px solid ${sponsorColor}40` }}>
+              <div className="text-2xl mb-2">🤝</div>
+              <div className="text-base font-bold text-white mb-1">Renewal in ~70 days</div>
+              <div className="text-xs mb-4" style={{ color: '#6B7280' }}>Current deal expires Jun 2026. ROI tracking positively against the 1:1 value-to-fee benchmark.</div>
+              <button className="px-8 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: sponsorColor }}>Start renewal discussion →</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -8212,7 +8665,6 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   const liveProfilePhotoOuter = useDartsProfilePhoto()
   const liveBrandName = useDartsBrandName()
   const liveBrandLogo = useDartsBrandLogo()
-  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter?.trim() || session.photoDataUrl?.trim() || (isDemoOuter ? '/jake_morrison.jpg' : null) }
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
@@ -8232,9 +8684,29 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   const roleConfig = DARTS_ROLE_CONFIG[currentRole] ?? DARTS_ROLE_CONFIG.player
   const isSponsor = currentRole === 'sponsor'
 
+  // liveSession reflects the LIVE role override (not the original session.role
+  // captured at mount). RoleSwitcher uses session.role to highlight the
+  // "Current view" — without this, the label stays glued to the original role
+  // even after the user switches.
+  const liveSession = { ...session, role: roleOverride, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter?.trim() || session.photoDataUrl?.trim() || (isDemoOuter ? '/jake_morrison.jpg' : null) }
+
   const visibleSidebarItems = roleConfig.sidebar === 'all'
     ? SIDEBAR_ITEMS
     : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
+
+  // Render guard against role-leakage: if the current activeSection isn't in
+  // the new role's allowed list (e.g. user switched from Player to Sponsor
+  // while on a player-only tab), snap back to the role's first allowed
+  // section. Belt-and-braces alongside the explicit reset in onRoleChange.
+  const allowedSections: string[] = roleConfig.sidebar === 'all'
+    ? SIDEBAR_ITEMS.map(i => i.id)
+    : roleConfig.sidebar
+  useEffect(() => {
+    if (allowedSections.length > 0 && !allowedSections.includes(activeSection)) {
+      setActiveSection(allowedSections[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleOverride])
 
   useEffect(() => {
     let cancelled = false;
@@ -8547,6 +9019,15 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           accentColor="#dc2626"
           onRoleChange={(role) => {
             setRoleOverride(role)
+            // Reset activeSection to the new role's first allowed tab so we
+            // never render player content under a sponsor view (or vice versa).
+            const newConfig = DARTS_ROLE_CONFIG[role as keyof typeof DARTS_ROLE_CONFIG]
+            if (newConfig) {
+              const firstAllowed = newConfig.sidebar === 'all'
+                ? SIDEBAR_ITEMS[0]?.id
+                : newConfig.sidebar[0]
+              if (firstAllowed) setActiveSection(firstAllowed)
+            }
             try {
               const key = 'lumio_sports_demo_darts'
               const stored = localStorage.getItem(key)

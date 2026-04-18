@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Sparkles, AlertCircle, CheckCircle2, Clock, Target, Users, Layers, BarChart3, Filter, Plus } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
@@ -202,10 +202,12 @@ export default function ProjectsView() {
         <div className="min-w-[600px]">
           <div className="grid gap-0" style={{ gridTemplateColumns: '120px repeat(9, 1fr)' }}>
             <div />{QUARTERS.map(q => <div key={q} className="text-center text-[10px] font-semibold pb-2" style={{ color: '#6B7280' }}>{q}</div>)}
-            {ROADMAP.map(r => (<>
-              <div key={r.code} className="flex items-center gap-2 pr-2 py-2"><span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${r.color}1a`, color: r.color }}>{r.code}</span><span className="text-xs truncate" style={{ color: '#9CA3AF' }}>{r.name}</span></div>
-              {QUARTERS.map((_, qi) => <div key={qi} className="py-2 px-0.5">{qi >= r.start && qi <= r.end && <div className="h-5 rounded" style={{ backgroundColor: r.color, opacity: 0.7 }} />}</div>)}
-            </>))}
+            {ROADMAP.map(r => (
+              <Fragment key={r.code}>
+                <div className="flex items-center gap-2 pr-2 py-2"><span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${r.color}1a`, color: r.color }}>{r.code}</span><span className="text-xs truncate" style={{ color: '#9CA3AF' }}>{r.name}</span></div>
+                {QUARTERS.map((_, qi) => <div key={qi} className="py-2 px-0.5">{qi >= r.start && qi <= r.end && <div className="h-5 rounded" style={{ backgroundColor: r.color, opacity: 0.7 }} />}</div>)}
+              </Fragment>
+            ))}
           </div>
         </div>
       </div>}

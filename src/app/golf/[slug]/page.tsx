@@ -847,7 +847,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     ? (liveProfileName || session.userName || player.name)
     : player.name
   const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto || session.photoDataUrl || '/james_hargreaves.jpg') : null
-  const firstName = displayPlayerName.split(' ')[0] || 'James'
+  const firstName = displayPlayerName.split(' ')[0] || 'You'
   const aiSummaryLabel = (() => { const h = new Date().getHours(); return h < 12 ? 'AI Morning Summary' : h < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary' })()
   // Speech state — morning briefing TTS
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -3711,6 +3711,324 @@ function GolfFindProView({ player, session }: { player: GolfPlayer; session: Spo
   )
 }
 
+// ─── TRAVEL & LOGISTICS ──────────────────────────────────────────────────────
+// Inline types for the Travel Researcher (mirrors the tennis pattern).
+interface GolfFlightResult { airline: string; flightNo: string; departure: string; arrival: string; duration: string; stops: string; price: number; class: string; bookingUrl?: string; score: number }
+interface GolfHotelResult  { name: string; stars: number; area: string; distanceToVenue: string; pricePerNight: number; totalPrice: number; rating: number; amenities: string[]; bookingUrl?: string; score: number }
+
+function GolfTravelView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const [travelTabMode, setTravelTabMode] = useState<'overview' | 'researcher'>('overview')
+  const [tStep,setTStep]=useState<1|2|3|4>(1)
+  const [searching,setSearching]=useState(false)
+  const [searchPhase,setSearchPhase]=useState('')
+  const [flightResults,setFlightResults]=useState<GolfFlightResult[]>([])
+  const [hotelResults,setHotelResults]=useState<GolfHotelResult[]>([])
+  const [selectedFlight,setSelectedFlight]=useState<GolfFlightResult|null>(null)
+  const [selectedHotel,setSelectedHotel]=useState<GolfHotelResult|null>(null)
+  const [bookingEmail,setBookingEmail]=useState('')
+  const [emailSent,setEmailSent]=useState(false)
+  const [aiNarrative,setAiNarrative]=useState('')
+  const [trOrigin,setTrOrigin]=useState('London (LHR)')
+  const [trDest,setTrDest]=useState('')
+  const [trTourney,setTrTourney]=useState('')
+  const [trDepart,setTrDepart]=useState('')
+  const [trReturn,setTrReturn]=useState('')
+  const [trCabin,setTrCabin]=useState<'economy'|'premium_economy'|'business'>('economy')
+  const [trMaxFlight,setTrMaxFlight]=useState('')
+  const [trHotelBudget,setTrHotelBudget]=useState('')
+  const trNights=7,trPax=1
+  const [trGym,setTrGym]=useState(true)
+  const [trCourse,setTrCourse]=useState(true)
+  const [trEarly,setTrEarly]=useState(false)
+  const [travelMode,setTravelMode]=useState<'full'|'flights'|'rooms'>('full')
+  const [trBudgetTier,setTrBudgetTier]=useState<'budget'|'mid'|'luxe'>('mid')
+  const [trKitchen,setTrKitchen]=useState(false)
+  const [trShared,setTrShared]=useState(false)
+  const [trSpa,setTrSpa]=useState(false)
+
+  const UPCOMING=[
+    {name:'Halden Motors International Open', dest:'Munich (MUC)',  dates:'This week · BMW Golf Club Munich-Eichenried'},
+    {name:'Genesis Scottish Open',            dest:'Edinburgh (EDI)',dates:'10–13 Jul · Renaissance Club'},
+    {name:'The Open Championship',            dest:'Belfast (BFS)',  dates:'17–20 Jul · Royal Portrush'},
+    {name:'British Masters',                  dest:'Manchester (MAN)',dates:'24–27 Jul · The Belfry'},
+    {name:'Omega European Masters',           dest:'Geneva (GVA)',   dates:'28–31 Aug · Crans-sur-Sierre'},
+    {name:'FedEx St. Jude Championship',      dest:'Memphis (MEM)',  dates:'7–10 Aug · TPC Southwind'},
+  ]
+
+  const FLIGHT_FALLBACK:GolfFlightResult[]=[
+    {airline:'British Airways',flightNo:'BA0958',departure:'09:25 LHR',arrival:'12:15 MUC',duration:'1h 50m',stops:'Direct',price:189,class:trCabin,bookingUrl:'https://www.britishairways.com',score:93},
+    {airline:'Lufthansa',      flightNo:'LH2475',departure:'07:00 LHR',arrival:'09:55 MUC',duration:'1h 55m',stops:'Direct',price:175,class:trCabin,bookingUrl:'https://www.lufthansa.com',score:90},
+    {airline:'easyJet',        flightNo:'EZY2113',departure:'14:50 LGW',arrival:'17:55 MUC',duration:'2h 05m',stops:'Direct',price:89,class:trCabin,bookingUrl:'https://www.easyjet.com',score:82},
+    {airline:'Eurowings',      flightNo:'EW7445',departure:'12:30 LHR',arrival:'15:25 MUC',duration:'1h 55m',stops:'Direct',price:124,class:trCabin,bookingUrl:'https://www.eurowings.com',score:76},
+    {airline:'Ryanair',        flightNo:'FR8512',departure:'06:15 STN',arrival:'09:15 MUC',duration:'2h 00m',stops:'Direct',price:62,class:trCabin,bookingUrl:'https://www.ryanair.com',score:64},
+  ]
+  const HOTEL_FALLBACKS:Record<'budget'|'mid'|'luxe',GolfHotelResult[]>={
+    budget:[
+      {name:'Motel One Munich Hauptbahnhof',  stars:3,area:'City Centre',           distanceToVenue:'35 min taxi',pricePerNight:68, totalPrice:476, rating:8.4,amenities:['WiFi','Bar','Breakfast'],            bookingUrl:'https://www.motel-one.com',  score:84},
+      {name:'Airbnb private room — Schwabing',stars:0,area:'Schwabing',             distanceToVenue:'25 min taxi',pricePerNight:55, totalPrice:385, rating:4.7,amenities:['Kitchen','WiFi','Self check-in'], bookingUrl:'https://www.airbnb.com',     score:81},
+      {name:'B&B Hotel Munich-Putzbrunn',     stars:2,area:'Putzbrunn',             distanceToVenue:'18 min taxi',pricePerNight:58, totalPrice:406, rating:8.0,amenities:['WiFi','Breakfast','Parking'],     bookingUrl:'https://www.booking.com',    score:78},
+      {name:'Premier Inn München City',       stars:3,area:'City Centre',           distanceToVenue:'32 min taxi',pricePerNight:78, totalPrice:546, rating:8.3,amenities:['WiFi','Restaurant','Gym'],       bookingUrl:'https://www.premierinn.com', score:75},
+    ],
+    mid:[
+      {name:'Sheraton Munich Westpark',       stars:4,area:'Westpark',              distanceToVenue:'22 min taxi',pricePerNight:165,totalPrice:1155,rating:8.6,amenities:['Gym','Pool','Course shuttle','WiFi'],bookingUrl:'https://www.marriott.com',   score:92},
+      {name:'Hilton Munich Park',             stars:5,area:'Englischer Garten',     distanceToVenue:'28 min taxi',pricePerNight:215,totalPrice:1505,rating:8.9,amenities:['Gym','Pool','Spa','Restaurant'], bookingUrl:'https://www.hilton.com',     score:89},
+      {name:'Marriott Munich',                stars:4,area:'Schwabing',             distanceToVenue:'24 min taxi',pricePerNight:178,totalPrice:1246,rating:8.7,amenities:['Gym','Driving range nearby','Bar'],bookingUrl:'https://www.marriott.com',   score:87},
+      {name:'NH Collection München Bavaria',  stars:4,area:'Hauptbahnhof',          distanceToVenue:'35 min taxi',pricePerNight:135,totalPrice:945, rating:8.4,amenities:['Gym','Restaurant','WiFi'],         bookingUrl:'https://www.booking.com',    score:78},
+    ],
+    luxe:[
+      {name:'Mandarin Oriental Munich',       stars:5,area:'Altstadt',              distanceToVenue:'34 min taxi',pricePerNight:625,totalPrice:4375,rating:9.5,amenities:['Spa','Pool','Concierge','Suite'], bookingUrl:'https://www.mandarinoriental.com',score:95},
+      {name:'Bayerischer Hof',                stars:5,area:'Altstadt',              distanceToVenue:'32 min taxi',pricePerNight:540,totalPrice:3780,rating:9.4,amenities:['Spa','Pool','Concierge','Restaurant'],bookingUrl:'https://www.bayerischerhof.de',score:93},
+      {name:'Charles Hotel — Rocco Forte',    stars:5,area:'Maxvorstadt',           distanceToVenue:'30 min taxi',pricePerNight:485,totalPrice:3395,rating:9.3,amenities:['Spa','Pool','Suite'],              bookingUrl:'https://www.roccofortehotels.com',score:91},
+      {name:'The Westin Grand Munich',        stars:5,area:'Arabellapark',          distanceToVenue:'18 min taxi',pricePerNight:325,totalPrice:2275,rating:9.0,amenities:['Pool','Spa','Restaurant'],         bookingUrl:'https://www.marriott.com',    score:88},
+    ],
+  }
+
+  const includeFlights = travelMode !== 'rooms'
+  const includeHotels  = travelMode !== 'flights'
+
+  const runSearch=async()=>{
+    setSearching(true);setTStep(2);setFlightResults([]);setHotelResults([]);setAiNarrative('')
+    try{
+      if(includeFlights){
+        setSearchPhase('✈️ Searching flights from '+trOrigin+' to '+trDest+'...')
+        await new Promise(r=>setTimeout(r,800))
+        setSearchPhase('💰 Comparing fares...')
+        if(session.isDemoShell !== false){
+          setFlightResults(FLIGHT_FALLBACK)
+        } else {
+          try{
+            const fr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a DP World Tour event. Sort by score desc.`}]})})
+            const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+            setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))
+          }catch{setFlightResults(FLIGHT_FALLBACK)}
+        }
+      }
+      if(includeHotels){
+        setSearchPhase('🏨 Searching hotels...')
+        await new Promise(r=>setTimeout(r,700))
+        if(travelMode==='rooms'){
+          setHotelResults(HOTEL_FALLBACKS[trBudgetTier])
+        } else if(session.isDemoShell !== false){
+          setHotelResults(HOTEL_FALLBACKS.mid)
+        } else {
+          try{
+            const hr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, course-adjacent.'} Need: ${[trGym&&'Gym',trCourse&&'Course-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+            const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
+            setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))
+          }catch{setHotelResults(HOTEL_FALLBACKS.mid)}
+        }
+      }
+      const f0 = includeFlights ? (flightResults[0] ?? FLIGHT_FALLBACK[0]) : null
+      const h0 = includeHotels ? (hotelResults[0] ?? (travelMode==='rooms' ? HOTEL_FALLBACKS[trBudgetTier][0] : HOTEL_FALLBACKS.mid[0])) : null
+      if(f0 && h0)      setAiNarrative(`Best: ${f0.airline} £${f0.price} + ${h0.name} £${h0.pricePerNight}/night. Total est: £${(f0.price*trPax+h0.totalPrice).toLocaleString()}.`)
+      else if(f0)       setAiNarrative(`Best flight: ${f0.airline} £${f0.price}. Direct ${f0.duration} ${f0.departure}→${f0.arrival}.`)
+      else if(h0)       setAiNarrative(`Best ${trBudgetTier === 'budget' ? 'budget room' : trBudgetTier === 'luxe' ? 'flagship hotel' : 'hotel'}: ${h0.name} £${h0.pricePerNight}/night. Total ${trNights} nights: £${h0.totalPrice.toLocaleString()}.`)
+      setTStep(3)
+    }catch(e){console.error(e)}
+    setSearching(false);setSearchPhase('')
+  }
+
+  const genEmail=()=>{if(!selectedFlight&&!selectedHotel)return;setBookingEmail([`Subject: Travel — ${trTourney||trDest} — ${session.userName||player.name}`,'',`Hi Sarah,`,'',`Please book the following for ${session.userName||player.name} (OWGR #${player.owgr ?? 87}):`,selectedFlight?`\n✈️ ${selectedFlight.airline} (${selectedFlight.flightNo})\n${trOrigin} → ${trDest}\nDepart: ${trDepart}\nClass: ${selectedFlight.class}\nPrice: £${selectedFlight.price*trPax}\nBook: ${selectedFlight.bookingUrl}`:'',selectedHotel?`\n🏨 ${selectedHotel.name} (${selectedHotel.stars>0?selectedHotel.stars+'★':'Airbnb'})\nCheck-in: ${trDepart}\nNights: ${trNights}\nPrice: £${selectedHotel.totalPrice}\nBook: ${selectedHotel.bookingUrl}${trEarly?'\nEarly check-in requested.':''}`:'',`\nTotal: £${((selectedFlight?.price??0)*trPax+(selectedHotel?.totalPrice??0)).toLocaleString()}`,'','Thanks',session.userName||player.name].filter(Boolean).join('\n'));setTStep(4)}
+
+  const ScBadge=({s}:{s:number})=><div className={`text-[10px] px-2 py-1 rounded-full font-bold ${s>=90?'bg-green-600/20 text-green-400':s>=75?'bg-emerald-600/20 text-emerald-400':s>=60?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{s} Lumio</div>
+
+  const bookingComUrl = `https://www.booking.com/search.html?ss=${encodeURIComponent(trDest)}${trDepart?`&checkin=${trDepart}`:''}${trReturn?`&checkout=${trReturn}`:''}`
+  const airbnbUrl     = `https://www.airbnb.com/s/${encodeURIComponent(trDest)}/homes${trDepart?`?checkin=${trDepart}`:''}${trReturn?`${trDepart?'&':'?'}checkout=${trReturn}`:''}`
+
+  const ROOM_DEST_CHIPS = ['Munich','Edinburgh','Belfast','Geneva','Memphis','Dubai','Abu Dhabi','New York']
+
+  const cta = travelMode === 'flights' ? '🔍 Search flights →' : travelMode === 'rooms' ? '🔍 Search rooms →' : '🔍 Search flights & hotels →'
+  const searchDisabled = !trDest || !trDepart
+
+  // ─── OVERVIEW (landing) ───────────────────────────────────────────────────
+  if (travelTabMode === 'overview') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-xl font-black text-white">Travel &amp; Logistics</h2>
+            <p className="text-sm text-gray-400 mt-1">Tour-week travel, hotels, and DP World Tour itinerary planning.</p>
+          </div>
+          <button
+            onClick={() => setTravelTabMode('researcher')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-all hover:opacity-90"
+            style={{ background: '#15803D', boxShadow: '0 4px 14px rgba(21,128,61,0.35)' }}
+          >
+            <span>✈️</span><span>Plan new trip</span>
+          </button>
+        </div>
+
+        <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-600/30 rounded-xl p-5">
+          <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-2">TODAY&apos;S TRAVEL</div>
+          <div className="text-white font-bold text-lg">In Munich for Halden Motors International Open</div>
+          <div className="text-sm text-gray-400 mt-1">Inbound: <span className="text-green-300 font-semibold">BA0731 LHR → MUC (Sun, completed)</span> · Hotel: Sheraton Munich Westpark · 7 nights.</div>
+          <div className="text-sm text-gray-400 mt-1">Course transport: Tournament courtesy car from hotel — pickup 06:15 for Thu R1 (08:42 tee).</div>
+          <div className="text-sm text-gray-400 mt-1">Return: BA0729 MUC → LHR Sun 18:50 (post-final, contingent on cut/finish).</div>
+        </div>
+
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">This Month&rsquo;s Travel</div>
+          <div className="space-y-2">
+            {[
+              { date: 'Apr 13', route: 'London → Munich (LHR → MUC)',     reason: 'Halden Motors International Open' },
+              { date: 'Apr 20', route: 'Munich → London',                  reason: 'Post-event reset' },
+              { date: 'May 1',  route: 'London → Edinburgh (LHR → EDI)',   reason: 'Genesis Scottish Open build' },
+              { date: 'May 8',  route: 'Edinburgh → Belfast (EDI → BFS)',  reason: 'The Open practice (Portrush)' },
+              { date: 'May 14', route: 'Belfast → London',                 reason: 'Reset week' },
+              { date: 'May 28', route: 'London → New York (LHR → JFK)',    reason: 'FedEx Cup build (US swing)' },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 last:border-0">
+                <span className="text-xs text-green-400 font-medium w-14">{t.date}</span>
+                <span className="text-sm text-gray-200 flex-1">{t.route}</span>
+                <span className="text-xs text-gray-500">{t.reason}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-xl p-4 text-center bg-[#0d0f1a] border border-gray-800"><div className="text-xl font-black text-green-400">38</div><div className="text-xs text-gray-300 font-semibold mt-1">Flights</div><div className="text-[10px] text-gray-600 mt-0.5">This season</div></div>
+          <div className="rounded-xl p-4 text-center bg-[#0d0f1a] border border-gray-800"><div className="text-xl font-black text-teal-400">11</div><div className="text-xs text-gray-300 font-semibold mt-1">Countries</div><div className="text-[10px] text-gray-600 mt-0.5">Visited</div></div>
+          <div className="rounded-xl p-4 text-center bg-[#0d0f1a] border border-gray-800"><div className="text-xl font-black text-orange-400">128</div><div className="text-xs text-gray-300 font-semibold mt-1">Hotel Nights</div><div className="text-[10px] text-gray-600 mt-0.5">YTD</div></div>
+        </div>
+
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">Visa &amp; Entry Requirements</div>
+          <div className="space-y-2 text-xs text-gray-400">
+            <div className="py-1.5 border-b border-gray-800/50">Schengen events (Munich, Geneva, Madrid, Paris): GBR passport — no visa, 90/180 day rule applies. Track cumulative days carefully across the European swing.</div>
+            <div className="py-1.5 border-b border-gray-800/50">USA — FedEx Cup swing (Aug-Sep, Memphis / Atlanta): ESTA active until 2027 · Fee $21 · No action needed.</div>
+            <div className="py-1.5 border-b border-gray-800/50">Australia — ISPS Handa Open (Dec, Perth): ETA required — apply 6 weeks before departure. £15.</div>
+            <div className="py-1.5">UAE — Race to Dubai Championship (Nov): GBR passport — visa on arrival, free, 30 days. No action needed.</div>
+          </div>
+        </div>
+
+        <GolfAISection context="default" player={player} session={session} />
+      </div>
+    )
+  }
+
+  // ─── RESEARCHER (4-step wizard, 3-mode switcher) ──────────────────────────
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <button onClick={() => setTravelTabMode('overview')} className="text-xs text-gray-500 hover:text-green-400 flex items-center gap-1.5 transition-colors">
+        <span>&larr;</span><span>Back to travel overview</span>
+      </button>
+      <div><div className="flex items-center gap-2 mb-1"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest bg-gray-800 px-2 py-0.5 rounded">TR-FLIGHTS-01</span><span className="text-[10px] font-bold text-green-400 bg-green-600/10 px-2 py-0.5 rounded border border-green-600/30">AI Research Agent</span></div><h2 className="text-xl font-black text-white">Travel Researcher</h2><p className="text-sm text-gray-400">Flights, hotels, and a booking email in under 60 seconds.</p></div>
+      <div className="flex items-center gap-2 mb-4">{[{n:1,l:'Configure'},{n:2,l:'Research'},{n:3,l:'Results'},{n:4,l:'Book'}].map((s,i)=><div key={s.n} className="flex items-center gap-2"><div className="flex flex-col items-center gap-1"><div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${tStep===s.n?'bg-green-600 text-white':tStep>s.n?'bg-emerald-500 text-white':'bg-gray-800 text-gray-500'}`}>{tStep>s.n?'✓':s.n}</div><span className={`text-[10px] ${tStep===s.n?'text-green-400 font-semibold':'text-gray-600'}`}>{s.l}</span></div>{i<3&&<div className={`h-px w-12 mb-4 ${tStep>s.n?'bg-emerald-500':'bg-gray-800'}`}/>}</div>)}</div>
+
+      {tStep===1 && (
+        <div className="space-y-6">
+          <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-2 grid grid-cols-3 gap-1">
+            {([
+              { id:'full' as const,    icon:'✈️🏨', label:'Full trip',    sub:'Flights + hotel' },
+              { id:'flights' as const, icon:'✈️',   label:'Flights only', sub:'Skip the hotel' },
+              { id:'rooms' as const,   icon:'🏨',   label:'Room only',    sub:'Hotel / Airbnb only' },
+            ]).map(m => (
+              <button key={m.id} onClick={() => setTravelMode(m.id)}
+                className={`px-3 py-3 rounded-xl text-xs text-center border transition-all ${travelMode===m.id ? 'border-green-500 bg-green-600/10 text-white' : 'border-transparent text-gray-500 hover:text-white'}`}>
+                <div className="text-base mb-0.5">{m.icon}</div>
+                <div className="font-bold">{m.label}</div>
+                <div className="text-[10px] opacity-70 mt-0.5">{m.sub}</div>
+              </button>
+            ))}
+          </div>
+
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-1">Which tournament?</h3><div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">{UPCOMING.map(t=><button key={t.name} onClick={()=>{setTrTourney(t.name);setTrDest(t.dest)}} className={`px-4 py-3 rounded-xl text-left text-xs border ${trTourney===t.name?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-400 hover:text-white'}`}><div className="font-semibold">{t.name}</div><div className="text-[10px] text-gray-600 mt-0.5">{t.dates}</div></button>)}</div></div>
+          )}
+
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">Route &amp; dates</h3><div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">From</label><input defaultValue={trOrigin} onBlur={e=>setTrOrigin(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">To</label><input value={trDest} onChange={e=>setTrDest(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Depart</label><input type="date" value={trDepart} onChange={e=>setTrDepart(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div><div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Return</label><input type="date" value={trReturn} onChange={e=>setTrReturn(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div></div></div>
+          )}
+
+          {travelMode === 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6 space-y-5">
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">Destination &amp; dates</h3>
+                <p className="text-[11px] text-gray-500 mb-3">City or course area. No tournament needed.</p>
+                <div className="flex flex-wrap gap-2 mb-3">{ROOM_DEST_CHIPS.map(c => <button key={c} onClick={()=>setTrDest(c)} className={`px-3 py-1.5 rounded-lg text-xs border ${trDest===c?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-500 hover:text-white'}`}>{c}</button>)}</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Where</label><input value={trDest} onChange={e=>setTrDest(e.target.value)} placeholder="City or course" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Check-in</label><input type="date" value={trDepart} onChange={e=>setTrDepart(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                  <div><label className="text-[10px] text-gray-500 uppercase mb-1 block">Check-out</label><input type="date" value={trReturn} onChange={e=>setTrReturn(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase mb-2 block">Budget tier</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id:'budget' as const, label:'Budget',  sub:'£30-£60/night',  hint:'Hostels, Airbnb private rooms, budget chains' },
+                    { id:'mid' as const,    label:'Mid',     sub:'£90-£180/night', hint:'Standard 3-4★ hotels' },
+                    { id:'luxe' as const,   label:'Luxe',    sub:'£250+/night',    hint:'Flagship hotels, suites' },
+                  ]).map(t => (
+                    <button key={t.id} onClick={()=>setTrBudgetTier(t.id)} className={`px-3 py-3 rounded-xl text-left border text-xs ${trBudgetTier===t.id?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-500 hover:text-white'}`}>
+                      <div className="font-bold">{t.label}</div>
+                      <div className="text-[10px] mt-0.5 opacity-70">{t.sub}</div>
+                      <div className="text-[10px] mt-1 opacity-50">{t.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase mb-2 block">Preferences</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {(trBudgetTier==='budget'
+                    ? [{v:trShared,s:setTrShared,l:'Shared room OK'},{v:trKitchen,s:setTrKitchen,l:'Kitchen access'},{v:trEarly,s:setTrEarly,l:'Early check-in'},{v:trCourse,s:setTrCourse,l:'Course-adjacent (bonus)'}]
+                    : trBudgetTier==='luxe'
+                      ? [{v:trSpa,s:setTrSpa,l:'Spa'},{v:trCourse,s:setTrCourse,l:'Course-adjacent'},{v:trGym,s:setTrGym,l:'Gym'},{v:trEarly,s:setTrEarly,l:'Suite preferred'}]
+                      : [{v:trGym,s:setTrGym,l:'Gym'},{v:trCourse,s:setTrCourse,l:'Course-adjacent'},{v:trEarly,s:setTrEarly,l:'Late check-out'},{v:trKitchen,s:setTrKitchen,l:'Workspace'}]
+                  ).map(r=>
+                    <button key={r.l} onClick={()=>r.s(!r.v)} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs border text-left ${r.v?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-500'}`}><span>{r.v?'✓':'○'}</span>{r.l}</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {travelMode !== 'rooms' && (
+            <div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">Preferences</h3><div className={`grid ${travelMode==='full' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}><div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Cabin</label>{([{id:'economy' as const,l:'Economy'},{id:'premium_economy' as const,l:'Premium Econ'},{id:'business' as const,l:'Business'}]).map(c=><button key={c.id} onClick={()=>setTrCabin(c.id)} className={`w-full mb-1.5 px-3 py-2 rounded-xl text-xs text-left border ${trCabin===c.id?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-400'}`}>{c.l}</button>)}</div><div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Flight max (£)</label><input type="number" defaultValue={trMaxFlight} onBlur={e=>setTrMaxFlight(e.target.value)} placeholder="300" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white mb-3"/>{travelMode==='full' && <><label className="text-[10px] text-gray-500 uppercase mb-2 block">Hotel (£/night)</label><input type="number" defaultValue={trHotelBudget} onBlur={e=>setTrHotelBudget(e.target.value)} placeholder="200" className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white"/></>}</div>{travelMode==='full' && <div><label className="text-[10px] text-gray-500 uppercase mb-2 block">Hotel needs</label>{[{v:trCourse,s:setTrCourse,l:'Course-adjacent'},{v:trGym,s:setTrGym,l:'Gym'},{v:trEarly,s:setTrEarly,l:'Early check-in'}].map(r=><button key={r.l} onClick={()=>r.s(!r.v)} className={`w-full mb-1.5 flex items-center gap-2 px-3 py-2 rounded-xl text-xs border text-left ${r.v?'border-green-500 bg-green-600/10 text-white':'border-gray-800 text-gray-500'}`}><span>{r.v?'✓':'○'}</span>{r.l}</button>)}</div>}</div></div>
+          )}
+
+          <button onClick={runSearch} disabled={searchDisabled} className="w-full py-4 rounded-2xl text-sm font-bold text-white disabled:opacity-40" style={{background:searchDisabled?'#374151':'linear-gradient(135deg, #15803D, #166534)'}}>{cta}</button>
+        </div>
+      )}
+
+      {tStep===2&&searching&&(<div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-12 text-center"><div className="text-4xl mb-6 animate-bounce">{travelMode==='rooms'?'🏨':'✈️'}</div><h3 className="text-lg font-bold text-white mb-2">Searching...</h3><p className="text-sm text-green-400 mb-4">{searchPhase}</p></div>)}
+
+      {tStep===3 && (
+        <div className="space-y-6">
+          {aiNarrative && <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 flex items-start gap-3"><span>🤖</span><div><div className="text-xs font-bold text-green-400 mb-1">AI Recommendation</div><p className="text-xs text-gray-300">{aiNarrative}</p></div></div>}
+          {includeFlights && (
+            <div><h3 className="text-sm font-bold text-white mb-3">✈️ Flights — {trOrigin} → {trDest}</h3><div className="space-y-2">{flightResults.map((f,i)=><button key={i} onClick={()=>setSelectedFlight(selectedFlight?.flightNo===f.flightNo?null:f)} className={`w-full text-left rounded-xl border p-4 ${selectedFlight?.flightNo===f.flightNo?'border-green-500 bg-green-600/10':'border-gray-800 bg-[#0d1117] hover:border-gray-700'}`}><div className="flex items-center justify-between"><div className="flex items-center gap-4"><div className={`w-4 h-4 rounded-full border ${selectedFlight?.flightNo===f.flightNo?'bg-green-500 border-green-500':'border-gray-600'}`}/><div><div className="text-xs font-bold text-white">{f.airline}</div><div className="text-[10px] text-gray-500">{f.flightNo} · {f.stops}</div></div><div className="text-xs text-gray-300">{f.departure}→{f.arrival}</div><div className="text-xs text-gray-500">{f.duration}</div></div><div className="flex items-center gap-3"><ScBadge s={f.score}/><div className="text-sm font-black text-white">£{f.price}</div>{i===0&&<span className="text-[9px] px-2 py-0.5 rounded-full bg-green-600/20 text-green-400 font-bold">Best</span>}</div></div></button>)}</div></div>
+          )}
+          {includeHotels && (
+            <div>
+              <h3 className="text-sm font-bold text-white mb-3">🏨 {travelMode==='rooms' ? (trBudgetTier==='budget' ? 'Budget rooms' : trBudgetTier==='luxe' ? 'Flagship hotels' : 'Hotels') : 'Hotels'} — {trDest}</h3>
+              <div className="grid grid-cols-2 gap-3">{hotelResults.map((h,i)=><button key={i} onClick={()=>setSelectedHotel(selectedHotel?.name===h.name?null:h)} className={`text-left rounded-xl border p-4 ${selectedHotel?.name===h.name?'border-green-500 bg-green-600/10':'border-gray-800 bg-[#0d1117] hover:border-gray-700'}`}><div className="flex items-start justify-between mb-2"><div className="flex items-center gap-2"><div className={`w-4 h-4 rounded-full border mt-0.5 ${selectedHotel?.name===h.name?'bg-green-500 border-green-500':'border-gray-600'}`}/><div><div className="text-xs font-bold text-white">{h.name}</div><div className="text-[10px] text-gray-500">{h.stars>0?'★'.repeat(h.stars):'Airbnb'} · {h.area}</div></div></div><ScBadge s={h.score}/></div><div className="text-[10px] text-gray-500 ml-6 mb-2">📍 {h.distanceToVenue} · ⭐ {h.rating}</div><div className="flex flex-wrap gap-1 ml-6 mb-2">{h.amenities.map((a,j)=><span key={j} className={`text-[9px] px-1.5 py-0.5 rounded ${a==='Gym'||a==='Spa'||a==='Course shuttle'||a==='Concierge'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500'}`}>{a}</span>)}</div><div className="flex justify-between ml-6"><span className="text-[10px] text-gray-500">£{h.pricePerNight}/night</span><span className="text-sm font-black text-white">£{h.totalPrice.toLocaleString()}</span></div>{i===0&&<div className="mt-2 ml-6 text-[9px] text-green-400 font-bold">✓ Recommended</div>}</button>)}</div>
+              {travelMode === 'rooms' && (
+                <div className="mt-4 bg-[#0d0f1a] border border-green-600/30 rounded-xl p-4">
+                  <div className="text-xs font-bold text-white mb-3">Or browse direct</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <a href={bookingComUrl} target="_blank" rel="noreferrer" className="text-center py-3 rounded-xl border border-blue-600/30 bg-blue-600/5 text-blue-400 hover:bg-blue-600/10 hover:text-blue-300 text-xs font-semibold">🔍 Search on booking.com →</a>
+                    <a href={airbnbUrl}     target="_blank" rel="noreferrer" className="text-center py-3 rounded-xl border border-pink-600/30 bg-pink-600/5 text-pink-400 hover:bg-pink-600/10 hover:text-pink-300 text-xs font-semibold">🔍 Search on Airbnb →</a>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-2">Pre-populated with your destination{trDepart && ' + check-in'}{trReturn && ' + check-out'}.</div>
+                </div>
+              )}
+            </div>
+          )}
+          {(selectedFlight||selectedHotel) && <div className="bg-[#0d1117] border border-green-600/30 rounded-xl p-4 flex items-center justify-between"><div><div className="text-xs font-bold text-white">Selected</div><div className="text-[10px] text-gray-500">{selectedFlight&&`✈️ ${selectedFlight.airline} £${selectedFlight.price*trPax}`}{selectedFlight&&selectedHotel&&' + '}{selectedHotel&&`🏨 ${selectedHotel.name} £${selectedHotel.totalPrice}`}</div></div><div className="text-2xl font-black text-white">£{((selectedFlight?.price??0)*trPax+(selectedHotel?.totalPrice??0)).toLocaleString()}</div></div>}
+          <div className="flex gap-3"><button onClick={genEmail} disabled={!selectedFlight&&!selectedHotel} className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{background:(!selectedFlight&&!selectedHotel)?'#374151':'#15803D'}}>📧 Booking email →</button><button onClick={()=>{setTStep(1);setFlightResults([]);setHotelResults([]);setSelectedFlight(null);setSelectedHotel(null)}} className="px-4 py-3 rounded-xl text-xs border border-gray-700 text-gray-400 hover:text-white">↺ New</button></div>
+        </div>
+      )}
+
+      {tStep===4&&(<div className="space-y-5"><div className="bg-[#0d0f1a] border border-gray-800 rounded-2xl p-6"><h3 className="text-sm font-bold text-white mb-4">📧 Booking email</h3><textarea value={bookingEmail} onChange={e=>setBookingEmail(e.target.value)} rows={16} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-xs text-gray-300 font-mono resize-none"/></div>{emailSent?<div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 text-center"><span className="text-2xl">✅</span><div className="text-sm font-bold text-green-400 mt-2">Email opened</div></div>:<div className="flex gap-3"><button onClick={()=>{window.open(`mailto:sarah.mitchell@ism.com?subject=${encodeURIComponent(`Travel — ${trTourney||trDest}`)}&body=${encodeURIComponent(bookingEmail)}`);setEmailSent(true)}} className="flex-1 py-4 rounded-xl text-sm font-bold text-white" style={{background:'#15803D'}}>📧 Send →</button><button onClick={()=>navigator.clipboard?.writeText(bookingEmail)} className="px-4 py-4 rounded-xl text-xs border border-gray-700 text-gray-400">📋 Copy</button></div>}<button onClick={()=>{setTStep(1);setFlightResults([]);setHotelResults([]);setSelectedFlight(null);setSelectedHotel(null);setBookingEmail('');setEmailSent(false)}} className="text-xs text-gray-600 hover:text-gray-400 block mx-auto">← New search</button></div>)}
+
+      <GolfAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
 // Generic placeholder for remaining views
 
 function PlaceholderView({ title, icon, description, player, session }: { title: string; icon: string; description: string; player: GolfPlayer; session: SportsDemoSession }) {
@@ -5806,7 +6124,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const liveProfilePhotoOuter = useGolfProfilePhoto()
   const liveBrandName = useGolfBrandName()
   const liveBrandLogo = useGolfBrandLogo()
-  const liveSession = { ...session, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
+  // liveSession reflects the LIVE role override (not the original session.role
+  // captured at mount). RoleSwitcher uses session.role to highlight the
+  // "Current view" — without this, the label stays glued to the original role
+  // even after the user switches.
+  const liveSession = { ...session, role: roleOverride, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
 
   // Founding members (live mode) get their wizard-entered name on the player
   // card. Demo mode is unchanged — the James Harrington persona is intentional.
@@ -5847,6 +6169,19 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
   const visibleSidebarItems = (roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))).filter(item => !isHidden(item.id))
+
+  // Render guard against role-leakage: snap activeSection back to the role's
+  // first allowed tab if it's no longer in scope (e.g. user switched roles
+  // while on a tab the new role can't see).
+  const allowedSections: string[] = roleConfig.sidebar === 'all'
+    ? SIDEBAR_ITEMS.map(i => i.id)
+    : roleConfig.sidebar
+  useEffect(() => {
+    if (allowedSections.length > 0 && !allowedSections.includes(activeSection)) {
+      setActiveSection(allowedSections[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleOverride])
 
   // Quick Wins dismissed state
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
@@ -5918,7 +6253,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
         ? <MediaContentModule sport="golf" accentColor="#16a34a" isDemoShell={true} />
         : <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
       case 'agent':       return <AgentPipelineView player={player} session={session} />;
-      case 'travel':      return <PlaceholderView icon="✈️" title="Travel & Logistics" description="Event-by-event travel planning, hotel contacts, per-diem tracker, and caddie movement planning." player={player} session={session} />;
+      case 'travel':      return <GolfTravelView player={player} session={session} />;
       case 'qualifying':  return <PlaceholderView icon="🎓" title="Q-School & Qualifying" description="Monday qualifier management, Q-School countdown, sectional qualifying entries, and status tracker." player={player} session={session} />;
       case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." player={player} session={session} />;
       case 'findpro':     return <GolfFindProView player={player} session={session} />;
@@ -6020,14 +6355,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
     }
   };
 
-  // Render sponsor dashboard if sponsor role
-  if (isSponsor) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ background: '#07080F', color: '#F9FAFB' }}>
-        <GolfSponsorDashboard session={session} player={player} />
-      </div>
-    )
-  }
+  // NOTE: previously an early return here rendered <GolfSponsorDashboard>
+  // without the sidebar — which trapped sponsor users with no way to switch
+  // back to player. Sponsor view is now rendered inline in the main content
+  // area below (matches the boxing/darts pattern), so the sidebar +
+  // RoleSwitcher remain accessible.
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
@@ -6161,6 +6493,15 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           accentColor="#15803D"
           onRoleChange={(role) => {
             setRoleOverride(role)
+            // Reset activeSection to the new role's first allowed tab so we
+            // never render player content under a sponsor view (or vice versa).
+            const newConfig = GOLF_ROLE_CONFIG[role as keyof typeof GOLF_ROLE_CONFIG]
+            if (newConfig) {
+              const firstAllowed = newConfig.sidebar === 'all'
+                ? SIDEBAR_ITEMS[0]?.id
+                : newConfig.sidebar[0]
+              if (firstAllowed) setActiveSection(firstAllowed)
+            }
             const key = 'lumio_golf_demo_session'
             const stored = localStorage.getItem(key)
             if (stored) { const parsed = JSON.parse(stored); localStorage.setItem(key, JSON.stringify({ ...parsed, role })) }
@@ -6197,8 +6538,12 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           </div>
         )}
 
-        {/* Content + card */}
+        {/* Content + card. Sponsor view renders the sponsor dashboard inline
+            (no right column); other roles render the normal view + right column. */}
         <div className="flex-1 flex overflow-hidden">
+          {isSponsor ? (
+            <div className="flex-1 overflow-y-auto"><GolfSponsorDashboard session={session} player={player} /></div>
+          ) : (<>
           <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
           {/* Right column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
@@ -6234,6 +6579,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
               </div>
             </div>
           </div>
+          </>)}
         </div>
       </div>
     </div>
