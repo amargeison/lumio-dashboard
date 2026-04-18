@@ -9084,7 +9084,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         <button onClick={() => {
           if (onSignOut) { onSignOut(); return }
           clearDemoSession('darts')
-          window.location.href = '/darts'
+          window.location.href = '/darts/darts-demo'
         }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           {sidebarExpanded && <span>Sign out</span>}

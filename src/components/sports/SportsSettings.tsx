@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { touchDemoSessionTs } from '@/lib/demo-session/clear'
 
 // Write to Supabase via browser client (same pattern as
 // OnboardingWizard.saveAndComplete). The /api/sports-auth/update-profile
@@ -472,6 +473,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       ctx.drawImage(img, 0, 0, 400, 400)
                       const compressed = canvas.toDataURL('image/jpeg', 0.7)
                       try { localStorage.setItem(profilePhotoKey, compressed) } catch {}
+                      touchDemoSessionTs(sport)
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       setCurrentPhoto(compressed)
                       writeProfilePatch({ avatar_url: compressed })
@@ -521,6 +523,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={async () => {
                     localStorage.setItem(nameKey, nameValue)
+                    touchDemoSessionTs(sport)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     writeProfilePatch({ display_name: nameValue })
                     setEditingName(false)
@@ -596,6 +599,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={async () => {
                     localStorage.setItem(nicknameKey, nicknameValue)
+                    touchDemoSessionTs(sport)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     writeProfilePatch({ nickname: nicknameValue })
                     setEditingNickname(false)
@@ -672,6 +676,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={async () => {
                     localStorage.setItem(brandNameKey, brandNameLocal)
+                    touchDemoSessionTs(sport)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     writeProfilePatch({ brand_name: brandNameLocal })
                     props.onBrandNameChange?.(brandNameLocal)
@@ -733,6 +738,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 200, 200)
                       const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
                       try { localStorage.setItem(brandLogoKey, dataUrl) } catch {}
+                      touchDemoSessionTs(sport)
                       setBrandLogoLocal(dataUrl)
                       writeProfilePatch({ brand_logo_url: dataUrl })
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
@@ -747,6 +753,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                 <button
                   onClick={async () => {
                     try { localStorage.removeItem(brandLogoKey) } catch {}
+                    touchDemoSessionTs(sport)
                     setBrandLogoLocal('')
                     writeProfilePatch({ brand_logo_url: null })
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
