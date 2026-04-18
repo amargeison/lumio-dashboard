@@ -10,6 +10,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import { clearDemoSession } from '@/lib/demo-session/clear'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -334,10 +335,21 @@ const FormTracker = ({ results }: { results: Array<{event: string; pos: string; 
 );
 
 // ─── PLAYER CARD ─────────────────────────────────────────────────────────────
-const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: GolfPlayer; session?: { userName?: string; photoDataUrl?: string | null; role?: string }; setActiveSection?: (s: string) => void }) => {
+const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: GolfPlayer; session?: { userName?: string; photoDataUrl?: string | null; role?: string; isDemoShell?: boolean }; setActiveSection?: (s: string) => void }) => {
   const isPlayerRole = !session?.role || session.role === 'player'
-  const liveName = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session?.userName || player.name : player.name
-  const livePhoto = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null) || session?.photoDataUrl : null
+  const isFoundingMember = session?.isDemoShell === false
+  // Founders read session only — never lumio_golf_* survivor keys — to avoid
+  // leakage from a prior demo visit on the same browser.
+  const liveName = isPlayerRole
+    ? (isFoundingMember
+        ? (session?.userName || player.name)
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_name') : null) || session?.userName || player.name))
+    : player.name
+  const livePhoto = isPlayerRole
+    ? (isFoundingMember
+        ? (session?.photoDataUrl || null)
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null) || session?.photoDataUrl))
+    : null
   return (
   <div className="relative w-52 rounded-xl overflow-hidden border-2 border-green-600/40 shadow-2xl shadow-green-900/30 flex-shrink-0"
     style={{ background: 'linear-gradient(135deg, #0a1a0a 0%, #0d1929 50%, #0a1a12 100%)' }}>
@@ -6080,11 +6092,18 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
-  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
-  const liveProfileNameOuter = useGolfProfileName()
-  const liveProfilePhotoOuter = useGolfProfilePhoto()
-  const liveBrandName = useGolfBrandName()
-  const liveBrandLogo = useGolfBrandLogo()
+  const isFoundingMember = session.isDemoShell === false
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits.
+  // Founders bypass these survivor-key reads to prevent leakage from a prior demo
+  // visit on the same browser.
+  const _liveProfileNameOuterRaw = useGolfProfileName()
+  const _liveProfilePhotoOuterRaw = useGolfProfilePhoto()
+  const _liveBrandNameRaw = useGolfBrandName()
+  const _liveBrandLogoRaw = useGolfBrandLogo()
+  const liveProfileNameOuter = isFoundingMember ? null : _liveProfileNameOuterRaw
+  const liveProfilePhotoOuter = isFoundingMember ? null : _liveProfilePhotoOuterRaw
+  const liveBrandName = isFoundingMember ? '' : _liveBrandNameRaw
+  const liveBrandLogo = isFoundingMember ? '' : _liveBrandLogoRaw
   // liveSession reflects the LIVE role override (not the original session.role
   // captured at mount). RoleSwitcher uses session.role to highlight the
   // "Current view" — without this, the label stays glued to the original role
@@ -6093,9 +6112,8 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
 
   // Founding members (live mode) get their wizard-entered name on the player
   // card. Demo mode is unchanged — the James Harrington persona is intentional.
-  const isFoundingMember = session.isDemoShell === false
   const player: GolfPlayer = isFoundingMember
-    ? { ...DEMO_PLAYER, name: liveProfileNameOuter || session.userName || DEMO_PLAYER.name }
+    ? { ...DEMO_PLAYER, name: session.userName || DEMO_PLAYER.name }
     : DEMO_PLAYER;
 
   // Sidebar pin state
@@ -6475,12 +6493,14 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             <div className="text-xs text-green-400 font-semibold mt-0.5">Pro+ · £349/mo</div>
           </div>
         )}
-        {onSignOut && (
-          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            {sidebarExpanded && <span>Sign out</span>}
-          </button>
-        )}
+        <button onClick={() => {
+          if (onSignOut) { onSignOut(); return }
+          clearDemoSession('golf')
+          window.location.href = '/golf'
+        }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          {sidebarExpanded && <span>Sign out</span>}
+        </button>
         <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
           {sidebarExpanded ? <img src="/golf_logo.png" alt="Lumio Golf" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" /> : <span className="text-lg">⛳</span>}
         </div>

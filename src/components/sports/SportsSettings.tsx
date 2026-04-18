@@ -2,6 +2,26 @@
 
 import React, { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+
+// Write to Supabase via browser client (same pattern as
+// OnboardingWizard.saveAndComplete). The /api/sports-auth/update-profile
+// route required an Authorization header the browser fetch never
+// forwarded, which failed silently.
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
+
+async function writeProfilePatch(patch: Record<string, unknown>) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const { error } = await supabase
+    .from('sports_profiles')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+  if (error) console.error('[SportsSettings] profile update failed', error)
+}
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 export type SportKey =
@@ -454,7 +474,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       try { localStorage.setItem(profilePhotoKey, compressed) } catch {}
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       setCurrentPhoto(compressed)
-                      fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avatar_url: compressed }) }).catch(() => {})
+                      writeProfilePatch({ avatar_url: compressed })
                       props.onPhotoChange?.(compressed)
                     }
                     img.src = ev.target?.result as string
@@ -499,10 +519,10 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     localStorage.setItem(nameKey, nameValue)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
-                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ display_name: nameValue }) }).catch(() => {})
+                    writeProfilePatch({ display_name: nameValue })
                     setEditingName(false)
                   }}
                   style={{
@@ -574,10 +594,10 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     localStorage.setItem(nicknameKey, nicknameValue)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
-                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nickname: nicknameValue }) }).catch(() => {})
+                    writeProfilePatch({ nickname: nicknameValue })
                     setEditingNickname(false)
                   }}
                   style={{
@@ -650,10 +670,10 @@ export default function SportsSettings(props: SportsSettingsProps) {
                   style={{ background: '#ffffff10', border: `1px solid ${ACCENT}`, borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 14, width: 180 }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     localStorage.setItem(brandNameKey, brandNameLocal)
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
-                    fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand_name: brandNameLocal }) }).catch(() => {})
+                    writeProfilePatch({ brand_name: brandNameLocal })
                     props.onBrandNameChange?.(brandNameLocal)
                     setEditingBrandName(false)
                   }}
@@ -714,7 +734,7 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
                       try { localStorage.setItem(brandLogoKey, dataUrl) } catch {}
                       setBrandLogoLocal(dataUrl)
-                      fetch('/api/sports-auth/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand_logo_url: dataUrl }) }).catch(() => {})
+                      writeProfilePatch({ brand_logo_url: dataUrl })
                       if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                       props.onBrandLogoChange?.(dataUrl)
                     }
@@ -725,9 +745,10 @@ export default function SportsSettings(props: SportsSettingsProps) {
               </label>
               {brandLogoLocal && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     try { localStorage.removeItem(brandLogoKey) } catch {}
                     setBrandLogoLocal('')
+                    writeProfilePatch({ brand_logo_url: null })
                     if (typeof window !== 'undefined') window.dispatchEvent(new Event('lumio-profile-updated'))
                     props.onBrandLogoChange?.('')
                   }}

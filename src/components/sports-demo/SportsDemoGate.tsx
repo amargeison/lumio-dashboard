@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
+import { clearDemoSession } from '@/lib/demo-session/clear'
 
 // ── SPORT LOGOS ───────────────────────────────────────────────────────────
 const SPORT_LOGOS: Record<string, string> = {
@@ -451,11 +452,13 @@ export default function SportsDemoGate({
         } else {
           // Rebuild from surviving customisation keys — only if the user has
           // ever completed the wizard on this browser (the `onboarded` flag,
-          // set in finaliseSession / verifyOtp / URL-params restore). The flag
-          // is intentionally NOT cleared on sign-out — survivor keys plus
-          // onboarded together mean "this browser knows this demo persona;
-          // resume them straight to the portal". Genuine first-time visitors
-          // don't have the flag yet, so they still get the wizard.
+          // set in finaliseSession / verifyOtp / URL-params restore). A true
+          // demo Sign out (clearDemoSession) clears `onboarded` along with the
+          // other survivor keys, so the next visit gets the wizard fresh.
+          // Restore-from-URL-params re-sets `onboarded` when a new sign-in
+          // completes, so the rebuild path still works for repeat visitors
+          // who haven't explicitly signed out. Genuine first-time visitors
+          // don't have the flag yet, so they get the wizard.
           const hasOnboarded = localStorage.getItem(`lumio_${sport}_onboarded`) === 'true'
           if (hasOnboarded) {
             const savedName = localStorage.getItem(`lumio_${sport}_name`)
@@ -638,6 +641,9 @@ export default function SportsDemoGate({
     if (resolvedNickname) {
       try { localStorage.setItem(`lumio_${sport}_nickname`, resolvedNickname) } catch {}
     }
+    if (resolvedClubName) {
+      try { localStorage.setItem(`lumio_${sport}_brand_name`, resolvedClubName) } catch {}
+    }
     if (photoDataUrl) {
       try { localStorage.setItem(`lumio_${sport}_profile_photo`, photoDataUrl) } catch {}
     }
@@ -679,10 +685,7 @@ export default function SportsDemoGate({
   }
 
   const resetSession = () => {
-    try {
-      localStorage.removeItem(sessionKey(sport))
-      localStorage.removeItem(`lumio_${sport}_demo_active`)
-    } catch { /* ignore */ }
+    clearDemoSession(sport)
     const isDevHost = typeof window !== 'undefined' && (
       window.location.hostname.includes('vercel.app')
       || window.location.hostname.includes('dev.')

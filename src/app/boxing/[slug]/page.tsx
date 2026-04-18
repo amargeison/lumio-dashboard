@@ -10,6 +10,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import { clearDemoSession } from '@/lib/demo-session/clear'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -311,9 +312,25 @@ const WaveBanner = ({ fighter, session }: { fighter: BoxingFighter; session: Spo
 // ─── FIGHTER CARD ─────────────────────────────────────────────────────────────
 const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) => {
   const isPlayerRole = !session.role || session.role === 'fighter'
-  const liveName = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null) || session.userName || fighter.name : fighter.name
-  const liveNickname = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || '' : fighter.nickname
-  const livePhoto = isPlayerRole ? (typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl : null
+  const isFoundingMember = session.isDemoShell === false
+  // Founders read session (hydrated from sports_profiles) only — never the
+  // lumio_boxing_* survivor keys, which may carry leaked values from a prior
+  // demo visit on this browser.
+  const liveName = isPlayerRole
+    ? (isFoundingMember
+        ? (session.userName || fighter.name)
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_name') : null) || session.userName || fighter.name))
+    : fighter.name
+  const liveNickname = isPlayerRole
+    ? (isFoundingMember
+        ? (session.nickname?.trim() || '')
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null) || ''))
+    : fighter.nickname
+  const livePhoto = isPlayerRole
+    ? (isFoundingMember
+        ? (session.photoDataUrl || null)
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl))
+    : null
   return (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
     <div className="flex flex-col items-center text-center mb-3">
@@ -7667,12 +7684,25 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null } catch { return null } })
-  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
-  const liveProfileNameOuter = useBoxingProfileName()
-  const liveProfilePhotoOuter = useBoxingProfilePhoto()
-  const liveBrandName = useBoxingBrandName()
-  const liveBrandLogo = useBoxingBrandLogo()
+  const isFoundingMember = session.isDemoShell === false
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => {
+    try {
+      if (typeof window === 'undefined') return null
+      if (isFoundingMember) return session.photoDataUrl || null
+      return localStorage.getItem('lumio_boxing_profile_photo')
+    } catch { return null }
+  })
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits.
+  // Founders bypass these survivor-key reads to prevent leakage from a prior demo
+  // visit on the same browser.
+  const _liveProfileNameOuterRaw = useBoxingProfileName()
+  const _liveProfilePhotoOuterRaw = useBoxingProfilePhoto()
+  const _liveBrandNameRaw = useBoxingBrandName()
+  const _liveBrandLogoRaw = useBoxingBrandLogo()
+  const liveProfileNameOuter = isFoundingMember ? null : _liveProfileNameOuterRaw
+  const liveProfilePhotoOuter = isFoundingMember ? null : _liveProfilePhotoOuterRaw
+  const liveBrandName = isFoundingMember ? '' : _liveBrandNameRaw
+  const liveBrandLogo = isFoundingMember ? '' : _liveBrandLogoRaw
   // Note: liveSession is rebuilt below with `role: roleOverride` once
   // roleOverride is in scope, so RoleSwitcher's "Current view" highlight
   // tracks the live override (not the original session.role at mount).
@@ -7681,21 +7711,20 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   // the fighter card. Demo mode is unchanged — Marcus Cole / "The Machine" is
   // the intentional persona. Nickname falls all the way through to '' if the
   // founder left it blank in the wizard — never to "The Machine".
-  const liveBoxingNickname = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null
-  const isFoundingMember = session.isDemoShell === false
+  const liveBoxingNickname = !isFoundingMember && typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_nickname') : null
   const fighter: BoxingFighter = isFoundingMember
     ? {
         ...DEMO_FIGHTER,
-        name: liveProfileNameOuter || session.userName || DEMO_FIGHTER.name,
-        nickname: liveBoxingNickname || session.nickname || '',
+        name: session.userName || DEMO_FIGHTER.name,
+        nickname: session.nickname || '',
       }
     : DEMO_FIGHTER;
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || isFoundingMember) return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_boxing_profile_photo'))
     window.addEventListener('lumio-profile-updated', sync)
     return () => window.removeEventListener('lumio-profile-updated', sync)
-  }, [])
+  }, [isFoundingMember])
 
   // Sidebar pin
   const [sidebarPinned, setSidebarPinned] = useState(false)
@@ -8040,12 +8069,14 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
         />
 
         {/* Sidebar Footer */}
-        {onSignOut && (
-          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            {sidebarExpanded && <span>Sign out</span>}
-          </button>
-        )}
+        <button onClick={() => {
+          if (onSignOut) { onSignOut(); return }
+          clearDemoSession('boxing')
+          window.location.href = '/boxing'
+        }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          {sidebarExpanded && <span>Sign out</span>}
+        </button>
         {sidebarExpanded && (
           <div className="p-3 border-t border-gray-800 flex items-center justify-center">
             <img src="/boxing_logo.png" alt="Lumio Boxing" style={{ maxHeight: 32, objectFit: 'contain' }} />
