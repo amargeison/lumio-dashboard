@@ -6244,7 +6244,15 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           entity="player"
           accentColour="#15803D"
           accentLight="#16a34a"
-          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl, email: session?.email }}
+          session={{
+            userName: session?.userName,
+            photoDataUrl: session?.photoDataUrl,
+            email: session?.email,
+            nickname: session?.nickname,
+            clubName: session?.clubName,
+            logoDataUrl: session?.logoDataUrl,
+            isDemoShell: session?.isDemoShell,
+          }}
           storagePrefix="lumio_golf_"
           brandNameValue={liveBrandName}
           brandLogoUrl={liveBrandLogo}

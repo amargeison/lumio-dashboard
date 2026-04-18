@@ -8859,7 +8859,15 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           entity="player"
           accentColour="#dc2626"
           accentLight="#ef4444"
-          session={{ userName: session?.userName, photoDataUrl: session?.photoDataUrl, email: session?.email }}
+          session={{
+            userName: session?.userName,
+            photoDataUrl: session?.photoDataUrl,
+            email: session?.email,
+            nickname: session?.nickname,
+            clubName: session?.clubName,
+            logoDataUrl: session?.logoDataUrl,
+            isDemoShell: session?.isDemoShell,
+          }}
           storagePrefix="lumio_darts_"
           brandNameValue={liveBrandName}
           brandLogoUrl={liveBrandLogo}
@@ -8885,18 +8893,18 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             {
               title: 'DATA PROVIDERS',
               items: [
-                { name: 'PDC Profile', desc: 'Rankings & tour data', connected: true },
+                { name: 'PDC Profile', desc: 'Rankings & tour data', connected: isDemoOuter },
                 { name: 'WDF Profile', desc: 'World Darts Federation stats' },
                 { name: 'STATSports', desc: 'Movement & load tracking' },
                 { name: 'Softronic', desc: 'Tournament scoring software' },
                 { name: 'Dartfish', desc: 'Video analysis' },
-                { name: 'DartConnect', desc: 'Digital scorekeeping', connected: true },
+                { name: 'DartConnect', desc: 'Digital scorekeeping', connected: isDemoOuter },
               ],
             },
             {
               title: 'COMMUNICATION',
               items: [
-                { name: 'Slack', desc: 'Team messaging & alerts', connected: true },
+                { name: 'Slack', desc: 'Team messaging & alerts', connected: isDemoOuter },
                 { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
                 { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
                 { name: 'WhatsApp Business', desc: 'Player & manager messaging' },
@@ -8913,11 +8921,13 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             staffCount: 1,
             pendingInvites: 0,
             roleOptions: ['Coach','Manager','Physio','Sports Psychologist','Admin'],
-            members: [
-              { name: player.coach, role: 'Coach', access: 'Full' },
-              { name: player.manager, role: 'Manager', access: 'Commercial' },
-              { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
-            ],
+            members: isDemoOuter
+              ? [
+                  { name: player.coach, role: 'Coach', access: 'Full' },
+                  { name: player.manager, role: 'Manager', access: 'Commercial' },
+                  { name: 'Dr. Sarah Mitchell', role: 'Sports Psychologist', access: 'Limited' },
+                ]
+              : [],
           }}
           navItems={[
             { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
