@@ -11,6 +11,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import { clearDemoSession } from '@/lib/demo-session/clear'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -6533,8 +6534,13 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
 
 // ─── PLAYER PROFILE CARD (ENHANCED) ──────────────────────────────────────────
 function PlayerCard({ player, session }: { player: TennisPlayer; session?: SportsDemoSession }) {
-  const profileNameLive = useTennisProfileName()
-  const profilePhotoLive = useTennisProfilePhoto()
+  const _profileNameLiveRaw = useTennisProfileName()
+  const _profilePhotoLiveRaw = useTennisProfilePhoto()
+  // Founders read session only — never lumio_tennis_* survivor keys — to avoid
+  // leakage from a prior demo visit on the same browser.
+  const isFoundingMember = session?.isDemoShell === false
+  const profileNameLive = isFoundingMember ? null : _profileNameLiveRaw
+  const profilePhotoLive = isFoundingMember ? null : _profilePhotoLiveRaw
   const surfaceWinPct = [
     { surface: 'Clay', pct: 58, color: 'bg-orange-500' },
     { surface: 'Hard', pct: 65, color: 'bg-blue-500' },
@@ -9536,11 +9542,18 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
   const sidebarExpanded = sidebarPinned || sidebarHovered;
   const sidebarRef = useRef<HTMLElement | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(72);
-  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
-  const liveProfileName = useTennisProfileName();
-  const liveProfilePhoto = useTennisProfilePhoto();
-  const liveBrandName = useTennisBrandName();
-  const liveBrandLogo = useTennisBrandLogo();
+  const isFoundingMember = session.isDemoShell === false
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits.
+  // Founders bypass these survivor-key reads to prevent leakage from a prior demo
+  // visit on the same browser.
+  const _liveProfileNameRaw = useTennisProfileName();
+  const _liveProfilePhotoRaw = useTennisProfilePhoto();
+  const _liveBrandNameRaw = useTennisBrandName();
+  const _liveBrandLogoRaw = useTennisBrandLogo();
+  const liveProfileName = isFoundingMember ? null : _liveProfileNameRaw;
+  const liveProfilePhoto = isFoundingMember ? null : _liveProfilePhotoRaw;
+  const liveBrandName = isFoundingMember ? '' : _liveBrandNameRaw;
+  const liveBrandLogo = isFoundingMember ? '' : _liveBrandLogoRaw;
   // Note: liveSession is rebuilt below with `role: roleOverride` once
   // roleOverride is in scope, so RoleSwitcher's "Current view" highlight
   // tracks the live override (not the original session.role at mount).
@@ -9581,9 +9594,8 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
 
   // Founding members (live mode) get their wizard-entered name on the player
   // card. Demo mode is unchanged — the Alex Rivera persona is intentional.
-  const isFoundingMember = session.isDemoShell === false
   const player: TennisPlayer = isFoundingMember
-    ? { ...DEMO_PLAYER, name: liveProfileName || session.userName || DEMO_PLAYER.name }
+    ? { ...DEMO_PLAYER, name: session.userName || DEMO_PLAYER.name }
     : DEMO_PLAYER;
   const [liveScores, setLiveScores] = useState<any[]>([]);
   const [h2hData, setH2hData] = useState<any[]>([]);
@@ -10354,12 +10366,14 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
             <div className="text-[10px] text-purple-400 font-semibold mt-0.5">Pro+ . GBP 299/mo</div>
           </div>
         )}
-        {onSignOut && (
-          <button onClick={onSignOut} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            {sidebarExpanded && <span>Sign out</span>}
-          </button>
-        )}
+        <button onClick={() => {
+          if (onSignOut) { onSignOut(); return }
+          clearDemoSession('tennis')
+          window.location.href = '/tennis/tennis-demo'
+        }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          {sidebarExpanded && <span>Sign out</span>}
+        </button>
         <div className="border-t flex items-center justify-center" style={{ borderColor: '#1F2937', padding: '8px 12px', width: '100%' }}>
           {sidebarExpanded ? (
             <>

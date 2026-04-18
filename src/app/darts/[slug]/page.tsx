@@ -11,6 +11,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import { clearDemoSession } from '@/lib/demo-session/clear'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -8678,18 +8679,32 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   }, [])
   const isHidden = (key: string) => hiddenItems.includes(key)
   const isDemoOuter = session.isDemoShell !== false
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => { try { return typeof window !== 'undefined' ? localStorage.getItem('lumio_darts_profile_photo')?.trim() || session.photoDataUrl?.trim() || (isDemoOuter ? '/jake_morrison.jpg' : null) : null } catch { return null } })
-  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits
-  const liveProfileNameOuter = useDartsProfileName()
-  const liveProfilePhotoOuter = useDartsProfilePhoto()
-  const liveBrandName = useDartsBrandName()
-  const liveBrandLogo = useDartsBrandLogo()
+  const isFoundingMemberOuter = !isDemoOuter
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => {
+    try {
+      if (typeof window === 'undefined') return null
+      if (isFoundingMemberOuter) return session.photoDataUrl?.trim() || null
+      return localStorage.getItem('lumio_darts_profile_photo')?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg'
+    } catch { return null }
+  })
+  // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits.
+  // Founders must NEVER read lumio_darts_* survivor keys: a prior demo visit on the
+  // same browser may have written them, and leaking those values into the founder
+  // portal is the sidebar-leak bug we're guarding against here.
+  const _liveProfileNameOuterRaw = useDartsProfileName()
+  const _liveProfilePhotoOuterRaw = useDartsProfilePhoto()
+  const _liveBrandNameRaw = useDartsBrandName()
+  const _liveBrandLogoRaw = useDartsBrandLogo()
+  const liveProfileNameOuter = isFoundingMemberOuter ? null : _liveProfileNameOuterRaw
+  const liveProfilePhotoOuter = isFoundingMemberOuter ? null : _liveProfilePhotoOuterRaw
+  const liveBrandName = isFoundingMemberOuter ? '' : _liveBrandNameRaw
+  const liveBrandLogo = isFoundingMemberOuter ? '' : _liveBrandLogoRaw
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || isFoundingMemberOuter) return
     const sync = () => setCurrentPhoto(localStorage.getItem('lumio_darts_profile_photo'))
     window.addEventListener('lumio-profile-updated', sync)
     return () => window.removeEventListener('lumio-profile-updated', sync)
-  }, [])
+  }, [isFoundingMemberOuter])
 
   useEffect(() => { setSidebarPinned(typeof window !== 'undefined' && localStorage.getItem('lumio_darts_sidebar_pinned') === 'true') }, [])
   function toggleSidebarPin() { setSidebarPinned(p => { const next = !p; localStorage.setItem('lumio_darts_sidebar_pinned', String(next)); return next }) }
@@ -8750,8 +8765,9 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
     return () => { cancelled = true; };
   }, [slug]);
 
-  const profileNickname = useDartsNickname();
-  const isFoundingMember = session.isDemoShell === false;
+  const _profileNicknameRaw = useDartsNickname();
+  const profileNickname = isFoundingMemberOuter ? null : _profileNicknameRaw;
+  const isFoundingMember = isFoundingMemberOuter;
 
   // Resolve the player display name + nickname.
   //
@@ -9067,10 +9083,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         )}
         <button onClick={() => {
           if (onSignOut) { onSignOut(); return }
-          try {
-            localStorage.removeItem('lumio_sports_demo_darts')
-            localStorage.removeItem('lumio_darts_demo_active')
-          } catch {}
+          clearDemoSession('darts')
           window.location.href = '/darts/darts-demo'
         }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>

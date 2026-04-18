@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
+import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, DEMO_SESSION_TTL_MS } from '@/lib/demo-session/clear'
 
 // ── SPORT LOGOS ───────────────────────────────────────────────────────────
 const SPORT_LOGOS: Record<string, string> = {
@@ -428,6 +429,7 @@ export default function SportsDemoGate({
           // URL-restore implies the user came from a successful sign-in flow —
           // mark them onboarded so subsequent mounts skip the wizard.
           localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
+          touchDemoSessionTs(sport)
         } catch {}
         url.searchParams.delete('restore')
         url.searchParams.delete('name')
@@ -449,37 +451,65 @@ export default function SportsDemoGate({
           }
           restored = parsed
         } else {
-          // Rebuild from surviving customisation keys — only if the user has
-          // ever completed the wizard on this browser (the `onboarded` flag,
-          // set in finaliseSession / verifyOtp / URL-params restore). The flag
-          // is intentionally NOT cleared on sign-out — survivor keys plus
-          // onboarded together mean "this browser knows this demo persona;
-          // resume them straight to the portal". Genuine first-time visitors
-          // don't have the flag yet, so they still get the wizard.
+          // Rebuild path — the user has completed the wizard at some point on
+          // this browser (the `onboarded` flag). Survivor keys carry their
+          // name/nickname/photo/brand so they can resume without re-entering.
+          //
+          // Behaviour differs by host:
+          //   - Prod: require OTP verify to resume. Mount leaves `restored`
+          //     null so the gate renders the 'email' step, then verifyOtp
+          //     picks the survivors back up on successful code entry.
+          //   - Dev (localhost / *.vercel.app / dev.*): auto-rebuild straight
+          //     to 'done' so local iteration doesn't demand a fresh OTP each
+          //     reload.
+          //
+          // After DEMO_SESSION_TTL_MS of inactivity (no survivor write), the
+          // survivors are wiped on mount and the wizard fires fresh.
           const hasOnboarded = localStorage.getItem(`lumio_${sport}_onboarded`) === 'true'
           if (hasOnboarded) {
-            const savedName = localStorage.getItem(`lumio_${sport}_name`)
-            const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
-            const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
-            const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
-            const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
-            if (savedName || savedPhoto || savedClubName || savedClubLogo) {
-              const rebuilt: SportsDemoSession = {
-                email: '',
-                userName: savedName || '',
-                clubName: savedClubName || defaultClubName,
-                role: roles[0]?.id ?? 'player',
-                photoDataUrl: savedPhoto || null,
-                logoDataUrl: savedClubLogo || null,
-                nickname: savedNickname || null,
-                sport,
-                verifiedAt: new Date().toISOString(),
+            const tsRaw = localStorage.getItem(`lumio_${sport}_session_ts`)
+            const ts = tsRaw ? Number(tsRaw) : 0
+            if (!ts) {
+              // Grandfather: onboarded users from before session_ts was
+              // tracked keep their persona and start their 14-day window
+              // from now.
+              touchDemoSessionTs(sport)
+            }
+            const expired = ts > 0 && Date.now() - ts > DEMO_SESSION_TTL_MS
+            if (expired) {
+              wipeDemoSurvivors(sport)
+            } else {
+              const isDevHostMount = typeof window !== 'undefined' && (
+                window.location.hostname.includes('vercel.app')
+                || window.location.hostname.includes('dev.')
+                || window.location.hostname === 'localhost'
+              )
+              if (isDevHostMount) {
+                const savedName = localStorage.getItem(`lumio_${sport}_name`)
+                const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
+                const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
+                const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
+                const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
+                if (savedName || savedPhoto || savedClubName || savedClubLogo) {
+                  const rebuilt: SportsDemoSession = {
+                    email: '',
+                    userName: savedName || '',
+                    clubName: savedClubName || defaultClubName,
+                    role: roles[0]?.id ?? 'player',
+                    photoDataUrl: savedPhoto || null,
+                    logoDataUrl: savedClubLogo || null,
+                    nickname: savedNickname || null,
+                    sport,
+                    verifiedAt: new Date().toISOString(),
+                  }
+                  try {
+                    localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
+                    localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+                    touchDemoSessionTs(sport)
+                  } catch {}
+                  restored = rebuilt
+                }
               }
-              try {
-                localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
-                localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
-              } catch {}
-              restored = rebuilt
             }
           }
         }
@@ -599,6 +629,7 @@ export default function SportsDemoGate({
               localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, p.avatar_url)
             }
             if (p.logo_url) localStorage.setItem(`lumio_${sport}_brand_logo`, p.logo_url)
+            touchDemoSessionTs(sport)
           } catch {}
           if (p.logo_url) setLogoDataUrl(p.logo_url)
           if (p.avatar_url) setPhotoDataUrl(p.avatar_url)
@@ -606,6 +637,44 @@ export default function SportsDemoGate({
           setStep('done')
           setLoading(false)
           return
+        }
+      } catch {}
+      // Server had no profile for this email, but this browser might —
+      // a returning demo user who signed out carries their persona in
+      // localStorage survivors. Skip the wizard and resume from there.
+      try {
+        const hasOnboarded = typeof window !== 'undefined'
+          && localStorage.getItem(`lumio_${sport}_onboarded`) === 'true'
+        if (hasOnboarded) {
+          const savedName = localStorage.getItem(`lumio_${sport}_name`)
+          const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
+          const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
+          const savedClubName = localStorage.getItem(`lumio_${sport}_brand_name`)
+          const savedClubLogo = localStorage.getItem(`lumio_${sport}_brand_logo`)
+          if (savedName || savedPhoto || savedClubName || savedClubLogo) {
+            const rebuilt: SportsDemoSession = {
+              email,
+              userName: savedName || '',
+              clubName: savedClubName || defaultClubName,
+              role: roles[0]?.id ?? 'player',
+              photoDataUrl: savedPhoto || null,
+              logoDataUrl: savedClubLogo || null,
+              nickname: savedNickname || null,
+              sport,
+              verifiedAt: new Date().toISOString(),
+            }
+            try {
+              localStorage.setItem(sessionKey(sport), JSON.stringify(rebuilt))
+              localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+              touchDemoSessionTs(sport)
+            } catch {}
+            if (savedPhoto) setPhotoDataUrl(savedPhoto)
+            if (savedClubLogo) setLogoDataUrl(savedClubLogo)
+            setSession(rebuilt)
+            setStep('done')
+            setLoading(false)
+            return
+          }
         }
       } catch {}
       setStep('club')
@@ -638,6 +707,9 @@ export default function SportsDemoGate({
     if (resolvedNickname) {
       try { localStorage.setItem(`lumio_${sport}_nickname`, resolvedNickname) } catch {}
     }
+    if (resolvedClubName) {
+      try { localStorage.setItem(`lumio_${sport}_brand_name`, resolvedClubName) } catch {}
+    }
     if (photoDataUrl) {
       try { localStorage.setItem(`lumio_${sport}_profile_photo`, photoDataUrl) } catch {}
     }
@@ -653,6 +725,7 @@ export default function SportsDemoGate({
       localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
       // Save photo keyed by email for cross-session persistence
       if (photoDataUrl && effectiveEmail) localStorage.setItem(`lumio_demo_photo_${effectiveEmail.toLowerCase()}`, photoDataUrl)
+      touchDemoSessionTs(sport)
     } catch (e) {
       console.warn('localStorage unavailable, proceeding without persistence', e)
     }
@@ -679,10 +752,7 @@ export default function SportsDemoGate({
   }
 
   const resetSession = () => {
-    try {
-      localStorage.removeItem(sessionKey(sport))
-      localStorage.removeItem(`lumio_${sport}_demo_active`)
-    } catch { /* ignore */ }
+    clearDemoSession(sport)
     const isDevHost = typeof window !== 'undefined' && (
       window.location.hostname.includes('vercel.app')
       || window.location.hostname.includes('dev.')
