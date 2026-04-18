@@ -425,6 +425,9 @@ export default function SportsDemoGate({
           if (restoredName) localStorage.setItem(`lumio_${sport}_name`, restoredName)
           if (restoredNickname) localStorage.setItem(`lumio_${sport}_nickname`, restoredNickname)
           localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+          // URL-restore implies the user came from a successful sign-in flow —
+          // mark them onboarded so subsequent mounts skip the wizard.
+          localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
         } catch {}
         url.searchParams.delete('restore')
         url.searchParams.delete('name')
@@ -446,12 +449,15 @@ export default function SportsDemoGate({
           }
           restored = parsed
         } else {
-          // Rebuild from surviving customisation keys — only if the user hadn't
-          // explicitly signed out. demo_active is cleared on sign-out; without it
-          // we treat survivors as dormant data (preserved for the next sign-in)
-          // rather than an active session.
-          const demoActive = localStorage.getItem(`lumio_${sport}_demo_active`)
-          if (demoActive === 'true') {
+          // Rebuild from surviving customisation keys — only if the user has
+          // ever completed the wizard on this browser (the `onboarded` flag,
+          // set in finaliseSession / verifyOtp / URL-params restore). The flag
+          // is intentionally NOT cleared on sign-out — survivor keys plus
+          // onboarded together mean "this browser knows this demo persona;
+          // resume them straight to the portal". Genuine first-time visitors
+          // don't have the flag yet, so they still get the wizard.
+          const hasOnboarded = localStorage.getItem(`lumio_${sport}_onboarded`) === 'true'
+          if (hasOnboarded) {
             const savedName = localStorage.getItem(`lumio_${sport}_name`)
             const savedNickname = localStorage.getItem(`lumio_${sport}_nickname`)
             const savedPhoto = localStorage.getItem(`lumio_${sport}_profile_photo`)
@@ -583,6 +589,9 @@ export default function SportsDemoGate({
           try {
             localStorage.setItem(sessionKey(sport), JSON.stringify(restored))
             localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+            // Server-side profile present + verified → mark this browser as
+            // onboarded so future mounts skip the wizard via the rebuild path.
+            localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
             if (p.user_name) localStorage.setItem(`lumio_${sport}_name`, p.user_name)
             if (p.nickname) localStorage.setItem(`lumio_${sport}_nickname`, p.nickname)
             if (p.avatar_url) {
@@ -638,6 +647,10 @@ export default function SportsDemoGate({
     try {
       localStorage.setItem(sessionKey(sport), JSON.stringify(newSession))
       localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+      // Onboarded flag — survives sign-out. Marks "this browser has completed
+      // the wizard for this demo persona at least once"; the rebuild path
+      // gates on this so subsequent visits skip the wizard entirely.
+      localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
       // Save photo keyed by email for cross-session persistence
       if (photoDataUrl && effectiveEmail) localStorage.setItem(`lumio_demo_photo_${effectiveEmail.toLowerCase()}`, photoDataUrl)
     } catch (e) {

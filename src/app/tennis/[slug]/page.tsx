@@ -956,14 +956,27 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [gpsRequested, setGpsRequested] = useState(false)
   const profileNameLive = useTennisProfileName()
   const profilePhotoLive = useTennisProfilePhoto()
+  const isDemoShellDash = session.isDemoShell !== false
   const isPlayerRole = currentRole === 'player'
+  // Founder mode (live) reads Supabase profile values ONLY — never the
+  // lumio_tennis_* localStorage survivor keys. Those keys are a demo-mode
+  // ergonomic for Settings-edit sync; a founder who previously visited the
+  // demo shell must not see demo name/nickname/photo leak into their view.
   const displayPlayerName = isPlayerRole
-    ? (profileNameLive || session.userName || player.name)
+    ? (isDemoShellDash
+        ? (profileNameLive || session.userName || player.name)
+        : (session.userName || player.name))
     : player.name
   const displayPlayerNickname = isPlayerRole
-    ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
+    ? (isDemoShellDash
+        ? ((typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null) || '')
+        : (session.nickname?.trim() || ''))
     : ''
-  const displayPlayerPhoto = isPlayerRole ? (profilePhotoLive || session.photoDataUrl || '/alex_thompson.jpg') : null
+  const displayPlayerPhoto = isPlayerRole
+    ? (isDemoShellDash
+        ? (profilePhotoLive || session.photoDataUrl || '/alex_thompson.jpg')
+        : (session.photoDataUrl?.trim() || null))
+    : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -2130,10 +2143,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <div className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.4)', minWidth: 180 }}>
                     <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2 overflow-hidden"
                       style={{ background: 'rgba(14,165,233,0.2)', border: '2px solid #0ea5e9', color: '#0ea5e9' }}>
-                      {(profilePhotoLive || session.photoDataUrl) ? <img src={profilePhotoLive || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : (session.userName || firstName || 'AL').slice(0,2).toUpperCase()}
+                      {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : (displayPlayerName || 'AL').slice(0,2).toUpperCase()}
                     </div>
-                    <div className="text-sm font-semibold text-white">{profileNameLive || session.userName || player.name}</div>
-                    {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null; return nn ? <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginTop: 2 }}>&quot;{nn}&quot;</div> : null })()}
+                    <div className="text-sm font-semibold text-white">{displayPlayerName}</div>
+                    {displayPlayerNickname ? <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginTop: 2 }}>&quot;{displayPlayerNickname}&quot;</div> : null}
                     <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Player — ATP #{player.ranking}</div>
                   </div>
                 </div>
@@ -6558,7 +6571,14 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         <div className="text-white font-black text-sm uppercase tracking-wide text-center leading-tight mb-0.5">{fullName.split(' ')[0]}</div>
         <div className="text-purple-300 font-bold text-xs uppercase tracking-widest text-center">{fullName.split(' ').slice(1).join(' ')}</div>
         </>)})()}
-        {(() => { const nn = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null; return nn ? <div className="text-center mb-2" style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>&quot;{nn}&quot;</div> : <div className="mb-2" /> })()}
+        {(() => {
+          // Founder mode reads session.nickname only; demo mode reads the
+          // Settings-edit localStorage key.
+          const nn = session?.isDemoShell === false
+            ? (session?.nickname?.trim() || null)
+            : (typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_nickname') : null)
+          return nn ? <div className="text-center mb-2" style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>&quot;{nn}&quot;</div> : <div className="mb-2" />
+        })()}
 
         {/* Surface Win % bars */}
         <div className="space-y-1.5 mb-2">

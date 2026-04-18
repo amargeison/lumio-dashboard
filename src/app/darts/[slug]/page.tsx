@@ -598,22 +598,37 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       if (staticSummary) setDartsSummary(staticSummary)
       return
     }
-    setDartsSummaryLoading(true)
-    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the personal performance coach for ${displayPlayerName}, professional darts player ranked #${player.pdcRank} on the PDC tour${displayPlayerNickname ? `, known as ${displayPlayerNickname}` : ''}. Generate his morning briefing for today.\n\nStructure the briefing exactly like this:\n- Opening: one sentence acknowledging his current form and ranking momentum (#${player.pdcRank}, up 2 this week)\n- Match focus: tonight's PDC European Championship R1 vs Darren Merrick (#7) at Westfalenhallen Dortmund, 20:00. Walk-on at 19:30. Win = £110,000. Mention their H2H (Merrick leads 3-4) and the key tactical note (Merrick's checkout % drops to 39.8% when behind — Jake's is ${player.checkoutPercent}%)\n- One specific tactical preparation tip for tonight\n- One mental performance cue — what to focus on in the first 3 legs\n- Closing: one punchy motivational line under 12 words\n\nTone: direct, coaching, confident. Not corporate. Sound like a trusted coach who knows him well. 4-5 sentences total. No intro or labels — just the briefing text. It will be read aloud by text-to-speech so it must sound natural when spoken.` }] }) })
-      .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setDartsSummary(t ? cleanResponse(t) : null) }).catch(() => {}).finally(() => setDartsSummaryLoading(false))
+    // Founder mode: no auto-fire. The AI Summary card renders an EmptyState
+    // ("Connect your darts data to unlock…") for unconnected founders, so a
+    // live /api/ai/darts hit here would waste credits AND produce content the
+    // UI doesn't render. When data-integration lands, fetch from there.
+    return
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const liveProfileName = useDartsProfileName()
   const liveProfilePhoto = useDartsProfilePhoto()
   const liveProfileNickname = useDartsNickname()
   const isPlayerRole = !session.role || session.role === 'player'
+  // Founder mode (live) reads Supabase profile values ONLY — never from the
+  // lumio_darts_* localStorage survivor keys. Those keys are a demo-mode
+  // ergonomic for Settings-edit sync; a founder who previously visited
+  // /darts/darts-demo may have written them, and they must not leak into
+  // the founder view (name/nickname/photo).
   const displayPlayerName = isPlayerRole
-    ? (liveProfileName || session.userName || player.name)
+    ? (isDemoShellDash
+        ? (liveProfileName || session.userName || player.name)
+        : (session.userName || player.name))
     : player.name
   const displayPlayerNickname = isPlayerRole
-    ? (liveProfileNickname || '')
+    ? (isDemoShellDash
+        ? (liveProfileNickname || '')
+        : (session.nickname?.trim() || ''))
     : `"${session.nickname || player.nickname}"`
-  const displayPlayerPhoto = isPlayerRole ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || (isDemoShellDash ? '/jake_morrison.jpg' : null)) : null
+  const displayPlayerPhoto = isPlayerRole
+    ? (isDemoShellDash
+        ? (liveProfilePhoto?.trim() || session.photoDataUrl?.trim() || '/jake_morrison.jpg')
+        : (session.photoDataUrl?.trim() || null))
+    : null
   const firstName = displayPlayerName.split(' ')[0] || (isDemoShellDash ? 'Jake' : '')
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -1286,8 +1301,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
               </div>
             </div>
 
-            {/* AI Morning Summary — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {/* AI Morning Summary — matches tennis. Empty state for founders
+                until data integrations are connected; demo mode keeps the
+                static second-person briefing from ai-summaries.ts. */}
+            {session.isDemoShell === false
+              ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your darts data to unlock your AI evening briefing" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ color: '#8B5CF6' }}>✨</span>
@@ -1320,7 +1339,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                   <div key={i} className="flex gap-3 text-xs"><span className="text-base flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
                 ))}</div>}
               </div>
-            </div>
+            </div>}
 
             {/* Performance Intelligence — matches tennis */}
             {session.isDemoShell === false
