@@ -198,8 +198,8 @@ const GOLF: MediaContentData = {
       hashtags: ['HaldenMotorsOpen', 'RoadToDubai', 'VantaSports'],
       status: 'scheduled',
       media: [
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-course-prep/800/800',  name: 'Course walk — 18th green' },
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-range-setup/800/800', name: 'Range setup' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-course-prep/800/800',  name: 'Course walk — 18th green' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-range-setup/800/800', name: 'Range setup' },
       ],
     },
     {
@@ -224,8 +224,8 @@ const GOLF: MediaContentData = {
       media: [
         {
           type: 'video',
-          dataUrl: 'https://picsum.photos/seed/harrington-driver-fitting/800/800',
-          poster:  'https://picsum.photos/seed/harrington-driver-fitting/800/800',
+          dataUrl: 'https://picsum.photos/seed/halton-driver-fitting/800/800',
+          poster:  'https://picsum.photos/seed/halton-driver-fitting/800/800',
           name: 'Driver fitting — 60-sec clip',
         },
       ],
@@ -257,7 +257,7 @@ const GOLF: MediaContentData = {
       hashtags: ['Caddie', 'HaldenMotorsOpen'],
       status: 'draft',
       media: [
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-caddie-debrief/800/800', name: 'Caddie debrief — Gareth + front nine' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-caddie-debrief/800/800', name: 'Caddie debrief — Gareth + front nine' },
       ],
     },
     {
