@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Lumio Tennis Club crest">
+  <defs>
+    <linearGradient id="ltcShield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+  </defs>
+  <path d="M 100 8 L 180 26 L 180 108 C 180 150 148 178 100 192 C 52 178 20 150 20 108 L 20 26 Z"
+        fill="url(#ltcShield)" stroke="#1e3a8a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 100 18 L 172 33 L 172 108 C 172 144 144 170 100 183 C 56 170 28 144 28 108 L 28 33 Z"
+        fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.5"/>
+  <g transform="translate(100,96)">
+    <g transform="rotate(-35)">
+      <ellipse cx="0" cy="-34" rx="14" ry="18" fill="none" stroke="#ffffff" stroke-width="3"/>
+      <path d="M -14 -34 H 14 M 0 -52 V -16 M -11 -42 H 11 M -11 -26 H 11" stroke="#ffffff" stroke-width="1" stroke-opacity="0.85" fill="none"/>
+      <rect x="-2.5" y="-16" width="5" height="40" fill="#ffffff"/>
+      <rect x="-4" y="22" width="8" height="4" rx="1" fill="#1e3a8a"/>
+    </g>
+    <g transform="rotate(35)">
+      <ellipse cx="0" cy="-34" rx="14" ry="18" fill="none" stroke="#ffffff" stroke-width="3"/>
+      <path d="M -14 -34 H 14 M 0 -52 V -16 M -11 -42 H 11 M -11 -26 H 11" stroke="#ffffff" stroke-width="1" stroke-opacity="0.85" fill="none"/>
+      <rect x="-2.5" y="-16" width="5" height="40" fill="#ffffff"/>
+      <rect x="-4" y="22" width="8" height="4" rx="1" fill="#1e3a8a"/>
+    </g>
+    <circle cx="0" cy="0" r="9" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <path d="M -8 -2 Q 0 -10 8 -2" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="1" stroke-linecap="round"/>
+    <path d="M -8 2 Q 0 10 8 2" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <rect x="20" y="126" width="160" height="22" fill="#ffffff"/>
+  <text x="100" y="141" text-anchor="middle"
+        font-family="DM Sans, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="12" font-weight="800" letter-spacing="2"
+        fill="#1e3a8a">LUMIO TENNIS CLUB</text>
+  <text x="100" y="165" text-anchor="middle"
+        font-family="DM Sans, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="9" font-weight="700" letter-spacing="3"
+        fill="#ffffff" fill-opacity="0.85">EST. 2024</text>
+</svg>

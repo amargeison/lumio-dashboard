@@ -76,7 +76,7 @@ function rgba(hex: string, a: number) {
 // ─── persona + AI helpers ────────────────────────────────────────────────────
 type Persona = { name: string; descriptor: string };
 const PERSONA_BY_SPORT: Record<string, Persona> = {
-  golf:       { name: 'James Harrington',          descriptor: 'DP World Tour pro, World #87' },
+  golf:       { name: 'James Halton',              descriptor: 'DP World Tour pro, World #87' },
   tennis:     { name: 'Alex Rivera',               descriptor: 'British ATP tennis player ranked #67' },
   boxing:     { name: 'Marcus Cole',               descriptor: 'pro boxer chasing a world title' },
   darts:      { name: 'Jake "Shooter" Morrison',   descriptor: 'PDC Pro Tour player' },

@@ -1,6 +1,65 @@
 'use client';
 // TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
 
+// ─── INVENTED TENNIS ROSTER ──────────────────────────────────────────────────
+// All ATP/WTA "players" named in this file (and in sports-quotes.ts tennis
+// block) are fictional. The founder persona Alex Rivera is intentional.
+// Keep this list in sync if you add/rename — H2H plausibility and matchup
+// coherence across tabs depend on it.
+//
+// ATP (24):
+//   Marco Vitelli ("Il Marchese", ITA) — tour anchor
+//   Luca Orsini ("The Orsi", ITA)
+//   Rafael Castelli ("The Castellan", ITA)
+//   Santiago Ferreiro ("Santi", ARG)
+//   Diego Maldonado ("El Rayo", ARG)
+//   Andre Kleinhoff ("Kleiny", GER)
+//   Felix Hohenberg ("The Mountain", GER)
+//   Pascal Fournier ("Le Fournier", FRA)
+//   Mathieu Beaulieu ("Beau", FRA)
+//   Thibault Rocher ("Le Rocher", FRA)
+//   Viktor Orlov ("The Siberian", RUS)
+//   Nikolai Zaitsev ("Z-man", RUS)
+//   Miguel Herrera ("El Mago", ESP)
+//   Alejandro Barrios ("Barrio", ESP)
+//   Joaquin Soto ("El Duende", CHI)
+//   Kiran Patel ("KP", IND)
+//   Lukas Berg ("Bergie", SWE)
+//   Magnus Eriksson ("The Hammer", SWE)
+//   Jasper Holm ("Holmie", DEN)
+//   Dane Whitlock ("The Dane", AUS)
+//   Connor Brennan ("The Brawler", USA)
+//   Luca Varga ("The Magician", HUN)
+//   Stefan Krasic ("Kras", SRB)
+//   Kieran Fallon ("The Falcon", IRL)
+//
+// WTA (24):
+//   Chiara Amato ("Chi", ITA)
+//   Giulia Bellini ("Belli", ITA)
+//   Camila Fuentes ("Cami", ARG)
+//   Valentina Reyes ("Vale", ARG)
+//   Anya Schneider ("The Swiss", SUI)
+//   Lena Bergmann ("Lenny", GER)
+//   Hannah Krüger ("The Crusher", GER)
+//   Celeste Dubois ("Celi", FRA)
+//   Noémie Laurent ("Nomi", FRA)
+//   Tatiana Volkova ("Tati", RUS)
+//   Sofia Ivanenko ("Sofi", UKR)
+//   Isabel Santiago ("Isa", ESP)
+//   Marina Espinosa ("Mari", ESP)
+//   Ivy Whitfield ("Ivy", USA)
+//   Madison Crane ("Madi", USA)
+//   Sienna Whitlock ("Si", AUS)
+//   Amelia Donovan ("Am", AUS)
+//   Freja Lindqvist ("Freja", SWE)
+//   Noor van Dijk ("The Dutchess", NED)
+//   Nadia Kowalski ("Nady", POL)
+//   Ava Renwick ("Ren", GBR)
+//   Saoirse Keegan ("The Kick", IRL)
+//   Maya Nakamura ("Maya", JPN)
+//   Leila Karimi ("Leila", IRN)
+// ─────────────────────────────────────────────────────────────────────────────
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
@@ -975,7 +1034,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     : ''
   const displayPlayerPhoto = isPlayerRole
     ? (isDemoShellDash
-        ? (profilePhotoLive || session.photoDataUrl || '/alex_thompson.jpg')
+        ? (profilePhotoLive || session.photoDataUrl || '/alex_rivera.svg')
         : (session.photoDataUrl?.trim() || null))
     : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
@@ -1549,7 +1608,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="text-center">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
                         style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
-                        {(profilePhotoLive || session.photoDataUrl) ? <img src={profilePhotoLive || session.photoDataUrl || ''} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                        {(() => {
+                          const p = profilePhotoLive || session.photoDataUrl || (isDemoShellDash ? '/alex_rivera.svg' : '');
+                          return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
+                        })()}
                       </div>
                       <div className="text-xs font-bold text-white">{profileNameLive || session.userName || player.name}</div>
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
@@ -2620,11 +2682,11 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
           {[
             { rank: 1, name: 'L. Brenner', pts: 9240, flag: '🇮🇹', qualified: true },
             { rank: 2, name: 'C. Valdez', pts: 7850, flag: '🇪🇸', qualified: true },
-            { rank: 3, name: 'A. Zverev', pts: 6120, flag: '🇩🇪', qualified: false },
-            { rank: 4, name: 'H. Rune', pts: 5480, flag: '🇩🇰', qualified: false },
+            { rank: 3, name: 'A. Kleinhoff', pts: 6120, flag: '🇩🇪', qualified: false },
+            { rank: 4, name: 'S. Ferreiro', pts: 5480, flag: '🇦🇷', qualified: false },
             { rank: 5, name: 'J. Draper', pts: 4930, flag: '🇬🇧', qualified: false },
-            { rank: 6, name: 'T. Fritz', pts: 4410, flag: '🇺🇸', qualified: false },
-            { rank: 7, name: 'C. Ruud', pts: 4180, flag: '🇳🇴', qualified: false },
+            { rank: 6, name: 'C. Brennan', pts: 4410, flag: '🇺🇸', qualified: false },
+            { rank: 7, name: 'M. Herrera', pts: 4180, flag: '🇪🇸', qualified: false },
             { rank: 8, name: 'K. Mensik', pts: 3820, flag: '🇨🇿', qualified: false },
             { rank: 54, name: player.name, pts: player.ranking_points, flag: player.flag, qualified: false, isPlayer: true },
           ].map((p: { rank: number; name: string; pts: number; flag: string; qualified: boolean; isPlayer?: boolean }, i) => (
@@ -2869,9 +2931,9 @@ function PerformanceView({ player, session }: { player: TennisPlayer; session: S
   ];
 
   const recentForm = [
-    { tournament: 'Indian Wells', cat: 'Masters 1000', surface: 'Hard', result: 'QF', opponent: 'Rune', score: '6-4, 4-6, 2-6', wl: 'L' },
+    { tournament: 'Indian Wells', cat: 'Masters 1000', surface: 'Hard', result: 'QF', opponent: 'Ferreiro', score: '6-4, 4-6, 2-6', wl: 'L' },
     { tournament: 'Miami Open', cat: 'Masters 1000', surface: 'Hard', result: 'R3', opponent: 'Mensik', score: '4-6, 6-3, 2-6', wl: 'L' },
-    { tournament: 'Dubai ATP 500', cat: 'ATP 500', surface: 'Hard', result: 'SF', opponent: 'Tsitsipas', score: '6-7, 3-6', wl: 'L' },
+    { tournament: 'Dubai ATP 500', cat: 'ATP 500', surface: 'Hard', result: 'SF', opponent: 'Orsini', score: '6-7, 3-6', wl: 'L' },
     { tournament: 'Rotterdam ATP 500', cat: 'ATP 500', surface: 'Indoor', result: 'W', opponent: 'Paul', score: '6-4, 7-6', wl: 'W' },
     { tournament: 'Australian Open', cat: 'Grand Slam', surface: 'Hard', result: 'R4', opponent: 'Brenner', score: '3-6, 4-6, 7-5, 2-6', wl: 'L' },
   ];
@@ -3717,9 +3779,9 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
     { date: '9 Apr', type: 'On-court', partner: 'J. Draper', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
     { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Vega deuce court patterns.' },
     { date: '7 Apr', type: 'Ball Machine', partner: '—', duration: '45 min', coachNotes: 'Forehand inside-in drill. 200 balls at match intensity.' },
-    { date: '6 Apr', type: 'On-court', partner: 'C. Ruud', duration: '90 min', coachNotes: 'Match-play set. Won 6-4. Good clay movement.' },
+    { date: '6 Apr', type: 'On-court', partner: 'M. Herrera', duration: '90 min', coachNotes: 'Match-play set. Won 6-4. Good clay movement.' },
     { date: '5 Apr', type: 'Movement', partner: '—', duration: '60 min', coachNotes: 'Movement patterns with Luis. Lateral agility focus.' },
-    { date: '4 Apr', type: 'On-court', partner: 'T. Fritz', duration: '60 min', coachNotes: 'Short hit. Serve warm-up pre-Monte-Carlo.' },
+    { date: '4 Apr', type: 'On-court', partner: 'C. Brennan', duration: '60 min', coachNotes: 'Short hit. Serve warm-up pre-Monte-Carlo.' },
     { date: '3 Apr', type: 'Ball Machine', partner: '—', duration: '30 min', coachNotes: 'Crosscourt backhand drills. Consistency above 85%.' },
   ];
 
@@ -4081,7 +4143,7 @@ function SwingVisionCards() {
 }
 function VideoLibraryView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const videos = [
-    { title: 'Monte-Carlo R2 vs Hurkacz', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
+    { title: 'Monte-Carlo R2 vs Zaitsev', category: 'Match Footage', date: '8 Apr 2026', duration: '1h 42m', tags: ['clay', 'win', 'M1000'] },
     { title: 'Monte-Carlo R1 vs Caballero', category: 'Match Footage', date: '7 Apr 2026', duration: '1h 18m', tags: ['clay', 'win', 'M1000'] },
     { title: 'Serve Pattern Drill — Body %', category: 'Practice Clips', date: '9 Apr 2026', duration: '12m', tags: ['serve', 'drill'] },
     { title: 'Rotterdam Final Highlights', category: 'Highlight Reels', date: '18 Feb 2026', duration: '8m', tags: ['indoor', 'title', 'ATP500'] },
@@ -4814,8 +4876,8 @@ function PlayingPartnersView({ player, session }: { player: TennisPlayer; sessio
 
   const sparringLog = [
     { date: '9 Apr', partner: 'Lucas Moreau', type: 'Full practice', notes: 'Serve pattern + crosscourt rally drill. 90 min.' },
-    { date: '6 Apr', partner: 'C. Ruud', type: 'Match-play set', notes: 'Won 6-4. Good clay intensity.' },
-    { date: '4 Apr', partner: 'T. Fritz', type: 'Short hit', notes: '60 min warm-up. Serve loosener.' },
+    { date: '6 Apr', partner: 'M. Herrera', type: 'Match-play set', notes: 'Won 6-4. Good clay intensity.' },
+    { date: '4 Apr', partner: 'C. Brennan', type: 'Short hit', notes: '60 min warm-up. Serve loosener.' },
     { date: '1 Apr', partner: 'Lucas Moreau', type: 'Full practice', notes: 'Return drills + point play. 75 min.' },
   ];
 
@@ -4910,7 +4972,7 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
   const doublesH2H = [
     { opponents: 'Mektic / Pavic', result: 'L', score: '4-6, 3-6', tournament: 'Australian Open 2026' },
     { opponents: 'Salisbury / Ram', result: 'W', score: '6-3, 7-6', tournament: 'Rotterdam 2026' },
-    { opponents: 'Gonzalez / Roger-Vasselin', result: 'W', score: '7-5, 6-4', tournament: 'Dubai 2026' },
+    { opponents: 'Fournier / Beaulieu', result: 'W', score: '7-5, 6-4', tournament: 'Dubai 2026' },
     { opponents: 'Arevalo / Rojer', result: 'L', score: '3-6, 6-7', tournament: 'Indian Wells 2026' },
   ];
 
@@ -6186,8 +6248,8 @@ function AcademyView({ player, session }: { player: TennisPlayer; session: Sport
 // ─── MENTAL PERFORMANCE VIEW ───────────────────────────────────────────────────
 function MentalPerformanceView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const debriefLog = [
-    { date: '9 Apr', match: 'Monte-Carlo R2 vs Hurkacz', topic: 'Pressure serve at 5-4', outcome: 'Held serve. Positive close-out.', rating: 8 },
-    { date: '15 Mar', match: 'Indian Wells QF vs Rune', topic: 'Third set collapse', outcome: 'Lost composure after losing 2nd set. Need reset routine.', rating: 4 },
+    { date: '9 Apr', match: 'Monte-Carlo R2 vs Zaitsev', topic: 'Pressure serve at 5-4', outcome: 'Held serve. Positive close-out.', rating: 8 },
+    { date: '15 Mar', match: 'Indian Wells QF vs Ferreiro', topic: 'Third set collapse', outcome: 'Lost composure after losing 2nd set. Need reset routine.', rating: 4 },
     { date: '12 Mar', match: 'Indian Wells R3 vs Berrettini', topic: 'Tight tiebreak performance', outcome: 'Won 7-5 in TB. Breathing protocol worked.', rating: 7 },
     { date: '18 Feb', match: 'Rotterdam Final vs Paul', topic: 'Title pressure handling', outcome: 'Managed final nerves. Best mental performance of season.', rating: 9 },
   ];
@@ -6570,7 +6632,13 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         {/* Player photo */}
         <div className="w-full h-28 rounded-lg mb-3 flex items-center justify-center overflow-hidden"
           style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2) 0%, rgba(13,148,136,0.2) 100%)', border: '1px solid rgba(108,63,197,0.3)' }}>
-          {(profilePhotoLive || session?.photoDataUrl) ? <img src={profilePhotoLive || session?.photoDataUrl || ''} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} /> : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div>}
+          {(() => {
+            const isDemoShellCard = session?.isDemoShell !== false;
+            const p = profilePhotoLive || session?.photoDataUrl || (isDemoShellCard ? '/alex_rivera.svg' : '');
+            return p
+              ? <img src={p} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} />
+              : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div>;
+          })()}
         </div>
         {/* Name */}
         {(() => { const fullName = profileNameLive || session?.userName || player.name; return (<>
@@ -6646,11 +6714,11 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
 const LiveScoresView = ({ liveScores, fixtures, player, session }: { liveScores: any[]; fixtures: any[]; player: TennisPlayer; session: SportsDemoSession }) => {
   const DEMO_MATCHES = [
     { p1: 'L. Brenner [1]', p2: 'C. Valdez [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
-    { p1: 'N. Djokovic [3]', p2: 'D. Medvedev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
+    { p1: 'V. Orlov [3]', p2: 'N. Zaitsev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
     { p1: `${player.name} [67]`, p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
-    { p1: 'C. Ruud [7]', p2: 'S. Tsitsipas [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
-    { p1: 'T. Fritz [5]', p2: 'A. Rublev [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
-    { p1: 'H. Rune [12]', p2: 'A. De Minaur [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
+    { p1: 'M. Herrera [7]', p2: 'L. Orsini [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
+    { p1: 'C. Brennan [5]', p2: 'F. Hohenberg [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
+    { p1: 'S. Ferreiro [12]', p2: 'D. Whitlock [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
   ];
   const matches = liveScores.length > 0 ? liveScores : DEMO_MATCHES;
   const isDemo = liveScores.length === 0;
@@ -7784,44 +7852,421 @@ export default function TennisTourPage() {
 
 // ─── GPS & VIDEO VIEW ────────────────────────────────────────────────────────
 function GPSVideoView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
-  const [gpsAiBrief, setGpsAiBrief] = useState<string | null>(null)
-  const [gpsAiLoading, setGpsAiLoading] = useState(false)
-  const gpsGenerated = useRef(false)
+  const isDemoShell = session.isDemoShell !== false
+  const [gpsTab, setGpsTab] = useState<'overview'|'heatmaps'|'gps'|'videos'|'brief'>('overview')
+  const [historyOpen, setHistoryOpen] = useState(false)
 
-  useEffect(() => {
-    if (gpsGenerated.current) return
-    gpsGenerated.current = true
-    setGpsAiLoading(true)
-    fetch('/api/ai/tennis', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user',
-        content: `You are an elite ATP tennis coaching analyst. Session data: GPS: Court coverage 4.2km, sprint distance 1.8km, top speed 28.4km/h, load score 74/100, recovery index Good, heaviest movement baseline deuce side. SwingVision: 68% first serve in, 14 winners, 8 unforced errors, avg rally 4.2 shots, net points won 71%. Generate a post-session coaching brief in a professional ATP coaching tone. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
-      }] })
-    }).then(r => r.json()).then(d => setGpsAiBrief(cleanResponse(d.content?.[0]?.text || 'Unable to generate brief.'))).catch(() => setGpsAiBrief('Unable to generate brief.')).finally(() => setGpsAiLoading(false))
-  }, [])
+  const courtSurface = '#b45309'
+
+  const aiBrief = "Your session load of 74 sits in the optimal training zone. Court coverage at 4.2km is above your 12-session average — you've been moving more aggressively to the deuce side baseline, where 60% of your rally exposure came today. Top speed of 28.4km/h was logged on a set-2 sprint to recover a drop shot — faster than 74% of your tracked sessions on clay.\n\nSwingVision logged 14 winners against 8 unforced errors, a clean +6 on the margin. First-serve percentage at 68% gives you a platform; the target for your next session is to push that to 72% without losing the 12% ace rate.\n\nNet points won at 71% suggests you were rewarded when you advanced — consider scripting 2-3 forced net approaches per service game in your next match."
+
+  const movementPoints = [
+    { x: 150, y: 510, r: 50, grad: 'movHot' }, { x: 90, y: 505, r: 45, grad: 'movHot' },
+    { x: 210, y: 500, r: 42, grad: 'movHot' }, { x: 50, y: 495, r: 35, grad: 'movWarm' },
+    { x: 250, y: 490, r: 35, grad: 'movWarm' }, { x: 170, y: 480, r: 38, grad: 'movHot' },
+    { x: 130, y: 470, r: 36, grad: 'movWarm' }, { x: 200, y: 470, r: 32, grad: 'movWarm' },
+    { x: 110, y: 480, r: 34, grad: 'movWarm' }, { x: 160, y: 440, r: 30, grad: 'movWarm' },
+    { x: 90, y: 435, r: 28, grad: 'movCool' }, { x: 220, y: 430, r: 28, grad: 'movCool' },
+    { x: 140, y: 380, r: 25, grad: 'movCool' }, { x: 180, y: 360, r: 24, grad: 'movCool' },
+    { x: 100, y: 320, r: 22, grad: 'movCool' }, { x: 200, y: 310, r: 22, grad: 'movCool' },
+    { x: 155, y: 295, r: 22, grad: 'movCool' }, { x: 145, y: 250, r: 20, grad: 'movCool' },
+  ]
+
+  const shotPlacementPoints = [
+    { x: 60, y: 50, r: 30, grad: 'shotHot' }, { x: 240, y: 45, r: 32, grad: 'shotHot' },
+    { x: 150, y: 30, r: 28, grad: 'shotWarm' }, { x: 90, y: 80, r: 28, grad: 'shotWarm' },
+    { x: 210, y: 75, r: 26, grad: 'shotHot' }, { x: 160, y: 110, r: 24, grad: 'shotWarm' },
+    { x: 110, y: 130, r: 22, grad: 'shotCool' }, { x: 195, y: 135, r: 22, grad: 'shotCool' },
+    { x: 70, y: 200, r: 20, grad: 'shotCool' }, { x: 230, y: 210, r: 22, grad: 'shotCool' },
+    { x: 150, y: 230, r: 20, grad: 'shotCool' }, { x: 130, y: 60, r: 26, grad: 'shotWarm' },
+  ]
+
+  const firstServePoints = [
+    { x: 65, y: 240, r: 18 }, { x: 60, y: 200, r: 16 }, { x: 145, y: 210, r: 18 },
+    { x: 145, y: 165, r: 14 }, { x: 235, y: 195, r: 16 }, { x: 230, y: 240, r: 18 },
+    { x: 100, y: 220, r: 14 }, { x: 200, y: 220, r: 14 },
+  ]
+  const secondServePoints = [
+    { x: 100, y: 195, r: 14 }, { x: 200, y: 195, r: 14 }, { x: 120, y: 230, r: 12 },
+    { x: 180, y: 230, r: 12 }, { x: 140, y: 195, r: 12 }, { x: 160, y: 195, r: 12 },
+  ]
+
+  const hrZones = [
+    { zone: 'Z1 Recovery', pct: 18, color: '#dc2626' },
+    { zone: 'Z2 Aerobic',  pct: 34, color: '#ec4899' },
+    { zone: 'Z3 Tempo',    pct: 28, color: '#a855f7' },
+    { zone: 'Z4 Threshold', pct: 14, color: '#8b5cf6' },
+    { zone: 'Z5 VO2',      pct: 6,  color: '#6366f1' },
+  ]
+
+  const fatigueData = [
+    { t: 0, load: 18 }, { t: 10, load: 24 }, { t: 20, load: 32 },
+    { t: 30, load: 41 }, { t: 40, load: 48 }, { t: 50, load: 53 },
+    { t: 60, load: 58 }, { t: 70, load: 62 }, { t: 80, load: 67 },
+    { t: 90, load: 71 }, { t: 100, load: 74 }, { t: 110, load: 73 },
+  ]
+  const fatigueEvents = [
+    { t: 45, label: 'Break' }, { t: 75, label: 'Set 1 end' }, { t: 110, label: 'Match end' },
+  ]
+
+  const splitTimes = [
+    { set: 'Set 1', sec: 18.3, points: 64 },
+    { set: 'Set 2', sec: 19.7, points: 58 },
+    { set: 'Set 3', sec: 22.1, points: 42 },
+  ]
+
+  const videos = [
+    { ctx: 'Set 2 · Game 4 · Point 3', label: 'Forehand Winner', time: '1:24', tint: 'from-cyan-500/30 to-emerald-500/30' },
+    { ctx: 'Set 1 · Game 8 · Point 5', label: 'Serve Ace',       time: '0:42', tint: 'from-purple-500/30 to-cyan-500/30' },
+    { ctx: 'Set 2 · Game 6 · Point 2', label: 'Backhand DTL',    time: '2:15', tint: 'from-orange-500/30 to-rose-500/30' },
+    { ctx: 'Set 1 · Game 3 · Point 7', label: 'Drop Shot Winner',time: '1:08', tint: 'from-emerald-500/30 to-amber-500/30' },
+    { ctx: 'Set 2 · Game 9 · Point 4', label: 'Forehand CC',     time: '0:55', tint: 'from-indigo-500/30 to-fuchsia-500/30' },
+    { ctx: 'Set 1 · Game 2 · Point 6', label: 'Volley Winner',   time: '1:42', tint: 'from-rose-500/30 to-orange-500/30' },
+  ]
+
+  const sessionHistoryRows = [
+    { date:'09 Apr', surface:'Clay', coverage:'3.8km', load:68, speed:'27.1km/h', outcome:'W vs Lindqvist', win:true as boolean | null },
+    { date:'07 Apr', surface:'Clay', coverage:'4.1km', load:79, speed:'29.2km/h', outcome:'W vs Kellner', win:true as boolean | null },
+    { date:'05 Apr', surface:'Clay', coverage:'2.9km', load:51, speed:'25.8km/h', outcome:'Practice', win:null as boolean | null },
+    { date:'03 Apr', surface:'Hard', coverage:'4.4km', load:82, speed:'30.1km/h', outcome:'L vs Brenner', win:false as boolean | null },
+    { date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null as boolean | null },
+  ]
+
+  const tabs: ReadonlyArray<readonly ['overview'|'heatmaps'|'gps'|'videos'|'brief', string]> = [
+    ['overview', 'Overview'], ['heatmaps', 'Heatmaps'], ['gps', 'GPS Stats'], ['videos', 'Videos'], ['brief', 'AI Brief'],
+  ]
+
+  const EmptyConnect = ({ feature }: { feature: string }) => (
+    <div className="text-center py-12 px-4">
+      <p className="text-sm text-gray-400 mb-3">{feature}</p>
+      <button className="px-4 py-2 bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 text-xs font-medium rounded-lg hover:bg-cyan-600/30 transition-colors">Connect Devices</button>
+    </div>
+  )
+
+  const CourtBase = () => (
+    <>
+      <rect x="0" y="0" width="300" height="540" rx="4" fill={courtSurface} />
+      <line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" />
+      <line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" />
+      <line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" />
+      <line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" />
+      <line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" />
+      <line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" />
+      <line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" />
+      <line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" />
+      <line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" />
+      <line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" />
+    </>
+  )
+
+  const HeatLegend = () => (
+    <div className="flex items-center justify-center gap-1.5 mt-3">
+      <span className="text-[10px] text-gray-500 mr-1">Low</span>
+      {['#22c55e', '#0ea5e9', '#eab308', '#f97316', '#dc2626'].map(c => (
+        <span key={c} className="w-4 h-2 rounded-sm" style={{ backgroundColor: c }} />
+      ))}
+      <span className="text-[10px] text-gray-500 ml-1">High</span>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-3">
-        <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🛰️</span><span className="text-sm font-semibold text-white">Lumio GPS Tracker</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Connected</span><span className="text-xs" style={{ color: '#6B7280' }}>Battery: 87%</span><span className="text-xs" style={{ color: '#6B7280' }}>Last sync: 2 mins ago</span><button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Settings</button></div>
-        <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🎾</span><span className="text-sm font-semibold text-white">SwingVision</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /><span className="text-xs" style={{ color: '#22C55E' }}>Connected</span><span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span><button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>View Clips</button></div>
+      <SectionHeader icon="🛰️" title="GPS & Video" subtitle="Court coverage, shot tracking, and SwingVision clip review." />
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {tabs.map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setGpsTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${gpsTab === id ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      <div className="grid grid-cols-5 gap-3">{[{ label:'Court Coverage', value:'4.2 km', color:'#06b6d4' },{ label:'Sprint Distance', value:'1.8 km', color:'#06b6d4' },{ label:'Top Speed', value:'28.4 km/h', color:'#06b6d4' },{ label:'Load Score', value:'74 / 100', color:'#F59E0B' },{ label:'Recovery Index', value:'Good', color:'#22C55E' }].map(s => (<div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>))}</div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="text-sm font-bold text-white mb-3">Court Movement Heatmap</div>
-          <svg viewBox="0 0 300 540" className="w-full max-w-[280px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}><rect x="0" y="0" width="300" height="540" rx="4" fill="#1a6b3c" /><line x1="10" y1="10" x2="10" y2="530" stroke="white" strokeWidth="1.5" /><line x1="290" y1="10" x2="290" y2="530" stroke="white" strokeWidth="1.5" /><line x1="40" y1="10" x2="40" y2="530" stroke="white" strokeWidth="1" /><line x1="260" y1="10" x2="260" y2="530" stroke="white" strokeWidth="1" /><line x1="10" y1="10" x2="290" y2="10" stroke="white" strokeWidth="2" /><line x1="10" y1="530" x2="290" y2="530" stroke="white" strokeWidth="2" /><line x1="0" y1="270" x2="300" y2="270" stroke="white" strokeWidth="3" /><line x1="40" y1="140" x2="260" y2="140" stroke="white" strokeWidth="1" /><line x1="40" y1="400" x2="260" y2="400" stroke="white" strokeWidth="1" /><line x1="150" y1="140" x2="150" y2="270" stroke="white" strokeWidth="1" /><line x1="150" y1="270" x2="150" y2="400" stroke="white" strokeWidth="1" /><line x1="150" y1="10" x2="150" y2="20" stroke="white" strokeWidth="1" /><line x1="150" y1="520" x2="150" y2="530" stroke="white" strokeWidth="1" /><ellipse cx="150" cy="500" rx="60" ry="25" fill="#ef4444" opacity="0.5" /><ellipse cx="80" cy="490" rx="40" ry="20" fill="#ef4444" opacity="0.4" /><ellipse cx="220" cy="480" rx="35" ry="18" fill="#f59e0b" opacity="0.35" /><ellipse cx="150" cy="450" rx="45" ry="22" fill="#f59e0b" opacity="0.3" /><ellipse cx="100" cy="300" rx="30" ry="20" fill="#3b82f6" opacity="0.2" /><ellipse cx="200" cy="310" rx="25" ry="18" fill="#3b82f6" opacity="0.15" /></svg>
-          <div className="flex items-center justify-center gap-2 mt-3"><span className="text-[10px]" style={{ color: '#3b82f6' }}>Low</span><div className="w-24 h-1.5 rounded-full" style={{ background: 'linear-gradient(90deg, #3b82f6, #f59e0b, #ef4444)' }} /><span className="text-[10px]" style={{ color: '#ef4444' }}>High</span></div>
+
+      {/* OVERVIEW */}
+      {gpsTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🛰️</span><span className="text-sm font-semibold text-white">Lumio GPS Tracker</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: isDemoShell ? '#22C55E' : '#6B7280' }} /><span className="text-xs" style={{ color: isDemoShell ? '#22C55E' : '#6B7280' }}>{isDemoShell ? 'Connected' : 'Not connected'}</span>{isDemoShell && <><span className="text-xs" style={{ color: '#6B7280' }}>Battery: 87%</span><span className="text-xs" style={{ color: '#6B7280' }}>Last sync: 2 mins ago</span></>}<button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Settings</button></div>
+            <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🎾</span><span className="text-sm font-semibold text-white">SwingVision</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: isDemoShell ? '#22C55E' : '#6B7280' }} /><span className="text-xs" style={{ color: isDemoShell ? '#22C55E' : '#6B7280' }}>{isDemoShell ? 'Connected' : 'Not connected'}</span>{isDemoShell && <span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span>}<button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{isDemoShell ? 'View Clips' : 'Connect'}</button></div>
+          </div>
+          <div className="grid grid-cols-5 gap-3">{[{ label:'Court Coverage', value: isDemoShell ? '4.2 km' : '—', color:'#06b6d4' },{ label:'Sprint Distance', value: isDemoShell ? '1.8 km' : '—', color:'#06b6d4' },{ label:'Top Speed', value: isDemoShell ? '28.4 km/h' : '—', color:'#06b6d4' },{ label:'Load Score', value: isDemoShell ? '74 / 100' : '—', color:'#F59E0B' },{ label:'Recovery Index', value: isDemoShell ? 'Good' : '—', color:'#22C55E' }].map(s => (<div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-lg font-black" style={{ color: isDemoShell ? s.color : '#4B5563' }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>))}</div>
+
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-sm font-bold text-white mb-3">Last Session</div>
+            {isDemoShell ? (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Date</div><div className="text-sm text-white font-medium mt-1">09 Apr · Clay</div></div>
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Opponent</div><div className="text-sm text-white font-medium mt-1">M. Lindqvist</div></div>
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Result</div><div className="text-sm font-medium mt-1" style={{ color: '#22C55E' }}>W 6-4, 7-5</div></div>
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Coverage</div><div className="text-sm text-white font-medium mt-1">3.8km · Load 68</div></div>
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">SwingVision</div><div className="text-sm text-white font-medium mt-1">12 W / 9 UE · 64% 1st</div></div>
+              </div>
+            ) : (
+              <EmptyConnect feature="Connect your Lumio GPS Tracker to log session summaries." />
+            )}
+          </div>
+
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <button onClick={() => setHistoryOpen(o => !o)} className="w-full px-5 py-4 flex items-center justify-between" style={{ borderBottom: historyOpen ? '1px solid #1F2937' : 'none' }}>
+              <div className="text-sm font-bold text-white">Session History</div>
+              <span className="text-xs text-gray-500">{historyOpen ? 'Hide ▴' : 'Show ▾'}</span>
+            </button>
+            {historyOpen && (
+              isDemoShell ? (
+                <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{sessionHistoryRows.map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div>
+              ) : (
+                <EmptyConnect feature="Connect your Lumio GPS Tracker to populate session history." />
+              )
+            )}
+          </div>
         </div>
+      )}
+
+      {/* HEATMAPS */}
+      {gpsTab === 'heatmaps' && (
         <div className="space-y-4">
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-3">Distance by Set</div><div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div></div>
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-sm font-bold text-white mb-3">Speed Zones</div><div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div></div>
-          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div><div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Court Movement — large */}
+            <div className="lg:col-span-2 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-sm font-bold text-white mb-1">Court Movement Heatmap</div>
+              <div className="text-[11px] text-gray-500 mb-3">Density of where you held position throughout the session.</div>
+              {isDemoShell ? (
+                <>
+                  <svg viewBox="0 0 300 540" className="w-full max-w-[320px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+                    <defs>
+                      <filter id="movHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12" /></filter>
+                      <radialGradient id="movHot"><stop offset="0%" stopColor="#dc2626" stopOpacity="0.9" /><stop offset="50%" stopColor="#f97316" stopOpacity="0.55" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
+                      <radialGradient id="movWarm"><stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" /><stop offset="60%" stopColor="#eab308" stopOpacity="0.4" /><stop offset="100%" stopColor="#22c55e" stopOpacity="0" /></radialGradient>
+                      <radialGradient id="movCool"><stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" /><stop offset="70%" stopColor="#0ea5e9" stopOpacity="0.3" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
+                    </defs>
+                    <CourtBase />
+                    <g filter="url(#movHeatBlur)">
+                      {movementPoints.map((p, i) => (
+                        <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={`url(#${p.grad})`} />
+                      ))}
+                    </g>
+                  </svg>
+                  <HeatLegend />
+                </>
+              ) : (
+                <EmptyConnect feature="Connect your Lumio GPS Tracker to see your court coverage heatmap." />
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {/* Shot Placement */}
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-sm font-bold text-white mb-1">Shot Placement — Opponent Court</div>
+                <div className="text-[11px] text-gray-500 mb-3">Where your shots landed.</div>
+                {isDemoShell ? (
+                  <>
+                    <svg viewBox="0 0 300 540" className="w-full max-w-[220px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+                      <defs>
+                        <filter id="shotHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10" /></filter>
+                        <radialGradient id="shotHot"><stop offset="0%" stopColor="#dc2626" stopOpacity="0.9" /><stop offset="50%" stopColor="#f97316" stopOpacity="0.55" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
+                        <radialGradient id="shotWarm"><stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" /><stop offset="60%" stopColor="#eab308" stopOpacity="0.4" /><stop offset="100%" stopColor="#22c55e" stopOpacity="0" /></radialGradient>
+                        <radialGradient id="shotCool"><stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" /><stop offset="70%" stopColor="#0ea5e9" stopOpacity="0.3" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
+                      </defs>
+                      <CourtBase />
+                      <g filter="url(#shotHeatBlur)">
+                        {shotPlacementPoints.map((p, i) => (
+                          <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={`url(#${p.grad})`} />
+                        ))}
+                      </g>
+                    </svg>
+                    <HeatLegend />
+                  </>
+                ) : (
+                  <EmptyConnect feature="Connect SwingVision to log shot placement." />
+                )}
+              </div>
+
+              {/* Serve Placement */}
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-sm font-bold text-white mb-1">Serve Placement</div>
+                <div className="text-[11px] text-gray-500 mb-3">1st serves cyan · 2nd serves orange.</div>
+                {isDemoShell ? (
+                  <>
+                    <svg viewBox="0 0 300 540" className="w-full max-w-[220px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
+                      <defs>
+                        <filter id="serveHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8" /></filter>
+                        <radialGradient id="serveCyan"><stop offset="0%" stopColor="#06b6d4" stopOpacity="0.9" /><stop offset="60%" stopColor="#0ea5e9" stopOpacity="0.45" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
+                        <radialGradient id="serveOrange"><stop offset="0%" stopColor="#f97316" stopOpacity="0.85" /><stop offset="60%" stopColor="#fb923c" stopOpacity="0.4" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
+                      </defs>
+                      <CourtBase />
+                      <g filter="url(#serveHeatBlur)">
+                        {firstServePoints.map((p, i) => (
+                          <circle key={`f${i}`} cx={p.x} cy={p.y} r={p.r} fill="url(#serveCyan)" />
+                        ))}
+                        {secondServePoints.map((p, i) => (
+                          <circle key={`s${i}`} cx={p.x} cy={p.y} r={p.r} fill="url(#serveOrange)" />
+                        ))}
+                      </g>
+                    </svg>
+                    <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-gray-400">
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#06b6d4' }} />1st serve</span>
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />2nd serve</span>
+                    </div>
+                  </>
+                ) : (
+                  <EmptyConnect feature="Connect SwingVision to log serve placement." />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">SwingVision — Shot Analysis</div></div><div className="p-5"><div className="grid grid-cols-5 gap-3 mb-5">{[{ l:'1st Serve %', v:'68%' },{ l:'Winners', v:'14' },{ l:'Unforced Errors', v:'8' },{ l:'Avg Rally', v:'4.2' },{ l:'Net Pts Won', v:'71%' }].map(s => (<div key={s.l} className="text-center p-2 rounded-lg" style={{ backgroundColor: '#0a0c14' }}><div className="text-base font-black" style={{ color: '#06b6d4' }}>{s.v}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.l}</div></div>))}</div><div className="text-xs font-bold text-white mb-2">Shot Type Breakdown</div><div className="space-y-1.5">{[{ type:'Forehand Winner', count:6, color:'#22C55E' },{ type:'Backhand Winner', count:4, color:'#22C55E' },{ type:'Serve Winner', count:4, color:'#22C55E' },{ type:'Volley Winner', count:2, color:'#22C55E' },{ type:'Forehand Error', count:5, color:'#EF4444' },{ type:'Backhand Error', count:3, color:'#EF4444' }].map(s => (<div key={s.type} className="flex items-center gap-3"><span className="text-xs w-28" style={{ color: '#9CA3AF' }}>{s.type}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${(s.count/6)*100}%`, backgroundColor: s.color }} /></div><span className="text-xs w-6 text-right font-bold" style={{ color: s.color }}>{s.count}</span></div>))}</div></div></div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}><div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span></div><div className="px-5 py-4">{gpsAiLoading && <div className="text-sm" style={{ color: '#06b6d4' }}>Analysing your session data...</div>}{gpsAiBrief && !gpsAiLoading && <div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{gpsAiBrief}</div>}</div></div>
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><div className="text-sm font-bold text-white">Session History</div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{[{ date:'09 Apr', surface:'Clay', coverage:'3.8km', load:68, speed:'27.1km/h', outcome:'W vs Lindqvist', win:true },{ date:'07 Apr', surface:'Clay', coverage:'4.1km', load:79, speed:'29.2km/h', outcome:'W vs Kellner', win:true },{ date:'05 Apr', surface:'Clay', coverage:'2.9km', load:51, speed:'25.8km/h', outcome:'Practice', win:null },{ date:'03 Apr', surface:'Hard', coverage:'4.4km', load:82, speed:'30.1km/h', outcome:'L vs Brenner', win:false },{ date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null }].map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div></div>
+      )}
+
+      {/* GPS STATS */}
+      {gpsTab === 'gps' && (
+        isDemoShell ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-sm font-bold text-white mb-3">Distance by Set</div>
+                <div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-sm font-bold text-white mb-3">Speed Zones</div>
+                <div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-sm font-bold text-white mb-3">Heart Rate Zones</div>
+              <div className="flex h-6 rounded-md overflow-hidden">
+                {hrZones.map(z => (
+                  <div key={z.zone} title={`${z.zone} ${z.pct}%`} style={{ width: `${z.pct}%`, backgroundColor: z.color }} />
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
+                {hrZones.map(z => (
+                  <span key={z.zone} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: z.color }} />{z.zone} <span className="text-gray-500">{z.pct}%</span></span>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-sm font-bold text-white mb-1">Fatigue Curve</div>
+              <div className="text-[11px] text-gray-500 mb-3">Cumulative load across the match timeline.</div>
+              {(() => {
+                const w = 600, h = 160, padX = 24, padY = 18
+                const innerW = w - padX * 2, innerH = h - padY * 2
+                const maxT = fatigueData[fatigueData.length - 1].t
+                const maxLoad = 80
+                const pts = fatigueData.map(d => {
+                  const x = padX + (d.t / maxT) * innerW
+                  const y = padY + (1 - d.load / maxLoad) * innerH
+                  return `${x.toFixed(1)},${y.toFixed(1)}`
+                })
+                const baseY = padY + innerH
+                const areaPts = `${padX},${baseY} ${pts.join(' ')} ${padX + innerW},${baseY}`
+                return (
+                  <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
+                    <defs>
+                      <linearGradient id="fatigueArea" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
+                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
+                      </linearGradient>
+                    </defs>
+                    <polygon points={areaPts} fill="url(#fatigueArea)" />
+                    <polyline fill="none" stroke="#06b6d4" strokeWidth="2" points={pts.join(' ')} />
+                    {fatigueData.map((d, i) => {
+                      const x = padX + (d.t / maxT) * innerW
+                      const y = padY + (1 - d.load / maxLoad) * innerH
+                      return <circle key={i} cx={x} cy={y} r="2.5" fill="#06b6d4" />
+                    })}
+                    {fatigueEvents.map(e => {
+                      const x = padX + (e.t / maxT) * innerW
+                      return (
+                        <g key={e.t}>
+                          <line x1={x} x2={x} y1={padY} y2={baseY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+                          <text x={x} y={h - 4} textAnchor="middle" fontSize="9" fill="#f59e0b">{e.label}</text>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                )
+              })()}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="text-sm font-bold text-white mb-1">Split Times</div>
+                <div className="text-[11px] text-gray-500 mb-3">Average recovery between points, per set.</div>
+                <div className="flex items-end gap-4 h-28">{splitTimes.map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.sec}s</div><div className="w-full rounded-t" style={{ height: `${(s.sec / 25) * 100}%`, backgroundColor: '#06b6d4', minHeight: 8, opacity: 0.85 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>{s.points} pts</div></div>))}</div>
+              </div>
+              <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div>
+                <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <EmptyConnect feature="Connect your Lumio GPS Tracker to unlock movement, speed, heart rate, and fatigue analytics." />
+          </div>
+        )
+      )}
+
+      {/* VIDEOS */}
+      {gpsTab === 'videos' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-bold text-white">Highlight Clips</div>
+              <div className="text-[11px] text-gray-500">SwingVision auto-tagged moments from this session.</div>
+            </div>
+            <button className="px-3 py-1.5 bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 text-xs font-medium rounded-lg hover:bg-cyan-600/30 transition-colors">View in SwingVision →</button>
+          </div>
+          {isDemoShell ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {videos.map((v, i) => (
+                <div key={i} className="rounded-xl overflow-hidden group" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="px-4 py-2 border-b border-gray-800/60"><div className="text-[11px] font-medium text-gray-300">{v.ctx}</div></div>
+                  <div className={`relative aspect-video bg-gradient-to-br ${v.tint} flex items-center justify-center overflow-hidden`}>
+                    <svg viewBox="0 0 300 540" className="absolute inset-0 w-full h-full opacity-25" preserveAspectRatio="xMidYMid slice">
+                      <CourtBase />
+                    </svg>
+                    <div className="relative w-12 h-12 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white text-lg transition-transform group-hover:scale-110">▶</div>
+                    <span className="absolute bottom-2 left-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/70 text-white">{v.time}</span>
+                    <span className="absolute bottom-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/30 text-cyan-100 border border-cyan-400/30">{v.label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <EmptyConnect feature="Connect SwingVision to auto-capture and tag highlight clips." />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI BRIEF */}
+      {gpsTab === 'brief' && (
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+            <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div>
+            {isDemoShell && <span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span>}
+          </div>
+          <div className="px-5 py-4">
+            {isDemoShell ? (
+              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiBrief}</div>
+            ) : (
+              <EmptyConnect feature="Connect your SwingVision + Lumio GPS Tracker to unlock AI coaching briefs." />
+            )}
+          </div>
+        </div>
+      )}
+
       <TennisAISection context="default" player={player} session={session} />
     </div>
   )
@@ -10282,14 +10727,16 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
               ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
               : session.logoDataUrl
                 ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
-                    🎾
-                  </div>
+                : !isFoundingMember
+                  ? <img src="/lumio_tennis_club_crest.svg" alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+                  : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                      🎾
+                    </div>
             }
             {sidebarExpanded && (
               <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>
-                {liveBrandName || 'Lumio Tennis'}
+                {liveBrandName || session.clubName || (!isFoundingMember ? 'Lumio Tennis Club' : 'Lumio Tennis')}
               </span>
             )}
           </div>
