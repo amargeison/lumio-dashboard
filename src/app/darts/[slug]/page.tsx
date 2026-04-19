@@ -211,6 +211,7 @@ const SIDEBAR_ITEMS = [
   { id: 'morning',         label: 'Morning Briefing',   icon: '🌅', group: 'OVERVIEW'     },
   { id: 'performance',     label: 'Performance',        icon: '📈', group: 'PERFORMANCE'  },
   { id: 'dartcam',         label: 'Dart Cam & Analytics', icon: '🎯', group: 'PERFORMANCE'  },
+  { id: 'dartboard-heatmap', label: 'Dartboard Heatmap', icon: '🎯', group: 'PERFORMANCE'  },
   { id: 'practice',        label: 'Practice',           icon: '📋', group: 'PERFORMANCE'  },
   { id: 'schedule',        label: 'Tournament Sched',   icon: '🗓️', group: 'MATCH'        },
   { id: 'live-scores',     label: 'Live Scores',        icon: '🔴', group: 'MATCH'        },
@@ -9030,7 +9031,6 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
     { id: 'merit-forecaster',  label: 'Points Forecaster' },
     { id: 'averages',          label: '3-Dart Average' },
     { id: 'advanced-stats',    label: 'Advanced Stats' },
-    { id: 'dartboard-heatmap', label: 'Dartboard Heatmap' },
     { id: 'checkout',          label: 'Checkout Analysis' },
     { id: 'matchreports',      label: 'Match Reports' },
     { id: 'practicelog',       label: 'Practice Log' },
@@ -9048,7 +9048,6 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
       case 'merit-forecaster':  return <MeritForecasterView player={player} session={session} />;
       case 'averages':          return <ThreeDartAverageView player={player} onNavigate={onNavigate} session={session} />;
       case 'advanced-stats':    return <AdvancedStatsView player={player} session={session} />;
-      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} session={session} />;
       case 'checkout':          return <CheckoutAnalysisView onNavigate={onNavigate} player={player} session={session} />;
       case 'matchreports':      return <MatchReportsView onNavigate={onNavigate} player={player} session={session} />;
       case 'practicelog':       return <PracticeLogView onNavigate={onNavigate} player={player} session={session} />;
@@ -9960,6 +9959,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
             { key: 'performance', label: 'Performance', emoji: '📈' },
             { key: 'dartcam', label: 'Dart Cam & Analytics', emoji: '🎯' },
+            { key: 'dartboard-heatmap', label: 'Dartboard Heatmap', emoji: '🎯' },
             { key: 'schedule', label: 'Tournament Schedule', emoji: '🗓️' },
             { key: 'match-prep', label: 'Match Prep', emoji: '⚡' },
             { key: 'opponentintel', label: 'Opponent Intel', emoji: '🔍' },
