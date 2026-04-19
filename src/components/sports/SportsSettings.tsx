@@ -908,6 +908,9 @@ export default function SportsSettings(props: SportsSettingsProps) {
                       className="text-sm rounded-lg px-3 py-1.5 outline-none"
                       style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}
                     >
+                      {!configValues[field.id] && (
+                        <option value="" disabled hidden>Select…</option>
+                      )}
                       {(field.options || []).map(opt => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
