@@ -75,6 +75,7 @@ import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
+import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -562,6 +563,12 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  const [brandPrimary, setBrandPrimary] = useState(() => {
+    try { return typeof window !== 'undefined' ? (localStorage.getItem('lumio_darts_brand_primary') || '#dc2626') : '#dc2626' } catch { return '#dc2626' }
+  })
+  const [brandSecondary, setBrandSecondary] = useState(() => {
+    try { return typeof window !== 'undefined' ? (localStorage.getItem('lumio_darts_brand_secondary') || '#ffffff') : '#ffffff' } catch { return '#ffffff' }
+  })
   const isDemoShellDash = session.isDemoShell !== false
   const [tourStep, setTourStep] = useState(0)
   const [scheduleChecked, setScheduleChecked] = useState<Record<string,boolean>>(() => {
@@ -869,9 +876,9 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
           ]).map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={{ backgroundColor: '#D97706', color: '#FFFFFF' }}>
+              style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
               <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: '#fff', color: '#D97706' }}>AI</span>}
+              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)' }}>AI</span>}
             </button>
           ))}
         </div>
@@ -940,6 +947,30 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                       </div>
                       <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
                         <span style={{ color: '#F59E0B' }}>💡</span> <span style={{ color: '#9CA3AF' }}>Used by PDC Tour players to manage everything in one place.</span>
+                      </div>
+                      {/* Brand Colours — only in step 1 detail */}
+                      <div className="mt-4 space-y-3">
+                        <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p>
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label>
+                            <input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_darts_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }}
+                              className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+                          </div>
+                          <div>
+                            <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label>
+                            <input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_darts_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }}
+                              className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label>
+                            <div className="flex items-center gap-2">
+                              <div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div>
+                              <div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </>)}
 
@@ -2774,61 +2805,151 @@ function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (i
 
 // ─── SPONSORSHIP VIEW ─────────────────────────────────────────────────────────
 function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
+  const deals = [
+    {
+      sponsor: 'Vanta Sports Darts', category: 'Barrel & Equipment', type: 'Barrel + Fee', value: '£48,000/yr', status: 'Renewal due', expiry: 'May 2026', daysLeft: 23,
+      obligations: [
+        'Use Vanta Sports barrel at all PDC events',
+        '2 social posts/month minimum',
+        '4 content videos/yr',
+        'Exclusivity — no competitor barrel endorsements',
+      ],
+      bonuses: [
+        'Top 16 year-end: +£8,000',
+        'Major TV win: +£5,000 per event',
+        'World Championship QF+: +£15,000',
+      ],
+    },
+    {
+      sponsor: 'Crown Wagers', category: 'Betting Partner', type: 'Retainer + Appearance', value: '£24,000/yr', status: 'Active', expiry: 'Dec 2026', daysLeft: 250,
+      obligations: [
+        'Odds graphic shares at PDC events',
+        '1 promotional interview/quarter',
+        'Post-match quote on result night',
+      ],
+      bonuses: [],
+    },
+    {
+      sponsor: 'Apex Performance', category: 'Apparel', type: 'Kit + Fee', value: '£38,000/yr', status: 'Active', expiry: 'Jun 2027', daysLeft: 425,
+      obligations: [
+        'Wear Apex Performance shirt at all televised events',
+        'Instagram post: 2/month minimum',
+        'Attend 1 brand launch event/yr',
+      ],
+      bonuses: [],
+    },
+    {
+      sponsor: 'Meridian Watches', category: 'Watch / Luxury', type: 'Cash + Watch allocation', value: '£55,000/yr', status: 'Active', expiry: 'Sep 2026', daysLeft: 155,
+      obligations: [
+        'Wear Meridian Watches at all walk-ons + press',
+        '1 Meridian campaign appearance/yr',
+        'Quarterly ranking report to brand team',
+      ],
+      bonuses: [],
+    },
+    {
+      sponsor: 'Kinetix Hydration', category: 'Nutrition', type: 'Product + Fee', value: '£12,000/yr', status: 'Active', expiry: 'Mar 2027', daysLeft: 335,
+      obligations: [
+        'Kinetix bottle visible on stage table',
+        '1 Instagram reel/quarter',
+      ],
+      bonuses: [],
+    },
+    {
+      sponsor: 'Target Pro', category: 'Flights & Accessories', type: 'Product supply', value: 'Product only', status: 'Active', expiry: 'Dec 2026', daysLeft: 250,
+      obligations: [
+        'Use Target Pro flights in all matches',
+        'Tag Target Pro in 2 social posts/yr',
+      ],
+      bonuses: [],
+    },
+  ];
+
+  const pipeline = [
+    { name: 'Vanta Sports Darts', detail: 'Approached Jake\'s manager in March. Offer pending: £35k/yr barrel + accessories deal', stage: 'Offer pending' },
+    { name: 'Flutter/Betfair',     detail: 'Pre-match stats partnership — £8k/event for 4 major TV events.',                        stage: 'Under review'  },
+  ];
+
+  const contentCalendar = [
+    { date: 'Today',     platform: 'YouTube',   brand: 'Vanta Sports Darts', type: 'Barrel review video',          status: 'Due',      draft: true  },
+    { date: 'This week', platform: 'Instagram', brand: 'Crown Wagers',       type: 'Post-match interview',         status: 'Upcoming', draft: false },
+    { date: '19 Apr',    platform: 'YouTube',   brand: 'Apex Performance',   type: 'Practice routine walkthrough', status: 'Upcoming', draft: false },
+    { date: '26 Apr',    platform: 'Instagram', brand: 'Meridian Watches',   type: 'Walk-on watch showcase',       status: 'Upcoming', draft: false },
+    { date: '30 Apr',    platform: 'TikTok',    brand: 'Crown Wagers',       type: 'Odds reaction video',          status: 'Upcoming', draft: false },
+  ];
+
   return (
     <div className="space-y-6">
 
       <SectionHeader icon="🤝" title="Sponsorship & Commercial" subtitle="Active deals, obligations, pipeline, and content calendar." />
 
-      {/* Active Sponsors */}
-      {[
-        { name: 'Vanta Sports Darts', value: '£48,000/yr', renewal: '23 days remaining', renewalUrgent: true, obligations: 'Barrel use (required), 2 social posts/month, 4 content videos/yr', contentDue: 'Barrel review video (today 14:00) — SCHEDULED', nextPayment: 'May 1 (£4,000)', contact: 'Sarah Mills — sarah@reddragon.com' },
-        { name: 'Crown Wagers', value: '£24,000/yr', renewal: '8 months', renewalUrgent: false, obligations: 'Odds graphic shares (PDC events), 1 interview/quarter', contentDue: 'Post-match interview tonight (if Jake wins)', nextPayment: 'Jun 1 (£6,000)', contact: 'Ben Clarke — ben@ladbrokes.com' },
-      ].map((s, i) => (
-        <div key={i} className={`bg-[#0d0f1a] border ${s.renewalUrgent ? 'border-red-600/30' : 'border-gray-800'} rounded-xl p-5`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-white font-bold">{s.name}</div>
-            <div className="text-sm text-gray-300">{s.value}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Total Annual Value" value="£185k+" sub="Confirmed contracts" color="yellow" />
+        <StatCard label="Active Deals" value="6" sub="1 renewal due" color="green" />
+        <StatCard label="Vanta Sports Renewal" value="23 days" sub="Action required" color="red" />
+        <StatCard label="Obligations Due" value="1 today" sub="Barrel review video" color="orange" />
+      </div>
+
+      {/* Deal Tracker */}
+      <div className="space-y-3">
+        {deals.map((deal, i) => (
+          <div key={i} className={`bg-[#0d0f1a] border rounded-xl p-4 ${deal.status === 'Renewal due' ? 'border-red-600/40' : 'border-gray-800'}`}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-semibold">{deal.sponsor}</span>
+                  <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{deal.category}</span>
+                </div>
+                <div className="text-sm text-gray-400 mt-0.5">{deal.type} · {deal.value}</div>
+              </div>
+              <div className="text-right">
+                <span className={`text-xs px-2 py-0.5 rounded-full ${deal.status === 'Active' ? 'bg-teal-600/20 text-teal-400' : deal.status === 'Renewal due' ? 'bg-red-600/20 text-red-400' : 'bg-blue-600/20 text-blue-400'}`}>{deal.status}</span>
+                <div className="text-xs text-gray-500 mt-1">Expires: {deal.expiry} ({deal.daysLeft}d)</div>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 space-y-0.5">
+              {deal.obligations.map((o, j) => (
+                <div key={j} className="flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                  {o}
+                </div>
+              ))}
+            </div>
+            {deal.bonuses.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-800/50">
+                <div className="text-xs text-yellow-500/80 font-medium mb-1">Performance bonuses:</div>
+                {deal.bonuses.map((b, j) => <div key={j} className="text-xs text-gray-500">{b}</div>)}
+              </div>
+            )}
           </div>
-          <div className={`text-xs mb-3 ${s.renewalUrgent ? 'text-red-400 font-medium' : 'text-gray-500'}`}>Renewal: {s.renewal} {s.renewalUrgent && '— RED ALERT'}</div>
-          <div className="space-y-1 text-xs text-gray-400">
-            <div>Obligations: {s.obligations}</div>
-            <div>Content due: {s.contentDue}</div>
-            <div>Next payment: {s.nextPayment}</div>
-            <div className="text-gray-500">Contact: {s.contact}</div>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {/* Pipeline */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="text-sm font-semibold text-white mb-3">Pipeline</div>
-        <div className="space-y-3">
-          {[
-            { name: 'Vanta Sports Darts', detail: 'Approached Jake\'s manager in March. Offer pending: £35k/yr barrel + accessories deal' },
-            { name: 'Flutter/Betfair', detail: 'Pre-match stats partnership — £8k/event for 4 major TV events. Under review.' },
-          ].map((p, i) => (
-            <div key={i} className="py-2 border-b border-gray-800/50">
+        {pipeline.map((p, i) => (
+          <div key={i} className="flex items-start justify-between py-3 border-b border-gray-800/50">
+            <div>
               <div className="text-sm text-white font-medium">{p.name}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{p.detail}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{p.detail}</div>
             </div>
-          ))}
-        </div>
+            <span className="text-xs px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-600/30 flex-shrink-0 ml-3">{p.stage}</span>
+          </div>
+        ))}
       </div>
 
       {/* Content Calendar */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Content Calendar This Month</div>
+        <div className="text-sm font-semibold text-white mb-4">Content & Obligations Calendar</div>
         <div className="space-y-2">
-          {[
-            { week: 'Week 1', content: 'Vanta Sports barrel review', status: 'TODAY ✓ scheduled' },
-            { week: 'Week 2', content: 'Behind-the-scenes European Championship', status: 'pending' },
-            { week: 'Week 3', content: 'Practice routine walkthrough — YouTube', status: 'planned' },
-            { week: 'Week 4', content: 'Crown Wagers odds reaction video', status: 'planned' },
-          ].map((c, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-              <span className="text-xs text-gray-500 w-16">{c.week}</span>
-              <span className="text-sm text-gray-300 flex-1">{c.content}</span>
-              <span className={`text-xs ${c.status.includes('TODAY') ? 'text-teal-400' : 'text-gray-500'}`}>{c.status}</span>
+          {contentCalendar.map((c, i) => (
+            <div key={i} className={`flex items-center gap-3 py-2 border-b border-gray-800/50 ${c.status === 'Due' ? 'bg-yellow-500/5 rounded-lg px-2' : ''}`}>
+              <div className={`text-xs font-semibold w-20 ${c.status === 'Due' ? 'text-yellow-400' : 'text-gray-500'}`}>{c.date}</div>
+              <div className="flex-1 text-sm text-gray-300">{c.brand} — {c.type}</div>
+              <div className="text-xs text-gray-500">{c.platform}</div>
+              {c.draft && <span className="text-xs text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">Draft ready</span>}
+              <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'Due' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-gray-700 text-gray-400'}`}>{c.status}</span>
             </div>
           ))}
         </div>
@@ -9429,6 +9550,8 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   const isHidden = (key: string) => hiddenItems.includes(key)
   const isDemoOuter = session.isDemoShell !== false
   const isFoundingMemberOuter = !isDemoOuter
+  // Mirror Settings brand colours onto CSS vars — see tennis/[slug]/page.tsx
+  useLiveBrandColours('darts', { primary: '#dc2626', secondary: '#ffffff' })
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(() => {
     try {
       if (typeof window === 'undefined') return null
