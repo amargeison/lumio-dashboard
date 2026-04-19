@@ -220,7 +220,7 @@ const SIDEBAR_ITEMS = [
   { id: 'pairs-events',    label: 'Pairs Events',       icon: '🤝', group: 'MATCH'        },
   { id: 'teamhub',         label: 'Team Hub',           icon: '👥', group: 'TEAM'         },
   { id: 'practice-partners', label: 'Practice Partners', icon: '🤜', group: 'TEAM'        },
-  { id: 'physio-recovery', label: 'Physio',             icon: '⚕️', group: 'TEAM'         },
+  { id: 'physio-recovery', label: 'Physio & Recovery',  icon: '⚕️', group: 'TEAM'         },
   { id: 'mental',          label: 'Mental Performance', icon: '🧠', group: 'TEAM'         },
   { id: 'walk-on-music',   label: 'Walk-on Music',      icon: '🎤', group: 'TEAM'         },
   { id: 'nutrition-log',   label: 'Nutrition',          icon: '🥗', group: 'TEAM'         },
@@ -5442,7 +5442,70 @@ function PracticeGamesView({ player, session }: { player: DartsPlayer; session: 
 }
 
 // ─── PHYSIO & RECOVERY VIEW ───────────────────────────────────────────────────
+const DARTS_TOURNAMENT_LOAD = [
+  { week: 'Jan W1', matches: 2, hours: 8.2 },
+  { week: 'Jan W2', matches: 1, hours: 4.4 },
+  { week: 'Jan W3', matches: 2, hours: 9.1 },
+  { week: 'Feb W1', matches: 2, hours: 8.6 },
+  { week: 'Feb W2', matches: 1, hours: 3.8 },
+  { week: 'Feb W3', matches: 2, hours: 9.8 },
+  { week: 'Mar W1', matches: 1, hours: 4.1 },
+  { week: 'Mar W2', matches: 2, hours: 9.4 },
+  { week: 'Mar W3', matches: 1, hours: 4.6 },
+  { week: 'Mar W4', matches: 2, hours: 9.9 },
+  { week: 'Apr W1', matches: 1, hours: 4.2 },
+  { week: 'Apr W2', matches: 1, hours: 4.8 },
+  { week: 'Apr W3', matches: 2, hours: 8.7 },
+];
+
+function DartsRecoveryChart() {
+  const data = [72, 78, 82, 75, 88, 82, 85];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const w = 360, h = 150, padX = 35, padY = 15, padBottom = 25;
+  const chartW = w - padX * 2, chartH = h - padY - padBottom;
+  const xStep = chartW / (data.length - 1);
+  const minV = 50, maxV = 100;
+  const points = data.map((v, i) => ({
+    x: padX + i * xStep,
+    y: padY + chartH - ((v - minV) / (maxV - minV)) * chartH,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs>
+          <linearGradient id="dartsRecovGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#dartsRecovGrad)" />
+        <path d={linePath} fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#14b8a6" stroke="#07080F" strokeWidth="1.5" />
+        ))}
+        {days.map((d, i) => (
+          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">{d}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const totalMatches90d = DARTS_TOURNAMENT_LOAD.reduce((a,w)=>a+w.matches,0);
+  const totalHours90d = DARTS_TOURNAMENT_LOAD.reduce((a,w)=>a+w.hours,0);
+  const maxMatchesInWeek = Math.max(...DARTS_TOURNAMENT_LOAD.map(w=>w.matches));
+  const fatigueRisk = totalMatches90d > 20;
+  const dartsRecovery = [
+    { date: 'Today',       score: 78, hrv: 62, rhr: 52, sleep: 7.4 },
+    { date: 'Yesterday',   score: 74, hrv: 58, rhr: 54, sleep: 6.9 },
+    { date: '2 days ago',  score: 82, hrv: 68, rhr: 50, sleep: 7.8 },
+    { date: '3 days ago',  score: 69, hrv: 55, rhr: 56, sleep: 6.2 },
+    { date: '4 days ago',  score: 80, hrv: 66, rhr: 51, sleep: 7.5 },
+  ];
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
   const SEVERITY_CONFIG = {
     critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
@@ -5464,6 +5527,15 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
         <h1 className="text-2xl font-medium text-white">Physio &amp; Recovery</h1>
         <p className="text-gray-400 text-sm mt-1">Body map, treatment log, prevention programme</p>
       </div>
+
+      {/* Section 2 — 4 StatCards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Recovery Score" value="78/100" sub="Today (WHOOP)" color="green" />
+        <StatCard label="HRV" value="62ms" sub="+4ms vs yesterday" color="teal" />
+        <StatCard label="Resting HR" value="52 bpm" sub="Normal range" color="blue" />
+        <StatCard label="Sleep" value="7.4 hrs" sub="78 sleep score" color="purple" />
+      </div>
+
       <div className="bg-gradient-to-r from-green-900/30 to-green-900/10 border border-green-600/30 rounded-xl p-5">
         <div className="flex items-center gap-3">
           <span className="text-2xl">✅</span>
@@ -5473,6 +5545,47 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
           </div>
         </div>
       </div>
+
+      {/* Section 4 — Three-Month Tournament Load */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">📊 Three-Month Tournament Load</div>
+            <div className="text-xs text-gray-400 mt-0.5">Last 90 days — arm load + travel fatigue tracking</div>
+          </div>
+          {fatigueRisk && (
+            <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-600/30">⚠ HIGH LOAD</span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className={`p-3 rounded-lg border text-center ${fatigueRisk?'bg-red-900/10 border-red-600/20':'bg-green-900/10 border-green-600/20'}`}>
+            <div className={`text-2xl font-bold ${fatigueRisk?'text-red-400':'text-green-400'}`}>{totalMatches90d}</div>
+            <div className="text-xs text-gray-500">Matches (90d)</div>
+            <div className={`text-[10px] mt-0.5 ${fatigueRisk?'text-red-400':'text-green-400'}`}>{fatigueRisk?'⚠ Over 20 — fatigue threshold':'✓ Under 20 — target'}</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-teal-400">{totalHours90d.toFixed(1)}h</div>
+            <div className="text-xs text-gray-500">Tournament hours (90d)</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-orange-400">{maxMatchesInWeek}</div>
+            <div className="text-xs text-gray-500">Peak week matches</div>
+          </div>
+        </div>
+        <div className="flex items-end gap-1 h-20 mb-2">
+          {DARTS_TOURNAMENT_LOAD.map((w,i)=>{
+            const h=(w.matches/Math.max(maxMatchesInWeek,1))*100;
+            const col=w.matches>=4?'#EF4444':w.matches>=3?'#F97316':'#8B5CF6';
+            return(
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div className="w-full rounded-t" style={{height:`${h}%`,background:col,opacity:0.8}}/>
+                <div className="text-[7px] text-gray-600" style={{fontSize:'6px'}}>{w.week}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
           <h2 className="text-white font-medium mb-3">Body map</h2>
@@ -5597,6 +5710,27 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
           </div>
         </div>
       </div>
+      {/* Section 6 — WHOOP Recovery Chart */}
+      <DartsRecoveryChart />
+
+      {/* Section 7 — Recovery Trend — Last 5 Days */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Recovery Trend — Last 5 Days</div>
+        <div className="space-y-3">
+          {dartsRecovery.map((r, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="text-xs text-gray-500 w-20 flex-shrink-0">{r.date}</div>
+              <div className="flex-1 bg-gray-800 rounded-full h-2">
+                <div className={`h-2 rounded-full ${r.score >= 80 ? 'bg-teal-500' : r.score >= 65 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${r.score}%` }}></div>
+              </div>
+              <div className={`text-sm font-bold w-10 text-right ${r.score >= 80 ? 'text-teal-400' : r.score >= 65 ? 'text-yellow-400' : 'text-red-400'}`}>{r.score}</div>
+              <div className="text-xs text-gray-500 w-16">HRV {r.hrv}ms</div>
+              <div className="text-xs text-gray-500 w-16">{r.sleep}h sleep</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
         <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
         <div className="rounded-lg border border-white/5 overflow-hidden">

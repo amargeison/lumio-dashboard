@@ -376,7 +376,7 @@ const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: 
   const livePhoto = isPlayerRole
     ? (isFoundingMember
         ? (session?.photoDataUrl || null)
-        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null) || session?.photoDataUrl))
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_profile_photo') : null) || session?.photoDataUrl || '/james_halton.jpg'))
     : null
   return (
   <div className="relative w-52 rounded-xl overflow-hidden border-2 border-green-600/40 shadow-2xl shadow-green-900/30 flex-shrink-0"
@@ -876,6 +876,19 @@ function GolfSendMessage({ onClose, player, session }: { onClose: () => void; pl
       </div>
     </>
   )
+}
+
+// Shared demo-only photo mapping for staff cards across Team sub-tabs (today,
+// info, org). Vanta Sports is a sponsor not a person — falls back to initials
+// "VS" since /vanta_sports_logo.svg doesn't exist. Mick Sullivan uses
+// Dave_Askew.jpg as a substitute (Marcus_Webb.jpg not in /public).
+const DEMO_STAFF_PHOTOS: Record<string, string> = {
+  'Carlos Mendez': '/Carlos_Mendez.jpg',
+  'Mick Sullivan': '/Dave_Askew.jpg',
+  'James Crawford': '/Rick_Dalton.jpg',
+  'Dr Anna Price': '/Sarah_Lee.jpg',
+  'Sarah Chen': '/Elena_Russo.jpg',
+  'Dave Morton': '/James_Okafor.jpg',
 }
 
 function DashboardView({ player, session, setActiveSection, onOpenModal }: { player: GolfPlayer; session: SportsDemoSession; setActiveSection: (s: string) => void; onOpenModal: (m: string) => void }) {
@@ -1697,16 +1710,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             ))}
           </div>
 
-          {teamSubTab === 'today' && (() => {
-            const demoStaffPhotos: Record<string, string> = {
-              'Carlos Mendez': '/Carlos_Mendez.jpg',
-              'Mick Sullivan': '/Marcus_Webb.jpg',
-              'James Crawford': '/Rick_Dalton.jpg',
-              'Dr Anna Price': '/Sarah_Lee.jpg',
-              'Sarah Chen': '/Elena_Russo.jpg',
-              'Dave Morton': '/James_Okafor.jpg',
-            }
-            return (
+          {teamSubTab === 'today' && (
             <div className="space-y-2">
               {[
                 { name: 'Mick Sullivan', role: 'Caddie', status: 'Updated hole 7 yardage — 9-iron not 8', dot: '#22C55E' },
@@ -1717,8 +1721,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 { name: 'Dave Morton', role: 'Mental Coach', status: 'Pre-round call 08:30', dot: '#22C55E' },
               ].map((m, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  {demoStaffPhotos[m.name] ? (
-                    <img src={demoStaffPhotos[m.name]} alt={m.name} className="w-9 h-9 rounded-full object-cover object-center flex-shrink-0 border" style={{ borderColor: `${m.dot}40` }} />
+                  {(isDemoShellDash && DEMO_STAFF_PHOTOS[m.name]) ? (
+                    <img src={DEMO_STAFF_PHOTOS[m.name]} alt={m.name} className="w-9 h-9 rounded-full object-cover object-center flex-shrink-0 border" style={{ borderColor: `${m.dot}40` }} />
                   ) : (
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.dot}20`, border: `1px solid ${m.dot}40`, color: m.dot }}>
                     {m.name.split(' ').map(w => w[0]).join('')}
@@ -1733,8 +1737,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 </div>
               ))}
             </div>
-            )
-          })()}
+          )}
 
           {teamSubTab === 'org' && (
             <div className="flex flex-col items-center gap-3 py-6">
@@ -1750,6 +1753,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="flex gap-4">
                 {[{ name: 'James Crawford', role: 'Agent', color: '#F59E0B' }, { name: 'Vanta Sports', role: 'Equipment Sponsor', color: '#8B5CF6' }].map((p, i) => (
                   <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 160 }}>
+                    <div className="w-10 h-10 mx-auto rounded-full overflow-hidden mb-2 flex items-center justify-center" style={{ background: `${p.color}20`, border: `2px solid ${p.color}40` }}>
+                      {(isDemoShellDash && DEMO_STAFF_PHOTOS[p.name])
+                        ? <img src={DEMO_STAFF_PHOTOS[p.name]} alt={p.name} className="w-full h-full object-cover" />
+                        : <span className="text-xs font-bold" style={{ color: p.color }}>{p.name.split(' ').map(w => w[0]).join('')}</span>}
+                    </div>
                     <div className="text-xs font-bold text-white">{p.name}</div>
                     <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
                   </div>
@@ -1759,6 +1767,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="flex gap-4">
                 {[{ name: 'Carlos Mendez', role: 'Head Coach', color: '#22C55E' }, { name: 'Mick Sullivan', role: 'Caddie', color: '#15803D' }].map((p, i) => (
                   <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 160 }}>
+                    <div className="w-10 h-10 mx-auto rounded-full overflow-hidden mb-2 flex items-center justify-center" style={{ background: `${p.color}20`, border: `2px solid ${p.color}40` }}>
+                      {(isDemoShellDash && DEMO_STAFF_PHOTOS[p.name])
+                        ? <img src={DEMO_STAFF_PHOTOS[p.name]} alt={p.name} className="w-full h-full object-cover" />
+                        : <span className="text-xs font-bold" style={{ color: p.color }}>{p.name.split(' ').map(w => w[0]).join('')}</span>}
+                    </div>
                     <div className="text-xs font-bold text-white">{p.name}</div>
                     <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
                   </div>
@@ -1768,6 +1781,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               <div className="flex flex-wrap justify-center gap-3">
                 {[{ name: 'Dr Anna Price', role: 'Physio', color: '#EF4444' }, { name: 'Dave Morton', role: 'Mental Coach', color: '#8B5CF6' }, { name: 'Sarah Chen', role: 'Sponsor Mgr', color: '#F59E0B' }].map((p, i) => (
                   <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 140 }}>
+                    <div className="w-10 h-10 mx-auto rounded-full overflow-hidden mb-2 flex items-center justify-center" style={{ background: `${p.color}20`, border: `2px solid ${p.color}40` }}>
+                      {(isDemoShellDash && DEMO_STAFF_PHOTOS[p.name])
+                        ? <img src={DEMO_STAFF_PHOTOS[p.name]} alt={p.name} className="w-full h-full object-cover" />
+                        : <span className="text-xs font-bold" style={{ color: p.color }}>{p.name.split(' ').map(w => w[0]).join('')}</span>}
+                    </div>
                     <div className="text-xs font-bold text-white">{p.name}</div>
                     <div className="text-[10px]" style={{ color: p.color }}>{p.role}</div>
                   </div>
@@ -1776,14 +1794,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             </div>
           )}
 
-          {teamSubTab === 'info' && (() => {
-            const demoStaffPhotosInfo: Record<string, string> = {
-              'Carlos Mendez': '/Carlos_Mendez.jpg',
-              'Mick Sullivan': '/Marcus_Webb.jpg',
-              'James Crawford': '/Rick_Dalton.jpg',
-              'Dr Anna Price': '/Sarah_Lee.jpg',
-            }
-            return (
+          {teamSubTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { name: 'Carlos Mendez', role: 'Head Coach', overall: 93, stats: [{ k: 'TAC', v: 94 }, { k: 'MOT', v: 91 }, { k: 'TCH', v: 95 }, { k: 'ANA', v: 92 }, { k: 'EXP', v: 90 }, { k: 'COM', v: 93 }], color: '#22C55E' },
@@ -1793,8 +1804,8 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               ].map((card, i) => (
                 <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                   <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid #1F2937' }}>
-                    {demoStaffPhotosInfo[card.name] ? (
-                      <img src={demoStaffPhotosInfo[card.name]} alt={card.name} className="w-12 h-12 rounded-xl object-cover object-center" style={{ border: `2px solid ${card.color}40` }} />
+                    {(isDemoShellDash && DEMO_STAFF_PHOTOS[card.name]) ? (
+                      <img src={DEMO_STAFF_PHOTOS[card.name]} alt={card.name} className="w-12 h-12 rounded-xl object-cover object-center" style={{ border: `2px solid ${card.color}40` }} />
                     ) : (
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: `${card.color}20`, border: `2px solid ${card.color}40`, color: card.color }}>{card.overall}</div>
                     )}
@@ -1814,8 +1825,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 </div>
               ))}
             </div>
-            )
-          })()}
+          )}
 
           {teamSubTab === 'tour' && (
             <div className="rounded-xl p-5 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -3205,60 +3215,362 @@ function TeamHubView({ player, session }: { player: GolfPlayer; session: SportsD
   );
 }
 
+const GOLF_ROUND_LOAD = [
+  { week: 'Jan W1', matches: 2, hours: 9.2 },
+  { week: 'Jan W2', matches: 1, hours: 4.6 },
+  { week: 'Jan W3', matches: 2, hours: 9.1 },
+  { week: 'Feb W1', matches: 1, hours: 4.4 },
+  { week: 'Feb W2', matches: 2, hours: 8.8 },
+  { week: 'Feb W3', matches: 2, hours: 9.3 },
+  { week: 'Mar W1', matches: 1, hours: 4.1 },
+  { week: 'Mar W2', matches: 2, hours: 9.0 },
+  { week: 'Mar W3', matches: 2, hours: 9.2 },
+  { week: 'Mar W4', matches: 1, hours: 4.5 },
+  { week: 'Apr W1', matches: 2, hours: 8.7 },
+  { week: 'Apr W2', matches: 2, hours: 9.4 },
+  { week: 'Apr W3', matches: 1, hours: 4.2 },
+];
+
+function GolfRecoveryChart() {
+  const data = [74, 80, 78, 81, 76, 82, 78];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const w = 360, h = 150, padX = 35, padY = 15, padBottom = 25;
+  const chartW = w - padX * 2, chartH = h - padY - padBottom;
+  const xStep = chartW / (data.length - 1);
+  const minV = 50, maxV = 100;
+  const points = data.map((v, i) => ({
+    x: padX + i * xStep,
+    y: padY + chartH - ((v - minV) / (maxV - minV)) * chartH,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs>
+          <linearGradient id="golfRecovGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#golfRecovGrad)" />
+        <path d={linePath} fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#14b8a6" stroke="#07080F" strokeWidth="1.5" />
+        ))}
+        {days.map((d, i) => (
+          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">{d}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function PhysioView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const isDemoShellGolf = session.isDemoShell !== false;
+  const totalRounds90d = GOLF_ROUND_LOAD.reduce((a,w)=>a+w.matches,0);
+  const totalHours90d = GOLF_ROUND_LOAD.reduce((a,w)=>a+w.hours,0);
+  const maxRoundsInWeek = Math.max(...GOLF_ROUND_LOAD.map(w=>w.matches));
+  const fatigueRisk = totalRounds90d > 12;
   const recovery = [
-    { day: 'Today', score: 78, hrv: 62, rhr: 52, sleep: 7.0 },
-    { day: 'Yesterday', score: 84, hrv: 68, rhr: 50, sleep: 7.8 },
-    { day: '2 days ago', score: 71, hrv: 58, rhr: 55, sleep: 6.4 },
-    { day: '3 days ago', score: 88, hrv: 72, rhr: 48, sleep: 8.1 },
-    { day: '4 days ago', score: 81, hrv: 65, rhr: 51, sleep: 7.5 },
-    { day: '5 days ago', score: 76, hrv: 60, rhr: 53, sleep: 6.8 },
-    { day: '6 days ago', score: 82, hrv: 67, rhr: 50, sleep: 7.6 },
+    { date: 'Today',       score: 78, hrv: 62, rhr: 52, sleep: 7.0 },
+    { date: 'Yesterday',   score: 84, hrv: 68, rhr: 50, sleep: 7.8 },
+    { date: '2 days ago',  score: 71, hrv: 58, rhr: 55, sleep: 6.4 },
+    { date: '3 days ago',  score: 88, hrv: 72, rhr: 48, sleep: 8.1 },
+    { date: '4 days ago',  score: 81, hrv: 65, rhr: 51, sleep: 7.5 },
   ];
-  const injuries = [
-    { area: 'Lower Back', severity: 'Mild', status: 'Managed', date: 'Ongoing', notes: 'Chronic stiffness. Daily treatment. Cleared for all activity. Watch 4th round fatigue.', cleared: false },
-    { area: 'Left Wrist', severity: 'Resolved', status: 'Clear', date: '14 Apr', notes: 'Tendinopathy. Fully resolved after 3 weeks rest.', cleared: true },
+
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const SEVERITY_CONFIG = {
+    critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
+    moderate:   { fill: '#f59e0b', r: 9,  label: 'Moderate',   textClass: 'text-amber-400' },
+    minor:      { fill: '#eab308', r: 7,  label: 'Minor',      textClass: 'text-yellow-400' },
+    monitoring: { fill: '#10b981', r: 5,  label: 'Monitoring', textClass: 'text-green-400' },
+  } as const;
+  type Severity = keyof typeof SEVERITY_CONFIG;
+  const bodyMarkers: { id: string; x: number; y: number; severity: Severity; label: string; note: string }[] = [
+    { id: 'back',     x: 100, y: 110, severity: 'moderate',   label: 'Lower back',       note: 'L4/L5 rotation load — daily mobility + core routine' },
+    { id: 'lwrist',   x: 48,  y: 150, severity: 'minor',      label: 'Left wrist',       note: 'Lead hand mild strain — taping + Voltaren on practice days' },
+    { id: 'rshoulder',x: 132, y: 66,  severity: 'minor',      label: 'Right shoulder',   note: 'Follow-through mobility work — 2x/week band programme' },
+    { id: 'lhip',     x: 82,  y: 156, severity: 'monitoring', label: 'Left hip',         note: 'Rotation range — weekly osteopath check' },
+    { id: 'neck',     x: 100, y: 45,  severity: 'monitoring', label: 'Neck',             note: 'Post-round release routine' },
   ];
+  const selectedMarker = bodyMarkers.find(m => m.id === selectedBodyPart) ?? null;
+
   return (
     <div className="space-y-6">
       <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, WHOOP recovery scores, and treatment protocols." />
-      <div className="grid grid-cols-4 gap-4">
+
+      {/* Section 2 — 4 StatCards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Recovery Score" value="78/100" sub="Today (WHOOP)" color="teal" />
         <StatCard label="HRV" value="62ms" sub="▼6ms vs yesterday" color="orange" />
         <StatCard label="Resting HR" value="52 bpm" sub="Travel fatigue flag" color="blue" />
         <StatCard label="Sleep" value="7.0 hrs" sub="Below 7.5 target" color="yellow" />
       </div>
+
+      {/* Section 3 — Cleared-for-round banner */}
+      {isDemoShellGolf ? (
+        <div className="bg-gradient-to-r from-green-900/30 to-green-900/10 border border-green-600/30 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <div className="text-white font-medium">Cleared for tournament play</div>
+              <div className="text-xs text-gray-400 mt-0.5">Lower back mobility 2/10 · No restrictions · Watch 4th-round fatigue</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🩺</span>
+            <div>
+              <div className="text-white font-medium">No physio data yet</div>
+              <div className="text-xs text-gray-500 mt-0.5">Connect your Lumio Medical feed to see clearance status.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section 4 — Three-Month Round Load */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Recovery Trend — 7 Days (WHOOP)</div>
-        <div className="space-y-2">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">📊 Three-Month Round Load</div>
+            <div className="text-xs text-gray-400 mt-0.5">Last 90 days — round count + travel fatigue tracking</div>
+          </div>
+          {fatigueRisk && (
+            <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30">⚠ HIGH LOAD</span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className={`p-3 rounded-lg border text-center ${fatigueRisk?'bg-amber-900/10 border-amber-600/20':'bg-green-900/10 border-green-600/20'}`}>
+            <div className={`text-2xl font-bold ${fatigueRisk?'text-amber-400':'text-green-400'}`}>{totalRounds90d}</div>
+            <div className="text-xs text-gray-500">Rounds (90d)</div>
+            <div className={`text-[10px] mt-0.5 ${fatigueRisk?'text-amber-400':'text-green-400'}`}>{fatigueRisk?'⚠ Over 12 — fatigue threshold':'✓ Under 12 — target'}</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-teal-400">{totalHours90d.toFixed(1)}h</div>
+            <div className="text-xs text-gray-500">Round hours (90d)</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-orange-400">{maxRoundsInWeek}</div>
+            <div className="text-xs text-gray-500">Peak week rounds</div>
+          </div>
+        </div>
+        <div className="flex items-end gap-1 h-20 mb-2">
+          {GOLF_ROUND_LOAD.map((w,i)=>{
+            const h=(w.matches/Math.max(maxRoundsInWeek,1))*100;
+            const col=w.matches>=4?'#EF4444':w.matches>=3?'#F97316':'#15803D';
+            return(
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div className="w-full rounded-t" style={{height:`${h}%`,background:col,opacity:0.8}}/>
+                <div className="text-[7px] text-gray-600" style={{fontSize:'6px'}}>{w.week}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Section 5 — Body map + Injury history */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Body map</h2>
+          <div className="flex justify-center">
+            <svg width="200" height="280" viewBox="0 0 200 280" aria-label="Body map — severity-coded markers">
+              <style>{`
+                .lumio-pulse-critical { transform-box: fill-box; transform-origin: center; animation: lumioPulseCritical 1.6s ease-in-out infinite; }
+                @keyframes lumioPulseCritical { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+              `}</style>
+              <defs>
+                <filter id="lumioMarkerGlowGolf" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              <g fill="rgba(255,255,255,0.02)" stroke="#475569" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+                <ellipse cx="100" cy="30" rx="18" ry="22" />
+                <path d="M92,50 C92,56 92,58 92,60 L108,60 C108,58 108,56 108,50" fill="none" />
+                <path d="M74,62 C78,60 84,60 90,60 L110,60 C116,60 122,60 126,62 L134,92 L138,140 C138,150 130,156 120,156 L80,156 C70,156 62,150 62,140 L66,92 Z" />
+                <circle cx="68" cy="66" r="7" />
+                <circle cx="132" cy="66" r="7" />
+                <path d="M62,70 L52,108" fill="none" strokeWidth="6" />
+                <path d="M52,108 L48,148" fill="none" strokeWidth="5" />
+                <circle cx="48" cy="150" r="4" />
+                <path d="M138,70 L148,108" fill="none" strokeWidth="6" />
+                <path d="M148,108 L152,148" fill="none" strokeWidth="5" />
+                <circle cx="152" cy="150" r="4" />
+                <circle cx="82" cy="156" r="5" />
+                <circle cx="118" cy="156" r="5" />
+                <path d="M82,160 L78,212" fill="none" strokeWidth="9" />
+                <path d="M78,212 L74,262" fill="none" strokeWidth="7" />
+                <path d="M118,160 L122,212" fill="none" strokeWidth="9" />
+                <path d="M122,212 L126,262" fill="none" strokeWidth="7" />
+              </g>
+              {isDemoShellGolf && bodyMarkers.map(m => {
+                const cfg = SEVERITY_CONFIG[m.severity];
+                const isCritical = m.severity === 'critical';
+                const isSelected = selectedBodyPart === m.id;
+                return (
+                  <g key={m.id} className={isCritical ? 'lumio-pulse-critical' : ''} style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart(m.id)}>
+                    <circle cx={m.x} cy={m.y} r={cfg.r + 2} fill={cfg.fill} opacity="0.35" filter="url(#lumioMarkerGlowGolf)" />
+                    <circle cx={m.x} cy={m.y} r={cfg.r} fill={cfg.fill} stroke="#fff" strokeWidth={isSelected ? 2.5 : 1.5} />
+                    <circle cx={m.x} cy={m.y} r={cfg.r * 0.35} fill="#fff" opacity="0.9" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {isDemoShellGolf ? (
+            <>
+              <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-3 text-[11px] text-gray-400">
+                {(['critical','moderate','minor','monitoring'] as Severity[]).map(s => {
+                  const cfg = SEVERITY_CONFIG[s];
+                  return (
+                    <div key={s} className="flex items-center gap-1.5">
+                      <span style={{ width: cfg.r*2, height: cfg.r*2, borderRadius:'50%', background: cfg.fill, border:'1.5px solid #fff', display:'inline-block', flexShrink:0 }} />
+                      <span>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedMarker && (
+                <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium text-sm">{selectedMarker.label}</span>
+                    <span className={`text-xs ${SEVERITY_CONFIG[selectedMarker.severity].textClass}`}>
+                      {SEVERITY_CONFIG[selectedMarker.severity].label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{selectedMarker.note}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 text-center mt-3">Connect your medical feed to see injury markers.</p>
+          )}
+        </div>
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Injury history</h2>
+          {isDemoShellGolf ? (
+            <div className="space-y-2">
+              {[
+                { date: '2024-08', site: 'Left wrist tendinopathy', severity: 'Moderate', days: 21 },
+                { date: '2024-05', site: 'L4/L5 disc spasm',        severity: 'Moderate', days: 14 },
+                { date: '2024-01', site: 'Right shoulder impingement', severity: 'Mild',  days: 9  },
+                { date: '2023-10', site: 'Left hip flexor strain',  severity: 'Mild',     days: 7  },
+              ].map((inj, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+                  <div>
+                    <div className="text-gray-200">{inj.site}</div>
+                    <div className="text-xs text-gray-500">{inj.date} · {inj.severity}</div>
+                  </div>
+                  <span className="text-xs text-gray-400">{inj.days}d out</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Section 6 — WHOOP Recovery Chart */}
+      <GolfRecoveryChart />
+
+      {/* Section 7 — Recovery Trend — Last 5 Days */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Recovery Trend — Last 5 Days</div>
+        <div className="space-y-3">
           {recovery.map((r, i) => (
             <div key={i} className="flex items-center gap-4">
-              <div className="text-xs text-gray-500 w-20 flex-shrink-0">{r.day}</div>
+              <div className="text-xs text-gray-500 w-20 flex-shrink-0">{r.date}</div>
               <div className="flex-1 bg-gray-800 rounded-full h-2">
                 <div className={`h-2 rounded-full ${r.score >= 80 ? 'bg-teal-500' : r.score >= 65 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${r.score}%` }}></div>
               </div>
               <div className={`text-sm font-bold w-10 text-right ${r.score >= 80 ? 'text-teal-400' : r.score >= 65 ? 'text-yellow-400' : 'text-red-400'}`}>{r.score}</div>
               <div className="text-xs text-gray-500 w-16">HRV {r.hrv}ms</div>
-              <div className="text-xs text-gray-500 w-14">{r.sleep}h sleep</div>
+              <div className="text-xs text-gray-500 w-16">{r.sleep}h sleep</div>
             </div>
           ))}
         </div>
       </div>
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Injury Log</div>
-        {injuries.map((inj, i) => (
-          <div key={i} className={`p-4 rounded-lg border mb-2 ${inj.cleared ? 'border-gray-800 bg-gray-900/20' : 'border-yellow-600/30 bg-yellow-600/5'}`}>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">{inj.area}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${inj.cleared ? 'bg-teal-600/20 text-teal-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{inj.severity}</span>
-              </div>
-              <div className="text-xs text-gray-500">{inj.date}</div>
+
+      {/* Section 8 — Treatment log */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
+        {isDemoShellGolf ? (
+          <div className="rounded-lg border border-white/5 overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-black/40 text-[11px] text-gray-500 uppercase tracking-wide">
+              <span>Date</span><span>Therapist</span><span>Focus</span><span>Duration</span>
             </div>
-            <div className="text-xs text-gray-400">{inj.notes}</div>
+            {[
+              { date: '15 Apr', therapist: 'Dr Helen Marsh',  focus: 'Lower back mobility + soft tissue',   time: '45 min' },
+              { date: '12 Apr', therapist: 'M. Lawrence',     focus: 'Full body sports massage',            time: '60 min' },
+              { date: '9 Apr',  therapist: 'Dr Helen Marsh',  focus: 'Wrist ultrasound + ice',              time: '30 min' },
+              { date: '5 Apr',  therapist: 'Thomas Nyberg',   focus: 'Dry needling — back + hips',          time: '45 min' },
+              { date: '2 Apr',  therapist: 'Dr Helen Marsh',  focus: 'Post-round ROM assessment',           time: '30 min' },
+            ].map((s, i) => (
+              <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+                <span className="text-gray-400">{s.date}</span>
+                <span className="text-white">{s.therapist}</span>
+                <span className="text-gray-400 text-xs">{s.focus}</span>
+                <span className="text-gray-400">{s.time}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
       </div>
+
+      {/* Section 9 — Prevention — daily routine */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Prevention — daily routine</h2>
+        {isDemoShellGolf ? (
+          <div className="space-y-2">
+            {[
+              'TRX core circuit — 15 min',
+              'Hip mobility flow',
+              'Thoracic rotation drills',
+              'Forearm extensor stretches',
+              'Hydration — 3L water + electrolytes',
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+                <span className="text-gray-300">{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Section 10 — Physio contacts */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Physio contacts</h2>
+        {isDemoShellGolf ? (
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { name: 'Dr Helen Marsh',  role: 'Golf Physio',        phone: '07700 900201' },
+              { name: 'Thomas Nyberg',   role: 'Osteopath',          phone: '07700 900202' },
+              { name: 'Marco Lawrence',  role: 'Massage Therapist',  phone: '07700 900203' },
+            ].map((p, i) => (
+              <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-3">
+                <div className="text-white font-medium text-sm">{p.name}</div>
+                <div className="text-xs text-gray-500">{p.role}</div>
+                <div className="text-xs text-green-400 mt-1">{p.phone}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          </div>
+        )}
+      </div>
+
       <GolfAISection context="default" player={player} session={session} />
     </div>
   );
@@ -6471,9 +6783,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
               ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
               : session.logoDataUrl
                 ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(21,128,61,0.15)', border: '1px solid rgba(21,128,61,0.3)' }}>⛳</div>
+                : !isFoundingMember
+                  ? <img src="/lumio_golf_club_crest.svg" alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+                  : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(21,128,61,0.15)', border: '1px solid rgba(21,128,61,0.3)' }}>⛳</div>
             }
-            {sidebarExpanded && <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>{liveBrandName || 'Lumio Golf'}</span>}
+            {sidebarExpanded && <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>{liveBrandName || (!isFoundingMember ? 'LUMIO GOLF CLUB' : 'Lumio Golf')}</span>}
           </div>
           {sidebarExpanded && (
             <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#15803D' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>

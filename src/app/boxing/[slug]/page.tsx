@@ -160,7 +160,7 @@ const BOXING_ROLES = [
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { id: 'camp',             label: 'Camp Dashboard',      icon: '🏕️', group: 'FIGHT CAMP' },
+  { id: 'camp',             label: 'Dashboard',           icon: '🏕️', group: 'FIGHT CAMP' },
   { id: 'training',        label: 'Training Log',        icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'FIGHT CAMP' },
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
@@ -181,6 +181,7 @@ const SIDEBAR_ITEMS = [
   { id: 'earnings',        label: 'Fight Earnings',      icon: '💰', group: 'FINANCIALS' },
   { id: 'campcosts',       label: 'Camp Costs',          icon: '🧾', group: 'FINANCIALS' },
   { id: 'tax',             label: 'Tax Tracker',         icon: '📊', group: 'FINANCIALS' },
+  { id: 'physio-recovery', label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM HUB' },
   { id: 'teamoverview',    label: 'Team Overview',       icon: '👥', group: 'TEAM HUB' },
   { id: 'briefing',        label: 'Fighter Briefing',    icon: '📄', group: 'TEAM HUB' },
   { id: 'trainernotes',    label: 'Trainer Notes',       icon: '📝', group: 'TEAM HUB' },
@@ -360,7 +361,7 @@ const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: Sp
   const livePhoto = isPlayerRole
     ? (isFoundingMember
         ? (session.photoDataUrl || null)
-        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl))
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl || '/marcus_reid.jpg'))
     : null
   return (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
@@ -1319,7 +1320,10 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="flex items-center justify-between">
                 <div className="text-center">
                   <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
-                    {session.photoDataUrl ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                    {(() => {
+                      const p = session.photoDataUrl || (isDemoShellDash ? '/marcus_reid.jpg' : '');
+                      return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
+                    })()}
                   </div>
                   <div className="text-xs font-bold text-white">{session.userName || fighter.name}</div>
                   <div className="text-[10px] text-red-400">WBC #{fighter.rankings.wbc}</div>
@@ -2530,6 +2534,396 @@ function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session
         </div>
       </div>
       <BoxingAISection context="training" fighter={fighter} session={session} />
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── PHYSIO & RECOVERY (SUMMARY) ──────────────────────────────────────────────
+// Tennis-parity summary view. Sits alongside Recovery & HRV + Medical Record
+// as a single landing page that surfaces the top-line health data and links
+// through to the deep-dive tools.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const BOXING_CAMP_LOAD = [
+  { week: 'Jan W1', rounds: 32, hours: 12 },
+  { week: 'Jan W2', rounds: 44, hours: 15 },
+  { week: 'Jan W3', rounds: 48, hours: 16 },
+  { week: 'Feb W1', rounds: 36, hours: 13 },
+  { week: 'Feb W2', rounds: 52, hours: 17 },
+  { week: 'Feb W3', rounds: 56, hours: 18 },
+  { week: 'Mar W1', rounds: 42, hours: 14 },
+  { week: 'Mar W2', rounds: 58, hours: 18 },
+  { week: 'Mar W3', rounds: 60, hours: 19 },
+  { week: 'Mar W4', rounds: 46, hours: 15 },
+  { week: 'Apr W1', rounds: 54, hours: 17 },
+  { week: 'Apr W2', rounds: 58, hours: 18 },
+  { week: 'Apr W3', rounds: 38, hours: 13 },
+];
+
+function BoxingRecoveryChartInline() {
+  const data = [68, 74, 72, 80, 76, 82, 78];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const w = 360, h = 150, padX = 35, padY = 15, padBottom = 25;
+  const chartW = w - padX * 2, chartH = h - padY - padBottom;
+  const xStep = chartW / (data.length - 1);
+  const minV = 50, maxV = 100;
+  const points = data.map((v, i) => ({
+    x: padX + i * xStep,
+    y: padY + chartH - ((v - minV) / (maxV - minV)) * chartH,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs>
+          <linearGradient id="boxingRecovGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#boxingRecovGrad)" />
+        <path d={linePath} fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#14b8a6" stroke="#07080F" strokeWidth="1.5" />
+        ))}
+        {days.map((d, i) => (
+          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">{d}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function BoxingPhysioRecoveryView({ fighter, session, onNavigate }: { fighter: BoxingFighter; session: SportsDemoSession; onNavigate: (id: string) => void }) {
+  const isDemoShellBoxing = session.isDemoShell !== false;
+  const totalRounds90d = BOXING_CAMP_LOAD.reduce((a,w)=>a+w.rounds,0);
+  const totalHours90d = BOXING_CAMP_LOAD.reduce((a,w)=>a+w.hours,0);
+  const maxRoundsInWeek = Math.max(...BOXING_CAMP_LOAD.map(w=>w.rounds));
+  const campOverload = maxRoundsInWeek > 55;
+
+  const recovery = [
+    { date: 'Today',       score: 74, hrv: 58, rhr: 54, sleep: 6.9 },
+    { date: 'Yesterday',   score: 68, hrv: 52, rhr: 57, sleep: 6.2 },
+    { date: '2 days ago',  score: 82, hrv: 68, rhr: 50, sleep: 7.8 },
+    { date: '3 days ago',  score: 71, hrv: 56, rhr: 55, sleep: 6.5 },
+    { date: '4 days ago',  score: 78, hrv: 64, rhr: 52, sleep: 7.3 },
+  ];
+
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const SEVERITY_CONFIG = {
+    critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
+    moderate:   { fill: '#f59e0b', r: 9,  label: 'Moderate',   textClass: 'text-amber-400' },
+    minor:      { fill: '#eab308', r: 7,  label: 'Minor',      textClass: 'text-yellow-400' },
+    monitoring: { fill: '#10b981', r: 5,  label: 'Monitoring', textClass: 'text-green-400' },
+  } as const;
+  type Severity = keyof typeof SEVERITY_CONFIG;
+  const bodyMarkers: { id: string; x: number; y: number; severity: Severity; label: string; note: string }[] = [
+    { id: 'rshoulder', x: 132, y: 66,  severity: 'moderate',   label: 'Right shoulder', note: 'Rotator cuff load from heavy bag work — strapping + ice post-session' },
+    { id: 'rknuckles', x: 152, y: 148, severity: 'minor',      label: 'Right knuckles', note: 'Boxer\'s knuckle mild inflammation — extra wrap padding on sparring days' },
+    { id: 'lwrist',    x: 48,  y: 150, severity: 'monitoring', label: 'Left wrist',     note: 'No active issue — mobility work maintained' },
+    { id: 'ribs',      x: 110, y: 115, severity: 'minor',      label: 'Lower ribs',     note: 'Sparring contact bruising — taping, no restrictions' },
+    { id: 'neck',      x: 100, y: 45,  severity: 'monitoring', label: 'Neck',           note: 'Daily isometric holds — whiplash prevention' },
+  ];
+  const selectedMarker = bodyMarkers.find(m => m.id === selectedBodyPart) ?? null;
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Camp load, clearance, injury map, and treatment log — the one-page health summary." />
+
+      {/* Section 2 — 4 StatCards (inline tile style to match boxing) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Recovery Score', value: '74/100', sub: 'Today (WHOOP)',          accent: '#14b8a6' },
+          { label: 'HRV',            value: '58ms',   sub: '+6ms vs yesterday',       accent: '#0ea5e9' },
+          { label: 'Resting HR',     value: '54 bpm', sub: 'Camp-day elevated',       accent: '#6366f1' },
+          { label: 'Sleep',          value: '6.9 hrs', sub: 'Below 7.5 target',       accent: '#f59e0b' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-xs uppercase tracking-wide" style={{ color: '#6B7280' }}>{s.label}</div>
+            <div className="text-xl font-black mt-1" style={{ color: s.accent }}>{s.value}</div>
+            <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end -mt-2">
+        <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+      </div>
+
+      {/* Section 3 — Cleared-for-fight banner */}
+      {isDemoShellBoxing ? (
+        <div className="bg-gradient-to-r from-green-900/30 to-green-900/10 border border-green-600/30 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <div className="text-white font-medium">Cleared for camp / fight night</div>
+              <div className="text-xs text-gray-400 mt-0.5">Right shoulder tightness 3/10 · No restrictions · All bloods + eye exam current</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🩺</span>
+            <div>
+              <div className="text-white font-medium">No physio data yet</div>
+              <div className="text-xs text-gray-500 mt-0.5">Connect your Lumio Medical feed to see clearance status.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section 4 — Three-Month Camp Load */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">📊 Three-Month Camp Load</div>
+            <div className="text-xs text-gray-400 mt-0.5">Last 90 days — sparring rounds + camp hours</div>
+          </div>
+          {campOverload && (
+            <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30">⚠ PEAK WEEK HIGH</span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-red-400">{totalRounds90d}</div>
+            <div className="text-xs text-gray-500">Sparring rounds (90d)</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-teal-400">{totalHours90d}h</div>
+            <div className="text-xs text-gray-500">Camp hours (90d)</div>
+          </div>
+          <div className={`p-3 rounded-lg border text-center ${campOverload?'bg-amber-900/10 border-amber-600/20':'bg-green-900/10 border-green-600/20'}`}>
+            <div className={`text-2xl font-bold ${campOverload?'text-amber-400':'text-green-400'}`}>{maxRoundsInWeek}</div>
+            <div className="text-xs text-gray-500">Peak week rounds</div>
+            <div className={`text-[10px] mt-0.5 ${campOverload?'text-amber-400':'text-green-400'}`}>{campOverload?'⚠ Over 55 — tapering due':'✓ Under 55 — safe'}</div>
+          </div>
+        </div>
+        <div className="flex items-end gap-1 h-20 mb-2">
+          {BOXING_CAMP_LOAD.map((w,i)=>{
+            const h=(w.rounds/Math.max(maxRoundsInWeek,1))*100;
+            const col=w.rounds>=55?'#EF4444':w.rounds>=45?'#F97316':'#dc2626';
+            return(
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div className="w-full rounded-t" style={{height:`${h}%`,background:col,opacity:0.8}}/>
+                <div className="text-[7px] text-gray-600" style={{fontSize:'6px'}}>{w.week}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-end">
+          <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+        </div>
+      </div>
+
+      {/* Section 5 — Body map + Injury history */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Body map</h2>
+          <div className="flex justify-center">
+            <svg width="200" height="280" viewBox="0 0 200 280" aria-label="Body map — severity-coded markers">
+              <style>{`
+                .lumio-pulse-critical { transform-box: fill-box; transform-origin: center; animation: lumioPulseCritical 1.6s ease-in-out infinite; }
+                @keyframes lumioPulseCritical { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+              `}</style>
+              <defs>
+                <filter id="lumioMarkerGlowBoxing" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              <g fill="rgba(255,255,255,0.02)" stroke="#475569" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+                <ellipse cx="100" cy="30" rx="18" ry="22" />
+                <path d="M92,50 C92,56 92,58 92,60 L108,60 C108,58 108,56 108,50" fill="none" />
+                <path d="M74,62 C78,60 84,60 90,60 L110,60 C116,60 122,60 126,62 L134,92 L138,140 C138,150 130,156 120,156 L80,156 C70,156 62,150 62,140 L66,92 Z" />
+                <circle cx="68" cy="66" r="7" />
+                <circle cx="132" cy="66" r="7" />
+                <path d="M62,70 L52,108" fill="none" strokeWidth="6" />
+                <path d="M52,108 L48,148" fill="none" strokeWidth="5" />
+                <circle cx="48" cy="150" r="4" />
+                <path d="M138,70 L148,108" fill="none" strokeWidth="6" />
+                <path d="M148,108 L152,148" fill="none" strokeWidth="5" />
+                <circle cx="152" cy="150" r="4" />
+                <circle cx="82" cy="156" r="5" />
+                <circle cx="118" cy="156" r="5" />
+                <path d="M82,160 L78,212" fill="none" strokeWidth="9" />
+                <path d="M78,212 L74,262" fill="none" strokeWidth="7" />
+                <path d="M118,160 L122,212" fill="none" strokeWidth="9" />
+                <path d="M122,212 L126,262" fill="none" strokeWidth="7" />
+              </g>
+              {isDemoShellBoxing && bodyMarkers.map(m => {
+                const cfg = SEVERITY_CONFIG[m.severity];
+                const isCritical = m.severity === 'critical';
+                const isSelected = selectedBodyPart === m.id;
+                return (
+                  <g key={m.id} className={isCritical ? 'lumio-pulse-critical' : ''} style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart(m.id)}>
+                    <circle cx={m.x} cy={m.y} r={cfg.r + 2} fill={cfg.fill} opacity="0.35" filter="url(#lumioMarkerGlowBoxing)" />
+                    <circle cx={m.x} cy={m.y} r={cfg.r} fill={cfg.fill} stroke="#fff" strokeWidth={isSelected ? 2.5 : 1.5} />
+                    <circle cx={m.x} cy={m.y} r={cfg.r * 0.35} fill="#fff" opacity="0.9" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {isDemoShellBoxing ? (
+            <>
+              <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-3 text-[11px] text-gray-400">
+                {(['critical','moderate','minor','monitoring'] as Severity[]).map(s => {
+                  const cfg = SEVERITY_CONFIG[s];
+                  return (
+                    <div key={s} className="flex items-center gap-1.5">
+                      <span style={{ width: cfg.r*2, height: cfg.r*2, borderRadius:'50%', background: cfg.fill, border:'1.5px solid #fff', display:'inline-block', flexShrink:0 }} />
+                      <span>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedMarker && (
+                <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium text-sm">{selectedMarker.label}</span>
+                    <span className={`text-xs ${SEVERITY_CONFIG[selectedMarker.severity].textClass}`}>
+                      {SEVERITY_CONFIG[selectedMarker.severity].label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{selectedMarker.note}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 text-center mt-3">Connect your medical feed to see injury markers.</p>
+          )}
+        </div>
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Injury history</h2>
+          {isDemoShellBoxing ? (
+            <>
+              <div className="space-y-2">
+                {[
+                  { date: '2025-11', site: 'Right hand — boxer\'s fracture', severity: 'Moderate', days: 28 },
+                  { date: '2025-06', site: 'Left shoulder impingement',     severity: 'Moderate', days: 18 },
+                  { date: '2024-12', site: 'Orbital bruising (sparring)',   severity: 'Mild',     days: 5  },
+                  { date: '2024-08', site: 'Right wrist sprain',            severity: 'Mild',     days: 7  },
+                ].map((inj, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+                    <div>
+                      <div className="text-gray-200">{inj.site}</div>
+                      <div className="text-xs text-gray-500">{inj.date} · {inj.severity}</div>
+                    </div>
+                    <span className="text-xs text-gray-400">{inj.days}d out</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-3">
+                <button onClick={() => onNavigate('medical')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full medical record →</button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Section 6 — WHOOP Recovery Chart */}
+      <BoxingRecoveryChartInline />
+
+      {/* Section 7 — Recovery Trend — Last 5 Days */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">Recovery Trend — Last 5 Days</div>
+          <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+        </div>
+        <div className="space-y-3">
+          {recovery.map((r, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="text-xs text-gray-500 w-20 flex-shrink-0">{r.date}</div>
+              <div className="flex-1 bg-gray-800 rounded-full h-2">
+                <div className={`h-2 rounded-full ${r.score >= 80 ? 'bg-teal-500' : r.score >= 65 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${r.score}%` }}></div>
+              </div>
+              <div className={`text-sm font-bold w-10 text-right ${r.score >= 80 ? 'text-teal-400' : r.score >= 65 ? 'text-yellow-400' : 'text-red-400'}`}>{r.score}</div>
+              <div className="text-xs text-gray-500 w-16">HRV {r.hrv}ms</div>
+              <div className="text-xs text-gray-500 w-16">{r.sleep}h sleep</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 8 — Treatment log */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
+        {isDemoShellBoxing ? (
+          <div className="rounded-lg border border-white/5 overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-black/40 text-[11px] text-gray-500 uppercase tracking-wide">
+              <span>Date</span><span>Therapist</span><span>Focus</span><span>Duration</span>
+            </div>
+            {[
+              { date: '15 Apr', therapist: 'Dr Sarah Mitchell', focus: 'Shoulder soft tissue + strap check', time: '45 min' },
+              { date: '13 Apr', therapist: 'Tyrone Baker',      focus: 'Deep tissue — back + lats',          time: '60 min' },
+              { date: '11 Apr', therapist: 'Dr Sarah Mitchell', focus: 'Knuckle/wrist check + wrap review',  time: '30 min' },
+              { date: '8 Apr',  therapist: 'Dr Amir Patel',     focus: 'Ice bath + contrast therapy',        time: '25 min' },
+              { date: '5 Apr',  therapist: 'Tyrone Baker',      focus: 'Full upper body sports massage',     time: '75 min' },
+            ].map((s, i) => (
+              <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+                <span className="text-gray-400">{s.date}</span>
+                <span className="text-white">{s.therapist}</span>
+                <span className="text-gray-400 text-xs">{s.focus}</span>
+                <span className="text-gray-400">{s.time}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Section 9 — Prevention — daily routine */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Prevention — daily routine</h2>
+        {isDemoShellBoxing ? (
+          <div className="space-y-2">
+            {[
+              'Ice bath — 10 min post-session',
+              'Hand care + knuckle inspection',
+              'Neck isometric holds — 5 min',
+              'Foam roll — 15 min',
+              'Hydration — 4L water + electrolytes',
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+                <span className="text-gray-300">{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Section 10 — Physio contacts */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Physio contacts</h2>
+        {isDemoShellBoxing ? (
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { name: 'Dr Sarah Mitchell', role: 'Head Physio',        phone: '07700 900301' },
+              { name: 'Tyrone Baker',      role: 'Soft Tissue / Massage', phone: '07700 900302' },
+              { name: 'Dr Amir Patel',     role: 'Ring Doctor',        phone: '07700 900303' },
+            ].map((p, i) => (
+              <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-3">
+                <div className="text-white font-medium text-sm">{p.name}</div>
+                <div className="text-xs text-gray-500">{p.role}</div>
+                <div className="text-xs text-red-400 mt-1">{p.phone}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          </div>
+        )}
+      </div>
+
+      <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   );
 }
@@ -7847,6 +8241,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
       case 'recovery':        return <RecoveryHRVView fighter={fighter} session={session} />;
       case 'medical':         return <MedicalRecordView fighter={fighter} session={session} />;
+      case 'physio-recovery': return <BoxingPhysioRecoveryView fighter={fighter} session={session} onNavigate={setActiveSection} />;
       case 'rankings':        return <WorldRankingsView fighter={fighter} session={session} />;
       case 'mandatory':       return <MandatoryTrackerView fighter={fighter} session={session} />;
       case 'pathtotitle':     return <PathToTitleView fighter={fighter} session={session} />;
@@ -8035,17 +8430,21 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
               ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
               : session.logoDataUrl
                 ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                    🥊
-                  </div>
+                : !isFoundingMember
+                  ? <img src="/cole_boxing_camp_crest.svg" alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+                  : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                      🥊
+                    </div>
             }
             {sidebarExpanded && (
               liveBrandName
                 ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>{liveBrandName}</span>
-                : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Lumio Fight
-                  </span>
+                : !isFoundingMember
+                  ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>COLE BOXING CAMP</span>
+                  : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      Lumio Fight
+                    </span>
             )}
           </div>
           {sidebarExpanded && (
