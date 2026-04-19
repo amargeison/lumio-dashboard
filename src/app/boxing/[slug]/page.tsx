@@ -166,7 +166,7 @@ const SIDEBAR_ITEMS = [
   { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
   { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'FIGHT CAMP' },
-  { id: 'gpsringheatmap',  label: 'GPS & Ring Heatmap',  icon: '🛰️', group: 'FIGHT CAMP' },
+  { id: 'gps',             label: 'GPS',                 icon: '🛰️', group: 'FIGHT CAMP' },
   { id: 'fightcamp',       label: 'Fight Camp',          icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
@@ -198,11 +198,9 @@ const SIDEBAR_ITEMS = [
   { id: 'opscout',         label: 'Opposition Scout',    icon: '🎯', group: 'INTEL' },
   { id: 'broadcast',       label: 'Broadcast Tracker',   icon: '📺', group: 'INTEL' },
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
-  { id: 'gps',             label: 'GPS Load Monitor',    icon: '📡', group: 'INTEGRATIONS' },
-  { id: 'gpsvest',         label: 'GPS Vest Dashboard',  icon: '🦺', group: 'INTEGRATIONS' },
-  { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'INTEGRATIONS' },
-  { id: 'travel',          label: 'Travel & Logistics',  icon: '✈️', group: 'INTEGRATIONS' },
-  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'INTEL' },
+  { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'TEAM HUB' },
+  { id: 'travel',          label: 'Travel & Logistics',  icon: '✈️', group: 'TEAM HUB' },
+  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'SETTINGS' },
 ];
 
 // ─── DEMO FIGHTER DATA ────────────────────────────────────────────────────────
@@ -223,7 +221,7 @@ const DEMO_FIGHTER: BoxingFighter = {
   target_weight: 92.7,
   record: { wins: 22, losses: 1, draws: 0, ko: 18 },
   rankings: { wbc: 6, wba: 9, wbo: 5, ibf: 12 },
-  promoter: 'Matchroom Boxing',
+  promoter: 'Titan Promotions',
   broadcast: 'Meridian Sports',
   manager: 'Danny Walsh',
   trainer: 'Jim Bevan',
@@ -1019,11 +1017,11 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
     { id:'manager', label:'Manager', icon:'💼', count:2, urgent:true, color:'#dc2626', messages:[
-      { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Matchroom offering 70/30. Need your call at 16:00.', time:'8:14am' },
+      { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Titan offering 70/30. Need your call at 16:00.', time:'8:14am' },
       { id:'m2', from:'Danny Walsh', text:'Apex Performance camp deal — £85k for fight week branding. Worth taking?', time:'7:52am' },
     ]},
     { id:'promoter', label:'Promoter Desk', icon:'🏟️', count:1, urgent:true, color:'#F97316', messages:[
-      { id:'p1', from:'Matchroom Boxing', text:'URGENT: Press conference moved to Thursday 2pm. Eddie needs 20min interview slot.', time:'9:01am' },
+      { id:'p1', from:'Titan Promotions', text:'URGENT: Press conference moved to Thursday 2pm. Jack needs 20min interview slot.', time:'9:01am' },
     ]},
     { id:'sponsor', label:'Media & Sponsor', icon:'🤝', count:2, urgent:false, color:'#F59E0B', messages:[
       { id:'s1', from:'Meridian Sports', text:'Pre-fight documentary crew arriving Monday. 3 days filming access needed.', time:'8:30am' },
@@ -1207,7 +1205,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
                     {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your boxing OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. Rankings, fight camp, weight tracking, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'🥊', v:`#${fighter.rankings.wbc}`, label:'WBC', c:'#dc2626' },{ icon:'🏆', v:`${fighter.record.wins}-${fighter.record.losses}`, label:'Record', c:'#F97316' },{ icon:'⚖️', v:`${fighter.current_weight}kg`, label:'Weight', c:'#F59E0B' },{ icon:'📅', v:`${fighter.next_fight.days_away}d`, label:'Fight', c:'#22C55E' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next fight:</span> <span className="text-white font-semibold">vs {fighter.next_fight.opponent} — {fighter.next_fight.venue}</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Camp day:</span> <span className="text-white font-semibold">Day {fighter.camp_day}/70 — On track</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#dc2626' }}>🥊</span> <span style={{ color: '#9CA3AF' }}>Used by professional fighters to manage everything from training camp to fight night.</span></div>{/* Brand Colours — only in step 1 detail */}<div className="mt-4 space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div><p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p><div className="flex items-center gap-4"><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label><input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_boxing_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label><input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_boxing_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div className="flex-1"><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label><div className="flex items-center gap-2"><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div></div></div></div></div></>)}
-                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every fight week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers weight status, camp progress, opponent intel, sponsor deadlines and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(220,38,38,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(220,38,38,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⚖️', text:`Weight on track — ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Cut projection: 3 days before weigh-in.` },{ icon:'🥊', text:'Stoyan scouting report ready — body shot breakdown and late-round fade analysis.' },{ icon:'🤝', text:'Apex Performance camp shoot tomorrow 10:00 — penalty clause. Kit prepped.' },{ icon:'📬', text:'Meridian Sports promotion confirmed. Danny Walsh purse split: 70/30 Matchroom offer.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up.</span></div></>)}
+                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every fight week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers weight status, camp progress, opponent intel, sponsor deadlines and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(220,38,38,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(220,38,38,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⚖️', text:`Weight on track — ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Cut projection: 3 days before weigh-in.` },{ icon:'🥊', text:'Stoyan scouting report ready — body shot breakdown and late-round fade analysis.' },{ icon:'🤝', text:'Apex Performance camp shoot tomorrow 10:00 — penalty clause. Kit prepped.' },{ icon:'📬', text:'Meridian Sports promotion confirmed. Danny Walsh purse split: 70/30 Titan offer.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up.</span></div></>)}
                     {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — log a sparring session, track weight, file a physio report, generate a sponsor post, check your visa. All in under 60 seconds.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Fight Prep AI', icon:'🥊', hot:true },{ label:'Weight Tracker', icon:'⚖️', hot:false },{ label:'Sparring Log', icon:'📋', hot:false },{ label:'Opponent Study', icon:'🔍', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#dc2626' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#dc2626' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🥊</span> <span style={{ color: '#0ea5e9' }}>Fight Prep AI generates a full opponent breakdown — punch stats, weaknesses, game plan — in 8 seconds.</span></div></>)}
                     {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Fight travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every fight venue. Smart Hotel finds gyms and hotels near the arena. Pre-filled with your home airport and weight class preferences.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Virgin Atlantic · VS 3</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£387 return</span></div><div className="text-[10px] text-gray-400">London LHR → New York JFK · 7h 20m · Direct</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Manhattan Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£142/night</span></div><div className="text-[10px] text-gray-400">0.8km from Madison Square Garden · Gym ✅ · 8.6 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Fighters using Smart Flights save an average of £520 per fight on travel vs booking through a promoter.</span></div></>)}
                     {step.preview === 'weight' && (<><h2 className="text-xl font-black text-white mb-2">Weight camp managed to the gram.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Daily weight logs, cut timeline, ACWR load monitoring, rehydration plan — all tracked automatically. Get alerted if you&apos;re behind schedule before it becomes a crisis.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(220,38,38,0.3)' }}><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-white">Weight Camp Tracker</span><span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>ON TRACK ✅</span></div><div className="grid grid-cols-3 gap-2 text-center mb-3">{[{ label:'Camp Day', v:`${fighter.camp_day}/70`, c:'#dc2626' },{ label:'Current', v:`${fighter.current_weight}kg`, c:'#F97316' },{ label:'Target', v:`${fighter.target_weight}kg`, c:'#22C55E' }].map((s,i) => (<div key={i} className="rounded-lg p-2" style={{ backgroundColor: '#111318' }}><div className="text-[10px] text-gray-500">{s.label}</div><div className="text-sm font-black" style={{ color: s.c }}>{s.v}</div></div>))}</div><div className="space-y-1 text-[10px]"><div className="flex justify-between text-gray-400"><span>Cut prediction:</span><span className="text-white font-semibold">3 days before weigh-in</span></div><div className="flex justify-between text-gray-400"><span>ACWR:</span><span className="text-green-400 font-semibold">1.12 (optimal zone)</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><span style={{ color: '#dc2626' }}>⚖️</span> <span style={{ color: '#dc2626' }}>Missing weight costs purse deductions and can cancel fights. Lumio flags weight risk 14 days out.</span></div></>)}
@@ -1375,13 +1373,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 })}
               </div>
             </div>
-            {/* Tonight's Venue */}
+            {/* Fight Night Venue */}
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Fight Night Venue — {fighter.next_fight.days_away} days</div>
               <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
-              <div className="text-xs text-gray-500 mt-1">16°C · Clear · Doors open 18:00</div>
+              <div className="text-xs text-gray-500 mt-1">{fighter.next_fight.date} · Doors open 18:00 on fight night</div>
               <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00</span></div>
+                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00 fight night</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.2M</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£360,000</span></div>
                 <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">{fighter.next_fight.broadcast}</span></div>
@@ -1485,7 +1483,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { p:2, title:'Meridian Sports pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm', effort:'2min', description:'Press tour begins today. Contractual obligation — confirm now.' },
             { p:3, title:'Sparring session vs southpaw booked — 10:00',                     impact:'High',     cat:'Camp',       icon:'🥊', cta:'Log sparring', effort:'5min', description:'Southpaw rounds to prepare for Stoyan\'s stance. Jim Bevan supervising.' },
             { p:4, title:'Stoyan\'s last 3 fights uploaded — review footage',                impact:'High',     cat:'Prep',       icon:'🎬', cta:'Open scout', effort:'15min', description:'3 recent fights available — study patterns and defensive tendencies.' },
-            { p:5, title:'Matchroom contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review', effort:'5min', description:'Addendum to existing deal — Danny Walsh flagged urgency.' },
+            { p:5, title:'Titan contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review', effort:'5min', description:'Addendum to existing deal — Danny Walsh flagged urgency.' },
           ].map((w, i) => (
             <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="flex items-start justify-between gap-4">
@@ -1593,7 +1591,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               { type:'ALERT',       icon:'⚠️', color:'#EF4444', bg:'rgba(239,68,68,0.08)',  border:'rgba(239,68,68,0.2)',  title:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to cut in ${fighter.next_fight.days_away} days`, desc:`Current ${fighter.current_weight}kg, target ${fighter.target_weight}kg. Daily cut required: ${((fighter.current_weight - fighter.target_weight) / fighter.next_fight.days_away).toFixed(2)}kg/day. On track if you log daily.`, action:'Log weight →', modal:'weight' },
               { type:'OPPORTUNITY', icon:'💡', color:'#F59E0B', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.2)', title:'Apex Performance camp extension offer', desc:'New approach via Danny Walsh — £85k for fight week branding and post-fight content. No competing sponsor in the pipeline. Decision needed by end of week.', action:'Open sponsor brief →', modal:'sponsor' },
               { type:'TREND',       icon:'📈', color:'#22C55E', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)',  title:'Sparring power output up 8%', desc:'Last 5 sessions vs season avg. Right hand velocity and body shot compression both trending up. Jim Bevan flagged this in camp notes — keep the current pad routine.', action:'View training log →', modal:'matchprep' },
-              { type:'ACHIEVEMENT', icon:'🏆', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)', title:`Record now ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KOs)`, desc:'Last fight: 12-round points win. Promoter Matchroom locking in Millennium Dome headline slot. First top-10 WBC fight — media interest is high.', action:'View fight record →', modal:'matchprep' },
+              { type:'ACHIEVEMENT', icon:'🏆', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)', title:`Record now ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KOs)`, desc:'Last fight: 12-round points win. Promoter Titan locking in Millennium Dome headline slot. First top-10 WBC fight — media interest is high.', action:'View fight record →', modal:'matchprep' },
             ].map((tile, i) => (
               <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -1642,7 +1640,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { urgency:'CRITICAL', item:'Weight cut — 5.1kg to target in 48 days. If missed: dangerous rapid cut fight week.', action:'Log weight →', color:'#dc2626' },
             { urgency:'CRITICAL', item:'Right hand X-ray — Jim flagged knuckle swelling. If missed: risk fighting injured.', action:'Book appointment →', color:'#EF4444' },
             { urgency:'TODAY',    item:'Meridian Sports interview — press tour begins today. If missed: contractual breach.', action:'Prep talking points →', color:'#F59E0B' },
-            { urgency:'THIS WEEK',item:'Matchroom contract addendum signature. If missed: fight postponed.', action:'Review contract →', color:'#F59E0B' },
+            { urgency:'THIS WEEK',item:'Titan contract addendum signature. If missed: fight postponed.', action:'Review contract →', color:'#F59E0B' },
             { urgency:'THIS WEEK',item:'Mandatory rest day Saturday — physio assessment. If missed: overtraining risk.', action:'Log recovery →', color:'#6B7280' },
           ].map((d, i) => (
             <div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1700,7 +1698,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <div className="rounded-xl p-6 text-center space-y-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="text-sm font-bold text-white mb-4">Team Organisation</div>
               <div className="flex justify-center gap-8">
-                {[{name:'Danny Walsh',role:'Manager'},{name:'Matchroom',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
+                {[{name:'Danny Walsh',role:'Manager'},{name:'Titan',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
               </div>
               <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-lg font-bold overflow-hidden"
                 style={{background:'rgba(220,38,38,0.2)',border:'2px solid #dc2626',color:'#dc2626'}}>
@@ -1752,7 +1750,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <div className="rounded-xl p-5 space-y-3" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
               <div className="text-sm font-bold text-white mb-3">Fight Record</div>
               {[
-                {l:'Professional Record',v:'22-1 (18 KOs)'},{l:'WBC Ranking',v:`#${fighter.rankings.wbc}`},{l:'WBA Ranking',v:`#${fighter.rankings.wba}`},{l:'WBO Ranking',v:`#${fighter.rankings.wbo}`},{l:'IBF Ranking',v:`#${fighter.rankings.ibf}`},{l:'Weight Class',v:'Heavyweight (max 200lb / 90.7kg)'},{l:'Promoter',v:'Matchroom Boxing'},{l:'Broadcast',v:'Meridian Sports'},{l:'Trainer',v:'Jim Bevan (since 2021)'},{l:'Pro debut',v:'March 2018'},{l:'Last fight',v:'W — points — 12 rounds'},
+                {l:'Professional Record',v:'22-1 (18 KOs)'},{l:'WBC Ranking',v:`#${fighter.rankings.wbc}`},{l:'WBA Ranking',v:`#${fighter.rankings.wba}`},{l:'WBO Ranking',v:`#${fighter.rankings.wbo}`},{l:'IBF Ranking',v:`#${fighter.rankings.ibf}`},{l:'Weight Class',v:'Heavyweight (max 200lb / 90.7kg)'},{l:'Promoter',v:'Titan Promotions'},{l:'Broadcast',v:'Meridian Sports'},{l:'Trainer',v:'Jim Bevan (since 2021)'},{l:'Pro debut',v:'March 2018'},{l:'Last fight',v:'W — points — 12 rounds'},
               ].map((r,i)=>(<div key={i} className="flex items-center justify-between py-2 text-xs" style={{borderBottom:i<10?'1px solid #1F2937':'none'}}><span style={{color:'#6B7280'}}>{r.l}</span><span className="font-bold text-white">{r.v}</span></div>))}
             </div>
           )}
@@ -1796,7 +1794,6 @@ function TrainingLogView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🥊" title="Training Log" subtitle="Session-by-session camp log with load tracking and trainer notes." />
 
       {/* Weekly Summary */}
@@ -1910,7 +1907,6 @@ function SparringPlannerView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🤼" title="Sparring Planner" subtitle="Manage sparring partners, weekly round targets, and camp sparring strategy." />
 
       {/* Sparring Stats */}
@@ -2036,7 +2032,6 @@ function OppositionAnalysisView({ fighter, session }: { fighter: BoxingFighter; 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🔍" title="Opposition Analysis" subtitle={`Detailed breakdown of ${fighter.next_fight.opponent} — ${fighter.next_fight.opponent_ranking}`} />
 
       {/* Opponent Profile Card */}
@@ -2188,7 +2183,6 @@ function WeightTrackerView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="⚖️" title="Weight Tracker" subtitle="Daily weigh-ins, trajectory analysis, and cut planning." />
 
       {/* Hero Weight Card */}
@@ -2336,7 +2330,6 @@ function CutPlannerView({ fighter, session }: { fighter: BoxingFighter; session:
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📉" title="Cut Planner" subtitle="Structured weight cut protocol for fight week and beyond." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2468,7 +2461,6 @@ function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💚" title="Recovery & HRV" subtitle="Track heart rate variability, sleep quality, and recovery protocols." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2947,7 +2939,6 @@ function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🏥" title="Medical Record" subtitle="Injury history, medical clearances, and BBBofC documentation." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3127,7 +3118,6 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🌍" title="World Rankings" subtitle="WBC, WBA, WBO, IBF heavyweight rankings with Marcus highlighted." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3137,7 +3127,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         <StatCard label="IBF" value={`#${fighter.rankings.ibf}`} sub="Heavyweight" color="orange" />
       </div>
 
-      {/* 5-Column Rankings (incl. Zuffa) */}
+      {/* 5-Column Rankings (incl. Northbridge) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         {Object.entries(rankings).map(([body, fighters]) => (
           <div key={body} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
@@ -3157,7 +3147,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           </div>
         ))}
 
-        {/* Zuffa Boxing Column */}
+        {/* Northbridge Fight Night Column */}
         <div className="bg-[#0D1117] border border-yellow-600/50 rounded-xl p-4" style={{ background: 'linear-gradient(160deg, rgba(17,13,0,0.9), #0D1117)' }}>
           <div className="text-sm font-bold mb-1 flex items-center gap-2" style={{ color: '#FBBF24' }}>
             ⚡ ZUFFA BOXING
@@ -3175,10 +3165,10 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           <div className="text-[10px] text-gray-500 font-semibold mb-2 uppercase tracking-wider">Signed Fighters</div>
           <div className="space-y-1 mb-4">
             {[
-              { name: 'Conor Benn', country: '🇬🇧' },
-              { name: 'Jai Opetaia', country: '🇦🇺' },
+              { name: 'Callum Brennan', country: '🇬🇧' },
+              { name: 'Hone Tahere', country: '🇳🇿' },
               { name: 'Ezekiel Onyeka', country: '🇳🇬' },
-              { name: 'Callum Walsh', country: '🇺🇸' },
+              { name: 'Trevon Walsh', country: '🇺🇸' },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-gray-800/50">
                 <span className="text-gray-500 w-4 text-right font-mono">{i + 1}</span>
@@ -3192,7 +3182,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           <div className="px-2 py-2 rounded text-xs bg-gray-800/50 border border-gray-700/50 mb-3">
             <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{fighter.name}</div>
             <div className="text-gray-500 font-bold">NOT RANKED</div>
-            <div className="text-[10px] text-gray-600">Not signed with Zuffa</div>
+            <div className="text-[10px] text-gray-600">Not signed with Northbridge</div>
           </div>
 
           <div className="text-[10px] text-yellow-400/70 text-center cursor-pointer hover:text-yellow-300 transition-colors">
@@ -3220,14 +3210,14 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         </div>
       </div>
 
-      {/* Zuffa Boxing Explainer */}
+      {/* Northbridge Fight Night Explainer */}
       <div className="bg-[#0D1117] border border-yellow-600/40 rounded-xl p-5">
         <div className="flex items-start gap-4">
           <span className="text-2xl">⚡</span>
           <div>
-            <div className="text-sm font-bold text-yellow-300 mb-2">What Zuffa Boxing means for Marcus's career</div>
+            <div className="text-sm font-bold text-yellow-300 mb-2">What Northbridge Fight Night means for Marcus's career</div>
             <div className="text-xs text-gray-400 leading-relaxed mb-4">
-              Zuffa Boxing — the boxing division backed by TKO Group Holdings (UFC parent) — operates on a one-fight deal model rather than traditional multi-fight exclusive contracts. This means fighters retain freedom but receive no guaranteed fight pipeline. Zuffa has signed marquee names including Conor Benn and Jai Opetaia, and broadcasts on Apex Sports Network+ and Apex Sports Network.
+              Northbridge Fight Night — a US-backed boxing venture launched 2025 — operates on a one-fight deal model rather than traditional multi-fight exclusive contracts. This means fighters retain freedom but receive no guaranteed fight pipeline. Northbridge has signed several marquee names from the UK and Commonwealth scenes and broadcasts on Apex Sports Network+ and Apex Sports Network.
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="bg-green-900/10 border border-green-800/30 rounded-lg p-3">
@@ -3236,7 +3226,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
               </div>
               <div className="bg-red-900/10 border border-red-800/30 rounded-lg p-3">
                 <div className="text-red-400 font-bold mb-1">Risk for Marcus</div>
-                <div className="text-gray-400">No ranking within Zuffa (no titles yet). Could jeopardise WBC/WBA mandatory position. Matchroom first-option clause complication.</div>
+                <div className="text-gray-400">No ranking within Northbridge (no titles yet). Could jeopardise WBC/WBA mandatory position. Titan first-option clause complication.</div>
               </div>
               <div className="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3">
                 <div className="text-yellow-400 font-bold mb-1">Current Status</div>
@@ -3317,7 +3307,6 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Track mandatory obligations, eliminators, and sanctioning body deadlines." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3390,7 +3379,6 @@ function PathToTitleView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🏆" title="Path to Title" subtitle="Mapped route to a world heavyweight championship fight." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -3463,7 +3451,6 @@ function PurseBidAlertsView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🔔" title="Purse Bid Tracker" subtitle="WBC/WBA/WBO/IBF mandatory proceedings and real-time purse split calculator" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3609,7 +3596,6 @@ function PurseSimulatorView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💷" title="Purse Simulator" subtitle="Interactive fight purse calculator — see exactly what lands in your bank account." />
 
       {/* Jurisdiction Selector */}
@@ -3840,7 +3826,6 @@ function FightEarningsView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💰" title="Fight Earnings" subtitle="Historical purse breakdown and career earnings tracker." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3924,7 +3909,6 @@ function CampCostsView({ fighter, session }: { fighter: BoxingFighter; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🧾" title="Camp Costs" subtitle="Line-by-line camp expenditure tracking and budget management." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4007,7 +3991,6 @@ function TaxTrackerView({ fighter, session }: { fighter: BoxingFighter; session:
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📊" title="Tax Tracker" subtitle="Self-assessment tracker, deductions log, and payment schedule." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4074,7 +4057,6 @@ function TeamOverviewView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="👥" title="Team Overview" subtitle={`${team.length} team members supporting ${fighter.name}${fighter.nickname ? ' "' + fighter.nickname + '"' : ''}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4122,7 +4104,6 @@ function FighterBriefingView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📄" title="Fighter Briefing" subtitle="Structured daily briefing document for Marcus and the team." />
 
       <div className="bg-gradient-to-r from-red-900/30 via-[#0D1117] to-gray-900 border border-red-600/20 rounded-xl p-5">
@@ -4165,7 +4146,6 @@ function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📝" title="Trainer Notes" subtitle={`Jim Bevan's training diary and technical observations.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4221,7 +4201,6 @@ function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💼" title="Manager Dashboard" subtitle={`Danny Walsh's management overview for ${fighter.name}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4309,7 +4288,6 @@ function SponsorshipsView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🤝" title="Sponsorships" subtitle="Active and pipeline brand partnerships." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4354,7 +4332,7 @@ function MediaObligationsView({ fighter, session }: { fighter: BoxingFighter; se
     { date: 'Apr 15', event: 'Northbridge Sport Interview', location: 'Sky Studios, Isleworth', duration: '45 min', type: 'TV', notes: 'Pre-fight feature for Northbridge Sport Boxing show', status: 'Confirmed' },
     { date: 'Apr 18', event: 'Social Media Content Day', location: 'Training camp (Sheffield)', duration: '2 hours', type: 'Social', notes: 'Behind-the-scenes content, training clips, Q&A', status: 'Confirmed' },
     { date: 'Apr 25', event: 'Boxing News Interview', location: 'Phone/Zoom', duration: '30 min', type: 'Print', notes: 'Cover story feature for May edition', status: 'Pending' },
-    { date: 'May 1', event: 'IFL TV Interview', location: 'Matchroom HQ', duration: '20 min', type: 'YouTube', notes: 'Fight preview, prediction discussion', status: 'Pending' },
+    { date: 'May 1', event: 'IFL TV Interview', location: 'Titan HQ', duration: '20 min', type: 'YouTube', notes: 'Fight preview, prediction discussion', status: 'Pending' },
     { date: 'May 8', event: 'Press Conference', location: 'Hilton Park Lane, London', duration: 'Half day', type: 'Major Event', notes: 'Official fight press conference with face-off', status: 'Confirmed' },
     { date: 'May 19', event: 'Open Workout', location: 'Boxpark, Wembley', duration: '2 hours', type: 'Public', notes: 'Public workout, fan meet & greet, media access', status: 'Confirmed' },
     { date: 'May 21', event: 'Weigh-In', location: 'Millennium Dome', duration: 'Full day', type: 'Major Event', notes: 'Official weigh-in, face-off, last press duties', status: 'Confirmed' },
@@ -4362,7 +4340,6 @@ function MediaObligationsView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📱" title="Media Obligations" subtitle="Scheduled press, interviews, and promotional commitments." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4409,7 +4386,7 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
     { event: 'Charity Gala — Help for Heroes', date: 'Feb 8, 2026', fee: '£3,500', type: 'Charity', notes: 'After-dinner speech, photo ops, auction item signing', status: 'Completed' },
     { event: 'Betfair Launch Event', date: 'Jan 22, 2026', fee: '£5,000', type: 'Corporate', notes: 'Brand ambassador appearance, 2-hour commitment', status: 'Completed' },
     { event: 'Fitness Expo (NEC)', date: 'Mar 1, 2026', fee: '£4,000', type: 'Expo', notes: 'Meet & greet, signing session, panel discussion', status: 'Completed' },
-    { event: 'Matchroom Boxing Awards', date: 'Jun 15, 2026', fee: '£0 (promotional)', type: 'Industry', notes: 'Networking, table appearance, promotional value', status: 'Confirmed' },
+    { event: 'Titan Promotions Awards', date: 'Jun 15, 2026', fee: '£0 (promotional)', type: 'Industry', notes: 'Networking, table appearance, promotional value', status: 'Confirmed' },
     { event: 'Apex Performance Store Opening', date: 'Jul 2026', fee: '£6,000', type: 'Sponsor', notes: 'Store appearance, signing, social content', status: 'Pending' },
   ];
 
@@ -4418,7 +4395,6 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🎤" title="Appearance Fees" subtitle="Paid appearances, corporate events, and personal bookings." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4462,7 +4438,7 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const contracts = [
-    { title: 'Matchroom Promotional Agreement', counterparty: 'Matchroom Sport', type: 'Promotional', start: 'Jan 2024', end: 'Dec 2027', fights: '6-fight deal (3 remaining)', value: 'Per-fight basis', status: 'Active', keyTerms: '3 fights remaining. Matchroom has first option on all UK fights. Meridian Sports broadcast rights included.' },
+    { title: 'Titan Promotional Agreement', counterparty: 'Titan Promotions', type: 'Promotional', start: 'Jan 2024', end: 'Dec 2027', fights: '6-fight deal (3 remaining)', value: 'Per-fight basis', status: 'Active', keyTerms: '3 fights remaining. Titan has first option on all UK fights. Meridian Sports broadcast rights included.' },
     { title: 'Management Agreement', counterparty: 'Danny Walsh / Walsh Management', type: 'Management', start: 'Jun 2020', end: 'Jun 2028', fights: 'All fights', value: '25% of purse', status: 'Active', keyTerms: '8-year deal with 2-year renewal option. Covers all fight purses, commercial income split negotiable.' },
     { title: 'Training Agreement', counterparty: 'Jim Bevan', type: 'Trainer', start: 'Mar 2021', end: 'Rolling', fights: 'Per-camp basis', value: '12% of purse + camp retainer', status: 'Active', keyTerms: 'Rolling agreement. Either party can terminate with 30-day notice. Camp retainer £6,000 regardless of purse %.' },
     { title: 'Apex Performance Sponsorship', counterparty: 'Apex Performance UK', type: 'Sponsorship', start: 'Jan 2024', end: 'Dec 2026', fights: 'N/A', value: '£65,000/yr', status: 'Renewal due', keyTerms: 'Exclusive kit deal. Must wear UA for all training content and ring walks. Renewal discussions opening.' },
@@ -4471,13 +4447,12 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📑" title="Contract Tracker" subtitle="All active agreements, expiry dates, and key terms." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Active Contracts" value={contracts.filter(c => c.status === 'Active').length} sub="Currently binding" color="green" />
         <StatCard label="Renewals Due" value={contracts.filter(c => c.status === 'Renewal due').length} sub="Action required" color="yellow" />
-        <StatCard label="Matchroom Deal" value="3 fights" sub="Remaining on deal" color="red" />
+        <StatCard label="Titan Deal" value="3 fights" sub="Remaining on deal" color="red" />
         <StatCard label="Mgmt Contract" value="Jun 2028" sub="Danny Walsh" color="blue" />
       </div>
 
@@ -4508,7 +4483,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {[
             { type: 'Multi-Fight Exclusive', example: "Marcus's deal", desc: 'Traditional model. Promoter controls next 4-10 fights.', color: 'text-blue-400', bg: 'bg-blue-900/10 border-blue-800/40' },
-            { type: 'One-Fight Deal', example: 'Zuffa approach', desc: 'Single fight, massive upfront fee, no ongoing obligation.', color: 'text-yellow-400', bg: 'bg-yellow-900/10 border-yellow-800/40' },
+            { type: 'One-Fight Deal', example: 'Northbridge approach', desc: 'Single fight, massive upfront fee, no ongoing obligation.', color: 'text-yellow-400', bg: 'bg-yellow-900/10 border-yellow-800/40' },
             { type: 'Co-Promotion', example: 'World title unifications', desc: 'Two promoters share a fight. Common for world title unification.', color: 'text-purple-400', bg: 'bg-purple-900/10 border-purple-800/40' },
             { type: 'Riyadh Season Direct', example: 'Saudi GEA', desc: 'Saudi GEA direct commission. Highest single-fight fees.', color: 'text-green-400', bg: 'bg-green-900/10 border-green-800/40' },
           ].map((ct, i) => (
@@ -4521,39 +4496,39 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         </div>
       </div>
 
-      {/* Zuffa Offer Alert */}
+      {/* Northbridge Offer Alert */}
       <div className="bg-yellow-900/10 border border-yellow-600/40 rounded-xl p-5 flex items-start gap-4">
         <span className="text-2xl">⚡</span>
         <div>
-          <div className="text-sm font-bold text-yellow-300 mb-1">Zuffa Boxing Approach — Action Required</div>
-          <div className="text-xs text-yellow-200/70">Danny Walsh has flagged a Zuffa Boxing approach — one-fight offer estimated at £2.1M. This is a one-fight deal with no ongoing promotional obligation. Decision required before current Matchroom contract window closes.</div>
+          <div className="text-sm font-bold text-yellow-300 mb-1">Northbridge Fight Night Approach — Action Required</div>
+          <div className="text-xs text-yellow-200/70">Danny Walsh has flagged a Northbridge Fight Night approach — one-fight offer estimated at £2.1M. This is a one-fight deal with no ongoing promotional obligation. Decision required before current Titan contract window closes.</div>
         </div>
       </div>
 
-      {/* Matchroom vs Zuffa Comparison */}
+      {/* Titan vs Northbridge Comparison */}
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Matchroom vs Zuffa Boxing — Side-by-Side Comparison</div>
+        <div className="text-sm font-semibold text-white mb-4">Titan vs Northbridge Fight Night — Side-by-Side Comparison</div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="text-left py-2 pr-4 text-gray-500 font-medium">Factor</th>
-                <th className="text-left py-2 pr-4 text-gray-300 font-bold">Matchroom</th>
-                <th className="text-left py-2 text-yellow-300 font-bold">⚡ Zuffa Boxing</th>
+                <th className="text-left py-2 pr-4 text-gray-300 font-bold">Titan</th>
+                <th className="text-left py-2 text-yellow-300 font-bold">⚡ Northbridge Fight Night</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
               {[
-                { factor: 'Purse', matchroom: '£450k–£800k per fight', zuffa: '£2.1M one-fight fee' },
-                { factor: 'Take-Home (est.)', matchroom: '~£148k–£260k net', zuffa: '~£690k net (45% tax)' },
-                { factor: 'Ranking Benefits', matchroom: 'Meridian Sports exposure, UK market leader', zuffa: 'Global reach, UFC fanbase crossover' },
-                { factor: 'Career Pathway', matchroom: 'Structured route to world title shot', zuffa: 'No guaranteed next fight' },
-                { factor: 'Breach Risk', matchroom: 'Low — existing relationship', zuffa: 'HIGH — may breach Matchroom first option clause' },
+                { factor: 'Purse', titan: '£450k–£800k per fight', northbridge: '£2.1M one-fight fee' },
+                { factor: 'Take-Home (est.)', titan: '~£148k–£260k net', northbridge: '~£690k net (45% tax)' },
+                { factor: 'Ranking Benefits', titan: 'Meridian Sports exposure, UK market leader', northbridge: 'Global reach, UFC fanbase crossover' },
+                { factor: 'Career Pathway', titan: 'Structured route to world title shot', northbridge: 'No guaranteed next fight' },
+                { factor: 'Breach Risk', titan: 'Low — existing relationship', northbridge: 'HIGH — may breach Titan first option clause' },
               ].map((row, i) => (
                 <tr key={i}>
                   <td className="py-2 pr-4 text-gray-500">{row.factor}</td>
-                  <td className="py-2 pr-4 text-gray-300">{row.matchroom}</td>
-                  <td className="py-2 text-yellow-200">{row.zuffa}</td>
+                  <td className="py-2 pr-4 text-gray-300">{row.titan}</td>
+                  <td className="py-2 text-yellow-200">{row.northbridge}</td>
                 </tr>
               ))}
             </tbody>
@@ -4566,7 +4541,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm shrink-0">DW</div>
         <div>
           <div className="text-xs font-bold text-white mb-0.5">Danny Walsh — Manager Note</div>
-          <div className="text-xs text-gray-400 italic">"The money is real but the contract risk is very real too. If we take this Zuffa fight without Matchroom sign-off we could be looking at an injunction. We need to read the first-option clause very carefully before we respond."</div>
+          <div className="text-xs text-gray-400 italic">"The money is real but the contract risk is very real too. If we take this Northbridge fight without Titan sign-off we could be looking at an injunction. We need to read the first-option clause very carefully before we respond."</div>
         </div>
       </div>
 
@@ -4574,7 +4549,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
       <div className="bg-[#0D1117] border border-red-800/40 rounded-xl p-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold text-white mb-1">Matchroom Contract Expiry</div>
+            <div className="text-sm font-bold text-white mb-1">Titan Contract Expiry</div>
             <div className="text-xs text-gray-400">Estimated contract end: December 2027 — 3 fights remaining</div>
           </div>
           <div className="text-right">
@@ -4647,7 +4622,6 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📜" title="Fight Record" subtitle={`Professional record: ${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws} (${fighter.record.ko} KO)`} />
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
@@ -4763,7 +4737,6 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📈" title="Career Stats" subtitle="Comprehensive statistical breakdown of Marcus Cole's professional career." />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -4820,19 +4793,18 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pipeline = [
-    { opponent: 'Maks Stoyan', promoter: 'Matchroom/Top Rank co-promote', purse: '£800,000', date: 'May 22, 2026', stage: 'Signed', broadcast: 'Meridian Sports PPV', notes: 'Fight contracts exchanged. Camp underway.' },
-    { opponent: 'Yang Zhi Wei', promoter: 'Matchroom/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Eddie Hearn has opened dialogue with Frank Warren\'s team.' },
-    { opponent: 'WBC Eliminator TBD', promoter: 'Matchroom', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'Meridian Sports', notes: 'If Marcus beats Stoyan and enters top 3. Eliminator likely ordered Q4 2026.' },
+    { opponent: 'Maks Stoyan', promoter: 'Titan/Top Rank co-promote', purse: '£800,000', date: 'May 22, 2026', stage: 'Signed', broadcast: 'Meridian Sports PPV', notes: 'Fight contracts exchanged. Camp underway.' },
+    { opponent: 'Yang Zhi Wei', promoter: 'Titan/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Jack Sterling has opened dialogue with Frank Warren\'s team.' },
+    { opponent: 'WBC Eliminator TBD', promoter: 'Titan', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'Meridian Sports', notes: 'If Marcus beats Stoyan and enters top 3. Eliminator likely ordered Q4 2026.' },
     { opponent: 'Title Shot', promoter: 'TBD', purse: '£3m+ (projected)', date: '2027', stage: 'Long-term target', broadcast: 'PPV', notes: 'Depends on route. WBC or WBO most likely first title opportunity.' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
-      <SectionHeader icon="🗂️" title="Promoter Pipeline" subtitle="Fight pipeline and promotional strategy with Matchroom Boxing." />
+      <SectionHeader icon="🗂️" title="Promoter Pipeline" subtitle="Fight pipeline and promotional strategy with Titan Promotions." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Current Promoter" value="Matchroom" sub="Eddie Hearn" color="red" />
+        <StatCard label="Current Promoter" value="Titan" sub="Jack Sterling" color="red" />
         <StatCard label="Fights Left" value="3" sub="On current deal" color="blue" />
         <StatCard label="Next Fight" value="£800k" sub="vs Stoyan — signed" color="green" />
         <StatCard label="Title Shot" value="2027" sub="Projected timeline" color="yellow" />
@@ -4880,14 +4852,13 @@ function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session:
   const intel = [
     { source: 'Industry contact (Top Rank)', date: 'Apr 3, 2026', content: 'Stoyan\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Yoel Bermudez loss closely. Stoyan has been sparring with Ezekiel Onyeka to simulate a taller, more technical opponent.' },
     { source: 'Boxing Scene report', date: 'Apr 2, 2026', content: 'WBC expected to order eliminator between #3 and #5 if Stoyan loses. This means a Marcus win could skip the eliminator stage entirely and go straight to mandatory position, depending on how WBC executive committee votes.' },
-    { source: 'Matchroom insider', date: 'Apr 1, 2026', content: 'Eddie Hearn has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Queensberry for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
+    { source: 'Titan insider', date: 'Apr 1, 2026', content: 'Jack Sterling has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Queensberry for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
     { source: 'Meridian Sports analytics team', date: 'Mar 28, 2026', content: 'Marcus Cole fight content is trending 34% higher engagement than this time last year. Meridian Sports very keen on building toward a PPV headliner — willing to increase marketing spend if Stoyan fight delivers.' },
     { source: 'BBBofC source', date: 'Mar 25, 2026', content: 'Referee for Stoyan fight expected to be Marcus McDonnell. He tends to let fighters work inside and breaks clinches quickly — advantages Marcus\'s boxing ability over Stoyan\'s mauling style.' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🕵️" title="Agent Intel" subtitle="Confidential intelligence from industry sources and contacts." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -4980,7 +4951,6 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🌅" title="AI Morning Briefing" subtitle="AI-generated structured daily briefing for Marcus and team." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5061,7 +5031,6 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🎯" title="Opposition Scout" subtitle="Active scouting reports on current and potential future opponents." />
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -5148,7 +5117,6 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📺" title="Broadcast Tracker" subtitle="Fight broadcasts, viewership data, and platform analytics." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5205,7 +5173,7 @@ function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; sessio
   const news = [
     { date: 'Apr 4, 2026', headline: 'WBC to order eliminator between #3 and #5 by end of summer', source: 'Boxing Scene', relevance: 'Direct', summary: 'If Marcus beats Stoyan and takes the #3 spot, he could be in line for a mandatory eliminator by Q4 2026. The WBC executive committee will vote at their May convention.' },
     { date: 'Apr 3, 2026', headline: 'Brennan considering retirement after Yang fight', source: 'Apex Sports Network', relevance: 'High', summary: 'If Brennan retires, the WBC title could become vacant, significantly accelerating the path to a title shot for top contenders including Marcus.' },
-    { date: 'Apr 2, 2026', headline: 'Meridian Sports signs new multi-year deal with Matchroom Boxing', source: 'Variety', relevance: 'Medium', summary: 'Extended partnership ensures Marcus\'s fights will continue to be broadcast on Meridian Sports. The deal includes increased investment in fighter promotion and marketing.' },
+    { date: 'Apr 2, 2026', headline: 'Meridian Sports signs new multi-year deal with Titan Promotions', source: 'Variety', relevance: 'Medium', summary: 'Extended partnership ensures Marcus\'s fights will continue to be broadcast on Meridian Sports. The deal includes increased investment in fighter promotion and marketing.' },
     { date: 'Apr 1, 2026', headline: 'Saudi Arabia PIF exploring heavyweight boxing investments', source: 'Financial Times', relevance: 'Medium', summary: 'Saudi PIF reportedly looking to host major heavyweight fights in 2026-2027. Could create lucrative site fee opportunities for top contenders.' },
     { date: 'Mar 30, 2026', headline: 'IBF mandates Wright vs Babic by June 2026', source: 'Ring Magazine', relevance: 'Low', summary: 'IBF forces mandatory defence. While Marcus is IBF #12, this fight could reshuffle the top 10 and create movement opportunities.' },
     { date: 'Mar 28, 2026', headline: 'UK boxing viewership up 28% year-over-year on Meridian Sports', source: 'Broadcasting Journal', relevance: 'Medium', summary: 'Growing audience for UK boxing benefits Marcus\'s commercial profile. Increased viewership strengthens negotiating position for future PPV events.' },
@@ -5213,7 +5181,6 @@ function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📰" title="Industry News" subtitle="Boxing industry news filtered for relevance to Marcus Cole's career." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -5359,7 +5326,6 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📡" title="GPS Load Monitor" subtitle={`Camp Days 15–${fighter.camp_day} · Lumio Fight Vest · UWB Ring Tracking Active`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5576,7 +5542,6 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🦺" title="GPS Vest Dashboard" subtitle="Lumio Fight Vest hardware management — vests, UWB beacons, sync status" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Vests Active" value="2" sub="of 3 registered" color="green" />
@@ -5720,11 +5685,10 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
   const avgCentre = Math.round(COMPUBOX_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/COMPUBOX_DATA.length);
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
       <div className="flex items-center gap-2.5 rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444430' }}>
         <span>🛰️</span>
-        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gpsringheatmap' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
+        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gps' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Connect %" value={`${Math.round((totalLanded/totalThrown)*100)}%`} sub={`${totalLanded} of ${totalThrown} thrown`} color="red" />
@@ -5969,7 +5933,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
             </div>
           ))}
         </div>
-        <div className="text-xs text-gray-500 mt-3">Press contact: Sarah James, Matchroom — 07xxx</div>
+        <div className="text-xs text-gray-500 mt-3">Press contact: Sarah James, Titan — 07xxx</div>
       </div>
 
       {/* 6. MEDICAL & SAFETY */}
@@ -6028,7 +5992,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
 // ─── ROLE CONFIG ─────────────────────────────────────────────────────────────
 const BOXING_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
   fighter: { label: 'Fighter', icon: '🥊', accent: '#dc2626', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
-  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','gpsvest','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
+  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
   manager: { label: 'Manager', icon: '💼', accent: '#F59E0B', sidebar: ['camp','rankings','mandatory','pathtotitle','pursebid','pursesim','earnings','campcosts','tax','contracts','sponsorships','media','appearances','managerdash','agentintel','promoterpipeline'], hiddenTabs: ['dailytasks'], roundupChannels: ['manager','promoter','sponsor'], message: 'Fights, contracts and commercial view.' },
   promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcast','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
   sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['camp','sponsorships','media'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
@@ -7885,6 +7849,40 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS (CONSOLIDATED) ──────────────────────────────────────────────────────
+// Single sidebar entry with three tabs: Ring Heatmap / Load Monitor / Vest
+// Dashboard. Each tab defers to the existing standalone view component so
+// the underlying data + JSX stays colocated with the original implementation.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function BoxingGpsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const [gpsTab, setGpsTab] = useState<'heatmap'|'load'|'vest'>('heatmap');
+  const tabs: ReadonlyArray<readonly ['heatmap'|'load'|'vest', string]> = [
+    ['heatmap', 'Ring Heatmap'],
+    ['load',    'Load Monitor'],
+    ['vest',    'Vest Dashboard'],
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🛰️" title="GPS" subtitle="Ring heatmap, sparring load, and vest telemetry in one view." />
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {tabs.map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setGpsTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${gpsTab === id ? 'bg-red-600/20 text-red-300 border border-red-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {gpsTab === 'heatmap' && <GpsRingHeatmapView />}
+      {gpsTab === 'load'    && <GPSLoadMonitorView fighter={fighter} session={session} />}
+      {gpsTab === 'vest'    && <GPSVestDashboardView fighter={fighter} session={session} />}
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── GPS & RING HEATMAP VIEW ──────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function GpsRingHeatmapView() {
@@ -8225,7 +8223,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
     }
   }, [toastDismissed]);
 
-  const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'INTEGRATIONS'];
+  const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'SETTINGS'];
 
   const renderView = () => {
     switch (activeSection) {
@@ -8235,7 +8233,6 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
       case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
       case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
-      case 'gpsringheatmap':  return <GpsRingHeatmapView />;
       case 'fightcamp':       return <FightCampView fighter={fighter} session={session} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
       case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
@@ -8276,8 +8273,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'opscout':         return <OppositionScoutView fighter={fighter} session={session} />;
       case 'broadcast':       return <BroadcastTrackerView fighter={fighter} session={session} />;
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
-      case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
-      case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
+      case 'gps':             return <BoxingGpsView fighter={fighter} session={session} />;
       case 'findpro':         return <FindProView fighter={fighter} session={session} />;
       case 'travel':          return <BoxingTravelView fighter={fighter} session={session} />;
       case 'settings':        return (
