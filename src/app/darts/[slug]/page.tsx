@@ -8874,20 +8874,20 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           profile={{
             name: 'Full Name',
             tour: 'Tour',
-            tourValue: 'PDC Professional',
+            tourValue: isDemoOuter ? 'PDC Professional' : undefined,
             ranking: 'Ranking',
-            rankingValue: `#${player.pdcRank}`,
+            rankingValue: isDemoOuter ? `#${player.pdcRank}` : undefined,
             coach: 'Coach',
-            coachValue: player.coach,
+            coachValue: isDemoOuter ? player.coach : undefined,
             agent: 'Manager',
-            agentValue: player.manager,
+            agentValue: isDemoOuter ? player.manager : undefined,
             playerIdLabel: 'PDC Player ID',
             staffInviteRoles: ['Coach','Manager','Physio','Sports Psychologist','Admin'],
           }}
           configFields={[
             { id: 'pdcId', label: 'PDC Player ID', description: 'For live ranking and tour data', kind: 'text', placeholder: 'e.g. PDC-0019' },
-            { id: 'boardSetup', label: 'Board Setup', kind: 'select', options: ['Vanta Sports','Target Pro','Precision'], defaultValue: 'Vanta Sports' },
-            { id: 'dartWeight', label: 'Dart Weight Preference', kind: 'select', options: ['21g','22g','23g','24g','25g','26g'], defaultValue: player.dartSetup?.barrelWeight || '23g' },
+            { id: 'boardSetup', label: 'Board Setup', kind: 'select', options: ['Vanta Sports','Target Pro','Precision'], defaultValue: isDemoOuter ? 'Vanta Sports' : '' },
+            { id: 'dartWeight', label: 'Dart Weight Preference', kind: 'select', options: ['21g','22g','23g','24g','25g','26g'], defaultValue: isDemoOuter ? (player.dartSetup?.barrelWeight || '23g') : '' },
           ]}
           integrationGroups={[
             {
