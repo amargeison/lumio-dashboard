@@ -10147,19 +10147,19 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
           profile={{
             name: 'Full Name',
             tour: 'Tour / Circuit',
-            tourValue: `${player.tour} Tour`,
+            tourValue: isFoundingMember ? undefined : `${player.tour} Tour`,
             ranking: 'Ranking',
-            rankingValue: `#${player.ranking}`,
+            rankingValue: isFoundingMember ? undefined : `#${player.ranking}`,
             coach: 'Coach',
-            coachValue: player.coach,
+            coachValue: isFoundingMember ? undefined : player.coach,
             agent: 'Agent',
-            agentValue: player.agent,
+            agentValue: isFoundingMember ? undefined : player.agent,
             playerIdLabel: 'ATP/WTA Player ID',
             staffInviteRoles: ['Coach','Physio','Agent','Fitness Trainer','Mental Coach','Admin'],
           }}
           configFields={[
             { id: 'atpwtaId', label: 'ATP/WTA Player ID', description: 'For live ranking and draw data', kind: 'text', placeholder: 'e.g. atpR123' },
-            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Player tracking system', kind: 'select', options: ['None','PlayerData EDGE Air (recommended)','PlayerData EDGE Pro (with live data)','STATSports APEX (legacy — manual sync)','Catapult One (legacy — manual sync)','CSV Upload (manual)'], defaultValue: 'None' },
+            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Player tracking system', kind: 'select', options: ['None','PlayerData EDGE Air (recommended)','PlayerData EDGE Pro (with live data)','STATSports APEX (legacy — manual sync)','Catapult One (legacy — manual sync)','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
           ]}
           integrationGroups={[
             {

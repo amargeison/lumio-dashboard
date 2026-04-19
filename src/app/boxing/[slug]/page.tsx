@@ -7869,20 +7869,20 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
           profile={{
             name: 'Full Name',
             tour: 'Tour',
-            tourValue: 'Professional Boxing',
+            tourValue: isFoundingMember ? undefined : 'Professional Boxing',
             ranking: 'Ranking',
-            rankingValue: `WBC #${fighter.rankings.wbc} / WBA #${fighter.rankings.wba} / WBO #${fighter.rankings.wbo} / IBF #${fighter.rankings.ibf}`,
+            rankingValue: isFoundingMember ? undefined : `WBC #${fighter.rankings.wbc} / WBA #${fighter.rankings.wba} / WBO #${fighter.rankings.wbo} / IBF #${fighter.rankings.ibf}`,
             coach: 'Trainer',
-            coachValue: fighter.trainer,
+            coachValue: isFoundingMember ? undefined : fighter.trainer,
             agent: 'Manager',
-            agentValue: fighter.manager,
+            agentValue: isFoundingMember ? undefined : fighter.manager,
             playerIdLabel: 'BoxRec Fighter ID',
             staffInviteRoles: ['Trainer','Cutman','Strength Coach','Nutritionist','Physio','Manager'],
           }}
           configFields={[
             { id: 'boxrecId', label: 'BoxRec Fighter ID', description: 'For live ranking and fight history', kind: 'text', placeholder: 'e.g. BR-000001' },
-            { id: 'weightClass', label: 'Weight Class', kind: 'select', options: ['Heavyweight','Cruiserweight','Light Heavyweight','Super Middleweight','Middleweight','Super Welterweight','Welterweight','Super Lightweight','Lightweight','Super Featherweight','Featherweight','Super Bantamweight','Bantamweight','Super Flyweight','Flyweight','Minimumweight'], defaultValue: fighter.weight_class },
-            { id: 'sanctioning', label: 'Sanctioning Body Preference', kind: 'checkboxGroup', options: ['WBC','WBA','WBO','IBF'], defaultValue: ['WBC','WBA','WBO','IBF'] },
+            { id: 'weightClass', label: 'Weight Class', kind: 'select', options: ['Heavyweight','Cruiserweight','Light Heavyweight','Super Middleweight','Middleweight','Super Welterweight','Welterweight','Super Lightweight','Lightweight','Super Featherweight','Featherweight','Super Bantamweight','Bantamweight','Super Flyweight','Flyweight','Minimumweight'], defaultValue: isFoundingMember ? '' : fighter.weight_class },
+            { id: 'sanctioning', label: 'Sanctioning Body Preference', kind: 'checkboxGroup', options: ['WBC','WBA','WBO','IBF'], defaultValue: isFoundingMember ? [] : ['WBC','WBA','WBO','IBF'] },
           ]}
           integrationGroups={[
             {

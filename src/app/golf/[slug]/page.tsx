@@ -6309,19 +6309,19 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           profile={{
             name: 'Full Name',
             tour: 'Tour / Circuit',
-            tourValue: player.tour,
+            tourValue: isFoundingMember ? undefined : player.tour,
             ranking: 'Ranking',
-            rankingValue: `OWGR #${player.owgr}`,
+            rankingValue: isFoundingMember ? undefined : `OWGR #${player.owgr}`,
             coach: 'Coach',
-            coachValue: player.coach,
+            coachValue: isFoundingMember ? undefined : player.coach,
             agent: 'Agent',
-            agentValue: player.agent,
+            agentValue: isFoundingMember ? undefined : player.agent,
             playerIdLabel: 'OWGR Player ID',
             staffInviteRoles: ['Coach','Short Game Coach','Caddie','Physio','Agent','Fitness Trainer','Mental Coach','Admin'],
           }}
           configFields={[
             { id: 'owgrId', label: 'OWGR Player ID', description: 'For live ranking and tournament data', kind: 'text', placeholder: 'e.g. 12345' },
-            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','TrackMan','ShotScope','Garmin','Arccos','PlayerData EDGE Air','CSV Upload (manual)'], defaultValue: 'None' },
+            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','TrackMan','ShotScope','Garmin','Arccos','PlayerData EDGE Air','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
           ]}
           integrationGroups={[
             {
