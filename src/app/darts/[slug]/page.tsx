@@ -211,6 +211,7 @@ const SIDEBAR_ITEMS = [
   { id: 'morning',         label: 'Morning Briefing',   icon: '🌅', group: 'OVERVIEW'     },
   { id: 'performance',     label: 'Performance',        icon: '📈', group: 'PERFORMANCE'  },
   { id: 'dartcam',         label: 'Dart Cam & Analytics', icon: '🎯', group: 'PERFORMANCE'  },
+  { id: 'dartboard-heatmap', label: 'Dartboard Heatmap', icon: '🎯', group: 'PERFORMANCE'  },
   { id: 'practice',        label: 'Practice',           icon: '📋', group: 'PERFORMANCE'  },
   { id: 'schedule',        label: 'Tournament Sched',   icon: '🗓️', group: 'MATCH'        },
   { id: 'live-scores',     label: 'Live Scores',        icon: '🔴', group: 'MATCH'        },
@@ -1078,8 +1079,8 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
                     {/* ── Step 6: Team ── */}
                     {step.preview === 'team' && (<>
-                      <h2 className="text-xl font-black text-white mb-2">Your team. Always in the loop.</h2>
-                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Manager, coach, physio, agent, equipment sponsor — all connected. Message your whole team in one tap. Everyone sees what they need to see.</p>
+                      <h2 className="text-xl font-black text-white mb-2">Your team. Everyone sees their own view.</h2>
+                      <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your whole team connected — but each role gets their own tailored view. Your coach, physio, sponsor and agent see only what&apos;s relevant to them. You control what each role can see.</p>
                       <div className="space-y-2 mb-4">
                         {[
                           { name:'Dave Askew', role:'Manager', status:'Confirmed travel to Dortmund', color:'#dc2626' },
@@ -1096,6 +1097,27 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                             <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                           </div>
                         ))}
+                      </div>
+                      <div className="mt-4 mb-3">
+                        <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>Everyone gets their own view</div>
+                        <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Your coach sees training & tactical data. Your physio sees medical & recovery only. Your sponsor sees brand activation & ROI. Your agent sees contracts & commercials. You stay in control — switch role any time from the bottom of the sidebar.</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { icon:'🎯', role:'Player view',        desc:'Full access — everything',           color:'#dc2626' },
+                            { icon:'📋', role:'Coach view',         desc:'Training, tactics, performance',     color:'#22C55E' },
+                            { icon:'⚕️', role:'Medical / Physio',   desc:'Injury log, load, recovery only',    color:'#EF4444' },
+                            { icon:'🤝', role:'Sponsor / Partner',  desc:'Brand visibility, obligations, ROI', color:'#F59E0B' },
+                            { icon:'💼', role:'Agent / Manager',    desc:'Contracts, commercials, schedule',   color:'#0ea5e9' },
+                          ].map((v, i) => (
+                            <div key={i} className="flex items-center gap-2 rounded-lg p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+                              <span className="text-base flex-shrink-0">{v.icon}</span>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-white truncate">{v.role}</div>
+                                <div className="text-[10px] truncate" style={{ color: v.color }}>{v.desc}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                       <div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
                         <span>📨</span> <span style={{ color: '#9CA3AF' }}>Your agent gets auto-briefed every Monday. Sponsor posts go out with one click.</span>
@@ -9009,7 +9031,6 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
     { id: 'merit-forecaster',  label: 'Points Forecaster' },
     { id: 'averages',          label: '3-Dart Average' },
     { id: 'advanced-stats',    label: 'Advanced Stats' },
-    { id: 'dartboard-heatmap', label: 'Dartboard Heatmap' },
     { id: 'checkout',          label: 'Checkout Analysis' },
     { id: 'matchreports',      label: 'Match Reports' },
     { id: 'practicelog',       label: 'Practice Log' },
@@ -9027,7 +9048,6 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
       case 'merit-forecaster':  return <MeritForecasterView player={player} session={session} />;
       case 'averages':          return <ThreeDartAverageView player={player} onNavigate={onNavigate} session={session} />;
       case 'advanced-stats':    return <AdvancedStatsView player={player} session={session} />;
-      case 'dartboard-heatmap': return <DartboardHeatmapView player={player} session={session} />;
       case 'checkout':          return <CheckoutAnalysisView onNavigate={onNavigate} player={player} session={session} />;
       case 'matchreports':      return <MatchReportsView onNavigate={onNavigate} player={player} session={session} />;
       case 'practicelog':       return <PracticeLogView onNavigate={onNavigate} player={player} session={session} />;
@@ -9939,6 +9959,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             { key: 'morning', label: 'Morning Briefing', emoji: '🌅' },
             { key: 'performance', label: 'Performance', emoji: '📈' },
             { key: 'dartcam', label: 'Dart Cam & Analytics', emoji: '🎯' },
+            { key: 'dartboard-heatmap', label: 'Dartboard Heatmap', emoji: '🎯' },
             { key: 'schedule', label: 'Tournament Schedule', emoji: '🗓️' },
             { key: 'match-prep', label: 'Match Prep', emoji: '⚡' },
             { key: 'opponentintel', label: 'Opponent Intel', emoji: '🔍' },
