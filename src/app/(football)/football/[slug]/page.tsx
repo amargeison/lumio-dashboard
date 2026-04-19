@@ -6358,15 +6358,27 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
   )
 }
 
+// Slug → demo-club display name. Slugs not in this map fall through to the
+// existing 'Lumio Sports FC' default (which is the passcoded demo persona).
+// Same fix pattern as yesterday's founder-name leaks: the route slug is the
+// source of truth for the persona, NOT a hardcoded literal.
+const FOOTBALL_SLUG_CLUB_NAMES: Record<string, string> = {
+  'oakridge-fc': 'Oakridge FC',
+}
+function defaultClubNameForSlug(slug: string): string {
+  return FOOTBALL_SLUG_CLUB_NAMES[slug] ?? 'Lumio Sports FC'
+}
+
 function FootballDashboardInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
-  void slug
+  void session
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
+    const fallback = defaultClubNameForSlug(slug)
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('football_club_name') || 'Lumio Sports FC'
+      return localStorage.getItem('football_club_name') || fallback
     }
-    return 'Lumio Sports FC'
+    return fallback
   })
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -6481,7 +6493,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   }
 
   useEffect(() => {
-    const name = localStorage.getItem('football_club_name') || 'Lumio Sports FC'
+    const name = localStorage.getItem('football_club_name') || defaultClubNameForSlug(slug)
     const user = localStorage.getItem('football_user_name') || localStorage.getItem('workspace_user_name') || ''
     setClubName(name)
     setUserName(user)

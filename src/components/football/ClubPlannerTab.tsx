@@ -24,10 +24,10 @@ function OneYear() {
       <SH text="Season Objectives (2025/26)" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {[
-          { icon: '🏆', title: 'Finish top 4 in league', current: 'Current: 6th', pct: 60, status: 'On Track', sc: C.amber },
-          { icon: '💰', title: 'Reduce wage ratio to <58%', current: 'Current: 62%', pct: 40, status: 'Behind', sc: C.red },
-          { icon: '👥', title: 'Sign 3 quality additions', current: '1 of 3 signed', pct: 33, status: 'In Progress', sc: C.amber },
-          { icon: '🏟️', title: 'Complete West Stand repairs', current: 'Works ongoing', pct: 80, status: 'On Track', sc: C.green },
+          { icon: '🏆', title: 'Finish top 6 in Championship', current: 'Current: 6th', pct: 65, status: 'On Track', sc: C.green },
+          { icon: '💰', title: 'Keep wage ratio below 65%', current: 'Current: 67%', pct: 40, status: 'Behind', sc: C.red },
+          { icon: '👥', title: 'Sign 3 quality January additions', current: '1 of 3 signed', pct: 33, status: 'In Progress', sc: C.amber },
+          { icon: '🏟️', title: 'Complete East Stand expansion prep', current: 'Phase 1 enabling works on schedule', pct: 70, status: 'On Track', sc: C.green },
         ].map(g => (
           <Card key={g.title}>
             <div className="flex items-start gap-3 mb-3">
@@ -52,10 +52,10 @@ function OneYear() {
           </tr></thead>
           <tbody>
             {[
-              { r: 'Striker', t: 'Clinical finisher, U26, 15+ goals/season', b: '£150K', p: '🔴 High', s: 'Searching' },
-              { r: 'CM', t: 'Box-to-box, high press, U24', b: '£95K', p: '🔴 High', s: 'Shortlist of 3' },
-              { r: 'RB', t: 'Attack-minded, set piece delivery', b: '£65K', p: '🟡 Med', s: 'Scouting' },
-              { r: 'GK (backup)', t: 'Experienced, 25-30, solid', b: '£40K', p: '🟢 Low', s: 'Monitoring' },
+              { r: 'Striker', t: 'Clinical finisher, U28, 15+ goals/season, proven Championship', b: '£6M', p: '🔴 High', s: 'Shortlist of 3' },
+              { r: 'CM', t: 'Box-to-box, high press, U26, Championship or top-tier Euro', b: '£4M', p: '🔴 High', s: 'Shortlist of 3' },
+              { r: 'RB', t: 'Attack-minded, set-piece delivery, U28', b: '£2.5M', p: '🟡 Med', s: 'Scouting' },
+              { r: 'GK (backup)', t: 'Experienced, 28-32, solid Championship', b: 'Loan / £800K', p: '🟢 Low', s: 'Monitoring' },
             ].map(row => (
               <tr key={row.r} style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td className="py-2 px-3 font-bold" style={{ color: C.text }}>{row.r}</td>
@@ -67,7 +67,7 @@ function OneYear() {
             ))}
           </tbody>
         </table>
-        <p className="text-[10px] mt-3 px-3" style={{ color: C.muted }}>Budget remaining: £350K · Max spend: £500K</p>
+        <p className="text-[10px] mt-3 px-3" style={{ color: C.muted }}>Budget remaining: £8.7M · Max spend: £15M (PSR-compliant headroom)</p>
       </Card>
 
       <SH text="Key Milestones Timeline" />
@@ -75,18 +75,18 @@ function OneYear() {
         <div className="relative pl-6">
           <div className="absolute left-[7px] top-0 bottom-0 w-px" style={{ backgroundColor: C.border }} />
           {[
-            'Apr 2025 — West Stand inspection',
+            'Apr 2025 — East Stand expansion masterplan submitted',
             'May 2025 — End of season review + contract decisions',
-            'Jun 2025 — Summer window opens',
-            'Jul 2025 — Pre-season begins (3 signings target)',
-            'Aug 2025 — 2025/26 season kicks off',
-            'Sep 2025 — Q1 financial review',
-            'Oct 2025 — Academy EPPP re-assessment',
+            'Jun 2025 — Summer window opens (budget: £15M)',
+            'Jul 2025 — Pre-season begins (3 quality signings target)',
+            'Aug 2025 — 2025/26 Championship season kicks off',
+            'Sep 2025 — Q1 financial review · PSR self-assessment',
+            'Oct 2025 — Academy EPPP Cat 2 → Cat 1 progression review',
             'Nov 2025 — Mid-season board review',
             'Dec 2025 — Winter window planning',
-            'Jan 2026 — Winter window (budget: £80K)',
+            'Jan 2026 — Winter window (budget: £8M)',
             'Mar 2026 — Financial year-end',
-            'Apr 2026 — Season run-in, top-4 push',
+            'Apr 2026 — Season run-in, top-6 / play-off push',
           ].map((m, i) => (
             <div key={i} className="relative flex items-start gap-4 pb-3">
               <div className="absolute left-[-18px] w-3 h-3 rounded-full" style={{ backgroundColor: i < 2 ? C.teal : C.border, border: `2px solid ${C.card}`, top: 3 }} />
@@ -104,13 +104,13 @@ function OneYear() {
           </tr></thead>
           <tbody>
             {[
-              { m: 'Total Revenue', a: '£8.2M', t: '£9.1M', ch: '▲+11%', ok: true },
-              { m: 'Wage Bill', a: '£2.52M', t: '£2.45M', ch: '▼-3%', ok: true },
-              { m: 'Wage Ratio', a: '62%', t: '58%', ch: '▼-4pts', ok: true },
-              { m: 'Matchday Revenue', a: '£480K', t: '£560K', ch: '▲+17%', ok: true },
-              { m: 'Commercial Income', a: '£270K', t: '£340K', ch: '▲+26%', ok: true },
-              { m: 'Net Transfer Spend', a: '-£2.1M', t: '-£500K', ch: 'Reduced', ok: true },
-              { m: 'Operating Profit', a: '£160K', t: '£420K', ch: '▲+163%', ok: true },
+              { m: 'Total Revenue', a: '£35M', t: '£38M', ch: '▲+9%', ok: true },
+              { m: 'Wage Bill', a: '£23.4M', t: '£24M', ch: '▲+3%', ok: true },
+              { m: 'Wage Ratio', a: '67%', t: '63%', ch: '▼-4pts', ok: true },
+              { m: 'Matchday Revenue', a: '£8.6M', t: '£9.4M', ch: '▲+9%', ok: true },
+              { m: 'Commercial Income', a: '£6.2M', t: '£7.1M', ch: '▲+15%', ok: true },
+              { m: 'Net Transfer Spend', a: '-£12M', t: '-£8M', ch: 'Trimmed', ok: true },
+              { m: 'Operating Surplus', a: '£1.5M', t: '£2.0M', ch: '▲+33%', ok: true },
             ].map(r => (
               <tr key={r.m} style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td className="py-2 px-3" style={{ color: C.text }}>{r.m}</td>
@@ -138,7 +138,7 @@ function ThreeYear() {
   return (
     <div className="space-y-5">
       <Card className="text-center">
-        <p className="text-sm italic leading-relaxed" style={{ color: C.gold }}>&ldquo;To establish Oakridge FC as a consistently competitive force in the top tier of non-league football, with a self-sustaining model built on academy talent, commercial growth, and a stadium fit for promotion.&rdquo;</p>
+        <p className="text-sm italic leading-relaxed" style={{ color: C.gold }}>&ldquo;To position Oakridge FC for promotion to the Premier League by 2028-29, with a squad, academy, and commercial base built to thrive in the top flight.&rdquo;</p>
       </Card>
 
       <SH text="3-Year KPI Roadmap" />
@@ -149,14 +149,14 @@ function ThreeYear() {
           </tr></thead>
           <tbody>
             {[
-              ['League Target', 'Top 4', 'Top 2 / Playoff', 'Promoted'],
-              ['Revenue Target', '£9.1M', '£11.2M', '£14.8M'],
-              ['Wage Ratio', '58%', '55%', '52%'],
-              ['Avg Attendance', '4,600', '5,100', '5,800'],
-              ['Season Tickets', '2,100', '2,600', '3,200'],
-              ['Squad Value', '£26M', '£31M', '£38M'],
-              ['Academy grads in XI', '3', '5', '7'],
-              ['Stadium capacity', '6,000', '6,000', '7,500'],
+              ['League Target', 'Top 6 (playoff push)', 'Top 2 / Playoff', 'Promoted'],
+              ['Revenue Target', '£38M', '£41M', '£52M'],
+              ['Wage Ratio', '63%', '63%', '65% (promotion-window spike)'],
+              ['Avg Attendance', '22,500', '23,200', '24,800'],
+              ['Season Tickets', '14,200', '15,600', '17,800'],
+              ['Squad Value', '£38M', '£52M', '£78M'],
+              ['Academy grads in XI', '3', '4', '5'],
+              ['Stadium capacity', '24,000 (current)', '25,500 (Phase 1 complete)', '28,500 (Phase 2 in build)'],
             ].map(row => (
               <tr key={row[0]} style={{ borderBottom: `1px solid ${C.border}` }}>
                 {row.map((cell, i) => <td key={i} className="py-2 px-3" style={{ color: i === 0 ? C.text : i === 3 ? C.teal : C.muted, fontWeight: i === 3 ? 700 : 400 }}>{cell}</td>)}
@@ -169,9 +169,9 @@ function ThreeYear() {
       <SH text="Investment Priorities" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {[
-          { t: 'Playing Squad', items: ['Year 1: £500K (3 signings)', 'Year 2: £750K (4 signings)', 'Year 3: £1.2M (marquee signing)'], total: '£2.45M' },
-          { t: 'Infrastructure', items: ['Year 1: £88K (West Stand, CCTV)', 'Year 2: £320K (East Stand planning)', 'Year 3: £1.8M (East Stand build)'], total: '£2.2M' },
-          { t: 'Commercial & Academy', items: ['Year 1: £45K (new kit deal)', 'Year 2: £120K (sponsors, streaming)', 'Year 3: £200K (hospitality expansion)'], total: '£365K + £320K/yr academy' },
+          { t: 'Playing Squad', items: ['Year 1: £15M (3 quality signings)', 'Year 2: £18M (4 signings + youth bonuses)', 'Year 3: £25M (promotion-window marquee)'], total: '£58M' },
+          { t: 'Infrastructure', items: ['Year 1: £450K (Phase 1 enabling works)', 'Year 2: £8M (East Stand redevelopment)', 'Year 3: £18M (North Stand promotion-year build)'], total: '£26.5M' },
+          { t: 'Commercial & Academy', items: ['Year 1: £1.5M (kit deal renewal)', 'Year 2: £3M (sponsors, streaming, training-ground upgrade)', 'Year 3: £4M (hospitality boxes + Cat 1 academy push)'], total: '£8.5M + £2.5M/yr academy' },
         ].map(col => (
           <Card key={col.t}>
             <p className="text-xs font-bold mb-3" style={{ color: C.text }}>{col.t}</p>
@@ -201,10 +201,10 @@ function ThreeYear() {
       <SH text="Promotion Pathway" />
       <div className="flex items-center gap-2 flex-wrap">
         {[
-          { y: '2024/25', s: 'Top 6', st: '✅', c: C.green },
-          { y: '2025/26', s: 'Top 4', st: '🎯', c: C.amber },
+          { y: '2024/25', s: 'Top 8 (Championship)', st: '✅', c: C.green },
+          { y: '2025/26', s: 'Top 6 / Playoff push', st: '🎯', c: C.amber },
           { y: '2026/27', s: 'Top 2 / Playoff', st: '🎯', c: C.amber },
-          { y: '2027/28', s: 'PROMOTED', st: '🏆', c: C.gold },
+          { y: '2027/28', s: 'PROMOTED to PL', st: '🏆', c: C.gold },
         ].map((step, i) => (
           <div key={step.y} className="flex items-center gap-2">
             <div className="rounded-xl px-4 py-3 text-center" style={{ backgroundColor: `${step.c}10`, border: `1px solid ${step.c}40`, minWidth: 120 }}>
@@ -222,25 +222,26 @@ function ThreeYear() {
 // ─── 5 Year ──────────────────────────────────────────────────────────────────
 
 function FiveYear() {
-  const revData = [{ y: '25/26', v: 9.1 }, { y: '26/27', v: 11.2 }, { y: '27/28', v: 14.8 }, { y: '28/29', v: 18.4 }, { y: '29/30', v: 22.6 }]
-  const max = 25
+  const revData = [{ y: '25/26', v: 38 }, { y: '26/27', v: 41 }, { y: '27/28', v: 52 }, { y: '28/29', v: 108 }, { y: '29/30', v: 138 }]
+  const max = 150
   return (
     <div className="space-y-5">
       <Card className="text-center">
-        <p className="text-lg font-black" style={{ color: C.gold }}>Oakridge FC — From Non-League to Football League by 2030</p>
+        <p className="text-lg font-black" style={{ color: C.gold }}>Oakridge FC &mdash; From Championship to Established Premier League Club by 2030</p>
       </Card>
 
       <SH text="5-Year Revenue Forecast" />
       <Card>
         <div className="flex items-end gap-4 justify-center" style={{ height: 200 }}>
-          {revData.map(d => (
+          {revData.map((d, i) => (
             <div key={d.y} className="flex flex-col items-center flex-1">
               <span className="text-xs font-bold mb-1" style={{ color: C.text }}>£{d.v}M</span>
-              <div className="w-full rounded-t" style={{ height: (d.v / max) * 170, backgroundColor: C.teal, maxWidth: 60 }} />
+              <div className="w-full rounded-t" style={{ height: (d.v / max) * 170, backgroundColor: i >= 3 ? C.gold : C.teal, maxWidth: 60 }} />
               <span className="text-[10px] mt-2" style={{ color: C.muted }}>{d.y}</span>
             </div>
           ))}
         </div>
+        <p className="text-[10px] mt-3 text-center" style={{ color: C.muted }}>27/28 → 28/29 step is the Premier League TV-money jump on promotion.</p>
       </Card>
 
       <Card>
@@ -249,7 +250,7 @@ function FiveYear() {
             {['', '25/26', '26/27', '27/28', '28/29', '29/30'].map(h => <th key={h} className="text-left py-2 px-2 font-semibold" style={{ color: C.muted }}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {[['Revenue', '£9.1M', '£11.2M', '£14.8M', '£18.4M', '£22.6M'], ['Costs', '£8.7M', '£10.1M', '£12.9M', '£15.2M', '£18.1M'], ['Net', '+£0.4M', '+£1.1M', '+£1.9M', '+£3.2M', '+£4.5M']].map(row => (
+            {[['Revenue', '£38M', '£41M', '£52M', '£108M', '£138M'], ['Costs', '£24M', '£26M', '£34M', '£68M', '£85M'], ['Net', '+£14M', '+£15M', '+£18M', '+£40M', '+£53M']].map(row => (
               <tr key={row[0]} style={{ borderBottom: `1px solid ${C.border}` }}>
                 {row.map((c, i) => <td key={i} className="py-2 px-2" style={{ color: row[0] === 'Net' ? C.green : i === 0 ? C.text : C.muted, fontWeight: row[0] === 'Net' ? 700 : 400 }}>{c}</td>)}
               </tr>
@@ -281,12 +282,12 @@ function FiveYear() {
             ))}
           </tbody>
         </table>
-        <p className="text-xs mt-3 px-3 font-bold" style={{ color: C.teal }}>Projected academy value by 2030: £4.2M</p>
+        <p className="text-xs mt-3 px-3 font-bold" style={{ color: C.teal }}>Projected academy value by 2030: £35M (Cat 1 sales pipeline)</p>
       </Card>
 
       <SH text="Commercial Growth Strategy" />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        {[{ t: 'Kit deal renewal 2026', v: '£180K/yr target', s: '🎯 Planned' }, { t: 'Hospitality boxes (12) 2028', v: '£240K/yr target', s: '🎯 Planned' }, { t: 'Streaming/digital 2027', v: '£60K/yr target', s: '🔄 Exploring' }, { t: 'Community grants', v: '£85K/yr target', s: '✅ Active' }].map(g => (
+        {[{ t: 'Kit deal renewal 2026', v: '£4M/yr target', s: '🎯 Planned' }, { t: 'Hospitality boxes (28) 2028', v: '£3.2M/yr target', s: '🎯 Planned' }, { t: 'Streaming / digital 2027', v: '£1.5M/yr target', s: '🔄 Exploring' }, { t: 'Community foundation', v: '£600K/yr target', s: '✅ Active' }].map(g => (
           <Card key={g.t}><p className="text-xs font-bold" style={{ color: C.text }}>{g.t}</p><p className="text-[10px] mt-1" style={{ color: C.muted }}>{g.v}</p><p className="text-[10px] mt-1" style={{ color: C.teal }}>{g.s}</p></Card>
         ))}
       </div>
