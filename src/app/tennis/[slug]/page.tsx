@@ -1034,7 +1034,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     : ''
   const displayPlayerPhoto = isPlayerRole
     ? (isDemoShellDash
-        ? (profilePhotoLive || session.photoDataUrl || '/alex_rivera.svg')
+        ? (profilePhotoLive || session.photoDataUrl || '/alex_rivera.jpg')
         : (session.photoDataUrl?.trim() || null))
     : null
   const firstName = displayPlayerName.split(' ')[0] || 'Alex'
@@ -1609,7 +1609,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
                         style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
                         {(() => {
-                          const p = profilePhotoLive || session.photoDataUrl || (isDemoShellDash ? '/alex_rivera.svg' : '');
+                          const p = profilePhotoLive || session.photoDataUrl || (isDemoShellDash ? '/alex_rivera.jpg' : '');
                           return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
                         })()}
                       </div>
@@ -6634,7 +6634,7 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
           style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.2) 0%, rgba(13,148,136,0.2) 100%)', border: '1px solid rgba(108,63,197,0.3)' }}>
           {(() => {
             const isDemoShellCard = session?.isDemoShell !== false;
-            const p = profilePhotoLive || session?.photoDataUrl || (isDemoShellCard ? '/alex_rivera.svg' : '');
+            const p = profilePhotoLive || session?.photoDataUrl || (isDemoShellCard ? '/alex_rivera.jpg' : '');
             return p
               ? <img src={p} alt={session?.userName || 'Player'} className="w-full h-full object-cover" style={{ borderRadius: 'inherit' }} />
               : <div className="text-2xl font-black" style={{ color: '#0ea5e9' }}>{(session?.userName || player.name || 'AL').slice(0,2).toUpperCase()}</div>;
