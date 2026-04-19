@@ -102,7 +102,7 @@ const SPORTS: SportPricing[] = [
       { name: 'Tour', price: '£299', period: '/mo', bestFor: 'DP World and PGA Tour professionals', recommended: true, features: ['OWGR tracker with points forecaster', 'Race to Dubai and FedExCup standings', 'Strokes Gained deep-dive (4 categories)', 'Course fit AI across 47+ venues', 'Caddie workflow dashboard', 'Sponsorship manager', 'Prize money ledger and tax tracker', 'AI morning briefing — 4 role views', 'Up to 6 team accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Elite', price: '£599', period: '/mo', bestFor: 'Top 50 OWGR with full management', features: ['All Tour features, plus:', 'Advanced tournament prep packs', 'Full career financial planning', 'Athlete content tracker', 'Priority account manager', 'Custom integrations (Arccos, TrackMan, ShotLink)'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
-    included: ['Demo pre-seeded with OWGR #87 James Harrington', 'Caddie view included in all tiers', 'UK data hosting · GDPR compliant'],
+    included: ['Demo pre-seeded with OWGR #87 James Halton', 'Caddie view included in all tiers', 'UK data hosting · GDPR compliant'],
   },
   {
     id: 'darts', icon: '🎯', label: 'Darts', color: '#EF4444',

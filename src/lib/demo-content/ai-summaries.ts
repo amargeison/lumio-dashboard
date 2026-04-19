@@ -41,13 +41,13 @@ export const DEMO_AI_SUMMARIES: Record<string, Record<string, DemoAISummary>> = 
 
   boxing: {
     dashboard: {
-      summary: "Three weeks into camp for Viktor Petrov on 22 May — the fight that opens up the world title conversation. Jim has the pad rounds running at championship pace and the body-work drills locked in for exactly what Petrov's pressure game gives up. Record is 22-1, 18 KOs, 78% stoppage rate; Petrov is 28-2 with 24 knockouts and a right hand that has hurt every fighter he's put on the floor. Sheffield camp is disciplined, hotel on airplane mode, film study built around closing the two-step jab gap. Matchroom has the three-fight pipeline post-22 May in place — none of which exists if Petrov isn't dealt with. Five weeks. One opponent. One job.",
+      summary: "Three weeks into camp for Maks Stoyan on 22 May — the fight that opens up the world title conversation. Jim has the pad rounds running at championship pace and the body-work drills locked in for exactly what Stoyan's pressure game gives up. Record is 22-1, 18 KOs, 78% stoppage rate; Stoyan is 28-2 with 24 knockouts and a right hand that has hurt every fighter he's put on the floor. Sheffield camp is disciplined, hotel on airplane mode, film study built around closing the two-step jab gap. Matchroom has the three-fight pipeline post-22 May in place — none of which exists if Stoyan isn't dealt with. Five weeks. One opponent. One job.",
       highlights: [
         "WBC ranking: #6 heavyweight, up one this month — win on 22 May opens the mandatory eliminator.",
         "Five years under Jim Bevan: from prospect to top-10 WBC, no wasted rounds.",
         "Sparring power output: +8% on the five-session rolling average; right-hand velocity trending up.",
         "Fight-week Apex Performance billboard shoot at the London HQ — Wed 6 May.",
-        "DAZN pre-fight documentary crew on site from Monday — 3 days filming access cleared.",
+        "Meridian Sports pre-fight documentary crew on site from Monday — 3 days filming access cleared.",
       ],
     },
   },

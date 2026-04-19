@@ -1,5 +1,32 @@
 'use client';
 // TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
+//
+// ─── INVENTED GOLF ROSTER ───────────────────────────────────────────────────
+// All real-world PGA / DP World / LIV player references in this portal have
+// been replaced with invented personas to keep the demo content brand-coherent
+// (matches the Meridian Watches / Halden Motors universe). The founder
+// persona was renamed from "James Harrington" → "James Halton" to avoid
+// surname collision with a real DP World Tour major champion.
+//
+// Roster (32 invented pros — mix of PGA / DP World / LIV flavour):
+//   PGA Tour:       Beau Carstairs, Quinn Marlowe, Davis Hadlow,
+//                   Cameron Whitlock, Wesley Cardoza, Jack Maxwell,
+//                   Bryce Trent, Connor Halverson, Adrián Salinas,
+//                   Lucas Mendel, Dane Hartwell, Andre Pollock
+//   DP World Tour:  Owen Alderton (ENG), Ross Kilbride (IRL),
+//                   Toby Linscott (ENG), Theo Lemaire (FRA),
+//                   Mateusz Kowal (POL), Pieter Verlinden (NED),
+//                   Pascal Renault (FRA), Jaden Pemberton (ENG),
+//                   Ronan Driscoll (IRL)
+//   Scandinavian:   Henrik Tellander (SWE), Niklas Brandt (GER),
+//                   Lars Borg (NOR), Sven Eklund (SWE)
+//   LIV / global:   Felipe Cardenal (ESP), Mateo Vega (ARG),
+//                   Hiroto Yamaguchi (JPN), Kentaro Saito (JPN),
+//                   Marko Vasilev (BUL), Tarik Boushra (MAR),
+//                   Damon Voller (AUS)
+//
+// Broadcaster: Golf Channel / Sky Sports Golf / ESPN are all swapped to
+// "Meridian Sports" (matching the boxing portal's same swap).
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
@@ -147,8 +174,8 @@ const SIDEBAR_ITEMS = [
 // ─── DEMO PLAYER ─────────────────────────────────────────────────────────────
 const DEMO_PLAYER: GolfPlayer = {
   id: 'golfer-demo-001',
-  name: 'James Harrington',
-  slug: 'james-harrington',
+  name: 'James Halton',
+  slug: 'james-halton',
   nationality: 'English',
   flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
   age: 29,
@@ -1844,7 +1871,7 @@ function RoundPrepView({ player, session }: { player: GolfPlayer; session: Sport
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 800,
-          system: 'You are Lumio AI, golf performance analyst for James Harrington (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
+          system: 'You are Lumio AI, golf performance analyst for James Halton (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
           messages: [{
             role: 'user',
             content: `Generate a post-round debrief. Round data: ${JSON.stringify(form)}. Player's season SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Respond ONLY in JSON: { "headline": "one sentence summary", "what_worked": "...", "what_didnt": "...", "practice_focus": "one specific drill or focus for next session", "mindset_note": "one sentence for mental coach" }`,
@@ -2419,9 +2446,9 @@ function OWGRView({ player, session }: { player: GolfPlayer; session: SportsDemo
         <div className="space-y-2">
           {[
             { pos: 1, name: 'R. Hartwell', country: '🇮🇪', pts: 4280, safe: true },
-            { pos: 2, name: 'T. Fleetwood', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', pts: 3840, safe: true },
+            { pos: 2, name: 'R. Kilbride', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', pts: 3840, safe: true },
             { pos: 3, name: 'R. MacIntyre', country: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', pts: 3210, safe: true },
-            { pos: 10, name: 'V. Hovland', country: '🇳🇴', pts: 2140, safe: true },
+            { pos: 10, name: 'H. Tellander', country: '🇳🇴', pts: 2140, safe: true },
             { pos: 43, name: player.name, country: player.flag, pts: player.race_to_dubai_points, safe: false, isPlayer: true },
             { pos: 50, name: 'G. Migliozzi', country: '🇮🇹', pts: 980, safe: false, isCutoff: true },
             { pos: 51, name: 'J. Smith', country: '🇦🇺', pts: 940, safe: false },
@@ -2510,7 +2537,7 @@ function ScheduleOptimiser() {
           system: 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
           messages: [{
             role: 'user',
-            content: 'Optimise the tournament schedule for James Harrington. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: Halden Motors International 8.1, Halden Motors Championship 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: Halden Motors International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
+            content: 'Optimise the tournament schedule for James Halton. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: Halden Motors International 8.1, Halden Motors Championship 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: Halden Motors International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
           }],
         }),
       });
@@ -3063,7 +3090,7 @@ th { background: #eee; text-transform: uppercase; font-size: 9px; letter-spacing
 .notes li { margin: 2px 0 }
 </style></head><body>
 <h1>CADDIE SHEET — Golfclub München Eichenried</h1>
-<div class="sub">James Harrington · Round 1 · Thu 09:42 &nbsp;|&nbsp; ${today}</div>
+<div class="sub">James Halton · Round 1 · Thu 09:42 &nbsp;|&nbsp; ${today}</div>
 <div class="conditions">12mph SW · Soft greens · +1 club adjustments</div>
 <h2>Hole Strategy</h2>
 <table><thead><tr><th>Hole</th><th>Par</th><th>Yardage</th><th>Wind</th><th>Strategy</th><th>Risk</th></tr></thead><tbody>${rows}</tbody></table>
@@ -3388,7 +3415,7 @@ function FinancialView({ player, session }: { player: GolfPlayer; session: Sport
         <div class="bar-track"><div class="bar-fill" style="width:${(b.amount / maxBar) * 100}%"></div></div>
         <div class="bar-val">&pound;${(b.amount / 1000).toFixed(0)}k</div>
       </div>`).join('');
-    w.document.write(`<!doctype html><html><head><title>Financial Summary — James Harrington</title><style>
+    w.document.write(`<!doctype html><html><head><title>Financial Summary — James Halton</title><style>
 @media print { body { margin: 0 } .pb { page-break-before: always } }
 body { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 20px; line-height: 1.4 }
 h1 { font-size: 18px; margin: 0 0 2px; letter-spacing: 0.02em }
@@ -3549,7 +3576,7 @@ function CareerView({ player, session }: { player: GolfPlayer; session: SportsDe
     '10yr': {
       title: '2026–2036 Long Game',
       goals: ['Transition plan from full-time tour to selective schedule by 35', 'Legacy events: Masters and Open invites into senior career', 'Begin senior / Champions Tour eligibility planning'],
-      financial: ['Career earnings target: £15–20M total', 'Coaching, commentary, or academy venture', 'Brand and IP — "James Harrington Golf" academies'],
+      financial: ['Career earnings target: £15–20M total', 'Coaching, commentary, or academy venture', 'Brand and IP — "James Halton Golf" academies'],
       milestones: ['Content creation and media career begins post-peak', 'UK golf development ambassador / LTA equivalent role', 'Retirement from full tour: target age 37–40'],
     },
   };
@@ -4083,8 +4110,8 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
     { date: 'Jun 28 — R3 KLM Open', ott: 0.3, atg: 0.7, arg: 0.2, putt: -1.6, total: -0.4, rounds: 1 },
   ];
   const tourUsers = [
-    { name: 'Matt Fitzpatrick', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Used Arccos Pro to win US Open 2022 & DP World Championship 2025' },
-    { name: 'Viktor Hovland', flag: '🇳🇴', tour: 'PGA Tour', note: 'SG Approach analytics for course-specific prep' },
+    { name: 'Owen Alderton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Used Arccos Pro to win US Open 2022 & DP World Championship 2025' },
+    { name: 'Henrik Tellander', flag: '🇳🇴', tour: 'PGA Tour', note: 'SG Approach analytics for course-specific prep' },
     { name: 'Nelly Korda', flag: '🇺🇸', tour: 'LPGA', note: 'Full Arccos Pro suite for competitive analytics' },
     { name: 'Kristoffer Reitan', flag: '🇳🇴', tour: 'DP World Tour', note: '2× DP World Tour winner in 2025 using Arccos Pro Insights' },
     { name: 'Rasmus Neergaard-Petersen', flag: '🇩🇰', tour: 'DP World Tour', note: 'First title at Crown Australian Open 2025 — Arccos Pro user' },
@@ -4752,7 +4779,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
     setLoading(true);
     setError(null);
     try {
-      const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Harrington. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: Vanta Sports (clubs), Vanta Sports (wedges/ball), Meridian Watches (watch), Halden Motors (vehicle), Apex Performance (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
+      const userPrompt = `Write a sponsorship pitch for ${brand} (${category}) for James Halton. Proposed value: ${value}. Brand wants: ${brandWants}. Player profile: OWGR #87 (career high #61, targeting top 50), Race to Dubai #43, English, 29 years old, DP World Tour. Prize money 2026: £367k. Current sponsors: Vanta Sports (clubs), Vanta Sports (wedges/ball), Meridian Watches (watch), Halden Motors (vehicle), Apex Performance (apparel). Social following: growing European tour presence. Notes: ${notes}. Generate: (1) subject line, (2) opening paragraph, (3) why James is a great fit, (4) proposed deliverables aligned with their ask, (5) closing line. Respond ONLY in JSON: { "subject": "...", "opening": "...", "fit": "...", "deliverables": "...", "closing": "..." }`;
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5139,7 +5166,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 500,
-          messages: [{ role: 'user', content: `Generate a social media post for James Harrington (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at Halden Motors International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
+          messages: [{ role: 'user', content: `Generate a social media post for James Halton (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at Halden Motors International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
         })
       })
       const data = await res.json()
@@ -5204,7 +5231,7 @@ function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 600,
-          messages: [{ role: 'user', content: `Simulate the OWGR and Race to Dubai ranking impact for James Harrington (OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points}pts) if he ${result} at the ${event} (DP World Tour event). Explain: new projected OWGR, new Race to Dubai position and points, prize money earned, impact on season target (£450k), Ryder Cup points implications if relevant. Max 200 words. Be specific with numbers.` }]
+          messages: [{ role: 'user', content: `Simulate the OWGR and Race to Dubai ranking impact for James Halton (OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points}pts) if he ${result} at the ${event} (DP World Tour event). Explain: new projected OWGR, new Race to Dubai position and points, prize money earned, impact on season target (£450k), Ryder Cup points implications if relevant. Max 200 words. Be specific with numbers.` }]
         })
       })
       const data = await res.json()
@@ -5717,7 +5744,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          messages: [{ role: 'user', content: `Generate a pre-round caddie briefing for James Harrington (#87 OWGR, scoring avg 70.2) for ${tournament} Round ${round}, tee time ${teeTime}, playing with ${partners}. Weather: ${weather}. Cover: course management priorities for today, club selection notes, pin positions to target/avoid, playing partner awareness, focus cues, one key stat to beat today. Max 400 words. Use emoji headers.` }]
+          messages: [{ role: 'user', content: `Generate a pre-round caddie briefing for James Halton (#87 OWGR, scoring avg 70.2) for ${tournament} Round ${round}, tee time ${teeTime}, playing with ${partners}. Weather: ${weather}. Cover: course management priorities for today, club selection notes, pin positions to target/avoid, playing partner awareness, focus cues, one key stat to beat today. Max 400 words. Use emoji headers.` }]
         })
       })
       const data = await res.json()
@@ -5834,7 +5861,7 @@ function GolfMentalPrepAI({ onClose, session, player }: { onClose: () => void; s
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          messages: [{ role: 'user', content: `Generate a pre-round mental preparation routine for James Harrington, DP World Tour professional golfer. Round ${round} of ${tournament}, tee time ${teeTime}, currently ${position || 'T12'} on leaderboard. Feeling: ${feeling}/10. Main concern: ${concern}. Include: warm-up range routine, putting green focus, first tee ritual, between-shot process, bogey recovery mindset. Practical, 4-5 minutes to read. Max 400 words. Use emoji headers.` }]
+          messages: [{ role: 'user', content: `Generate a pre-round mental preparation routine for James Halton, DP World Tour professional golfer. Round ${round} of ${tournament}, tee time ${teeTime}, currently ${position || 'T12'} on leaderboard. Feeling: ${feeling}/10. Main concern: ${concern}. Include: warm-up range routine, putting green focus, first tee ritual, between-shot process, bogey recovery mindset. Practical, 4-5 minutes to read. Max 400 words. Use emoji headers.` }]
         })
       })
       const data = await res.json()
@@ -6161,7 +6188,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const liveSession = { ...session, role: roleOverride, userName: liveProfileNameOuter || session.userName, photoDataUrl: liveProfilePhotoOuter || session.photoDataUrl }
 
   // Founding members (live mode) get their wizard-entered name on the player
-  // card. Demo mode is unchanged — the James Harrington persona is intentional.
+  // card. Demo mode is unchanged — the James Halton persona is intentional.
   const player: GolfPlayer = isFoundingMember
     ? { ...DEMO_PLAYER, name: session.userName || DEMO_PLAYER.name }
     : DEMO_PLAYER;

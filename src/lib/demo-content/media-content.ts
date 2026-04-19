@@ -1,6 +1,6 @@
 // ─── Media & Content — Static Demo Data ──────────────────────────────────────
 // Single source of truth for the Media & Content module across all sports.
-// Golf (James Harrington) is the reference implementation.
+// Golf (James Halton) is the reference implementation.
 // Other sports use TODO_DATA until their content is written in a follow-up pass.
 //
 // Rules:
@@ -172,7 +172,7 @@ const TODO_DATA: MediaContentData = {
   ],
 };
 
-// ─── GOLF — James Harrington (reference implementation) ──────────────────────
+// ─── GOLF — James Halton (reference implementation) ──────────────────────
 const GOLF: MediaContentData = {
   stats: {
     social:   { scheduledLabel: '12 this week', drafts: 3, pending: 2, reach: '2.4M last 7d' },
@@ -198,8 +198,8 @@ const GOLF: MediaContentData = {
       hashtags: ['HaldenMotorsOpen', 'RoadToDubai', 'VantaSports'],
       status: 'scheduled',
       media: [
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-course-prep/800/800',  name: 'Course walk — 18th green' },
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-range-setup/800/800', name: 'Range setup' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-course-prep/800/800',  name: 'Course walk — 18th green' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-range-setup/800/800', name: 'Range setup' },
       ],
     },
     {
@@ -224,8 +224,8 @@ const GOLF: MediaContentData = {
       media: [
         {
           type: 'video',
-          dataUrl: 'https://picsum.photos/seed/harrington-driver-fitting/800/800',
-          poster:  'https://picsum.photos/seed/harrington-driver-fitting/800/800',
+          dataUrl: 'https://picsum.photos/seed/halton-driver-fitting/800/800',
+          poster:  'https://picsum.photos/seed/halton-driver-fitting/800/800',
           name: 'Driver fitting — 60-sec clip',
         },
       ],
@@ -257,7 +257,7 @@ const GOLF: MediaContentData = {
       hashtags: ['Caddie', 'HaldenMotorsOpen'],
       status: 'draft',
       media: [
-        { type: 'image', dataUrl: 'https://picsum.photos/seed/harrington-caddie-debrief/800/800', name: 'Caddie debrief — Gareth + front nine' },
+        { type: 'image', dataUrl: 'https://picsum.photos/seed/halton-caddie-debrief/800/800', name: 'Caddie debrief — Gareth + front nine' },
       ],
     },
     {
@@ -369,11 +369,11 @@ const GOLF: MediaContentData = {
     {
       id: 'p-1',
       outlet: 'Fairway Quarterly',
-      headline: 'Harrington finds his groove at #43 — can he crack the Race to Dubai top 30?',
+      headline: 'Halton finds his groove at #43 — can he crack the Race to Dubai top 30?',
       date: 'Wed 16 Apr',
       author: 'Rachel Donoghue',
       sentiment: 'positive',
-      excerpt: 'Three consecutive top-20 finishes and a 4.82 strokes-gained average tell the story: James Harrington is quietly becoming one of the most consistent iron players on the DP World Tour.',
+      excerpt: 'Three consecutive top-20 finishes and a 4.82 strokes-gained average tell the story: James Halton is quietly becoming one of the most consistent iron players on the DP World Tour.',
     },
     {
       id: 'p-2',
@@ -382,12 +382,12 @@ const GOLF: MediaContentData = {
       date: 'Tue 15 Apr',
       author: 'Marcus Pentland',
       sentiment: 'positive',
-      excerpt: 'Harrington, world #87, arrives in Munich with genuine momentum. A strong week pushes him inside the Race to Dubai top 35 with seven events still to play.',
+      excerpt: 'Halton, world #87, arrives in Munich with genuine momentum. A strong week pushes him inside the Race to Dubai top 35 with seven events still to play.',
     },
     {
       id: 'p-3',
       outlet: 'European Tour Insider',
-      headline: 'Harrington\'s Vanta Sports iron switch: early numbers are promising',
+      headline: 'Halton\'s Vanta Sports iron switch: early numbers are promising',
       date: 'Mon 14 Apr',
       author: 'Sam Oakeley',
       sentiment: 'positive',
@@ -396,16 +396,16 @@ const GOLF: MediaContentData = {
     {
       id: 'p-4',
       outlet: 'Capital Herald',
-      headline: 'British golfer Harrington among favourites for Munich cut',
+      headline: 'British golfer Halton among favourites for Munich cut',
       date: 'Sun 13 Apr',
       author: 'Liam Trench',
       sentiment: 'neutral',
-      excerpt: 'Harrington, currently 43rd in the Race to Dubai, has made 11 of his last 12 cuts. A quiet, methodical operator — but one bookmakers are increasingly tracking.',
+      excerpt: 'Halton, currently 43rd in the Race to Dubai, has made 11 of his last 12 cuts. A quiet, methodical operator — but one bookmakers are increasingly tracking.',
     },
     {
       id: 'p-5',
       outlet: 'Northbridge Sport Online',
-      headline: '"Not panicking, not celebrating" — Harrington on his best stretch in two years',
+      headline: '"Not panicking, not celebrating" — Halton on his best stretch in two years',
       date: 'Fri 11 Apr',
       author: 'Clare Mensah',
       sentiment: 'positive',
@@ -414,7 +414,7 @@ const GOLF: MediaContentData = {
     {
       id: 'p-6',
       outlet: 'The Dispatch Sport',
-      headline: 'Is Harrington still a bit too cautious off the tee? One columnist thinks so',
+      headline: 'Is Halton still a bit too cautious off the tee? One columnist thinks so',
       date: 'Thu 10 Apr',
       author: 'Dan Pryce',
       sentiment: 'negative',
@@ -423,11 +423,11 @@ const GOLF: MediaContentData = {
     {
       id: 'p-7',
       outlet: 'Fairway Quarterly',
-      headline: 'Meridian Watches extends ambassador roster — Harrington named in 2026 campaign',
+      headline: 'Meridian Watches extends ambassador roster — Halton named in 2026 campaign',
       date: 'Wed 9 Apr',
       author: 'Rachel Donoghue',
       sentiment: 'positive',
-      excerpt: 'The luxury watchmaker\'s spring campaign leans heavily on James Harrington\'s story — a reliable, under-the-radar tour pro who\'s graduated to the full ambassador roster.',
+      excerpt: 'The luxury watchmaker\'s spring campaign leans heavily on James Halton\'s story — a reliable, under-the-radar tour pro who\'s graduated to the full ambassador roster.',
     },
   ],
 
@@ -1166,7 +1166,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Today 06:00',
       bucket: 'today',
       caption: 'Miles in the legs. Five weeks.',
-      hashtags: ['ColePetrov', 'RoadTo22May', 'TheMachine'],
+      hashtags: ['ColeStoyan', 'RoadTo22May', 'TheMachine'],
       status: 'scheduled',
     },
     {
@@ -1175,7 +1175,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Today 11:30',
       bucket: 'today',
       caption: 'Pads with Jim. Same pair of mitts since 2021. Same standards too.',
-      hashtags: ['TheMachine', 'Matchroom', 'ColePetrov'],
+      hashtags: ['TheMachine', 'Matchroom', 'ColeStoyan'],
       status: 'needs-approval',
       media: [
         { type: 'image', dataUrl: 'https://picsum.photos/seed/cole-pads-bevan/800/800', name: 'Pad work — Jim Bevan' },
@@ -1187,7 +1187,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Tonight 19:00',
       bucket: 'today',
       caption: 'Sparring, week three. Work. Recover. Repeat.',
-      hashtags: ['TheMachine', 'BoxingTok', 'ColePetrov'],
+      hashtags: ['TheMachine', 'BoxingTok', 'ColeStoyan'],
       status: 'scheduled',
       media: [
         {
@@ -1227,8 +1227,8 @@ const BOXING: MediaContentData = {
       platforms: ['youtube'],
       scheduledFor: 'Mon 10:00',
       bucket: 'thisWeek',
-      caption: 'Camp week 3 vlog — inside Sheffield with Jim Bevan. Pad work, film study, the Petrov plan in bits we\'re allowed to share.',
-      hashtags: ['TheMachine', 'ColePetrov', 'Matchroom'],
+      caption: 'Camp week 3 vlog — inside Sheffield with Jim Bevan. Pad work, film study, the Stoyan plan in bits we\'re allowed to share.',
+      hashtags: ['TheMachine', 'ColeStoyan', 'Matchroom'],
       status: 'needs-approval',
     },
     {
@@ -1237,7 +1237,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Wed 15:00',
       bucket: 'thisWeek',
       caption: 'Crown Wagers have me @ 6/4 win inside the distance. I know which side of that bet I\'m on.',
-      hashtags: ['CrownWagers', 'ColePetrov', 'TheMachine'],
+      hashtags: ['CrownWagers', 'ColeStoyan', 'TheMachine'],
       status: 'scheduled',
     },
     {
@@ -1263,7 +1263,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Next Mon 12:00',
       bucket: 'nextWeek',
       caption: 'Respect to the champion and his team. 22 May. One job, one opponent.',
-      hashtags: ['ColePetrov', 'TheMachine', 'Matchroom'],
+      hashtags: ['ColeStoyan', 'TheMachine', 'Matchroom'],
       status: 'scheduled',
     },
     {
@@ -1350,7 +1350,7 @@ const BOXING: MediaContentData = {
     {
       id: 'bp-1',
       outlet: 'Boxing News Weekly',
-      headline: 'Machine mode: Cole\'s Sheffield camp hits top gear with five weeks to Petrov',
+      headline: 'Machine mode: Cole\'s Sheffield camp hits top gear with five weeks to Stoyan',
       date: 'Thu 16 Apr',
       author: 'Declan Shaw',
       sentiment: 'positive',
@@ -1363,43 +1363,43 @@ const BOXING: MediaContentData = {
       date: 'Wed 15 Apr',
       author: 'Rhiann Dobie',
       sentiment: 'positive',
-      excerpt: 'Twenty-two wins. Eighteen by stoppage. A 78% KO rate through eight years as a pro, and a trainer who\'s taken him from prospect to WBC #6 without a wasted round. On paper, the Petrov fight is the last interview room between Cole and a world title shot.',
+      excerpt: 'Twenty-two wins. Eighteen by stoppage. A 78% KO rate through eight years as a pro, and a trainer who\'s taken him from prospect to WBC #6 without a wasted round. On paper, the Stoyan fight is the last interview room between Cole and a world title shot.',
     },
     {
       id: 'bp-3',
       outlet: 'Knockout Daily',
-      headline: 'Jim Bevan\'s tactical plan for Petrov: patience, angles, and the left hook to the body',
+      headline: 'Jim Bevan\'s tactical plan for Stoyan: patience, angles, and the left hook to the body',
       date: 'Tue 14 Apr',
       author: 'Eddie Parnaby',
       sentiment: 'positive',
-      excerpt: 'Anyone who\'s watched a Cole fight knows what Bevan values — ring generalship, body work, and a tight defensive shell when the shots start coming back. Against Petrov\'s pressure game, the Sheffield camp\'s film-study hours have been focused on exactly one thing: closing the two-step jab gap.',
+      excerpt: 'Anyone who\'s watched a Cole fight knows what Bevan values — ring generalship, body work, and a tight defensive shell when the shots start coming back. Against Stoyan\'s pressure game, the Sheffield camp\'s film-study hours have been focused on exactly one thing: closing the two-step jab gap.',
     },
     {
       id: 'bp-4',
       outlet: 'Ringside Report',
-      headline: 'Cole vs Petrov: tactical preview — who dictates the range?',
+      headline: 'Cole vs Stoyan: tactical preview — who dictates the range?',
       date: 'Tue 14 Apr',
       author: 'Mark Feltham',
       sentiment: 'neutral',
-      excerpt: 'Petrov wants the centre of the ring. Cole wants the angles. Whoever wins that first-four-rounds argument wins the fight. 28-2 against 22-1 — a closer matchup than the ranking numbers suggest, and a genuine coin-flip at the bookmakers.',
+      excerpt: 'Stoyan wants the centre of the ring. Cole wants the angles. Whoever wins that first-four-rounds argument wins the fight. 28-2 against 22-1 — a closer matchup than the ranking numbers suggest, and a genuine coin-flip at the bookmakers.',
     },
     {
       id: 'bp-5',
       outlet: 'Northbridge Sport Boxing',
-      headline: '"I respect Petrov. I plan to beat him." — Marcus Cole on the biggest night of his career',
+      headline: '"I respect Stoyan. I plan to beat him." — Marcus Cole on the biggest night of his career',
       date: 'Mon 13 Apr',
       author: 'Ayo Bankole',
       sentiment: 'positive',
-      excerpt: '"It\'s the biggest fight I\'ve had, and the one I\'ve prepared hardest for. Petrov\'s a top-three fighter for a reason. My job is to be the better version of myself on the night. The rest of it — the noise, the narrative — that\'s not my business. That\'s Danny\'s."',
+      excerpt: '"It\'s the biggest fight I\'ve had, and the one I\'ve prepared hardest for. Stoyan\'s a top-three fighter for a reason. My job is to be the better version of myself on the night. The rest of it — the noise, the narrative — that\'s not my business. That\'s Danny\'s."',
     },
     {
       id: 'bp-6',
       outlet: 'The Dispatch Sport',
-      headline: 'Cole\'s chin hasn\'t been tested — Petrov will find out',
+      headline: 'Cole\'s chin hasn\'t been tested — Stoyan will find out',
       date: 'Sun 12 Apr',
       author: 'Dan Pryce',
       sentiment: 'negative',
-      excerpt: 'Twenty-two fights, one loss — on points, against Sanchez in 2024. Cole\'s never been down as a professional. That\'s impressive, and also beside the point: against Petrov\'s right hand, the question isn\'t whether Cole has been tested, it\'s whether he\'s been tested by anyone remotely close to this level of power. He hasn\'t.',
+      excerpt: 'Twenty-two fights, one loss — on points, against Bermudez in 2024. Cole\'s never been down as a professional. That\'s impressive, and also beside the point: against Stoyan\'s right hand, the question isn\'t whether Cole has been tested, it\'s whether he\'s been tested by anyone remotely close to this level of power. He hasn\'t.',
     },
     {
       id: 'bp-7',
@@ -1408,7 +1408,7 @@ const BOXING: MediaContentData = {
       date: 'Fri 10 Apr',
       author: 'Declan Shaw',
       sentiment: 'positive',
-      excerpt: 'Sources close to Matchroom confirm a three-fight pipeline post-Petrov: an interim title shot in the autumn, a mandatory eliminator in Q1 2027, and a world title fight by summer 2027 at the latest. All of it, naturally, contingent on the result at the Millennium Dome.',
+      excerpt: 'Sources close to Matchroom confirm a three-fight pipeline post-Stoyan: an interim title shot in the autumn, a mandatory eliminator in Q1 2027, and a world title fight by summer 2027 at the latest. All of it, naturally, contingent on the result at the Millennium Dome.',
     },
     {
       id: 'bp-8',
@@ -1429,11 +1429,11 @@ const BOXING: MediaContentData = {
       datetime: 'Today · 16:30 (Sheffield camp)',
       format: 'in-person',
       prepStatus: 'ready',
-      topics: ['Prep vs Petrov', 'Jim Bevan\'s tactical plan (surface only)', 'Camp timeline', 'Matchroom 3-fight pipeline'],
+      topics: ['Prep vs Stoyan', 'Jim Bevan\'s tactical plan (surface only)', 'Camp timeline', 'Matchroom 3-fight pipeline'],
       talkingPoints: [
-        'Petrov is a top-three fighter and I\'m preparing like he\'s the best I\'ve ever faced — because he is.',
+        'Stoyan is a top-three fighter and I\'m preparing like he\'s the best I\'ve ever faced — because he is.',
         'Five years with Jim — patience, angles, body work. The pad rounds are where the fight gets won in April.',
-        'Matchroom have a plan post-22 May, but nothing past Petrov has meaning until Petrov is dealt with.',
+        'Matchroom have a plan post-22 May, but nothing past Stoyan has meaning until Stoyan is dealt with.',
         'Five years pro with Bevan, 22-1, 18 KOs — but the only number that matters is 22 May.',
         'Camp is in Sheffield — quiet, nobody around, no distractions. That\'s the point.',
       ],
@@ -1461,7 +1461,7 @@ const BOXING: MediaContentData = {
       topics: ['Pre-fight TV package', 'Cole\'s arc from prospect to contender', 'What 22 May means'],
       talkingPoints: [
         'Measured tone throughout — no hype quotes, no predictions.',
-        'One respectful Petrov mention, one Jim Bevan credit, one Matchroom / DAZN nod.',
+        'One respectful Stoyan mention, one Jim Bevan credit, one Matchroom / Meridian Sports nod.',
         'Final edit pending PR sign-off with Danny before broadcast clearance.',
       ],
       topicsToAvoid: [],
@@ -1476,7 +1476,7 @@ const BOXING: MediaContentData = {
       datetime: 'Fri 1 May · 13:00 (Matchroom HQ)',
       format: 'in-person',
       prepStatus: 'not-started',
-      topics: ['Fight week build-up', 'Corner team', 'Post-Petrov plans'],
+      topics: ['Fight week build-up', 'Corner team', 'Post-Stoyan plans'],
       talkingPoints: [],
       topicsToAvoid: [],
       keyStats: [],

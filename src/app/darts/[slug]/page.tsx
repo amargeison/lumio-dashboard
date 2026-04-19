@@ -1,6 +1,69 @@
 'use client';
 // TODO: Scope localStorage keys by user ID when auth is implemented// e.g. `sport_schedule_checked` → `sport_${userId}_schedule_checked`
 
+// ─── INVENTED DARTS ROSTER ───────────────────────────────────────────────────
+// All "PDC players" named in this file are fictional. The founder persona
+// (Jake "Shooter" Morrison) and the R1 opponent Darren Merrick are intentional
+// demo personas; everyone else is drawn from the roster below. Keep this list
+// in sync if you add/rename players — matchup coherence (same pair = same
+// score across tabs) and rank plausibility (#1 > #5 earnings) depend on it.
+//
+// BRITISH (English / Scottish / Welsh):
+//   Callum Redgate ("The Red Arrow", ENG) — OM #1 anchor
+//   Harry Moxon ("Mox", ENG) — OM #2 / Premier League #1
+//   Max Penderton ("The Pender", ENG) — OM #4
+//   Ewan Rigby ("Ripper", ENG) — OM #6
+//   Tom Starling ("Captain", ENG) — OM #9
+//   Freddie Lamont ("The Flame", ENG) — OM #12
+//   Ben Huxton ("Hux", ENG) — OM #15
+//   Will Easterbrook ("Easter Express", ENG) — OM #28
+//   Ryan Tolbert ("Bolt", ENG)
+//   Ollie Bannerman ("Banner", ENG)
+//   Sam Burbank ("The Banker", ENG)
+//   Leo Ashcroft ("Ash", ENG)
+//   Nathan Garrick ("The Gatling", ENG)
+//   Oscar Venables ("The Viper", ENG)
+//   Oliver Havelock ("Havoc", ENG)
+//   Cameron Dwyer ("The Dwyer", ENG)
+//   Toby Farringdon ("Toby", ENG)
+//   Ross Galbraith ("Galactic", SCO) — OM #14
+//   Callum MacIntyre ("Highlander", SCO) — Premier League #8
+//   Gareth Pennant ("The Pennant", WAL) — OM #5
+//   Evan Trelawney ("The Dragon", WAL)
+//   Morgan Llewellyn ("Morg", WAL)
+//   Rhodri Pemberton ("The Welshman", WAL)
+//   Dafydd Rhys-Morris ("Rhysy", WAL)
+//
+// DUTCH / BELGIAN:
+//   Jurgen Bakhuis ("The Dutchman", NED) — OM #3
+//   Thom van Kleef ("The Cleaver", NED)
+//   Koen Diepenhorst ("Deep", NED)
+//   Pieter Rutten ("The Ripple", NED)
+//   Lars Heemskerk ("Lars the Lion", NED)
+//   Ruben Vermaes ("The Voyager", NED)
+//   Vincent de Groot ("The Groot", NED)
+//   Tom Verbeek ("The Falcon", BEL)
+//   Dries Luytens ("Lightning", BEL)
+//   Gilles Verhaert ("Gilly", BEL)
+//
+// AUSTRALIAN:
+//   Jack Brumby ("The Brumby", AUS)
+//   Kirk Ballantyne ("Kirky", AUS)
+//   Luke Carmody ("Cobber", AUS)
+//   Rhys Daventry ("Day-Vee", AUS)
+//
+// IRISH:
+//   Conor Flaherty ("Flash", IRL)
+//   Aidan Kilbride ("The Kid", IRL) — OM #12 match history
+//   Finn O'Reilly ("Finnegan", IRL)
+//   Darragh Hennessy ("Hennessy", IRL)
+//   Seamus Carrick ("The Carrick Kid", IRL)
+//
+// GERMAN (continental fillers):
+//   Felix Brandt ("Brandt", GER)
+//   Matthias Rohde ("Rohde Rage", GER)
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { use, useState, useEffect, useRef } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
@@ -1932,11 +1995,11 @@ function OrderOfMeritView({ onNavigate, player, session }: { onNavigate: (id: st
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">#</th><th className="text-left p-3">Player</th><th className="text-left p-3">Prize Money</th></tr></thead>
           <tbody>
             {[
-              { rank: 1, name: 'Luke Humphries', money: '£2,847,200', isYou: false },
-              { rank: 2, name: 'Luke Littler', money: '£2,641,800', isYou: false },
-              { rank: 3, name: 'Michael van Gerwen', money: '£2,198,400', isYou: false },
+              { rank: 1, name: 'Callum Redgate', money: '£2,847,200', isYou: false },
+              { rank: 2, name: 'Harry Moxon', money: '£2,641,800', isYou: false },
+              { rank: 3, name: 'Jurgen Bakhuis', money: '£2,198,400', isYou: false },
               { rank: 4, name: 'Darren Merrick', money: '£1,847,600', isYou: false },
-              { rank: 5, name: 'Jonny Clayton', money: '£1,623,400', isYou: false },
+              { rank: 5, name: 'Gareth Pennant', money: '£1,623,400', isYou: false },
               { rank: player.pdcRank, name: `${player.name} ←`, money: '£687,420', isYou: true },
             ].map((p, i) => (
               <tr key={i} className={`border-b border-gray-800/50 ${p.isYou ? 'bg-red-600/5' : ''}`}>
@@ -2042,9 +2105,9 @@ function TournamentScheduleView({ onNavigate, player, session }: { onNavigate: (
 // ─── THREE-DART AVERAGE VIEW ──────────────────────────────────────────────────
 function ThreeDartAverageView({ player, onNavigate, session }: { player: DartsPlayer; onNavigate: (id: string) => void; session: SportsDemoSession }) {
   const matchAvgs = [
-    { opp: 'Hump', avg: 94.2 }, { opp: 'Lit', avg: 99.8 }, { opp: 'MvG', avg: 96.1 },
-    { opp: 'Merrick', avg: 101.4 }, { opp: 'Clay', avg: 98.7 }, { opp: 'Rock', avg: 103.2 },
-    { opp: 'Bunt', avg: 95.4 }, { opp: 'Nopb', avg: 97.8 }, { opp: 'Smi', avg: 100.1 }, { opp: 'Wrig', avg: 96.8 },
+    { opp: 'Redg', avg: 94.2 }, { opp: 'Mox', avg: 99.8 }, { opp: 'Bak', avg: 96.1 },
+    { opp: 'Merrick', avg: 101.4 }, { opp: 'Pen', avg: 98.7 }, { opp: 'Kil', avg: 103.2 },
+    { opp: 'Hux', avg: 95.4 }, { opp: 'Dep', avg: 97.8 }, { opp: 'Rig', avg: 100.1 }, { opp: 'Mac', avg: 96.8 },
   ];
   const chartW = 500, chartH = 180, padL = 35, padR = 100, padT = 15, padB = 30;
   const plotW = chartW - padL - padR, plotH = chartH - padT - padB;
@@ -2284,9 +2347,9 @@ function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: s
         <div className="text-sm font-semibold text-white mb-3">Draw Analysis — If Jake Wins Tonight</div>
         <div className="space-y-2">
           {[
-            { round: 'QF potential', opp: 'Luke Littler (#2)', avg: '104.1', h2h: 'Jake 1-5' },
-            { round: 'SF potential', opp: 'Michael van Gerwen (#3)', avg: '98.7', h2h: 'Jake 2-6' },
-            { round: 'Final potential', opp: 'Luke Humphries (#1)', avg: '97.4', h2h: 'Jake 3-3' },
+            { round: 'QF potential', opp: 'Harry Moxon (#2)', avg: '104.1', h2h: 'Jake 1-5' },
+            { round: 'SF potential', opp: 'Jurgen Bakhuis (#3)', avg: '98.7', h2h: 'Jake 2-6' },
+            { round: 'Final potential', opp: 'Callum Redgate (#1)', avg: '97.4', h2h: 'Jake 3-3' },
           ].map((d, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50">
               <span className="text-xs text-gray-500 w-24">{d.round}</span>
@@ -2303,7 +2366,7 @@ function OpponentIntelView({ onNavigate, player, session }: { onNavigate: (id: s
         <div className="text-sm font-semibold text-white mb-3">Player Database</div>
         <input type="text" placeholder="Search PDC player..." className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-600 focus:border-red-500 focus:outline-none mb-3" />
         <div className="flex gap-2">
-          {['MvG', 'Humphries', 'Bunting', 'Rock'].map(p => (
+          {['Bakhuis', 'Redgate', 'Huxton', 'Kilbride'].map(p => (
             <span key={p} className="text-[10px] bg-gray-800 text-gray-400 px-2 py-1 rounded cursor-pointer hover:text-white">{p}</span>
           ))}
         </div>
@@ -2434,11 +2497,11 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
 
   const matches = [
-    { id: 'dm1', opp: 'Jonny Clayton', rank: 10, event: 'Euro Championship QF', score: '6-3', avg: '101.4', result: 'W', date: '10 Apr' },
-    { id: 'dm2', opp: 'Josh Rock', rank: 12, event: 'Euro Championship R2', score: '6-4', avg: '98.7', result: 'W', date: '9 Apr' },
-    { id: 'dm3', opp: 'Stephen Bunting', rank: 15, event: 'Euro Championship R1', score: '6-2', avg: '99.2', result: 'W', date: '8 Apr' },
-    { id: 'dm4', opp: 'Luke Littler', rank: 2, event: 'German Masters SF', score: '3-6', avg: '94.1', result: 'L', date: '3 Apr' },
-    { id: 'dm5', opp: 'Callan Rydz', rank: 28, event: 'German Masters QF', score: '6-1', avg: '103.8', result: 'W', date: '2 Apr' },
+    { id: 'dm1', opp: 'Gareth Pennant', rank: 10, event: 'Euro Championship QF', score: '6-3', avg: '101.4', result: 'W', date: '10 Apr' },
+    { id: 'dm2', opp: 'Aidan Kilbride', rank: 12, event: 'Euro Championship R2', score: '6-4', avg: '98.7', result: 'W', date: '9 Apr' },
+    { id: 'dm3', opp: 'Ben Huxton', rank: 15, event: 'Euro Championship R1', score: '6-2', avg: '99.2', result: 'W', date: '8 Apr' },
+    { id: 'dm4', opp: 'Harry Moxon', rank: 2, event: 'German Masters SF', score: '3-6', avg: '94.1', result: 'L', date: '3 Apr' },
+    { id: 'dm5', opp: 'Will Easterbrook', rank: 28, event: 'German Masters QF', score: '6-1', avg: '103.8', result: 'W', date: '2 Apr' },
     { id: 'dm6', opp: 'Darren Merrick', rank: 7, event: 'Players Ch.', score: '4-6', avg: '96.2', result: 'L', date: '28 Mar' },
   ];
 
@@ -2518,9 +2581,9 @@ function VideoLibraryView({ onNavigate, player, session }: { onNavigate: (id: st
       {videoTab === 'match' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { title: 'Euro Ch. QF vs Clayton', date: 'Apr 10', dur: '38 min', note: 'Avg 101.4 · 6-3 win' },
-            { title: 'German Masters SF vs Littler', date: 'Apr 3', dur: '52 min', note: 'Avg 94.1 · 3-6 loss' },
-            { title: 'World Ch. R2 vs Smith', date: 'Jan 8', dur: '44 min', note: 'Avg 97.8 · 6-4 loss' },
+            { title: 'Euro Ch. QF vs Pennant', date: 'Apr 10', dur: '38 min', note: 'Avg 101.4 · 6-3 win' },
+            { title: 'German Masters SF vs Moxon', date: 'Apr 3', dur: '52 min', note: 'Avg 94.1 · 3-6 loss' },
+            { title: 'World Ch. R2 vs Rigby', date: 'Jan 8', dur: '44 min', note: 'Avg 97.8 · 6-4 loss' },
             { title: 'Players Ch. vs Merrick', date: 'Mar 28', dur: '31 min', note: 'Avg 96.2 · 4-6 loss' },
           ].map((v, i) => (
             <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
@@ -2562,7 +2625,7 @@ function VideoLibraryView({ onNavigate, player, session }: { onNavigate: (id: st
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { title: 'vs Clayton QF: Throwing arc analysis', stat: '94% consistent release angle' },
+              { title: 'vs Pennant QF: Throwing arc analysis', stat: '94% consistent release angle' },
               { title: 'Doubles routine: D20 dwell time', stat: 'avg 16.2 seconds (optimal range)' },
               { title: 'Practice session Apr 13: Stance drift detected', stat: 'left foot moving 2cm' },
             ].map((a, i) => (
@@ -2691,7 +2754,7 @@ function MentalPerformanceView({ onNavigate, player, session }: { onNavigate: (i
         <div className="space-y-2">
           {[
             { date: 'Apr 11', note: 'Pre-match visualisation for Merrick. Focus on own process, not scoreboard.' },
-            { date: 'Mar 20', note: 'Reviewed German Masters loss vs Littler. Reset confidence after 3-6.' },
+            { date: 'Mar 20', note: 'Reviewed German Masters loss vs Moxon. Reset confidence after 3-6.' },
             { date: 'Feb 14', note: 'Performance anxiety under lights — crowd management techniques.' },
           ].map((s, i) => (
             <div key={i} className="py-2 border-b border-gray-800/50">
@@ -2773,7 +2836,182 @@ function SponsorshipView({ onNavigate, player, session }: { onNavigate: (id: str
 }
 
 // ─── EXHIBITION MANAGER VIEW ──────────────────────────────────────────────────
+type Gig = {
+  id: string;
+  date: string;
+  venue: string;
+  loc: string;
+  fee: string;
+  status: string;
+  organiser: string;
+  organiserEmail: string;
+  format: string;
+  duration: string;
+  audience: string;
+  requirements: string;
+  accommodation: string;
+  travel: string;
+  note?: string;
+};
+
+function GigDetailsModal({
+  gig,
+  status,
+  statusBadgeClass,
+  onClose,
+  onConfirm,
+  onDecline,
+}: {
+  gig: Gig;
+  status: string;
+  statusBadgeClass: (s: string) => string;
+  onClose: () => void;
+  onConfirm: () => void;
+  onDecline: () => void;
+}) {
+  const resolved = status === 'Confirmed' || status === 'Declined';
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+          <div>
+            <div className="text-white font-medium">{gig.venue}</div>
+            <div className="text-xs text-gray-500">{gig.loc} · {gig.date}</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusBadgeClass(status)}`}>{status}</span>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-lg leading-none" aria-label="Close">×</button>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-3 text-sm">
+          {[
+            { label: 'Fee',             value: gig.fee },
+            { label: 'Organiser',       value: `${gig.organiser} · ${gig.organiserEmail}` },
+            { label: 'Format',          value: gig.format },
+            { label: 'Duration',        value: gig.duration },
+            { label: 'Audience',        value: gig.audience },
+            { label: 'Requirements',    value: gig.requirements },
+            { label: 'Accommodation',   value: gig.accommodation },
+            { label: 'Travel',          value: gig.travel },
+          ].map(row => (
+            <div key={row.label} className="grid grid-cols-[120px_1fr] gap-3">
+              <span className="text-xs text-gray-500 uppercase tracking-wide pt-0.5">{row.label}</span>
+              <span className="text-gray-200">{row.value}</span>
+            </div>
+          ))}
+          {gig.note && (
+            <div className="text-xs text-amber-400 pt-1">{gig.note}</div>
+          )}
+        </div>
+        <div className="px-5 py-4 border-t border-gray-800 flex gap-2 justify-end">
+          {!resolved && (
+            <>
+              <button
+                onClick={onDecline}
+                className="px-4 py-2 rounded-lg text-xs bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 transition-colors"
+              >Decline</button>
+              <button
+                onClick={onConfirm}
+                className="px-4 py-2 rounded-lg text-xs bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+              >Confirm</button>
+            </>
+          )}
+          <button onClick={onClose} className="px-4 py-2 rounded-lg text-xs text-gray-400 hover:text-gray-200 border border-gray-700">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ExhibitionManagerView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
+  const upcomingGigs: Gig[] = [
+    {
+      id: 'gig-sheffield-apr28',
+      date: 'Apr 28',
+      venue: 'Sheffield Sports Bar',
+      loc: 'Sheffield',
+      fee: '£2,200',
+      status: 'Enquiry',
+      organiser: 'Mark Holloway',
+      organiserEmail: 'bookings@sheffieldsportsbar.co.uk',
+      format: '8-player exhibition + meet & greet',
+      duration: '90 minutes (plus 30-min photo session)',
+      audience: '~180 ticketed attendees',
+      requirements: 'Arrive 60 min before. Branded shirt. 30-min Q&A after final match.',
+      accommodation: 'Radisson Sheffield — one night, arranged by organiser',
+      travel: 'Organiser covers return rail',
+      note: 'Respond by Apr 24',
+    },
+    {
+      id: 'gig-edinburgh-may3',
+      date: 'May 3',
+      venue: 'Edinburgh Darts Festival',
+      loc: 'Edinburgh',
+      fee: '£3,500',
+      status: 'Enquiry',
+      organiser: 'Fiona Blackwood',
+      organiserEmail: 'fiona@edinburghdartsfest.co.uk',
+      format: 'Headline exhibition — 16-player knockout plus festival opening',
+      duration: '2 hours on stage + walk-on at 19:00 opening',
+      audience: '~900 in the main hall; live-streamed to festival YouTube',
+      requirements: 'Tech rehearsal 15:00. Branded polo + festival patch. Two short to-camera pieces for the stream.',
+      accommodation: 'Balmoral Edinburgh — two nights, organiser booking under player name',
+      travel: 'Flights LBA→EDI both ways, claimable against receipts',
+    },
+    {
+      id: 'gig-manchester-may10',
+      date: 'May 10',
+      venue: 'Manchester Corporate Event',
+      loc: 'Manchester',
+      fee: '£4,000',
+      status: 'Enquiry',
+      organiser: 'Priya Khanna',
+      organiserEmail: 'priya.khanna@northbridgeevents.co.uk',
+      format: 'Private corporate — 4-player invitation exhibition + hospitality',
+      duration: '3 hours total (90-min darts, 90-min hosting and Q&A at tables)',
+      audience: '~120 Northbridge Financial clients',
+      requirements: 'Smart-casual dress code (no sponsor polos). Two table visits between sets. No posts until organiser signs off on clips.',
+      accommodation: 'Lowry Hotel — one night, arranged by organiser',
+      travel: 'Organiser covers return rail + black cab',
+    },
+  ];
+
+  const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+  const [gigStatuses, setGigStatuses] = useState<Record<string, string>>({});
+
+  const effectiveStatus = (g: Gig) => gigStatuses[g.id] ?? g.status;
+  const isResolved = (g: Gig) => {
+    const s = effectiveStatus(g);
+    return s === 'Confirmed' || s === 'Declined';
+  };
+
+  const openConfirmEmail = (gig: Gig) => {
+    const subject = `Re: ${gig.venue} exhibition — ${gig.date}`;
+    const body = `Hi ${gig.organiser},\n\nConfirming I'll be there for the exhibition on ${gig.date} at ${gig.venue}.\n\nI'll plan to arrive 60 minutes before start as requested. Please let me know the final schedule and any media commitments you'd like me to cover.\n\nLooking forward to it.\n\nBest,\n${session.userName || 'Jake'}`;
+    window.location.href = `mailto:${gig.organiserEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setGigStatuses(prev => ({ ...prev, [gig.id]: 'Confirmed' }));
+    setSelectedGig(null);
+  };
+
+  const openDeclineEmail = (gig: Gig) => {
+    const subject = `Re: ${gig.venue} exhibition — ${gig.date}`;
+    const body = `Hi ${gig.organiser},\n\nThanks so much for the offer, but unfortunately the date doesn't work with my schedule this time. I'd love to look at future dates — please keep me in mind.\n\nBest,\n${session.userName || 'Jake'}`;
+    window.location.href = `mailto:${gig.organiserEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setGigStatuses(prev => ({ ...prev, [gig.id]: 'Declined' }));
+    setSelectedGig(null);
+  };
+
+  const statusBadgeClass = (status: string) => {
+    if (status === 'Confirmed') return 'bg-teal-600/20 text-teal-400';
+    if (status === 'Declined')  return 'bg-red-600/20 text-red-400';
+    if (status === 'Enquiry')   return 'bg-amber-600/20 text-amber-400';
+    return 'bg-gray-600/20 text-gray-400';
+  };
+
   return (
     <div className="space-y-6">
 
@@ -2788,30 +3026,58 @@ function ExhibitionManagerView({ onNavigate, player, session }: { onNavigate: (i
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="text-sm font-semibold text-white mb-3">Upcoming Exhibitions</div>
         <div className="space-y-3">
-          {[
-            { date: 'Apr 22', venue: 'Preston Social Club', loc: 'Preston', fee: '£1,800', status: 'Enquiry', note: 'Respond by Apr 18' },
-            { date: 'Apr 28', venue: 'Sheffield Sports Bar', loc: 'Sheffield', fee: '£2,200', status: 'Confirmed' },
-            { date: 'May 3', venue: 'Edinburgh Darts Festival', loc: 'Edinburgh', fee: '£3,500', status: 'Confirmed' },
-            { date: 'May 10', venue: 'Manchester Corporate Event', loc: 'Manchester', fee: '£4,000', status: 'Confirmed' },
-            { date: 'May 18', venue: 'Dublin Darts Night', loc: 'Dublin', fee: '£2,800', status: 'Pending contract' },
-          ].map((e, i) => (
-            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div><div className="text-sm text-white font-medium">{e.venue}</div><div className="text-xs text-gray-500">{e.loc} · {e.date}</div></div>
-                <div className="text-right"><div className="text-sm text-white font-medium">{e.fee}</div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${e.status === 'Confirmed' ? 'bg-teal-600/20 text-teal-400' : e.status === 'Enquiry' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-600/20 text-gray-400'}`}>{e.status}</span>
+          {upcomingGigs.map(gig => {
+            const status = effectiveStatus(gig);
+            const resolved = isResolved(gig);
+            return (
+              <div key={gig.id} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div><div className="text-sm text-white font-medium">{gig.venue}</div><div className="text-xs text-gray-500">{gig.loc} · {gig.date}</div></div>
+                  <div className="text-right"><div className="text-sm text-white font-medium">{gig.fee}</div>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusBadgeClass(status)}`}>{status}</span>
+                  </div>
                 </div>
+                {gig.note && !resolved && <div className="text-xs text-amber-400">{gig.note}</div>}
+                {!resolved && (
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => openConfirmEmail(gig)}
+                      className="px-3 py-1 rounded text-xs bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
+                    >Confirm</button>
+                    <button
+                      onClick={() => openDeclineEmail(gig)}
+                      className="px-3 py-1 rounded text-xs bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 transition-colors"
+                    >Decline</button>
+                    <button
+                      onClick={() => setSelectedGig(gig)}
+                      className="px-3 py-1 rounded text-xs text-gray-500 hover:text-gray-300"
+                    >More Info</button>
+                  </div>
+                )}
+                {resolved && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setSelectedGig(gig)}
+                      className="px-3 py-1 rounded text-xs text-gray-500 hover:text-gray-300"
+                    >More Info</button>
+                  </div>
+                )}
               </div>
-              {e.note && <div className="text-xs text-amber-400">{e.note}</div>}
-              <div className="flex gap-2 mt-2">
-                <button className="px-3 py-1 rounded text-xs bg-teal-600/20 text-teal-400 border border-teal-600/30">Confirm</button>
-                <button className="px-3 py-1 rounded text-xs bg-red-600/20 text-red-400 border border-red-600/30">Decline</button>
-                <button className="px-3 py-1 rounded text-xs text-gray-500 hover:text-gray-300">More Info</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
+
+      {selectedGig && (
+        <GigDetailsModal
+          gig={selectedGig}
+          status={effectiveStatus(selectedGig)}
+          statusBadgeClass={statusBadgeClass}
+          onClose={() => setSelectedGig(null)}
+          onConfirm={() => openConfirmEmail(selectedGig)}
+          onDecline={() => openDeclineEmail(selectedGig)}
+        />
+      )}
 
       {/* Fee Guide */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
@@ -3804,7 +4070,7 @@ function CareerPlanningView({ onNavigate, player, session }: { onNavigate: (id: 
     { year: '2019', event: 'Turned pro — won tour card at Q-School' },
     { year: '2020', event: 'Pro Tour breakthrough — first £50k season' },
     { year: '2021', event: 'First European Tour win (Prague)' },
-    { year: '2022', event: 'World Championship debut — R2 loss vs MvG' },
+    { year: '2022', event: 'World Championship debut — R2 loss vs Bakhuis' },
     { year: '2023', event: 'Premier League debut (night player x 6)' },
     { year: '2024', event: 'Career high ranking #11 — UK Open SF' },
     { year: '2025', event: 'First ranking event title — Players Championship 8' },
@@ -4032,8 +4298,8 @@ function PDCLiveView({ onNavigate, player, session }: { onNavigate: (id: string)
           <div className="text-xs text-gray-400">PDC European Championship · Westfalenhalle, Dortmund</div>
         </div>
         <div className="grid grid-cols-3 gap-3 text-xs">
-          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">L. Humphries 6-3 R. Smith</span></div>
-          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">M. van Gerwen vs J. Henderson</span><span className="text-red-400 ml-2">LIVE 4-2</span></div>
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">C. Redgate 6-3 O. Bannerman</span></div>
+          <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">J. Bakhuis vs R. Vermaes</span><span className="text-red-400 ml-2">LIVE 4-2</span></div>
           <div className="bg-black/40 rounded-lg px-3 py-2"><span className="text-gray-500">R1 · </span><span className="text-white font-semibold">D. Merrick vs J. Morrison</span><span className="text-gray-600 ml-2">20:00</span></div>
         </div>
       </div>
@@ -4490,14 +4756,14 @@ function AdvancedStatsView({ player, session }: { player: DartsPlayer; session: 
   ];
   const maxLegs = Math.max(...legLengths.map(l => l.won));
   const h2h = [
-    { opp: 'Luke Littler', rank: 1, w: 2, l: 4, avg: 96.1 },
-    { opp: 'Michael van Gerwen', rank: 2, w: 1, l: 5, avg: 95.4 },
-    { opp: 'Luke Humphries', rank: 3, w: 3, l: 2, avg: 97.8 },
-    { opp: 'Nathan Aspinall', rank: 4, w: 4, l: 3, avg: 98.2 },
-    { opp: 'Rob Cross', rank: 9, w: 4, l: 4, avg: 97.1 },
+    { opp: 'Harry Moxon', rank: 1, w: 2, l: 4, avg: 96.1 },
+    { opp: 'Jurgen Bakhuis', rank: 2, w: 1, l: 5, avg: 95.4 },
+    { opp: 'Callum Redgate', rank: 3, w: 3, l: 2, avg: 97.8 },
+    { opp: 'Max Penderton', rank: 4, w: 4, l: 3, avg: 98.2 },
+    { opp: 'Tom Starling', rank: 9, w: 4, l: 4, avg: 97.1 },
     { opp: 'Darren Merrick', rank: 7, w: 8, l: 3, avg: 99.4 },
-    { opp: 'Gary Anderson', rank: 14, w: 5, l: 4, avg: 98.7 },
-    { opp: 'Michael Smith', rank: 6, w: 3, l: 5, avg: 96.8 },
+    { opp: 'Ross Galbraith', rank: 14, w: 5, l: 4, avg: 98.7 },
+    { opp: 'Ewan Rigby', rank: 6, w: 3, l: 5, avg: 96.8 },
   ];
   const busts = [
     { score: 36, count: 12, reason: 'Hits S18 leaving 18' },
@@ -4788,7 +5054,7 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
         <h2 className="text-white font-medium mb-3">Broadcaster approval status</h2>
         <div className="grid grid-cols-5 gap-2 text-sm">
           {[
-            { b: 'Northbridge Sport', ok: true }, { b: 'DAZN', ok: true }, { b: 'Crown TV', ok: true },
+            { b: 'Northbridge Sport', ok: true }, { b: 'Meridian Sports', ok: true }, { b: 'Crown TV', ok: true },
             { b: 'Crown Broadcasting', ok: true }, { b: 'Continental DE', ok: true },
           ].map((s, i) => (
             <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3 text-center">
@@ -4804,10 +5070,10 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
           <span className="text-[10px] text-amber-400 uppercase tracking-wide">Partially approved</span>
         </div>
         <div className="text-gray-300 text-sm">"Eye of the Tiger" — Survivor</div>
-        <div className="text-xs text-gray-500 mt-1">Northbridge Sport ✓ · Crown TV ✓ · Crown Broadcasting ✓ · DAZN ⏳ Pending · Continental DE ✓</div>
+        <div className="text-xs text-gray-500 mt-1">Northbridge Sport ✓ · Crown TV ✓ · Crown Broadcasting ✓ · Meridian Sports ⏳ Pending · Continental DE ✓</div>
       </div>
       <div className="bg-amber-950/40 border border-amber-800/30 rounded-xl p-4 text-sm text-amber-200">
-        ⚠ DAZN backup approval still pending — submit by <strong className="text-amber-100">May 1</strong> for Grand Slam eligibility.
+        ⚠ Meridian Sports backup approval still pending — submit by <strong className="text-amber-100">May 1</strong> for Grand Slam eligibility.
       </div>
       <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
         <h2 className="text-white font-medium mb-2">Brand identity notes</h2>
@@ -4821,7 +5087,7 @@ function WalkOnMusicView({ player, session }: { player: DartsPlayer; session: Sp
           </div>
           {[
             { ev: 'Grand Slam of Darts', date: 'Nov 8', br: 'Northbridge Sport', st: '✓ Approved' },
-            { ev: 'Premier League Night 14', date: 'May 2', br: 'Northbridge Sport + DAZN', st: '⏳ DAZN pending' },
+            { ev: 'Premier League Night 14', date: 'May 2', br: 'Northbridge Sport + Meridian Sports', st: '⏳ Meridian Sports pending' },
             { ev: 'World Matchplay', date: 'Jul 19', br: 'Northbridge Sport', st: '✓ Approved' },
             { ev: 'German Masters', date: 'Oct 4', br: 'Continental DE', st: '✓ Approved' },
           ].map((e, i) => (
@@ -5054,12 +5320,20 @@ function PracticeGamesView({ player, session }: { player: DartsPlayer; session: 
 // ─── PHYSIO & RECOVERY VIEW ───────────────────────────────────────────────────
 function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
-  const bodyParts: Record<string, { status: string; note: string; colour: string }> = {
-    'Right shoulder': { status: 'Monitor', note: 'Minor tightness 3/10 — cleared for play, ice post-match', colour: 'amber' },
-    'Elbow': { status: 'OK', note: 'No issues — full range of motion', colour: 'green' },
-    'Wrist': { status: 'OK', note: 'No issues', colour: 'green' },
-    'Back': { status: 'OK', note: 'Lower back prevention routine in place', colour: 'green' },
-  };
+  const SEVERITY_CONFIG = {
+    critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
+    moderate:   { fill: '#f59e0b', r: 9,  label: 'Moderate',   textClass: 'text-amber-400' },
+    minor:      { fill: '#eab308', r: 7,  label: 'Minor',      textClass: 'text-yellow-400' },
+    monitoring: { fill: '#10b981', r: 5,  label: 'Monitoring', textClass: 'text-green-400' },
+  } as const;
+  type Severity = keyof typeof SEVERITY_CONFIG;
+  const bodyMarkers: { id: string; x: number; y: number; severity: Severity; label: string; note: string }[] = [
+    { id: 'shoulder', x: 132, y: 66,  severity: 'moderate',   label: 'Right shoulder', note: 'Rotator cuff tightness — 2 weeks on prevention programme' },
+    { id: 'elbow',    x: 148, y: 108, severity: 'minor',      label: 'Right elbow',    note: 'Mild tendonitis — ultrasound sessions ongoing' },
+    { id: 'wrist',    x: 152, y: 150, severity: 'monitoring', label: 'Right wrist',    note: 'No active issue — mobility work' },
+    { id: 'back',     x: 100, y: 110, severity: 'monitoring', label: 'Lower back',     note: 'Daily release routine' },
+  ];
+  const selectedMarker = bodyMarkers.find(m => m.id === selectedBodyPart) ?? null;
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -5079,26 +5353,104 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
         <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
           <h2 className="text-white font-medium mb-3">Body map</h2>
           <div className="flex justify-center">
-            <svg width="180" height="260" viewBox="0 0 180 260">
-              <circle cx="90" cy="30" r="22" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <rect x="60" y="52" width="60" height="90" rx="10" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <rect x="32" y="58" width="22" height="74" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <rect x="126" y="58" width="22" height="74" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <rect x="66" y="142" width="22" height="90" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <rect x="92" y="142" width="22" height="90" rx="8" fill="none" stroke="#4b5563" strokeWidth="2" />
-              <circle cx="128" cy="62" r="8" fill="#f59e0b" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Right shoulder')} />
-              <circle cx="138" cy="92" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Elbow')} />
-              <circle cx="144" cy="128" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Wrist')} />
-              <circle cx="90" cy="100" r="6" fill="#10b981" stroke="#fff" strokeWidth="1.5" style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart('Back')} />
+            <svg width="200" height="280" viewBox="0 0 200 280" aria-label="Body map — severity-coded markers">
+              <style>{`
+                .lumio-pulse-critical {
+                  transform-box: fill-box;
+                  transform-origin: center;
+                  animation: lumioPulseCritical 1.6s ease-in-out infinite;
+                }
+                @keyframes lumioPulseCritical {
+                  0%, 100% { transform: scale(1); }
+                  50%      { transform: scale(1.15); }
+                }
+              `}</style>
+              <defs>
+                <filter id="lumioMarkerGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              {/* Figure */}
+              <g fill="rgba(255,255,255,0.02)" stroke="#475569" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+                {/* Head + neck taper */}
+                <ellipse cx="100" cy="30" rx="18" ry="22" />
+                <path d="M92,50 C92,56 92,58 92,60 L108,60 C108,58 108,56 108,50" fill="none" />
+                {/* Torso with shoulder slope + waist taper */}
+                <path d="M74,62 C78,60 84,60 90,60 L110,60 C116,60 122,60 126,62 L134,92 L138,140 C138,150 130,156 120,156 L80,156 C70,156 62,150 62,140 L66,92 Z" />
+                {/* Shoulders */}
+                <circle cx="68" cy="66" r="7" />
+                <circle cx="132" cy="66" r="7" />
+                {/* Left arm */}
+                <path d="M62,70 L52,108" fill="none" strokeWidth="6" />
+                <path d="M52,108 L48,148" fill="none" strokeWidth="5" />
+                <circle cx="48" cy="150" r="4" />
+                {/* Right arm */}
+                <path d="M138,70 L148,108" fill="none" strokeWidth="6" />
+                <path d="M148,108 L152,148" fill="none" strokeWidth="5" />
+                <circle cx="152" cy="150" r="4" />
+                {/* Hips */}
+                <circle cx="82" cy="156" r="5" />
+                <circle cx="118" cy="156" r="5" />
+                {/* Legs — thigh + calf with taper */}
+                <path d="M82,160 L78,212" fill="none" strokeWidth="9" />
+                <path d="M78,212 L74,262" fill="none" strokeWidth="7" />
+                <path d="M118,160 L122,212" fill="none" strokeWidth="9" />
+                <path d="M122,212 L126,262" fill="none" strokeWidth="7" />
+              </g>
+              {/* Markers */}
+              {bodyMarkers.map(m => {
+                const cfg = SEVERITY_CONFIG[m.severity];
+                const isCritical = m.severity === 'critical';
+                const isSelected = selectedBodyPart === m.id;
+                return (
+                  <g
+                    key={m.id}
+                    className={isCritical ? 'lumio-pulse-critical' : ''}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedBodyPart(m.id)}
+                  >
+                    {/* Outer glow */}
+                    <circle cx={m.x} cy={m.y} r={cfg.r + 2} fill={cfg.fill} opacity="0.35" filter="url(#lumioMarkerGlow)" />
+                    {/* Main marker */}
+                    <circle cx={m.x} cy={m.y} r={cfg.r} fill={cfg.fill} stroke="#fff" strokeWidth={isSelected ? 2.5 : 1.5} />
+                    {/* Inner highlight */}
+                    <circle cx={m.x} cy={m.y} r={cfg.r * 0.35} fill="#fff" opacity="0.9" />
+                  </g>
+                );
+              })}
             </svg>
           </div>
-          {selectedBodyPart && (
+          {/* Severity legend */}
+          <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-3 text-[11px] text-gray-400">
+            {(['critical','moderate','minor','monitoring'] as Severity[]).map(s => {
+              const cfg = SEVERITY_CONFIG[s];
+              return (
+                <div key={s} className="flex items-center gap-1.5">
+                  <span
+                    style={{
+                      width: cfg.r * 2,
+                      height: cfg.r * 2,
+                      borderRadius: '50%',
+                      background: cfg.fill,
+                      border: '1.5px solid #fff',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span>{cfg.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          {selectedMarker && (
             <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
               <div className="flex items-center justify-between">
-                <span className="text-white font-medium text-sm">{selectedBodyPart}</span>
-                <span className={`text-xs ${bodyParts[selectedBodyPart].colour === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>{bodyParts[selectedBodyPart].status}</span>
+                <span className="text-white font-medium text-sm">{selectedMarker.label}</span>
+                <span className={`text-xs ${SEVERITY_CONFIG[selectedMarker.severity].textClass}`}>
+                  {SEVERITY_CONFIG[selectedMarker.severity].label}
+                </span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">{bodyParts[selectedBodyPart].note}</p>
+              <p className="text-xs text-gray-400 mt-1">{selectedMarker.note}</p>
             </div>
           )}
         </div>
@@ -5181,10 +5533,10 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
   const [showFull, setShowFull] = useState(false);
   const path = [
     { round: 'R1', opp: 'Darren Merrick (#7)', prize: '£25,000', status: 'tonight' },
-    { round: 'R2', opp: 'Winner M. Smith/R. Cross', prize: '£35,000', status: 'pending' },
-    { round: 'QF', opp: 'Projected: L. Humphries (#3)', prize: '£50,000', status: 'pending' },
-    { round: 'SF', opp: 'Projected: L. Littler (#1)', prize: '£80,000', status: 'pending' },
-    { round: 'Final', opp: 'Projected: MVG (#2)', prize: '£110,000 winner', status: 'pending' },
+    { round: 'R2', opp: 'Winner E. Rigby/T. Starling', prize: '£35,000', status: 'pending' },
+    { round: 'QF', opp: 'Projected: C. Redgate (#3)', prize: '£50,000', status: 'pending' },
+    { round: 'SF', opp: 'Projected: H. Moxon (#1)', prize: '£80,000', status: 'pending' },
+    { round: 'Final', opp: 'Projected: J. Bakhuis (#2)', prize: '£110,000 winner', status: 'pending' },
   ];
   return (
     <div className="p-6 space-y-6">
@@ -5213,9 +5565,9 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
             <div className="text-gray-400">vs Darren Merrick (#7)</div>
           </div>
           {[
-            { top: 'Michael Smith', bot: 'Rob Cross' },
-            { top: 'Gary Anderson', bot: 'Dirk van Duijvenbode' },
-            { top: 'Luke Humphries', bot: 'Daryl Gurney' },
+            { top: 'Ewan Rigby', bot: 'Tom Starling' },
+            { top: 'Ross Galbraith', bot: 'Lars Heemskerk' },
+            { top: 'Callum Redgate', bot: "Finn O'Reilly" },
           ].map((m, i) => (
             <div key={i} className="bg-black/30 border border-white/5 rounded-lg p-3">
               <div className="text-gray-400">{m.top}</div>
@@ -5248,7 +5600,7 @@ function DrawBracketView({ player, session }: { player: DartsPlayer; session: Sp
         {showFull && (
           <div className="px-5 pb-5">
             <div className="grid grid-cols-4 gap-2 text-xs">
-              {['L. Littler', 'M. Smith', 'R. Cross', 'J. Wade', 'G. Anderson', 'D. van Duijvenbode', 'J. Morrison', 'D. Merrick', 'L. Humphries', 'D. Gurney', 'M. van Gerwen', 'D. Chisnall', 'N. Aspinall', 'P. Wright', 'D. Noppert', 'G. Clayton'].map((p, i) => (
+              {['H. Moxon', 'E. Rigby', 'T. Starling', 'R. Tolbert', 'R. Galbraith', 'L. Heemskerk', 'J. Morrison', 'D. Merrick', 'C. Redgate', "F. O'Reilly", 'J. Bakhuis', 'F. Lamont', 'M. Penderton', 'C. MacIntyre', 'K. Diepenhorst', 'G. Pennant'].map((p, i) => (
                 <div key={i} className="bg-black/30 border border-white/5 rounded px-2 py-1.5 text-gray-400">{p}</div>
               ))}
             </div>
@@ -5415,15 +5767,15 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
   const [tab, setTab] = useState<'jake' | 'all' | 'upcoming'>('jake');
 
   const allMatches: LiveMatch[] = [
-    { p1: 'Luke Littler', r1: 2, p2: 'Martin Schindler', r2: 0, avg1: 108.2, avg2: 94.1, status: 'live', board: 1, round: 'R1' },
-    { p1: 'Michael van Gerwen', r1: 1, p2: 'Niels Zonneveld', r2: 1, avg1: 99.4, avg2: 97.8, status: 'live', board: 2, round: 'R1' },
-    { p1: 'Luke Humphries', r1: 2, p2: 'Ricky Evans', r2: 0, avg1: 104.1, avg2: 91.2, status: 'live', board: 3, round: 'R1' },
+    { p1: 'Harry Moxon', r1: 2, p2: 'Felix Brandt', r2: 0, avg1: 108.2, avg2: 94.1, status: 'live', board: 1, round: 'R1' },
+    { p1: 'Jurgen Bakhuis', r1: 1, p2: 'Thom van Kleef', r2: 1, avg1: 99.4, avg2: 97.8, status: 'live', board: 2, round: 'R1' },
+    { p1: 'Callum Redgate', r1: 2, p2: 'Ollie Bannerman', r2: 0, avg1: 104.1, avg2: 91.2, status: 'live', board: 3, round: 'R1' },
     { p1: player.name, r1: 1, p2: 'Darren Merrick', r2: 0, avg1: 101.4, avg2: 96.8, status: 'live', board: 4, round: 'R1', isJake: true },
-    { p1: 'Rob Cross', r1: 1, p2: 'Danny Noppert', r2: 0, avg1: 96.8, avg2: 95.1, status: 'live', board: 5, round: 'R1' },
-    { p1: 'Nathan Aspinall', r1: 0, p2: 'Florian Hempel', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 6, round: 'R1', time: '21:00' },
-    { p1: 'Michael Smith', r1: 0, p2: 'Kevin Doets', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 7, round: 'R1', time: '21:00' },
-    { p1: 'Peter Wright', r1: 2, p2: 'Bradley Brooks', r2: 1, avg1: 97.3, avg2: 94.8, status: 'complete', board: 1, round: 'R1' },
-    { p1: 'Damon Heta', r1: 2, p2: 'Callan Rydz', r2: 0, avg1: 98.1, avg2: 88.4, status: 'complete', board: 2, round: 'R1' },
+    { p1: 'Tom Starling', r1: 1, p2: 'Koen Diepenhorst', r2: 0, avg1: 96.8, avg2: 95.1, status: 'live', board: 5, round: 'R1' },
+    { p1: 'Max Penderton', r1: 0, p2: 'Matthias Rohde', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 6, round: 'R1', time: '21:00' },
+    { p1: 'Ewan Rigby', r1: 0, p2: 'Dries Luytens', r2: 0, avg1: 0, avg2: 0, status: 'upcoming', board: 7, round: 'R1', time: '21:00' },
+    { p1: 'Callum MacIntyre', r1: 2, p2: 'Sam Burbank', r2: 1, avg1: 97.3, avg2: 94.8, status: 'complete', board: 1, round: 'R1' },
+    { p1: 'Jack Brumby', r1: 2, p2: 'Will Easterbrook', r2: 0, avg1: 98.1, avg2: 88.4, status: 'complete', board: 2, round: 'R1' },
   ];
 
   const jakeVisits = [
@@ -5587,9 +5939,9 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
       )}
 
       <div className="flex flex-wrap gap-4 px-4 py-3 bg-gray-900/40 rounded-xl border border-white/5 text-xs text-gray-500">
-        <span>Most 180s today: <span className="text-white">Littler (4)</span></span>
-        <span>Highest finish: <span className="text-white">161 (Humphries)</span></span>
-        <span>Highest avg: <span className="text-white">108.2 (Littler)</span></span>
+        <span>Most 180s today: <span className="text-white">Moxon (4)</span></span>
+        <span>Highest finish: <span className="text-white">161 (Redgate)</span></span>
+        <span>Highest avg: <span className="text-white">108.2 (Moxon)</span></span>
         <span>Total 180s: <span className="text-white">31</span></span>
         <span className="ml-auto text-gray-600">* Demo data · Live would update from DartConnect every 3s</span>
       </div>
@@ -5601,24 +5953,24 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
 // ─── ACADEMY & DEV VIEW ───────────────────────────────────────────────────────
 function AcademyDevView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const devTour = [
-    { pos: 1, name: 'Gian van Veen', flag: '🇳🇱', earned: 18400 },
-    { pos: 2, name: 'Niko Springer', flag: '🇩🇪', earned: 14200 },
-    { pos: 3, name: 'Nathan Rafferty', flag: '🇮🇪', earned: 12800 },
-    { pos: 4, name: 'Bradley Brooks', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 11400 },
-    { pos: 5, name: 'James Beeton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 9600 },
-    { pos: 6, name: 'Dylan Slevin', flag: '🇮🇪', earned: 8200 },
-    { pos: 7, name: 'Connor Scutt', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 7400 },
-    { pos: 8, name: 'Rhys Griffin', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 6800 },
+    { pos: 1, name: 'Pieter Rutten', flag: '🇳🇱', earned: 18400 },
+    { pos: 2, name: 'Nathan Garrick', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 14200 },
+    { pos: 3, name: 'Darragh Hennessy', flag: '🇮🇪', earned: 12800 },
+    { pos: 4, name: 'Sam Burbank', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 11400 },
+    { pos: 5, name: 'Leo Ashcroft', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 9600 },
+    { pos: 6, name: 'Conor Flaherty', flag: '🇮🇪', earned: 8200 },
+    { pos: 7, name: 'Oscar Venables', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 7400 },
+    { pos: 8, name: 'Morgan Llewellyn', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 6800 },
   ];
   const challengeTour = [
-    { pos: 1, name: 'Berry van Peer', flag: '🇳🇱', earned: 22800 },
-    { pos: 2, name: 'Owen Bates', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 19400 },
-    { pos: 3, name: 'Christian Kist', flag: '🇳🇱', earned: 17200 },
-    { pos: 4, name: 'Lewy Williams', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 14600 },
-    { pos: 5, name: 'Paul Hogan', flag: '🇮🇪', earned: 12100 },
-    { pos: 6, name: 'Alan Warriner', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 10800 },
-    { pos: 7, name: 'Robert Owen', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 9200 },
-    { pos: 8, name: 'Scott Williams', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 8100 },
+    { pos: 1, name: 'Ruben Vermaes', flag: '🇳🇱', earned: 22800 },
+    { pos: 2, name: 'Oliver Havelock', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 19400 },
+    { pos: 3, name: 'Vincent de Groot', flag: '🇳🇱', earned: 17200 },
+    { pos: 4, name: 'Rhodri Pemberton', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 14600 },
+    { pos: 5, name: 'Seamus Carrick', flag: '🇮🇪', earned: 12100 },
+    { pos: 6, name: 'Cameron Dwyer', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 10800 },
+    { pos: 7, name: 'Dafydd Rhys-Morris', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', earned: 9200 },
+    { pos: 8, name: 'Toby Farringdon', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', earned: 8100 },
   ];
   const pathway = [
     { level: 'County / grassroots', detail: 'BDO-affiliated regional play' },
@@ -5762,17 +6114,17 @@ function AcademyDevView({ player, session }: { player: DartsPlayer; session: Spo
 // ─── PAIRS & TEAM EVENTS VIEW ─────────────────────────────────────────────────
 function PairsEventsView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const englishPlayers = [
-    { pos: 1, pdcPos: 1, name: 'Luke Littler', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
-    { pos: 2, pdcPos: 6, name: 'Michael Smith', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
-    { pos: 3, pdcPos: 9, name: 'Rob Cross', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
-    { pos: 4, pdcPos: 12, name: 'Dave Chisnall', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
+    { pos: 1, pdcPos: 1, name: 'Harry Moxon', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
+    { pos: 2, pdcPos: 6, name: 'Ewan Rigby', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: true, isJake: false },
+    { pos: 3, pdcPos: 9, name: 'Tom Starling', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
+    { pos: 4, pdcPos: 12, name: 'Freddie Lamont', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: false },
     { pos: 5, pdcPos: 19, name: 'Jake Morrison', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', selected: false, isJake: true },
   ];
   const wcEvents = [
     { year: 2023, result: 'Did not qualify', detail: 'Pre-top-64 era' },
     { year: 2024, result: 'Did not qualify', detail: '#31 PDC — just missed England top 4' },
     { year: 2025, result: 'Not selected', detail: '#19 PDC — 5th English player' },
-    { year: 2026, result: 'Target', detail: 'Need to pass Cross or Chisnall' },
+    { year: 2026, result: 'Target', detail: 'Need to pass Starling or Lamont' },
   ];
 
   return (
@@ -5805,7 +6157,7 @@ function PairsEventsView({ player, session }: { player: DartsPlayer; session: Sp
         </div>
         <div className="mt-3 px-4 py-3 bg-amber-950/30 border border-amber-700/30 rounded-xl text-sm">
           <span className="text-amber-300">⚠️ </span>
-          <span className="text-gray-300">To make the World Cup squad Jake needs to pass <span className="text-white font-medium">Rob Cross (#9 PDC)</span> in the Order of Merit. Gap: approximately £82,000.</span>
+          <span className="text-gray-300">To make the World Cup squad Jake needs to pass <span className="text-white font-medium">Tom Starling (#9 PDC)</span> in the Order of Merit. Gap: approximately £82,000.</span>
         </div>
       </div>
 
@@ -6586,13 +6938,13 @@ function PerformanceRatingView({ player, session }: { player: DartsPlayer; sessi
   ];
   const maxH = Math.max(...history.map(h => h.score));
   const peers = [
-    { name: 'Luke Littler', rank: 1, score: 96, isJake: false },
-    { name: 'M. van Gerwen', rank: 2, score: 94, isJake: false },
-    { name: 'Luke Humphries', rank: 3, score: 92, isJake: false },
-    { name: 'N. Aspinall', rank: 4, score: 88, isJake: false },
-    { name: 'Rob Cross', rank: 9, score: 80, isJake: false },
+    { name: 'Harry Moxon', rank: 1, score: 96, isJake: false },
+    { name: 'J. Bakhuis', rank: 2, score: 94, isJake: false },
+    { name: 'Callum Redgate', rank: 3, score: 92, isJake: false },
+    { name: 'M. Penderton', rank: 4, score: 88, isJake: false },
+    { name: 'Tom Starling', rank: 9, score: 80, isJake: false },
     { name: 'Jake Morrison', rank: 19, score: overallScore, isJake: true },
-    { name: 'G. Anderson', rank: 14, score: 74, isJake: false },
+    { name: 'R. Galbraith', rank: 14, score: 74, isJake: false },
   ].sort((a, b) => b.score - a.score);
   return (
     <div className="p-6 space-y-6">
@@ -6763,14 +7115,14 @@ function NineDartTrackerView({ player, session }: { player: DartsPlayer; session
 // ─── Premier League ───────────────────────────────────────────────────────────
 function PremierLeagueView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const plTable = [
-    { pos: 1, name: 'Luke Littler', pts: 42, w: 14, d: 0, l: 2, avg: 103.2 },
-    { pos: 2, name: 'Michael van Gerwen', pts: 36, w: 11, d: 3, l: 2, avg: 101.8 },
-    { pos: 3, name: 'Luke Humphries', pts: 32, w: 10, d: 2, l: 4, avg: 100.1 },
-    { pos: 4, name: 'Nathan Aspinall', pts: 28, w: 8, d: 4, l: 4, avg: 98.4 },
-    { pos: 5, name: 'Michael Smith', pts: 24, w: 7, d: 3, l: 6, avg: 97.9 },
-    { pos: 6, name: 'Rob Cross', pts: 22, w: 6, d: 4, l: 6, avg: 97.1 },
-    { pos: 7, name: 'Gary Anderson', pts: 18, w: 5, d: 3, l: 8, avg: 96.8 },
-    { pos: 8, name: 'Peter Wright', pts: 14, w: 3, d: 5, l: 8, avg: 95.2 },
+    { pos: 1, name: 'Harry Moxon', pts: 42, w: 14, d: 0, l: 2, avg: 103.2 },
+    { pos: 2, name: 'Jurgen Bakhuis', pts: 36, w: 11, d: 3, l: 2, avg: 101.8 },
+    { pos: 3, name: 'Callum Redgate', pts: 32, w: 10, d: 2, l: 4, avg: 100.1 },
+    { pos: 4, name: 'Max Penderton', pts: 28, w: 8, d: 4, l: 4, avg: 98.4 },
+    { pos: 5, name: 'Ewan Rigby', pts: 24, w: 7, d: 3, l: 6, avg: 97.9 },
+    { pos: 6, name: 'Tom Starling', pts: 22, w: 6, d: 4, l: 6, avg: 97.1 },
+    { pos: 7, name: 'Ross Galbraith', pts: 18, w: 5, d: 3, l: 8, avg: 96.8 },
+    { pos: 8, name: 'Callum MacIntyre', pts: 14, w: 3, d: 5, l: 8, avg: 95.2 },
   ];
   return (
     <div className="p-6 space-y-6">
@@ -7269,8 +7621,39 @@ function AccreditationsView({ player, session }: { player: DartsPlayer; session:
 // ─── County Darts ─────────────────────────────────────────────────────────────
 // ─── DART CAM & ANALYTICS VIEW ───────────────────────────────────────────────
 function DartCamView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
-  const [aiBrief, setAiBrief] = useState<string | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
+  const isDemoShellDash = session.isDemoShell !== false
+
+  const aiBrief = "Your session average 98.4 — up 2.1 on last week. Doubles hit rate held at 48% but your D16/D8 pair dipped to 31% combined; worth isolating those in the next practice block. Your 180s rate (3/session) sits in line with tour form. Recovery window hit target (42 min). Tomorrow: add 15 min of pressure doubles at D16."
+
+  const oneEightyWeeks = [
+    { week: 'W1', count: 4 }, { week: 'W2', count: 3 }, { week: 'W3', count: 5 },
+    { week: 'W4', count: 2 }, { week: 'W5', count: 6 }, { week: 'W6', count: 4 },
+    { week: 'W7', count: 5 }, { week: 'W8', count: 3 }, { week: 'W9', count: 7 },
+    { week: 'W10', count: 4 }, { week: 'W11', count: 5 }, { week: 'W12', count: 6 },
+  ]
+  const oneEightyMax = Math.max(...oneEightyWeeks.map(w => w.count))
+
+  const scoringDistribution = [
+    { date: 'Apr 4', e180: 3, e140: 14, e100: 28, e80: 18, low: 12 },
+    { date: 'Apr 5', e180: 5, e140: 18, e100: 31, e80: 14, low: 9 },
+    { date: 'Apr 6', e180: 4, e140: 16, e100: 26, e80: 16, low: 11 },
+    { date: 'Apr 7', e180: 8, e140: 22, e100: 30, e80: 12, low: 7 },
+    { date: 'Apr 8', e180: 5, e140: 19, e100: 28, e80: 15, low: 10 },
+    { date: 'Apr 9', e180: 6, e140: 20, e100: 32, e80: 13, low: 8 },
+  ]
+  const scoringBuckets: Array<{ key: 'e180' | 'e140' | 'e100' | 'e80' | 'low'; label: string; color: string }> = [
+    { key: 'e180', label: '180', color: '#dc2626' },
+    { key: 'e140', label: '140+', color: '#f97316' },
+    { key: 'e100', label: '100+', color: '#f59e0b' },
+    { key: 'e80', label: '80+', color: '#9ca3af' },
+    { key: 'low', label: '<80', color: '#4b5563' },
+  ]
+
+  const sessionAverages = [
+    97.2, 99.1, 95.8, 98.4, 101.2, 96.9, 100.3, 94.8, 98.7, 99.6,
+    97.4, 102.1, 96.2, 98.9, 100.7, 95.4, 99.8, 97.6, 101.5, 98.4,
+  ]
+  const seasonAvg = 98.3
 
   const sessionStats = [
     { label: '3-Dart Avg', value: '98.4', color: '#dc2626' },
@@ -7312,13 +7695,6 @@ function DartCamView({ player, session }: { player: DartsPlayer; session: Sports
     { date: 'Apr 6', type: 'Match Sim', avg: '96.8', checkout: '39%', e180s: '4', duration: '120 min' },
     { date: 'Apr 5', type: 'Checkout Clinic', avg: '—', checkout: '48%', e180s: '—', duration: '75 min' },
   ]
-
-  useEffect(() => {
-    setAiLoading(true)
-    fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `You are the AI dart cam analyst for ${session.userName || player.name} "${session.nickname || player.nickname}" (PDC #${player.pdcRank}). Analyse this practice session: 3-dart avg 98.4, checkout 44.1%, first 9 avg 102.3, 18/41 doubles hit, 6 x 180s. Favourite doubles: D16 (67%), D8 (58%), D20 (54%). Give a concise post-session brief: 3 positives, 2 areas to work on, 1 recommendation for next session. Max 150 words. Plain text. No markdown.` }] }) })
-      .then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiBrief(t ? cleanResponse(t) : 'Unable to generate brief.') }).catch(() => setAiBrief('Unable to generate brief.')).finally(() => setAiLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   return (
     <div className="space-y-6">
@@ -7419,11 +7795,159 @@ function DartCamView({ player, session }: { player: DartsPlayer; session: Sports
         </div>
       </div>
 
+      {/* 180s Frequency — 12-week bar chart */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">180s Frequency</div>
+        <div className="text-[11px] text-gray-500 mb-4">Maximum scores over the last 12 weeks — current week highlighted.</div>
+        {isDemoShellDash ? (
+          <svg viewBox="0 0 360 140" className="w-full h-36">
+            <defs>
+              <linearGradient id="darts180Grad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#dc2626" />
+                <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+            </defs>
+            {oneEightyWeeks.map((w, i) => {
+              const barW = 22
+              const gap = 8
+              const x = 12 + i * (barW + gap)
+              const h = (w.count / oneEightyMax) * 100
+              const y = 110 - h
+              const isCurrent = i === oneEightyWeeks.length - 1
+              return (
+                <g key={w.week}>
+                  <rect
+                    x={x}
+                    y={y}
+                    width={barW}
+                    height={h}
+                    rx={3}
+                    fill={isCurrent ? '#fbbf24' : 'url(#darts180Grad)'}
+                    opacity={isCurrent ? 1 : 0.85}
+                  />
+                  <text x={x + barW / 2} y={y - 4} textAnchor="middle" fontSize="9" fill={isCurrent ? '#fbbf24' : '#9ca3af'} fontWeight="bold">{w.count}</text>
+                  <text x={x + barW / 2} y={126} textAnchor="middle" fontSize="8" fill="#6b7280">{w.week}</text>
+                </g>
+              )
+            })}
+          </svg>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-xs text-gray-500 mb-3">Connect your dart cam to unlock 180s frequency tracking</p>
+            <button className="px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium rounded-lg hover:bg-red-600/30 transition-colors">Connect Dart Cam</button>
+          </div>
+        )}
+      </div>
+
+      {/* Scoring Distribution — stacked bar per session */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">Scoring Distribution</div>
+        <div className="text-[11px] text-gray-500 mb-4">Throw composition across the last six sessions.</div>
+        {isDemoShellDash ? (
+          <>
+            <svg viewBox="0 0 360 160" className="w-full h-40">
+              {scoringDistribution.map((s, i) => {
+                const total = scoringBuckets.reduce((acc, b) => acc + s[b.key], 0)
+                const barW = 36
+                const gap = 16
+                const x = 14 + i * (barW + gap)
+                const chartH = 130
+                let yCursor = 10 + chartH
+                return (
+                  <g key={s.date}>
+                    {scoringBuckets.map(b => {
+                      const segH = (s[b.key] / total) * chartH
+                      yCursor -= segH
+                      return (
+                        <rect
+                          key={b.key}
+                          x={x}
+                          y={yCursor}
+                          width={barW}
+                          height={segH}
+                          fill={b.color}
+                        />
+                      )
+                    })}
+                    <text x={x + barW / 2} y={154} textAnchor="middle" fontSize="9" fill="#6b7280">{s.date}</text>
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
+              {scoringBuckets.map(b => (
+                <span key={b.key} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: b.color }} />
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-xs text-gray-500 mb-3">Connect your dart cam to unlock scoring distribution</p>
+            <button className="px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium rounded-lg hover:bg-red-600/30 transition-colors">Connect Dart Cam</button>
+          </div>
+        )}
+      </div>
+
+      {/* Heat-over-time — line chart of 3-dart average */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">Heat Over Time</div>
+        <div className="text-[11px] text-gray-500 mb-4">3-dart average across your last 20 sessions, with season-to-date line.</div>
+        {isDemoShellDash ? (
+          (() => {
+            const minY = 92
+            const maxY = 104
+            const w = 360
+            const h = 140
+            const padX = 12
+            const padY = 14
+            const innerW = w - padX * 2
+            const innerH = h - padY * 2
+            const points = sessionAverages.map((v, i) => {
+              const x = padX + (i / (sessionAverages.length - 1)) * innerW
+              const y = padY + ((maxY - v) / (maxY - minY)) * innerH
+              return `${x.toFixed(1)},${y.toFixed(1)}`
+            })
+            const seasonY = padY + ((maxY - seasonAvg) / (maxY - minY)) * innerH
+            return (
+              <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-36">
+                <line x1={padX} x2={w - padX} y1={seasonY} y2={seasonY} stroke="#22C55E" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
+                <text x={w - padX} y={seasonY - 4} textAnchor="end" fontSize="9" fill="#22C55E">Season avg {seasonAvg}</text>
+                <polyline
+                  fill="none"
+                  stroke="#dc2626"
+                  strokeWidth="1.8"
+                  points={points.join(' ')}
+                />
+                {sessionAverages.map((v, i) => {
+                  const x = padX + (i / (sessionAverages.length - 1)) * innerW
+                  const y = padY + ((maxY - v) / (maxY - minY)) * innerH
+                  return <circle key={i} cx={x} cy={y} r="2" fill="#f97316" />
+                })}
+              </svg>
+            )
+          })()
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-xs text-gray-500 mb-3">Connect your dart cam to unlock 3-dart average tracking</p>
+            <button className="px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium rounded-lg hover:bg-red-600/30 transition-colors">Connect Dart Cam</button>
+          </div>
+        )}
+      </div>
+
       {/* AI Post-Session Brief */}
       <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-3"><span>🤖</span><span className="text-sm font-bold text-white">AI Post-Session Brief</span></div>
-        {aiLoading && <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{ width: `${60+i*10}%` }} />)}</div>}
-        {aiBrief && !aiLoading && <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiBrief}</div>}
+        {isDemoShellDash ? (
+          <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{aiBrief}</div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-xs text-gray-500 mb-3">Connect your dart cam to unlock AI session briefs</p>
+            <button className="px-3 py-1.5 bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium rounded-lg hover:bg-red-600/30 transition-colors">Connect Dart Cam</button>
+          </div>
+        )}
       </div>
 
       {/* Session History */}
@@ -7697,10 +8221,10 @@ function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession
   ]
 
   const EVENTS = [
-    { event:'PDC European Championship — R1 vs D. Merrick', date:'Tonight',      venue:'Westfalenhallen, Dortmund',  broadcast:'Sky Sports, ITV4, DAZN', exposure:'Est. 1.8M TV viewers' },
+    { event:'PDC European Championship — R1 vs D. Merrick', date:'Tonight',      venue:'Westfalenhallen, Dortmund',  broadcast:'Sky Sports, ITV4, Meridian Sports', exposure:'Est. 1.8M TV viewers' },
     { event:'Players Championship 9',                        date:'Sat 26 Apr',   venue:'Marshall Arena, Milton Keynes', broadcast:'PDC.tv stream',          exposure:'Est. 420k stream views' },
     { event:'Players Championship 10',                       date:'Sun 27 Apr',   venue:'Marshall Arena, Milton Keynes', broadcast:'PDC.tv stream',          exposure:'Est. 380k stream views' },
-    { event:'World Matchplay',                               date:'Sat 19 Jul',   venue:'Winter Gardens, Blackpool',     broadcast:'Sky Sports, DAZN',       exposure:'Est. 2.4M TV viewers' },
+    { event:'World Matchplay',                               date:'Sat 19 Jul',   venue:'Winter Gardens, Blackpool',     broadcast:'Sky Sports, Meridian Sports',       exposure:'Est. 2.4M TV viewers' },
     { event:'PDC World Championship (if qualified)',         date:'Dec 2026',     venue:'Alexandra Palace, London',       broadcast:'Sky Sports, ITV4',       exposure:'Est. 4.1M TV viewers' },
   ]
 
@@ -7772,7 +8296,7 @@ function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
                 <p className="text-sm font-bold text-white">Brand visibility — European Championship tonight</p>
-                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{playerDisplayName} vs D. Merrick at Westfalenhallen, Dortmund — Sky Sports / ITV4 / DAZN</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{playerDisplayName} vs D. Merrick at Westfalenhallen, Dortmund — Sky Sports / ITV4 / Meridian Sports</p>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
@@ -7890,7 +8414,7 @@ function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold text-white mb-4">Estimated brand value breakdown</p>
               {[
-                { label:'TV / broadcast exposure (Sky / ITV4 / DAZN)', value:'£28,000', pct:58, color:sponsorColor },
+                { label:'TV / broadcast exposure (Sky / ITV4 / Meridian Sports)', value:'£28,000', pct:58, color:sponsorColor },
                 { label:'Walk-on banner & on-stage equipment',          value:'£9,000',  pct:19, color:'#dc2626' },
                 { label:'Social media reach (Twitter / TikTok)',        value:'£7,000',  pct:15, color:'#0ea5e9' },
                 { label:'Press conference & interview backdrop',        value:'£4,000',  pct:8,  color:'#8B5CF6' },
@@ -8832,7 +9356,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       case 'teamhub':       return gate('👥', 'No team added yet', 'Add your team during onboarding or in Settings', <TeamHubView onNavigate={setActiveSection} player={player} session={session} />);
       case 'mental':        return gate('🧘', 'No sessions logged', 'Connect your data to unlock this', <MentalPerformanceView onNavigate={setActiveSection} player={player} session={session} />);
       case 'sponsorship':   return gate('💼', 'No sponsors added', 'Connect your data to unlock this', <SponsorshipView onNavigate={setActiveSection} player={player} session={session} />);
-      case 'exhibitions':   return gate('🎪', 'No exhibitions booked', 'Connect your data to unlock this', <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />);
+      case 'exhibitions':   return gate('🎪', 'No exhibition enquiries yet', "We'll surface them here when they come in.", <ExhibitionManagerView onNavigate={setActiveSection} player={player} session={session} />);
       case 'media':         return gate('📱', 'No media logged', 'Connect your data to unlock this',
         session.isDemoShell !== false
           ? <MediaContentModule
