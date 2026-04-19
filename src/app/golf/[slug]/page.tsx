@@ -39,6 +39,7 @@ import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
+import { CADDIES_ROSTER, COURSES_ROSTER, DRIVING_RANGES_ROSTER } from '@/lib/demo-content/golf-pros'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -4042,29 +4043,31 @@ function GolfFindProView({ player, session }: { player: GolfPlayer; session: Spo
   const [tourLevel, setTourLevel] = useState('')
   const [budget, setBudget] = useState('')
   const [courseType, setCourseType] = useState('')
-  const [results, setResults] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [shortlist, setShortlist] = useState<string[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_findpro_shortlist') : null; return s ? JSON.parse(s) : [] } catch { return [] }
+  })
+  const toggleShortlist = (id: string) => setShortlist(prev => {
+    const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    try { localStorage.setItem('lumio_golf_findpro_shortlist', JSON.stringify(next)) } catch {}
+    return next
+  })
   const TABS = [{ id: 'caddy' as const, label: 'Find a Caddy', emoji: '🎒' },{ id: 'course' as const, label: 'Find a Course', emoji: '⛳' },{ id: 'range' as const, label: 'Driving Range', emoji: '🏌️' }]
-  const search = async () => {
-    setLoading(true); setResults('')
-    const prompts: Record<string, string> = {
-      caddy: `You are a professional golf career consultant. Find a caddy. Tour level: ${tourLevel || player.tour || 'DP World Tour'}. Location/region: ${location || 'Europe/flexible'}. Budget: ${budget || 'standard tour rate'}. Search for and recommend 4 real professional caddies currently available or caddy agencies that place caddies on tour. For each write a paragraph covering: full name or agency, background, tours worked, notable players caddied for, strengths, availability and how to contact. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-      course: `You are a professional golf consultant. Find a course. Location: ${location || 'flexible'}. Course type: ${courseType || 'any'}. Tour level: ${tourLevel || 'professional'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real golf courses suitable for a touring professional. For each write a paragraph covering: course name, location, course type, notable features, green fee or membership, tour professionals who practice there, and booking info. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-      range: `You are a professional golf consultant. Find a driving range or practice facility. Location: ${location || 'flexible'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real driving ranges or practice facilities suitable for a touring professional. For each write a paragraph covering: facility name, location, what they offer (covered bays, TrackMan/Toptracer, short game area, putting green, floodlit), opening hours, pricing, and any notable tour professionals who use it. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-    }
-    try {
-      const res = await fetch('/api/ai/golf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, tools: [{ type: 'web_search_20250305', name: 'web_search' }], messages: [{ role: 'user', content: prompts[tab] }] }) })
-      const data = await res.json()
-      const text = data.content?.find((b: { type: string }) => b.type === 'text')?.text || ''
-      setResults(text)
-    } catch { setResults('Search failed — please try again.') }
-    setLoading(false)
-  }
+
+  const q = (location + ' ' + tourLevel + ' ' + budget + ' ' + courseType).toLowerCase().trim()
+  const match = (item: object) => !q || JSON.stringify(item).toLowerCase().includes(q)
+  const filteredCaddies = CADDIES_ROSTER.filter(match)
+  const filteredCourses = COURSES_ROSTER.filter(match)
+  const filteredRanges  = DRIVING_RANGES_ROSTER.filter(match)
+
+  const mailto = (to: string, subj: string, body: string) =>
+    `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`
+  const signoff = session.userName || player.name || 'James'
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered live search for caddies and courses worldwide</div></div></div>
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>Caddies, courses, and driving ranges — instant static demo roster</div></div></div>
       <div className="flex gap-2 p-1 rounded-xl" style={{ background: '#0d1117' }}>
-        {TABS.map(t => (<button key={t.id} onClick={() => { setTab(t.id); setResults('') }} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#16a34a' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
+        {TABS.map(t => (<button key={t.id} onClick={() => setTab(t.id)} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#16a34a' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Scotland, Florida" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
@@ -4072,8 +4075,101 @@ function GolfFindProView({ player, session }: { player: GolfPlayer; session: Spo
         {tab === 'course' && <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Course Type</label><input value={courseType} onChange={e => setCourseType(e.target.value)} placeholder="e.g. Links, Parkland" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>}
         <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Budget</label><input value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. £200/round" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
       </div>
-      <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white transition-all" style={{ background: loading ? '#374151' : '#16a34a' }}>{loading ? '🔍 Searching live...' : `Search for ${TABS.find(t => t.id === tab)?.label}`}</button>
-      {results && (<div className="rounded-xl p-4 space-y-3" style={{ background: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xs font-bold" style={{ color: '#16a34a' }}>LIVE RESULTS · Powered by AI web search</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{results.split('\n\n').map((para, i) => (<p key={i} className="mb-3">{para}</p>))}</div><div className="text-xs" style={{ color: '#4B5563' }}>Results are AI-generated from live web search · Always verify directly before booking</div></div>)}
+      <div className="rounded-lg px-3 py-2 text-[11px]" style={{ background: '#0d1117', border: '1px solid #1F2937', color: '#6B7280' }}>
+        Demo data — wired to live search in full build. {shortlist.length > 0 && <span className="text-teal-400 ml-2">{shortlist.length} saved to shortlist</span>}
+      </div>
+
+      {tab === 'caddy' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredCaddies.map(c => {
+            const saved = shortlist.includes(c.id)
+            const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
+            return (
+              <div key={c.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff' }}>{initials}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{c.name}</div>
+                    <div className="text-[11px] text-gray-500">{c.homeBase} · {c.yearsExperience}y exp</div>
+                  </div>
+                </div>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Speciality:</span> {c.speciality}</div>
+                  <div><span className="text-gray-500">Tour level:</span> {c.tourLevel}</div>
+                  <div><span className="text-gray-500">Day rate:</span> {c.dayRate}</div>
+                  {c.notablePlayer && <div className="text-teal-400/80">★ {c.notablePlayer}</div>}
+                  <div><span className="text-gray-500">Availability:</span> {c.availability}</div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto(c.contactEmail, `Caddying enquiry — ${c.name}`, `Hi ${c.name.split(' ')[0]},\n\nI'm ${signoff}, currently on the ${player.tour || 'DP World Tour'}. Looking for a caddy — your profile matches what I'm after.\n\nCould we talk this week?\n\nBest,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {tab === 'course' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredCourses.map(c => {
+            const saved = shortlist.includes(c.id)
+            return (
+              <div key={c.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white">{c.name}</div>
+                    <div className="text-[11px] text-gray-500">{c.location}</div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(22,163,74,0.15)', color: '#22c55e' }}>{c.design}</span>
+                </div>
+                <p className="text-[11px] text-gray-400 mb-2">{c.description}</p>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Green fee:</span> {c.greenFee}</div>
+                  <div><span className="text-gray-500">Access:</span> {c.access}</div>
+                  <div><span className="text-gray-500">Rating / Slope:</span> {c.courseRating} / {c.slopeRating}</div>
+                  <div className="text-gray-500">Amenities: <span className="text-gray-300">{c.amenities.join(' · ')}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto('bookings@' + c.name.toLowerCase().replace(/[^a-z]+/g,'') + '.co.uk', `Tee-time enquiry — ${c.name}`, `Hi,\n\nI'm ${signoff} (${player.tour || 'DP World Tour'} pro). Looking to book a practice round at ${c.name} in the coming weeks.\n\nCan you confirm tour-pro rates + available tee times?\n\nThanks,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {tab === 'range' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredRanges.map(r => {
+            const saved = shortlist.includes(r.id)
+            return (
+              <div key={r.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white">{r.name}</div>
+                    <div className="text-[11px] text-gray-500">{r.location}</div>
+                  </div>
+                  {r.coachOnSite && <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>Coach on-site</span>}
+                </div>
+                <p className="text-[11px] text-gray-400 mb-2">{r.description}</p>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Trackman bays:</span> {r.trackmanBays}</div>
+                  <div><span className="text-gray-500">Hourly rate:</span> {r.hourlyRate}</div>
+                  <div><span className="text-gray-500">Access:</span> {r.access}</div>
+                  <div className="text-gray-500">Facilities: <span className="text-gray-300">{r.facilities.join(' · ')}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto('info@' + r.name.toLowerCase().replace(/[^a-z]+/g,'') + '.com', `Range booking — ${r.name}`, `Hi,\n\nI'm ${signoff} (${player.tour || 'DP World Tour'} pro). Looking for practice bay availability at ${r.name} this week.\n\nThanks,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(r.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       <GolfAISection context="default" player={player} session={session} />
     </div>
   )
