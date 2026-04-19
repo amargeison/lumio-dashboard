@@ -133,9 +133,9 @@ function OverviewTab() {
           <div className="flex items-center gap-6">
             <ProgressRing percent={71} size={90} />
             <div className="space-y-2 flex-1">
-              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Avg Attendance</span><span className="text-xs font-bold" style={{ color: C.text }}>4,240 / 6,000</span></div>
-              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Season Tickets</span><span className="text-xs font-bold" style={{ color: C.text }}>1,847</span></div>
-              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Last Match</span><span className="text-xs font-bold" style={{ color: '#22C55E' }}>5,100 (▲12%)</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Avg Attendance</span><span className="text-xs font-bold" style={{ color: C.text }}>22,500 / 24,000</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Season Tickets</span><span className="text-xs font-bold" style={{ color: C.text }}>14,200</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Last Match</span><span className="text-xs font-bold" style={{ color: '#22C55E' }}>23,840 (▲6%)</span></div>
             </div>
           </div>
         </Card>
@@ -200,9 +200,9 @@ function OverviewTab() {
                 { m: 'Points at this stage', prev: '41', curr: '47', change: '▲+6', ok: true },
                 { m: 'Goals scored', prev: '38', curr: '44', change: '▲+6', ok: true },
                 { m: 'Goals conceded', prev: '31', curr: '27', change: '▼-4', ok: true },
-                { m: 'Average attendance', prev: '3,980', curr: '4,240', change: '▲+260', ok: true },
-                { m: 'Revenue YTD', prev: '£1.02M', curr: '£1.14M', change: '▲+12%', ok: true },
-                { m: 'Wage bill/mo', prev: '£195K', curr: '£210K', change: '▲+8%', ok: false },
+                { m: 'Average attendance', prev: '21,200', curr: '22,500', change: '▲+1,300', ok: true },
+                { m: 'Revenue YTD', prev: '£21.4M', curr: '£23.6M', change: '▲+10%', ok: true },
+                { m: 'Wage bill/mo', prev: '£1.85M', curr: '£2.0M', change: '▲+8%', ok: false },
               ].map(r => (
                 <tr key={r.m} style={{ borderBottom: `1px solid ${C.border}` }}>
                   <td className="py-2 px-3" style={{ color: C.text }}>{r.m}</td>
@@ -350,10 +350,10 @@ function FinanceTab() {
           <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Cash Flow Summary</p>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { l: 'Opening', v: '£840K', c: C.text },
-              { l: 'In', v: '+£380K', c: '#22C55E' },
-              { l: 'Out', v: '-£290K', c: '#EF4444' },
-              { l: 'Closing', v: '£930K', c: '#22C55E' },
+              { l: 'Opening', v: '£8.4M', c: C.text },
+              { l: 'In', v: '+£3.2M', c: '#22C55E' },
+              { l: 'Out', v: '-£2.4M', c: '#EF4444' },
+              { l: 'Closing', v: '£9.2M', c: '#22C55E' },
             ].map(x => (
               <div key={x.l} className="rounded-lg p-3 text-center" style={{ backgroundColor: x.l === 'Closing' ? 'rgba(34,197,94,0.08)' : '#0A0B10', border: `1px solid ${x.l === 'Closing' ? 'rgba(34,197,94,0.3)' : C.border}` }}>
                 <p className="text-xs" style={{ color: C.muted }}>{x.l}</p>
@@ -394,12 +394,12 @@ function FinanceTab() {
       {/* Transfer Budget Tracker */}
       <Card>
         <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Transfer Budget Tracker</p>
-        <div className="flex justify-between text-xs mb-2"><span style={{ color: C.muted }}>£150K spent</span><span style={{ color: C.muted }}>£350K remaining</span></div>
+        <div className="flex justify-between text-xs mb-2"><span style={{ color: C.muted }}>£6.3M spent</span><span style={{ color: C.muted }}>£8.7M remaining</span></div>
         <div className="h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: C.border }}>
-          <div style={{ width: '30%', backgroundColor: C.teal }} />
-          <div style={{ width: '70%', backgroundColor: `${C.purple}40` }} />
+          <div style={{ width: '42%', backgroundColor: C.teal }} />
+          <div style={{ width: '58%', backgroundColor: `${C.purple}40` }} />
         </div>
-        <div className="flex justify-between mt-2"><span className="text-[10px]" style={{ color: C.teal }}>Spent: D. Osei from Harlow Town (£150K)</span><span className="text-[10px]" style={{ color: C.muted }}>Summer window: 1 Jun 2025</span></div>
+        <div className="flex justify-between mt-2"><span className="text-[10px]" style={{ color: C.teal }}>Spent: K. Whitfield from Cardiff City (£6.3M)</span><span className="text-[10px]" style={{ color: C.muted }}>Summer window opens: 1 Jun 2025</span></div>
       </Card>
 
       {/* Top Revenue Sources */}
@@ -826,10 +826,10 @@ function FacilitiesTab() {
         <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Stadium Timeline</p>
         <div className="space-y-2">
           {[
-            { y: '1952', text: 'Ground opened' },
-            { y: '2019', text: 'Last major refurbishment (North Stand)' },
-            { y: 'Now', text: 'Current capacity: 6,000' },
-            { y: 'Pending', text: 'East Stand expansion to 7,500 — planning decision expected Jun 2025' },
+            { y: '1897', text: 'Oakridge Park opened' },
+            { y: '2014', text: 'Last major refurbishment (West Stand)' },
+            { y: 'Now', text: 'Current capacity: 24,000' },
+            { y: 'Pending', text: 'East Stand expansion to 25,500 — Phase 1 enabling works on schedule (target 2026/27)' },
           ].map(t => (
             <div key={t.y} className="flex items-center gap-3">
               <span className="text-xs font-bold w-16 shrink-0" style={{ color: t.y === 'Pending' ? C.gold : C.text }}>{t.y}</span>
@@ -853,9 +853,9 @@ export default function BoardSuiteView() {
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
         <KPI icon={Trophy} label="League Position" value="6th" trend="↑2" trendUp />
         <KPI icon={Crown} label="Points" value="47" trend="+3" trendUp />
-        <KPI icon={Users} label="Squad Value" value="£24.3M" trend="↑£1.2M" trendUp />
-        <KPI icon={DollarSign} label="Monthly Revenue" value="£380K" trend="+8%" trendUp />
-        <KPI icon={TrendingDown} label="Wage Bill" value="£210K/mo" trend="+3%" trendUp={false} />
+        <KPI icon={Users} label="Squad Value" value="£38M" trend="↑£1.2M" trendUp />
+        <KPI icon={DollarSign} label="Monthly Revenue" value="£3.2M/mo" trend="+8%" trendUp />
+        <KPI icon={TrendingDown} label="Wage Bill" value="£2.0M/mo" trend="+3%" trendUp={false} />
       </div>
 
       {/* Tabs */}
