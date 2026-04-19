@@ -71,6 +71,10 @@ import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
+import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
+import { ATP_RANKINGS, WTA_RANKINGS, type RankingEntry } from '@/lib/demo-content/atp-wta-rankings'
+import { TENNIS_COACHES, type TennisCoach } from '@/lib/demo-content/tennis-coaches'
+import { TENNIS_HITTING_PARTNERS, distanceKmBetween, type HittingPartner } from '@/lib/demo-content/tennis-hitting-partners'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -1388,12 +1392,12 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="flex items-center gap-4">
                       <div>
                         <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label>
-                        <input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_tennis_brand_primary', e.target.value) }}
+                        <input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_tennis_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }}
                           className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
                       </div>
                       <div>
                         <label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label>
-                        <input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_tennis_brand_secondary', e.target.value) }}
+                        <input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_tennis_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }}
                           className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
                       </div>
                       <div className="flex-1">
@@ -1405,23 +1409,24 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       </div>
                     </div>
                   </div>
+                  <div className="mt-4 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>💡 Everything you need before stepping on court — match, ranking, urgent messages, prize money — surfaced in one place.</div>
                   </>)}
 
-                  {step.preview === 'morning_briefing' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}><div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#0a0c14', borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Since you were last here</span></div>{[{ icon:'📞', label:'Agent Messages', count:2, urgent:false, color:'#8B5CF6' },{ icon:'🏆', label:'Tournament Desk', count:3, urgent:true, color:'#0ea5e9' },{ icon:'📱', label:'Media & Sponsor', count:4, urgent:false, color:'#F59E0B' },{ icon:'⚕️', label:'Physio & Medical', count:1, urgent:true, color:'#EF4444' }].map((ch, i) => (<div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}><div className="flex items-center gap-2"><span>{ch.icon}</span><span className="text-xs text-white">{ch.label}</span>{ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}</div><span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span></div>))}</div>)}
+                  {step.preview === 'morning_briefing' && (<><div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}><div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#0a0c14', borderBottom: '1px solid #1F2937' }}><div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div><span className="text-[10px]" style={{ color: '#6B7280' }}>Since you were last here</span></div>{[{ icon:'📞', label:'Agent Messages', count:2, urgent:false, color:'#8B5CF6' },{ icon:'🏆', label:'Tournament Desk', count:3, urgent:true, color:'#0ea5e9' },{ icon:'📱', label:'Media & Sponsor', count:4, urgent:false, color:'#F59E0B' },{ icon:'⚕️', label:'Physio & Medical', count:1, urgent:true, color:'#EF4444' }].map((ch, i) => (<div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}><div className="flex items-center gap-2"><span>{ch.icon}</span><span className="text-xs text-white">{ch.label}</span>{ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}</div><span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span></div>))}</div><div className="mt-3 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🔊 Lumio triages every inbound across agent, tournament desk, sponsor and physio so you walk into the day already on top of it.</div></>)}
 
                   {step.preview === 'quick_actions' && (<div className="space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Quick actions</div><div className="flex flex-wrap gap-2">{[{ icon:'✈️', label:'Smart Flights', color:'#0ea5e9', hot:true },{ icon:'🎾', label:'Match Prep AI', color:'#22C55E', hot:true },{ icon:'📱', label:'Sponsor Post', color:'#F59E0B', hot:false },{ icon:'📣', label:'Press Statement', color:'#8B5CF6', hot:false },{ icon:'💼', label:'Agent Brief', color:'#F59E0B', hot:true },{ icon:'🎯', label:'Wildcard Request', color:'#EF4444', hot:false },{ icon:'💊', label:'Log Injury', color:'#EF4444', hot:false },{ icon:'⏱️', label:'Warm-up Timer', color:'#F59E0B', hot:false }].map((a, i) => (<div key={i} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold relative" style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}</div>))}</div><div className="text-xs p-3 rounded-xl" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.15)', color: '#93C5FD' }}>💡 Smart Flights searches 8+ airlines simultaneously — you shouldn&apos;t be able to find cheaper on Google.</div></div>)}
 
                   {step.preview === 'performance' && (<div className="space-y-3"><div className="grid grid-cols-2 gap-3">{[{ label:'ATP Ranking', value:`#${player.ranking ?? 67}`, sub:'↑2 this week', color:'#0ea5e9' },{ label:'Race to Turin', value:`#${player.race_ranking ?? 54}`, sub:'Top 8 qualifies', color:'#22C55E' },{ label:'Clay win rate', value:'68%', sub:'Above ATP avg', color:'#15803D' },{ label:'First serve %', value:'64%', sub:'↑6% last 5 matches', color:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.sub}</div></div></div>))}</div><div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🔌 Connect Catapult OpenField or STATSports Sonra in Settings for live GPS load, ACWR and heatmaps.</div></div>)}
 
-                  {step.preview === 'team' && (<div className="grid grid-cols-2 gap-3">{[{ initials:'CM', name:'Carlos Mendez', role:'Head Coach', status:'Match notes ready', color:'#22C55E' },{ initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', status:'12:30 treatment', color:'#EF4444' },{ initials:'JW', name:'James Wright', role:'Agent', status:'3 inquiries pending', color:'#F59E0B' },{ initials:'TE', name:'Tom Ellis', role:'Stringer', status:'11:45 confirmed', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#4B5563' }}>{m.status}</div></div><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#22C55E' }} /></div>))}</div>)}
+                  {step.preview === 'team' && (<><div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[{ initials:'CM', name:'Carlos Mendez', role:'Head Coach', status:'Match notes ready', color:'#22C55E' },{ initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', status:'12:30 treatment', color:'#EF4444' },{ initials:'JW', name:'James Wright', role:'Agent', status:'3 inquiries pending', color:'#F59E0B' },{ initials:'TE', name:'Tom Ellis', role:'Stringer', status:'11:45 confirmed', color:'#0ea5e9' },{ initials:'MW', name:'Meridian Watches', role:'Sponsor', status:'Content shoot 14:00 today', color:'#8B5CF6' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#4B5563' }}>{m.status}</div></div><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#22C55E' }} /></div>))}</div><div className="mt-3 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>📨 One tap from a card messages the right person — coach, physio, agent, stringer or sponsor — without leaving Lumio.</div></>)}
 
-                  {step.preview === 'match_prep' && (<div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,197,94,0.3)' }}><div className="px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.2)' }}><div className="text-xs font-bold" style={{ color: '#22C55E' }}>🎾 Match Prep AI — C. Vega · Clay</div></div><div className="p-4 text-xs space-y-2" style={{ backgroundColor: '#111318', color: '#D1D5DB' }}>{['🎯 SERVE PATTERNS: 68% wide on deuce court, 71% body on ad court. Second serve: kick to backhand.','🔄 RETURN GAME: Positions 2 steps left of centre. Strong forehand return — attack his BH side.','⚡ TACTICAL: Lead with inside-out FH. Force him wide, attack with DTL BH. Avoid extended rallies.','📊 H2H: 3–1 in your favour. Won last 3 on clay. He struggles when behind early.'].map((line, i) => (<div key={i} className="py-1.5" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : 'none' }}>{line}</div>))}</div><div className="px-4 py-2 text-[10px]" style={{ backgroundColor: '#0a0c14', color: '#4B5563' }}>Generated using web_search · ATP data · real-time opponent stats</div></div>)}
+                  {step.preview === 'match_prep' && (<><div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,197,94,0.3)' }}><div className="px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.2)' }}><div className="text-xs font-bold" style={{ color: '#22C55E' }}>🎾 Match Prep AI — C. Vega · Clay</div></div><div className="p-4 text-xs space-y-2" style={{ backgroundColor: '#111318', color: '#D1D5DB' }}>{['🎯 SERVE PATTERNS: 68% wide on deuce court, 71% body on ad court. Second serve: kick to backhand.','🔄 RETURN GAME: Positions 2 steps left of centre. Strong forehand return — attack his BH side.','⚡ TACTICAL: Lead with inside-out FH. Force him wide, attack with DTL BH. Avoid extended rallies.','📊 H2H: 3–1 in your favour. Won last 3 on clay. He struggles when behind early.'].map((line, i) => (<div key={i} className="py-1.5" style={{ borderBottom: i < 3 ? '1px solid #1F2937' : 'none' }}>{line}</div>))}</div><div className="px-4 py-2 text-[10px]" style={{ backgroundColor: '#0a0c14', color: '#4B5563' }}>Generated using web_search · ATP data · real-time opponent stats</div></div><div className="mt-3 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>✨ Re-generates 90 minutes before each match using the latest H2H, surface form and serve/return splits — share to Carlos in one tap.</div></>)}
 
-                  {step.preview === 'travel' && (<div className="space-y-2"><div className="text-xs font-bold mb-2" style={{ color: '#4B5563' }}>✈️ LHR → MAD · 26 Apr · Business · 2 pax</div>{[{ airline:'British Airways', dep:'07:20', arr:'10:35', dur:'2h15m', stops:'Direct', price:312, score:96, badge:'Best value', badgeColor:'#0ea5e9' },{ airline:'easyJet', dep:'06:05', arr:'09:20', dur:'2h15m', stops:'Direct', price:187, score:88, badge:'Cheapest', badgeColor:'#22C55E' },{ airline:'Vueling', dep:'11:30', arr:'14:45', dur:'2h15m', stops:'Direct', price:224, score:85, badge:null, badgeColor:'' }].map((f, i) => (<div key={i} className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: i === 0 ? 'rgba(14,165,233,0.08)' : '#111318', border: i === 0 ? '1px solid rgba(14,165,233,0.3)' : '1px solid #1F2937' }}><div><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{f.airline}</span>{f.badge && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badgeColor }}>{f.badge}</span>}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.dep} → {f.arr} · {f.dur} · {f.stops}</div></div><div className="text-right"><div className="text-sm font-black text-white">£{f.price * 2}</div><div className="text-[10px]" style={{ color: '#22C55E' }}>Score {f.score}/100</div></div></div>))}<div className="text-[10px] text-center mt-1" style={{ color: '#374151' }}>AI searched BA, easyJet, Ryanair, Vueling, Air France + more</div></div>)}
+                  {step.preview === 'travel' && (<div className="space-y-2"><div className="text-xs font-bold mb-2" style={{ color: '#4B5563' }}>✈️ LHR → MAD · 26 Apr · Business · 2 pax</div>{[{ airline:'British Airways', dep:'07:20', arr:'10:35', dur:'2h15m', stops:'Direct', price:312, score:96, badge:'Best value', badgeColor:'#0ea5e9' },{ airline:'easyJet', dep:'06:05', arr:'09:20', dur:'2h15m', stops:'Direct', price:187, score:88, badge:'Cheapest', badgeColor:'#22C55E' },{ airline:'Vueling', dep:'11:30', arr:'14:45', dur:'2h15m', stops:'Direct', price:224, score:85, badge:null, badgeColor:'' }].map((f, i) => (<div key={i} className="rounded-xl p-3 flex items-center justify-between" style={{ backgroundColor: i === 0 ? 'rgba(14,165,233,0.08)' : '#111318', border: i === 0 ? '1px solid rgba(14,165,233,0.3)' : '1px solid #1F2937' }}><div><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{f.airline}</span>{f.badge && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: f.badgeColor }}>{f.badge}</span>}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{f.dep} → {f.arr} · {f.dur} · {f.stops}</div></div><div className="text-right"><div className="text-sm font-black text-white">£{f.price * 2}</div><div className="text-[10px]" style={{ color: '#22C55E' }}>Score {f.score}/100</div></div></div>))}<div className="text-[10px] text-center mt-1" style={{ color: '#374151' }}>AI searched BA, easyJet, Ryanair, Vueling, Air France + more</div><div className="mt-2 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>✈️ Every option scored on price, schedule and recovery time — book the right flight for your week, not just the cheapest.</div></div>)}
 
-                  {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Meridian Watches · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Meridian Watches. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#Meridian WatchesAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Meridian Watches', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Apex Performance', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Apex Performance', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div></div>)}
+                  {step.preview === 'sponsor' && (<div className="space-y-3"><div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid rgba(245,158,11,0.3)' }}><div className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>📱 AI-generated · Meridian Watches · Instagram · Professional</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>&ldquo;Court 4, Monte-Carlo. Match day. ⌚ When every second matters — so does the detail. Grateful for the support @Meridian Watches. Let&apos;s go. 🎾&rdquo;<br /><br /><span style={{ color: '#4B5563' }}>#Meridian WatchesAmbassador #MonteCarlo #ATPTour #Tennis #LumioTennis</span></div></div><div className="grid grid-cols-3 gap-2">{[{ label:'Meridian Watches', due:'Renewal 47d', status:'⚠️ Due', color:'#F59E0B' },{ label:'Apex Performance', due:'Post today', status:'🔴 Urgent', color:'#EF4444' },{ label:'Apex Performance', due:'2 posts', status:'⏳ Pending', color:'#6B7280' }].map((s, i) => (<div key={i} className="rounded-xl p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.due}</div><div className="text-[9px] mt-1 font-bold" style={{ color: s.color }}>{s.status}</div></div>))}</div><div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🤖 Auto-drafts in your voice, tags the brand, queues to your socials and tracks deliverables against the contract — never miss a clause.</div></div>)}
 
-                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Vega — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Apex Performance kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Meridian Watches sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}</div>)}
+                  {step.preview === 'dontmiss' && (<div className="space-y-2">{[{ urgency:'CRITICAL', item:'Match vs C. Vega — 13:30 Court 4. Confirm court change.', color:'#EF4444', bg:'rgba(239,68,68,0.15)' },{ urgency:'TODAY', item:'Apex Performance kit photo due before 12:00. Carlos waiting.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'TODAY', item:'Hamburg wildcard decision — deadline 5pm. Call agent first.', color:'#F59E0B', bg:'rgba(245,158,11,0.1)' },{ urgency:'47 DAYS', item:'Meridian Watches sponsorship renewal. £240k deal on table.', color:'#6B7280', bg:'rgba(107,114,128,0.08)' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: `1px solid ${d.bg}` }}><span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.bg, color: d.color }}>{d.urgency}</span><span className="text-xs" style={{ color: '#D1D5DB' }}>{d.item}</span></div>))}<div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#FCD34D' }}>⚠️ Anything tagged CRITICAL or TODAY pings your phone the moment its window opens — wildcards, contracts, kit shoots, none slip through.</div></div>)}
 
                   {step.preview === 'gps_video' && (<div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -1445,6 +1450,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                         </div>
                       ))}
                     </div>
+                    <div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>📊 Match GPS data with shot-by-shot video to spot which patterns leak points — and which win them. Coach-ready in one click.</div>
                   </div>)}
 
                   {step.preview === 'cta' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{[{ icon:'🎾', label:'Live ATP rankings', color:'#0ea5e9' },{ icon:'📬', label:'Gmail + Outlook sync', color:'#22C55E' },{ icon:'📡', label:'GPS load tracking', color:'#F59E0B' },{ icon:'🤖', label:'AI for every workflow', color:'#8B5CF6' },{ icon:'✈️', label:'Smart travel booking', color:'#0ea5e9' },{ icon:'🤝', label:'Sponsor management', color:'#F59E0B' }].map((f, i) => (<div key={i} className="flex items-center gap-2 text-xs rounded-xl p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base">{f.icon}</span><span style={{ color: f.color }}>{f.label}</span></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.2), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.4)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-xs mb-3" style={{ color: '#6B7280' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><a href="/pricing-sports" className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Start free trial →</a></div></div>)}
@@ -1495,10 +1501,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               <button key={a.id}
                 onClick={() => onOpenModal(a.id)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}>
+                style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
                 <span>{a.icon}</span>
                 {a.label}
-                {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>AI</span>}
+                {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'var(--brand-secondary)' }}>AI</span>}
               </button>
             ))}
           </div>
@@ -4324,15 +4330,35 @@ function TeamHubView({ player, session }: { player: TennisPlayer; session: Sport
 
 // ─── PHYSIO VIEW ──────────────────────────────────────────────────────────────
 function PhysioView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const isDemoShellTennis = session.isDemoShell !== false;
   const totalMatches90d = MATCH_LOAD_DATA.reduce((a,w)=>a+w.matches,0);
   const totalHours90d = MATCH_LOAD_DATA.reduce((a,w)=>a+w.hours,0);
   const fatigueRisk = totalMatches90d > 20;
   const maxMatchesInWeek = Math.max(...MATCH_LOAD_DATA.map(w=>w.matches));
-  const injuries = [
-    { area: 'Right Shoulder', severity: 'Mild', status: 'Managed', date: '2 Apr', notes: 'Rotator cuff strain. Treated daily. Cleared for match play.', cleared: true },
-    { area: 'Left Ankle', severity: 'Resolved', status: 'Clear', date: '15 Feb', notes: 'Sprain from Miami practice. Fully resolved.', cleared: true },
-    { area: 'Lower Back', severity: 'Monitoring', status: 'Watch', date: 'Ongoing', notes: 'Chronic stiffness. Daily treatment, exercise programme active.', cleared: false },
+
+  // Recovery score drives the Cleared-for-match banner colour. Demo: 82
+  // (hardcoded alongside the WHOOP StatCard). Founder: undefined → amber
+  // warning gradient on the "no data" banner.
+  const recoveryScore = isDemoShellTennis ? 82 : null;
+  const recoveryBelowThreshold = recoveryScore !== null && recoveryScore < 65;
+
+  // Body-map severity config + tennis-specific markers.
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const SEVERITY_CONFIG = {
+    critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
+    moderate:   { fill: '#f59e0b', r: 9,  label: 'Moderate',   textClass: 'text-amber-400' },
+    minor:      { fill: '#eab308', r: 7,  label: 'Minor',      textClass: 'text-yellow-400' },
+    monitoring: { fill: '#10b981', r: 5,  label: 'Monitoring', textClass: 'text-green-400' },
+  } as const;
+  type Severity = keyof typeof SEVERITY_CONFIG;
+  const bodyMarkers: { id: string; x: number; y: number; severity: Severity; label: string; note: string }[] = [
+    { id: 'shoulder', x: 132, y: 66,  severity: 'moderate',   label: 'Right shoulder',  note: 'Serving load — 10 days on prevention programme' },
+    { id: 'wrist',    x: 148, y: 108, severity: 'minor',      label: 'Right wrist',     note: 'Forehand-side mild inflammation — taping when needed' },
+    { id: 'back',     x: 100, y: 110, severity: 'monitoring', label: 'Lower back',      note: 'Daily mobility + core work' },
+    { id: 'hip',      x: 82,  y: 156, severity: 'minor',      label: 'Left hip flexor', note: 'Lateral movement strain — massage 2x/week' },
+    { id: 'knee',     x: 78,  y: 210, severity: 'monitoring', label: 'Left knee',       note: 'Chronic — patellar tracking exercises' },
   ];
+  const selectedMarker = bodyMarkers.find(m => m.id === selectedBodyPart) ?? null;
 
   const recovery = [
     { date: 'Today', score: 82, hrv: 68, rhr: 48, sleep: 7.2, sleepScore: 76 },
@@ -4346,6 +4372,36 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
     <div className="space-y-6">
 
       <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, WHOOP recovery scores, and treatment protocols." />
+
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard label="Recovery Score" value="82/100" sub="Today (WHOOP)" color="green" />
+        <StatCard label="HRV" value="68ms" sub="^7ms vs yesterday" color="teal" />
+        <StatCard label="Resting HR" value="48 bpm" sub="Match day normal" color="blue" />
+        <StatCard label="Sleep" value="7.2 hrs" sub="76 sleep score" color="purple" />
+      </div>
+
+      {/* Cleared-for-match banner — green when recovery ≥ 65, amber below. */}
+      {isDemoShellTennis ? (
+        <div className={`bg-gradient-to-r border rounded-xl p-5 ${recoveryBelowThreshold ? 'from-amber-900/30 to-amber-900/10 border-amber-600/30' : 'from-green-900/30 to-green-900/10 border-green-600/30'}`}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{recoveryBelowThreshold ? '⚠️' : '✅'}</span>
+            <div>
+              <div className="text-white font-medium">{recoveryBelowThreshold ? 'Cleared with caution' : 'Cleared for match play'}</div>
+              <div className="text-xs text-gray-400 mt-0.5">Shoulder good · Minor hip flexor tightness 2/10 (left) · No restrictions</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🩺</span>
+            <div>
+              <div className="text-white font-medium">No physio data yet</div>
+              <div className="text-xs text-gray-500 mt-0.5">Connect your Lumio Medical feed to see clearance status.</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -4391,11 +4447,130 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Recovery Score" value="82/100" sub="Today (WHOOP)" color="green" />
-        <StatCard label="HRV" value="68ms" sub="^7ms vs yesterday" color="teal" />
-        <StatCard label="Resting HR" value="48 bpm" sub="Match day normal" color="blue" />
-        <StatCard label="Sleep" value="7.2 hrs" sub="76 sleep score" color="purple" />
+      {/* Body map + Injury history — 2-col grid */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Body map</h2>
+          <div className="flex justify-center">
+            <svg width="200" height="280" viewBox="0 0 200 280" aria-label="Body map — severity-coded markers">
+              <style>{`
+                .lumio-pulse-critical {
+                  transform-box: fill-box;
+                  transform-origin: center;
+                  animation: lumioPulseCritical 1.6s ease-in-out infinite;
+                }
+                @keyframes lumioPulseCritical {
+                  0%, 100% { transform: scale(1); }
+                  50%      { transform: scale(1.15); }
+                }
+              `}</style>
+              <defs>
+                <filter id="lumioMarkerGlowTennis" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              {/* Figure */}
+              <g fill="rgba(255,255,255,0.02)" stroke="#475569" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+                <ellipse cx="100" cy="30" rx="18" ry="22" />
+                <path d="M92,50 C92,56 92,58 92,60 L108,60 C108,58 108,56 108,50" fill="none" />
+                <path d="M74,62 C78,60 84,60 90,60 L110,60 C116,60 122,60 126,62 L134,92 L138,140 C138,150 130,156 120,156 L80,156 C70,156 62,150 62,140 L66,92 Z" />
+                <circle cx="68" cy="66" r="7" />
+                <circle cx="132" cy="66" r="7" />
+                <path d="M62,70 L52,108" fill="none" strokeWidth="6" />
+                <path d="M52,108 L48,148" fill="none" strokeWidth="5" />
+                <circle cx="48" cy="150" r="4" />
+                <path d="M138,70 L148,108" fill="none" strokeWidth="6" />
+                <path d="M148,108 L152,148" fill="none" strokeWidth="5" />
+                <circle cx="152" cy="150" r="4" />
+                <circle cx="82" cy="156" r="5" />
+                <circle cx="118" cy="156" r="5" />
+                <path d="M82,160 L78,212" fill="none" strokeWidth="9" />
+                <path d="M78,212 L74,262" fill="none" strokeWidth="7" />
+                <path d="M118,160 L122,212" fill="none" strokeWidth="9" />
+                <path d="M122,212 L126,262" fill="none" strokeWidth="7" />
+              </g>
+              {/* Markers — demo only */}
+              {isDemoShellTennis && bodyMarkers.map(m => {
+                const cfg = SEVERITY_CONFIG[m.severity];
+                const isCritical = m.severity === 'critical';
+                const isSelected = selectedBodyPart === m.id;
+                return (
+                  <g
+                    key={m.id}
+                    className={isCritical ? 'lumio-pulse-critical' : ''}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedBodyPart(m.id)}
+                  >
+                    <circle cx={m.x} cy={m.y} r={cfg.r + 2} fill={cfg.fill} opacity="0.35" filter="url(#lumioMarkerGlowTennis)" />
+                    <circle cx={m.x} cy={m.y} r={cfg.r} fill={cfg.fill} stroke="#fff" strokeWidth={isSelected ? 2.5 : 1.5} />
+                    <circle cx={m.x} cy={m.y} r={cfg.r * 0.35} fill="#fff" opacity="0.9" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {isDemoShellTennis ? (
+            <>
+              <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-3 text-[11px] text-gray-400">
+                {(['critical','moderate','minor','monitoring'] as Severity[]).map(s => {
+                  const cfg = SEVERITY_CONFIG[s];
+                  return (
+                    <div key={s} className="flex items-center gap-1.5">
+                      <span
+                        style={{
+                          width: cfg.r * 2,
+                          height: cfg.r * 2,
+                          borderRadius: '50%',
+                          background: cfg.fill,
+                          border: '1.5px solid #fff',
+                          display: 'inline-block',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedMarker && (
+                <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium text-sm">{selectedMarker.label}</span>
+                    <span className={`text-xs ${SEVERITY_CONFIG[selectedMarker.severity].textClass}`}>
+                      {SEVERITY_CONFIG[selectedMarker.severity].label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{selectedMarker.note}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 text-center mt-3">Connect your medical feed to see injury markers.</p>
+          )}
+        </div>
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Injury history</h2>
+          {isDemoShellTennis ? (
+            <div className="space-y-2">
+              {[
+                { date: '2025-02', site: 'Left hip flexor strain',     severity: 'Moderate', days: 12 },
+                { date: '2024-09', site: 'Right shoulder impingement', severity: 'Moderate', days: 21 },
+                { date: '2024-05', site: 'Lower back spasm',           severity: 'Mild',     days: 4 },
+                { date: '2024-02', site: 'Left ankle sprain',          severity: 'Mild',     days: 6 },
+              ].map((inj, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+                  <div>
+                    <div className="text-gray-200">{inj.site}</div>
+                    <div className="text-xs text-gray-500">{inj.date} · {inj.severity}</div>
+                  </div>
+                  <span className="text-xs text-gray-400">{inj.days}d out</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          )}
+        </div>
       </div>
 
       {/* WHOOP Recovery Chart */}
@@ -4419,44 +4594,79 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
         </div>
       </div>
 
-      {/* Injury Log */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Injury Log</div>
-        <div className="space-y-3">
-          {injuries.map((inj, i) => (
-            <div key={i} className={`p-4 rounded-lg border ${inj.cleared ? 'border-gray-800 bg-gray-900/20' : 'border-yellow-600/30 bg-yellow-600/5'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">{inj.area}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${inj.severity === 'Resolved' ? 'bg-teal-600/20 text-teal-400' : inj.severity === 'Mild' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-blue-600/20 text-blue-400'}`}>{inj.severity}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">{inj.date}</span>
-                  {inj.cleared && <span className="text-xs text-teal-400">Cleared</span>}
-                </div>
-              </div>
-              <div className="text-xs text-gray-400">{inj.notes}</div>
+      {/* Treatment log */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
+        {isDemoShellTennis ? (
+          <div className="rounded-lg border border-white/5 overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-black/40 text-[11px] text-gray-500 uppercase tracking-wide">
+              <span>Date</span><span>Therapist</span><span>Focus</span><span>Duration</span>
             </div>
-          ))}
-        </div>
+            {[
+              { date: '15 Apr', therapist: 'Dr Sarah Lee',   focus: 'Shoulder mobility + soft tissue', time: '45 min' },
+              { date: '12 Apr', therapist: 'M. Lawrence',    focus: 'Full body sports massage',        time: '60 min' },
+              { date: '9 Apr',  therapist: 'Dr Sarah Lee',   focus: 'Wrist strapping + ultrasound',    time: '30 min' },
+              { date: '5 Apr',  therapist: 'Pablo Ruiz',     focus: 'Deep tissue — back + hips',       time: '75 min' },
+              { date: '2 Apr',  therapist: 'Dr Sarah Lee',   focus: 'Post-match recovery + ROM',       time: '40 min' },
+            ].map((s, i) => (
+              <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+                <span className="text-gray-400">{s.date}</span>
+                <span className="text-white">{s.therapist}</span>
+                <span className="text-gray-400 text-xs">{s.focus}</span>
+                <span className="text-gray-400">{s.time}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
       </div>
 
-      {/* Pre-Match Protocol */}
-      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Today's Pre-Match Protocol</div>
-        <div className="space-y-2">
-          {[
-            { time: '12:00', task: 'Physio treatment — right shoulder' },
-            { time: '12:15', task: 'Strapping application (right shoulder, both ankles)' },
-            { time: '12:30', task: 'Dynamic warm-up — 15 min with Luis protocol' },
-            { time: '12:50', task: 'Hitting warm-up on practice court — 10 min' },
-          ].map((t, i) => (
-            <div key={i} className="flex items-center gap-3 text-sm text-gray-300">
-              <span className="text-gray-600 w-12">{t.time}</span>
-              <span>{t.task}</span>
-            </div>
-          ))}
-        </div>
+      {/* Prevention — daily routine */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Prevention — daily routine</h2>
+        {isDemoShellTennis ? (
+          <div className="space-y-2">
+            {[
+              'Dynamic warm-up — 15 min',
+              'Shoulder band activation',
+              'Core stability circuit',
+              'Hip mobility flow',
+              'Hydration — 3L water + electrolytes',
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+                <span className="text-gray-300">{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Physio contacts */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Physio contacts</h2>
+        {isDemoShellTennis ? (
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { name: 'Dr Sarah Lee',   role: 'Lead Physio',       phone: '07700 900101' },
+              { name: 'Pablo Ruiz',     role: 'Sports Rehab',      phone: '07700 900102' },
+              { name: 'Marco Lawrence', role: 'Massage Therapist', phone: '07700 900103' },
+            ].map((p, i) => (
+              <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-3">
+                <div className="text-white font-medium text-sm">{p.name}</div>
+                <div className="text-xs text-gray-500">{p.role}</div>
+                <div className="text-xs text-cyan-400 mt-1">{p.phone}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          </div>
+        )}
       </div>
       <TennisAISection context="physiorecovery" player={player} session={session} />
     </div>
@@ -7294,6 +7504,14 @@ const EntryManagerView = ({ player, session }: { player: TennisPlayer; session: 
         <span className="text-red-400 text-sm">⚠️</span>
         <span className="text-sm text-red-300">3 entry deadlines in the next 14 days</span>
       </div>
+      {/* Season summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <StatCard label="Entered" value="18" sub="tournaments" color="purple" />
+        <StatCard label="Completed" value="7" sub="this season" color="green" />
+        <StatCard label="Upcoming" value="11" sub="remaining" color="blue" />
+        <StatCard label="Wildcards" value="1" sub="used" color="orange" />
+        <StatCard label="Protected Ranking" value="0" sub="entries used" color="teal" />
+      </div>
       {/* Entry table */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5 mb-6 overflow-x-auto">
         <h3 className="text-sm font-bold text-white mb-4">Upcoming Entry Deadlines</h3>
@@ -7333,14 +7551,6 @@ const EntryManagerView = ({ player, session }: { player: TennisPlayer; session: 
             <div className="text-xs text-gray-400 max-w-xs text-right">{w.note}</div>
           </div>
         ))}
-      </div>
-      {/* Season summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard label="Entered" value="18" sub="tournaments" color="purple" />
-        <StatCard label="Completed" value="7" sub="this season" color="green" />
-        <StatCard label="Upcoming" value="11" sub="remaining" color="blue" />
-        <StatCard label="Wildcards" value="1" sub="used" color="orange" />
-        <StatCard label="Protected Ranking" value="0" sub="entries used" color="teal" />
       </div>
       <TennisAISection context="entries" player={player} session={session} />
     </div>
@@ -7854,7 +8064,6 @@ export default function TennisTourPage() {
 function GPSVideoView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const isDemoShell = session.isDemoShell !== false
   const [gpsTab, setGpsTab] = useState<'overview'|'heatmaps'|'gps'|'videos'|'brief'>('overview')
-  const [historyOpen, setHistoryOpen] = useState(false)
 
   const courtSurface = '#b45309'
 
@@ -7972,6 +8181,116 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
     </div>
   )
 
+  // Shared panels — rendered both inline on Overview and on their dedicated
+  // tabs. Closes over isDemoShell, hrZones, fatigueData, fatigueEvents,
+  // splitTimes, aiBrief, EmptyConnect.
+  const GpsStatsPanel = () => (
+    isDemoShell ? (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-sm font-bold text-white mb-3">Distance by Set</div>
+            <div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div>
+          </div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-sm font-bold text-white mb-3">Speed Zones</div>
+            <div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div>
+          </div>
+        </div>
+
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-sm font-bold text-white mb-3">Heart Rate Zones</div>
+          <div className="flex h-6 rounded-md overflow-hidden">
+            {hrZones.map(z => (
+              <div key={z.zone} title={`${z.zone} ${z.pct}%`} style={{ width: `${z.pct}%`, backgroundColor: z.color }} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
+            {hrZones.map(z => (
+              <span key={z.zone} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: z.color }} />{z.zone} <span className="text-gray-500">{z.pct}%</span></span>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <div className="text-sm font-bold text-white mb-1">Fatigue Curve</div>
+          <div className="text-[11px] text-gray-500 mb-3">Cumulative load across the match timeline.</div>
+          {(() => {
+            const w = 600, h = 160, padX = 24, padY = 18
+            const innerW = w - padX * 2, innerH = h - padY * 2
+            const maxT = fatigueData[fatigueData.length - 1].t
+            const maxLoad = 80
+            const pts = fatigueData.map(d => {
+              const x = padX + (d.t / maxT) * innerW
+              const y = padY + (1 - d.load / maxLoad) * innerH
+              return `${x.toFixed(1)},${y.toFixed(1)}`
+            })
+            const baseY = padY + innerH
+            const areaPts = `${padX},${baseY} ${pts.join(' ')} ${padX + innerW},${baseY}`
+            return (
+              <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
+                <defs>
+                  <linearGradient id="fatigueArea" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
+                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
+                  </linearGradient>
+                </defs>
+                <polygon points={areaPts} fill="url(#fatigueArea)" />
+                <polyline fill="none" stroke="#06b6d4" strokeWidth="2" points={pts.join(' ')} />
+                {fatigueData.map((d, i) => {
+                  const x = padX + (d.t / maxT) * innerW
+                  const y = padY + (1 - d.load / maxLoad) * innerH
+                  return <circle key={i} cx={x} cy={y} r="2.5" fill="#06b6d4" />
+                })}
+                {fatigueEvents.map(e => {
+                  const x = padX + (e.t / maxT) * innerW
+                  return (
+                    <g key={e.t}>
+                      <line x1={x} x2={x} y1={padY} y2={baseY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+                      <text x={x} y={h - 4} textAnchor="middle" fontSize="9" fill="#f59e0b">{e.label}</text>
+                    </g>
+                  )
+                })}
+              </svg>
+            )
+          })()}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-sm font-bold text-white mb-1">Split Times</div>
+            <div className="text-[11px] text-gray-500 mb-3">Average recovery between points, per set.</div>
+            <div className="flex items-end gap-4 h-28">{splitTimes.map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.sec}s</div><div className="w-full rounded-t" style={{ height: `${(s.sec / 25) * 100}%`, backgroundColor: '#06b6d4', minHeight: 8, opacity: 0.85 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>{s.points} pts</div></div>))}</div>
+          </div>
+          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div>
+            <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <EmptyConnect feature="Connect your Lumio GPS Tracker to unlock movement, speed, heart rate, and fatigue analytics." />
+      </div>
+    )
+  )
+
+  const AiBriefPanel = () => (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}>
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div>
+        {isDemoShell && <span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span>}
+      </div>
+      <div className="px-5 py-4">
+        {isDemoShell ? (
+          <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiBrief}</div>
+        ) : (
+          <EmptyConnect feature="Connect your SwingVision + Lumio GPS Tracker to unlock AI coaching briefs." />
+        )}
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <SectionHeader icon="🛰️" title="GPS & Video" subtitle="Court coverage, shot tracking, and SwingVision clip review." />
@@ -8013,17 +8332,21 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
             )}
           </div>
 
+          {/* Inline GPS Stats — same panel the dedicated tab renders */}
+          <GpsStatsPanel />
+
+          {/* Inline AI Brief — same panel the dedicated tab renders */}
+          <AiBriefPanel />
+
+          {/* Session History — open by default on Overview, no disclosure */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <button onClick={() => setHistoryOpen(o => !o)} className="w-full px-5 py-4 flex items-center justify-between" style={{ borderBottom: historyOpen ? '1px solid #1F2937' : 'none' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
               <div className="text-sm font-bold text-white">Session History</div>
-              <span className="text-xs text-gray-500">{historyOpen ? 'Hide ▴' : 'Show ▾'}</span>
-            </button>
-            {historyOpen && (
-              isDemoShell ? (
-                <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{sessionHistoryRows.map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div>
-              ) : (
-                <EmptyConnect feature="Connect your Lumio GPS Tracker to populate session history." />
-              )
+            </div>
+            {isDemoShell ? (
+              <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800"><th className="text-left px-5 py-2">Date</th><th className="text-left py-2">Surface</th><th className="text-right py-2">Coverage</th><th className="text-right py-2">Load</th><th className="text-right py-2">Top Speed</th><th className="text-right px-5 py-2">Outcome</th></tr></thead><tbody>{sessionHistoryRows.map((r,i) => (<tr key={i} className="border-b border-gray-800/50" style={{ backgroundColor: r.win===true?'rgba(34,197,94,0.04)':r.win===false?'rgba(239,68,68,0.04)':'transparent' }}><td className="px-5 py-2.5 text-gray-300">{r.date}</td><td className="py-2.5 text-gray-400">{r.surface}</td><td className="py-2.5 text-right text-white font-medium">{r.coverage}</td><td className="py-2.5 text-right"><span style={{ color: r.load>80?'#EF4444':r.load>60?'#F59E0B':'#22C55E' }}>{r.load}</span></td><td className="py-2.5 text-right text-gray-300">{r.speed}</td><td className="px-5 py-2.5 text-right"><span style={{ color: r.win===true?'#22C55E':r.win===false?'#EF4444':'#6B7280' }}>{r.outcome}</span></td></tr>))}</tbody></table></div>
+            ) : (
+              <EmptyConnect feature="Connect your Lumio GPS Tracker to populate session history." />
             )}
           </div>
         </div>
@@ -8125,96 +8448,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
       )}
 
       {/* GPS STATS */}
-      {gpsTab === 'gps' && (
-        isDemoShell ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-3">Distance by Set</div>
-                <div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div>
-              </div>
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-3">Speed Zones</div>
-                <div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div>
-              </div>
-            </div>
-
-            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-sm font-bold text-white mb-3">Heart Rate Zones</div>
-              <div className="flex h-6 rounded-md overflow-hidden">
-                {hrZones.map(z => (
-                  <div key={z.zone} title={`${z.zone} ${z.pct}%`} style={{ width: `${z.pct}%`, backgroundColor: z.color }} />
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
-                {hrZones.map(z => (
-                  <span key={z.zone} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: z.color }} />{z.zone} <span className="text-gray-500">{z.pct}%</span></span>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-sm font-bold text-white mb-1">Fatigue Curve</div>
-              <div className="text-[11px] text-gray-500 mb-3">Cumulative load across the match timeline.</div>
-              {(() => {
-                const w = 600, h = 160, padX = 24, padY = 18
-                const innerW = w - padX * 2, innerH = h - padY * 2
-                const maxT = fatigueData[fatigueData.length - 1].t
-                const maxLoad = 80
-                const pts = fatigueData.map(d => {
-                  const x = padX + (d.t / maxT) * innerW
-                  const y = padY + (1 - d.load / maxLoad) * innerH
-                  return `${x.toFixed(1)},${y.toFixed(1)}`
-                })
-                const baseY = padY + innerH
-                const areaPts = `${padX},${baseY} ${pts.join(' ')} ${padX + innerW},${baseY}`
-                return (
-                  <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
-                    <defs>
-                      <linearGradient id="fatigueArea" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
-                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
-                      </linearGradient>
-                    </defs>
-                    <polygon points={areaPts} fill="url(#fatigueArea)" />
-                    <polyline fill="none" stroke="#06b6d4" strokeWidth="2" points={pts.join(' ')} />
-                    {fatigueData.map((d, i) => {
-                      const x = padX + (d.t / maxT) * innerW
-                      const y = padY + (1 - d.load / maxLoad) * innerH
-                      return <circle key={i} cx={x} cy={y} r="2.5" fill="#06b6d4" />
-                    })}
-                    {fatigueEvents.map(e => {
-                      const x = padX + (e.t / maxT) * innerW
-                      return (
-                        <g key={e.t}>
-                          <line x1={x} x2={x} y1={padY} y2={baseY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-                          <text x={x} y={h - 4} textAnchor="middle" fontSize="9" fill="#f59e0b">{e.label}</text>
-                        </g>
-                      )
-                    })}
-                  </svg>
-                )
-              })()}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-1">Split Times</div>
-                <div className="text-[11px] text-gray-500 mb-3">Average recovery between points, per set.</div>
-                <div className="flex items-end gap-4 h-28">{splitTimes.map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.sec}s</div><div className="w-full rounded-t" style={{ height: `${(s.sec / 25) * 100}%`, backgroundColor: '#06b6d4', minHeight: 8, opacity: 0.85 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>{s.points} pts</div></div>))}</div>
-              </div>
-              <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div>
-                <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <EmptyConnect feature="Connect your Lumio GPS Tracker to unlock movement, speed, heart rate, and fatigue analytics." />
-          </div>
-        )
-      )}
+      {gpsTab === 'gps' && <GpsStatsPanel />}
 
       {/* VIDEOS */}
       {gpsTab === 'videos' && (
@@ -8251,21 +8485,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
       )}
 
       {/* AI BRIEF */}
-      {gpsTab === 'brief' && (
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div>
-            {isDemoShell && <span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span>}
-          </div>
-          <div className="px-5 py-4">
-            {isDemoShell ? (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiBrief}</div>
-            ) : (
-              <EmptyConnect feature="Connect your SwingVision + Lumio GPS Tracker to unlock AI coaching briefs." />
-            )}
-          </div>
-        </div>
-      )}
+      {gpsTab === 'brief' && <AiBriefPanel />}
 
       <TennisAISection context="default" player={player} session={session} />
     </div>
@@ -9643,88 +9863,74 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
 
 function PlayerDirectoryView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
   const [dirTab, setDirTab] = useState<'rankings'|'partners'|'contacts'>('rankings')
+
+  // Rankings tab — sync filter over static ATP/WTA rosters; no AI calls.
   const [searchQuery, setSearchQuery] = useState('')
-  const [tourFilter, setTourFilter] = useState('all')
-  const [searchResults, setSearchResults] = useState<string | null>(null)
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [profileModal, setProfileModal] = useState<string | null>(null)
-  const [profileData, setProfileData] = useState<string | null>(null)
-  const [profileLoading, setProfileLoading] = useState(false)
-  const [partnerResults, setPartnerResults] = useState<string | null>(null)
-  const [partnerLoading, setPartnerLoading] = useState(false)
+  const [tourFilter, setTourFilter] = useState<'all'|'atp'|'wta'>('all')
+  const [profileModal, setProfileModal] = useState<RankingEntry | null>(null)
+
+  const rankingsPool: RankingEntry[] = tourFilter === 'wta' ? WTA_RANKINGS
+    : tourFilter === 'atp' ? ATP_RANKINGS
+    : [...ATP_RANKINGS, ...WTA_RANKINGS].sort((a, b) => a.rank - b.rank)
+  const q = searchQuery.trim().toLowerCase()
+  const rankingsFiltered = q
+    ? rankingsPool.filter(p =>
+        p.name.toLowerCase().includes(q)
+        || p.nationality.toLowerCase().includes(q)
+        || String(p.rank).includes(q))
+    : rankingsPool.slice(0, 20)
+
+  // Hitting partners — local filters + optional geolocation distance sort.
+  const [partnerMaxKm, setPartnerMaxKm] = useState(50)
+  const [partnerLevels, setPartnerLevels] = useState<string[]>([])
+  const [partnerSurfaces, setPartnerSurfaces] = useState<string[]>([])
+  const [partnerDays, setPartnerDays] = useState<string[]>([])
+  const [userCoords, setUserCoords] = useState<[number, number] | null>(null)
+  const [scheduleModal, setScheduleModal] = useState<HittingPartner | null>(null)
+
+  useEffect(() => {
+    if (dirTab !== 'partners') return
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+    if (userCoords) return
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserCoords([pos.coords.latitude, pos.coords.longitude]),
+      () => { /* user denied — fall back to static distanceKm */ },
+      { timeout: 5000, maximumAge: 600000 },
+    )
+  }, [dirTab, userCoords])
+
+  const partnerLevelOpts: HittingPartner['level'][] = ['ATP Tour', 'Challenger', 'Former ATP', 'College D1', 'NTRP 5.5+']
+  const partnerSurfaceOpts: HittingPartner['preferredSurface'][] = ['Hard', 'Clay', 'Grass', 'Indoor']
+  const partnerDayOpts = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const togglePartnerLevel = (lvl: string) => setPartnerLevels(p => p.includes(lvl) ? p.filter(x => x !== lvl) : [...p, lvl])
+  const togglePartnerSurface = (s: string) => setPartnerSurfaces(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])
+  const togglePartnerDay = (d: string) => setPartnerDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])
+
+  const partnersFiltered = TENNIS_HITTING_PARTNERS.map(p => ({
+    ...p,
+    effectiveDistance: userCoords ? distanceKmBetween(userCoords, p.cityCoords) : p.distanceKm,
+  })).filter(p => {
+    if (p.effectiveDistance > partnerMaxKm) return false
+    if (partnerLevels.length > 0 && !partnerLevels.includes(p.level)) return false
+    if (partnerSurfaces.length > 0 && !partnerSurfaces.includes(p.preferredSurface)) return false
+    if (partnerDays.length > 0 && !partnerDays.some(d => p.availability.some(a => a.startsWith(d)))) return false
+    return true
+  }).sort((a, b) => a.effectiveDistance - b.effectiveDistance)
+
+  // Contacts — unchanged, localStorage-backed.
   const [contacts, setContacts] = useState<Array<{name:string;ranking:string;nationality:string;addedAt:string}>>(() => {
     try { return JSON.parse(localStorage.getItem('lumio_tennis_contacts') || '[]') } catch { return [] }
   })
-
-  const searchPlayers = async () => {
-    setSearchLoading(true)
-    try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for current ${tourFilter === 'wta' ? 'WTA' : tourFilter === 'atp' ? 'ATP' : 'ATP and WTA'} tennis player rankings. Query: "${searchQuery || 'top 20 current ranking'}". For each player return: name, current ranking number, nationality, age, plays hand, coach name, last 3 tournament results, best surface, career high ranking. Format each player on one line separated by pipes: NAME | RANKING | NATIONALITY | AGE | HAND | COACH | RECENT_RESULTS | BEST_SURFACE | CAREER_HIGH. Return up to 10 players. No other text.` }] })
-      })
-      const data = await res.json()
-      console.log('[Player Directory] API response:', JSON.stringify(data).slice(0, 500))
-      if (data.error || data.type === 'error') {
-        const msg = typeof data.error === 'string' ? data.error : data.error?.message || data.message || JSON.stringify(data.error || data)
-        setSearchResults(`⚠️ ${msg}`); setSearchLoading(false); return
-      }
-      const text = data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''
-      console.log('[Player Directory] Parsed text:', text.slice(0, 300))
-      setSearchResults(cleanResponse(text) || '⚠️ No results. Try a different search.')
-    } catch { setSearchResults('⚠️ Search failed. Check connection.') }
-    setSearchLoading(false)
-  }
-
-  const searchProfile = async (name: string) => {
-    setProfileModal(name); setProfileLoading(true); setProfileData(null)
-    try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for detailed profile of tennis player ${name}. Cover playing style, strengths and weaknesses, head-to-head vs top 10, serve and return stats, current coach and team, and social media presence. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
-      })
-      const data = await res.json()
-      if (data.error) { setProfileData(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setProfileLoading(false); return }
-      setProfileData(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No profile data found.')
-    } catch { setProfileData('⚠️ Unable to load profile.') }
-    setProfileLoading(false)
-  }
-
-  const searchPartners = async () => {
-    setPartnerLoading(true)
-    try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for professional tennis hitting partners available for hire. The player is ranked ATP #${player.ranking ?? 67}, based in Europe. Find 4-5 hitting partners who are former professionals or high-level players available for practice sessions. For each, write a paragraph covering name, background, speciality, approximate day rate, and how to contact. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
-      })
-      const data = await res.json()
-      if (data.error) { setPartnerResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setPartnerLoading(false); return }
-      setPartnerResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No results found.')
-    } catch { setPartnerResults('⚠️ Search failed.') }
-    setPartnerLoading(false)
-  }
-
-  const addContact = (name: string, ranking: string, nationality: string) => {
-    const updated = [...contacts, { name, ranking, nationality, addedAt: new Date().toISOString() }]
+  const addContact = (entry: RankingEntry) => {
+    if (contacts.some(c => c.name === entry.name)) return
+    const updated = [...contacts, { name: entry.name, ranking: String(entry.rank), nationality: entry.nationality, addedAt: new Date().toISOString() }]
     setContacts(updated)
     localStorage.setItem('lumio_tennis_contacts', JSON.stringify(updated))
   }
-
   const removeContact = (name: string) => {
     const updated = contacts.filter(c => c.name !== name)
     setContacts(updated)
     localStorage.setItem('lumio_tennis_contacts', JSON.stringify(updated))
-  }
-
-  // Parse pipe-separated results into cards
-  const parseResults = (text: string) => {
-    return text.split('\n').filter(l => l.includes('|')).map(line => {
-      const parts = line.split('|').map(p => p.trim())
-      return { name: parts[0]||'', ranking: parts[1]||'', nationality: parts[2]||'', age: parts[3]||'', hand: parts[4]||'', coach: parts[5]||'', results: parts[6]||'', surface: parts[7]||'', careerHigh: parts[8]||'' }
-    })
   }
 
   return (
@@ -9743,26 +9949,25 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
       {dirTab === 'rankings' && (
         <div className="space-y-4">
           <div className="flex gap-3">
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchPlayers()}
-              placeholder="Search player name, nationality, ranking..."
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search player name, nationality, or rank..."
               className="flex-1 px-4 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor: '#111318', border: '1px solid #374151' }} />
-            <button onClick={searchPlayers} disabled={searchLoading} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>
-              {searchLoading ? '🔍 Searching...' : '🔍 Search'}
-            </button>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {['all','atp','wta','challenger'].map(f => (
-              <button key={f} onClick={() => setTourFilter(f)} className="px-3 py-1.5 rounded-full text-xs font-bold"
-                style={{ backgroundColor: tourFilter === f ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: tourFilter === f ? '#fff' : '#6B7280' }}>
-                {f === 'all' ? 'All Tours' : f.toUpperCase()}
-              </button>
-            ))}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {(['all','atp','wta'] as const).map(f => (
+                <button key={f} onClick={() => setTourFilter(f)} className="px-3 py-1.5 rounded-full text-xs font-bold"
+                  style={{ backgroundColor: tourFilter === f ? '#7C3AED' : 'rgba(255,255,255,0.05)', color: tourFilter === f ? '#fff' : '#6B7280' }}>
+                  {f === 'all' ? 'All Tours' : f.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs" style={{ color: '#6B7280' }}>{rankingsFiltered.length} player{rankingsFiltered.length === 1 ? '' : 's'}</span>
           </div>
-          {searchLoading && <div className="text-center py-8"><div className="text-3xl mb-2 animate-bounce">🔍</div><div className="text-sm text-white">Searching live rankings...</div></div>}
-          {searchResults && !searchLoading && (
+          {rankingsFiltered.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {parseResults(searchResults).map((p, i) => (
-                <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              {rankingsFiltered.map(p => (
+                <div key={`${p.tour}-${p.rank}`} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: '#a855f720', color: '#a855f7' }}>
                       {p.name.split(' ').map(w => w[0]).join('').slice(0,2)}
@@ -9771,39 +9976,115 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
                       <div className="text-sm font-bold text-white truncate">{p.name}</div>
                       <div className="text-xs" style={{ color: '#6B7280' }}>{p.nationality} · {p.age} · {p.hand}</div>
                     </div>
-                    {p.ranking && <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>#{p.ranking}</span>}
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: p.tour === 'WTA' ? '#ec489918' : '#a855f718', border: `1px solid ${p.tour === 'WTA' ? '#ec489940' : '#a855f740'}`, color: p.tour === 'WTA' ? '#ec4899' : '#a855f7' }}>{p.tour} #{p.rank}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>SURFACE</div><div className="text-xs font-semibold text-white">{p.surface || '—'}</div></div>
-                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>CAREER HIGH</div><div className="text-xs font-semibold text-white">#{p.careerHigh || '—'}</div></div>
-                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>COACH</div><div className="text-xs font-semibold text-white truncate">{p.coach || '—'}</div></div>
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>SURFACE</div><div className="text-xs font-semibold text-white">{p.bestSurface}</div></div>
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>CAREER HIGH</div><div className="text-xs font-semibold text-white">#{p.careerHigh}</div></div>
+                    <div><div className="text-[10px]" style={{ color: '#6B7280' }}>COACH</div><div className="text-xs font-semibold text-white truncate" title={p.coach}>{p.coach}</div></div>
                   </div>
-                  {p.results && <div className="text-xs mt-2" style={{ color: '#6B7280' }}>{p.results}</div>}
+                  <div className="text-xs mt-2" style={{ color: '#6B7280' }}>{p.recentResults}</div>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={() => searchProfile(p.name)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>👁️ Full Profile</button>
-                    <button onClick={() => addContact(p.name, p.ranking, p.nationality)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#3b82f618', border: '1px solid #3b82f640', color: '#3b82f6' }}>➕ Add to Contacts</button>
+                    <button onClick={() => setProfileModal(p)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>👁️ Full Profile</button>
+                    <button onClick={() => addContact(p)} disabled={contacts.some(c => c.name === p.name)} className="flex-1 py-2 rounded-lg text-xs font-semibold disabled:opacity-50" style={{ background: '#3b82f618', border: '1px solid #3b82f640', color: '#3b82f6' }}>{contacts.some(c => c.name === p.name) ? '✓ In Contacts' : '➕ Add to Contacts'}</button>
                   </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-12"><div className="text-4xl mb-3">🏆</div><div className="text-sm text-white mb-1">No matches</div><div className="text-xs" style={{ color: '#6B7280' }}>Try a different search term, nationality, or rank.</div></div>
           )}
-          {!searchResults && !searchLoading && <div className="text-center py-12"><div className="text-4xl mb-3">🏆</div><div className="text-sm text-white mb-1">Search ATP/WTA Rankings</div><div className="text-xs" style={{ color: '#6B7280' }}>Powered by Lumio AI — searches live ranking data from public sources</div></div>}
+          {!q && <div className="text-xs text-center" style={{ color: '#4B5563' }}>Showing top 20 — search by name, nationality, or rank.</div>}
         </div>
       )}
 
       {/* HITTING PARTNERS TAB */}
       {dirTab === 'partners' && (
         <div className="space-y-4">
-          {!partnerResults && !partnerLoading && (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">🎾</div>
-              <div className="text-sm text-white mb-4">Find hitting partners and sparring pros near you</div>
-              <button onClick={searchPartners} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>🔍 Find Hitting Partners Near Me</button>
+          {/* Filters */}
+          <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Max distance</span>
+                <span className="text-xs text-white font-semibold">{partnerMaxKm} km</span>
+              </div>
+              <input type="range" min={2} max={100} value={partnerMaxKm} onChange={e => setPartnerMaxKm(Number(e.target.value))}
+                className="w-full" style={{ accentColor: '#7C3AED' }} />
             </div>
-          )}
-          {partnerLoading && <div className="text-center py-8"><div className="text-3xl mb-2 animate-bounce">🎾</div><div className="text-sm text-white">Searching for partners...</div></div>}
-          {partnerResults && !partnerLoading && (
-            <div className="rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB' }}>{partnerResults}</div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#6B7280' }}>Level</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {partnerLevelOpts.map(lvl => (
+                  <button key={lvl} onClick={() => togglePartnerLevel(lvl)} className="px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                    style={{ background: partnerLevels.includes(lvl) ? '#7C3AED' : 'transparent', borderColor: partnerLevels.includes(lvl) ? '#7C3AED' : '#374151', color: partnerLevels.includes(lvl) ? '#fff' : '#9CA3AF' }}>{lvl}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#6B7280' }}>Surface</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {partnerSurfaceOpts.map(s => (
+                  <button key={s} onClick={() => togglePartnerSurface(s)} className="px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                    style={{ background: partnerSurfaces.includes(s) ? '#7C3AED' : 'transparent', borderColor: partnerSurfaces.includes(s) ? '#7C3AED' : '#374151', color: partnerSurfaces.includes(s) ? '#fff' : '#9CA3AF' }}>{s}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#6B7280' }}>Available day</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {partnerDayOpts.map(d => (
+                  <button key={d} onClick={() => togglePartnerDay(d)} className="px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                    style={{ background: partnerDays.includes(d) ? '#7C3AED' : 'transparent', borderColor: partnerDays.includes(d) ? '#7C3AED' : '#374151', color: partnerDays.includes(d) ? '#fff' : '#9CA3AF' }}>{d}</button>
+                ))}
+              </div>
+            </div>
+            {userCoords && <div className="text-[10px]" style={{ color: '#22C55E' }}>📍 Distances calculated from your location</div>}
+          </div>
+
+          {/* Partner cards */}
+          {partnersFiltered.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {partnersFiltered.map(p => (
+                <div key={p.id} className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C3AED, #a855f7)', color: '#fff' }}>
+                      {p.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{p.name}</div>
+                      <div className="text-[10px] mt-0.5">
+                        <span className="px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#a855f718', color: '#a855f7' }}>{p.level}</span>
+                        {p.careerHighRank && <span className="ml-1.5" style={{ color: '#6B7280' }}>CH ATP #{p.careerHighRank}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Location</div>
+                      <div className="text-white truncate">{p.location}</div>
+                      <div className="text-[10px] mt-0.5" style={{ color: '#22C55E' }}>{p.effectiveDistance} km away</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Rate</div>
+                      <div className="text-white font-bold">£{p.sessionRate}<span className="text-[10px] font-normal" style={{ color: '#6B7280' }}> / 90 min</span></div>
+                    </div>
+                  </div>
+                  <div className="text-xs" style={{ color: '#9CA3AF' }}>
+                    <span className="font-semibold text-white">{p.bestShot}</span> · {p.handedness}-handed
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#a855f718', color: '#a855f7' }}>{p.preferredSurface}</span>
+                    {p.lastPlayed && <span className="text-[9px]" style={{ color: '#6B7280' }}>Last hit: {p.lastPlayed}</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setScheduleModal(p)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>📅 Schedule</button>
+                    <a href={`mailto:bookings@lumio-tennis.com?subject=${encodeURIComponent(`Hitting partner request — ${p.name}`)}&body=${encodeURIComponent(`Hi,\n\nI'd like to book a session with ${p.name} (${p.location}).\n\nPreferred date: \nDuration: 90 min\n\nThanks,\n${session.userName || player.name}`)}`} className="flex-1 py-2 rounded-lg text-xs font-semibold text-center" style={{ background: '#22C55E18', border: '1px solid #22C55E40', color: '#22C55E' }}>📧 Book</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12"><div className="text-4xl mb-3">🎾</div><div className="text-sm text-white mb-1">No partners match those filters</div><div className="text-xs" style={{ color: '#6B7280' }}>Try widening the distance or removing level/surface filters.</div></div>
           )}
         </div>
       )}
@@ -9812,7 +10093,7 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
       {dirTab === 'contacts' && (
         <div className="space-y-4">
           {contacts.length === 0 ? (
-            <div className="text-center py-12"><div className="text-4xl mb-3">📋</div><div className="text-sm text-white">No contacts saved yet</div><div className="text-xs" style={{ color: '#6B7280' }}>Search players and click "Add to Contacts"</div></div>
+            <div className="text-center py-12"><div className="text-4xl mb-3">📋</div><div className="text-sm text-white">No contacts saved yet</div><div className="text-xs" style={{ color: '#6B7280' }}>Search players and click &quot;Add to Contacts&quot;</div></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {contacts.map((c, i) => (
@@ -9827,16 +10108,57 @@ function PlayerDirectoryView({ player, session }: { player: TennisPlayer; sessio
         </div>
       )}
 
-      {/* Profile modal */}
+      {/* Profile modal — static fields from the ranking entry, no AI */}
       {profileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setProfileModal(null) }}>
           <div className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-lg font-bold text-white">{profileModal}</div>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-lg font-bold text-white">{profileModal.name}</div>
+                <div className="text-xs" style={{ color: '#6B7280' }}>{profileModal.tour} #{profileModal.rank} · {profileModal.nationality} · {profileModal.age} · {profileModal.hand}-handed</div>
+              </div>
               <button onClick={() => setProfileModal(null)} className="text-gray-500 hover:text-white">✕</button>
             </div>
-            {profileLoading && <div className="text-sm" style={{ color: '#7C3AED' }}>🔍 Searching for detailed profile...</div>}
-            {profileData && <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{profileData}</div>}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[
+                { l: 'Tour', v: profileModal.tour },
+                { l: 'Current rank', v: `#${profileModal.rank}` },
+                { l: 'Career high', v: `#${profileModal.careerHigh}` },
+                { l: 'Ranking points', v: profileModal.points.toLocaleString() },
+                { l: 'Best surface', v: profileModal.bestSurface },
+                { l: 'Coach', v: profileModal.coach },
+              ].map(s => (
+                <div key={s.l} className="rounded-lg px-3 py-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>{s.l}</div>
+                  <div className="text-sm text-white font-semibold">{s.v}</div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg px-4 py-3 mb-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>Recent results</div>
+              <div className="text-sm" style={{ color: '#D1D5DB' }}>{profileModal.recentResults}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule modal — availability grid */}
+      {scheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setScheduleModal(null) }}>
+          <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-lg font-bold text-white">{scheduleModal.name}</div>
+                <div className="text-xs" style={{ color: '#6B7280' }}>Availability — next 7 days</div>
+              </div>
+              <button onClick={() => setScheduleModal(null)} className="text-gray-500 hover:text-white">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {scheduleModal.availability.map(slot => (
+                <div key={slot} className="rounded-lg px-3 py-2 text-center" style={{ backgroundColor: '#111318', border: '1px solid #22C55E40', color: '#22C55E' }}>{slot}</div>
+              ))}
+            </div>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>Click &quot;Book&quot; on the card to email a session request.</p>
           </div>
         </div>
       )}
@@ -9854,53 +10176,110 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
   const [location, setLocation] = useState('')
   const [budget, setBudget] = useState('')
   const [style, setStyle] = useState('')
-  const [results, setResults] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<Array<TennisCoach & { score: number }> | null>(null)
   const [shortlist, setShortlist] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('lumio_tennis_coach_shortlist') || '[]') } catch { return [] }
   })
-  const [deepSearch, setDeepSearch] = useState<{name:string;data:string|null;loading:boolean}|null>(null)
+  const [deepSearch, setDeepSearch] = useState<{coach: TennisCoach; data: string | null; loading: boolean} | null>(null)
+  const isFoundingMember = session.isDemoShell === false
 
   const GOALS = ['🎯 Serve technique','↩️ Return of serve','🧠 Mental game','🏃 Movement & fitness','⚡ Net game/volleys','📊 Tactical awareness','🎾 Backhand','🤜 Forehand','🏆 Tournament preparation','💰 Career management','🌍 Tour scheduling','📱 Media & brand']
   const toggleGoal = (g: string) => setGoals(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])
 
-  const search = async () => {
-    setStep('search'); setLoading(true)
-    try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `You are a tennis career consultant. Help find the right coach. Player: ATP #${player.ranking ?? 67}. Goals: ${goals.join(', ')}. Specific issues: ${freeText || 'general improvement'}. Preferences: experience ${experience || 'any'}, location ${location || 'flexible'}, budget ${budget || 'flexible'}, style ${style || 'any'}. Search and recommend 4 tennis coaches. Write each as a paragraph covering full name, background, coaching philosophy, notable players coached, availability, fee range, and why they match. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
-      })
-      const data = await res.json()
-      if (data.error) { setResults(`⚠️ ${typeof data.error === 'string' ? data.error : data.error?.message || JSON.stringify(data.error)}`); setLoading(false); return }
-      setResults(cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || '⚠️ No coaches found. Try adjusting preferences.')
-    } catch { setResults('Unable to search. Check connection.') }
-    setLoading(false); setStep('results')
+  // Map goal emoji-prefixed labels onto coach speciality keywords for matching.
+  const goalToKeywords = (g: string): string[] => {
+    const lower = g.toLowerCase()
+    if (lower.includes('serve technique')) return ['serve']
+    if (lower.includes('return of serve')) return ['return']
+    if (lower.includes('mental')) return ['mental']
+    if (lower.includes('movement') || lower.includes('fitness')) return ['fitness', 'movement']
+    if (lower.includes('net') || lower.includes('volley')) return ['strategy', 'tactics']
+    if (lower.includes('tactical')) return ['strategy', 'tactics']
+    if (lower.includes('backhand') || lower.includes('forehand')) return ['biomechanics', 'stroke']
+    if (lower.includes('tournament')) return ['tour']
+    if (lower.includes('career') || lower.includes('tour scheduling')) return ['tour', 'transition']
+    return []
   }
 
-  const researchCoach = async (name: string) => {
-    setDeepSearch({ name, data: null, loading: true })
-    try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${name}. Cover their full coaching history, playing career, philosophy, current availability, fee structure, and contact methods. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
-      })
-      const data = await res.json()
-      setDeepSearch({ name, data: cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || ''), loading: false })
-    } catch { setDeepSearch({ name, data: 'Unable to search.', loading: false }) }
+  // Parse "£1k-2.5k" / "£2.5k-5k" / "£5k+" into a daily-rate ceiling we can
+  // compare against coach.dayRate. Day-rate budgets are weekly/5 — rough.
+  const parseBudget = (b: string): number | null => {
+    if (!b) return null
+    if (b.includes('5k+')) return 99999
+    const match = b.match(/£(\d+(?:\.\d+)?)k?-(\d+(?:\.\d+)?)k/)
+    if (!match) return null
+    const top = parseFloat(match[2]) * 1000
+    return Math.round(top / 5)
   }
 
-  const saveToShortlist = (name: string) => {
-    const updated = [...shortlist, name]
+  const runSearch = () => {
+    setStep('search')
+    const goalKeywords = goals.flatMap(goalToKeywords)
+    const budgetCeiling = parseBudget(budget)
+    const locationKeyword = location.toLowerCase()
+    const styleKeyword = style.toLowerCase().replace(/[^a-z]/g, '')
+    const freeTextWords = freeText.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+
+    const scored = TENNIS_COACHES.map(c => {
+      let score = 0
+      const specLower = c.speciality.toLowerCase()
+      const bioLower = c.bio.toLowerCase()
+      const locLower = c.location.toLowerCase()
+      // Goal/speciality match (the headline factor)
+      if (goalKeywords.some(k => specLower.includes(k))) score += 5
+      if (goalKeywords.some(k => bioLower.includes(k))) score += 2
+      // Budget
+      if (budgetCeiling && c.dayRate <= budgetCeiling) score += 3
+      // Style hint matches in bio
+      if (styleKeyword && bioLower.includes(styleKeyword)) score += 2
+      // Location preference
+      if (locationKeyword.includes('remote') && bioLower.includes('remote')) score += 2
+      if (locationKeyword.includes('travel') || locationKeyword.includes('tour')) {
+        if (specLower.includes('tour') || c.availability.toLowerCase().includes('tour')) score += 2
+      }
+      if (locationKeyword.includes('residential') && c.availability.toLowerCase().includes('residential')) score += 2
+      // Free-text match
+      if (freeTextWords.length > 0 && freeTextWords.some(w => bioLower.includes(w))) score += 1
+      // Experience tier
+      if (experience.includes('Top 10') && c.tourHistory && /\b#[1-9](?:\s|$)/.test(c.tourHistory)) score += 2
+      if (experience.includes('Top 100') && c.tourHistory) score += 1
+      if (experience.includes('Academy') && locLower.includes('academy')) score += 1
+      // Always reward higher-rated coaches as a tiebreak
+      score += (c.rating - 4) * 2
+      return { ...c, score }
+    }).sort((a, b) => b.score - a.score).slice(0, 6)
+    setResults(scored)
+    setStep('results')
+  }
+
+  const researchCoach = async (coach: TennisCoach) => {
+    if (isFoundingMember) {
+      // Live AI deep-research is reserved for paid founder accounts.
+      setDeepSearch({ coach, data: null, loading: true })
+      try {
+        const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
+            tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+            messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${coach.name} (${coach.speciality}, based ${coach.location}). Cover coaching history, philosophy, current availability, fee structure, and contact methods. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
+        })
+        const data = await res.json()
+        setDeepSearch({ coach, data: cleanResponse(data.content?.filter((b:{type:string}) => b.type === 'text').map((b:{text:string}) => b.text).join('\n') || '') || 'Unable to load research.', loading: false })
+      } catch { setDeepSearch({ coach, data: 'Unable to search.', loading: false }) }
+    } else {
+      // Demo mode — no AI. Show the static expanded profile.
+      setDeepSearch({ coach, data: null, loading: false })
+    }
+  }
+
+  const toggleShortlist = (name: string) => {
+    const updated = shortlist.includes(name) ? shortlist.filter(n => n !== name) : [...shortlist, name]
     setShortlist(updated)
     localStorage.setItem('lumio_tennis_coach_shortlist', JSON.stringify(updated))
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🎓</span><div><div className="text-lg font-bold text-white">Coach Finder</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered coach matching based on your goals and preferences</div></div></div>
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🎓</span><div><div className="text-lg font-bold text-white">Coach Finder</div><div className="text-xs" style={{ color: '#6B7280' }}>Match against our roster of vetted coaches based on your goals and preferences</div></div></div>
 
       {/* Step indicator */}
       <div className="flex items-center gap-2">
@@ -9938,38 +10317,102 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
           ))}
           <div className="flex gap-3">
             <button onClick={() => setStep('goals')} className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Back</button>
-            <button onClick={search} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>🔍 Find Coaches →</button>
+            <button onClick={runSearch} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>🔍 Find Coaches →</button>
           </div>
         </div>
       )}
 
-      {/* STEP 3: Searching */}
-      {step === 'search' && loading && (
-        <div className="text-center py-12"><div className="text-4xl mb-3 animate-bounce">🎓</div><div className="text-sm font-bold text-white mb-2">Searching for coaches...</div><div className="text-xs" style={{ color: '#6B7280' }}>Analysing your goals and preferences</div></div>
-      )}
-
-      {/* STEP 4: Results */}
+      {/* STEP 3 + 4: Results */}
       {step === 'results' && results && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-bold text-white">Recommended Coaches</div>
+            <div className="text-sm font-bold text-white">Recommended Coaches ({results.length})</div>
             {shortlist.length > 0 && <span className="text-xs px-2 py-1 rounded-full" style={{ background: '#22C55E18', color: '#22C55E' }}>💾 {shortlist.length} shortlisted</span>}
           </div>
-          <div className="rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', borderLeft: '4px solid #7C3AED', border: '1px solid #1F2937', color: '#D1D5DB' }}>{results}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {results.map(c => {
+              const inShortlist = shortlist.includes(c.name)
+              return (
+                <div key={c.id} className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7C3AED, #a855f7)', color: '#fff' }}>
+                      {c.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-bold text-white truncate">{c.name}</div>
+                        {c.nickname && <span className="text-[10px] italic" style={{ color: '#a855f7' }}>&ldquo;{c.nickname}&rdquo;</span>}
+                      </div>
+                      <div className="text-[11px] mt-0.5">
+                        <span className="px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#a855f718', color: '#a855f7' }}>{c.speciality}</span>
+                        <span className="ml-1.5" style={{ color: '#FCD34D' }}>★ {c.rating.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{c.bio}</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div><div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Experience</div><div className="text-xs font-semibold text-white">{c.yearsExperience}yr</div></div>
+                    <div><div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Day rate</div><div className="text-xs font-semibold text-white">£{c.dayRate.toLocaleString()}</div></div>
+                    <div><div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Languages</div><div className="text-xs font-semibold text-white truncate" title={c.languages.join(', ')}>{c.languages.length}</div></div>
+                  </div>
+                  <div className="text-[11px]" style={{ color: '#9CA3AF' }}>📍 {c.location}<br />🗓 {c.availability}</div>
+                  {c.tourHistory && <div className="text-[10px]" style={{ color: '#6B7280' }}>{c.tourHistory}</div>}
+                  <div className="flex gap-2">
+                    <button onClick={() => researchCoach(c)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: '#a855f718', border: '1px solid #a855f740', color: '#a855f7' }}>👁️ Full Profile</button>
+                    <button onClick={() => toggleShortlist(c.name)} className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: inShortlist ? '#22C55E18' : '#3b82f618', border: `1px solid ${inShortlist ? '#22C55E40' : '#3b82f640'}`, color: inShortlist ? '#22C55E' : '#3b82f6' }}>{inShortlist ? '✓ Shortlisted' : '💾 Shortlist'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
           <div className="flex gap-3">
             <button onClick={() => setStep('goals')} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>← Start over</button>
-            <button onClick={search} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔄 Search again</button>
+            <button onClick={runSearch} className="py-2.5 px-4 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>🔄 Re-rank</button>
           </div>
         </div>
       )}
 
-      {/* Deep search modal */}
+      {/* Deep search / static expanded profile modal */}
       {deepSearch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setDeepSearch(null) }}>
           <div className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl p-6" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between mb-4"><div className="text-lg font-bold text-white">{deepSearch.name}</div><button onClick={() => setDeepSearch(null)} className="text-gray-500 hover:text-white">✕</button></div>
-            {deepSearch.loading && <div className="text-sm" style={{ color: '#7C3AED' }}>🔍 Researching...</div>}
-            {deepSearch.data && <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{deepSearch.data}</div>}
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-lg font-bold text-white">{deepSearch.coach.name}{deepSearch.coach.nickname && <span className="ml-2 text-sm italic" style={{ color: '#a855f7' }}>&ldquo;{deepSearch.coach.nickname}&rdquo;</span>}</div>
+                <div className="text-xs" style={{ color: '#6B7280' }}>{deepSearch.coach.speciality} · {deepSearch.coach.yearsExperience} years experience · ★ {deepSearch.coach.rating.toFixed(1)}</div>
+              </div>
+              <button onClick={() => setDeepSearch(null)} className="text-gray-500 hover:text-white">✕</button>
+            </div>
+
+            {isFoundingMember && deepSearch.loading && <div className="text-sm" style={{ color: '#7C3AED' }}>🔍 Researching live web...</div>}
+            {isFoundingMember && deepSearch.data && <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{deepSearch.data}</div>}
+
+            {!isFoundingMember && (
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{deepSearch.coach.bio}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { l: 'Day rate',     v: `£${deepSearch.coach.dayRate.toLocaleString()}` },
+                    { l: 'Years pro',    v: `${deepSearch.coach.yearsExperience}` },
+                    { l: 'Location',     v: deepSearch.coach.location },
+                    { l: 'Availability', v: deepSearch.coach.availability },
+                    { l: 'Languages',    v: deepSearch.coach.languages.join(', ') },
+                    { l: 'Rating',       v: `★ ${deepSearch.coach.rating.toFixed(1)} / 5` },
+                  ].map(s => (
+                    <div key={s.l} className="rounded-lg px-3 py-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                      <div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>{s.l}</div>
+                      <div className="text-sm text-white font-semibold">{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+                {deepSearch.coach.tourHistory && (
+                  <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                    <div className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Tour history</div>
+                    <div className="text-sm text-white">{deepSearch.coach.tourHistory}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -9988,6 +10431,9 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
   const sidebarRef = useRef<HTMLElement | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(72);
   const isFoundingMember = session.isDemoShell === false
+  // Mirror Settings brand colours onto CSS vars so Quick Actions (and any
+  // other var(--brand-primary) consumer) updates live on picker change.
+  useLiveBrandColours('tennis', { primary: '#0ea5e9', secondary: '#ffffff' })
   // Profile sync — keeps the bottom RoleSwitcher avatar/name in step with Settings edits.
   // Founders bypass these survivor-key reads to prevent leakage from a prior demo
   // visit on the same browser.

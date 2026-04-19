@@ -3,12 +3,17 @@
 // without repeating for the full array length, and shift each year.
 
 export function getDailyQuote(quotes: { text: string; author: string }[]) {
+  // Only rotate through quotes with a verified attribution — "Unknown"
+  // looks unpolished on the dashboard and we're not in the business of
+  // fabricating sources.
+  const attributed = quotes.filter(q => q.author && q.author !== 'Unknown')
+  const pool = attributed.length > 0 ? attributed : quotes
   const now = new Date()
   const start = new Date(now.getFullYear(), 0, 0)
   const diff = now.getTime() - start.getTime()
   const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const index = (dayOfYear + (now.getFullYear() * 17)) % quotes.length
-  return quotes[index]
+  const index = (dayOfYear + (now.getFullYear() * 17)) % pool.length
+  return pool[index]
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
