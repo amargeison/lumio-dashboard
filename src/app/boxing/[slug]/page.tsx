@@ -42,6 +42,7 @@ import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
+import { TRAINERS_ROSTER, GYMS_ROSTER, SPARRING_ROSTER } from '@/lib/demo-content/boxing-pros'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -142,6 +143,8 @@ interface BoxingFighter {
     opponent_record: string;
     opponent_ranking: string;
     date: string;
+    date_iso?: string;
+    date_short?: string;
     days_away: number;
     venue: string;
     broadcast: string;
@@ -160,14 +163,15 @@ const BOXING_ROLES = [
 
 // ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
 const SIDEBAR_ITEMS = [
-  { id: 'camp',             label: 'Camp Dashboard',      icon: '🏕️', group: 'FIGHT CAMP' },
-  { id: 'training',        label: 'Training Log',        icon: '🥊', group: 'FIGHT CAMP' },
-  { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'FIGHT CAMP' },
-  { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
-  { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
-  { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'FIGHT CAMP' },
-  { id: 'gpsringheatmap',  label: 'GPS & Ring Heatmap',  icon: '🛰️', group: 'FIGHT CAMP' },
+  { id: 'camp',             label: 'Dashboard',           icon: '🏕️', group: 'OVERVIEW' },
+  { id: 'training',        label: 'Training Log',        icon: '🥊', group: 'OVERVIEW' },
+  { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'OVERVIEW' },
+  { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'OVERVIEW' },
+  { id: 'gps',             label: 'GPS',                 icon: '🛰️', group: 'OVERVIEW' },
   { id: 'fightcamp',       label: 'Fight Camp',          icon: '🥊', group: 'FIGHT CAMP' },
+  { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
+  { id: 'campcosts',       label: 'Camp Costs',          icon: '🧾', group: 'FIGHT CAMP' },
+  { id: 'opposition',      label: 'Opposition Analysis', icon: '🔍', group: 'FIGHT CAMP' },
   { id: 'weight',          label: 'Weight Tracker',      icon: '⚖️', group: 'WEIGHT & HEALTH' },
   { id: 'cut',             label: 'Cut Planner',         icon: '📉', group: 'WEIGHT & HEALTH' },
   { id: 'recovery',        label: 'Recovery & HRV',      icon: '💚', group: 'WEIGHT & HEALTH' },
@@ -179,8 +183,8 @@ const SIDEBAR_ITEMS = [
   { id: 'career',          label: 'Career Planning',     icon: '🚀', group: 'RANKINGS' },
   { id: 'pursesim',        label: 'Purse Simulator',     icon: '💷', group: 'FINANCIALS' },
   { id: 'earnings',        label: 'Fight Earnings',      icon: '💰', group: 'FINANCIALS' },
-  { id: 'campcosts',       label: 'Camp Costs',          icon: '🧾', group: 'FINANCIALS' },
   { id: 'tax',             label: 'Tax Tracker',         icon: '📊', group: 'FINANCIALS' },
+  { id: 'physio-recovery', label: 'Physio & Recovery',   icon: '⚕️', group: 'TEAM HUB' },
   { id: 'teamoverview',    label: 'Team Overview',       icon: '👥', group: 'TEAM HUB' },
   { id: 'briefing',        label: 'Fighter Briefing',    icon: '📄', group: 'TEAM HUB' },
   { id: 'trainernotes',    label: 'Trainer Notes',       icon: '📝', group: 'TEAM HUB' },
@@ -197,11 +201,9 @@ const SIDEBAR_ITEMS = [
   { id: 'opscout',         label: 'Opposition Scout',    icon: '🎯', group: 'INTEL' },
   { id: 'broadcast',       label: 'Broadcast Tracker',   icon: '📺', group: 'INTEL' },
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
-  { id: 'gps',             label: 'GPS Load Monitor',    icon: '📡', group: 'INTEGRATIONS' },
-  { id: 'gpsvest',         label: 'GPS Vest Dashboard',  icon: '🦺', group: 'INTEGRATIONS' },
-  { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'INTEGRATIONS' },
-  { id: 'travel',          label: 'Travel & Logistics',  icon: '✈️', group: 'INTEGRATIONS' },
-  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'INTEL' },
+  { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'TEAM HUB' },
+  { id: 'travel',          label: 'Travel & Logistics',  icon: '✈️', group: 'TEAM HUB' },
+  { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'SETTINGS' },
 ];
 
 // ─── DEMO FIGHTER DATA ────────────────────────────────────────────────────────
@@ -222,7 +224,7 @@ const DEMO_FIGHTER: BoxingFighter = {
   target_weight: 92.7,
   record: { wins: 22, losses: 1, draws: 0, ko: 18 },
   rankings: { wbc: 6, wba: 9, wbo: 5, ibf: 12 },
-  promoter: 'Matchroom Boxing',
+  promoter: 'Titan Promotions',
   broadcast: 'Meridian Sports',
   manager: 'Danny Walsh',
   trainer: 'Jim Bevan',
@@ -238,7 +240,11 @@ const DEMO_FIGHTER: BoxingFighter = {
     opponent_flag: '🇷🇺',
     opponent_record: '28-2 (24 KO)',
     opponent_ranking: 'WBC #3',
-    date: '2026-05-22',
+    // Single source of truth for fight timing. days_away is anchored to
+    // 2026-04-19 (today) → Sat 6 Jun 2026.
+    date: 'Sat 6 Jun 2026',
+    date_iso: '2026-06-06',
+    date_short: 'Jun 6',
     days_away: 48,
     venue: 'The Millennium Dome, London',
     broadcast: 'Meridian Sports PPV',
@@ -360,7 +366,7 @@ const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: Sp
   const livePhoto = isPlayerRole
     ? (isFoundingMember
         ? (session.photoDataUrl || null)
-        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl))
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl || '/marcus_reid.jpg'))
     : null
   return (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
@@ -1018,11 +1024,11 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
     { id:'manager', label:'Manager', icon:'💼', count:2, urgent:true, color:'#dc2626', messages:[
-      { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Matchroom offering 70/30. Need your call at 16:00.', time:'8:14am' },
+      { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Titan offering 70/30. Need your call at 16:00.', time:'8:14am' },
       { id:'m2', from:'Danny Walsh', text:'Apex Performance camp deal — £85k for fight week branding. Worth taking?', time:'7:52am' },
     ]},
     { id:'promoter', label:'Promoter Desk', icon:'🏟️', count:1, urgent:true, color:'#F97316', messages:[
-      { id:'p1', from:'Matchroom Boxing', text:'URGENT: Press conference moved to Thursday 2pm. Eddie needs 20min interview slot.', time:'9:01am' },
+      { id:'p1', from:'Titan Promotions', text:'URGENT: Press conference moved to Thursday 2pm. Jack needs 20min interview slot.', time:'9:01am' },
     ]},
     { id:'sponsor', label:'Media & Sponsor', icon:'🤝', count:2, urgent:false, color:'#F59E0B', messages:[
       { id:'s1', from:'Meridian Sports', text:'Pre-fight documentary crew arriving Monday. 3 days filming access needed.', time:'8:30am' },
@@ -1206,7 +1212,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
                     {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your boxing OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. Rankings, fight camp, weight tracking, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'🥊', v:`#${fighter.rankings.wbc}`, label:'WBC', c:'#dc2626' },{ icon:'🏆', v:`${fighter.record.wins}-${fighter.record.losses}`, label:'Record', c:'#F97316' },{ icon:'⚖️', v:`${fighter.current_weight}kg`, label:'Weight', c:'#F59E0B' },{ icon:'📅', v:`${fighter.next_fight.days_away}d`, label:'Fight', c:'#22C55E' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next fight:</span> <span className="text-white font-semibold">vs {fighter.next_fight.opponent} — {fighter.next_fight.venue}</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Camp day:</span> <span className="text-white font-semibold">Day {fighter.camp_day}/70 — On track</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#dc2626' }}>🥊</span> <span style={{ color: '#9CA3AF' }}>Used by professional fighters to manage everything from training camp to fight night.</span></div>{/* Brand Colours — only in step 1 detail */}<div className="mt-4 space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div><p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p><div className="flex items-center gap-4"><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label><input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_boxing_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label><input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_boxing_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div className="flex-1"><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label><div className="flex items-center gap-2"><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div></div></div></div></div></>)}
-                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every fight week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers weight status, camp progress, opponent intel, sponsor deadlines and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(220,38,38,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(220,38,38,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⚖️', text:`Weight on track — ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Cut projection: 3 days before weigh-in.` },{ icon:'🥊', text:'Stoyan scouting report ready — body shot breakdown and late-round fade analysis.' },{ icon:'🤝', text:'Apex Performance camp shoot tomorrow 10:00 — penalty clause. Kit prepped.' },{ icon:'📬', text:'Meridian Sports promotion confirmed. Danny Walsh purse split: 70/30 Matchroom offer.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up.</span></div></>)}
+                    {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every fight week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers weight status, camp progress, opponent intel, sponsor deadlines and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(220,38,38,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(220,38,38,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⚖️', text:`Weight on track — ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Cut projection: 3 days before weigh-in.` },{ icon:'🥊', text:'Stoyan scouting report ready — body shot breakdown and late-round fade analysis.' },{ icon:'🤝', text:'Apex Performance camp shoot tomorrow 10:00 — penalty clause. Kit prepped.' },{ icon:'📬', text:'Meridian Sports promotion confirmed. Danny Walsh purse split: 70/30 Titan offer.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up.</span></div></>)}
                     {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — log a sparring session, track weight, file a physio report, generate a sponsor post, check your visa. All in under 60 seconds.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Fight Prep AI', icon:'🥊', hot:true },{ label:'Weight Tracker', icon:'⚖️', hot:false },{ label:'Sparring Log', icon:'📋', hot:false },{ label:'Opponent Study', icon:'🔍', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#dc2626' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#dc2626' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🥊</span> <span style={{ color: '#0ea5e9' }}>Fight Prep AI generates a full opponent breakdown — punch stats, weaknesses, game plan — in 8 seconds.</span></div></>)}
                     {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Fight travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every fight venue. Smart Hotel finds gyms and hotels near the arena. Pre-filled with your home airport and weight class preferences.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Virgin Atlantic · VS 3</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£387 return</span></div><div className="text-[10px] text-gray-400">London LHR → New York JFK · 7h 20m · Direct</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Manhattan Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£142/night</span></div><div className="text-[10px] text-gray-400">0.8km from Madison Square Garden · Gym ✅ · 8.6 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Fighters using Smart Flights save an average of £520 per fight on travel vs booking through a promoter.</span></div></>)}
                     {step.preview === 'weight' && (<><h2 className="text-xl font-black text-white mb-2">Weight camp managed to the gram.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Daily weight logs, cut timeline, ACWR load monitoring, rehydration plan — all tracked automatically. Get alerted if you&apos;re behind schedule before it becomes a crisis.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(220,38,38,0.3)' }}><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-white">Weight Camp Tracker</span><span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>ON TRACK ✅</span></div><div className="grid grid-cols-3 gap-2 text-center mb-3">{[{ label:'Camp Day', v:`${fighter.camp_day}/70`, c:'#dc2626' },{ label:'Current', v:`${fighter.current_weight}kg`, c:'#F97316' },{ label:'Target', v:`${fighter.target_weight}kg`, c:'#22C55E' }].map((s,i) => (<div key={i} className="rounded-lg p-2" style={{ backgroundColor: '#111318' }}><div className="text-[10px] text-gray-500">{s.label}</div><div className="text-sm font-black" style={{ color: s.c }}>{s.v}</div></div>))}</div><div className="space-y-1 text-[10px]"><div className="flex justify-between text-gray-400"><span>Cut prediction:</span><span className="text-white font-semibold">3 days before weigh-in</span></div><div className="flex justify-between text-gray-400"><span>ACWR:</span><span className="text-green-400 font-semibold">1.12 (optimal zone)</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><span style={{ color: '#dc2626' }}>⚖️</span> <span style={{ color: '#dc2626' }}>Missing weight costs purse deductions and can cancel fights. Lumio flags weight risk 14 days out.</span></div></>)}
@@ -1319,7 +1325,10 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="flex items-center justify-between">
                 <div className="text-center">
                   <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
-                    {session.photoDataUrl ? <img src={session.photoDataUrl} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
+                    {(() => {
+                      const p = session.photoDataUrl || (isDemoShellDash ? '/marcus_reid.jpg' : '');
+                      return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
+                    })()}
                   </div>
                   <div className="text-xs font-bold text-white">{session.userName || fighter.name}</div>
                   <div className="text-[10px] text-red-400">WBC #{fighter.rankings.wbc}</div>
@@ -1371,13 +1380,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 })}
               </div>
             </div>
-            {/* Tonight's Venue */}
+            {/* Fight Night Venue */}
             <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Fight Night Venue — {fighter.next_fight.days_away} days</div>
               <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
-              <div className="text-xs text-gray-500 mt-1">16°C · Clear · Doors open 18:00</div>
+              <div className="text-xs text-gray-500 mt-1">{fighter.next_fight.date} · Doors open 18:00 on fight night</div>
               <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00</span></div>
+                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00 fight night</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.2M</span></div>
                 <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£360,000</span></div>
                 <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">{fighter.next_fight.broadcast}</span></div>
@@ -1481,7 +1490,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { p:2, title:'Meridian Sports pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm', effort:'2min', description:'Press tour begins today. Contractual obligation — confirm now.' },
             { p:3, title:'Sparring session vs southpaw booked — 10:00',                     impact:'High',     cat:'Camp',       icon:'🥊', cta:'Log sparring', effort:'5min', description:'Southpaw rounds to prepare for Stoyan\'s stance. Jim Bevan supervising.' },
             { p:4, title:'Stoyan\'s last 3 fights uploaded — review footage',                impact:'High',     cat:'Prep',       icon:'🎬', cta:'Open scout', effort:'15min', description:'3 recent fights available — study patterns and defensive tendencies.' },
-            { p:5, title:'Matchroom contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review', effort:'5min', description:'Addendum to existing deal — Danny Walsh flagged urgency.' },
+            { p:5, title:'Titan contract addendum — sign by Friday',                     impact:'High',     cat:'Commercial', icon:'📋', cta:'Review', effort:'5min', description:'Addendum to existing deal — Danny Walsh flagged urgency.' },
           ].map((w, i) => (
             <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="flex items-start justify-between gap-4">
@@ -1589,7 +1598,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               { type:'ALERT',       icon:'⚠️', color:'#EF4444', bg:'rgba(239,68,68,0.08)',  border:'rgba(239,68,68,0.2)',  title:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg to cut in ${fighter.next_fight.days_away} days`, desc:`Current ${fighter.current_weight}kg, target ${fighter.target_weight}kg. Daily cut required: ${((fighter.current_weight - fighter.target_weight) / fighter.next_fight.days_away).toFixed(2)}kg/day. On track if you log daily.`, action:'Log weight →', modal:'weight' },
               { type:'OPPORTUNITY', icon:'💡', color:'#F59E0B', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.2)', title:'Apex Performance camp extension offer', desc:'New approach via Danny Walsh — £85k for fight week branding and post-fight content. No competing sponsor in the pipeline. Decision needed by end of week.', action:'Open sponsor brief →', modal:'sponsor' },
               { type:'TREND',       icon:'📈', color:'#22C55E', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)',  title:'Sparring power output up 8%', desc:'Last 5 sessions vs season avg. Right hand velocity and body shot compression both trending up. Jim Bevan flagged this in camp notes — keep the current pad routine.', action:'View training log →', modal:'matchprep' },
-              { type:'ACHIEVEMENT', icon:'🏆', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)', title:`Record now ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KOs)`, desc:'Last fight: 12-round points win. Promoter Matchroom locking in Millennium Dome headline slot. First top-10 WBC fight — media interest is high.', action:'View fight record →', modal:'matchprep' },
+              { type:'ACHIEVEMENT', icon:'🏆', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)', title:`Record now ${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KOs)`, desc:'Last fight: 12-round points win. Promoter Titan locking in Millennium Dome headline slot. First top-10 WBC fight — media interest is high.', action:'View fight record →', modal:'matchprep' },
             ].map((tile, i) => (
               <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -1638,7 +1647,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             { urgency:'CRITICAL', item:'Weight cut — 5.1kg to target in 48 days. If missed: dangerous rapid cut fight week.', action:'Log weight →', color:'#dc2626' },
             { urgency:'CRITICAL', item:'Right hand X-ray — Jim flagged knuckle swelling. If missed: risk fighting injured.', action:'Book appointment →', color:'#EF4444' },
             { urgency:'TODAY',    item:'Meridian Sports interview — press tour begins today. If missed: contractual breach.', action:'Prep talking points →', color:'#F59E0B' },
-            { urgency:'THIS WEEK',item:'Matchroom contract addendum signature. If missed: fight postponed.', action:'Review contract →', color:'#F59E0B' },
+            { urgency:'THIS WEEK',item:'Titan contract addendum signature. If missed: fight postponed.', action:'Review contract →', color:'#F59E0B' },
             { urgency:'THIS WEEK',item:'Mandatory rest day Saturday — physio assessment. If missed: overtraining risk.', action:'Log recovery →', color:'#6B7280' },
           ].map((d, i) => (
             <div key={i} className="flex items-start gap-4 rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
@@ -1696,7 +1705,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <div className="rounded-xl p-6 text-center space-y-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="text-sm font-bold text-white mb-4">Team Organisation</div>
               <div className="flex justify-center gap-8">
-                {[{name:'Danny Walsh',role:'Manager'},{name:'Matchroom',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
+                {[{name:'Danny Walsh',role:'Manager'},{name:'Titan',role:'Promoter'}].map((p,i)=>(<div key={i} className="text-center"><div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-sm font-bold" style={{background:'rgba(220,38,38,0.2)',border:'1px solid rgba(220,38,38,0.4)',color:'#dc2626'}}>{p.name.split(' ').map(w=>w[0]).join('')}</div><div className="text-xs text-white">{p.name}</div><div className="text-[10px]" style={{color:'#6B7280'}}>{p.role}</div></div>))}
               </div>
               <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-lg font-bold overflow-hidden"
                 style={{background:'rgba(220,38,38,0.2)',border:'2px solid #dc2626',color:'#dc2626'}}>
@@ -1748,7 +1757,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             <div className="rounded-xl p-5 space-y-3" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}>
               <div className="text-sm font-bold text-white mb-3">Fight Record</div>
               {[
-                {l:'Professional Record',v:'22-1 (18 KOs)'},{l:'WBC Ranking',v:`#${fighter.rankings.wbc}`},{l:'WBA Ranking',v:`#${fighter.rankings.wba}`},{l:'WBO Ranking',v:`#${fighter.rankings.wbo}`},{l:'IBF Ranking',v:`#${fighter.rankings.ibf}`},{l:'Weight Class',v:'Heavyweight (max 200lb / 90.7kg)'},{l:'Promoter',v:'Matchroom Boxing'},{l:'Broadcast',v:'Meridian Sports'},{l:'Trainer',v:'Jim Bevan (since 2021)'},{l:'Pro debut',v:'March 2018'},{l:'Last fight',v:'W — points — 12 rounds'},
+                {l:'Professional Record',v:'22-1 (18 KOs)'},{l:'WBC Ranking',v:`#${fighter.rankings.wbc}`},{l:'WBA Ranking',v:`#${fighter.rankings.wba}`},{l:'WBO Ranking',v:`#${fighter.rankings.wbo}`},{l:'IBF Ranking',v:`#${fighter.rankings.ibf}`},{l:'Weight Class',v:'Heavyweight (max 200lb / 90.7kg)'},{l:'Promoter',v:'Titan Promotions'},{l:'Broadcast',v:'Meridian Sports'},{l:'Trainer',v:'Jim Bevan (since 2021)'},{l:'Pro debut',v:'March 2018'},{l:'Last fight',v:'W — points — 12 rounds'},
               ].map((r,i)=>(<div key={i} className="flex items-center justify-between py-2 text-xs" style={{borderBottom:i<10?'1px solid #1F2937':'none'}}><span style={{color:'#6B7280'}}>{r.l}</span><span className="font-bold text-white">{r.v}</span></div>))}
             </div>
           )}
@@ -1792,7 +1801,6 @@ function TrainingLogView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🥊" title="Training Log" subtitle="Session-by-session camp log with load tracking and trainer notes." />
 
       {/* Weekly Summary */}
@@ -1906,7 +1914,6 @@ function SparringPlannerView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🤼" title="Sparring Planner" subtitle="Manage sparring partners, weekly round targets, and camp sparring strategy." />
 
       {/* Sparring Stats */}
@@ -2032,7 +2039,6 @@ function OppositionAnalysisView({ fighter, session }: { fighter: BoxingFighter; 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🔍" title="Opposition Analysis" subtitle={`Detailed breakdown of ${fighter.next_fight.opponent} — ${fighter.next_fight.opponent_ranking}`} />
 
       {/* Opponent Profile Card */}
@@ -2184,7 +2190,6 @@ function WeightTrackerView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="⚖️" title="Weight Tracker" subtitle="Daily weigh-ins, trajectory analysis, and cut planning." />
 
       {/* Hero Weight Card */}
@@ -2332,7 +2337,6 @@ function CutPlannerView({ fighter, session }: { fighter: BoxingFighter; session:
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📉" title="Cut Planner" subtitle="Structured weight cut protocol for fight week and beyond." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2464,7 +2468,6 @@ function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💚" title="Recovery & HRV" subtitle="Track heart rate variability, sleep quality, and recovery protocols." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2535,6 +2538,396 @@ function RecoveryHRVView({ fighter, session }: { fighter: BoxingFighter; session
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── PHYSIO & RECOVERY (SUMMARY) ──────────────────────────────────────────────
+// Tennis-parity summary view. Sits alongside Recovery & HRV + Medical Record
+// as a single landing page that surfaces the top-line health data and links
+// through to the deep-dive tools.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const BOXING_CAMP_LOAD = [
+  { week: 'Jan W1', rounds: 32, hours: 12 },
+  { week: 'Jan W2', rounds: 44, hours: 15 },
+  { week: 'Jan W3', rounds: 48, hours: 16 },
+  { week: 'Feb W1', rounds: 36, hours: 13 },
+  { week: 'Feb W2', rounds: 52, hours: 17 },
+  { week: 'Feb W3', rounds: 56, hours: 18 },
+  { week: 'Mar W1', rounds: 42, hours: 14 },
+  { week: 'Mar W2', rounds: 58, hours: 18 },
+  { week: 'Mar W3', rounds: 60, hours: 19 },
+  { week: 'Mar W4', rounds: 46, hours: 15 },
+  { week: 'Apr W1', rounds: 54, hours: 17 },
+  { week: 'Apr W2', rounds: 58, hours: 18 },
+  { week: 'Apr W3', rounds: 38, hours: 13 },
+];
+
+function BoxingRecoveryChartInline() {
+  const data = [68, 74, 72, 80, 76, 82, 78];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const w = 360, h = 150, padX = 35, padY = 15, padBottom = 25;
+  const chartW = w - padX * 2, chartH = h - padY - padBottom;
+  const xStep = chartW / (data.length - 1);
+  const minV = 50, maxV = 100;
+  const points = data.map((v, i) => ({
+    x: padX + i * xStep,
+    y: padY + chartH - ((v - minV) / (maxV - minV)) * chartH,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
+  return (
+    <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs>
+          <linearGradient id="boxingRecovGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#boxingRecovGrad)" />
+        <path d={linePath} fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#14b8a6" stroke="#07080F" strokeWidth="1.5" />
+        ))}
+        {days.map((d, i) => (
+          <text key={i} x={padX + i * xStep} y={h - 5} fill="#6b7280" fontSize="9" textAnchor="middle">{d}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function BoxingPhysioRecoveryView({ fighter, session, onNavigate }: { fighter: BoxingFighter; session: SportsDemoSession; onNavigate: (id: string) => void }) {
+  const isDemoShellBoxing = session.isDemoShell !== false;
+  const totalRounds90d = BOXING_CAMP_LOAD.reduce((a,w)=>a+w.rounds,0);
+  const totalHours90d = BOXING_CAMP_LOAD.reduce((a,w)=>a+w.hours,0);
+  const maxRoundsInWeek = Math.max(...BOXING_CAMP_LOAD.map(w=>w.rounds));
+  const campOverload = maxRoundsInWeek > 55;
+
+  const recovery = [
+    { date: 'Today',       score: 74, hrv: 58, rhr: 54, sleep: 6.9 },
+    { date: 'Yesterday',   score: 68, hrv: 52, rhr: 57, sleep: 6.2 },
+    { date: '2 days ago',  score: 82, hrv: 68, rhr: 50, sleep: 7.8 },
+    { date: '3 days ago',  score: 71, hrv: 56, rhr: 55, sleep: 6.5 },
+    { date: '4 days ago',  score: 78, hrv: 64, rhr: 52, sleep: 7.3 },
+  ];
+
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const SEVERITY_CONFIG = {
+    critical:   { fill: '#dc2626', r: 12, label: 'Critical',   textClass: 'text-red-400' },
+    moderate:   { fill: '#f59e0b', r: 9,  label: 'Moderate',   textClass: 'text-amber-400' },
+    minor:      { fill: '#eab308', r: 7,  label: 'Minor',      textClass: 'text-yellow-400' },
+    monitoring: { fill: '#10b981', r: 5,  label: 'Monitoring', textClass: 'text-green-400' },
+  } as const;
+  type Severity = keyof typeof SEVERITY_CONFIG;
+  const bodyMarkers: { id: string; x: number; y: number; severity: Severity; label: string; note: string }[] = [
+    { id: 'rshoulder', x: 132, y: 66,  severity: 'moderate',   label: 'Right shoulder', note: 'Rotator cuff load from heavy bag work — strapping + ice post-session' },
+    { id: 'rknuckles', x: 152, y: 148, severity: 'minor',      label: 'Right knuckles', note: 'Boxer\'s knuckle mild inflammation — extra wrap padding on sparring days' },
+    { id: 'lwrist',    x: 48,  y: 150, severity: 'monitoring', label: 'Left wrist',     note: 'No active issue — mobility work maintained' },
+    { id: 'ribs',      x: 110, y: 115, severity: 'minor',      label: 'Lower ribs',     note: 'Sparring contact bruising — taping, no restrictions' },
+    { id: 'neck',      x: 100, y: 45,  severity: 'monitoring', label: 'Neck',           note: 'Daily isometric holds — whiplash prevention' },
+  ];
+  const selectedMarker = bodyMarkers.find(m => m.id === selectedBodyPart) ?? null;
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Camp load, clearance, injury map, and treatment log — the one-page health summary." />
+
+      {/* Section 2 — 4 StatCards (inline tile style to match boxing) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Recovery Score', value: '74/100', sub: 'Today (WHOOP)',          accent: '#14b8a6' },
+          { label: 'HRV',            value: '58ms',   sub: '+6ms vs yesterday',       accent: '#0ea5e9' },
+          { label: 'Resting HR',     value: '54 bpm', sub: 'Camp-day elevated',       accent: '#6366f1' },
+          { label: 'Sleep',          value: '6.9 hrs', sub: 'Below 7.5 target',       accent: '#f59e0b' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <div className="text-xs uppercase tracking-wide" style={{ color: '#6B7280' }}>{s.label}</div>
+            <div className="text-xl font-black mt-1" style={{ color: s.accent }}>{s.value}</div>
+            <div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end -mt-2">
+        <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+      </div>
+
+      {/* Section 3 — Cleared-for-fight banner */}
+      {isDemoShellBoxing ? (
+        <div className="bg-gradient-to-r from-green-900/30 to-green-900/10 border border-green-600/30 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <div className="text-white font-medium">Cleared for camp / fight night</div>
+              <div className="text-xs text-gray-400 mt-0.5">Right shoulder tightness 3/10 · No restrictions · All bloods + eye exam current</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🩺</span>
+            <div>
+              <div className="text-white font-medium">No physio data yet</div>
+              <div className="text-xs text-gray-500 mt-0.5">Connect your Lumio Medical feed to see clearance status.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section 4 — Three-Month Camp Load */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-white">📊 Three-Month Camp Load</div>
+            <div className="text-xs text-gray-400 mt-0.5">Last 90 days — sparring rounds + camp hours</div>
+          </div>
+          {campOverload && (
+            <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-600/30">⚠ PEAK WEEK HIGH</span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-red-400">{totalRounds90d}</div>
+            <div className="text-xs text-gray-500">Sparring rounds (90d)</div>
+          </div>
+          <div className="p-3 rounded-lg border bg-[#0a0c14] border-gray-800 text-center">
+            <div className="text-2xl font-bold text-teal-400">{totalHours90d}h</div>
+            <div className="text-xs text-gray-500">Camp hours (90d)</div>
+          </div>
+          <div className={`p-3 rounded-lg border text-center ${campOverload?'bg-amber-900/10 border-amber-600/20':'bg-green-900/10 border-green-600/20'}`}>
+            <div className={`text-2xl font-bold ${campOverload?'text-amber-400':'text-green-400'}`}>{maxRoundsInWeek}</div>
+            <div className="text-xs text-gray-500">Peak week rounds</div>
+            <div className={`text-[10px] mt-0.5 ${campOverload?'text-amber-400':'text-green-400'}`}>{campOverload?'⚠ Over 55 — tapering due':'✓ Under 55 — safe'}</div>
+          </div>
+        </div>
+        <div className="flex items-end gap-1 h-20 mb-2">
+          {BOXING_CAMP_LOAD.map((w,i)=>{
+            const h=(w.rounds/Math.max(maxRoundsInWeek,1))*100;
+            const col=w.rounds>=55?'#EF4444':w.rounds>=45?'#F97316':'#dc2626';
+            return(
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div className="w-full rounded-t" style={{height:`${h}%`,background:col,opacity:0.8}}/>
+                <div className="text-[7px] text-gray-600" style={{fontSize:'6px'}}>{w.week}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-end">
+          <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+        </div>
+      </div>
+
+      {/* Section 5 — Body map + Injury history */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Body map</h2>
+          <div className="flex justify-center">
+            <svg width="200" height="280" viewBox="0 0 200 280" aria-label="Body map — severity-coded markers">
+              <style>{`
+                .lumio-pulse-critical { transform-box: fill-box; transform-origin: center; animation: lumioPulseCritical 1.6s ease-in-out infinite; }
+                @keyframes lumioPulseCritical { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+              `}</style>
+              <defs>
+                <filter id="lumioMarkerGlowBoxing" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              <g fill="rgba(255,255,255,0.02)" stroke="#475569" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+                <ellipse cx="100" cy="30" rx="18" ry="22" />
+                <path d="M92,50 C92,56 92,58 92,60 L108,60 C108,58 108,56 108,50" fill="none" />
+                <path d="M74,62 C78,60 84,60 90,60 L110,60 C116,60 122,60 126,62 L134,92 L138,140 C138,150 130,156 120,156 L80,156 C70,156 62,150 62,140 L66,92 Z" />
+                <circle cx="68" cy="66" r="7" />
+                <circle cx="132" cy="66" r="7" />
+                <path d="M62,70 L52,108" fill="none" strokeWidth="6" />
+                <path d="M52,108 L48,148" fill="none" strokeWidth="5" />
+                <circle cx="48" cy="150" r="4" />
+                <path d="M138,70 L148,108" fill="none" strokeWidth="6" />
+                <path d="M148,108 L152,148" fill="none" strokeWidth="5" />
+                <circle cx="152" cy="150" r="4" />
+                <circle cx="82" cy="156" r="5" />
+                <circle cx="118" cy="156" r="5" />
+                <path d="M82,160 L78,212" fill="none" strokeWidth="9" />
+                <path d="M78,212 L74,262" fill="none" strokeWidth="7" />
+                <path d="M118,160 L122,212" fill="none" strokeWidth="9" />
+                <path d="M122,212 L126,262" fill="none" strokeWidth="7" />
+              </g>
+              {isDemoShellBoxing && bodyMarkers.map(m => {
+                const cfg = SEVERITY_CONFIG[m.severity];
+                const isCritical = m.severity === 'critical';
+                const isSelected = selectedBodyPart === m.id;
+                return (
+                  <g key={m.id} className={isCritical ? 'lumio-pulse-critical' : ''} style={{ cursor: 'pointer' }} onClick={() => setSelectedBodyPart(m.id)}>
+                    <circle cx={m.x} cy={m.y} r={cfg.r + 2} fill={cfg.fill} opacity="0.35" filter="url(#lumioMarkerGlowBoxing)" />
+                    <circle cx={m.x} cy={m.y} r={cfg.r} fill={cfg.fill} stroke="#fff" strokeWidth={isSelected ? 2.5 : 1.5} />
+                    <circle cx={m.x} cy={m.y} r={cfg.r * 0.35} fill="#fff" opacity="0.9" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {isDemoShellBoxing ? (
+            <>
+              <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-3 text-[11px] text-gray-400">
+                {(['critical','moderate','minor','monitoring'] as Severity[]).map(s => {
+                  const cfg = SEVERITY_CONFIG[s];
+                  return (
+                    <div key={s} className="flex items-center gap-1.5">
+                      <span style={{ width: cfg.r*2, height: cfg.r*2, borderRadius:'50%', background: cfg.fill, border:'1.5px solid #fff', display:'inline-block', flexShrink:0 }} />
+                      <span>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedMarker && (
+                <div className="mt-3 bg-black/40 border border-white/10 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium text-sm">{selectedMarker.label}</span>
+                    <span className={`text-xs ${SEVERITY_CONFIG[selectedMarker.severity].textClass}`}>
+                      {SEVERITY_CONFIG[selectedMarker.severity].label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{selectedMarker.note}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 text-center mt-3">Connect your medical feed to see injury markers.</p>
+          )}
+        </div>
+        <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+          <h2 className="text-white font-medium mb-3">Injury history</h2>
+          {isDemoShellBoxing ? (
+            <>
+              <div className="space-y-2">
+                {[
+                  { date: '2025-11', site: 'Right hand — boxer\'s fracture', severity: 'Moderate', days: 28 },
+                  { date: '2025-06', site: 'Left shoulder impingement',     severity: 'Moderate', days: 18 },
+                  { date: '2024-12', site: 'Orbital bruising (sparring)',   severity: 'Mild',     days: 5  },
+                  { date: '2024-08', site: 'Right wrist sprain',            severity: 'Mild',     days: 7  },
+                ].map((inj, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+                    <div>
+                      <div className="text-gray-200">{inj.site}</div>
+                      <div className="text-xs text-gray-500">{inj.date} · {inj.severity}</div>
+                    </div>
+                    <span className="text-xs text-gray-400">{inj.days}d out</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-3">
+                <button onClick={() => onNavigate('medical')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full medical record →</button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Section 6 — WHOOP Recovery Chart */}
+      <BoxingRecoveryChartInline />
+
+      {/* Section 7 — Recovery Trend — Last 5 Days */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold text-white">Recovery Trend — Last 5 Days</div>
+          <button onClick={() => onNavigate('recovery')} className="text-[11px] text-cyan-400 hover:text-cyan-300">View full detail →</button>
+        </div>
+        <div className="space-y-3">
+          {recovery.map((r, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="text-xs text-gray-500 w-20 flex-shrink-0">{r.date}</div>
+              <div className="flex-1 bg-gray-800 rounded-full h-2">
+                <div className={`h-2 rounded-full ${r.score >= 80 ? 'bg-teal-500' : r.score >= 65 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${r.score}%` }}></div>
+              </div>
+              <div className={`text-sm font-bold w-10 text-right ${r.score >= 80 ? 'text-teal-400' : r.score >= 65 ? 'text-yellow-400' : 'text-red-400'}`}>{r.score}</div>
+              <div className="text-xs text-gray-500 w-16">HRV {r.hrv}ms</div>
+              <div className="text-xs text-gray-500 w-16">{r.sleep}h sleep</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 8 — Treatment log */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Treatment log — last 5 sessions</h2>
+        {isDemoShellBoxing ? (
+          <div className="rounded-lg border border-white/5 overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-black/40 text-[11px] text-gray-500 uppercase tracking-wide">
+              <span>Date</span><span>Therapist</span><span>Focus</span><span>Duration</span>
+            </div>
+            {[
+              { date: '15 Apr', therapist: 'Dr Sarah Mitchell', focus: 'Shoulder soft tissue + strap check', time: '45 min' },
+              { date: '13 Apr', therapist: 'Tyrone Baker',      focus: 'Deep tissue — back + lats',          time: '60 min' },
+              { date: '11 Apr', therapist: 'Dr Sarah Mitchell', focus: 'Knuckle/wrist check + wrap review',  time: '30 min' },
+              { date: '8 Apr',  therapist: 'Dr Amir Patel',     focus: 'Ice bath + contrast therapy',        time: '25 min' },
+              { date: '5 Apr',  therapist: 'Tyrone Baker',      focus: 'Full upper body sports massage',     time: '75 min' },
+            ].map((s, i) => (
+              <div key={i} className="grid grid-cols-4 gap-2 px-4 py-2.5 border-t border-white/5 text-sm">
+                <span className="text-gray-400">{s.date}</span>
+                <span className="text-white">{s.therapist}</span>
+                <span className="text-gray-400 text-xs">{s.focus}</span>
+                <span className="text-gray-400">{s.time}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Section 9 — Prevention — daily routine */}
+      <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+        <h2 className="text-white font-medium mb-3">Prevention — daily routine</h2>
+        {isDemoShellBoxing ? (
+          <div className="space-y-2">
+            {[
+              'Ice bath — 10 min post-session',
+              'Hand care + knuckle inspection',
+              'Neck isometric holds — 5 min',
+              'Foam roll — 15 min',
+              'Hydration — 4L water + electrolytes',
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 rounded border border-white/20 flex-shrink-0" />
+                <span className="text-gray-300">{item}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Nothing logged yet.</p>
+        )}
+      </div>
+
+      {/* Section 10 — Physio contacts */}
+      <div>
+        <h2 className="text-white font-medium mb-3">Physio contacts</h2>
+        {isDemoShellBoxing ? (
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { name: 'Dr Sarah Mitchell', role: 'Head Physio',        phone: '07700 900301' },
+              { name: 'Tyrone Baker',      role: 'Soft Tissue / Massage', phone: '07700 900302' },
+              { name: 'Dr Amir Patel',     role: 'Ring Doctor',        phone: '07700 900303' },
+            ].map((p, i) => (
+              <div key={i} className="bg-gray-900/60 border border-white/5 rounded-xl p-3">
+                <div className="text-white font-medium text-sm">{p.name}</div>
+                <div className="text-xs text-gray-500">{p.role}</div>
+                <div className="text-xs text-red-400 mt-1">{p.phone}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900/60 border border-white/5 rounded-xl p-5">
+            <p className="text-xs text-gray-500">Nothing logged yet.</p>
+          </div>
+        )}
+      </div>
+
+      <BoxingAISection context="default" fighter={fighter} session={session} />
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── MEDICAL RECORD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
@@ -2553,7 +2946,6 @@ function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🏥" title="Medical Record" subtitle="Injury history, medical clearances, and BBBofC documentation." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2658,12 +3050,12 @@ function MedicalRecordView({ fighter, session }: { fighter: BoxingFighter; sessi
           ))}
         </div>
         <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600/20 rounded-lg">
-          <div className="text-xs text-blue-400 font-medium mb-1">Pre-Fight Requirements — Cole vs Stoyan (May 22)</div>
+          <div className="text-xs text-blue-400 font-medium mb-1">Pre-Fight Requirements — {fighter.name.split(' ').slice(-1)[0]} vs {fighter.next_fight.opponent.split(' ').slice(-1)[0]} ({fighter.next_fight.date_short})</div>
           <div className="space-y-1 text-[10px] text-gray-400">
-            <div>□ Blood work — submit to BBBofC by May 15</div>
+            <div>□ Blood work — submit to BBBofC by May 23</div>
             <div>□ MRI scan — valid (Nov 2025, within 12 months ✓)</div>
-            <div>□ Pre-fight medical — BBBofC doctor, May 21 (venue)</div>
-            <div>□ Weigh-in — May 21, official BBBofC scales</div>
+            <div>□ Pre-fight medical — BBBofC doctor, Jun 5 (venue)</div>
+            <div>□ Weigh-in — Jun 5, official BBBofC scales</div>
           </div>
         </div>
       </div>
@@ -2733,7 +3125,6 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🌍" title="World Rankings" subtitle="WBC, WBA, WBO, IBF heavyweight rankings with Marcus highlighted." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2743,7 +3134,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         <StatCard label="IBF" value={`#${fighter.rankings.ibf}`} sub="Heavyweight" color="orange" />
       </div>
 
-      {/* 5-Column Rankings (incl. Zuffa) */}
+      {/* 5-Column Rankings (incl. Northbridge) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         {Object.entries(rankings).map(([body, fighters]) => (
           <div key={body} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
@@ -2763,7 +3154,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           </div>
         ))}
 
-        {/* Zuffa Boxing Column */}
+        {/* Northbridge Fight Night Column */}
         <div className="bg-[#0D1117] border border-yellow-600/50 rounded-xl p-4" style={{ background: 'linear-gradient(160deg, rgba(17,13,0,0.9), #0D1117)' }}>
           <div className="text-sm font-bold mb-1 flex items-center gap-2" style={{ color: '#FBBF24' }}>
             ⚡ ZUFFA BOXING
@@ -2781,10 +3172,10 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           <div className="text-[10px] text-gray-500 font-semibold mb-2 uppercase tracking-wider">Signed Fighters</div>
           <div className="space-y-1 mb-4">
             {[
-              { name: 'Conor Benn', country: '🇬🇧' },
-              { name: 'Jai Opetaia', country: '🇦🇺' },
+              { name: 'Callum Brennan', country: '🇬🇧' },
+              { name: 'Hone Tahere', country: '🇳🇿' },
               { name: 'Ezekiel Onyeka', country: '🇳🇬' },
-              { name: 'Callum Walsh', country: '🇺🇸' },
+              { name: 'Trevon Walsh', country: '🇺🇸' },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-gray-800/50">
                 <span className="text-gray-500 w-4 text-right font-mono">{i + 1}</span>
@@ -2798,7 +3189,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
           <div className="px-2 py-2 rounded text-xs bg-gray-800/50 border border-gray-700/50 mb-3">
             <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{fighter.name}</div>
             <div className="text-gray-500 font-bold">NOT RANKED</div>
-            <div className="text-[10px] text-gray-600">Not signed with Zuffa</div>
+            <div className="text-[10px] text-gray-600">Not signed with Northbridge</div>
           </div>
 
           <div className="text-[10px] text-yellow-400/70 text-center cursor-pointer hover:text-yellow-300 transition-colors">
@@ -2826,14 +3217,14 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
         </div>
       </div>
 
-      {/* Zuffa Boxing Explainer */}
+      {/* Northbridge Fight Night Explainer */}
       <div className="bg-[#0D1117] border border-yellow-600/40 rounded-xl p-5">
         <div className="flex items-start gap-4">
           <span className="text-2xl">⚡</span>
           <div>
-            <div className="text-sm font-bold text-yellow-300 mb-2">What Zuffa Boxing means for Marcus's career</div>
+            <div className="text-sm font-bold text-yellow-300 mb-2">What Northbridge Fight Night means for Marcus's career</div>
             <div className="text-xs text-gray-400 leading-relaxed mb-4">
-              Zuffa Boxing — the boxing division backed by TKO Group Holdings (UFC parent) — operates on a one-fight deal model rather than traditional multi-fight exclusive contracts. This means fighters retain freedom but receive no guaranteed fight pipeline. Zuffa has signed marquee names including Conor Benn and Jai Opetaia, and broadcasts on Apex Sports Network+ and Apex Sports Network.
+              Northbridge Fight Night — a US-backed boxing venture launched 2025 — operates on a one-fight deal model rather than traditional multi-fight exclusive contracts. This means fighters retain freedom but receive no guaranteed fight pipeline. Northbridge has signed several marquee names from the UK and Commonwealth scenes and broadcasts on Apex Sports Network+ and Apex Sports Network.
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="bg-green-900/10 border border-green-800/30 rounded-lg p-3">
@@ -2842,7 +3233,7 @@ function WorldRankingsView({ fighter, session }: { fighter: BoxingFighter; sessi
               </div>
               <div className="bg-red-900/10 border border-red-800/30 rounded-lg p-3">
                 <div className="text-red-400 font-bold mb-1">Risk for Marcus</div>
-                <div className="text-gray-400">No ranking within Zuffa (no titles yet). Could jeopardise WBC/WBA mandatory position. Matchroom first-option clause complication.</div>
+                <div className="text-gray-400">No ranking within Northbridge (no titles yet). Could jeopardise WBC/WBA mandatory position. Titan first-option clause complication.</div>
               </div>
               <div className="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3">
                 <div className="text-yellow-400 font-bold mb-1">Current Status</div>
@@ -2923,7 +3314,6 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Track mandatory obligations, eliminators, and sanctioning body deadlines." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2982,7 +3372,7 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PathToTitleView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pathSteps = [
-    { step: 1, fight: 'Maks Stoyan (WBC #3)', date: 'May 22, 2026', importance: 'Must-win to crack top 3 across all bodies', outcome: 'Win → WBC #3, WBO #3 projected', status: 'scheduled' },
+    { step: 1, fight: `${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking})`, date: fighter.next_fight.date, importance: 'Must-win to crack top 3 across all bodies', outcome: 'Win → WBC #3, WBO #3 projected', status: 'scheduled' },
     { step: 2, fight: 'WBC Eliminator (vs #2 or #4)', date: 'Oct/Nov 2026', importance: 'Official eliminator for mandatory position', outcome: 'Win → WBC mandatory challenger', status: 'projected' },
     { step: 3, fight: 'WBC Mandatory Title Shot', date: 'Q1 2027', importance: 'First world title fight', outcome: 'Win → WBC Heavyweight Champion', status: 'projected' },
   ];
@@ -2996,7 +3386,6 @@ function PathToTitleView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🏆" title="Path to Title" subtitle="Mapped route to a world heavyweight championship fight." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -3069,7 +3458,6 @@ function PurseBidAlertsView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🔔" title="Purse Bid Tracker" subtitle="WBC/WBA/WBO/IBF mandatory proceedings and real-time purse split calculator" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3215,7 +3603,6 @@ function PurseSimulatorView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💷" title="Purse Simulator" subtitle="Interactive fight purse calculator — see exactly what lands in your bank account." />
 
       {/* Jurisdiction Selector */}
@@ -3446,7 +3833,6 @@ function FightEarningsView({ fighter, session }: { fighter: BoxingFighter; sessi
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💰" title="Fight Earnings" subtitle="Historical purse breakdown and career earnings tracker." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3530,7 +3916,6 @@ function CampCostsView({ fighter, session }: { fighter: BoxingFighter; session: 
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🧾" title="Camp Costs" subtitle="Line-by-line camp expenditure tracking and budget management." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3613,7 +3998,6 @@ function TaxTrackerView({ fighter, session }: { fighter: BoxingFighter; session:
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📊" title="Tax Tracker" subtitle="Self-assessment tracker, deductions log, and payment schedule." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3680,7 +4064,6 @@ function TeamOverviewView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="👥" title="Team Overview" subtitle={`${team.length} team members supporting ${fighter.name}${fighter.nickname ? ' "' + fighter.nickname + '"' : ''}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3722,20 +4105,19 @@ function FighterBriefingView({ fighter, session }: { fighter: BoxingFighter; ses
     { section: 'This Week\'s Focus', content: 'Transition to opponent-specific sparring. Increase sparring rounds from 26 to 30. Focus on body-head combinations and lateral movement. Drill clinch exits and uppercut counters.' },
     { section: 'Key Numbers', content: 'Weight: 97.8kg (on target). Body fat: 11.2%. VO2 Max: 54.2. Power output: 612 PSI avg. HRV: 62ms (good). Sleep: 7.8hrs avg.' },
     { section: 'Opposition Update', content: 'Stoyan confirmed training camp in Big Bear, California. Working with new conditioning coach. Recent sparring footage shows he\'s working on body shots — unusual for him. His team are confident.' },
-    { section: 'Commercial Obligations', content: 'Meridian Sports promo shoot — April 12. Northbridge Sport interview — April 15. Social media content day — April 18. Press conference (London) — May 8. Weigh-in — May 21.' },
+    { section: 'Commercial Obligations', content: 'Meridian Sports promo shoot — April 12. Northbridge Sport interview — April 15. Social media content day — April 18. Press conference (London) — May 23. Weigh-in — Jun 5.' },
     { section: 'Flag', content: 'Right shoulder tightness has improved with treatment but monitoring closely. Liam (physio) recommends reducing overhead strength work for next 7 days.' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📄" title="Fighter Briefing" subtitle="Structured daily briefing document for Marcus and the team." />
 
       <div className="bg-gradient-to-r from-red-900/30 via-[#0D1117] to-gray-900 border border-red-600/20 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-lg font-bold text-white">Daily Fighter Briefing</div>
-            <div className="text-xs text-gray-400">April 4, 2026 — Camp Day {fighter.camp_day} — {fighter.next_fight.days_away} days to fight</div>
+            <div className="text-xs text-gray-400">April 19, 2026 — Camp Day {fighter.camp_day} — {fighter.next_fight.days_away} days to fight</div>
           </div>
           <div className="text-right">
             <div className="text-xs text-gray-500">Prepared by: Team Cole</div>
@@ -3771,7 +4153,6 @@ function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📝" title="Trainer Notes" subtitle={`Jim Bevan's training diary and technical observations.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3813,7 +4194,7 @@ function TrainerNotesView({ fighter, session }: { fighter: BoxingFighter; sessio
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const fightOffers = [
-    { opponent: 'Maks Stoyan', purse: '£800,000', broadcast: 'Meridian Sports PPV', venue: 'Millennium Dome, London', status: 'SIGNED', date: 'May 22, 2026', notes: 'WBC eliminator implications' },
+    { opponent: fighter.next_fight.opponent, purse: '£800,000', broadcast: fighter.next_fight.broadcast, venue: fighter.next_fight.venue.replace(/^The\s+/, ''), status: 'SIGNED', date: fighter.next_fight.date, notes: 'WBC eliminator implications' },
     { opponent: 'Yang Zhi Wei', purse: '£1,200,000 (projected)', broadcast: 'Meridian Sports / Apex Sports Network', venue: 'TBD', status: 'Informal enquiry', date: 'Q4 2026', notes: 'If Marcus beats Stoyan — massive fight' },
     { opponent: 'Trevon Walsh', purse: '£500,000', broadcast: 'Meridian Sports', venue: 'USA (MSG or Barclays)', status: 'Declined', date: 'N/A', notes: 'Timing wrong — mid Stoyan camp' },
   ];
@@ -3827,7 +4208,6 @@ function ManagerDashboardView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="💼" title="Manager Dashboard" subtitle={`Danny Walsh's management overview for ${fighter.name}.`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3915,7 +4295,6 @@ function SponsorshipsView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🤝" title="Sponsorships" subtitle="Active and pipeline brand partnerships." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3960,22 +4339,21 @@ function MediaObligationsView({ fighter, session }: { fighter: BoxingFighter; se
     { date: 'Apr 15', event: 'Northbridge Sport Interview', location: 'Sky Studios, Isleworth', duration: '45 min', type: 'TV', notes: 'Pre-fight feature for Northbridge Sport Boxing show', status: 'Confirmed' },
     { date: 'Apr 18', event: 'Social Media Content Day', location: 'Training camp (Sheffield)', duration: '2 hours', type: 'Social', notes: 'Behind-the-scenes content, training clips, Q&A', status: 'Confirmed' },
     { date: 'Apr 25', event: 'Boxing News Interview', location: 'Phone/Zoom', duration: '30 min', type: 'Print', notes: 'Cover story feature for May edition', status: 'Pending' },
-    { date: 'May 1', event: 'IFL TV Interview', location: 'Matchroom HQ', duration: '20 min', type: 'YouTube', notes: 'Fight preview, prediction discussion', status: 'Pending' },
-    { date: 'May 8', event: 'Press Conference', location: 'Hilton Park Lane, London', duration: 'Half day', type: 'Major Event', notes: 'Official fight press conference with face-off', status: 'Confirmed' },
-    { date: 'May 19', event: 'Open Workout', location: 'Boxpark, Wembley', duration: '2 hours', type: 'Public', notes: 'Public workout, fan meet & greet, media access', status: 'Confirmed' },
-    { date: 'May 21', event: 'Weigh-In', location: 'Millennium Dome', duration: 'Full day', type: 'Major Event', notes: 'Official weigh-in, face-off, last press duties', status: 'Confirmed' },
+    { date: 'May 1', event: 'IFL TV Interview', location: 'Titan HQ', duration: '20 min', type: 'YouTube', notes: 'Fight preview, prediction discussion', status: 'Pending' },
+    { date: 'May 23', event: 'Press Conference', location: 'Hilton Park Lane, London', duration: 'Half day', type: 'Major Event', notes: 'Official fight press conference with face-off', status: 'Confirmed' },
+    { date: 'Jun 3', event: 'Open Workout', location: 'Boxpark, Wembley', duration: '2 hours', type: 'Public', notes: 'Public workout, fan meet & greet, media access', status: 'Confirmed' },
+    { date: 'Jun 5', event: 'Weigh-In', location: 'Millennium Dome', duration: 'Full day', type: 'Major Event', notes: 'Official weigh-in, face-off, last press duties', status: 'Confirmed' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📱" title="Media Obligations" subtitle="Scheduled press, interviews, and promotional commitments." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Obligations" value={obligations.length} sub="Pre-fight schedule" color="red" />
         <StatCard label="Confirmed" value={obligations.filter(o => o.status === 'Confirmed').length} sub="Locked in" color="green" />
         <StatCard label="Pending" value={obligations.filter(o => o.status === 'Pending').length} sub="Awaiting confirmation" color="yellow" />
-        <StatCard label="Next Up" value="Apr 12" sub="Meridian Sports Promo Shoot" color="blue" />
+        <StatCard label="Next Up" value="Apr 25" sub="Boxing News Interview" color="blue" />
       </div>
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -4015,7 +4393,7 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
     { event: 'Charity Gala — Help for Heroes', date: 'Feb 8, 2026', fee: '£3,500', type: 'Charity', notes: 'After-dinner speech, photo ops, auction item signing', status: 'Completed' },
     { event: 'Betfair Launch Event', date: 'Jan 22, 2026', fee: '£5,000', type: 'Corporate', notes: 'Brand ambassador appearance, 2-hour commitment', status: 'Completed' },
     { event: 'Fitness Expo (NEC)', date: 'Mar 1, 2026', fee: '£4,000', type: 'Expo', notes: 'Meet & greet, signing session, panel discussion', status: 'Completed' },
-    { event: 'Matchroom Boxing Awards', date: 'Jun 15, 2026', fee: '£0 (promotional)', type: 'Industry', notes: 'Networking, table appearance, promotional value', status: 'Confirmed' },
+    { event: 'Titan Promotions Awards', date: 'Jun 15, 2026', fee: '£0 (promotional)', type: 'Industry', notes: 'Networking, table appearance, promotional value', status: 'Confirmed' },
     { event: 'Apex Performance Store Opening', date: 'Jul 2026', fee: '£6,000', type: 'Sponsor', notes: 'Store appearance, signing, social content', status: 'Pending' },
   ];
 
@@ -4024,7 +4402,6 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🎤" title="Appearance Fees" subtitle="Paid appearances, corporate events, and personal bookings." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4068,7 +4445,7 @@ function AppearanceFeesView({ fighter, session }: { fighter: BoxingFighter; sess
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const contracts = [
-    { title: 'Matchroom Promotional Agreement', counterparty: 'Matchroom Sport', type: 'Promotional', start: 'Jan 2024', end: 'Dec 2027', fights: '6-fight deal (3 remaining)', value: 'Per-fight basis', status: 'Active', keyTerms: '3 fights remaining. Matchroom has first option on all UK fights. Meridian Sports broadcast rights included.' },
+    { title: 'Titan Promotional Agreement', counterparty: 'Titan Promotions', type: 'Promotional', start: 'Jan 2024', end: 'Dec 2027', fights: '6-fight deal (3 remaining)', value: 'Per-fight basis', status: 'Active', keyTerms: '3 fights remaining. Titan has first option on all UK fights. Meridian Sports broadcast rights included.' },
     { title: 'Management Agreement', counterparty: 'Danny Walsh / Walsh Management', type: 'Management', start: 'Jun 2020', end: 'Jun 2028', fights: 'All fights', value: '25% of purse', status: 'Active', keyTerms: '8-year deal with 2-year renewal option. Covers all fight purses, commercial income split negotiable.' },
     { title: 'Training Agreement', counterparty: 'Jim Bevan', type: 'Trainer', start: 'Mar 2021', end: 'Rolling', fights: 'Per-camp basis', value: '12% of purse + camp retainer', status: 'Active', keyTerms: 'Rolling agreement. Either party can terminate with 30-day notice. Camp retainer £6,000 regardless of purse %.' },
     { title: 'Apex Performance Sponsorship', counterparty: 'Apex Performance UK', type: 'Sponsorship', start: 'Jan 2024', end: 'Dec 2026', fights: 'N/A', value: '£65,000/yr', status: 'Renewal due', keyTerms: 'Exclusive kit deal. Must wear UA for all training content and ring walks. Renewal discussions opening.' },
@@ -4077,13 +4454,12 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📑" title="Contract Tracker" subtitle="All active agreements, expiry dates, and key terms." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Active Contracts" value={contracts.filter(c => c.status === 'Active').length} sub="Currently binding" color="green" />
         <StatCard label="Renewals Due" value={contracts.filter(c => c.status === 'Renewal due').length} sub="Action required" color="yellow" />
-        <StatCard label="Matchroom Deal" value="3 fights" sub="Remaining on deal" color="red" />
+        <StatCard label="Titan Deal" value="3 fights" sub="Remaining on deal" color="red" />
         <StatCard label="Mgmt Contract" value="Jun 2028" sub="Danny Walsh" color="blue" />
       </div>
 
@@ -4114,7 +4490,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {[
             { type: 'Multi-Fight Exclusive', example: "Marcus's deal", desc: 'Traditional model. Promoter controls next 4-10 fights.', color: 'text-blue-400', bg: 'bg-blue-900/10 border-blue-800/40' },
-            { type: 'One-Fight Deal', example: 'Zuffa approach', desc: 'Single fight, massive upfront fee, no ongoing obligation.', color: 'text-yellow-400', bg: 'bg-yellow-900/10 border-yellow-800/40' },
+            { type: 'One-Fight Deal', example: 'Northbridge approach', desc: 'Single fight, massive upfront fee, no ongoing obligation.', color: 'text-yellow-400', bg: 'bg-yellow-900/10 border-yellow-800/40' },
             { type: 'Co-Promotion', example: 'World title unifications', desc: 'Two promoters share a fight. Common for world title unification.', color: 'text-purple-400', bg: 'bg-purple-900/10 border-purple-800/40' },
             { type: 'Riyadh Season Direct', example: 'Saudi GEA', desc: 'Saudi GEA direct commission. Highest single-fight fees.', color: 'text-green-400', bg: 'bg-green-900/10 border-green-800/40' },
           ].map((ct, i) => (
@@ -4127,39 +4503,39 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         </div>
       </div>
 
-      {/* Zuffa Offer Alert */}
+      {/* Northbridge Offer Alert */}
       <div className="bg-yellow-900/10 border border-yellow-600/40 rounded-xl p-5 flex items-start gap-4">
         <span className="text-2xl">⚡</span>
         <div>
-          <div className="text-sm font-bold text-yellow-300 mb-1">Zuffa Boxing Approach — Action Required</div>
-          <div className="text-xs text-yellow-200/70">Danny Walsh has flagged a Zuffa Boxing approach — one-fight offer estimated at £2.1M. This is a one-fight deal with no ongoing promotional obligation. Decision required before current Matchroom contract window closes.</div>
+          <div className="text-sm font-bold text-yellow-300 mb-1">Northbridge Fight Night Approach — Action Required</div>
+          <div className="text-xs text-yellow-200/70">Danny Walsh has flagged a Northbridge Fight Night approach — one-fight offer estimated at £2.1M. This is a one-fight deal with no ongoing promotional obligation. Decision required before current Titan contract window closes.</div>
         </div>
       </div>
 
-      {/* Matchroom vs Zuffa Comparison */}
+      {/* Titan vs Northbridge Comparison */}
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Matchroom vs Zuffa Boxing — Side-by-Side Comparison</div>
+        <div className="text-sm font-semibold text-white mb-4">Titan vs Northbridge Fight Night — Side-by-Side Comparison</div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="text-left py-2 pr-4 text-gray-500 font-medium">Factor</th>
-                <th className="text-left py-2 pr-4 text-gray-300 font-bold">Matchroom</th>
-                <th className="text-left py-2 text-yellow-300 font-bold">⚡ Zuffa Boxing</th>
+                <th className="text-left py-2 pr-4 text-gray-300 font-bold">Titan</th>
+                <th className="text-left py-2 text-yellow-300 font-bold">⚡ Northbridge Fight Night</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
               {[
-                { factor: 'Purse', matchroom: '£450k–£800k per fight', zuffa: '£2.1M one-fight fee' },
-                { factor: 'Take-Home (est.)', matchroom: '~£148k–£260k net', zuffa: '~£690k net (45% tax)' },
-                { factor: 'Ranking Benefits', matchroom: 'Meridian Sports exposure, UK market leader', zuffa: 'Global reach, UFC fanbase crossover' },
-                { factor: 'Career Pathway', matchroom: 'Structured route to world title shot', zuffa: 'No guaranteed next fight' },
-                { factor: 'Breach Risk', matchroom: 'Low — existing relationship', zuffa: 'HIGH — may breach Matchroom first option clause' },
+                { factor: 'Purse', titan: '£450k–£800k per fight', northbridge: '£2.1M one-fight fee' },
+                { factor: 'Take-Home (est.)', titan: '~£148k–£260k net', northbridge: '~£690k net (45% tax)' },
+                { factor: 'Ranking Benefits', titan: 'Meridian Sports exposure, UK market leader', northbridge: 'Global reach, UFC fanbase crossover' },
+                { factor: 'Career Pathway', titan: 'Structured route to world title shot', northbridge: 'No guaranteed next fight' },
+                { factor: 'Breach Risk', titan: 'Low — existing relationship', northbridge: 'HIGH — may breach Titan first option clause' },
               ].map((row, i) => (
                 <tr key={i}>
                   <td className="py-2 pr-4 text-gray-500">{row.factor}</td>
-                  <td className="py-2 pr-4 text-gray-300">{row.matchroom}</td>
-                  <td className="py-2 text-yellow-200">{row.zuffa}</td>
+                  <td className="py-2 pr-4 text-gray-300">{row.titan}</td>
+                  <td className="py-2 text-yellow-200">{row.northbridge}</td>
                 </tr>
               ))}
             </tbody>
@@ -4172,7 +4548,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
         <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm shrink-0">DW</div>
         <div>
           <div className="text-xs font-bold text-white mb-0.5">Danny Walsh — Manager Note</div>
-          <div className="text-xs text-gray-400 italic">"The money is real but the contract risk is very real too. If we take this Zuffa fight without Matchroom sign-off we could be looking at an injunction. We need to read the first-option clause very carefully before we respond."</div>
+          <div className="text-xs text-gray-400 italic">"The money is real but the contract risk is very real too. If we take this Northbridge fight without Titan sign-off we could be looking at an injunction. We need to read the first-option clause very carefully before we respond."</div>
         </div>
       </div>
 
@@ -4180,7 +4556,7 @@ function ContractTrackerView({ fighter, session }: { fighter: BoxingFighter; ses
       <div className="bg-[#0D1117] border border-red-800/40 rounded-xl p-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold text-white mb-1">Matchroom Contract Expiry</div>
+            <div className="text-sm font-bold text-white mb-1">Titan Contract Expiry</div>
             <div className="text-xs text-gray-400">Estimated contract end: December 2027 — 3 fights remaining</div>
           </div>
           <div className="text-right">
@@ -4253,7 +4629,6 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📜" title="Fight Record" subtitle={`Professional record: ${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws} (${fighter.record.ko} KO)`} />
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
@@ -4369,7 +4744,6 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📈" title="Career Stats" subtitle="Comprehensive statistical breakdown of Marcus Cole's professional career." />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -4426,19 +4800,18 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pipeline = [
-    { opponent: 'Maks Stoyan', promoter: 'Matchroom/Top Rank co-promote', purse: '£800,000', date: 'May 22, 2026', stage: 'Signed', broadcast: 'Meridian Sports PPV', notes: 'Fight contracts exchanged. Camp underway.' },
-    { opponent: 'Yang Zhi Wei', promoter: 'Matchroom/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Eddie Hearn has opened dialogue with Frank Warren\'s team.' },
-    { opponent: 'WBC Eliminator TBD', promoter: 'Matchroom', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'Meridian Sports', notes: 'If Marcus beats Stoyan and enters top 3. Eliminator likely ordered Q4 2026.' },
+    { opponent: fighter.next_fight.opponent, promoter: 'Titan/Top Rank co-promote', purse: '£800,000', date: fighter.next_fight.date, stage: 'Signed', broadcast: fighter.next_fight.broadcast, notes: 'Fight contracts exchanged. Camp underway.' },
+    { opponent: 'Yang Zhi Wei', promoter: 'Titan/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Jack Sterling has opened dialogue with Frank Warren\'s team.' },
+    { opponent: 'WBC Eliminator TBD', promoter: 'Titan', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'Meridian Sports', notes: 'If Marcus beats Stoyan and enters top 3. Eliminator likely ordered Q4 2026.' },
     { opponent: 'Title Shot', promoter: 'TBD', purse: '£3m+ (projected)', date: '2027', stage: 'Long-term target', broadcast: 'PPV', notes: 'Depends on route. WBC or WBO most likely first title opportunity.' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
-      <SectionHeader icon="🗂️" title="Promoter Pipeline" subtitle="Fight pipeline and promotional strategy with Matchroom Boxing." />
+      <SectionHeader icon="🗂️" title="Promoter Pipeline" subtitle="Fight pipeline and promotional strategy with Titan Promotions." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Current Promoter" value="Matchroom" sub="Eddie Hearn" color="red" />
+        <StatCard label="Current Promoter" value="Titan" sub="Jack Sterling" color="red" />
         <StatCard label="Fights Left" value="3" sub="On current deal" color="blue" />
         <StatCard label="Next Fight" value="£800k" sub="vs Stoyan — signed" color="green" />
         <StatCard label="Title Shot" value="2027" sub="Projected timeline" color="yellow" />
@@ -4486,14 +4859,13 @@ function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session:
   const intel = [
     { source: 'Industry contact (Top Rank)', date: 'Apr 3, 2026', content: 'Stoyan\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Yoel Bermudez loss closely. Stoyan has been sparring with Ezekiel Onyeka to simulate a taller, more technical opponent.' },
     { source: 'Boxing Scene report', date: 'Apr 2, 2026', content: 'WBC expected to order eliminator between #3 and #5 if Stoyan loses. This means a Marcus win could skip the eliminator stage entirely and go straight to mandatory position, depending on how WBC executive committee votes.' },
-    { source: 'Matchroom insider', date: 'Apr 1, 2026', content: 'Eddie Hearn has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Queensberry for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
+    { source: 'Titan insider', date: 'Apr 1, 2026', content: 'Jack Sterling has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Queensberry for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
     { source: 'Meridian Sports analytics team', date: 'Mar 28, 2026', content: 'Marcus Cole fight content is trending 34% higher engagement than this time last year. Meridian Sports very keen on building toward a PPV headliner — willing to increase marketing spend if Stoyan fight delivers.' },
     { source: 'BBBofC source', date: 'Mar 25, 2026', content: 'Referee for Stoyan fight expected to be Marcus McDonnell. He tends to let fighters work inside and breaks clinches quickly — advantages Marcus\'s boxing ability over Stoyan\'s mauling style.' },
   ];
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🕵️" title="Agent Intel" subtitle="Confidential intelligence from industry sources and contacts." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -4586,7 +4958,6 @@ Write a concise, focused morning briefing covering: TRAINING (today's sessions),
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🌅" title="AI Morning Briefing" subtitle="AI-generated structured daily briefing for Marcus and team." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -4667,7 +5038,6 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🎯" title="Opposition Scout" subtitle="Active scouting reports on current and potential future opponents." />
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -4740,7 +5110,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const broadcasts = [
-    { fight: 'Cole vs Stoyan', date: 'May 22, 2026', broadcaster: 'Meridian Sports PPV', territory: 'Global', estimated_viewers: '800k-1.2m', card_position: 'Main Event', notes: 'First PPV headliner. Meridian Sports investing heavily in promotion.' },
+    { fight: `${fighter.name.split(' ').slice(-1)[0]} vs ${fighter.next_fight.opponent.split(' ').slice(-1)[0]}`, date: fighter.next_fight.date, broadcaster: fighter.next_fight.broadcast, territory: 'Global', estimated_viewers: '800k-1.2m', card_position: 'Main Event', notes: 'First PPV headliner. Meridian Sports investing heavily in promotion.' },
     { fight: 'Brennan vs Yang', date: 'TBD 2026', broadcaster: 'Continental Sport / Apex Sports Network+', territory: 'UK & US', estimated_viewers: '2-3m', card_position: 'N/A', notes: 'Key fight to watch — impacts WBC rankings.' },
     { fight: 'Wright vs Babic', date: 'Jun 2026', broadcaster: 'Meridian Sports', territory: 'Global', estimated_viewers: '500k', card_position: 'N/A', notes: 'IBF mandatory — could reshape IBF rankings.' },
     { fight: 'Levchenko vs TBD', date: 'Q3 2026', broadcaster: 'TBD', territory: 'TBD', estimated_viewers: 'TBD', card_position: 'N/A', notes: 'Undisputed champion defence — all belts at stake.' },
@@ -4754,11 +5124,10 @@ function BroadcastTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📺" title="Broadcast Tracker" subtitle="Fight broadcasts, viewership data, and platform analytics." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Next Broadcast" value="Meridian Sports PPV" sub="Cole vs Stoyan — May 22" color="red" />
+        <StatCard label="Next Broadcast" value={fighter.next_fight.broadcast} sub={`${fighter.name.split(' ').slice(-1)[0]} vs ${fighter.next_fight.opponent.split(' ').slice(-1)[0]} — ${fighter.next_fight.date_short}`} color="red" />
         <StatCard label="Est. Viewers" value="800k-1.2m" sub="First PPV headliner" color="blue" />
         <StatCard label="Growth Trend" value="+45%" sub="vs last fight" color="green" />
         <StatCard label="Platform" value="Meridian Sports" sub="Exclusive broadcast" color="orange" />
@@ -4811,7 +5180,7 @@ function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; sessio
   const news = [
     { date: 'Apr 4, 2026', headline: 'WBC to order eliminator between #3 and #5 by end of summer', source: 'Boxing Scene', relevance: 'Direct', summary: 'If Marcus beats Stoyan and takes the #3 spot, he could be in line for a mandatory eliminator by Q4 2026. The WBC executive committee will vote at their May convention.' },
     { date: 'Apr 3, 2026', headline: 'Brennan considering retirement after Yang fight', source: 'Apex Sports Network', relevance: 'High', summary: 'If Brennan retires, the WBC title could become vacant, significantly accelerating the path to a title shot for top contenders including Marcus.' },
-    { date: 'Apr 2, 2026', headline: 'Meridian Sports signs new multi-year deal with Matchroom Boxing', source: 'Variety', relevance: 'Medium', summary: 'Extended partnership ensures Marcus\'s fights will continue to be broadcast on Meridian Sports. The deal includes increased investment in fighter promotion and marketing.' },
+    { date: 'Apr 2, 2026', headline: 'Meridian Sports signs new multi-year deal with Titan Promotions', source: 'Variety', relevance: 'Medium', summary: 'Extended partnership ensures Marcus\'s fights will continue to be broadcast on Meridian Sports. The deal includes increased investment in fighter promotion and marketing.' },
     { date: 'Apr 1, 2026', headline: 'Saudi Arabia PIF exploring heavyweight boxing investments', source: 'Financial Times', relevance: 'Medium', summary: 'Saudi PIF reportedly looking to host major heavyweight fights in 2026-2027. Could create lucrative site fee opportunities for top contenders.' },
     { date: 'Mar 30, 2026', headline: 'IBF mandates Wright vs Babic by June 2026', source: 'Ring Magazine', relevance: 'Low', summary: 'IBF forces mandatory defence. While Marcus is IBF #12, this fight could reshuffle the top 10 and create movement opportunities.' },
     { date: 'Mar 28, 2026', headline: 'UK boxing viewership up 28% year-over-year on Meridian Sports', source: 'Broadcasting Journal', relevance: 'Medium', summary: 'Growing audience for UK boxing benefits Marcus\'s commercial profile. Increased viewership strengthens negotiating position for future PPV events.' },
@@ -4819,7 +5188,6 @@ function IndustryNewsView({ fighter, session }: { fighter: BoxingFighter; sessio
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📰" title="Industry News" subtitle="Boxing industry news filtered for relevance to Marcus Cole's career." />
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -4965,7 +5333,6 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
 
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="📡" title="GPS Load Monitor" subtitle={`Camp Days 15–${fighter.camp_day} · Lumio Fight Vest · UWB Ring Tracking Active`} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -5182,7 +5549,6 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
   ];
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🦺" title="GPS Vest Dashboard" subtitle="Lumio Fight Vest hardware management — vests, UWB beacons, sync status" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Vests Active" value="2" sub="of 3 registered" color="green" />
@@ -5278,29 +5644,32 @@ function FindProView({ fighter, session }: { fighter: BoxingFighter; session: Sp
   const [style, setStyle] = useState('')
   const [weightClass, setWeightClass] = useState('')
   const [budget, setBudget] = useState('')
-  const [results, setResults] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [shortlist, setShortlist] = useState<string[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_findpro_shortlist') : null; return s ? JSON.parse(s) : [] } catch { return [] }
+  })
+  const toggleShortlist = (id: string) => setShortlist(prev => {
+    const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    try { localStorage.setItem('lumio_boxing_findpro_shortlist', JSON.stringify(next)) } catch {}
+    return next
+  })
   const TABS = [{ id: 'trainer' as const, label: 'Find Trainer', emoji: '🥊' },{ id: 'gym' as const, label: 'Find Gym', emoji: '🏋️' },{ id: 'sparring' as const, label: 'Find Sparring', emoji: '🤜' }]
-  const search = async () => {
-    setLoading(true); setResults('')
-    const prompts: Record<string, string> = {
-      trainer: `You are a boxing career consultant. Find a trainer for a professional boxer. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Location: ${location || 'flexible'}. Style: ${style || 'any'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real professional boxing trainers currently active. For each write a paragraph covering: full name, gym base, career highlights, notable fighters trained, training style, contact/booking info if available, and why they suit this fighter. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-      gym: `You are a boxing career consultant. Find a professional boxing gym. Location: ${location || 'UK/flexible'}. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Budget: ${budget || 'flexible'}. Search for and recommend 4 real professional boxing gyms currently operating. For each write a paragraph covering: gym name, location, facilities, notable trainers based there, fighters who train there, membership/access info, and why it suits a travelling professional. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-      sparring: `You are a boxing career consultant. Find sparring partners. Weight class: ${weightClass || fighter.weight_class || 'heavyweight'}. Location: ${location || 'flexible'}. Style: ${style || 'any'}. Search for sparring services, boxing agencies, and gyms that facilitate sparring for professionals. Recommend 4 real options. For each write a paragraph covering who they are, where based, weight classes covered, how to arrange, and approximate cost. Respond in plain prose paragraphs. No bullet points, no markdown, no headers.`,
-    }
-    try {
-      const res = await fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, tools: [{ type: 'web_search_20250305', name: 'web_search' }], messages: [{ role: 'user', content: prompts[tab] }] }) })
-      const data = await res.json()
-      const text = data.content?.find((b: { type: string }) => b.type === 'text')?.text || ''
-      setResults(text)
-    } catch { setResults('Search failed — please try again.') }
-    setLoading(false)
-  }
+
+  const q = (location + ' ' + style + ' ' + weightClass + ' ' + budget).toLowerCase().trim()
+  const match = (item: object) => !q || JSON.stringify(item).toLowerCase().includes(q)
+  const filteredTrainers = TRAINERS_ROSTER.filter(match)
+  const filteredGyms     = GYMS_ROSTER.filter(match)
+  const filteredSparring = SPARRING_ROSTER.filter(match)
+
+  const mailto = (to: string, subj: string, body: string) =>
+    `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`
+  const signoff = session.userName || fighter.name || 'Marcus'
+  const weightLine = fighter.weight_class || 'Heavyweight'
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>AI-powered live search for trainers, gyms and sparring partners</div></div></div>
+      <div className="flex items-center gap-2 px-1"><span className="text-2xl">🔍</span><div><div className="text-lg font-bold text-white">Find a Pro</div><div className="text-xs" style={{ color: '#6B7280' }}>Trainers, gyms, and sparring partners — instant static demo roster</div></div></div>
       <div className="flex gap-2 p-1 rounded-xl" style={{ background: '#0d1117' }}>
-        {TABS.map(t => (<button key={t.id} onClick={() => { setTab(t.id); setResults('') }} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#ef4444' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
+        {TABS.map(t => (<button key={t.id} onClick={() => setTab(t.id)} className="flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all" style={{ background: tab === t.id ? '#ef4444' : 'transparent', color: tab === t.id ? '#fff' : '#6B7280' }}>{t.emoji} {t.label}</button>))}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. London, Las Vegas" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
@@ -5308,8 +5677,100 @@ function FindProView({ fighter, session }: { fighter: BoxingFighter; session: Sp
         <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Style Preference</label><input value={style} onChange={e => setStyle(e.target.value)} placeholder="e.g. Technical, pressure fighter" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
         <div><label className="text-xs font-semibold text-gray-400 mb-1 block">Budget</label><input value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. £500/week" className="w-full px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }} /></div>
       </div>
-      <button onClick={search} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white transition-all" style={{ background: loading ? '#374151' : '#ef4444' }}>{loading ? '🔍 Searching live...' : `Search for ${TABS.find(t => t.id === tab)?.label}`}</button>
-      {results && (<div className="rounded-xl p-4 space-y-3" style={{ background: '#0d1117', border: '1px solid #1F2937' }}><div className="text-xs font-bold" style={{ color: '#ef4444' }}>LIVE RESULTS · Powered by AI web search</div><div className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{results.split('\n\n').map((para, i) => (<p key={i} className="mb-3">{para}</p>))}</div><div className="text-xs" style={{ color: '#4B5563' }}>Results are AI-generated from live web search · Always verify contact details directly</div></div>)}
+      <div className="rounded-lg px-3 py-2 text-[11px]" style={{ background: '#0d1117', border: '1px solid #1F2937', color: '#6B7280' }}>
+        Demo data — wired to live search in full build. {shortlist.length > 0 && <span className="text-teal-400 ml-2">{shortlist.length} saved to shortlist</span>}
+      </div>
+
+      {tab === 'trainer' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredTrainers.map(t => {
+            const saved = shortlist.includes(t.id)
+            const initials = t.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
+            return (
+              <div key={t.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg,#ef4444,#b91c1c)', color: '#fff' }}>{initials}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{t.name}{t.nickname ? <span className="text-red-400 font-normal"> — &quot;{t.nickname}&quot;</span> : null}</div>
+                    <div className="text-[11px] text-gray-500">{t.homeGym} · {t.location}</div>
+                  </div>
+                </div>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Style:</span> {t.styles.join(' · ')}</div>
+                  <div><span className="text-gray-500">Experience:</span> {t.yearsExperience} years</div>
+                  <div><span className="text-gray-500">Rate:</span> {t.weekRate}</div>
+                  {t.notableFighter && <div className="text-red-400/80">★ {t.notableFighter}</div>}
+                  <div><span className="text-gray-500">Availability:</span> {t.availability}</div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto(t.contact, `Camp enquiry — ${t.name}`, `Hi ${t.name.split(' ')[0]},\n\nI'm ${signoff} (${weightLine}). Looking for a trainer for my next camp — your ${t.style.toLowerCase()} style lines up with what I want to work on.\n\nCould we set up a call this week?\n\nBest,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#ef4444', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(t.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {tab === 'gym' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredGyms.map(g => {
+            const saved = shortlist.includes(g.id)
+            return (
+              <div key={g.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white">{g.name}</div>
+                    <div className="text-[11px] text-gray-500">{g.location}</div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: g.access === 'Invite-only' ? 'rgba(245,158,11,0.15)' : g.access === 'Members' ? 'rgba(14,165,233,0.15)' : 'rgba(22,163,74,0.15)', color: g.access === 'Invite-only' ? '#f59e0b' : g.access === 'Members' ? '#0ea5e9' : '#22c55e' }}>{g.access}</span>
+                </div>
+                <p className="text-[11px] text-gray-400 mb-2">{g.description}</p>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Trainers in-house:</span> {g.trainersInHouse}</div>
+                  <div><span className="text-gray-500">Weekly rate:</span> {g.weeklyRate}</div>
+                  <div className="text-gray-500">Facilities: <span className="text-gray-300">{g.facilities.join(' · ')}</span></div>
+                  {g.notableFighters.length > 0 && <div className="text-red-400/80">★ {g.notableFighters.join(', ')}</div>}
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto('bookings@' + g.name.toLowerCase().replace(/[^a-z]+/g,'') + '.com', `Camp enquiry — ${g.name}`, `Hi,\n\nI'm ${signoff} (${weightLine}). Looking for a gym base for my next camp. Interested in ${g.name} — ${g.access.toLowerCase()} access.\n\nCan you confirm availability + pro rate?\n\nThanks,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#ef4444', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(g.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {tab === 'sparring' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredSparring.map(s => {
+            const saved = shortlist.includes(s.id)
+            return (
+              <div key={s.id} className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white">{s.name}</div>
+                    <div className="text-[11px] text-gray-500">{s.weightClass} · {s.record}</div>
+                  </div>
+                </div>
+                <div className="space-y-1 text-[11px] text-gray-400 mb-3">
+                  <div><span className="text-gray-500">Style:</span> {s.style}</div>
+                  <div><span className="text-gray-500">Best shot:</span> {s.bestShot}</div>
+                  <div><span className="text-gray-500">Session rate:</span> {s.sessionRate}</div>
+                  <div><span className="text-gray-500">Location:</span> {s.location}</div>
+                  <div><span className="text-gray-500">Availability:</span> {s.availability.join(' · ')}</div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={mailto(s.contact, `Sparring enquiry — ${s.name}`, `Hi ${s.name.split(' ')[0]},\n\nI'm ${signoff} (${weightLine}). Looking for sparring work in the coming weeks.\n\nWhen are you next available?\n\nBest,\n${signoff}`)} className="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#ef4444', color: '#fff' }}>Contact</a>
+                  <button onClick={() => toggleShortlist(s.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: saved ? '#14b8a6' : '#1F2937', color: saved ? '#0a0c14' : '#9CA3AF' }}>{saved ? '★ Saved' : '☆ Save'}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       <BoxingAISection context="default" fighter={fighter} session={session} />
     </div>
   )
@@ -5326,11 +5787,10 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
   const avgCentre = Math.round(COMPUBOX_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/COMPUBOX_DATA.length);
   return (
     <div className="space-y-6">
-      <QuickActionsBar />
       <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
       <div className="flex items-center gap-2.5 rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444430' }}>
         <span>🛰️</span>
-        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gpsringheatmap' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
+        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gps' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Connect %" value={`${Math.round((totalLanded/totalThrown)*100)}%`} sub={`${totalLanded} of ${totalThrown} thrown`} color="red" />
@@ -5391,11 +5851,24 @@ const FIGHT_NIGHT_TIMELINE = [
 function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const [roundTab, setRoundTab] = useState<'early' | 'mid' | 'late'>('early')
 
+  const daysUntilFight = fighter.next_fight.days_away
+  const countdownLabel = daysUntilFight > 1
+    ? `FIGHT NIGHT — T-${daysUntilFight} DAYS`
+    : daysUntilFight === 1
+      ? 'FIGHT NIGHT — TOMORROW'
+      : daysUntilFight === 0
+        ? 'FIGHT NIGHT — TODAY'
+        : 'FIGHT NIGHT — COMPLETE'
+  const isFightWeek = daysUntilFight <= 7 && daysUntilFight >= 0
+  const subtitleCopy = isFightWeek
+    ? 'Tonight\u2019s command centre — timeline, corner, strategy, broadcast, medical.'
+    : `Fight night command centre (${daysUntilFight} days out) — timeline, corner, strategy, broadcast, medical.`
+
   const generateCornerSheet = () => {
     const w = window.open('', '_blank');
     if (!w) return;
     const latestGPS = GPS_SESSIONS.filter(s=>s.ring.centre>0).slice(-1)[0];
-    w.document.write(`<!DOCTYPE html><html><head><title>Corner Sheet — Cole vs Stoyan</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>Corner Sheet — ${fighter.name.split(' ').slice(-1)[0]} vs ${fighter.next_fight.opponent.split(' ').slice(-1)[0]}</title>
     <style>
       *{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0;padding:16px}
       h1{font-size:18px;margin:0 0 2px;color:#c0392b}h2{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin:12px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px}
@@ -5415,8 +5888,8 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
     <div class="header">
       <div>
         <h1>🥊 CORNER SHEET</h1>
-        <div style="font-size:13px;font-weight:700">Marcus Cole vs Maks Stoyan</div>
-        <div style="font-size:10px;color:#666">The Millennium Dome, London · May 22, 2026 · Meridian Sports PPV · Heavyweight</div>
+        <div style="font-size:13px;font-weight:700">${fighter.name} vs ${fighter.next_fight.opponent}</div>
+        <div style="font-size:10px;color:#666">${fighter.next_fight.venue} · ${fighter.next_fight.date} · ${fighter.next_fight.broadcast} · ${fighter.weight_class}</div>
       </div>
       <div style="text-align:right;font-size:10px;color:#666">
         <div style="font-weight:700;font-size:12px">TEAM COLE</div>
@@ -5457,7 +5930,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
       <div><h2>Cutman Notes</h2><div style="height:60px;border:1px solid #ddd;border-radius:4px;padding:6px;font-size:10px;color:#aaa">Cuts / swelling notes here...</div></div>
       <div><h2>Between Rounds — Key Reminders</h2><div style="font-size:10px;line-height:1.8">□ Breathe through nose between rounds<br/>□ Stay off the ropes in R1<br/>□ Work the body when in close<br/>□ Protect the chin against right hands<br/>□ Take water every round</div></div>
     </div>
-    <footer><span>Lumio Fight · ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL — Team Only</span><span>Cole vs Stoyan · May 22, 2026 · The O2</span></footer>
+    <footer><span>Lumio Fight · ${new Date().toLocaleDateString('en-GB')} · CONFIDENTIAL — Team Only</span><span>${fighter.name.split(' ').slice(-1)[0]} vs ${fighter.next_fight.opponent.split(' ').slice(-1)[0]} · ${fighter.next_fight.date} · ${fighter.next_fight.venue.split(',')[0]}</span></footer>
     </body></html>`);
     w.document.close();
     setTimeout(() => w.print(), 400);
@@ -5479,7 +5952,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2"><span className="text-xl">🥊</span><h2 className="text-xl font-bold text-white">Fight Night Ops</h2></div>
-          <p className="text-sm text-gray-400 mt-1 ml-7">Tonight&apos;s command centre — timeline, corner, strategy, broadcast, medical.</p>
+          <p className="text-sm text-gray-400 mt-1 ml-7">{subtitleCopy}</p>
         </div>
         <button onClick={generateCornerSheet} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
           📋 Print Corner Sheet
@@ -5491,18 +5964,18 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="text-xs text-red-300 font-semibold uppercase tracking-widest mb-1">Main event</div>
-            <div className="text-2xl font-bold text-white mb-1">{fighter.name} &ldquo;{fighter.nickname}&rdquo; vs Maks Stoyan</div>
-            <div className="text-sm text-gray-300">{fighter.next_fight.venue}  ·  Saturday 15 June 2026  ·  22:00 Ringwalk</div>
+            <div className="text-2xl font-bold text-white mb-1">{fighter.name} &ldquo;{fighter.nickname}&rdquo; vs {fighter.next_fight.opponent}</div>
+            <div className="text-sm text-gray-300">{fighter.next_fight.venue}  ·  {fighter.next_fight.date}  ·  22:00 Ringwalk</div>
           </div>
           <div className="bg-red-600 text-white text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-lg flex-shrink-0">
-            FIGHT NIGHT — T-4 hours
+            {countdownLabel}
           </div>
         </div>
       </div>
 
       {/* 2. TIMELINE */}
       <div className="bg-gray-950 border border-red-600/20 rounded-xl p-5">
-        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">Timeline</div>
+        <div className="text-sm font-bold text-red-400 mb-4 uppercase tracking-wider">{isFightWeek ? 'Timeline' : `Fight night schedule — ${daysUntilFight} days away`}</div>
         <div className="space-y-3">
           {FIGHT_NIGHT_TIMELINE.map((t, i) => (
             <div key={i} className="flex items-start gap-4 border-l-2 border-red-600/40 pl-4 pb-2">
@@ -5575,7 +6048,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
             </div>
           ))}
         </div>
-        <div className="text-xs text-gray-500 mt-3">Press contact: Sarah James, Matchroom — 07xxx</div>
+        <div className="text-xs text-gray-500 mt-3">Press contact: Sarah James, Titan — 07xxx</div>
       </div>
 
       {/* 6. MEDICAL & SAFETY */}
@@ -5600,11 +6073,11 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
           <div className="bg-black/40 border border-gray-800 rounded-lg p-3">
             <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Suspension status</div>
             <div className="text-sm text-green-400 mt-0.5">Clean</div>
-            <div className="text-xs text-gray-400 mt-1">Last test 14 May — passed</div>
+            <div className="text-xs text-gray-400 mt-1">Last test 14 Apr — passed</div>
           </div>
           <div className="bg-black/40 border border-gray-800 rounded-lg p-3 md:col-span-2">
             <div className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Brain scan</div>
-            <div className="text-sm text-green-400 mt-0.5">MRI completed 1 June — cleared</div>
+            <div className="text-sm text-green-400 mt-0.5">MRI completed 14 Apr — cleared</div>
           </div>
         </div>
       </div>
@@ -5634,7 +6107,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
 // ─── ROLE CONFIG ─────────────────────────────────────────────────────────────
 const BOXING_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
   fighter: { label: 'Fighter', icon: '🥊', accent: '#dc2626', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
-  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','gpsvest','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
+  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
   manager: { label: 'Manager', icon: '💼', accent: '#F59E0B', sidebar: ['camp','rankings','mandatory','pathtotitle','pursebid','pursesim','earnings','campcosts','tax','contracts','sponsorships','media','appearances','managerdash','agentintel','promoterpipeline'], hiddenTabs: ['dailytasks'], roundupChannels: ['manager','promoter','sponsor'], message: 'Fights, contracts and commercial view.' },
   promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcast','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
   sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['camp','sponsorships','media'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
@@ -6494,12 +6967,12 @@ function BoxingTravelView({ fighter, session }: { fighter: BoxingFighter; sessio
           <div className="text-sm font-semibold text-white mb-3">This Month&rsquo;s Travel</div>
           <div className="space-y-2">
             {[
-              { date: 'May 8',  route: 'Sheffield → London (drive)',    reason: 'Pre-fight press conference (Hilton Park Lane)' },
-              { date: 'May 19', route: 'Sheffield → London (drive)',    reason: 'Meridian Sports open workout (Boxpark Wembley)' },
-              { date: 'May 21', route: 'Sheffield → London (drive)',    reason: 'Fight-week hotel check-in' },
-              { date: 'May 22', route: 'In London',                      reason: 'Fight night vs Stoyan · Millennium Dome' },
-              { date: 'May 23', route: 'London → Sheffield',             reason: 'Post-fight return' },
-              { date: 'May 27', route: 'Sheffield → Manchester (drive)', reason: 'Meridian Sports post-fight interview' },
+              { date: 'May 23', route: 'Sheffield → London (drive)',    reason: 'Pre-fight press conference (Hilton Park Lane)' },
+              { date: 'Jun 3',  route: 'Sheffield → London (drive)',    reason: 'Meridian Sports open workout (Boxpark Wembley)' },
+              { date: 'Jun 5',  route: 'Sheffield → London (drive)',    reason: 'Fight-week hotel check-in' },
+              { date: fighter.next_fight.date_short || 'Jun 6', route: 'In London',           reason: `Fight night vs ${fighter.next_fight.opponent.split(' ').slice(-1)[0]} · ${fighter.next_fight.venue.split(',')[0].replace(/^The\s+/, '')}` },
+              { date: 'Jun 7',  route: 'London → Sheffield',             reason: 'Post-fight return' },
+              { date: 'Jun 11', route: 'Sheffield → Manchester (drive)', reason: 'Meridian Sports post-fight interview' },
             ].map((t, i) => (
               <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 last:border-0">
                 <span className="text-xs text-red-400 font-medium w-14">{t.date}</span>
@@ -7491,6 +7964,40 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS (CONSOLIDATED) ──────────────────────────────────────────────────────
+// Single sidebar entry with three tabs: Ring Heatmap / Load Monitor / Vest
+// Dashboard. Each tab defers to the existing standalone view component so
+// the underlying data + JSX stays colocated with the original implementation.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function BoxingGpsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const [gpsTab, setGpsTab] = useState<'heatmap'|'load'|'vest'>('heatmap');
+  const tabs: ReadonlyArray<readonly ['heatmap'|'load'|'vest', string]> = [
+    ['heatmap', 'Ring Heatmap'],
+    ['load',    'Load Monitor'],
+    ['vest',    'Vest Dashboard'],
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🛰️" title="GPS" subtitle="Ring heatmap, sparring load, and vest telemetry in one view." />
+      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
+        {tabs.map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setGpsTab(id)}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${gpsTab === id ? 'bg-red-600/20 text-red-300 border border-red-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {gpsTab === 'heatmap' && <GpsRingHeatmapView />}
+      {gpsTab === 'load'    && <GPSLoadMonitorView fighter={fighter} session={session} />}
+      {gpsTab === 'vest'    && <GPSVestDashboardView fighter={fighter} session={session} />}
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── GPS & RING HEATMAP VIEW ──────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function GpsRingHeatmapView() {
@@ -7831,7 +8338,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
     }
   }, [toastDismissed]);
 
-  const groups = ['FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'INTEGRATIONS'];
+  const groups = ['OVERVIEW', 'FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'SETTINGS'];
 
   const renderView = () => {
     switch (activeSection) {
@@ -7841,12 +8348,12 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
       case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
       case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
-      case 'gpsringheatmap':  return <GpsRingHeatmapView />;
       case 'fightcamp':       return <FightCampView fighter={fighter} session={session} />;
       case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
       case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
       case 'recovery':        return <RecoveryHRVView fighter={fighter} session={session} />;
       case 'medical':         return <MedicalRecordView fighter={fighter} session={session} />;
+      case 'physio-recovery': return <BoxingPhysioRecoveryView fighter={fighter} session={session} onNavigate={setActiveSection} />;
       case 'rankings':        return <WorldRankingsView fighter={fighter} session={session} />;
       case 'mandatory':       return <MandatoryTrackerView fighter={fighter} session={session} />;
       case 'pathtotitle':     return <PathToTitleView fighter={fighter} session={session} />;
@@ -7881,8 +8388,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'opscout':         return <OppositionScoutView fighter={fighter} session={session} />;
       case 'broadcast':       return <BroadcastTrackerView fighter={fighter} session={session} />;
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
-      case 'gps':             return <GPSLoadMonitorView fighter={fighter} session={session} />;
-      case 'gpsvest':         return <GPSVestDashboardView fighter={fighter} session={session} />;
+      case 'gps':             return <BoxingGpsView fighter={fighter} session={session} />;
       case 'findpro':         return <FindProView fighter={fighter} session={session} />;
       case 'travel':          return <BoxingTravelView fighter={fighter} session={session} />;
       case 'settings':        return (
@@ -8035,17 +8541,21 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
               ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
               : session.logoDataUrl
                 ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                    🥊
-                  </div>
+                : !isFoundingMember
+                  ? <img src="/cole_boxing_camp_crest.svg" alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
+                  : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                      🥊
+                    </div>
             }
             {sidebarExpanded && (
               liveBrandName
                 ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>{liveBrandName}</span>
-                : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Lumio Fight
-                  </span>
+                : !isFoundingMember
+                  ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>COLE BOXING CAMP</span>
+                  : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      Lumio Fight
+                    </span>
             )}
           </div>
           {sidebarExpanded && (

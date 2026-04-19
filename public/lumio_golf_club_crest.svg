@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Lumio Golf Club crest">
+  <defs>
+    <linearGradient id="lgcShield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <radialGradient id="lgcBall" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="80%" stop-color="#e5e7eb"/>
+      <stop offset="100%" stop-color="#9ca3af"/>
+    </radialGradient>
+  </defs>
+  <path d="M 100 8 L 180 26 L 180 108 C 180 150 148 178 100 192 C 52 178 20 150 20 108 L 20 26 Z"
+        fill="url(#lgcShield)" stroke="#d4a017" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 100 18 L 172 33 L 172 108 C 172 144 144 170 100 183 C 56 170 28 144 28 108 L 28 33 Z"
+        fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.5"/>
+  <g transform="translate(100,96)">
+    <!-- Driver (left, rotated -35) -->
+    <g transform="rotate(-35)">
+      <rect x="-1.6" y="-50" width="3.2" height="62" rx="1.2" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
+      <rect x="-2.4" y="10" width="4.8" height="9" rx="1" fill="#1f2937" stroke="#0a0c14" stroke-width="0.5"/>
+      <path d="M -10 -50 Q -12 -60 -2 -62 Q 10 -62 12 -54 Q 12 -48 6 -47 L -8 -47 Z"
+            fill="#0a0c14" stroke="#d4a017" stroke-width="1" stroke-linejoin="round"/>
+      <path d="M -8 -55 Q 0 -58 8 -55" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.8"/>
+    </g>
+    <!-- Putter (right, rotated +35) -->
+    <g transform="rotate(35)">
+      <rect x="-1.6" y="-50" width="3.2" height="62" rx="1.2" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
+      <rect x="-2.4" y="10" width="4.8" height="9" rx="1" fill="#1f2937" stroke="#0a0c14" stroke-width="0.5"/>
+      <rect x="-14" y="-52" width="28" height="6" rx="1" fill="#9ca3af" stroke="#4b5563" stroke-width="0.6"/>
+      <rect x="-14" y="-49" width="28" height="3" fill="#6b7280" fill-opacity="0.6"/>
+    </g>
+    <!-- Golf ball at crossover -->
+    <circle cx="0" cy="0" r="9" fill="url(#lgcBall)" stroke="#6b7280" stroke-width="0.8"/>
+    <g fill="#9ca3af" fill-opacity="0.6">
+      <circle cx="-3.5" cy="-3" r="0.7"/>
+      <circle cx="0" cy="-4" r="0.7"/>
+      <circle cx="3.5" cy="-3" r="0.7"/>
+      <circle cx="-4.5" cy="0" r="0.7"/>
+      <circle cx="-1.5" cy="0.5" r="0.7"/>
+      <circle cx="1.5" cy="0.5" r="0.7"/>
+      <circle cx="4.5" cy="0" r="0.7"/>
+      <circle cx="-3" cy="3.5" r="0.7"/>
+      <circle cx="0" cy="4" r="0.7"/>
+      <circle cx="3" cy="3.5" r="0.7"/>
+    </g>
+  </g>
+  <rect x="20" y="126" width="160" height="22" fill="#ffffff"/>
+  <text x="100" y="141" text-anchor="middle"
+        font-family="DM Sans, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="12" font-weight="800" letter-spacing="2"
+        fill="#14532d">LUMIO GOLF CLUB</text>
+  <text x="100" y="165" text-anchor="middle"
+        font-family="DM Sans, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="9" font-weight="700" letter-spacing="3"
+        fill="#ffffff" fill-opacity="0.85">EST. 2024</text>
+</svg>
