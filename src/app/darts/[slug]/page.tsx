@@ -216,7 +216,9 @@ const SIDEBAR_ITEMS = [
   { id: 'draw-bracket',    label: 'Draw & Bracket',     icon: '🏆', group: 'MATCH'        },
   { id: 'match-prep',      label: 'Match Prep',         icon: '⚡', group: 'MATCH'        },
   { id: 'opponentintel',   label: 'Opponent Intel',     icon: '🔍', group: 'MATCH'        },
+  { id: 'pairs-events',    label: 'Pairs Events',       icon: '🤝', group: 'MATCH'        },
   { id: 'teamhub',         label: 'Team Hub',           icon: '👥', group: 'TEAM'         },
+  { id: 'practice-partners', label: 'Practice Partners', icon: '🤜', group: 'TEAM'        },
   { id: 'physio-recovery', label: 'Physio',             icon: '⚕️', group: 'TEAM'         },
   { id: 'mental',          label: 'Mental Performance', icon: '🧠', group: 'TEAM'         },
   { id: 'walk-on-music',   label: 'Walk-on Music',      icon: '🎤', group: 'TEAM'         },
@@ -228,7 +230,8 @@ const SIDEBAR_ITEMS = [
   { id: 'media',           label: 'Media & Content',    icon: '📱', group: 'COMMERCIAL'   },
   { id: 'financial',       label: 'Financial',          icon: '💰', group: 'COMMERCIAL'   },
   { id: 'agent',           label: 'Agent Pipeline',     icon: '📬', group: 'COMMERCIAL'   },
-  { id: 'travel',          label: 'Travel',             icon: '✈️', group: 'TOOLS'        },
+  { id: 'prize-forecaster', label: 'Prize Forecaster',  icon: '💵', group: 'COMMERCIAL'   },
+  { id: 'travel',          label: 'Travel & Logistics', icon: '✈️', group: 'TOOLS'        },
   { id: 'tourcard',        label: 'Tour Card',          icon: '🏛️', group: 'TOOLS'        },
   { id: 'equipment',       label: 'Equipment',          icon: '📦', group: 'TOOLS'        },
   { id: 'career',          label: 'Career Planning',    icon: '🚀', group: 'TOOLS'        },
@@ -5527,6 +5530,228 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
   );
 }
 
+// ─── PRACTICE PARTNERS VIEW ───────────────────────────────────────────────────
+function DartsPracticePartnersView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const [radius, setRadius] = useState(30)
+  const [skillLevel, setSkillLevel] = useState('Tour Pro')
+  const [availDays, setAvailDays] = useState<string[]>(['Mon', 'Wed', 'Thu'])
+
+  type Availability = 'green' | 'amber' | 'grey'
+
+  const partners: Array<{
+    name: string; nickname: string; h2h: string; lastDate: string; lastVenue: string;
+    preferredGame: string; availability: Availability; gradient: string; phone: string;
+  }> = [
+    { name: 'Kyle Brennan',   nickname: 'The Spike',     h2h: 'You 5 - 3',  lastDate: 'Apr 17', lastVenue: 'Ocean Bar, Leigh',          preferredGame: '501',                availability: 'green', gradient: 'from-red-600 to-orange-500',     phone: '07' },
+    { name: 'Marcus Faulkner',nickname: 'The Baron',     h2h: 'You 7 - 4',  lastDate: 'Apr 15', lastVenue: 'Oakridge Social Club',      preferredGame: 'Doubles Practice',   availability: 'green', gradient: 'from-purple-600 to-pink-500',    phone: '07' },
+    { name: 'Danny Whitcombe',nickname: 'The Whip',      h2h: 'You 9 - 6',  lastDate: 'Apr 14', lastVenue: 'The Regency Darts Lounge',  preferredGame: 'Checkout Drills',    availability: 'amber', gradient: 'from-teal-600 to-cyan-500',      phone: '07' },
+    { name: 'Sully Maguire',  nickname: 'The Quiet One', h2h: 'You 4 - 6',  lastDate: 'Apr 12', lastVenue: 'Bricklayers Arms, Stoke',   preferredGame: 'High-Pressure',      availability: 'green', gradient: 'from-amber-600 to-yellow-500',   phone: '07' },
+    { name: 'Eddie Trantham', nickname: 'Big Ed',        h2h: 'You 2 - 1',  lastDate: 'Apr 09', lastVenue: 'Harfield Working Mens Club',preferredGame: '9-Dart Attempts',    availability: 'grey',  gradient: 'from-emerald-600 to-lime-500',   phone: '07' },
+    { name: 'Robbie Westgate',nickname: 'The Roman',     h2h: 'You 11 - 8', lastDate: 'Apr 06', lastVenue: 'The Lord Nelson, Mansfield',preferredGame: '501',                availability: 'amber', gradient: 'from-blue-600 to-indigo-500',    phone: '07' },
+  ]
+
+  const sessionLog = [
+    { date: 'Apr 17', partner: 'Kyle Brennan',    format: '501 best-of-15', yourAvg: 99.4, theirAvg: 96.1, legs: '8 - 7',  location: 'Ocean Bar, Leigh',          notes: 'Tight throughout. D16 conversion strong.' },
+    { date: 'Apr 15', partner: 'Marcus Faulkner', format: 'Doubles drill',  yourAvg: 98.1, theirAvg: 97.8, legs: '12 - 8', location: 'Oakridge Social Club',      notes: 'Doubles isolation — 62% combined hit rate.' },
+    { date: 'Apr 14', partner: 'Danny Whitcombe', format: 'Checkout 100+',  yourAvg: 96.8, theirAvg: 92.2, legs: '13 - 5', location: 'The Regency Darts Lounge',  notes: 'Bogey numbers cleaned up; 121 in two darts.' },
+    { date: 'Apr 12', partner: 'Sully Maguire',   format: 'Match-pace',     yourAvg: 94.2, theirAvg: 99.6, legs: '6 - 9',  location: 'Bricklayers Arms, Stoke',   notes: 'Lost on first-9. Slow starter — fix.' },
+    { date: 'Apr 09', partner: 'Eddie Trantham',  format: '9-dart attempts',yourAvg: 102.4, theirAvg: 98.9, legs: '—',     location: 'Harfield Working Mens Club',notes: '14 attempts; closest 9-dart was 132 left after 6.' },
+    { date: 'Apr 06', partner: 'Robbie Westgate', format: '501 best-of-11', yourAvg: 100.7, theirAvg: 95.4, legs: '6 - 4',  location: 'The Lord Nelson, Mansfield',notes: 'Solid match pace; tempo dipped at 4-3.' },
+    { date: 'Apr 03', partner: 'Kyle Brennan',    format: 'Pressure ladder',yourAvg: 97.5, theirAvg: 96.0, legs: '9 - 8',  location: 'Ocean Bar, Leigh',          notes: 'Sudden-death legs — 4 of 5 to me.' },
+    { date: 'Apr 01', partner: 'Marcus Faulkner', format: '501 best-of-9',  yourAvg: 95.6, theirAvg: 98.2, legs: '4 - 5',  location: 'Oakridge Social Club',      notes: 'Marcus warm from first throw; finishing missed.' },
+    { date: 'Mar 30', partner: 'Danny Whitcombe', format: 'Checkout drills',yourAvg: 93.4, theirAvg: 90.1, legs: '—',     location: 'The Regency Darts Lounge',  notes: '40 finishes / 38 conversions across 50 attempts.' },
+    { date: 'Mar 27', partner: 'Sully Maguire',   format: '501 best-of-11', yourAvg: 96.2, theirAvg: 97.1, legs: '5 - 6',  location: 'Bricklayers Arms, Stoke',   notes: 'Lost decider on tops; clean overall.' },
+  ]
+
+  const upcoming = [
+    { day: 'Thu 24 Apr', partner: 'Kyle Brennan',    venue: 'Ocean Bar',          format: '501 drills',         time: '18:00' },
+    { day: 'Sat 26 Apr', partner: 'Marcus Faulkner', venue: 'Oakridge Social',    format: 'Doubles + checkout', time: '14:00' },
+    { day: 'Mon 28 Apr', partner: 'Danny Whitcombe', venue: 'Regency Lounge',     format: '9-dart attempts',    time: '19:30' },
+    { day: 'Wed 30 Apr', partner: 'Robbie Westgate', venue: 'The Lord Nelson',    format: 'Match-pace 501',     time: '20:00' },
+  ]
+
+  const suggestions = [
+    { name: 'Tommy Halford', nickname: 'The Lighthouse', distance: '12km', avg: 96.4, level: 'Tour Pro' },
+    { name: 'Greg Tindale',  nickname: 'Tinman',         distance: '18km', avg: 94.1, level: 'Challenge Tour' },
+    { name: 'Dean Pickford', nickname: 'Pick',           distance: '24km', avg: 92.7, level: 'Development' },
+  ]
+
+  const initials = (n: string) => n.split(' ').map(w => w[0]).slice(0, 2).join('')
+  const availDot = (a: Availability) => a === 'green' ? '#22C55E' : a === 'amber' ? '#F59E0B' : '#6B7280'
+  const availLabel = (a: Availability) => a === 'green' ? 'Available' : a === 'amber' ? 'Limited' : 'Away'
+
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const toggleDay = (d: string) => setAvailDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🤜" title="Practice Partners" subtitle="Sparring rotation, session log, scheduling, and partner discovery." />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Active partners" value="6" sub="On rotation" color="red" />
+        <StatCard label="Last session" value="2 days ago" sub="Apr 17 — Ocean Bar" color="teal" />
+        <StatCard label="Avg sessions/week" value="3.2" sub="Trailing 8 weeks" color="orange" />
+        <StatCard label="Win rate vs partners" value="61%" sub="Across 47 logged legs" color="purple" />
+      </div>
+
+      {/* Roster */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {partners.map((p, i) => (
+          <div key={i} className="bg-[#0d1117] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${p.gradient} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                {initials(p.name)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{p.name}</div>
+                    <div className="text-xs text-gray-500">"{p.nickname}"</div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: availDot(p.availability) }} />
+                    <span className="text-[10px] uppercase tracking-wide" style={{ color: availDot(p.availability) }}>{availLabel(p.availability)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+                  <span><span className="text-gray-500">H2H:</span> <span className="text-white font-medium">{p.h2h}</span></span>
+                  <span className="px-2 py-0.5 rounded-full bg-red-600/15 border border-red-500/30 text-red-300 text-[10px] font-medium">{p.preferredGame}</span>
+                </div>
+                <div className="text-[11px] text-gray-500 mt-2">Last: {p.lastDate} — {p.lastVenue}</div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-800/60">
+              <button className="w-8 h-8 rounded-lg bg-gray-800/60 border border-gray-700 text-gray-300 hover:bg-gray-700 transition-colors flex items-center justify-center text-xs" title="Call">📞</button>
+              <button className="w-8 h-8 rounded-lg bg-gray-800/60 border border-gray-700 text-green-400 hover:bg-gray-700 transition-colors flex items-center justify-center text-xs" title="WhatsApp">💬</button>
+              <button className="px-3 py-1.5 rounded-lg bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium hover:bg-red-600/30 transition-colors">Schedule</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Session log */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-800">
+          <div className="text-sm font-semibold text-white">Session Log — Last 10</div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+                <th className="text-left p-3">Date</th>
+                <th className="text-left p-3">Partner</th>
+                <th className="text-left p-3">Format</th>
+                <th className="text-right p-3">Your avg</th>
+                <th className="text-right p-3">Their avg</th>
+                <th className="text-right p-3">Legs</th>
+                <th className="text-left p-3">Location</th>
+                <th className="text-left p-3">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessionLog.map((s, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-400 text-xs">{s.date}</td>
+                  <td className="p-3 text-gray-200">{s.partner}</td>
+                  <td className="p-3 text-gray-400 text-xs">{s.format}</td>
+                  <td className="p-3 text-right font-bold" style={{ color: s.yourAvg >= s.theirAvg ? '#22C55E' : '#F59E0B' }}>{s.yourAvg}</td>
+                  <td className="p-3 text-right text-gray-300">{s.theirAvg}</td>
+                  <td className="p-3 text-right text-gray-300 font-medium">{s.legs}</td>
+                  <td className="p-3 text-gray-400 text-xs">{s.location}</td>
+                  <td className="p-3 text-gray-500 text-xs">{s.notes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Upcoming */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Upcoming Sessions</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {upcoming.map((u, i) => (
+            <div key={i} className="flex items-center gap-3 bg-gray-900/40 border border-gray-800 rounded-lg p-3">
+              <div className="w-12 h-12 rounded-lg bg-red-600/15 border border-red-500/30 flex flex-col items-center justify-center shrink-0">
+                <span className="text-[9px] text-red-300 uppercase tracking-wide">{u.day.split(' ')[0]}</span>
+                <span className="text-sm font-bold text-white leading-none">{u.day.split(' ')[1]}</span>
+                <span className="text-[9px] text-gray-500">{u.day.split(' ')[2]}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-white font-medium">{u.partner}</div>
+                <div className="text-[11px] text-gray-500">{u.venue} · {u.format}</div>
+              </div>
+              <div className="text-sm font-bold text-teal-400">{u.time}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Find new partners */}
+      <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-1">Find New Partners</div>
+        <div className="text-[11px] text-gray-500 mb-4">Search nearby players matching your level and availability.</div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <div>
+            <label className="text-xs text-gray-400 block mb-2">Radius — {radius}km</label>
+            <input
+              type="range"
+              min={5}
+              max={100}
+              step={5}
+              value={radius}
+              onChange={e => setRadius(Number(e.target.value))}
+              className="w-full accent-red-500"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 block mb-2">Skill level</label>
+            <select
+              value={skillLevel}
+              onChange={e => setSkillLevel(e.target.value)}
+              className="w-full bg-[#0a0c14] border border-gray-800 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              {['Tour Pro', 'Challenge Tour', 'Development', 'Academy', 'Amateur'].map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 block mb-2">Available on</label>
+            <div className="flex flex-wrap gap-1">
+              {weekdays.map(d => (
+                <button
+                  key={d}
+                  onClick={() => toggleDay(d)}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${availDays.includes(d) ? 'bg-red-600/20 border-red-500/40 text-red-300' : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:text-gray-300'}`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {suggestions.map((s, i) => (
+            <div key={i} className="flex items-center gap-3 bg-gray-900/40 border border-gray-800 rounded-lg p-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-xs font-bold shrink-0">{initials(s.name)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-white font-medium">{s.name} <span className="text-gray-500 text-xs font-normal">"{s.nickname}"</span></div>
+                <div className="text-[11px] text-gray-500">{s.distance} · {s.level} · 3DA {s.avg}</div>
+              </div>
+              <button className="px-3 py-1.5 rounded-lg bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-medium hover:bg-red-600/30 transition-colors">Request match</button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <DartsAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
 // ─── DRAW & BRACKET VIEW ──────────────────────────────────────────────────────
 function DrawBracketView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
   const [tournament, setTournament] = useState<'european' | 'grand-slam' | 'matchplay' | 'uk-open'>('european');
@@ -9460,11 +9685,14 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             { key: 'schedule', label: 'Tournament Schedule', emoji: '🗓️' },
             { key: 'match-prep', label: 'Match Prep', emoji: '⚡' },
             { key: 'opponentintel', label: 'Opponent Intel', emoji: '🔍' },
+            { key: 'pairs-events', label: 'Pairs Events', emoji: '🤝' },
             { key: 'teamhub', label: 'Team Hub', emoji: '👥' },
+            { key: 'practice-partners', label: 'Practice Partners', emoji: '🤜' },
             { key: 'sponsorship', label: 'Sponsorship', emoji: '🤝' },
             { key: 'exhibitions', label: 'Exhibitions', emoji: '🎪' },
             { key: 'financial', label: 'Financial', emoji: '💰' },
-            { key: 'travel', label: 'Travel', emoji: '✈️' },
+            { key: 'prize-forecaster', label: 'Prize Forecaster', emoji: '💵' },
+            { key: 'travel', label: 'Travel & Logistics', emoji: '✈️' },
             { key: 'equipment', label: 'Equipment', emoji: '📦' },
           ]}
           featureItems={[
@@ -9494,6 +9722,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       case 'pressure-analysis': return gate('📊', 'No pressure data', 'Connect your data to unlock this', <PressureAnalysisView player={player} session={session} />);
       case 'match-prep':        return gate('🧠', 'No match data', 'Connect your data to unlock this', <MatchPrepView player={player} session={session} />);
       case 'physio-recovery':   return gate('🏥', 'No physio records', 'Connect your data to unlock this', <PhysioRecoveryView player={player} session={session} />);
+      case 'practice-partners': return gate('🤜', 'No practice partners yet', 'Invite partners or connect your community to unlock this', <DartsPracticePartnersView player={player} session={session} />);
       case 'walk-on-music':     return gate('🎵', 'No walk-on music set', 'Connect your data to unlock this', <WalkOnMusicView player={player} session={session} />);
       case 'pairs-events':      return gate('🤝', 'No pairs data', 'Connect your data to unlock this', <PairsEventsView player={player} session={session} />);
       case 'tour-card-monitor': return gate('🃏', 'No tour card data', 'Connect your data to unlock this', <TourCardMonitorView player={player} session={session} />);
