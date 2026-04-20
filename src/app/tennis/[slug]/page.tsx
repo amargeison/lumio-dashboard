@@ -80,6 +80,7 @@ import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integr
 import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { MobileTennisHome } from '@/components/mobile/MobileTennisHome'
+import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -11094,9 +11095,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return isMobile
-        ? <MobileTennisHome session={session} player={player} onNavigate={setActiveSection} sidebarItems={SIDEBAR_ITEMS} groupOrder={['PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS']} />
-        : <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
+      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
@@ -11258,6 +11257,28 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
       default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
     }
   };
+
+  // Mobile shell — short-circuit the desktop chrome (sidebar, player-card
+  // column, top banner, fixed padding) so the mobile home renders edge-to-edge
+  // and the bottom nav is present on every section.
+  if (isMobile) {
+    return (
+      <MobileSportLayout
+        sport="tennis"
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        sidebarItems={SIDEBAR_ITEMS}
+        groupOrder={['PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS']}
+        inboxBadge={13}
+      >
+        <PwaInstaller sport="tennis" />
+        {activeSection === 'dashboard'
+          ? <MobileTennisHome session={session} player={player} onNavigate={setActiveSection} />
+          : <div className="px-4 py-4">{renderView()}</div>
+        }
+      </MobileSportLayout>
+    )
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
