@@ -357,7 +357,7 @@ function SportsLoginForm() {
                 style={{ display: 'block', width: '100%', background: '#8B5CF6', color: '#fff', border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
                 Apply for founding access →
               </Link>
-              <Link href="/tennis/tennis-demo"
+              <Link href="/tennis/demo"
                 style={{ display: 'block', width: '100%', background: 'transparent', color: '#8B5CF6', border: '1px solid #8B5CF630', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
                 Try a demo →
               </Link>

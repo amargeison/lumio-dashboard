@@ -82,7 +82,7 @@ const PORTALS: Portal[] = [
     ],
     integrations: ['WHOOP', 'Garmin', 'Dartfish', 'ATP/WTA APIs'],
     checks: ['All 4 Grand Slam entry and withdrawal deadlines tracked', 'Surface breakdown — win rates on clay, grass, hard', 'H2H records and opponent scouting notes', 'Multi-jurisdiction prize money and tax tracker', 'Team briefings at different times for each role'],
-    cta: 'See Tennis Tour live in a demo', href: '/tennis/tennis-demo',
+    cta: 'See Tennis Tour live in a demo', href: '/tennis/demo',
   },
   {
     id: 'golf', icon: '⛳', label: 'Golf', color: '#38BDF8',
@@ -96,7 +96,7 @@ const PORTALS: Portal[] = [
     ],
     integrations: ['DataGolf', 'Arccos', 'TrackMan', 'ShotLink', 'PGA Tour API'],
     checks: ['DP World Tour and PGA Tour schedule in one calendar', 'Strokes gained alerts when a category needs attention', 'Tour card status and exemption categories tracked', 'Caddie has their own dedicated dashboard view', 'Multi-jurisdiction tax modelling for Saudi, US, UK'],
-    cta: 'See Golf Tour live in a demo', href: '/golf/golf-demo',
+    cta: 'See Golf Tour live in a demo', href: '/golf/demo',
   },
   {
     id: 'darts', icon: '🎯', label: 'Darts', color: '#EF4444',
@@ -110,7 +110,7 @@ const PORTALS: Portal[] = [
     ],
     integrations: ['DartConnect', 'PDC Live Data', 'Scolia', 'Supabase'],
     checks: ['Order of Merit updated automatically — rolling 2-year window', 'Live PDC scores and OoM movement (3-second refresh)', 'Camera-tracked dartboard heatmaps from Scolia', '5-step player onboarding wizard at /darts/onboarding', '51 features built specifically for the professional darts player'],
-    cta: 'See Darts Tour live in a demo', href: '/darts/darts-demo',
+    cta: 'See Darts Tour live in a demo', href: '/darts/demo',
   },
   {
     id: 'boxing', icon: '🥊', label: 'Boxing', color: '#DC2626',

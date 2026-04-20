@@ -264,7 +264,7 @@ export default function BoxingLandingPage() {
             <Link href="/sports-signup?sport=boxing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for founding access →
             </Link>
-            <Link href="/boxing/boxing-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <Link href="/boxing/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo
             </Link>
           </div>
@@ -298,7 +298,7 @@ export default function BoxingLandingPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="boxing" demoHref="/boxing/boxing-demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={BOXING_ROLES} />
+      <SportRoleTabs sport="boxing" demoHref="/boxing/demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={BOXING_ROLES} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
@@ -392,7 +392,7 @@ export default function BoxingLandingPage() {
             Try the demo with the Marcus Cole sample profile, or set up your own portal in 5 steps.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/boxing/boxing-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
+            <Link href="/boxing/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Try the live demo →
             </Link>
             <Link href="/boxing/onboarding" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>

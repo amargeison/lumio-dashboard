@@ -8,20 +8,35 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   let manifestHref = `/darts/${slug}/manifest.webmanifest`
+  let debugReason = 'anon'
 
   try {
     const cookieStore = await cookies()
+    const cookieNames = cookieStore.getAll().map(c => c.name).join(',')
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
     )
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user?.id && user.email) {
-      const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'darts', slug })
-      manifestHref = `/darts/${slug}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) {
+      debugReason = `auth-error:${error.message}`
+    } else if (!user) {
+      debugReason = `no-user:cookies=[${cookieNames}]`
+    } else if (!user.email) {
+      debugReason = 'no-email'
+    } else {
+      try {
+        const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'darts', slug })
+        manifestHref = `/darts/${slug}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
+        debugReason = 'minted'
+      } catch (e) {
+        debugReason = `mint-error:${e instanceof Error ? e.message : String(e)}`
+      }
     }
-  } catch { /* anonymous fall-through */ }
+  } catch (e) {
+    debugReason = `cookies-error:${e instanceof Error ? e.message : String(e)}`
+  }
 
   return {
     title:        `Lumio Darts — ${slug}`,
@@ -34,6 +49,9 @@ export async function generateMetadata(
     icons: {
       icon:  '/darts_logo.png',
       apple: '/darts_logo.png',
+    },
+    other: {
+      'x-lumio-pwa-debug': debugReason,
     },
   }
 }

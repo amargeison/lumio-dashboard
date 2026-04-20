@@ -7,7 +7,7 @@ const SPORT_LABELS: Record<string, string> = {
 }
 
 const DEMO_SLUGS: Record<string, string> = {
-  tennis: 'tennis-demo', golf: 'golf-demo', darts: 'darts-demo',
+  tennis: 'demo', golf: 'demo', darts: 'demo',
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
   football: 'lumio-dev', nonleague: 'harfield-fc',
   grassroots: 'sunday-rovers-fc', womens: 'oakridge-women-fc',
