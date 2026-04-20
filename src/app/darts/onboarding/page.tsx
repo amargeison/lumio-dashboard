@@ -172,12 +172,12 @@ export default function DartsOnboardingPage() {
                   body: JSON.stringify(data),
                 })
                   .then(() => {
-                    const slug = data.name.toLowerCase().replace(/\s+/g, '-') || 'darts-demo';
+                    const slug = data.name.toLowerCase().replace(/\s+/g, '-') || 'demo';
                     window.location.href = `/darts/${slug}`;
                   })
                   .catch(() => {
                     alert('Setup saved in demo mode. Connect Supabase to persist data.');
-                    window.location.href = '/darts/darts-demo';
+                    window.location.href = '/darts/demo';
                   });
               }
             }}

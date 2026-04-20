@@ -691,7 +691,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   // Founder mode (live) reads Supabase profile values ONLY — never from the
   // lumio_darts_* localStorage survivor keys. Those keys are a demo-mode
   // ergonomic for Settings-edit sync; a founder who previously visited
-  // /darts/darts-demo may have written them, and they must not leak into
+  // /darts/demo may have written them, and they must not leak into
   // the founder view (name/nickname/photo).
   const displayPlayerName = isPlayerRole
     ? (isDemoShellDash
@@ -8707,7 +8707,7 @@ function DartsSponsorDashboard({ session, player }: { session: SportsDemoSession
   const playerDisplayName = session.userName || player.name
 
   // Anchored on the Vanta Sports / Jake Morrison demo deal — the default sponsor
-  // session for /darts/darts-demo. Modest sponsor demands tier-appropriate for
+  // session for /darts/demo. Modest sponsor demands tier-appropriate for
   // a PDC #19 player; £48k is a meaningful deal at this level.
   const OBLIGATIONS = [
     { id:'o1', title:'Barrel review video shoot — Sarah Mills on-site',  due:'Today',         status:'pending',   platform:'TikTok / Instagram', reach:'52k' },
@@ -10245,7 +10245,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         <button onClick={() => {
           if (onSignOut) { onSignOut(); return }
           clearDemoSession('darts')
-          window.location.href = '/darts/darts-demo'
+          window.location.href = '/darts/demo'
         }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           {sidebarExpanded && <span>Sign out</span>}

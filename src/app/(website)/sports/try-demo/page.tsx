@@ -2,10 +2,10 @@
 import Link from 'next/link'
 
 const SPORTS = [
-  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', href: '/tennis/tennis-demo', accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps' },
-  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', href: '/darts/darts-demo', accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel' },
-  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', href: '/golf/golf-demo', accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub' },
-  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', href: '/boxing/boxing-demo', accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator' },
+  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', href: '/tennis/demo', accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps' },
+  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', href: '/darts/demo', accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel' },
+  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', href: '/golf/demo', accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub' },
+  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', href: '/boxing/demo', accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator' },
   { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', href: '/cricket/cricket-demo', accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode' },
   { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', href: '/rugby/rugby-demo', accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite' },
   { id: 'football', label: 'Football Pro', logo: '/football_logo.png', href: '/football/lumio-dev', accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite' },

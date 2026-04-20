@@ -4,7 +4,7 @@ import { verifyInstallToken } from '@/lib/pwa-install-token'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/pwa/consume-token?t=<JWT>&next=/tennis/tennis-demo
+// GET /api/pwa/consume-token?t=<JWT>&next=/tennis/demo
 //
 // First-open redemption endpoint for the PWA install token embedded in
 // the start_url of a per-sport manifest. On valid token we ask Supabase
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
   // Extra belt-and-braces: the bound slug in the token should match the
   // route we're about to hand off to. Prevents a token minted for
-  // /tennis/tennis-demo being reused against /tennis/some-other-slug.
+  // /tennis/demo being reused against /tennis/some-other-slug.
   const expectedPrefix = `/${payload.sport}/${payload.slug}`
   if (!nextPath.startsWith(expectedPrefix)) return NextResponse.redirect(cleanTarget)
 
