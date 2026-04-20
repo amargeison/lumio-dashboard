@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { MobileTopBar } from './tennis/MobileTopBar'
@@ -9,8 +9,7 @@ import { MobileQuickActions, type MobileQuickAction } from './tennis/MobileQuick
 import { MobileRoundupStrip, type MobileRoundupChannel } from './tennis/MobileRoundupStrip'
 import { MobileSponsorAlert } from './tennis/MobileSponsorAlert'
 import { MobilePerformanceIntel } from './tennis/MobilePerformanceIntel'
-import { MobileBottomNav, type MobileNavKey } from './tennis/MobileBottomNav'
-import { MobileMoreSheet, type MoreSheetItem } from './tennis/MobileMoreSheet'
+import { useMobileLayout } from './MobileLayoutContext'
 
 export type MobileTennisPlayerLike = {
   ranking?: number | null
@@ -23,13 +22,8 @@ export type MobileTennisHomeProps = {
   session: SportsDemoSession
   player: MobileTennisPlayerLike
   onNavigate: (sectionId: string) => void
-  sidebarItems: MoreSheetItem[]
-  hiddenNavIds?: Set<string>
   roundupCount?: number
-  groupOrder?: string[]
 }
-
-const DEFAULT_HIDDEN_IDS = new Set(['dashboard', 'morning', 'matchprep'])
 
 function partOfDay(hour: number): string {
   if (hour < 5) return 'Up early'
@@ -69,27 +63,9 @@ export function MobileTennisHome({
   session,
   player,
   onNavigate,
-  sidebarItems,
-  hiddenNavIds,
   roundupCount = 18,
-  groupOrder,
 }: MobileTennisHomeProps) {
-  const [moreOpen, setMoreOpen] = useState(false)
-  const [bottomNav, setBottomNav] = useState<MobileNavKey>('home')
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
-    const prev = meta?.content
-    if (!meta) {
-      meta = document.createElement('meta')
-      meta.name = 'theme-color'
-      document.head.appendChild(meta)
-    }
-    meta.content = '#A855F7'
-    return () => { if (meta) meta.content = prev ?? '#07080F' }
-  }, [])
-
+  const { openMore } = useMobileLayout()
   const now = useMemo(() => new Date(), [])
   const hour = now.getHours()
   const greeting = partOfDay(hour)
@@ -137,72 +113,14 @@ export function MobileTennisHome({
   const totalRoundup = roundupChannels.reduce((sum, c) => sum + c.count, 0)
   const derivedRoundupCount = roundupCount ?? totalRoundup
 
-  const hiddenIds = hiddenNavIds ?? DEFAULT_HIDDEN_IDS
-
-  const handleBottomNav = (key: MobileNavKey) => {
-    setBottomNav(key)
-    switch (key) {
-      case 'home':  onNavigate('dashboard'); break
-      case 'today': onNavigate('today'); break
-      case 'inbox': onNavigate('morning'); break
-      case 'match': onNavigate('matchprep'); break
-      case 'more':  setMoreOpen(true); break
-    }
-  }
-
   return (
-    <div
-      className="mobile-home min-h-screen flex flex-col"
-      style={{
-        background: 'var(--bg-base)',
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'calc(64px + 22px + env(safe-area-inset-bottom))',
-        // Prototype token palette — overrides any sport-specific theme upstream.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ['--bg-base' as any]:      'rgb(13, 8, 32)',
-        ['--bg-card' as any]:      'rgb(22, 16, 43)',
-        ['--bg-card-alt' as any]:  'rgb(30, 23, 57)',
-        ['--text-primary' as any]: 'rgb(245, 243, 255)',
-        ['--text-accent' as any]:  'rgb(196, 181, 253)',
-        ['--text-muted' as any]:   'rgb(139, 127, 184)',
-        ['--text-meta' as any]:    'rgb(94, 79, 133)',
-        ['--violet' as any]:       'rgb(168, 85, 247)',
-        ['--fuchsia' as any]:      'rgb(217, 70, 239)',
-        ['--yellow' as any]:       'rgb(252, 211, 77)',
-        ['--green' as any]:        'rgb(16, 185, 129)',
-        ['--amber' as any]:        'rgb(245, 158, 11)',
-        ['--blue' as any]:         'rgb(96, 165, 250)',
-        ['--red' as any]:          'rgb(239, 68, 68)',
-        ['--cyan' as any]:         'rgb(34, 211, 238)',
-        ['--pink' as any]:         'rgb(236, 72, 153)',
-        ['--border' as any]:       'rgba(168, 85, 247, 0.18)',
-      }}
-    >
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes mobileCardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes mobileMatchGlow {
-          0%, 100% { box-shadow: 0 0 20px 0 rgba(168, 85, 247, 0.55); }
-          50%      { box-shadow: 0 0 40px 4px rgba(217, 70, 239, 0.55); }
-        }
-        @keyframes mobileGreenPulse {
-          0%, 100% { transform: scale(1);   opacity: 1; }
-          50%      { transform: scale(1.6); opacity: 0.55; }
-        }
-        @keyframes mobileRedPulse {
-          0%, 100% { transform: scale(1);   opacity: 1; }
-          50%      { transform: scale(1.5); opacity: 0.55; }
-        }
-        @keyframes mobileWave { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(18deg); } 75% { transform: rotate(-12deg); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { scrollbar-width: none; }
-      ` }} />
-
+    <div className="w-full">
       <MobileTopBar
         subtitle="TENNIS · MONTE-CARLO"
         photoUrl={session.photoDataUrl ?? null}
         initials={avatarInitials}
-        onSearch={() => setMoreOpen(true)}
-        onBell={() => { onNavigate('morning'); setBottomNav('inbox') }}
+        onSearch={openMore}
+        onBell={() => onNavigate('morning')}
         onAvatar={() => onNavigate('settings')}
       />
 
@@ -220,7 +138,7 @@ export function MobileTennisHome({
       <MobileQuickActions
         total={18}
         actions={quickActions}
-        onAll={() => setMoreOpen(true)}
+        onAll={openMore}
       />
 
       <MobileMatchCard
@@ -238,8 +156,8 @@ export function MobileTennisHome({
         totalCount={derivedRoundupCount}
         sinceLabel="06:00"
         channels={roundupChannels}
-        onOpen={() => { onNavigate('morning'); setBottomNav('inbox') }}
-        onChannel={() => { onNavigate('morning'); setBottomNav('inbox') }}
+        onOpen={() => onNavigate('morning')}
+        onChannel={() => onNavigate('morning')}
       />
 
       <MobileSponsorAlert
@@ -255,23 +173,6 @@ export function MobileTennisHome({
           <span style={{ color: 'var(--text-muted)' }}> — above season avg (65%). Clay kick serve landing 12cm deeper.</span>
         </>}
         onPress={() => onNavigate('performance')}
-      />
-
-      <div className="flex-1" />
-
-      <MobileBottomNav
-        active={bottomNav}
-        onSelect={handleBottomNav}
-        inboxBadge={13}
-      />
-
-      <MobileMoreSheet
-        open={moreOpen}
-        onClose={() => setMoreOpen(false)}
-        items={sidebarItems}
-        hiddenIds={hiddenIds}
-        onNavigate={(id) => { onNavigate(id); setBottomNav('more') }}
-        groupOrder={groupOrder}
       />
     </div>
   )
