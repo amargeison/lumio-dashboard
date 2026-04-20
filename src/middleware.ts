@@ -31,15 +31,31 @@ const SPORT_ROOTS = new Set([
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Sport routes: hands-off ────────────────────────────────────────────
+  // ── Sport routes: hands-off (with one exception) ──────────────────────
   // /sport/* must never be touched by middleware. The /sport/app auth check
   // below is a separate, intentional carve-out for the founder portal.
   // Everything else under /sport/* (including /sport/<demo-slug>) is owned
   // by the page component.
+  //
+  // The one exception: when the URL carries an ?install_token=, we
+  // transparently route through /api/pwa/consume-token to redeem it
+  // before the page renders. The redemption endpoint mints a fresh
+  // session via Supabase magic-link and ultimately redirects to the
+  // clean portal path with the install_token stripped — so the user
+  // only ever sees /<sport>/<slug> in the URL bar, never the API.
   const firstSegment = pathname.split('/')[1]
   if (firstSegment && SPORT_ROOTS.has(firstSegment)) {
     const secondSegment = pathname.split('/')[2]
     if (secondSegment !== 'app') {
+      const token = request.nextUrl.searchParams.get('install_token')
+      if (token && secondSegment) {
+        const consume = request.nextUrl.clone()
+        consume.pathname = '/api/pwa/consume-token'
+        consume.searchParams.delete('install_token')
+        consume.searchParams.set('t', token)
+        consume.searchParams.set('next', `/${firstSegment}/${secondSegment}`)
+        return NextResponse.redirect(consume)
+      }
       return NextResponse.next()
     }
     // Fall through to the /sport/app auth gate further down.

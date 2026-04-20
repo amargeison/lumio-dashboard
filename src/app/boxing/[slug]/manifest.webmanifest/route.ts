@@ -23,7 +23,8 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.id && user.email) {
       const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'boxing', slug })
-      startUrl = `/api/pwa/consume-token?t=${encodeURIComponent(token)}&next=${encodeURIComponent(portalPath)}`
+      // Token rides on the portal path; middleware redeems it transparently.
+      startUrl = `${portalPath}?install_token=${encodeURIComponent(token)}`
     }
   } catch { /* anonymous fall-through */ }
 
