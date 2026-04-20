@@ -246,9 +246,6 @@ export default function RugbyLandingPage() {
       <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${PURPLE}33, transparent 50%), radial-gradient(circle at 80% 60%, ${PURPLE_LIGHT}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Sports/rugby_logo.png" alt="Lumio Rugby" style={{ height: 80, margin: '0 auto 32px', display: 'block' }}
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
             LUMIO RUGBY
           </div>

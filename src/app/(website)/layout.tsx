@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, X, Twitter, Linkedin, Github } from 'lucide-react'
 import BookTrialModal from '@/app/(website)/components/BookTrialModal'
 import TrialTypeModal from '@/app/(website)/components/TrialTypeModal'
+import { FootballNavDropdown, FOOTBALL_TIERS } from '@/app/(website)/components/FootballNavDropdown'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',    href: '/sports-product' },
@@ -191,13 +192,14 @@ function Nav() {
     >
       <div
         className={`w-full mx-auto flex max-w-7xl items-center ${isSports ? 'px-6 py-2 justify-between' : ''}`}
-        style={isSports ? { minHeight: 100 } : { display: 'flex', alignItems: 'center', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 80 }}
+        style={isSports ? { minHeight: 104 } : { display: 'flex', alignItems: 'center', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isTennis ? '/tennis_transparent_logo.png' : isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
-            style={{ height: isSports ? '112px' : '72px', width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+            className="h-12 md:h-16 lg:h-20"
+            style={{ width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {!isSports && !isSchools && (
             <span style={{
               fontSize: 10,
@@ -217,21 +219,32 @@ function Nav() {
 
         {/* Desktop nav */}
         <nav className={`hidden md:flex items-center ${isSports ? 'gap-2' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 1, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 1, overflow: 'hidden' }}>
-          {navLinks.map(l => (
-            <Link key={l.label} href={l.href}
-              className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
-              style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
-              {l.label}
-              {(l as any).badge && (
-                <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                  style={{ backgroundColor: 'rgba(139,92,246,0.2)', color: '#A78BFA', lineHeight: 1, boxShadow: '0 0 6px rgba(139,92,246,0.4)' }}>
-                  {(l as any).badge}
-                </span>
-              )}
-            </Link>
-          ))}
+          {navLinks.map(l => {
+            if (l.label === 'Football') {
+              return (
+                <FootballNavDropdown
+                  key="football-dropdown"
+                  scrolled={scrolled}
+                  className={isSports ? 'px-2 py-2 text-sm font-semibold' : 'px-2 py-2 font-medium text-sm'}
+                />
+              )
+            }
+            return (
+              <Link key={l.label} href={l.href}
+                className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
+                style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
+                {l.label}
+                {(l as any).badge && (
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: 'rgba(139,92,246,0.2)', color: '#A78BFA', lineHeight: 1, boxShadow: '0 0 6px rgba(139,92,246,0.4)' }}>
+                    {(l as any).badge}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Desktop CTAs */}
@@ -330,18 +343,38 @@ function Nav() {
       {mobileOpen && (
         <div className="md:hidden border-t px-6 py-4 flex flex-col gap-4"
           style={{ backgroundColor: '#07080F', borderColor: '#1F2937' }}>
-          {navLinks.map(l => (
-            <Link key={l.label} href={l.href} onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
-              {l.label}
-              {(l as any).badge && (
-                <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                  style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
-                  {(l as any).badge}
-                </span>
-              )}
-            </Link>
-          ))}
+          {navLinks.map(l => {
+            if (l.label === 'Football') {
+              return (
+                <div key="football-mobile">
+                  <div className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
+                    Football
+                  </div>
+                  <div className="flex flex-col gap-1 pl-3">
+                    {FOOTBALL_TIERS.map(t => (
+                      <Link key={t.href} href={t.href} onClick={() => setMobileOpen(false)}
+                        className="py-2 flex flex-col" style={{ color: '#D1D5DB' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{t.label}</span>
+                        <span style={{ fontSize: 11, color: '#6B7280' }}>{t.subtitle}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <Link key={l.label} href={l.href} onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
+                {l.label}
+                {(l as any).badge && (
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+                    {(l as any).badge}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
           <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
             {isSports ? (
               <>
