@@ -78,6 +78,8 @@ import { TENNIS_HITTING_PARTNERS, distanceKmBetween, type HittingPartner } from 
 import { PwaInstaller } from '@/components/PwaInstaller'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { MobileTennisHome } from '@/components/mobile/MobileTennisHome'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -10428,6 +10430,7 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
 
 export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const isMobile = useIsMobile();
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -11091,7 +11094,9 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
 
   const renderView = () => {
     switch (activeSection) {
-      case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
+      case 'dashboard':    return isMobile
+        ? <MobileTennisHome session={session} player={player} onNavigate={setActiveSection} sidebarItems={SIDEBAR_ITEMS} groupOrder={['PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS']} />
+        : <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
       case 'morning':      return <MorningBriefingView player={player} session={session} />;
       case 'rankings':     return <RankingsView player={player} session={session} />;
       case 'forecaster':   return <PointsForecasterView player={player} session={session} />;

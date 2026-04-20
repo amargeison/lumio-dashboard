@@ -18,8 +18,32 @@ const DASHBOARD_ROUTES = new Set([
   'partners', 'support', 'success', 'settings', 'projects', 'onboarding', 'directors',
 ])
 
+// Sport route prefixes — these own their own auth/onboarding logic at the
+// page level (founder Supabase check + SportsDemoGate fallback). Middleware
+// must not redirect or rewrite these paths under any circumstance, otherwise
+// a signed-in business user could get bounced to /overview, /sports, or a
+// founder login when they're trying to reach a sport portal.
+const SPORT_ROOTS = new Set([
+  'tennis', 'golf', 'darts', 'boxing', 'cricket', 'rugby',
+  'football', 'nonleague', 'grassroots', 'womens',
+])
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── Sport routes: hands-off ────────────────────────────────────────────
+  // /sport/* must never be touched by middleware. The /sport/app auth check
+  // below is a separate, intentional carve-out for the founder portal.
+  // Everything else under /sport/* (including /sport/<demo-slug>) is owned
+  // by the page component.
+  const firstSegment = pathname.split('/')[1]
+  if (firstSegment && SPORT_ROOTS.has(firstSegment)) {
+    const secondSegment = pathname.split('/')[2]
+    if (secondSegment !== 'app') {
+      return NextResponse.next()
+    }
+    // Fall through to the /sport/app auth gate further down.
+  }
 
   // /demo/* routes are always public — never redirect to auth
   if (pathname.startsWith('/demo/')) {
@@ -50,6 +74,33 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Domain scope guard ────────────────────────────────────────────────
+  // lumiosports.com must not serve business-product pages. If a visitor
+  // somehow lands on /overview or another business dashboard path from a
+  // sports domain (browser autocomplete, stale bookmark, third-party
+  // redirect), bounce them to /sports. This also stops a signed-in
+  // business user accidentally ending up on the business dashboard while
+  // they're on the sports domain.
+  const isSportsDomain =
+    hostname === 'lumiosports.com' || hostname === 'www.lumiosports.com' || hostname === 'app.lumiosports.com'
+  if (isSportsDomain) {
+    const BUSINESS_ONLY_PREFIXES = [
+      '/overview', '/hr', '/accounts', '/sales', '/crm', '/marketing',
+      '/operations', '/it', '/insights', '/school-office', '/workflows',
+      '/strategy', '/trials', '/partners', '/support', '/projects',
+      '/onboarding', '/directors', '/dfe', '/settings', '/success',
+    ]
+    const isBusinessPath = BUSINESS_ONLY_PREFIXES.some(
+      p => pathname === p || pathname.startsWith(p + '/'),
+    )
+    if (isBusinessPath) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/sports'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Root / is handled by src/app/page.tsx (host-based routing)
   // lumiosports.com/ → /sports, lumiocms.com/ → /home
 
@@ -74,6 +125,15 @@ export async function middleware(request: NextRequest) {
   // Handle /{slug}/{department} → rewrite to /{department} internally
   // while keeping the URL as /{slug}/{department}
   const parts = pathname.split('/').filter(Boolean)
+
+  // Belt-and-braces: under no circumstances should a /{sport}/{anything}
+  // path ever be rewritten to a non-sport route. This is a hard guard on
+  // top of the RESERVED_SLUGS check below so a future edit to that set
+  // cannot accidentally redirect a player away from their sport portal.
+  if (parts.length >= 1 && SPORTS_APP_SLUGS.has(parts[0])) {
+    return NextResponse.next()
+  }
+
   if (parts.length >= 2) {
     const potentialSlug = parts[0]
     const potentialDept = parts[1]
