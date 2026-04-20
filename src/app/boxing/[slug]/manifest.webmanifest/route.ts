@@ -1,11 +1,31 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { signInstallToken } from '@/lib/pwa-install-token'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
-  const startUrl = `/boxing/${slug}`
+  const portalPath = `/boxing/${slug}`
+  let startUrl = portalPath
+
+  try {
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.id && user.email) {
+      const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'boxing', slug })
+      startUrl = `/api/pwa/consume-token?t=${encodeURIComponent(token)}&next=${encodeURIComponent(portalPath)}`
+    }
+  } catch { /* anonymous fall-through */ }
 
   return NextResponse.json(
     {
@@ -13,7 +33,7 @@ export async function GET(
       short_name:        'Boxing',
       description:       'Your fight OS — fight camp, weigh-in, corner sheet, sparring log.',
       start_url:         startUrl,
-      scope:             startUrl,
+      scope:             portalPath,
       display:           'standalone',
       orientation:       'portrait',
       background_color:  '#0D0820',
@@ -24,6 +44,6 @@ export async function GET(
         { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
-    { headers: { 'Content-Type': 'application/manifest+json' } },
+    { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store, must-revalidate' } },
   )
 }

@@ -32,14 +32,36 @@ const SPORT_LABEL: Record<Sport, string> = {
 // over that responsibility. This component now only handles SW
 // registration, the install-prompt card, and the offline indicator.
 
+function isIosSafari(): boolean {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false
+  const ua = navigator.userAgent
+  const iOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document)
+  const webkit = /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
+  return iOS && webkit
+}
+
+function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(display-mode: standalone)').matches
+    // iOS legacy prop — narrowed through a typed guard
+    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+}
+
 export function PwaInstaller({ sport }: { sport: Sport }) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [dismissed, setDismissed] = useState(false)
   const [isOffline, setIsOffline] = useState(false)
+  // iOS doesn't fire beforeinstallprompt — we render a static hint there
+  // instead, telling the user to tap Share → Add to Home Screen. When
+  // the Safari session is authenticated the manifest route mints an
+  // install token into start_url on every request, so the user's next
+  // Share tap re-fetches the manifest and picks up a fresh token.
+  const [showIosHint, setShowIosHint] = useState(false)
 
   useEffect(() => {
     setDismissed(localStorage.getItem(`lumio_${sport}_pwa_dismissed`) === 'true')
     setIsOffline(typeof navigator !== 'undefined' && navigator.onLine === false)
+    setShowIosHint(isIosSafari() && !isStandalone())
   }, [sport])
 
   useEffect(() => {
@@ -65,6 +87,7 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
   }, [sport])
 
   const showInstallCard = installPrompt && !dismissed
+  const showIosCard = showIosHint && !dismissed
   const themeColor = THEME_COLORS[sport]
 
   return (
@@ -114,6 +137,34 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
               className="py-2 px-3 rounded-lg text-xs text-gray-400 border border-gray-700"
             >
               Not now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showIosCard && !showInstallCard && (
+        <div
+          className="fixed bottom-4 left-4 right-4 md:left-auto md:max-w-sm z-50 rounded-xl p-4 shadow-2xl"
+          style={{ backgroundColor: '#0d1117', border: `1px solid ${themeColor}` }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-white mb-1">Install {SPORT_LABEL[sport]}</div>
+              <div className="text-xs text-gray-400">
+                Tap <span className="font-semibold text-white">Share</span>{' '}
+                <span className="inline-block" aria-hidden>⬆︎</span>{' '}
+                → <span className="font-semibold text-white">Add to Home Screen</span>. If you&apos;re signed in, the installed app opens straight into the portal — no code required.
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem(`lumio_${sport}_pwa_dismissed`, 'true')
+                setDismissed(true)
+              }}
+              className="shrink-0 text-lg leading-none text-gray-500 hover:text-gray-300"
+              aria-label="Dismiss install hint"
+            >
+              ×
             </button>
           </div>
         </div>
