@@ -43,12 +43,17 @@ export async function middleware(request: NextRequest) {
   // session via Supabase magic-link and ultimately redirects to the
   // clean portal path with the install_token stripped — so the user
   // only ever sees /<sport>/<slug> in the URL bar, never the API.
-  const firstSegment = pathname.split('/')[1]
+  const segments = pathname.split('/').filter(Boolean)
+  const firstSegment = segments[0]
   if (firstSegment && SPORT_ROOTS.has(firstSegment)) {
-    const secondSegment = pathname.split('/')[2]
+    const secondSegment = segments[1]
     if (secondSegment !== 'app') {
+      // Only intercept install_token on the canonical portal path
+      // (exactly /<sport>/<slug>) — never on sub-routes like
+      // /<sport>/<slug>/manifest.webmanifest, which the manifest route
+      // legitimately receives the token on for token verification.
       const token = request.nextUrl.searchParams.get('install_token')
-      if (token && secondSegment) {
+      if (token && secondSegment && segments.length === 2) {
         const consume = request.nextUrl.clone()
         consume.pathname = '/api/pwa/consume-token'
         consume.searchParams.delete('install_token')
