@@ -41,6 +41,8 @@ import MediaContentModule from '@/components/sports/media-content/MediaContentMo
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { CADDIES_ROSTER, COURSES_ROSTER, DRIVING_RANGES_ROSTER } from '@/lib/demo-content/golf-pros'
+import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
+import { GOLF_INTEGRATIONS } from '@/lib/sports-integrations/golf-integrations'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -164,13 +166,8 @@ const SIDEBAR_ITEMS = [
   { id: 'career',        label: 'Career Planning',      icon: '🚀', group: 'OPERATIONS' },
   { id: 'video',         label: 'Video Library',        icon: '🎬', group: 'OPERATIONS' },
   { id: 'findpro',       label: 'Find a Pro',           icon: '🔍', group: 'OPERATIONS' },
-  { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'INTEGRATIONS' },
-  { id: 'arccos',        label: 'Arccos Integration',   icon: '📡', group: 'INTEGRATIONS' },
-  { id: 'datagolf',      label: 'DataGolf Integration', icon: '🌐', group: 'INTEGRATIONS' },
-  { id: 'trackman',      label: 'TrackMan Integration', icon: '🎯', group: 'INTEGRATIONS' },
-  { id: 'shotlink',      label: 'ShotLink (Phase 3)',   icon: '🔗', group: 'INTEGRATIONS' },
-  { id: 'lpga',          label: 'LPGA / LET Mode',      icon: '🏆', group: 'INTEGRATIONS' },
-  { id: 'mobileapp',     label: 'Mobile App',           icon: '📲', group: 'INTEGRATIONS' },
+  { id: 'integrations',  label: 'Integrations',         icon: '🔌', group: 'SETTINGS' },
+  { id: 'settings',      label: 'Settings',             icon: '⚙️', group: 'SETTINGS' },
 ];
 
 // ─── DEMO PLAYER ─────────────────────────────────────────────────────────────
@@ -4838,6 +4835,188 @@ function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: Spo
   );
 }
 
+// ─── VIDEO LIBRARY ─────────────────────────────────────────────────────────
+function GolfVideoLibraryView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const isFounder = session.isDemoShell === false
+  type VideoCategory = 'swing' | 'competition' | 'debrief' | 'coach' | 'drill'
+  type FilterId = 'all' | VideoCategory
+  const [category, setCategory] = useState<FilterId>('all')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'views'>('newest')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const GBUCKET = 'https://storage.googleapis.com/gtv-videos-bucket/sample'
+  const VIDEOS: {
+    id: string; title: string; category: VideoCategory; duration: string;
+    date: string; dateSort: number; views: number; src: string; thumbnail: string;
+    coach: string; description: string; tags: string[];
+  }[] = [
+    { id: 'v01', title: 'R1 Range Session — Halden Motors',                  category: 'swing',       duration: '2:14',  date: 'Apr 16', dateSort: 116, views: 420,  src: `${GBUCKET}/BigBuckBunny.mp4`,                 thumbnail: 'https://picsum.photos/seed/golf-v01/640/360', coach: 'Carlos Mendez', description: 'Pre-round 45-minute range block. Driver → 4i → wedges. Working on the trail-hip clearance flagged in last debrief.',              tags: ['range','driver','warm-up'] },
+    { id: 'v02', title: 'Carlos Mendez debrief — Tees at Munich',            category: 'debrief',     duration: '8:45',  date: 'Apr 14', dateSort: 114, views: 178,  src: `${GBUCKET}/ElephantsDream.mp4`,               thumbnail: 'https://picsum.photos/seed/golf-v02/640/360', coach: 'Carlos Mendez', description: 'Full post-round walk-through after R3. Strokes-gained breakdown plus three focus areas for R4.',                                  tags: ['debrief','strategy'] },
+    { id: 'v03', title: 'Slow-mo swing analysis — driver setup',             category: 'swing',       duration: '3:22',  date: 'Apr 12', dateSort: 112, views: 645,  src: `${GBUCKET}/ForBiggerBlazes.mp4`,              thumbnail: 'https://picsum.photos/seed/golf-v03/640/360', coach: 'Carlos Mendez', description: '240fps capture of the driver setup sequence. Ball position, grip pressure, and spine tilt checks.',                              tags: ['slow-mo','driver'] },
+    { id: 'v04', title: 'Dunhill Links T8 — back 9 highlights',              category: 'competition', duration: '6:18',  date: 'Apr 08', dateSort: 108, views: 1243, src: `${GBUCKET}/ForBiggerEscapes.mp4`,             thumbnail: 'https://picsum.photos/seed/golf-v04/640/360', coach: 'Broadcast feed', description: 'Sunday back-nine highlights from the Alfred Dunhill Links — T8 finish at the Old Course.',                                      tags: ['competition','highlights'] },
+    { id: 'v05', title: 'Lag putting drill — 30-40ft',                       category: 'drill',       duration: '4:10',  date: 'Apr 05', dateSort: 105, views: 389,  src: `${GBUCKET}/ForBiggerFun.mp4`,                 thumbnail: 'https://picsum.photos/seed/golf-v05/640/360', coach: 'Tommy Delgado', description: 'Speed-control ladder drill. 10 balls at 30ft, then 35, then 40 — target: all inside 3ft.',                                      tags: ['putting','drill'] },
+    { id: 'v06', title: 'Bunker technique — splash vs lift',                 category: 'coach',       duration: '5:32',  date: 'Apr 02', dateSort: 102, views: 712,  src: `${GBUCKET}/ForBiggerJoyrides.mp4`,            thumbnail: 'https://picsum.photos/seed/golf-v06/640/360', coach: 'Carlos Mendez', description: 'Coach-library clip: when to splash out vs pick-and-lift. Sand conditions, lie, and distance decision tree.',                    tags: ['short-game','bunker'] },
+    { id: 'v07', title: 'Tempo work — weighted club routine',                category: 'drill',       duration: '2:50',  date: 'Mar 29', dateSort: 98,  views: 256,  src: `${GBUCKET}/ForBiggerMeltdowns.mp4`,           thumbnail: 'https://picsum.photos/seed/golf-v07/640/360', coach: 'Carlos Mendez', description: 'Three-swing tempo routine with a weighted training club. 3:1 backswing-to-downswing cadence.',                                   tags: ['tempo','routine'] },
+    { id: 'v08', title: 'R2 post-round chat — KLM Open',                     category: 'debrief',     duration: '12:04', date: 'Mar 25', dateSort: 94,  views: 94,   src: `${GBUCKET}/Sintel.mp4`,                       thumbnail: 'https://picsum.photos/seed/golf-v08/640/360', coach: 'Carlos Mendez', description: 'Long-form post-round with Carlos after KLM Open R2. Course-strategy errors plus mental-game notes.',                             tags: ['debrief','mental'] },
+    { id: 'v09', title: 'Wind play — low stinger setup',                     category: 'coach',       duration: '4:55',  date: 'Mar 22', dateSort: 91,  views: 512,  src: `${GBUCKET}/SubaruOutbackOnStreetAndDirt.mp4`, thumbnail: 'https://picsum.photos/seed/golf-v09/640/360', coach: 'Mia Rodriguez', description: 'Links conditions — how to hit a low stinger under 12ft trajectory. Ball position and hand height adjustments.',                 tags: ['links','stinger'] },
+    { id: 'v10', title: 'Pressure putts — 6ft gauntlet',                     category: 'drill',       duration: '3:15',  date: 'Mar 18', dateSort: 87,  views: 421,  src: `${GBUCKET}/TearsOfSteel.mp4`,                 thumbnail: 'https://picsum.photos/seed/golf-v10/640/360', coach: 'Tommy Delgado', description: '20-putt gauntlet from 6ft with scoring pressure. Session ends only when 10 consecutive are made.',                               tags: ['putting','pressure'] },
+    { id: 'v11', title: 'Crown Park final round — approach highlights',      category: 'competition', duration: '7:40',  date: 'Mar 12', dateSort: 81,  views: 892,  src: `${GBUCKET}/VolkswagenGTIReview.mp4`,          thumbnail: 'https://picsum.photos/seed/golf-v11/640/360', coach: 'Broadcast feed', description: 'Final-round approach highlights at Crown Park. Six approaches inside 12ft including the 5-iron on 17.',                           tags: ['competition','approach'] },
+    { id: 'v12', title: 'Driver cover gallery — shot shapes',                category: 'swing',       duration: '5:10',  date: 'Mar 08', dateSort: 77,  views: 334,  src: `${GBUCKET}/WeAreGoingOnBullrun.mp4`,          thumbnail: 'https://picsum.photos/seed/golf-v12/640/360', coach: 'Carlos Mendez', description: "Six different shot shapes off the tee — fade, draw, power draw, knockdown, high cut, stinger. Session from Carlos' training bay.", tags: ['driver','shot-shapes'] },
+  ]
+
+  const CATEGORIES: { id: FilterId; label: string }[] = [
+    { id: 'all',         label: 'All' },
+    { id: 'swing',       label: 'My Swings' },
+    { id: 'competition', label: 'Competition' },
+    { id: 'debrief',     label: 'Debriefs' },
+    { id: 'coach',       label: 'Coach Library' },
+    { id: 'drill',       label: 'Drills' },
+  ]
+  const categoryLabel: Record<VideoCategory, string> = { swing: 'Swing', competition: 'Competition', debrief: 'Debrief', coach: 'Coach Library', drill: 'Drill' }
+  const categoryColor: Record<VideoCategory, string> = { swing: '#16a34a', competition: '#8b5cf6', debrief: '#0ea5e9', coach: '#f59e0b', drill: '#ec4899' }
+
+  const q = query.trim().toLowerCase()
+  const filtered = VIDEOS
+    .filter(v => category === 'all' || v.category === category)
+    .filter(v => !q || v.title.toLowerCase().includes(q) || v.tags.some(t => t.toLowerCase().includes(q)))
+    .sort((a, b) => sort === 'newest' ? b.dateSort - a.dateSort : sort === 'oldest' ? a.dateSort - b.dateSort : b.views - a.views)
+
+  const selectedIdx = selectedId ? filtered.findIndex(v => v.id === selectedId) : -1
+  const selected = selectedIdx >= 0 ? filtered[selectedIdx] : null
+  const goto = (offset: number) => {
+    if (selectedIdx < 0 || filtered.length === 0) return
+    const next = (selectedIdx + offset + filtered.length) % filtered.length
+    setSelectedId(filtered[next].id)
+  }
+
+  useEffect(() => {
+    if (!selected) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedId(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selected])
+
+  const formatViews = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+
+  if (isFounder) {
+    return (
+      <div className="space-y-6">
+        <SectionHeader icon="🎬" title="Video Library" subtitle="Swing recordings, competition footage, debriefs, and coach clip library — upload or auto-import." />
+        <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-12 flex flex-col items-center justify-center text-center">
+          <div className="text-5xl mb-4">🎬</div>
+          <div className="text-white font-semibold text-lg mb-2">No videos yet</div>
+          <div className="text-gray-400 text-sm max-w-sm mb-5">Connect your range camera or upload footage to start building your video library. Swing clips, competition footage, and coach debriefs all land here.</div>
+          <div className="flex gap-2">
+            <button className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Connect Veo</button>
+            <button className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#1F2937', color: '#9CA3AF' }}>Upload Footage</button>
+          </div>
+        </div>
+        <GolfAISection context="default" player={player} session={session} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎬" title="Video Library" subtitle="Swing recordings, competition footage, debriefs, and coach clip library — 340 videos indexed." />
+
+      <div className="rounded-lg px-3 py-2 text-[11px]" style={{ background: '#0d1117', border: '1px solid #1F2937', color: '#6B7280' }}>
+        Demo placeholder footage — real swing clips stream from your Veo + range camera in the full build.
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-3 md:items-center">
+        <div className="flex gap-1 flex-wrap flex-1">
+          {CATEGORIES.map(c => (
+            <button key={c.id} onClick={() => setCategory(c.id)} className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all" style={{ background: category === c.id ? '#16a34a' : '#0d1117', color: category === c.id ? '#fff' : '#9CA3AF', border: '1px solid ' + (category === c.id ? '#16a34a' : '#1F2937') }}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search title or tag…" className="px-3 py-2 rounded-lg text-sm text-white md:w-56" style={{ background: '#0d1117', border: '1px solid #1F2937' }} />
+        <select value={sort} onChange={e => setSort(e.target.value as typeof sort)} className="px-3 py-2 rounded-lg text-sm text-white" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="views">Most Viewed</option>
+        </select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl p-8 text-center text-sm" style={{ background: '#0d1117', border: '1px solid #1F2937', color: '#6B7280' }}>
+          No videos match that search.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(v => (
+            <button key={v.id} onClick={() => setSelectedId(v.id)} className="text-left rounded-xl overflow-hidden group transition-all hover:scale-[1.01]" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+              <div className="relative aspect-video overflow-hidden">
+                <img src={v.thumbnail} alt={v.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%)' }} />
+                <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: categoryColor[v.category], color: '#fff' }}>
+                  {categoryLabel[v.category]}
+                </span>
+                <span className="absolute bottom-2 right-2 text-[10px] font-semibold px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.75)', color: '#fff' }}>
+                  {v.duration}
+                </span>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-transform group-hover:scale-110" style={{ background: 'rgba(22,163,74,0.9)', color: '#fff' }}>
+                    ▶
+                  </div>
+                </div>
+              </div>
+              <div className="p-3">
+                <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                  <span>{v.date}</span>
+                  <span>{formatViews(v.views)} views</span>
+                </div>
+                <div className="text-sm font-semibold text-white truncate" title={v.title}>{v.title}</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">{v.coach}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4" onClick={() => setSelectedId(null)}>
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl" style={{ background: '#0d1117', border: '1px solid #1F2937' }} onClick={e => e.stopPropagation()}>
+            <div className="relative">
+              <video controls autoPlay src={selected.src} poster={selected.thumbnail} className="w-full aspect-video bg-black" />
+              <button onClick={() => setSelectedId(null)} className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center text-white text-lg font-bold" style={{ background: 'rgba(0,0,0,0.75)' }} aria-label="Close">×</button>
+              {filtered.length > 1 && (
+                <>
+                  <button onClick={() => goto(-1)} className="absolute top-1/2 left-3 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" style={{ background: 'rgba(0,0,0,0.6)' }} aria-label="Previous video">‹</button>
+                  <button onClick={() => goto(1)} className="absolute top-1/2 right-3 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" style={{ background: 'rgba(0,0,0,0.6)' }} aria-label="Next video">›</button>
+                </>
+              )}
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: categoryColor[selected.category], color: '#fff' }}>
+                  {categoryLabel[selected.category]}
+                </span>
+                <span className="text-xs text-gray-500">{selected.date} · {formatViews(selected.views)} views · {selected.duration}</span>
+              </div>
+              <div className="text-lg font-bold text-white mb-1">{selected.title}</div>
+              <div className="text-xs text-gray-400 mb-3">{selected.coach}</div>
+              <p className="text-sm text-gray-300 leading-relaxed">{selected.description}</p>
+              {selected.tags.length > 0 && (
+                <div className="flex gap-1 flex-wrap mt-3">
+                  {selected.tags.map(t => (
+                    <span key={t} className="text-[10px] text-gray-400 px-2 py-0.5 rounded" style={{ background: '#161b22' }}>#{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <GolfAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
 function PlaceholderView({ title, icon, description, player, session }: { title: string; icon: string; description: string; player: GolfPlayer; session: SportsDemoSession }) {
   return (
     <div className="space-y-6">
@@ -4867,11 +5046,11 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
     { date: 'Jun 28 — R3 KLM Open', ott: 0.3, atg: 0.7, arg: 0.2, putt: -1.6, total: -0.4, rounds: 1 },
   ];
   const tourUsers = [
-    { name: 'Owen Alderton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Used Arccos Pro to win US Open 2022 & DP World Championship 2025' },
+    { name: 'Owen Alderton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Arccos Pro suite — SG tracking + shot-by-shot history' },
     { name: 'Henrik Tellander', flag: '🇳🇴', tour: 'PGA Tour', note: 'SG Approach analytics for course-specific prep' },
-    { name: 'Nelly Korda', flag: '🇺🇸', tour: 'LPGA', note: 'Full Arccos Pro suite for competitive analytics' },
-    { name: 'Kristoffer Reitan', flag: '🇳🇴', tour: 'DP World Tour', note: '2× DP World Tour winner in 2025 using Arccos Pro Insights' },
-    { name: 'Rasmus Neergaard-Petersen', flag: '🇩🇰', tour: 'DP World Tour', note: 'First title at Crown Australian Open 2025 — Arccos Pro user' },
+    { name: 'Emma Lindgren', flag: '🇸🇪', tour: 'LPGA', note: 'Arccos Pro Insights — full competitive analytics' },
+    { name: 'Erik Sandberg', flag: '🇳🇴', tour: 'DP World Tour', note: 'Arccos Pro — driving + approach SG tracking' },
+    { name: 'Jens Kjaer', flag: '🇩🇰', tour: 'DP World Tour', note: 'Arccos Pro — putting metrics + course fit' },
   ];
   return (
     <div className="space-y-6">
@@ -5268,10 +5447,10 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
     { event: 'Halden Motors Ladies Championship', cat: 'LET Meridian', venue: 'Seomjin River CC, Korea', date: 'Oct 2026', rwgr: '60 pts', prize: '$3.25M' },
   ];
   const arccosWomen = [
-    { name: 'Nelly Korda', flag: '🇺🇸', rank: '#1 RWGR', note: 'Full Arccos Pro analytics suite' },
-    { name: 'Lydia Ko', flag: '🇳🇿', rank: 'Top 10 RWGR', note: 'SG tracking across LPGA season' },
-    { name: 'Brooke Henderson', flag: '🇨🇦', rank: 'Top 15 RWGR', note: 'Arccos course strategy tools' },
-    { name: 'Georgia Hall', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 'Top 40 RWGR', note: 'LET + LPGA Arccos user' },
+    { name: 'Emma Lindgren', flag: '🇸🇪', rank: '#1 RWGR', note: 'Full Arccos Pro analytics suite' },
+    { name: 'Mia Harrington', flag: '🇳🇿', rank: 'Top 10 RWGR', note: 'SG tracking across LPGA season' },
+    { name: 'Sofia Lindqvist', flag: '🇨🇦', rank: 'Top 15 RWGR', note: 'Arccos course strategy tools' },
+    { name: 'Charlotte Ainsworth', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 'Top 40 RWGR', note: 'LET + LPGA Arccos user' },
   ];
   return (
     <div className="space-y-6">
@@ -5288,7 +5467,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
         <div className="space-y-4">
           <div className="bg-[#0d0f1a] border border-red-600/30 rounded-xl p-5">
             <div className="text-sm font-semibold text-white mb-3">The Women's Golf Technology Gap — Total</div>
-            <div className="text-sm text-gray-300 leading-relaxed">For women's professional golfers, the gap is not partial — it is total. There is no dedicated analytics platform for LPGA or LET players. No performance OS. No RWGR tracker. No sponsorship manager. No caddie workflow module. Nothing beyond the tour portal for entries and rankings. Arccos Pro Insights has 35+ women (Nelly Korda, etc.) getting on-course analytics — but nothing commercial. Lumio Tour would be the first technology platform ever built specifically for the women's professional golf career. The WTA gap in tennis is identical, and it's exactly Lumio Tour's strongest entry point in tennis. The same play is available in golf.</div>
+            <div className="text-sm text-gray-300 leading-relaxed">For women's professional golfers, the gap is not partial — it is total. There is no dedicated analytics platform for LPGA or LET players. No performance OS. No RWGR tracker. No sponsorship manager. No caddie workflow module. Nothing beyond the tour portal for entries and rankings. Arccos Pro Insights has 35+ women on tour getting on-course analytics — but nothing commercial. Lumio Tour would be the first technology platform ever built specifically for the women's professional golf career. The WTA gap in tennis is identical, and it's exactly Lumio Tour's strongest entry point in tennis. The same play is available in golf.</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
@@ -5387,7 +5566,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
           </div>
           <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
             <div className="text-sm font-semibold text-green-400 mb-2">Route In</div>
-            <div className="text-xs text-gray-400">The LPGA route in is via player agents (IMG, Hambric, Excel also manage women's players). Approaching Arccos directly — Edoardo Molinari already works with 35+ women — could fast-track access to the warmest leads. One well-known LPGA player on Lumio Tour is the equivalent of Kristoffer Reitan on the DP World Tour side.</div>
+            <div className="text-xs text-gray-400">The LPGA route in is via player agents (IMG, Hambric, Excel also manage women's players). Approaching Arccos directly — Edoardo Molinari already works with 35+ women — could fast-track access to the warmest leads. One well-known LPGA player on Lumio Tour is the equivalent of Erik Sandberg on the DP World Tour side.</div>
           </div>
         </div>
       )}
@@ -5459,9 +5638,9 @@ function MobileAppView({ player, session }: { player: GolfPlayer; session: Sport
         <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
         <div className="space-y-2">
           {[
-            { opt: 'React Native (Expo)', pros: 'Single codebase for iOS + Android. Shares component logic with Next.js web portal. Fastest time to market.', cons: 'Some native features need bridging. Performance slightly below fully native.' },
-            { opt: 'Progressive Web App (PWA)', pros: 'Zero extra codebase. Installable from browser. Service workers enable offline.', cons: 'iOS PWA limitations (push notifications restricted). App Store visibility limited.' },
-            { opt: 'Native Swift + Kotlin', pros: 'Best performance and OS integration. Full App Store presence.', cons: 'Two separate codebases. Significantly slower to build and maintain.' },
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of caddie yardage book + morning briefing audio. Fastest path to validating sport-specific traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Arccos / launch monitors).' },
+            { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
+            { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
           ].map((o, i) => (
             <div key={i} className="p-3 bg-black/20 rounded-lg">
               <div className="text-sm font-medium text-white mb-1">{o.opt}</div>
@@ -5470,7 +5649,7 @@ function MobileAppView({ player, session }: { player: GolfPlayer; session: Sport
             </div>
           ))}
         </div>
-        <div className="mt-4 text-xs text-gray-500">Recommendation: React Native (Expo) for Phase 1 mobile — fastest path to full iOS + Android coverage with shared logic from the existing Next.js codebase. Upgrade to fully native components where performance demands it in Phase 2.</div>
+        <div className="mt-4 text-xs text-gray-500">Recommendation: PWA for Phase 1 demo + early access. Capacitor wrap for Phase 2 when App Store presence and sensor integration matter. Reserve full native for the sport with the strongest pro adoption signal.</div>
       </div>
       {/* Download placeholder */}
       <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-6 flex flex-col items-center text-center">
@@ -5519,6 +5698,25 @@ const PIPELINE: PipelineColumn[] = [
     { brand: 'Mizuno', category: 'Equipment', value: '£22k/yr', next: 'Contract signing Monday' },
   ]},
 ];
+
+// ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
+function GolfIntegrationsHub({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+  const entries: HubEntry[] = [
+    { id: 'datagolf',  icon: '🌐', label: 'DataGolf',             category: 'Data Feeds',       kind: 'custom',  render: () => <DataGolfView player={player} session={session} /> },
+    { id: 'lpga',      icon: '🏆', label: 'LPGA / LET Mode',      category: 'Data Feeds',       kind: 'custom',  render: () => <LPGAView player={player} session={session} /> },
+    { id: 'shotlink',  icon: '🔗', label: 'ShotLink',             category: 'Data Feeds',       kind: 'custom',  render: () => <ShotLinkView player={player} session={session} /> },
+    { id: 'arccos',    icon: '📡', label: 'Arccos',               category: 'Hardware Sensors', kind: 'custom',  render: () => <ArccosView player={player} session={session} /> },
+    { id: 'trackman',  icon: '🎯', label: 'TrackMan',             category: 'Hardware Sensors', kind: 'custom',  render: () => <TrackManView player={player} session={session} /> },
+    { id: 'v1golf',    icon: '🎥', label: 'V1 Golf Video',        category: 'Hardware Sensors', kind: 'generic', config: GOLF_INTEGRATIONS.v1golf },
+    { id: 'whoop',     icon: '💚', label: 'WHOOP / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
+    { id: 'catapult',  icon: '🛰️', label: 'Catapult / STATSports', category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.catapult },
+    { id: 'workspace', icon: '📧', label: 'Gmail + Calendar',     category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.workspace },
+    { id: 'slack',     icon: '💬', label: 'Slack',                category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.slack },
+    { id: 'broadcast', icon: '📺', label: 'Meridian Sports',      category: 'Distribution',     kind: 'generic', config: GOLF_INTEGRATIONS.broadcast },
+    { id: 'mobileapp', icon: '📲', label: 'Mobile App',           category: 'Distribution',     kind: 'custom',  render: () => <MobileAppView player={player} session={session} /> },
+  ]
+  return <IntegrationsHub entries={entries} accent="var(--brand-primary, #16a34a)" />
+}
 
 function AgentPipelineView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [tab, setTab] = useState<'pipeline' | 'pitch'>('pipeline');
@@ -6925,7 +7123,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const activeRole = roleOverride;
   const [toast, setToast] = useState<{ message: string; sponsor: string } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'INTEGRATIONS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'SETTINGS'];
   const isFoundingMember = session.isDemoShell === false
   // Mirror Settings brand colours onto CSS vars — see tennis/[slug]/page.tsx
   useLiveBrandColours('golf', { primary: '#15803d', secondary: '#ffffff' })
@@ -7070,7 +7268,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       case 'agent':       return <AgentPipelineView player={player} session={session} />;
       case 'travel':      return <GolfTravelView player={player} session={session} />;
       case 'qualifying':  return <GolfQSchoolView player={player} session={session} />;
-      case 'video':       return <PlaceholderView icon="🎬" title="Video Library" description="Swing session recordings, competition footage, post-round debriefs, and coach clip library." player={player} session={session} />;
+      case 'video':       return <GolfVideoLibraryView player={player} session={session} />;
       case 'findpro':     return <GolfFindProView player={player} session={session} />;
       case 'settings':    return (
         <SportsSettings
@@ -7168,12 +7366,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           devApiRouteOptions={['/api/ai/golf']}
         />
       );
-      case 'arccos':      return <ArccosView player={player} session={session} />;
-      case 'datagolf':    return <DataGolfView player={player} session={session} />;
-      case 'trackman':    return <TrackManView player={player} session={session} />;
-      case 'shotlink':    return <ShotLinkView player={player} session={session} />;
-      case 'lpga':        return <LPGAView player={player} session={session} />;
-      case 'mobileapp':   return <MobileAppView player={player} session={session} />;
+      case 'integrations': return <GolfIntegrationsHub player={player} session={session} />;
       default:            return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
     }
   };

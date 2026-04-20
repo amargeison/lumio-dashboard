@@ -76,6 +76,8 @@ import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
+import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
+import { DARTS_INTEGRATIONS } from '@/lib/sports-integrations/darts-integrations'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -238,7 +240,8 @@ const SIDEBAR_ITEMS = [
   { id: 'equipment',       label: 'Equipment',          icon: '📦', group: 'TOOLS'        },
   { id: 'career',          label: 'Career Planning',    icon: '🚀', group: 'TOOLS'        },
   { id: 'datahub',         label: 'Data Hub',           icon: '📡', group: 'TOOLS'        },
-  { id: 'settings',        label: 'Settings',           icon: '⚙️', group: 'TOOLS'        },
+  { id: 'integrations',    label: 'Integrations',       icon: '🔌', group: 'SETTINGS'     },
+  { id: 'settings',        label: 'Settings',           icon: '⚙️', group: 'SETTINGS'     },
 ];
 
 // ─── DEMO PLAYER ──────────────────────────────────────────────────────────────
@@ -9081,6 +9084,121 @@ function DartsPerformanceView({ player, session, onNavigate }: { player: DartsPl
   );
 }
 
+// ─── MOBILE APP VIEW ─────────────────────────────────────────────────────────
+function DartsMobileAppView({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const features = [
+    { section: 'OVERVIEW', items: ['Morning briefing voice playback', 'Dashboard alerts', 'Notification centre'] },
+    { section: 'TOURNAMENT NIGHT', items: ['Walk-on music cue', 'Opponent intel quick view', '3-dart average tracker', '180s counter', 'Checkout chart'] },
+    { section: 'PERFORMANCE', items: ['PDC ranking + Order of Merit position', 'Points forecaster', 'Recent form', 'Dartboard heatmap snapshot'] },
+    { section: 'COMMERCIAL', items: ['Sponsor obligation due', 'Contract expiry alerts', 'Prize money summary', 'Exhibition booking quick view'] },
+    { section: 'TEAM', items: ['Team message feed', 'Manager + agent messages', 'Practice log quick entry'] },
+  ];
+  const mobileFirst = [
+    { why: 'Player needs walk-on music cue 30 seconds before stage', solution: 'Walk-on cue queued + push-notified to player and stage manager — no scrambling backstage.' },
+    { why: 'Practice log entry mid-session at the oche', solution: 'One-tap quick entry — leg won, 3-dart avg, checkout — logged in 5 seconds without breaking rhythm.' },
+    { why: 'Manager flags Crown Wagers obligation due during pre-match meal', solution: 'Deadline alert + draft response in 2 taps — sponsor commitment cleared before walk-on.' },
+    { why: 'Opponent intel pull while warming up backstage', solution: 'Full H2H card + recent form + best-of-X average, offline cached so no signal worry in the venue.' },
+    { why: 'Walk-off from a 5-set night, post-match media in 5 minutes', solution: 'AI press-quote draft + interview prep delivered to lock screen — talking points ready before the mics.' },
+    { why: 'Travel desk needs 5am taxi confirmed at airport hotel', solution: 'Push notification with one-tap confirm — no hunting through emails at half five.' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📲" title="Mobile App" subtitle="A hard launch requirement, not a roadmap item. Tour darts is a 50+ event year played in venues with patchy WiFi." />
+      {/* Critical context */}
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-red-400 mb-2">🚨 Non-Negotiable Launch Requirement</div>
+        <div className="text-sm text-gray-300 leading-relaxed">The walk-on cue fires 30 seconds before the player steps on stage at Westfalenhallen. The practice log gets the leg-by-leg average at the oche, not at a desk. Manager confirms the Crown Wagers obligation from the table at lunch. Travel desk needs a one-tap confirm on a 5am taxi while the player is still asleep. None of this happens on a desktop. Lumio Darts must be fully functional on iOS and Android from day one — full feature parity, offline support, push notifications.</div>
+      </div>
+      {/* Feature parity matrix */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Mobile Feature Scope — Day One</div>
+        <div className="space-y-4">
+          {features.map((sec, i) => (
+            <div key={i}>
+              <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">{sec.section}</div>
+              <div className="space-y-1">
+                {sec.items.map((item, j) => (
+                  <div key={j} className="flex items-center gap-2 text-sm text-gray-300">
+                    <div className="w-4 h-4 rounded flex items-center justify-center bg-red-600/20 flex-shrink-0">
+                      <span className="text-red-400 text-xs">✓</span>
+                    </div>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Why mobile-first */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">The Mobile Use Cases — Why Each One Matters</div>
+        <div className="space-y-3">
+          {mobileFirst.map((m, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg border border-gray-800">
+              <div className="text-xs text-yellow-400 font-medium mb-1">👤 {m.why}</div>
+              <div className="text-xs text-orange-400">→ {m.solution}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tech approach */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
+        <div className="space-y-2">
+          {[
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of opponent intel + walk-on cue list. Fastest path to validating darts traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs.' },
+            { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
+            { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
+          ].map((o, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg">
+              <div className="text-sm font-medium text-white mb-1">{o.opt}</div>
+              <div className="text-xs text-orange-400 mb-0.5">✓ {o.pros}</div>
+              <div className="text-xs text-red-400">✗ {o.cons}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-xs text-gray-500">Recommendation: PWA for Phase 1 demo + early access. Capacitor wrap for Phase 2 when App Store presence and sensor integration matter. Reserve full native for the sport with the strongest pro adoption signal.</div>
+      </div>
+      {/* Download placeholder */}
+      <div className="bg-[#0d0f1a] border border-red-600/30 rounded-xl p-6 flex flex-col items-center text-center">
+        <div className="text-4xl mb-3">📲</div>
+        <div className="text-white font-semibold mb-1">Lumio Darts — Mobile App</div>
+        <div className="text-sm text-gray-400 mb-4">Coming in Phase 1B · iOS + Android</div>
+        <div className="flex gap-3">
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl"></span>
+            <div className="text-left"><div className="text-xs text-gray-500">Download on the</div><div className="text-sm font-semibold text-white">App Store</div></div>
+          </div>
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl">▶</span>
+            <div className="text-left"><div className="text-xs text-gray-500">Get it on</div><div className="text-sm font-semibold text-white">Google Play</div></div>
+          </div>
+        </div>
+        <div className="mt-4 text-xs text-gray-600">Register your interest at lumiodarts.com — early access for pilot players from Month 5</div>
+      </div>
+      <DartsAISection context="default" player={player} session={session} />
+    </div>
+  );
+}
+
+// ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
+function DartsIntegrationsHub({ player, session }: { player: DartsPlayer; session: SportsDemoSession }) {
+  const entries: HubEntry[] = [
+    { id: 'pdc-api',     icon: '🏆', label: 'PDC Tour API',       category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['pdc-api'] },
+    { id: 'wdf-api',     icon: '🌍', label: 'WDF Data Feed',      category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['wdf-api'] },
+    { id: 'dartconnect', icon: '🎯', label: 'DartConnect',        category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartconnect },
+    { id: 'dartfish',    icon: '📹', label: 'Dartfish Video',     category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartfish },
+    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',       category: 'Wearables',        kind: 'generic', config: DARTS_INTEGRATIONS.whoop },
+    { id: 'statsports',  icon: '🛰️', label: 'STATSports / Lumio GPS', category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.statsports },
+    { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.workspace },
+    { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.slack },
+    { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',    category: 'Distribution',     kind: 'generic', config: DARTS_INTEGRATIONS.broadcast },
+    { id: 'mobileapp',   icon: '📲', label: 'Mobile App',         category: 'Distribution',     kind: 'custom',  render: () => <DartsMobileAppView player={player} session={session} /> },
+  ]
+  return <IntegrationsHub entries={entries} accent="var(--brand-primary, #dc2626)" />
+}
+
 // ─── MODAL HELPERS ───────────────────────────────────────────────────────────
 function DartsModalHeader({ icon, title, subtitle, onClose }: { icon: string; title: string; subtitle: string; onClose: () => void }) {
   return (
@@ -9819,7 +9937,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         ...(liveProfileNameOuter && { name: liveProfileNameOuter }),
         ...(profileNickname && { nickname: profileNickname }),
       };
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS'];
 
   const renderView = () => {
     // Pro-only feature gate — demo player is on Premier League so all pass.
@@ -9988,7 +10106,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           devApiRouteOptions={['/api/ai/darts']}
         />
       );
-      case 'dartconnect':   return <DartConnectView onNavigate={setActiveSection} player={player} session={session} />;
+      case 'integrations':  return <DartsIntegrationsHub player={player} session={session} />;
       case 'pdclive':       return <PDCLiveView onNavigate={setActiveSection} player={player} session={session} />;
       case 'womens-darts':  return gate('⭐', 'No data yet', 'Connect your data to unlock this', <WomensDartsView onNavigate={setActiveSection} player={player} session={session} />);
       case 'merit-forecaster':  return gate('📊', 'No ranking data', 'Connect your PDC feed to unlock this', <MeritForecasterView player={player} session={session} />);

@@ -43,6 +43,8 @@ import MediaContentModule from '@/components/sports/media-content/MediaContentMo
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { TRAINERS_ROSTER, GYMS_ROSTER, SPARRING_ROSTER } from '@/lib/demo-content/boxing-pros'
+import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
+import { BOXING_INTEGRATIONS } from '@/lib/sports-integrations/boxing-integrations'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -199,10 +201,11 @@ const SIDEBAR_ITEMS = [
   { id: 'agentintel',      label: 'Agent Intel',         icon: '🕵️', group: 'CAREER' },
   { id: 'aibriefing',      label: 'AI Morning Briefing', icon: '🌅', group: 'INTEL' },
   { id: 'opscout',         label: 'Opposition Scout',    icon: '🎯', group: 'INTEL' },
-  { id: 'broadcast',       label: 'Broadcast Tracker',   icon: '📺', group: 'INTEL' },
+  { id: 'broadcasttracker',label: 'Broadcast Tracker',   icon: '📺', group: 'INTEL' },
   { id: 'news',            label: 'Industry News',       icon: '📰', group: 'INTEL' },
   { id: 'findpro',         label: 'Find a Pro',          icon: '🔍', group: 'TEAM HUB' },
   { id: 'travel',          label: 'Travel & Logistics',  icon: '✈️', group: 'TEAM HUB' },
+  { id: 'integrations',    label: 'Integrations',        icon: '🔌', group: 'SETTINGS' },
   { id: 'settings',        label: 'Settings',            icon: '⚙️', group: 'SETTINGS' },
 ];
 
@@ -2076,7 +2079,7 @@ function OppositionAnalysisView({ fighter, session }: { fighter: BoxingFighter; 
             <div className="text-gray-500">Last Loss</div><div className="text-white font-medium">Sep 2024 (UD)</div>
           </div>
           <div className="p-2 bg-[#0a0c14] rounded border border-gray-800">
-            <div className="text-gray-500">Promoter</div><div className="text-white font-medium">Top Rank</div>
+            <div className="text-gray-500">Promoter</div><div className="text-white font-medium">Crown Promotions</div>
           </div>
         </div>
       </div>
@@ -4800,8 +4803,8 @@ function CareerStatsView({ fighter, session }: { fighter: BoxingFighter; session
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const pipeline = [
-    { opponent: fighter.next_fight.opponent, promoter: 'Titan/Top Rank co-promote', purse: '£800,000', date: fighter.next_fight.date, stage: 'Signed', broadcast: fighter.next_fight.broadcast, notes: 'Fight contracts exchanged. Camp underway.' },
-    { opponent: 'Yang Zhi Wei', promoter: 'Titan/Queensberry co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Jack Sterling has opened dialogue with Frank Warren\'s team.' },
+    { opponent: fighter.next_fight.opponent, promoter: 'Titan/Crown co-promote', purse: '£800,000', date: fighter.next_fight.date, stage: 'Signed', broadcast: fighter.next_fight.broadcast, notes: 'Fight contracts exchanged. Camp underway.' },
+    { opponent: 'Yang Zhi Wei', promoter: 'Titan/Crown co-promote', purse: '£1.2m-1.5m', date: 'Q4 2026', stage: 'Discussions', broadcast: 'Meridian Sports / Continental Sport', notes: 'Conditional on Stoyan win. Jack Sterling has opened dialogue with Crown\'s camp.' },
     { opponent: 'WBC Eliminator TBD', promoter: 'Titan', purse: '£1.5m+', date: 'Q1 2027', stage: 'Projected', broadcast: 'Meridian Sports', notes: 'If Marcus beats Stoyan and enters top 3. Eliminator likely ordered Q4 2026.' },
     { opponent: 'Title Shot', promoter: 'TBD', purse: '£3m+ (projected)', date: '2027', stage: 'Long-term target', broadcast: 'PPV', notes: 'Depends on route. WBC or WBO most likely first title opportunity.' },
   ];
@@ -4857,9 +4860,9 @@ function PromoterPipelineView({ fighter, session }: { fighter: BoxingFighter; se
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function AgentIntelView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const intel = [
-    { source: 'Industry contact (Top Rank)', date: 'Apr 3, 2026', content: 'Stoyan\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Yoel Bermudez loss closely. Stoyan has been sparring with Ezekiel Onyeka to simulate a taller, more technical opponent.' },
+    { source: 'Industry contact (Crown)', date: 'Apr 3, 2026', content: 'Stoyan\'s team are very confident heading into this fight. They believe Marcus is hittable and have been studying the Yoel Bermudez loss closely. Stoyan has been sparring with Ezekiel Onyeka to simulate a taller, more technical opponent.' },
     { source: 'Boxing Scene report', date: 'Apr 2, 2026', content: 'WBC expected to order eliminator between #3 and #5 if Stoyan loses. This means a Marcus win could skip the eliminator stage entirely and go straight to mandatory position, depending on how WBC executive committee votes.' },
-    { source: 'Titan insider', date: 'Apr 1, 2026', content: 'Jack Sterling has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Queensberry for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
+    { source: 'Titan insider', date: 'Apr 1, 2026', content: 'Jack Sterling has privately indicated that a Marcus victory over Stoyan would trigger immediate discussions with Crown Promotions for a co-promoted fight with Yang (WBC #2). Potential venue: Crown Park Stadium, summer 2026.' },
     { source: 'Meridian Sports analytics team', date: 'Mar 28, 2026', content: 'Marcus Cole fight content is trending 34% higher engagement than this time last year. Meridian Sports very keen on building toward a PPV headliner — willing to increase marketing spend if Stoyan fight delivers.' },
     { source: 'BBBofC source', date: 'Mar 25, 2026', content: 'Referee for Stoyan fight expected to be Marcus McDonnell. He tends to let fighters work inside and breaks clinches quickly — advantages Marcus\'s boxing ability over Stoyan\'s mauling style.' },
   ];
@@ -6109,7 +6112,7 @@ const BOXING_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: 
   fighter: { label: 'Fighter', icon: '🥊', accent: '#dc2626', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
   trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
   manager: { label: 'Manager', icon: '💼', accent: '#F59E0B', sidebar: ['camp','rankings','mandatory','pathtotitle','pursebid','pursesim','earnings','campcosts','tax','contracts','sponsorships','media','appearances','managerdash','agentintel','promoterpipeline'], hiddenTabs: ['dailytasks'], roundupChannels: ['manager','promoter','sponsor'], message: 'Fights, contracts and commercial view.' },
-  promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcast','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
+  promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcasttracker','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
   sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['camp','sponsorships','media'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
 }
 
@@ -8224,6 +8227,123 @@ function GpsRingHeatmapView() {
   )
 }
 
+// ─── MOBILE APP VIEW ─────────────────────────────────────────────────────────
+function BoxingMobileAppView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const features = [
+    { section: 'OVERVIEW', items: ['Morning briefing voice playback', 'Fight camp day status', 'Weight check-in'] },
+    { section: 'FIGHT CAMP', items: ['Sparring log entry', 'GPS vest sync status', 'Recovery + HRV check-in', 'Cut-week daily weigh-in'] },
+    { section: 'PERFORMANCE', items: ['WBC / WBA / WBO / IBF ranking position', 'Mandatory tracker', 'Punch analytics summary', 'Opposition film cue'] },
+    { section: 'COMMERCIAL', items: ['Sponsor activation due today', 'Purse bid alerts', 'Contract addendum signatures', 'Media obligation reminder'] },
+    { section: 'TEAM', items: ['Trainer notes', 'Manager + promoter messages', 'Doctor clearance log', 'Cutman pre-fight checklist'] },
+  ];
+  const mobileFirst = [
+    { why: 'Daily weigh-in logged on the bathroom scales at 6am', solution: 'One-tap weight + body comp entry — cut trajectory updates instantly across team views.' },
+    { why: 'Cutman needs corner sheet on his phone in the changing room before walk-on', solution: 'Offline-cached corner sheet with timeline, round-by-round notes, cut-protocol — works without venue WiFi.' },
+    { why: 'Sparring partner cancellation 3 hours before session', solution: 'Re-book flow on phone — tap to ping the next two fallback partners, trainer notified automatically.' },
+    { why: 'Manager negotiating purse bid in 3-way call from airport', solution: 'Live deal terms + counter-offer log on phone — every revision audited in real time.' },
+    { why: 'Doctor logs sparring head impact event for medical record', solution: 'One-tap incident log + auto BBBofC compliance entry — clean paper trail without leaving the gym floor.' },
+    { why: 'Walk-on cue 60 seconds out — check ringwalk music + corner ready', solution: 'Fight-night ops checklist on lock screen — music cued, corner team confirmed, doctor clearance green.' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📲" title="Mobile App" subtitle="A hard launch requirement, not a roadmap item. Fight camp runs on the gym floor, not at a desk." />
+      {/* Critical context */}
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-red-400 mb-2">🚨 Non-Negotiable Launch Requirement</div>
+        <div className="text-sm text-gray-300 leading-relaxed">The 6am weigh-in is logged on the bathroom scales. The corner sheet is on the cutman\u2019s phone in the changing room before the walk-on. The doctor logs a sparring head-impact event from the gym floor. Manager works the purse bid from a 3-way airport call. None of this happens on a desktop. Lumio Fight must be fully functional on iOS and Android from day one — full feature parity, offline support, push notifications.</div>
+      </div>
+      {/* Feature parity matrix */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Mobile Feature Scope — Day One</div>
+        <div className="space-y-4">
+          {features.map((sec, i) => (
+            <div key={i}>
+              <div className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">{sec.section}</div>
+              <div className="space-y-1">
+                {sec.items.map((item, j) => (
+                  <div key={j} className="flex items-center gap-2 text-sm text-gray-300">
+                    <div className="w-4 h-4 rounded flex items-center justify-center bg-red-600/20 flex-shrink-0">
+                      <span className="text-red-400 text-xs">✓</span>
+                    </div>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Why mobile-first */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">The Mobile Use Cases — Why Each One Matters</div>
+        <div className="space-y-3">
+          {mobileFirst.map((m, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg border border-gray-800">
+              <div className="text-xs text-yellow-400 font-medium mb-1">👤 {m.why}</div>
+              <div className="text-xs text-orange-400">→ {m.solution}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tech approach */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
+        <div className="space-y-2">
+          {[
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of corner sheet + opposition film cue. Fastest path to validating boxing traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for GPS vest / WHOOP / smart scales).' },
+            { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
+            { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
+          ].map((o, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg">
+              <div className="text-sm font-medium text-white mb-1">{o.opt}</div>
+              <div className="text-xs text-orange-400 mb-0.5">✓ {o.pros}</div>
+              <div className="text-xs text-red-400">✗ {o.cons}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-xs text-gray-500">Recommendation: PWA for Phase 1 demo + early access. Capacitor wrap for Phase 2 when App Store presence and sensor integration matter. Reserve full native for the sport with the strongest pro adoption signal.</div>
+      </div>
+      {/* Download placeholder */}
+      <div className="bg-[#0d0f1a] border border-red-600/30 rounded-xl p-6 flex flex-col items-center text-center">
+        <div className="text-4xl mb-3">📲</div>
+        <div className="text-white font-semibold mb-1">Lumio Fight — Mobile App</div>
+        <div className="text-sm text-gray-400 mb-4">Coming in Phase 1B · iOS + Android</div>
+        <div className="flex gap-3">
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl"></span>
+            <div className="text-left"><div className="text-xs text-gray-500">Download on the</div><div className="text-sm font-semibold text-white">App Store</div></div>
+          </div>
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl">▶</span>
+            <div className="text-left"><div className="text-xs text-gray-500">Get it on</div><div className="text-sm font-semibold text-white">Google Play</div></div>
+          </div>
+        </div>
+        <div className="mt-4 text-xs text-gray-600">Register your interest at lumiofight.com — early access for pilot fighters from Month 5</div>
+      </div>
+      <BoxingAISection context="default" fighter={fighter} session={session} />
+    </div>
+  );
+}
+
+// ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
+function BoxingIntegrationsHub({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  const entries: HubEntry[] = [
+    { id: 'boxrec',      icon: '📊', label: 'BoxRec Database',      category: 'Data Feeds',       kind: 'generic', config: BOXING_INTEGRATIONS.boxrec },
+    { id: 'compubox',    icon: '🥊', label: 'CompuBox Stats',       category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.compubox },
+    { id: 'striketec',   icon: '📡', label: 'Punch Sensors',        category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.striketec },
+    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',         category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS.whoop },
+    { id: 'gps-vest',    icon: '🛰️', label: 'Lumio GPS Vest',       category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS['gps-vest'] },
+    { id: 'sanctioning', icon: '🏆', label: 'WBC / WBA / WBO / IBF', category: 'Compliance',       kind: 'generic', config: BOXING_INTEGRATIONS.sanctioning },
+    { id: 'bbbofc',      icon: '📋', label: 'BBBofC Licensing',     category: 'Compliance',       kind: 'generic', config: BOXING_INTEGRATIONS.bbbofc },
+    { id: 'vada',        icon: '💊', label: 'VADA / UKAD',          category: 'Compliance',       kind: 'generic', config: BOXING_INTEGRATIONS.vada },
+    { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',     category: 'Team Tools',       kind: 'generic', config: BOXING_INTEGRATIONS.workspace },
+    { id: 'slack',       icon: '💬', label: 'Slack',                category: 'Team Tools',       kind: 'generic', config: BOXING_INTEGRATIONS.slack },
+    { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',      category: 'Distribution',     kind: 'generic', config: BOXING_INTEGRATIONS.broadcast },
+    { id: 'mobileapp',   icon: '📲', label: 'Mobile App',           category: 'Distribution',     kind: 'custom',  render: () => <BoxingMobileAppView fighter={fighter} session={session} /> },
+  ]
+  return <IntegrationsHub entries={entries} accent="var(--brand-primary, #1e3a8a)" />
+}
+
 export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
@@ -8386,11 +8506,12 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'agentintel':      return <AgentIntelView fighter={fighter} session={session} />;
       case 'aibriefing':      return <AIMorningBriefingView fighter={fighter} session={session} />;
       case 'opscout':         return <OppositionScoutView fighter={fighter} session={session} />;
-      case 'broadcast':       return <BroadcastTrackerView fighter={fighter} session={session} />;
+      case 'broadcasttracker': return <BroadcastTrackerView fighter={fighter} session={session} />;
       case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
       case 'gps':             return <BoxingGpsView fighter={fighter} session={session} />;
       case 'findpro':         return <FindProView fighter={fighter} session={session} />;
       case 'travel':          return <BoxingTravelView fighter={fighter} session={session} />;
+      case 'integrations':    return <BoxingIntegrationsHub fighter={fighter} session={session} />;
       case 'settings':        return (
         <SportsSettings
           sport="boxing"
