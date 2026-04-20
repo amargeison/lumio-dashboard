@@ -78,6 +78,7 @@ import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { DARTS_INTEGRATIONS } from '@/lib/sports-integrations/darts-integrations'
+import { PwaInstaller } from '@/components/PwaInstaller'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -10143,6 +10144,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+      <PwaInstaller sport="darts" />
       {/* Sidebar — floating when unpinned, pushes content when pinned */}
       {/* sidebar spacer removed — main content uses marginLeft */}
       <aside

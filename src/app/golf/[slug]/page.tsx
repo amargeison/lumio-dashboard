@@ -42,6 +42,7 @@ import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { CADDIES_ROSTER, COURSES_ROSTER, DRIVING_RANGES_ROSTER } from '@/lib/demo-content/golf-pros'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { GOLF_INTEGRATIONS } from '@/lib/sports-integrations/golf-integrations'
+import { PwaInstaller } from '@/components/PwaInstaller'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -7329,6 +7330,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+      <PwaInstaller sport="golf" />
       {/* Modal overlay */}
       {activeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeModal}>

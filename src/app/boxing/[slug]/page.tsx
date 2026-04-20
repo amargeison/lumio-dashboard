@@ -45,6 +45,7 @@ import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { TRAINERS_ROSTER, GYMS_ROSTER, SPARRING_ROSTER } from '@/lib/demo-content/boxing-pros'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { BOXING_INTEGRATIONS } from '@/lib/sports-integrations/boxing-integrations'
+import { PwaInstaller } from '@/components/PwaInstaller'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -8627,6 +8628,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+      <PwaInstaller sport="boxing" />
       {toast && !toastDismissed && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
           <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>

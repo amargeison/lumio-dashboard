@@ -1,6 +1,8 @@
-// @ts-ignore
-const withPWA = require('next-pwa')
 import type { NextConfig } from 'next'
+
+// PWA: hand-rolled at /public/sw.js (registered by src/components/PwaInstaller.tsx).
+// next-pwa was removed because it's incompatible with Next 16 + Turbopack — its
+// last release predates Next 14 and it overwrites /public/sw.js during build.
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -28,14 +30,15 @@ const nextConfig: NextConfig = {
         { key: 'Content-Security-Policy', value: 'frame-ancestors *;' },
       ],
     },
+    // Allow service worker to be served (with its own short TTL so SW updates propagate quickly)
+    {
+      source: '/sw.js',
+      headers: [
+        { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        { key: 'Service-Worker-Allowed', value: '/' },
+      ],
+    },
   ],
 }
 
-export default withPWA({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: true,
-  runtimeCaching: [],
-  exclude: [/auth\/callback/, /login/, /api\/auth/],
-})(nextConfig)
+export default nextConfig
