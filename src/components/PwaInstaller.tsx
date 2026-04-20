@@ -23,29 +23,14 @@ const SPORT_LABEL: Record<Sport, string> = {
   boxing: 'Lumio Fight',
 }
 
-// Inject sport-specific manifest + apple-touch icon + theme-color into <head>.
-// Page files are 'use client' so we can't use Next's metadata export — this is
-// the cleanest mount-time injection.
-function ensureHeadTags(sport: Sport) {
-  if (typeof document === 'undefined') return
-
-  const set = (selector: string, attrs: Record<string, string>, tag = 'meta') => {
-    let el = document.head.querySelector<HTMLElement>(selector)
-    if (!el) {
-      el = document.createElement(tag)
-      document.head.appendChild(el)
-    }
-    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
-  }
-
-  set('link[rel="manifest"]',                   { rel: 'manifest', href: `/manifest-${sport}.json` }, 'link')
-  set('link[rel="apple-touch-icon"]',           { rel: 'apple-touch-icon', href: `/${sport}_logo.png` }, 'link')
-  set('meta[name="theme-color"]',               { name: 'theme-color', content: THEME_COLORS[sport] })
-  set('meta[name="apple-mobile-web-app-capable"]',          { name: 'apple-mobile-web-app-capable', content: 'yes' })
-  set('meta[name="mobile-web-app-capable"]',                { name: 'mobile-web-app-capable', content: 'yes' })
-  set('meta[name="apple-mobile-web-app-status-bar-style"]', { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' })
-  set('meta[name="apple-mobile-web-app-title"]',            { name: 'apple-mobile-web-app-title', content: SPORT_LABEL[sport] })
-}
+// Manifest link, theme-color, apple-web-app tags and apple-touch-icon are
+// now all emitted at SSR time by each sport's [slug]/layout.tsx via
+// generateMetadata. Previously this component injected them client-side,
+// which caused iOS Safari to pick up the root /manifest.json in the
+// initial HTML before the override ran — so the installed PWA opened at
+// the root site instead of the sport portal. The SSR metadata API takes
+// over that responsibility. This component now only handles SW
+// registration, the install-prompt card, and the offline indicator.
 
 export function PwaInstaller({ sport }: { sport: Sport }) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
@@ -58,8 +43,6 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
   }, [sport])
 
   useEffect(() => {
-    ensureHeadTags(sport)
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     }
