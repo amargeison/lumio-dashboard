@@ -20,12 +20,19 @@ export const dynamic = 'force-dynamic'
 //     plumbing cookies, so we just let the downstream page short-circuit
 //     if already auth'd — worst case we burn one extra magic-link).
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  // Behind nginx + PM2 the raw request origin is 0.0.0.0:3000 — useless
+  // for a redirect the client follows. Prefer the forwarded host/proto
+  // headers nginx sets, fall back to the request origin otherwise.
+  const fwdHost  = request.headers.get('x-forwarded-host')  || request.headers.get('host')
+  const fwdProto = request.headers.get('x-forwarded-proto') || 'https'
+  const publicOrigin = fwdHost ? `${fwdProto}://${fwdHost}` : new URL(request.url).origin
+
   const token = searchParams.get('t') || ''
   const nextRaw = searchParams.get('next') || '/'
   // Only allow relative same-origin `next` to prevent open-redirect.
   const nextPath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/'
-  const cleanTarget = new URL(nextPath, origin)
+  const cleanTarget = new URL(nextPath, publicOrigin)
 
   if (!token) return NextResponse.redirect(cleanTarget)
 
@@ -47,7 +54,7 @@ export async function GET(request: NextRequest) {
   // redirectTo is the post-verify landing — Supabase ships a `code` to
   // /auth/callback which exchanges it for a session. After that, the
   // callback redirects to the clean portal URL (no install_token).
-  const callback = new URL('/auth/callback', origin)
+  const callback = new URL('/auth/callback', publicOrigin)
   callback.searchParams.set('redirectTo', cleanTarget.pathname + cleanTarget.search + cleanTarget.hash)
 
   const { data, error } = await admin.auth.admin.generateLink({
