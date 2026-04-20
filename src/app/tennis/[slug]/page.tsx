@@ -75,6 +75,8 @@ import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { ATP_RANKINGS, WTA_RANKINGS, type RankingEntry } from '@/lib/demo-content/atp-wta-rankings'
 import { TENNIS_COACHES, type TennisCoach } from '@/lib/demo-content/tennis-coaches'
 import { TENNIS_HITTING_PARTNERS, distanceKmBetween, type HittingPartner } from '@/lib/demo-content/tennis-hitting-partners'
+import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
+import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -293,7 +295,8 @@ const SIDEBAR_ITEMS = [
   { id: 'accreditations', label: 'Accreditations',   icon: '🪪', group: 'TOOLS'        },
   { id: 'playerdirectory', label: 'Player Directory', icon: '👥', group: 'TOOLS'       },
   { id: 'coachfinder', label: 'Coach Finder',        icon: '🎓', group: 'TOOLS'       },
-  { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'TOOLS'        },
+  { id: 'integrations', label: 'Integrations',       icon: '🔌', group: 'SETTINGS'     },
+  { id: 'settings',    label: 'Settings',            icon: '⚙️', group: 'SETTINGS'     },
 ];
 
 // ─── DEMO PLAYER DATA ─────────────────────────────────────────────────────────
@@ -2690,7 +2693,7 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
             { rank: 2, name: 'C. Valdez', pts: 7850, flag: '🇪🇸', qualified: true },
             { rank: 3, name: 'A. Kleinhoff', pts: 6120, flag: '🇩🇪', qualified: false },
             { rank: 4, name: 'S. Ferreiro', pts: 5480, flag: '🇦🇷', qualified: false },
-            { rank: 5, name: 'J. Draper', pts: 4930, flag: '🇬🇧', qualified: false },
+            { rank: 5, name: 'K. Patel', pts: 4930, flag: '🇮🇳', qualified: false },
             { rank: 6, name: 'C. Brennan', pts: 4410, flag: '🇺🇸', qualified: false },
             { rank: 7, name: 'M. Herrera', pts: 4180, flag: '🇪🇸', qualified: false },
             { rank: 8, name: 'K. Mensik', pts: 3820, flag: '🇨🇿', qualified: false },
@@ -3782,7 +3785,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
   const [aiAnalysis, setAiAnalysis] = useState<Record<number, { loading: boolean; result: string | null }>>({});
 
   const sessions = [
-    { date: '9 Apr', type: 'On-court', partner: 'J. Draper', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
+    { date: '9 Apr', type: 'On-court', partner: 'K. Patel', duration: '90 min', coachNotes: 'Serve patterns: body serve % improved to 68%. Good session.' },
     { date: '8 Apr', type: 'On-court', partner: 'Hitting partner (Lucas)', duration: '75 min', coachNotes: 'Return drills — focusing on Vega deuce court patterns.' },
     { date: '7 Apr', type: 'Ball Machine', partner: '—', duration: '45 min', coachNotes: 'Forehand inside-in drill. 200 balls at match intensity.' },
     { date: '6 Apr', type: 'On-court', partner: 'M. Herrera', duration: '90 min', coachNotes: 'Match-play set. Won 6-4. Good clay movement.' },
@@ -5187,10 +5190,10 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
   ];
 
   const doublesSchedule = [
-    { tournament: 'Monte-Carlo', date: '6-12 Apr', partner: 'J. Draper', status: 'Active', round: 'QF' },
-    { tournament: 'Barcelona', date: '13-19 Apr', partner: 'J. Draper', status: 'Entered', round: '—' },
+    { tournament: 'Monte-Carlo', date: '6-12 Apr', partner: 'K. Patel', status: 'Active', round: 'QF' },
+    { tournament: 'Barcelona', date: '13-19 Apr', partner: 'K. Patel', status: 'Entered', round: '—' },
     { tournament: 'Roland-Garros', date: '24 May-7 Jun', partner: 'TBD', status: 'Pending', round: '—' },
-    { tournament: 'Wimbledon', date: '30 Jun-13 Jul', partner: 'J. Draper', status: 'Planned', round: '—' },
+    { tournament: 'Wimbledon', date: '30 Jun-13 Jul', partner: 'K. Patel', status: 'Planned', round: '—' },
   ];
 
   return (
@@ -5200,7 +5203,7 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Doubles Ranking" value={`#${player.doubles_ranking}`} sub="ATP Doubles" color="purple" />
-        <StatCard label="Current Partner" value="J. Draper" sub="🇬🇧 Jack Draper" color="teal" />
+        <StatCard label="Current Partner" value="K. Patel" sub="🇮🇳 Kiran Patel" color="teal" />
         <StatCard label="Season Record" value="6W-3L" sub="67% win rate" color="blue" />
         <StatCard label="Doubles Titles" value="0" sub="Best: SF Rotterdam" color="orange" />
       </div>
@@ -5209,9 +5212,9 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
       <div className="bg-gradient-to-r from-purple-900/30 to-teal-900/20 border border-purple-600/30 rounded-xl p-5">
         <div className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-3">CURRENT DOUBLES PARTNER</div>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-purple-600/20 border-2 border-purple-500/40 flex items-center justify-center text-2xl">🇬🇧</div>
+          <div className="w-14 h-14 rounded-full bg-purple-600/20 border-2 border-purple-500/40 flex items-center justify-center text-2xl">🇮🇳</div>
           <div>
-            <div className="text-white font-bold text-lg">Jack Draper</div>
+            <div className="text-white font-bold text-lg">Kiran Patel</div>
             <div className="text-gray-400 text-sm">#15 ATP Singles . #92 Doubles . Left-handed</div>
             <div className="text-gray-500 text-xs">Partnership since: January 2026</div>
           </div>
@@ -5274,9 +5277,9 @@ function DoublesView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="text-sm font-semibold text-white mb-4">Grand Slam Doubles Entry Status</div>
         <div className="space-y-2">
           {[
-            { slam: 'Australian Open', status: 'Played — R2', partner: 'J. Draper' },
+            { slam: 'Australian Open', status: 'Played — R2', partner: 'K. Patel' },
             { slam: 'Roland-Garros', status: 'Entry pending', partner: 'TBD' },
-            { slam: 'Wimbledon', status: 'Planned entry', partner: 'J. Draper' },
+            { slam: 'Wimbledon', status: 'Planned entry', partner: 'K. Patel' },
             { slam: 'US Open', status: 'TBD', partner: 'TBD' },
           ].map((s, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-sm">
@@ -6437,8 +6440,8 @@ function AcademyView({ player, session }: { player: TennisPlayer; session: Sport
         <div className="text-sm font-semibold text-white mb-4">Notable NTC Alumni</div>
         <div className="space-y-2">
           {[
-            { name: 'Jack Draper', ranking: '#15', note: 'Active ATP tour' },
-            { name: 'Emma Raducanu', ranking: '#28', note: 'Active WTA tour' },
+            { name: 'Kiran Patel', ranking: '#15', note: 'Active ATP tour' },
+            { name: 'Ava Renwick', ranking: '#28', note: 'Active WTA tour' },
             { name: 'Cameron Hadley', ranking: '#42', note: 'Active ATP tour' },
             { name: 'Dan Evans', ranking: '#78', note: 'Active ATP tour' },
           ].map((a, i) => (
@@ -6925,7 +6928,7 @@ const LiveScoresView = ({ liveScores, fixtures, player, session }: { liveScores:
   const DEMO_MATCHES = [
     { p1: 'L. Brenner [1]', p2: 'C. Valdez [2]', score: '6-4 3-6 6-3', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'Final', status: 'Live', set: '3rd set' },
     { p1: 'V. Orlov [3]', p2: 'N. Zaitsev [4]', score: '7-6(5) 4-6 2-1', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: 'Live', set: '3rd set' },
-    { p1: `${player.name} [67]`, p2: 'C. Ferreira [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
+    { p1: `${player.name} [67]`, p2: 'J. Soto [54]', score: '6-4 6-7(3)', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Live', set: '3rd set' },
     { p1: 'M. Herrera [7]', p2: 'L. Orsini [9]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'SF', status: '14:00', set: '' },
     { p1: 'C. Brennan [5]', p2: 'F. Hohenberg [6]', score: '', tournament: 'Monte Carlo Masters', surface: 'Clay', round: 'QF', status: '16:30', set: '' },
     { p1: 'S. Ferreiro [12]', p2: 'D. Whitlock [8]', score: '6-3 6-4', tournament: 'Brighton ATP 250', surface: 'Hard', round: 'QF', status: 'Finished', set: '' },
@@ -7131,21 +7134,21 @@ const DrawBracketView = ({ player, session }: { player: TennisPlayer; session: S
   const bracket = [
     // R16 matchups (8 matches)
     [
-      { p1: 'T. Nakashima [1]', p2: 'Qualifier', score: '6-3 6-4', winner: 1 },
-      { p1: 'L. Musetti [8]', p2: 'M. Cressy', score: '7-6 6-4', winner: 1 },
-      { p1: 'J. Draper [3]', p2: 'D. Shapovalov', score: '6-2 7-5', winner: 1 },
-      { p1: 'B. Sutton [5]', p2: 'F. Caballero', score: '4-6 6-3 7-6', winner: 1 },
-      { p1: 'A. Fils [4]', p2: 'L. Djere', score: '6-1 6-3', winner: 1 },
-      { p1: `${player.name} [6]`, p2: 'R. Carballes', score: '6-4 6-2', winner: 1, isYou: true },
-      { p1: 'C. Ferreira [7]', p2: 'J. Munar', score: '7-5 6-7 6-4', winner: 1, isOpponent: true },
-      { p1: 'U. Humbert [2]', p2: 'M. Arnaldi', score: '6-3 6-4', winner: 1 },
+      { p1: 'M. Vitelli [1]', p2: 'Qualifier', score: '6-3 6-4', winner: 1 },
+      { p1: 'L. Varga [8]', p2: 'M. Beaulieu', score: '7-6 6-4', winner: 1 },
+      { p1: 'K. Patel [3]', p2: 'S. Krasic', score: '6-2 7-5', winner: 1 },
+      { p1: 'A. Barrios [5]', p2: 'P. Fournier', score: '4-6 6-3 7-6', winner: 1 },
+      { p1: 'T. Rocher [4]', p2: 'D. Maldonado', score: '6-1 6-3', winner: 1 },
+      { p1: `${player.name} [6]`, p2: 'R. Castelli', score: '6-4 6-2', winner: 1, isYou: true },
+      { p1: 'J. Soto [7]', p2: 'J. Holm', score: '7-5 6-7 6-4', winner: 1, isOpponent: true },
+      { p1: 'K. Fallon [2]', p2: 'M. Eriksson', score: '6-3 6-4', winner: 1 },
     ],
     // QF (4 matches)
     [
-      { p1: 'T. Nakashima [1]', p2: 'L. Musetti [8]', score: '', winner: 0 },
-      { p1: 'J. Draper [3]', p2: 'B. Sutton [5]', score: '', winner: 0 },
-      { p1: 'A. Fils [4]', p2: `${player.name} [6]`, score: '', winner: 0, isYou: true },
-      { p1: 'C. Ferreira [7]', p2: 'U. Humbert [2]', score: '', winner: 0, isOpponent: true },
+      { p1: 'M. Vitelli [1]', p2: 'L. Varga [8]', score: '', winner: 0 },
+      { p1: 'K. Patel [3]', p2: 'A. Barrios [5]', score: '', winner: 0 },
+      { p1: 'T. Rocher [4]', p2: `${player.name} [6]`, score: '', winner: 0, isYou: true },
+      { p1: 'J. Soto [7]', p2: 'K. Fallon [2]', score: '', winner: 0, isOpponent: true },
     ],
     // SF
     [{ p1: 'TBD', p2: 'TBD', score: '', winner: 0 }, { p1: 'TBD', p2: 'TBD', score: '', winner: 0 }],
@@ -7565,9 +7568,9 @@ const MatchReportsView = ({ player, session }: { player: TennisPlayer; session: 
   const matches = [
     { id: 'm1', opponent: 'C. Valdez', oppRank: 3, tournament: 'Madrid Open', round: 'QF', score: '4-6 6-3 7-6(5)', surface: 'Clay', result: 'W', date: '14 Apr' },
     { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'R16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr' },
-    { id: 'm3', opponent: 'F. Caballero', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
+    { id: 'm3', opponent: 'P. Fournier', oppRank: 29, tournament: 'Madrid Open', round: 'R32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr' },
     { id: 'm4', opponent: 'L. Brenner', oppRank: 1, tournament: 'Monte Carlo Masters', round: 'SF', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr' },
-    { id: 'm5', opponent: 'B. Sutton', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
+    { id: 'm5', opponent: 'A. Barrios', oppRank: 14, tournament: 'Monte Carlo QF', round: 'QF', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr' },
     { id: 'm6', opponent: 'C. Hadley', oppRank: 45, tournament: 'Barcelona Open', round: 'R32', score: '6-7(4) 4-6', surface: 'Clay', result: 'L', date: '22 Mar' },
   ];
 
@@ -10541,7 +10544,7 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
     }
   }, [activeSection]);
 
-  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS'];
+  const groups = ['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS'];
 
   // Quick Wins dismissed state
   const [dismissedWins, setDismissedWins] = useState<Set<string>>(() => {
@@ -10616,9 +10619,9 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
   const matches = [
     { id: 'm1', opponent: 'C. Valdez', oppRank: 3, tournament: 'Madrid Open', round: 'Quarter-Final', score: '4-6 6-3 7-6', surface: 'Clay', result: 'W', date: '14 Apr 2025' },
     { id: 'm2', opponent: 'T. Paul', oppRank: 32, tournament: 'Madrid Open', round: 'Round of 16', score: '6-4 6-2', surface: 'Clay', result: 'W', date: '11 Apr 2025' },
-    { id: 'm3', opponent: 'F. Caballero', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
+    { id: 'm3', opponent: 'P. Fournier', oppRank: 29, tournament: 'Madrid Open', round: 'Round of 32', score: '7-5 6-4', surface: 'Clay', result: 'W', date: '9 Apr 2025' },
     { id: 'm4', opponent: 'L. Brenner', oppRank: 1, tournament: 'Monte Carlo', round: 'Semi-Final', score: '3-6 4-6', surface: 'Clay', result: 'L', date: '5 Apr 2025' },
-    { id: 'm5', opponent: 'B. Sutton', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
+    { id: 'm5', opponent: 'A. Barrios', oppRank: 14, tournament: 'Monte Carlo', round: 'Quarter-Final', score: '6-3 7-5', surface: 'Clay', result: 'W', date: '3 Apr 2025' },
     { id: 'm6', opponent: 'C. Hadley', oppRank: 45, tournament: 'Barcelona Open', round: 'Round of 32', score: '6-7 4-6', surface: 'Clay', result: 'L', date: '22 Mar 2025' },
   ];
 
@@ -10919,6 +10922,122 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
   );
 }
 
+// ─── MOBILE APP VIEW ─────────────────────────────────────────────────────────
+function TennisMobileAppView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const features = [
+    { section: 'OVERVIEW', items: ['Morning briefing', 'Today\u2019s schedule', 'Don\u2019t Miss alerts'] },
+    { section: 'ON COURT', items: ['Match prep brief', 'Opponent scout pre-match', 'Set-by-set serve % logger', 'Between-points note voice memo'] },
+    { section: 'PERFORMANCE', items: ['ATP ranking + Race standings', 'Last 5 matches SG tracker', 'GPS load summary', 'Recovery score check-in'] },
+    { section: 'COMMERCIAL', items: ['Sponsor obligation due today', 'Contract alerts', 'Prize money to date', 'Agent pipeline quick view'] },
+    { section: 'TEAM', items: ['Team message feed', 'Coach video review notes', 'Physio treatment log', 'Stringer tension request'] },
+  ];
+  const mobileFirst = [
+    { why: 'Player walking onto Court 4 at Monte-Carlo, needs match prep brief', solution: 'Match Prep AI brief on lock-screen widget — serve patterns, return positioning, tactical plan, ready before the warm-up.' },
+    { why: 'Coach courtside logging set-by-set serve %', solution: 'One-tap stat entry — first serve %, aces, double faults — feeds the live match dashboard the player\u2019s team sees back home.' },
+    { why: 'Stringer needs tension order during warm-up', solution: 'One-tap order push to stringer\u2019s phone — tension, gauge, mains/crosses, count — racquets ready before the call to court.' },
+    { why: 'Physio logs ankle treatment 7am pre-warmup', solution: '30-second injury log on the phone — clearance status auto-updates the player and coach views instantly.' },
+    { why: 'Agent confirms wildcard request from breakfast', solution: 'Deadline alert with one-tap action — accept, decline, or hold for review — no laptop, no email scramble.' },
+    { why: 'Mid-tournament travel pivot to next ATP 250', solution: 'Flight + hotel rebooked from phone, agent sees update in real time — no logistics chain across three timezones.' },
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📲" title="Mobile App" subtitle="A hard launch requirement, not a roadmap item. Touring professionals are on tour 30+ weeks per year." />
+      {/* Critical context */}
+      <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-5">
+        <div className="text-sm font-semibold text-red-400 mb-2">🚨 Non-Negotiable Launch Requirement</div>
+        <div className="text-sm text-gray-300 leading-relaxed">The match prep brief loads on the player\u2019s phone walking onto Court 4 at Monte-Carlo. The coach logs serve % on the changeover, not at a desk. The stringer takes a tension order from a one-tap push. The physio logs treatment at 7am on the table. None of this happens on a desktop. Lumio Tennis must be fully functional on iOS and Android from day one — full feature parity, offline support, push notifications.</div>
+      </div>
+      {/* Feature parity matrix */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">Mobile Feature Scope — Day One</div>
+        <div className="space-y-4">
+          {features.map((sec, i) => (
+            <div key={i}>
+              <div className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-2">{sec.section}</div>
+              <div className="space-y-1">
+                {sec.items.map((item, j) => (
+                  <div key={j} className="flex items-center gap-2 text-sm text-gray-300">
+                    <div className="w-4 h-4 rounded flex items-center justify-center bg-cyan-600/20 flex-shrink-0">
+                      <span className="text-cyan-400 text-xs">✓</span>
+                    </div>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Why mobile-first */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-4">The Mobile Use Cases — Why Each One Matters</div>
+        <div className="space-y-3">
+          {mobileFirst.map((m, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg border border-gray-800">
+              <div className="text-xs text-yellow-400 font-medium mb-1">👤 {m.why}</div>
+              <div className="text-xs text-cyan-400">→ {m.solution}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tech approach */}
+      <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
+        <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
+        <div className="space-y-2">
+          {[
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of opponent scout + morning briefing audio. Fastest path to validating tennis traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Catapult / WHOOP).' },
+            { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
+            { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
+          ].map((o, i) => (
+            <div key={i} className="p-3 bg-black/20 rounded-lg">
+              <div className="text-sm font-medium text-white mb-1">{o.opt}</div>
+              <div className="text-xs text-cyan-400 mb-0.5">✓ {o.pros}</div>
+              <div className="text-xs text-red-400">✗ {o.cons}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-xs text-gray-500">Recommendation: PWA for Phase 1 demo + early access. Capacitor wrap for Phase 2 when App Store presence and sensor integration matter. Reserve full native for the sport with the strongest pro adoption signal.</div>
+      </div>
+      {/* Download placeholder */}
+      <div className="bg-[#0d0f1a] border border-cyan-600/30 rounded-xl p-6 flex flex-col items-center text-center">
+        <div className="text-4xl mb-3">📲</div>
+        <div className="text-white font-semibold mb-1">Lumio Tennis — Mobile App</div>
+        <div className="text-sm text-gray-400 mb-4">Coming in Phase 1B · iOS + Android</div>
+        <div className="flex gap-3">
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl"></span>
+            <div className="text-left"><div className="text-xs text-gray-500">Download on the</div><div className="text-sm font-semibold text-white">App Store</div></div>
+          </div>
+          <div className="bg-black border border-gray-700 rounded-xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-xl">▶</span>
+            <div className="text-left"><div className="text-xs text-gray-500">Get it on</div><div className="text-sm font-semibold text-white">Google Play</div></div>
+          </div>
+        </div>
+        <div className="mt-4 text-xs text-gray-600">Register your interest at lumiotennis.com — early access for pilot players from Month 5</div>
+      </div>
+      <TennisAISection context="default" player={player} session={session} />
+    </div>
+  );
+}
+
+// ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
+function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  const entries: HubEntry[] = [
+    { id: 'atp-api',     icon: '🏆', label: 'ATP Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['atp-api'] },
+    { id: 'wta-api',     icon: '🎾', label: 'WTA Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['wta-api'] },
+    { id: 'hawkeye',     icon: '👁️', label: 'Hawk-Eye',           category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.hawkeye },
+    { id: 'swingvision', icon: '📹', label: 'SwingVision',        category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.swingvision },
+    { id: 'playsight',   icon: '🎥', label: 'PlaySight',          category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.playsight },
+    { id: 'catapult',    icon: '🛰️', label: 'Catapult GPS',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.catapult },
+    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.whoop },
+    { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.workspace },
+    { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.slack },
+    { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',    category: 'Distribution',     kind: 'generic', config: TENNIS_INTEGRATIONS.broadcast },
+    { id: 'mobileapp',   icon: '📲', label: 'Mobile App',         category: 'Distribution',     kind: 'custom',  render: () => <TennisMobileAppView player={player} session={session} /> },
+  ]
+  return <IntegrationsHub entries={entries} accent="var(--brand-primary, #0ea5e9)" />
+}
+
   // ── Consolidated Performance Tabs ──
   const PerformanceTabsView = () => {
     const [perfTab, setPerfTab] = useState('rankings')
@@ -11015,6 +11134,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
       case 'courtbooking': return <CourtBookingView player={player} session={session} />;
       case 'teamcomms':    return <TeamCommsView player={player} session={session} />;
       case 'accreditations': return <AccreditationsView player={player} session={session} />;
+      case 'integrations': return <TennisIntegrationsHub player={player} session={session} />;
       case 'settings':     return (
         <SportsSettings
           sport="tennis"
