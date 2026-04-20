@@ -46,7 +46,11 @@ export async function GET(
         sport: 'tennis',
         slug,
       })
-      startUrl = `/api/pwa/consume-token?t=${encodeURIComponent(token)}&next=${encodeURIComponent(portalPath)}`
+      // Token is embedded on the portal path itself. Middleware
+      // intercepts /<sport>/<slug>?install_token=... and routes through
+      // /api/pwa/consume-token internally, so the user only ever sees
+      // the portal URL — never the API endpoint.
+      startUrl = `${portalPath}?install_token=${encodeURIComponent(token)}`
     }
   } catch {
     // Anonymous fall-through — startUrl stays as the bare portal path.
