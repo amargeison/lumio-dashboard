@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
     const isExcluded = pathname === '/dev-login'
       || pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
-      || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|woff2?|ttf)$/i.test(pathname)
+      || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|html|woff2?|ttf)$/i.test(pathname)
     if (!isExcluded) {
       const cookie = request.cookies.get('lumio_dev_access')?.value
       if (cookie !== devPin) {

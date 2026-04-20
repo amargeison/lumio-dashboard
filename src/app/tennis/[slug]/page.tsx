@@ -75,6 +75,7 @@ import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { ATP_RANKINGS, WTA_RANKINGS, type RankingEntry } from '@/lib/demo-content/atp-wta-rankings'
 import { TENNIS_COACHES, type TennisCoach } from '@/lib/demo-content/tennis-coaches'
 import { TENNIS_HITTING_PARTNERS, distanceKmBetween, type HittingPartner } from '@/lib/demo-content/tennis-hitting-partners'
+import { PwaInstaller } from '@/components/PwaInstaller'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
 
@@ -11255,6 +11256,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+      <PwaInstaller sport="tennis" />
       {sponsorToast && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
           <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>

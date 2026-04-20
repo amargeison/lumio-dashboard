@@ -1175,7 +1175,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Today 11:30',
       bucket: 'today',
       caption: 'Pads with Jim. Same pair of mitts since 2021. Same standards too.',
-      hashtags: ['TheMachine', 'Matchroom', 'ColeStoyan'],
+      hashtags: ['TheMachine', 'Titan', 'ColeStoyan'],
       status: 'needs-approval',
       media: [
         { type: 'image', dataUrl: 'https://picsum.photos/seed/cole-pads-bevan/800/800', name: 'Pad work — Jim Bevan' },
@@ -1216,7 +1216,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Sun 16:00',
       bucket: 'thisWeek',
       caption: 'The Halden Motors lads dropped off the camp car. Comfortable way to get between gym and home.',
-      hashtags: ['HaldenMotors', 'TheMachine', 'Matchroom'],
+      hashtags: ['HaldenMotors', 'TheMachine', 'Titan'],
       status: 'scheduled',
       media: [
         { type: 'image', dataUrl: 'https://picsum.photos/seed/cole-halden-suv/800/800', name: 'Halden Motors — camp SUV' },
@@ -1228,7 +1228,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Mon 10:00',
       bucket: 'thisWeek',
       caption: 'Camp week 3 vlog — inside Sheffield with Jim Bevan. Pad work, film study, the Stoyan plan in bits we\'re allowed to share.',
-      hashtags: ['TheMachine', 'ColeStoyan', 'Matchroom'],
+      hashtags: ['TheMachine', 'ColeStoyan', 'Titan'],
       status: 'needs-approval',
     },
     {
@@ -1263,7 +1263,7 @@ const BOXING: MediaContentData = {
       scheduledFor: 'Next Mon 12:00',
       bucket: 'nextWeek',
       caption: 'Respect to the champion and his team. 22 May. One job, one opponent.',
-      hashtags: ['ColeStoyan', 'TheMachine', 'Matchroom'],
+      hashtags: ['ColeStoyan', 'TheMachine', 'Titan'],
       status: 'scheduled',
     },
     {
@@ -1323,7 +1323,7 @@ const BOXING: MediaContentData = {
         { id: 'bhm-1', text: 'Branded Halden SUV for Sheffield-to-London camp transport', done: true },
         { id: 'bhm-2', text: 'Q2 lifestyle shoot at Halden Mayfair showroom', done: false, dueDate: 'Mon 28 Apr' },
         { id: 'bhm-3', text: 'Annual dealership appearance (Q1 — completed Jan)', done: true },
-        { id: 'bhm-4', text: 'Halden Motors logo on post-fight interview backdrop (Matchroom production briefed)', done: true },
+        { id: 'bhm-4', text: 'Halden Motors logo on post-fight interview backdrop (Titan production briefed)', done: true },
       ],
       nextDeadline: 'Q2 lifestyle shoot — Mon 28 Apr',
     },
@@ -1336,7 +1336,7 @@ const BOXING: MediaContentData = {
       contractDuration: '2-yr rehydration partner deal · ends Dec 2026',
       monthlyValue: '£2.1k/mo',
       obligations: [
-        { id: 'bkh-1', text: 'Ringside Kinetix bottles on fight night — Matchroom production confirmed', done: true },
+        { id: 'bkh-1', text: 'Ringside Kinetix bottles on fight night — Titan production confirmed', done: true },
         { id: 'bkh-2', text: '2 training TikToks per month (1/2 this month)', done: false, dueDate: '2nd due Sun 19 Apr' },
         { id: 'bkh-3', text: 'Weight-cut content series (5 episodes) — scripting complete with Kinetix team', done: true },
         { id: 'bkh-4', text: 'Monthly hydration reel — March delayed in production', done: false, dueDate: 'Mar 2026 (overdue)' },
@@ -1404,11 +1404,11 @@ const BOXING: MediaContentData = {
     {
       id: 'bp-7',
       outlet: 'Boxing News Weekly',
-      headline: 'Matchroom plan 3-fight path to world title for Cole — contingent on 22 May',
+      headline: 'Titan plan 3-fight path to world title for Cole — contingent on 22 May',
       date: 'Fri 10 Apr',
       author: 'Declan Shaw',
       sentiment: 'positive',
-      excerpt: 'Sources close to Matchroom confirm a three-fight pipeline post-Stoyan: an interim title shot in the autumn, a mandatory eliminator in Q1 2027, and a world title fight by summer 2027 at the latest. All of it, naturally, contingent on the result at the Millennium Dome.',
+      excerpt: 'Sources close to Titan confirm a three-fight pipeline post-Stoyan: an interim title shot in the autumn, a mandatory eliminator in Q1 2027, and a world title fight by summer 2027 at the latest. All of it, naturally, contingent on the result at the Millennium Dome.',
     },
     {
       id: 'bp-8',
@@ -1417,7 +1417,7 @@ const BOXING: MediaContentData = {
       date: 'Thu 9 Apr',
       author: 'Liam Trench',
       sentiment: 'positive',
-      excerpt: 'The £85k fight-week addendum already on the table is understood to be the opening move in a broader multi-year extension. Apex wants Cole on the ring walk for every Matchroom headliner through 2028 — and Cole\'s camp looks receptive.',
+      excerpt: 'The £85k fight-week addendum already on the table is understood to be the opening move in a broader multi-year extension. Apex wants Cole on the ring walk for every Titan headliner through 2028 — and Cole\'s camp looks receptive.',
     },
   ],
 
@@ -1429,11 +1429,11 @@ const BOXING: MediaContentData = {
       datetime: 'Today · 16:30 (Sheffield camp)',
       format: 'in-person',
       prepStatus: 'ready',
-      topics: ['Prep vs Stoyan', 'Jim Bevan\'s tactical plan (surface only)', 'Camp timeline', 'Matchroom 3-fight pipeline'],
+      topics: ['Prep vs Stoyan', 'Jim Bevan\'s tactical plan (surface only)', 'Camp timeline', 'Titan 3-fight pipeline'],
       talkingPoints: [
         'Stoyan is a top-three fighter and I\'m preparing like he\'s the best I\'ve ever faced — because he is.',
         'Five years with Jim — patience, angles, body work. The pad rounds are where the fight gets won in April.',
-        'Matchroom have a plan post-22 May, but nothing past Stoyan has meaning until Stoyan is dealt with.',
+        'Titan have a plan post-22 May, but nothing past Stoyan has meaning until Stoyan is dealt with.',
         'Five years pro with Bevan, 22-1, 18 KOs — but the only number that matters is 22 May.',
         'Camp is in Sheffield — quiet, nobody around, no distractions. That\'s the point.',
       ],
@@ -1461,7 +1461,7 @@ const BOXING: MediaContentData = {
       topics: ['Pre-fight TV package', 'Cole\'s arc from prospect to contender', 'What 22 May means'],
       talkingPoints: [
         'Measured tone throughout — no hype quotes, no predictions.',
-        'One respectful Stoyan mention, one Jim Bevan credit, one Matchroom / Meridian Sports nod.',
+        'One respectful Stoyan mention, one Jim Bevan credit, one Titan / Meridian Sports nod.',
         'Final edit pending PR sign-off with Danny before broadcast clearance.',
       ],
       topicsToAvoid: [],
@@ -1473,7 +1473,7 @@ const BOXING: MediaContentData = {
       id: 'bi-3',
       outlet: 'IFL TV',
       journalist: 'Kugan Cassius',
-      datetime: 'Fri 1 May · 13:00 (Matchroom HQ)',
+      datetime: 'Fri 1 May · 13:00 (Titan HQ)',
       format: 'in-person',
       prepStatus: 'not-started',
       topics: ['Fight week build-up', 'Corner team', 'Post-Stoyan plans'],
