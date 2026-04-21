@@ -24,6 +24,19 @@ export async function POST(req: NextRequest) {
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
+    // Basic rate limit — max 5 OTP mints per email+sport in a 10 min window.
+    // demo_magic_links already stores created_at; count recent rows.
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { count } = await supabase
+      .from('demo_magic_links')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', email.toLowerCase())
+      .eq('slug', `sports-demo-${sport}`)
+      .gt('created_at', tenMinAgo)
+    if ((count ?? 0) >= 5) {
+      return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+    }
+
     // Invalidate previous unused codes
     await supabase
       .from('demo_magic_links')

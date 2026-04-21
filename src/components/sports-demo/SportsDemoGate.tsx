@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
+import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
 import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, DEMO_SESSION_TTL_MS } from '@/lib/demo-session/clear'
 
@@ -377,6 +379,7 @@ export default function SportsDemoGate({
   sportEmoji, sportLabel, roles, children,
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
+  const router = useRouter()
 
   const [session, setSession] = useState<SportsDemoSession | null>(null)
   const [step, setStep] = useState<'email'|'otp'|'club'|'profile'|'earlyaccess'|'invite'|'done'>('email')
@@ -530,6 +533,77 @@ export default function SportsDemoGate({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Supabase session check — preferred source of truth post-Path C. If a
+  // Supabase session is present with matching role+sport we build the gate
+  // session directly (isDemoShell mirrors the metadata.role exactly so
+  // founders visiting the demo URL get the founder empty-state and demo
+  // users get demo data — see the darts-mirror work for the gate contract).
+  // Falls back silently to the existing localStorage flow when no session.
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+    let cancelled = false
+    ;(async () => {
+      const { data: { session: sbSession } } = await supabase.auth.getSession()
+      if (cancelled || !sbSession) return
+      const meta = (sbSession.user.app_metadata ?? {}) as Record<string, unknown>
+      const role = typeof meta.role === 'string' ? meta.role : null
+      const userSport = typeof meta.sport === 'string' ? meta.sport : null
+      const matches = role === 'founder' || (role === 'demo' && userSport === sport)
+      if (!matches) return
+
+      // Reuse any localStorage survivors for persona fields (name, club,
+      // photo, logo). Supabase session only carries identity.
+      let savedName = ''
+      let savedNickname = ''
+      let savedPhoto: string | null = null
+      let savedClubName = defaultClubName
+      let savedClubLogo: string | null = null
+      let savedRole = roles[0]?.id ?? 'player'
+      try {
+        const raw = localStorage.getItem(sessionKey(sport))
+        if (raw) {
+          const parsed = JSON.parse(raw) as SportsDemoSession
+          savedName = parsed.userName || savedName
+          savedNickname = parsed.nickname || savedNickname
+          savedPhoto = parsed.photoDataUrl ?? savedPhoto
+          savedClubName = parsed.clubName || savedClubName
+          savedClubLogo = parsed.logoDataUrl ?? savedClubLogo
+          savedRole = parsed.role || savedRole
+        }
+        savedName = savedName || (localStorage.getItem(`lumio_${sport}_name`) ?? '')
+        savedNickname = savedNickname || (localStorage.getItem(`lumio_${sport}_nickname`) ?? '')
+        savedPhoto = savedPhoto || localStorage.getItem(`lumio_${sport}_profile_photo`)
+        savedClubName = savedClubName || localStorage.getItem(`lumio_${sport}_brand_name`) || defaultClubName
+        savedClubLogo = savedClubLogo || localStorage.getItem(`lumio_${sport}_brand_logo`)
+      } catch {}
+
+      const displayName = (sbSession.user.user_metadata as Record<string, unknown> | undefined)?.display_name
+      const built: SportsDemoSession = {
+        email: sbSession.user.email ?? '',
+        userName: savedName || (typeof displayName === 'string' ? displayName : ''),
+        clubName: savedClubName,
+        role: savedRole,
+        photoDataUrl: savedPhoto,
+        logoDataUrl: savedClubLogo,
+        nickname: savedNickname || null,
+        sport,
+        verifiedAt: new Date().toISOString(),
+        // CRITICAL — keeps the two cohorts visually separated. Demo users
+        // get demo data; founders visiting the demo URL fall through to the
+        // founder empty-state via the role-gated renderers.
+        isDemoShell: role === 'demo',
+      }
+      setSession(built)
+      setStep('done')
+      try { localStorage.setItem(sessionKey(sport), JSON.stringify(built)) } catch {}
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sport])
+
   useEffect(() => {
     if (!restoredParamsEmail) return
     fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(restoredParamsEmail)}&sport=${sport}`)
@@ -598,6 +672,13 @@ export default function SportsDemoGate({
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
+      // Path C: verify-otp now sets an sb-*-auth-token cookie for the
+      // provisioned demo user. Re-fetch server components so layout.tsx
+      // generateMetadata re-runs and mints the install_token onto the
+      // manifest link for this session.
+      if (data.sessionMinted) {
+        try { router.refresh() } catch {}
+      }
       // Check for existing demo profile — skip setup if found
       try {
         const profileRes = await fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`)
