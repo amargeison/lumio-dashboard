@@ -25,15 +25,13 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Blog',       href: '/blog' },
 ]
 
-const BUSINESS_NAV: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',      href: '/product' },
-  { label: 'Workflows',    href: '/product#workflows' },
-  { label: 'Schools',      href: '/schools' },
-  { label: 'CRM',          href: '/lumio-crm' },
-  { label: 'Integrations', href: '/product#integrations' },
-  { label: 'Pricing',      href: '/pricing' },
-  { label: 'About',        href: '/about' },
-  { label: 'Blog',         href: '/blog' },
+// Lumio Business + Lumio Schools are behind coming-soon waitlists on
+// lumiocms.com. Only non-gated routes are linked from the nav — everything
+// else rewrites at the middleware layer and would confuse the journey.
+const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: boolean }[] = [
+  { label: 'About',  href: '/about' },
+  { label: 'Blog',   href: '/blog'  },
+  { label: 'Sports', href: 'https://lumiosports.com', external: true },
 ]
 
 // `initial` seeds useState so the server render matches the actual host — no
@@ -48,12 +46,6 @@ function useIsSports(initial: boolean = false) {
   }, [])
   return isSports
 }
-
-const SCHOOLS_EXTRA_LINKS = [
-  { label: 'Features', href: '/schools/features' },
-  { label: 'SSO & Rostering', href: '/schools/sso' },
-  { label: 'Integrations', href: '/schools/integrations' },
-]
 
 const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
@@ -96,31 +88,17 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
     setBetaBannerVisible(false)
   }
 
+  // Lumio Business + Schools are behind coming-soon waitlists on lumiocms.com,
+  // so BUSINESS_NAV no longer contains Schools / CRM / Product / Pricing. The
+  // old schools sub-nav expansion and href-rewrite chain is now dead weight —
+  // SPORTS_NAV drives everything on lumiosports.com, and the isFootball filter
+  // below is kept as a guard even though the labels it targets are already
+  // gone from BUSINESS_NAV.
   const NAV_LINKS = isSports ? SPORTS_NAV : BUSINESS_NAV
-  const baseLinks = isSchools && NAV_LINKS.some(l => l.label === 'Schools')
-    ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
-    : NAV_LINKS
-  const navLinks = baseLinks
-    .filter(l => {
-      if (isSchools && (l.label === 'CRM' || l.label === 'Sports')) return false
-      if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
-      return true
-    })
-    .filter(l => {
-      // Remove SSO & Rostering from football pages (it's a schools-only feature)
-      if (isFootball && l.label === 'SSO & Rostering') return false
-      return true
-    })
-    .map(l => {
-      if (isSchools) {
-        if (l.label === 'Product')      return { ...l, href: '/schools/product' }
-        if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
-        if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
-        if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
-        if (l.label === 'About')        return { ...l, href: '/schools/about' }
-      }
-      return l
-    })
+  const navLinks = NAV_LINKS.filter(l => {
+    if (isFootball && (l.label === 'Schools' || l.label === 'CRM' || l.label === 'SSO & Rostering')) return false
+    return true
+  })
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8)
@@ -234,12 +212,10 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                 />
               )
             }
-            return (
-              <Link key={l.label} href={l.href}
-                className={`flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`}
-                style={{ color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
+            const linkClassName = `flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`
+            const linkStyle = { color: '#9CA3AF', ...(isSchools ? { fontSize: 13 } : isSports ? {} : { fontSize: 14 }) }
+            const inner = (
+              <>
                 {l.label}
                 {(l as any).badge && (
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
@@ -247,6 +223,26 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                     {(l as any).badge}
                   </span>
                 )}
+              </>
+            )
+            if ((l as any).external) {
+              return (
+                <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
+                  className={linkClassName}
+                  style={linkStyle}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF' }}>
+                  {inner}
+                </a>
+              )
+            }
+            return (
+              <Link key={l.label} href={l.href}
+                className={linkClassName}
+                style={linkStyle}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
+                {inner}
               </Link>
             )
           })}
@@ -367,16 +363,26 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                 </div>
               )
             }
+            const badge = (l as any).badge && (
+              <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
+                {(l as any).badge}
+              </span>
+            )
+            if ((l as any).external) {
+              return (
+                <a key={l.label} href={l.href} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
+                  {l.label}
+                  {badge}
+                </a>
+              )
+            }
             return (
               <Link key={l.label} href={l.href} onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
                 {l.label}
-                {(l as any).badge && (
-                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: 'rgba(108,63,197,0.2)', color: '#A78BFA' }}>
-                    {(l as any).badge}
-                  </span>
-                )}
+                {badge}
               </Link>
             )
           })}
@@ -654,6 +660,21 @@ function EarlyAccessModal({ isSchools, onClose }: { isSchools: boolean; onClose:
 
 function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
   const isSports = useIsSports(initialIsSportsHost)
+
+  // Business footer (lumiocms.com) mirrors the nav: Lumio Business + Schools
+  // are behind coming-soon waitlists, so the old Product / Resources columns
+  // would point at gated routes. Sports gets two columns of tour-style links
+  // exactly as before.
+  const BUSINESS_FOOTER_COL_A: { label: string; href: string; external?: boolean }[] = [
+    { label: 'About',                href: '/about' },
+    { label: 'Blog',                 href: '/blog'  },
+    { label: 'Lumio Sports',         href: 'https://lumiosports.com', external: true },
+  ]
+  const BUSINESS_FOOTER_COL_B: { label: string; href: string }[] = [
+    { label: 'Lumio Business (coming)', href: '/coming-soon/business' },
+    { label: 'Lumio Schools (coming)',  href: '/coming-soon/schools'  },
+  ]
+
   return (
     <footer style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937' }}>
       <div className="mx-auto max-w-7xl px-6 py-16">
@@ -664,7 +685,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
             <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
               style={{ width: '200px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
-              Your business, fully connected.
+              {isSports ? 'The operating system for professional sport.' : 'The AI operating system for sport, business and education.'}
             </p>
             <div className="flex items-center gap-3">
               {[Twitter, Linkedin, Github].map((Icon, i) => (
@@ -682,19 +703,34 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
           {/* Links */}
           <div className="md:col-span-2 grid grid-cols-2 gap-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Product</p>
-              {FOOTER_LINKS.slice(0, 3).map(l => (
-                <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
-                  style={{ color: '#6B7280' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' }}>
-                  {l.label}
-                </Link>
-              ))}
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Company</p>
+              {(isSports ? FOOTER_LINKS.slice(0, 3) : BUSINESS_FOOTER_COL_A).map(l => {
+                if ((l as { external?: boolean }).external) {
+                  return (
+                    <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
+                      className="block mb-3 text-sm transition-colors"
+                      style={{ color: '#6B7280' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#F9FAFB' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#6B7280' }}>
+                      {l.label}
+                    </a>
+                  )
+                }
+                return (
+                  <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
+                    style={{ color: '#6B7280' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' }}>
+                    {l.label}
+                  </Link>
+                )
+              })}
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Resources</p>
-              {FOOTER_LINKS.slice(3).map(l => (
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
+                {isSports ? 'Resources' : 'Products'}
+              </p>
+              {(isSports ? FOOTER_LINKS.slice(3) : BUSINESS_FOOTER_COL_B).map(l => (
                 <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
                   style={{ color: '#6B7280' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
@@ -707,12 +743,18 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
 
           {/* CTA */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Get started</p>
-            <p className="text-sm mb-4" style={{ color: '#6B7280' }}>See how Lumio can connect your business in under 30 minutes.</p>
-            <Link href="/demo"
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
+              {isSports ? 'Get started' : 'Stay in the loop'}
+            </p>
+            <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
+              {isSports
+                ? 'See how Lumio Sports runs your club or career.'
+                : 'Lumio Business opens its waitlist for founding customers in late 2026.'}
+            </p>
+            <Link href={isSports ? '/sports/try-demo' : '/coming-soon/business'}
               className="inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              Start free trial →
+              {isSports ? 'Try a demo →' : 'Join the waitlist →'}
             </Link>
           </div>
         </div>

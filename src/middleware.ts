@@ -71,6 +71,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ── lumiocms.com takedown (production only) ─────────────────────────
+  // Business + schools sit behind coming-soon waitlists until launch.
+  // Fires only when NODE_ENV === 'production' AND host is lumiocms.com —
+  // localhost and lumiosports.com are never affected. Rewrites (not
+  // redirects) so the URL the visitor typed stays in the bar. /demo/**
+  // is exempted above; /api, /about, /blog, /privacy, /cookies, /terms,
+  // /contact and /coming-soon remain live.
+  if (process.env.NODE_ENV === 'production') {
+    const cmsHost = request.nextUrl.hostname
+    const isLumioCms = cmsHost === 'lumiocms.com' || cmsHost === 'www.lumiocms.com'
+    if (isLumioCms) {
+      const ALWAYS_LIVE_PATHS = [
+        '/coming-soon',
+        '/about',
+        '/contact',
+        '/privacy',
+        '/cookies',
+        '/terms',
+        '/blog',
+        '/demo',
+        '/api',
+        '/_next',
+        '/favicon',
+      ]
+      const STATIC_FILE_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|css|js|woff2?|ttf|map)$/i
+      const isAlwaysLive = ALWAYS_LIVE_PATHS.some(
+        p => pathname === p || pathname.startsWith(p + '/'),
+      )
+      if (!STATIC_FILE_REGEX.test(pathname) && !isAlwaysLive) {
+        const isSchoolsPath = pathname !== '/' && pathname.startsWith('/schools')
+        const target = isSchoolsPath ? '/coming-soon/schools' : '/coming-soon/business'
+        const url = request.nextUrl.clone()
+        url.pathname = target
+        return NextResponse.rewrite(url)
+      }
+    }
+  }
+
   // ── Dev PIN gate (non-production only) ────────────────────────────────
   const hostname = request.nextUrl.hostname
   const isProductionDomain =
