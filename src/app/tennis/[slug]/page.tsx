@@ -61,10 +61,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation'
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { createBrowserClient } from '@supabase/ssr'
+import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
@@ -10454,6 +10456,12 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
 }
 
 export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
+  // URL decides demo-vs-founder. Session-driven gating fails for anonymous
+  // visitors (undefined === false is false, so founder URLs fell through to
+  // demo content in incognito). See src/lib/config/demo-slugs.ts.
+  const params = useParams<{ slug: string }>()
+  const slug = typeof params?.slug === 'string' ? params.slug : ''
+  session = { ...session, isDemoShell: isDemoSlug(slug) }
   const [activeSection, setActiveSection] = useState('dashboard');
   const isMobile = useIsMobile();
   const [sidebarPinned, setSidebarPinned] = useState(false);
