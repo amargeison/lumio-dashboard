@@ -53,7 +53,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Academy', detail: 'Youth pathway tracker, development ratings, and progression monitoring.' },
       { name: 'GPS & Load', detail: 'ACWR monitoring, pitch heatmaps, training load planner, injury risk flags.' },
     ],
-    integrations: ['Wyscout', 'PlayerData', 'STATSports', 'Catapult', 'FA Whole Game System'],
+    integrations: ['Wyscout', 'Lumio GPS', 'STATSports', 'Catapult', 'FA Whole Game System'],
     whatYouGet: [
       'AI Transfer Researcher — 5 targets with Lumio Fit Score',
       'Transfer Kanban pipeline with deadline countdown',
@@ -74,7 +74,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'AI Post-Match Analysis', detail: 'Input scoreline and formation → Claude generates headline, key moments, player ratings, and manager quote.' },
       { name: 'Press Conference', detail: 'AI-generated 5 questions + suggested responses based on last result and team news.' },
     ],
-    integrations: ['Hudl', 'Wyscout', 'PlayerData', 'STATSports'],
+    integrations: ['Hudl', 'Wyscout', 'Lumio GPS', 'STATSports'],
     whatYouGet: [
       'World-first AI half-time GPS brief in under 10 seconds',
       'AI opposition report with tactical suggestions',
@@ -95,7 +95,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Match Analytics', detail: 'xG, possession, pressing stats, formation data, and club comparison tool.' },
       { name: 'Club Comparison', detail: 'Compare vs 3 rivals + division average across 13 metrics with AI analysis.' },
     ],
-    integrations: ['PlayerData', 'Catapult', 'STATSports', 'Opta', 'StatsBomb'],
+    integrations: ['Lumio GPS', 'Catapult', 'STATSports', 'Opta', 'StatsBomb'],
     whatYouGet: [
       'GPS pitch heatmaps per player or full squad',
       'ACWR 28-day rolling load monitoring with risk alerts',
@@ -115,7 +115,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Return to Play', detail: 'Stage-by-stage RTP protocol with clearance sign-off and load caps.' },
       { name: 'Player Profile — Medical Tab', detail: 'Full injury timeline, severity badges, and season injury summary per player.' },
     ],
-    integrations: ['PlayerData', 'Catapult', 'STATSports'],
+    integrations: ['Lumio GPS', 'Catapult', 'STATSports'],
     whatYouGet: [
       'ACWR risk flag before every training session',
       'GPS readiness scores — know who can go harder',

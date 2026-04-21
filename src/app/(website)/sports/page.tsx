@@ -6,7 +6,7 @@ import Link from 'next/link'
 // ─── Portal Data ──────────────────────────────────────────────────────────────
 const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string}> = [
   {emoji:'⚽',name:'Football Pro Club',pill:'Pro · National League System',accent:'#10B981',
-    features:['Squad management with GPS load data — PlayerData EDGE integrated','PSR financial compliance — live headroom tracking to the pound','FIFA-style pitch view — starting XI, bench, click-to-swap','Set pieces library — 90+ routines across all categories','Transfer pipeline, agent contacts, scouting reports','AI Manager Briefing — GPS readiness, compliance, selection in one view'],
+    features:['Squad management with GPS load data — Lumio GPS integrated','PSR financial compliance — live headroom tracking to the pound','FIFA-style pitch view — starting XI, bench, click-to-swap','Set pieces library — 90+ routines across all categories','Transfer pipeline, agent contacts, scouting reports','AI Manager Briefing — GPS readiness, compliance, selection in one view'],
     hook:'The first platform where the manager\'s morning briefing includes GPS readiness scores, transfer headroom and compliance status — before the first training session of the day.',
     url:'lumiosports.com/football/lumio-dev',href:'/football/lumio-dev'},
   {emoji:'⚽',name:'Non-League Football',pill:'Steps 3–7 · National League System',accent:'#F59E0B',
@@ -75,8 +75,7 @@ const PILLARS: Array<{icon:string;accent:string;heading:string;body:string;extra
     body:'Delivered at the time you set. Voice or text. Every relevant metric, every compliance deadline, every commercial obligation, every selection decision — synthesised before the first training session, meeting or call of the day. Different content for each role on the same team.',
     tags:['Football','Rugby','Tennis','Boxing','Golf','Darts','Cricket',"Women's FC"]},
   {icon:'📡',accent:'#06B6D4',heading:'FIFA Quality Certified. World Rugby Approved.',
-    body:'PlayerData EDGE GPS units sync session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags directly into your portal — automatically, after every session. No export. No copy-paste. No manual entry.',
-    extra:'Partnership with PlayerData — 50,000+ athletes on the platform'},
+    body:'Lumio GPS units sync session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags directly into your portal — automatically, after every session. No export. No copy-paste. No manual entry.'},
   {icon:'💰',accent:'#10B981',heading:'Every pound. Every contract. Every clause.',
     body:'The purse simulator that shows a boxer their exact take-home. The FSR dashboard that shows a women\'s club where they stand. The salary cap meter that tracks a rugby club to the pound. Financial transparency is not a feature. It is the foundation every portal is built on.'},
   {icon:'👥',accent:'#8B5CF6',heading:'Every role sees exactly what they need.',

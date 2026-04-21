@@ -4484,26 +4484,26 @@ Respond ONLY in JSON (no markdown):
         <div className="space-y-4">
           {/* Provider Connection Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* PlayerData (Primary) */}
+            {/* Lumio GPS (Primary) */}
             <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
                   <Activity size={20} style={{ color: '#3B82F6' }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>PlayerData EDGE</p>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your PlayerData account to sync EDGE GPS data automatically into your squad dashboard.</p>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Lumio GPS</p>
+                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your Lumio GPS account to sync vest data automatically into your squad dashboard.</p>
                 </div>
               </div>
-              <input type="text" placeholder="Enter your PlayerData API key"
+              <input type="text" placeholder="Enter your Lumio GPS API key"
                 className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
                 style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
                 value={connectProvider === 'catapult' ? connectToken : ''}
                 onChange={e => { setConnectProvider('catapult'); setConnectToken(e.target.value) }} />
-              <button onClick={() => { setToast('PlayerData connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
+              <button onClick={() => { setToast('Lumio GPS connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
                 className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#3B82F6', color: '#FFF' }}>
-                Connect PlayerData
+                Connect Lumio GPS
               </button>
             </div>
 
@@ -4514,7 +4514,7 @@ Respond ONLY in JSON (no markdown):
                   <Activity size={20} style={{ color: '#22C55E' }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Legacy Providers (Catapult / STATSports)</p>
+                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Legacy GPS Platform</p>
                   <p className="text-xs" style={{ color: '#6B7280' }}>Manual sync via CSV upload — see below</p>
                 </div>
               </div>
@@ -4539,14 +4539,14 @@ Respond ONLY in JSON (no markdown):
               </div>
               <div>
                 <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>CSV Upload</p>
-                <p className="text-xs" style={{ color: '#6B7280' }}>Manually export from your GPS platform and upload directly. Supports PlayerData, Catapult and STATSports formats.</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>Manually export from your GPS platform and upload directly. Supports Lumio GPS and standard GPS CSV formats.</p>
               </div>
             </div>
             <div className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-amber-600"
               style={{ borderColor: '#374151' }}>
               <FileText size={32} className="mx-auto mb-2" style={{ color: '#6B7280' }} />
               <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Drop CSV file here or click to browse</p>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Auto-detects PlayerData, Catapult or STATSports format from column headers</p>
+              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Auto-detects Lumio GPS and standard GPS CSV formats from column headers</p>
             </div>
           </div>
 
@@ -4564,7 +4564,7 @@ Respond ONLY in JSON (no markdown):
               </div>
               <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10' }}>
                 <p className="text-xs" style={{ color: '#6B7280' }}>Provider</p>
-                <p className="text-sm font-bold mt-1" style={{ color: '#3B82F6' }}>PlayerData EDGE</p>
+                <p className="text-sm font-bold mt-1" style={{ color: '#3B82F6' }}>Lumio GPS</p>
               </div>
             </div>
           </div>
@@ -5471,7 +5471,7 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
           <div className="flex items-center justify-between px-5 py-3">
             <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
             <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-              <option>None</option><option>PlayerData EDGE Air (recommended)</option><option>PlayerData EDGE Pro (with live data)</option><option>STATSports APEX (legacy — manual sync)</option><option>Catapult One (legacy — manual sync)</option><option>CSV Upload (manual)</option>
+              <option>None</option><option>Lumio GPS (recommended)</option><option>Lumio GPS Pro (with live data)</option><option>CSV Upload (manual)</option>
             </select>
           </div>
           <div className="flex items-center justify-between px-5 py-3">
