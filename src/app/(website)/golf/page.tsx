@@ -26,20 +26,20 @@ const FEATURES = [
   { icon: '🚀', title: 'Career Planning', desc: 'OWGR goal ladder: from current rank to Top 50 (Major invitations) to Top 25. Ryder Cup 2028 points accumulation built in.' },
 ]
 
-const STAT_PILLS = ['30+ features', 'DP World Tour & PGA Tour', 'AI powered', 'ElevenLabs voice', 'DataGolf ready']
+const STAT_PILLS = ['30+ features', 'DP World Tour & PGA Tour', 'AI powered', 'ElevenLabs voice', 'Lumio Data ready']
 
 const INTEGRATIONS = [
-  { icon: '⛳', name: 'DataGolf',       desc: 'Ranking and SG data' },
-  { icon: '📡', name: 'Arccos',         desc: 'Shot tracking and club data' },
-  { icon: '🎯', name: 'TrackMan',       desc: 'Launch monitor and fitting' },
+  { icon: '⛳', name: 'Lumio Data',      desc: 'Ranking and SG data' },
+  { icon: '📡', name: 'Lumio Range',     desc: 'Shot tracking and club data' },
+  { icon: '🎯', name: 'Lumio Range Pro', desc: 'Launch monitor and fitting' },
   { icon: '🔗', name: 'ShotLink',       desc: 'PGA Tour shot data (Phase 3)' },
   { icon: '🏆', name: 'DP World Tour',  desc: 'Race to Dubai live feed' },
   { icon: '🌍', name: 'R&A',            desc: 'Schedule and exemptions' },
   { icon: '🎵', name: 'ElevenLabs',     desc: 'Voice briefing delivery' },
   { icon: '🤖', name: 'Claude AI',      desc: 'Intelligence and briefings' },
   { icon: '💰', name: 'Xero',           desc: 'Financial management' },
-  { icon: '✈️', name: 'Google Flights', desc: 'Travel search' },
-  { icon: '🏨', name: 'Booking.com',    desc: 'Hotel management' },
+  { icon: '✈️', name: 'Smart Flights',  desc: 'AI-powered flight search' },
+  { icon: '🏨', name: 'Smart Hotels',   desc: 'AI-powered hotel search' },
   { icon: '📧', name: 'Microsoft 365',  desc: 'Email and calendar' },
 ]
 
@@ -380,8 +380,8 @@ export default function GolfPage() {
 
       {/* Integrations */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl md:text-4xl font-black text-center mb-3" style={{ color: '#F9FAFB' }}>Lumio Golf connects to the tools you already use.</h2>
-        <p className="text-sm text-center mb-12" style={{ color: MUTED }}>DataGolf, Arccos, TrackMan and everything in between — your existing stack just works.</p>
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-3" style={{ color: '#F9FAFB' }}>Lumio Golf — built-in and connected.</h2>
+        <p className="text-sm text-center mb-12" style={{ color: MUTED }}>Lumio Data, Lumio Range and the full Lumio stack — purpose-built for the tour pro.</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {INTEGRATIONS.map((it, i) => (
             <div key={i} className="rounded-xl p-4" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>

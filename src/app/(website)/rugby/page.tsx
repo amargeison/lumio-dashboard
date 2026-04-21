@@ -35,10 +35,9 @@ const AI_FEATURES = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '📡', name: 'Catapult OpenField', desc: 'GPS vest load and position data' },
-  { icon: '🏃', name: 'STATSports Sonra', desc: 'Alternative GPS integration' },
-  { icon: '💗', name: 'Kitman Labs', desc: 'Player readiness and welfare' },
-  { icon: '🎬', name: 'Hudl', desc: 'Video analysis and clips' },
+  { icon: '📡', name: 'Lumio GPS', desc: 'GPS vest load and position data' },
+  { icon: '💗', name: 'Lumio Health', desc: 'Player readiness and welfare' },
+  { icon: '🎬', name: 'Lumio Vision', desc: 'Video analysis and clips' },
   { icon: '📹', name: 'FrameSports', desc: 'Set piece and contact tagging' },
   { icon: '🏉', name: 'RFU Data API', desc: 'Franchise and compliance data' },
   { icon: '🤖', name: 'Claude API', desc: 'AI briefings and rotation' },
@@ -119,7 +118,7 @@ function GPSMockup() {
   return (
     <MockupFrame>
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>📡 GPS & Load — Squad Dashboard</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>28-day rolling ACWR · All 38 players · Catapult + STATSports</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>28-day rolling ACWR · All 38 players · Lumio GPS</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
         <KPI value="14" label="Ready" sub="Optimal" color="#10B981" />
         <KPI value="1" label="Manage" color="#F59E0B" />
@@ -329,7 +328,7 @@ export default function RugbyLandingPage() {
         eyebrow="SPOTLIGHT · GPS & HEATMAPS"
         title="Know every player\u2019s load. Every session."
         body="28-day rolling ACWR for the full squad. Player heatmaps rendered on a pitch diagram. S&C coach alerted at 07:30 when any player enters amber or red — before you name the team."
-        bullets={['28-day rolling ACWR with green/amber/red zones', 'Position x/y heatmaps filterable by player and session', 'Daily load bar chart with session-by-session breakdown', 'Catapult OpenField and STATSports Sonra integration']}
+        bullets={['28-day rolling ACWR with green/amber/red zones', 'Position x/y heatmaps filterable by player and session', 'Daily load bar chart with session-by-session breakdown', 'Lumio GPS vest integration — zero manual upload']}
         mockup={<GPSMockup />}
       />
 
@@ -438,7 +437,7 @@ export default function RugbyLandingPage() {
               <div style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 4 }}>£599<span style={{ fontSize: 16, color: MUTED }}>/mo</span></div>
               <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>Championship clubs</div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['All 53 sections', 'GPS & Player Heatmaps', 'AI Halftime Brief', 'Salary cap dashboard', 'Franchise readiness tracker', 'FrameSports video integration', 'Kitman Labs readiness sync', 'Claude API (DoR brief + rotation)', 'Up to 45 players'].map(f => (
+                {['All 53 sections', 'GPS & Player Heatmaps', 'AI Halftime Brief', 'Salary cap dashboard', 'Franchise readiness tracker', 'Lumio Vision set-piece tagging', 'Lumio Health readiness sync', 'Claude API (DoR brief + rotation)', 'Up to 45 players'].map(f => (
                   <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: TEXT }}>
                     <span style={{ color: PURPLE_LIGHT }}>✓</span>{f}
                   </li>

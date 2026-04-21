@@ -21,8 +21,8 @@ const STAT_PILLS = ['50+ features', 'Championship & League', 'AI powered', 'GPS 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📡', title: 'AI Half-Time GPS Brief', desc: "The world's first AI coaching brief powered by GPS vest data. Upload first-half load figures at half-time — Claude AI returns fatigue alerts, a substitution recommendation, and your second-half tactical instruction in 10 seconds." },
   { icon: '📊', title: 'Directors Suite & PSR', desc: "Board-level financial dashboard, PSR compliance tracker, wage-to-revenue ratios, and FA/EFL governance reporting. Built for Chairmen and Finance Directors who need the full picture before the Board meeting — not just the table position." },
-  { icon: '🎯', title: 'AI Transfer Intelligence', desc: "The AI Transfer Researcher analyses your squad needs and returns five targets with a Lumio Fit Score, strengths, weaknesses, and a recommendation. Opposition reports, scouting database, and Wyscout integration in one toolkit." },
-  { icon: '⚽', title: 'GPS Load Monitoring', desc: "Lumio Vest GPS with Catapult OpenField and STATSports Sonra integration. Pitch heatmaps, ACWR load monitoring, training load planner with injury risk flags, and per-player readiness scores every morning before training." },
+  { icon: '🎯', title: 'AI Transfer Intelligence', desc: "The AI Transfer Researcher analyses your squad needs and returns five targets with a Lumio Fit Score, strengths, weaknesses, and a recommendation. Opposition reports, scouting database, and Lumio Scout in one toolkit." },
+  { icon: '⚽', title: 'GPS Load Monitoring', desc: "Lumio GPS vest integration. Pitch heatmaps, ACWR load monitoring, training load planner with injury risk flags, and per-player readiness scores every morning before training." },
   { icon: '💼', title: 'Fan Engagement & Commercial', desc: "Fan NPS, attendance trends, season ticket trajectory, social sentiment, sponsor pipeline, and matchday revenue. The commercial picture your Board needs alongside the football picture — in the same platform." },
   { icon: '🏥', title: 'Medical & Fitness Hub', desc: "ACWR-based injury risk flagging, return-to-play tracking, GPS load history per player, medical clearance workflow, and physio case notes. Know who is at risk before the session starts — not after." },
 ]
@@ -36,7 +36,7 @@ const TIERS = [
 const PRICING = [
   { name: 'Starter', price: 'Free', features: ['Squad & contract management', 'Fixtures & results (live data)', 'Match Report Builder', 'GPS CSV upload', 'Fan Hub KPI strip', '3 staff accounts'] },
   { name: 'Professional', price: '£199/mo', highlight: true, features: ['Everything in Starter', 'Directors Suite & PSR tracker', 'AI Transfer Researcher + Opposition Report', 'AI Post-Match Analysis', 'Training Load Planner', 'GPS pitch heatmaps', 'AI half-time GPS brief', 'Full Fan Engagement Dashboard', 'PDF export across all dashboards', '10 staff accounts'] },
-  { name: 'Elite', price: '£499/mo', features: ['Everything in Professional', 'Catapult + STATSports direct API', 'Wyscout video integration', 'Opta / StatsBomb data', 'AI Club Comparison Analysis', 'White-label club branding', 'Unlimited staff accounts', 'Priority support'] },
+  { name: 'Elite', price: '£499/mo', features: ['Everything in Professional', 'Lumio GPS direct API', 'Lumio Scout video integration', 'Lumio Data feed', 'AI Club Comparison Analysis', 'White-label club branding', 'Unlimited staff accounts', 'Priority support'] },
   { name: 'Enterprise', price: 'Custom', features: ['Everything in Elite', 'Custom integrations', 'Multi-club portfolio management', 'Dedicated account manager + SLA', 'Contact us for pricing'] },
 ]
 
@@ -332,7 +332,7 @@ export default function FootballProPage() {
       <Spotlight
         eyebrow="SPOTLIGHT · GPS & LOAD MONITORING"
         title="See where every player is. Before and after."
-        body="Lumio GPS Vest integrates with Catapult OpenField and STATSports Sonra. Every training session and match generates a pitch heatmap, ACWR load score, and injury risk flag per player. The AI post-session analysis tells you who to rest and who can go harder — before you write tomorrow's session plan."
+        body="Lumio GPS vests plug directly into the platform. Every training session and match generates a pitch heatmap, ACWR load score, and injury risk flag per player. The AI post-session analysis tells you who to rest and who can go harder — before you write tomorrow's session plan."
         bullets={['Pitch heatmap — GPS positional data rendered on a full football pitch, per player or full squad', 'ACWR monitoring — 28-day rolling load vs 7-day acute, green/amber/red risk zones', 'AI post-session analysis — Claude reads the full squad load and generates coaching recommendations', 'Training Load Planner — weekly player × day calendar with auto-generated ACWR risk flags']}
         mockup={<GPSPitchMockup />}
       />

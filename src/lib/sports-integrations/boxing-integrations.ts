@@ -196,10 +196,10 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
 
   whoop: {
     icon: '💚',
-    title: 'WHOOP / Oura',
+    title: 'Lumio Wear / Oura',
     subtitle: 'Sleep, HRV, recovery and strain piped into every camp-day briefing.',
-    partnerBadge: 'OAuth available · WHOOP + Oura · ring or strap',
-    connectLabel: 'Connect WHOOP / Oura',
+    partnerBadge: 'OAuth available · Lumio Wear + Oura · ring or strap',
+    connectLabel: 'Connect Lumio Wear / Oura',
     summaryText: 'Pipe HRV, recovery score, sleep duration and strain into Lumio every morning. Camp is long — knowing whether the fighter walked in on 45% recovery vs 80% recovery changes the session plan.',
     connectedStats: [
       { label: 'Last Sync', value: '05:40' },
@@ -207,11 +207,11 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { label: 'HRV', value: '54 ms' },
       { label: 'Sleep', value: '7h 10m' },
     ],
-    whyHeading: 'Why WHOOP / Oura matters during fight camp',
-    whyBody: 'Camps are 10-week compressed-adaptation cycles — by Week 6 the fighter is accumulating fatigue that compounds daily. Feeding WHOOP/Oura into Lumio means the trainer walks into the morning session already knowing recovery is 68% today vs 85% yesterday, and can swap a heavy sparring day for skills-and-defence. Over a 70-day camp, this is the difference between arriving at fight night sharp and arriving burnt out.',
+    whyHeading: 'Why Lumio Wear / Oura matters during fight camp',
+    whyBody: 'Camps are 10-week compressed-adaptation cycles — by Week 6 the fighter is accumulating fatigue that compounds daily. Feeding Lumio Wear/Oura into Lumio means the trainer walks into the morning session already knowing recovery is 68% today vs 85% yesterday, and can swap a heavy sparring day for skills-and-defence. Over a 70-day camp, this is the difference between arriving at fight night sharp and arriving burnt out.',
     endpointsTitle: 'Data Flows Used by Lumio Boxing',
     endpoints: [
-      { endpoint: 'Recovery Score', desc: 'WHOOP 0-100 daily recovery or Oura Readiness score.', status: 'Live' },
+      { endpoint: 'Recovery Score', desc: 'Lumio Wear 0-100 daily recovery or Oura Readiness score.', status: 'Live' },
       { endpoint: 'HRV (RMSSD)', desc: 'Overnight HRV — critical during weight-cut windows.', status: 'Live' },
       { endpoint: 'Sleep Stages', desc: 'REM / deep / light split — sleep debt during cuts is the #1 recovery risk.', status: 'Live' },
       { endpoint: 'Daily Strain', desc: 'Strain vs target — flags over-training during camp.', status: 'Live' },
@@ -219,16 +219,16 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Respiratory Rate', desc: 'Overnight breath rate — illness-incubation flag.', status: 'Beta' },
       { endpoint: 'Cut-Week Recovery Alerts', desc: 'Dehydration-linked HRV crash detection — Planned.', status: 'Planned' },
     ],
-    pricing: 'Free to connect if the fighter has WHOOP or Oura. WHOOP approximately £20/month; Oura approximately £5/month plus ring hardware. Lumio adds no fee — OAuth connection only.',
+    pricing: 'Free to connect if the fighter has Lumio Wear or Oura. Lumio Wear approximately £20/month; Oura approximately £5/month plus ring hardware. Lumio adds no fee — OAuth connection only.',
   },
 
   'gps-vest': {
     icon: '🛰️',
     title: 'Lumio GPS Vest',
     subtitle: 'Sparring, roadwork, and camp-session load tracking via wearable GPS.',
-    partnerBadge: 'Lumio GPS · bundled in Pro Plus · STATSports + Catapult also supported',
+    partnerBadge: 'Lumio GPS · bundled in Pro Plus · Lumio GPS Pro + Lumio GPS also supported',
     connectLabel: 'Connect Lumio GPS Vest',
-    summaryText: 'The Lumio GPS vest (or a STATSports / Catapult equivalent) captures session-by-session movement load across sparring, roadwork, pad work, and strength sessions. The backbone of the Fight Camp load-management view.',
+    summaryText: 'The Lumio GPS vest (or a Lumio GPS Pro / Lumio GPS equivalent) captures session-by-session movement load across sparring, roadwork, pad work, and strength sessions. The backbone of the Fight Camp load-management view.',
     connectedStats: [
       { label: 'Sessions (30d)', value: '38' },
       { label: 'Roadwork Distance', value: '184 km' },
@@ -247,7 +247,7 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Heat / Environmental', desc: 'Estimated core temp during camp in hot-weather conditions.', status: 'Beta' },
       { endpoint: 'Taper Optimiser', desc: 'Auto-suggest load for final 14 days based on camp trend — Planned.', status: 'Planned' },
     ],
-    pricing: 'Lumio GPS vest is bundled in the Pro Plus plan — no extra hardware cost. STATSports APEX (approximately £400/year) and Catapult Vector (approximately £800/year) are supported as alternatives via the same data contract.',
+    pricing: 'Lumio GPS vest is bundled in the Pro Plus plan — no extra hardware cost. Lumio GPS Pro APEX (approximately £400/year) and Lumio GPS Vector (approximately £800/year) are supported as alternatives via the same data contract.',
   },
 
   workspace: {

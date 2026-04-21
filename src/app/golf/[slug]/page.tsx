@@ -460,7 +460,7 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
     owgr: 'OWGR ranking analysis: current position, points defending, trajectory to top 50, and Race to Dubai status.',
     strokes: 'Strokes Gained breakdown: identify strengths and weaknesses, compare to tour average, and recommend practice focus.',
     coursefit: 'Course fit analysis: how the player\'s SG profile matches the current event course demands.',
-    practicelog: 'Practice session review: recent focus areas, TrackMan data trends, and recommended next session.',
+    practicelog: 'Practice session review: recent focus areas, Lumio Range data trends, and recommended next session.',
     sponsorship: 'Sponsorship overview: upcoming obligations, renewal deadlines, and commercial opportunities.',
     travel: 'Travel logistics: upcoming flights, hotel bookings, caddie arrangements, and visa requirements.',
     financial: 'Financial summary: prize money YTD, expense tracking, tax jurisdiction updates, and budget status.',
@@ -472,7 +472,7 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
     owgr:         [`Current OWGR: #${player.owgr} — up 3 this week`, `285 pts defending this week — need T20+ to hold position`, `Career high #${player.career_high_owgr} achievable with strong summer swing`, `Top-50 OWGR locks Masters 2027 invitation`, `Race to Dubai #${player.race_to_dubai_pos} — need +260pts to reach cut line`],
     strokes:      [`SG: Off the Tee +0.41 — consistent strength this season`, `SG: Putting -1.18 — critical weakness from 8-15ft`, `SG: Approach -0.28 — 7-iron carry 4yd shorter than assumed`, `SG: Around Green +0.15 — bunker technique improving`, `Tee-to-green strong (+0.28) but putting cancels gains`],
     coursefit:     [`Eichenried: 8.1/10 course fit — approach game suits layout`, `Wentworth: 9.0/10 — best course fit on tour for this profile`, `Royal Birkdale: 6.8/10 — links putting historically weak`, `Crans-sur-Sierre: 8.8/10 — altitude approach play is elite`, `Course fit weighted by SG profile vs historical demands`],
-    practicelog:  [`Today: 120 min putting session — 8-15ft focus with Pete`, `Short game with Dave yesterday: bunker technique improved`, `TrackMan: 7-iron carry 168yd — corrected to 6-iron from 172yd`, `Course walk with Mick: holes 7 and 15 identified as scoring holes`, `Pre-round routine: 45 min confirmed for tomorrow AM`],
+    practicelog:  [`Today: 120 min putting session — 8-15ft focus with Pete`, `Short game with Dave yesterday: bunker technique improved`, `Lumio Range: 7-iron carry 168yd — corrected to 6-iron from 172yd`, `Course walk with Mick: holes 7 and 15 identified as scoring holes`, `Pre-round routine: 45 min confirmed for tomorrow AM`],
     sponsorship:  [`Vanta Sports renewal: 18-day deadline — Sarah has proposal ready`, `Vanta Sports content: 2 posts this month (0 done) — post due today`, `Halden Motors Pro-Am: hospitality partner confirmed for tomorrow`, `Vanta Sports call at 16:00 — equipment review discussion`, `Apex Performance apparel obligation confirmed for this event`],
     travel:       [`Munich hotel: confirmed 3 nights (Mon-Thu)`, `Next event: Scottish Open — Edinburgh, 10-13 Jul`, `Caddie Mick: flights confirmed and reimbursed`, `European leg: 4 events confirmed Jul-Sep`, `Halden Motors Championship: Wentworth accommodation via Halden Motors partner deal`],
     financial:    [`Prize money YTD: £367,000`, `This week's purse: $4.5M — cut = £18k, win = £1.32M`, `Agent commission: 10% of endorsement income`, `Multi-jurisdiction tax: 20+ countries, accountant briefed`, `Equipment: Vanta Sports + Vanta Sports cover most costs`],
@@ -1030,7 +1030,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     { id: 'sponsor', label: 'Media & Sponsor', icon: '📱', count: 3, urgent: false, color: '#EA580C', messages: [
       { id: 'sp1', from: 'Sarah Chen', text: 'Vanta Sports post due before 18:00 — caption drafted and attached. Just need your photo from the range.', time: '09:00' },
       { id: 'sp2', from: 'Sarah Chen', text: 'Northbridge Sport interview request for post-round — 5 min, greenside. Confirmed tentatively.', time: '08:45' },
-      { id: 'sp3', from: 'Carlos Mendez', text: 'Range session notes sent — focus on 7-iron carry distance today. TrackMan data attached.', time: '07:30' },
+      { id: 'sp3', from: 'Carlos Mendez', text: 'Range session notes sent — focus on 7-iron carry distance today. Lumio Range data attached.', time: '07:30' },
     ]},
     { id: 'physio', label: 'Physio & Medical', icon: '⚕️', count: 1, urgent: true, color: '#EF4444', messages: [
       { id: 'ph1', from: 'Dr Anna Price', text: 'Lower back — mild stiffness. Cleared for play. Treatment booked 13:00. Ice 15 min post-round.', time: '07:00' },
@@ -1074,7 +1074,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
       { id:'gs3', time:'09:24', label:'R2 tee time — with Hartwell, Donovan', highlight:true },
       { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
-      { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+      { id:'gs5', time:'15:00', label:'Lumio Range session review',             highlight:false },
       { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
       { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
       { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
@@ -1209,7 +1209,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
             { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
             { id:'loground', label:'Log Round', icon:'📋', color:'#15803D', hot:false },
-            { id:'trackman', label:'TrackMan Session', icon:'📡', color:'#0ea5e9', hot:true },
+            { id:'trackman', label:'Lumio Range Session', icon:'📡', color:'#0ea5e9', hot:true },
             { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', color:'#F59E0B', hot:true },
             { id:'sponsorpost', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
             { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#0ea5e9', hot:true },
@@ -1271,16 +1271,16 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minHeight: 420 }}>
                   <div className="p-6">
                     <div className="text-4xl mb-3">{step.icon}</div>
-                    {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your golf OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. World rankings, tournament schedule, TrackMan data, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next event:</span> <span className="text-white font-semibold">Masters — Ashbourne National</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Tee time:</span> <span className="text-white font-semibold">09:24 R2 — Hole 1</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#15803D' }}>⛳</span> <span style={{ color: '#9CA3AF' }}>Used by DP World Tour and PGA Tour players to manage their season end to end.</span></div>{/* Brand Colours — only in step 1 detail */}<div className="mt-4 space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div><p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p><div className="flex items-center gap-4"><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label><input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_golf_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label><input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_golf_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div className="flex-1"><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label><div className="flex items-center gap-2"><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div></div></div></div></div></>)}
+                    {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your golf OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. World rankings, tournament schedule, Lumio Range data, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.owgr}`, label:'OWGR', c:'#15803D' },{ icon:'🏆', v:`#${player.race_to_dubai_pos}`, label:'Race', c:'#0D9488' },{ icon:'💰', v:'£367k', label:'Season', c:'#F59E0B' },{ icon:'🎯', v:'70.2', label:'Scoring', c:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next event:</span> <span className="text-white font-semibold">Masters — Ashbourne National</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Tee time:</span> <span className="text-white font-semibold">09:24 R2 — Hole 1</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#15803D' }}>⛳</span> <span style={{ color: '#9CA3AF' }}>Used by DP World Tour and PGA Tour players to manage their season end to end.</span></div>{/* Brand Colours — only in step 1 detail */}<div className="mt-4 space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div><p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p><div className="flex items-center gap-4"><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label><input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_golf_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label><input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_golf_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div className="flex-1"><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label><div className="flex items-center gap-2"><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div></div></div></div></div></>)}
                     {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every tournament week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers today&apos;s tee time, course conditions, caddie notes, sponsor obligations and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(21,128,61,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(21,128,61,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(21,128,61,0.12)', color: '#15803D' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⛳', text:'Tee time 09:24 R2 Ashbourne National. Wind 14mph SW — affects Valley Turn significantly.' },{ icon:'🤝', text:'Vanta Sports content post due by 12:00 — Instagram photo needed. Penalty clause.' },{ icon:'✈️', text:'Madrid hotel confirmed for next week. Transfer from airport arranged.' },{ icon:'📊', text:'Cut line projected +2. You are -3 after R1. GIR% yesterday: 72% — above season avg.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up on the range.</span></div></>)}
-                    {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — book the cheapest flights, log a TrackMan session, get caddie notes AI-generated, file a physio report, post sponsor content.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Course Notes AI', icon:'🗺️', hot:true },{ label:'Log Round', icon:'📋', hot:false },{ label:'TrackMan Session', icon:'📡', hot:true },{ label:'Caddie Brief', icon:'⛳', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#16A34A' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#16A34A' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🗺️</span> <span style={{ color: '#0ea5e9' }}>Course Notes AI pulls the latest course data, pin positions and weather forecast and briefs your caddie in 10 seconds.</span></div></>)}
+                    {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — book the cheapest flights, log a Lumio Range session, get caddie notes AI-generated, file a physio report, post sponsor content.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Course Notes AI', icon:'🗺️', hot:true },{ label:'Log Round', icon:'📋', hot:false },{ label:'Lumio Range Session', icon:'📡', hot:true },{ label:'Caddie Brief', icon:'⛳', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#16A34A' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#16A34A' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🗺️</span> <span style={{ color: '#0ea5e9' }}>Course Notes AI pulls the latest course data, pin positions and weather forecast and briefs your caddie in 10 seconds.</span></div></>)}
                     {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Tour travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every DP World Tour and PGA Tour venue. Smart Hotel finds the best course-adjacent hotels.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Delta · DL 417</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£687 return</span></div><div className="text-[10px] text-gray-400">London LHR → Ashbourne Regional · 9h 45m · 1 stop ATL</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Ashbourne Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£189/night</span></div><div className="text-[10px] text-gray-400">1.2km from Ashbourne National · Driving range ✅ · 8.7 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Tour players using Smart Flights save an average of £890 per tournament. That&apos;s £18k over a 20-event season.</span></div></>)}
                     {step.preview === 'performance' && (<><h2 className="text-xl font-black text-white mb-2">Every shot tracked. Every ranking point counted.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>OWGR ranking, Race to Dubai standing, scoring average, GIR%, driving distance, putting average — all updated after every round.</p><div className="grid grid-cols-2 gap-3 mb-4">{[{ label:'OWGR', value:`#${player.owgr}`, sub:'↑ 4 this month', color:'#15803D' },{ label:'Race to Dubai', value:`#${player.race_to_dubai_pos}`, sub:`${player.owgr_points.toFixed(0)} pts`, color:'#0D9488' },{ label:'Scoring Avg', value:'70.2', sub:'Tour avg: 71.1', color:'#F97316' },{ label:'Form (last 5)', value:'MC-6-3-1-MC', sub:'2 top-10s', color:'#8B5CF6' }].map((s, i) => (<div key={i} className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-[10px] text-gray-500 mb-1">{s.label}</div><div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{s.sub}</div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📈</span> <span style={{ color: '#9CA3AF' }}>The Ranking Simulator shows you exactly what you need to finish this week to break into the top 50.</span></div></>)}
                     {step.preview === 'team' && (<><h2 className="text-xl font-black text-white mb-2">Your team. Everyone sees their own view.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your whole team connected — but each role gets their own tailored view. Your coach, physio, sponsor and agent see only what&apos;s relevant to them. You control what each role can see.</p><div className="space-y-2 mb-4">{[{ name:'Mick Sullivan', role:'Caddie', status:'Course notes sent for R2', color:'#15803D' },{ name:'Carlos Mendez', role:'Coach', status:'Swing review at 17:00', color:'#0D9488' },{ name:'James Wright', role:'Agent', status:'Vanta Sports renewal pending', color:'#F59E0B' },{ name:'Dr Sarah Lee', role:'Physio', status:'Back treatment 18:00', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div><div className="text-[10px] text-gray-500">{m.status}</div></div><div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /></div>))}</div><div className="mt-4 mb-3"><div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>Everyone gets their own view</div><p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Your coach sees training & tactical data. Your physio sees medical & recovery only. Your sponsor sees brand activation & ROI. Your agent sees contracts & commercials. You stay in control — switch role any time from the bottom of the sidebar.</p><div className="grid grid-cols-2 gap-2">{[{ icon:'🎯', role:'Player view', desc:'Full access — everything', color:'#15803d' },{ icon:'📋', role:'Coach view', desc:'Training, tactics, performance', color:'#22C55E' },{ icon:'⚕️', role:'Medical / Physio', desc:'Injury log, load, recovery only', color:'#EF4444' },{ icon:'🤝', role:'Sponsor / Partner', desc:'Brand visibility, obligations, ROI', color:'#F59E0B' },{ icon:'💼', role:'Agent / Manager', desc:'Contracts, commercials, schedule', color:'#0ea5e9' }].map((v, i) => (<div key={i} className="flex items-center gap-2 rounded-lg p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base flex-shrink-0">{v.icon}</span><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{v.role}</div><div className="text-[10px] truncate" style={{ color: v.color }}>{v.desc}</div></div></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📨</span> <span style={{ color: '#9CA3AF' }}>Your caddie book syncs automatically with the course notes AI. No more WhatsApp chains the night before.</span></div></>)}
-                    {step.preview === 'ai' && (<><h2 className="text-xl font-black text-white mb-2">AI analysis that actually improves your game.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Course Notes AI pulls pin positions, wind history and green speed. TrackMan AI spots patterns. Caddie Brief AI writes the full hole-by-hole strategy.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}><div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Course Notes AI — Ashbourne National R2</span></div><div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}><p>Back 9 playing 2.1 shots harder than front. Wind 14mph SW — affects 11, 12, 13 significantly.</p><p>Your GIR% on par 5s this season: 89%. Attack 15 in 2 — you&apos;re 4 for 5 this season.</p><p>Avoid short-left on 12. Pin is back-right today — bail-out centre is the play.</p></div><div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using course data, weather API and TrackMan history · Claude AI</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}><span style={{ color: '#A78BFA' }}>🤖</span> <span style={{ color: '#A78BFA' }}>Powered by Claude AI · Anthropic · The same AI trusted by Fortune 500 companies.</span></div></>)}
+                    {step.preview === 'ai' && (<><h2 className="text-xl font-black text-white mb-2">AI analysis that actually improves your game.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Course Notes AI pulls pin positions, wind history and green speed. Lumio Range AI spots patterns. Caddie Brief AI writes the full hole-by-hole strategy.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(139,92,246,0.3)' }}><div className="flex items-center gap-2 mb-2"><span>🤖</span><span className="text-xs font-bold" style={{ color: '#A78BFA' }}>Course Notes AI — Ashbourne National R2</span></div><div className="space-y-2 text-[11px]" style={{ color: '#D1D5DB' }}><p>Back 9 playing 2.1 shots harder than front. Wind 14mph SW — affects 11, 12, 13 significantly.</p><p>Your GIR% on par 5s this season: 89%. Attack 15 in 2 — you&apos;re 4 for 5 this season.</p><p>Avoid short-left on 12. Pin is back-right today — bail-out centre is the play.</p></div><div className="text-[9px] mt-3" style={{ color: '#6B7280' }}>Generated using course data, weather API and Lumio Range history · Claude AI</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}><span style={{ color: '#A78BFA' }}>🤖</span> <span style={{ color: '#A78BFA' }}>Powered by Claude AI · Anthropic · The same AI trusted by Fortune 500 companies.</span></div></>)}
                     {step.preview === 'sponsor' && (<><h2 className="text-xl font-black text-white mb-2">Never miss a sponsor obligation again.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Content shoots, Instagram posts, appearance fees, equipment contracts — all tracked. Social Media AI writes the post, you approve it, one click posts it.</p><div className="space-y-2 mb-4">{[{ name:'Vanta Sports', status:'Instagram post due today — photo needed before 12:00', badge:'DUE NOW', badgeColor:'#EF4444', value:'£120k/yr' },{ name:'Meridian Watches', status:'Renewal meeting Apr 25 — agent handling', badge:'RENEWAL', badgeColor:'#F59E0B', value:'£85k/yr' },{ name:'Dubai Tourism', status:'Appearance inquiry — £45k — respond by Apr 30', badge:'NEW DEAL', badgeColor:'#22C55E', value:'£45k' }].map((s, i) => (<div key={i} className="flex items-center justify-between rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{s.name}</span><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${s.badgeColor}20`, color: s.badgeColor }}>{s.badge}</span></div><div className="text-[10px] text-gray-500 mt-0.5">{s.status}</div></div><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.value}</span></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📱</span> <span style={{ color: '#9CA3AF' }}>Sponsor Post AI generates the Instagram caption in your voice. Takes 8 seconds.</span></div></>)}
                     {step.preview === 'dontmiss' && (<><h2 className="text-xl font-black text-white mb-2">Nothing falls through the cracks.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Don&apos;t Miss catches everything — entry deadlines, world ranking points dropping off, visa expiry, sponsor deadlines.</p><div className="space-y-2 mb-4">{[{ badge:'ALERT', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'180 OWGR points drop off after this event. Finish T20 or better to hold #87.', sub:'Miss = drop to #94 — lose exemptions' },{ badge:'8 DAYS', bg:'rgba(245,158,11,0.15)', color:'#F59E0B', text:'The Open Championship entry deadline closes.', sub:'Lumio flagged this 30 days out' },{ badge:'TODAY', bg:'rgba(220,38,38,0.15)', color:'#EF4444', text:'Vanta Sports Instagram post due by 12:00. Penalty clause.', sub:'Content obligation — contractual' }].map((d, i) => (<div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: '#0a0c14' }}><span className="text-[9px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.bg, color: d.color }}>{d.badge}</span><div><div className="text-[11px] text-white">{d.text}</div><div className="text-[10px] italic mt-0.5" style={{ color: '#EF4444' }}>{d.sub}</div></div></div>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📋</span> <span style={{ color: '#9CA3AF' }}>Entry deadline for The Open Championship closes in 8 days. Lumio flagged this 30 days out.</span></div></>)}
-                    {step.preview === 'cta' && (<><h2 className="text-xl font-black text-white mb-2">Run your golf career like a business.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Rankings, travel, TrackMan data, sponsors, team, AI analysis — all in one place. Built for DP World Tour and PGA Tour professionals.</p><div className="grid grid-cols-3 gap-2 mb-4">{[{ icon:'📊', label:'OWGR Rankings', desc:'Live tracking' },{ icon:'✈️', label:'Smart Travel', desc:'Flights + hotels' },{ icon:'🤖', label:'AI Analysis', desc:'Course + caddie' },{ icon:'🤝', label:'Sponsors', desc:'Obligations tracked' },{ icon:'👥', label:'Team Hub', desc:'Everyone connected' },{ icon:'📡', label:'TrackMan', desc:'Session data' }].map((f, i) => (<div key={i} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl mb-1">{f.icon}</div><div className="text-[10px] font-bold text-white">{f.label}</div><div className="text-[9px] text-gray-500">{f.desc}</div></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.1), rgba(13,148,136,0.1))', border: '1px solid rgba(21,128,61,0.25)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-[11px] mb-3" style={{ color: '#9CA3AF' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><div className="flex justify-center gap-2"><button onClick={goLive} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#15803D' }}>Go to my dashboard →</button><button className="px-4 py-2 rounded-xl text-xs font-bold" style={{ border: '1px solid #374151', color: '#9CA3AF' }}>Invite my caddie →</button></div></div><div className="rounded-lg p-3 mt-4 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>🏆</span> <span style={{ color: '#F59E0B' }}>You&apos;re one of our first 20 founding members. We&apos;ll build what you ask for.</span></div></>)}
+                    {step.preview === 'cta' && (<><h2 className="text-xl font-black text-white mb-2">Run your golf career like a business.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Rankings, travel, Lumio Range data, sponsors, team, AI analysis — all in one place. Built for DP World Tour and PGA Tour professionals.</p><div className="grid grid-cols-3 gap-2 mb-4">{[{ icon:'📊', label:'OWGR Rankings', desc:'Live tracking' },{ icon:'✈️', label:'Smart Travel', desc:'Flights + hotels' },{ icon:'🤖', label:'AI Analysis', desc:'Course + caddie' },{ icon:'🤝', label:'Sponsors', desc:'Obligations tracked' },{ icon:'👥', label:'Team Hub', desc:'Everyone connected' },{ icon:'📡', label:'Lumio Range', desc:'Session data' }].map((f, i) => (<div key={i} className="rounded-lg p-2.5 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl mb-1">{f.icon}</div><div className="text-[10px] font-bold text-white">{f.label}</div><div className="text-[9px] text-gray-500">{f.desc}</div></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.1), rgba(13,148,136,0.1))', border: '1px solid rgba(21,128,61,0.25)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-[11px] mb-3" style={{ color: '#9CA3AF' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><div className="flex justify-center gap-2"><button onClick={goLive} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: '#15803D' }}>Go to my dashboard →</button><button className="px-4 py-2 rounded-xl text-xs font-bold" style={{ border: '1px solid #374151', color: '#9CA3AF' }}>Invite my caddie →</button></div></div><div className="rounded-lg p-3 mt-4 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>🏆</span> <span style={{ color: '#F59E0B' }}>You&apos;re one of our first 20 founding members. We&apos;ll build what you ask for.</span></div></>)}
                   </div>
                   <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
                     <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0} className="px-4 py-2 rounded-xl text-sm" style={{ backgroundColor: tourStep === 0 ? 'transparent' : '#1F2937', color: tourStep === 0 ? '#374151' : '#9CA3AF' }}>← Back</button>
@@ -1444,7 +1444,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
                   { id:'gs3', time:'09:24', label:'R2 tee time — with Hartwell, Donovan', highlight:true },
                   { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
-                  { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+                  { id:'gs5', time:'15:00', label:'Lumio Range session review',             highlight:false },
                   { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
                   { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
                   { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
@@ -1602,7 +1602,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high', category:'Training', action:'Log session', modal:'loground' },
           { id:'dt2', time:'09:24', title:'Tee time R2 — with Hartwell, Donovan', priority:'critical', category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
           { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high', category:'Medical', action:'Log medical', modal:'injury' },
-          { id:'dt4', time:'15:00', title:'TrackMan session analysis — review numbers', priority:'medium', category:'Performance', action:'Open TrackMan', modal:'trackman' },
+          { id:'dt4', time:'15:00', title:'Lumio Range session analysis — review numbers', priority:'medium', category:'Performance', action:'Open Lumio Range', modal:'trackman' },
           { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical', category:'Entries', action:'Enter now', modal:'' },
           { id:'dt6', time:'18:00', title:'Vanta Sports sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
           { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium', category:'Finance', action:'Log expense', modal:'expense' },
@@ -3121,7 +3121,7 @@ function PuttingHeatMap() {
       </div>
 
       <div className="mt-4 text-[10px] text-gray-600 italic">
-        Connect Arccos to auto-populate from real round data.
+        Connect Lumio Range to auto-populate from real round data.
       </div>
     </div>
   );
@@ -3439,7 +3439,7 @@ function GolfRecoveryChart() {
   const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
   return (
     <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <div className="text-sm font-semibold text-white mb-4">Lumio Wear Recovery (7-Day Trend)</div>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <defs>
           <linearGradient id="golfRecovGrad" x1="0" y1="0" x2="0" y2="1">
@@ -3493,11 +3493,11 @@ function PhysioView({ player, session }: { player: GolfPlayer; session: SportsDe
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, WHOOP recovery scores, and treatment protocols." />
+      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, Lumio Wear recovery scores, and treatment protocols." />
 
       {/* Section 2 — 4 StatCards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Recovery Score" value="78/100" sub="Today (WHOOP)" color="teal" />
+        <StatCard label="Recovery Score" value="78/100" sub="Today (Lumio Wear)" color="teal" />
         <StatCard label="HRV" value="62ms" sub="▼6ms vs yesterday" color="orange" />
         <StatCard label="Resting HR" value="52 bpm" sub="Travel fatigue flag" color="blue" />
         <StatCard label="Sleep" value="7.0 hrs" sub="Below 7.5 target" color="yellow" />
@@ -3668,7 +3668,7 @@ function PhysioView({ player, session }: { player: GolfPlayer; session: SportsDe
         </div>
       </div>
 
-      {/* Section 6 — WHOOP Recovery Chart */}
+      {/* Section 6 — Lumio Wear Recovery Chart */}
       <GolfRecoveryChart />
 
       {/* Section 7 — Recovery Trend — Last 5 Days */}
@@ -4934,7 +4934,7 @@ function GolfVideoLibraryView({ player, session }: { player: GolfPlayer; session
           <div className="text-white font-semibold text-lg mb-2">No videos yet</div>
           <div className="text-gray-400 text-sm max-w-sm mb-5">Connect your range camera or upload footage to start building your video library. Swing clips, competition footage, and coach debriefs all land here.</div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Connect Veo</button>
+            <button className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#16a34a', color: '#fff' }}>Connect Lumio Vision</button>
             <button className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#1F2937', color: '#9CA3AF' }}>Upload Footage</button>
           </div>
         </div>
@@ -4948,7 +4948,7 @@ function GolfVideoLibraryView({ player, session }: { player: GolfPlayer; session
       <SectionHeader icon="🎬" title="Video Library" subtitle="Swing recordings, competition footage, debriefs, and coach clip library — 340 videos indexed." />
 
       <div className="rounded-lg px-3 py-2 text-[11px]" style={{ background: '#0d1117', border: '1px solid #1F2937', color: '#6B7280' }}>
-        Demo placeholder footage — real swing clips stream from your Veo + range camera in the full build.
+        Demo placeholder footage — real swing clips stream from your Lumio Vision + range camera in the full build.
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 md:items-center">
@@ -5062,7 +5062,7 @@ function PlaceholderView({ title, icon, description, player, session }: { title:
 }
 
 // ─── ARCCOS INTEGRATION VIEW ──────────────────────────────────────────────────
-function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+function GolfShotTrackingLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sgFeed = [
     { date: 'Jul 5 — R2 Halden Motors International', ott: 0.6, atg: 0.8, arg: 0.2, putt: -1.4, total: 0.2, rounds: 1 },
@@ -5072,28 +5072,28 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
     { date: 'Jun 28 — R3 KLM Open', ott: 0.3, atg: 0.7, arg: 0.2, putt: -1.6, total: -0.4, rounds: 1 },
   ];
   const tourUsers = [
-    { name: 'Owen Alderton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Arccos Pro suite — SG tracking + shot-by-shot history' },
+    { name: 'Owen Alderton', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', tour: 'PGA / DP World', note: 'Lumio Range Pro suite — SG tracking + shot-by-shot history' },
     { name: 'Henrik Tellander', flag: '🇳🇴', tour: 'PGA Tour', note: 'SG Approach analytics for course-specific prep' },
-    { name: 'Emma Lindgren', flag: '🇸🇪', tour: 'LPGA', note: 'Arccos Pro Insights — full competitive analytics' },
-    { name: 'Erik Sandberg', flag: '🇳🇴', tour: 'DP World Tour', note: 'Arccos Pro — driving + approach SG tracking' },
-    { name: 'Jens Kjaer', flag: '🇩🇰', tour: 'DP World Tour', note: 'Arccos Pro — putting metrics + course fit' },
+    { name: 'Emma Lindgren', flag: '🇸🇪', tour: 'LPGA', note: 'Lumio Range Pro Insights — full competitive analytics' },
+    { name: 'Erik Sandberg', flag: '🇳🇴', tour: 'DP World Tour', note: 'Lumio Range Pro — driving + approach SG tracking' },
+    { name: 'Jens Kjaer', flag: '🇩🇰', tour: 'DP World Tour', note: 'Lumio Range Pro — putting metrics + course fit' },
   ];
   return (
     <div className="space-y-6">
-      <SectionHeader icon="📡" title="Arccos Integration" subtitle="Connect your Arccos sensors to pipe real on-course SG data directly into Lumio Tour." />
+      <SectionHeader icon="📡" title="Lumio Range Integration" subtitle="Connect your Lumio Range sensors to pipe real on-course SG data directly into Lumio Tour." />
       {/* Status Banner */}
       <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>📡</div>
             <div>
-              <div className="text-white font-semibold">Arccos Pro Insights</div>
+              <div className="text-white font-semibold">Lumio Range Pro Insights</div>
               <div className="text-xs text-gray-400">Built by Edoardo Molinari · 35+ PGA / DP World / LPGA players</div>
             </div>
           </div>
           <button onClick={() => setConnected(!connected)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
-            {connected ? 'Disconnect' : 'Connect Arccos'}
+            {connected ? 'Disconnect' : 'Connect Lumio Range'}
           </button>
         </div>
         {connected ? (
@@ -5106,20 +5106,20 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-400">Connect your Arccos account to automatically sync on-course SG data from every competitive round — no manual entry required.</div>
+          <div className="text-sm text-gray-400">Connect your Lumio Range account to automatically sync on-course SG data from every competitive round — no manual entry required.</div>
         )}
       </div>
-      {/* What Arccos unlocks */}
+      {/* What Lumio Range unlocks */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">What Arccos Integration Unlocks</div>
+        <div className="text-sm font-semibold text-white mb-4">What Lumio Range Integration Unlocks</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
             { icon: '📈', title: 'Automatic SG data', desc: 'Every competitive round syncs to your Strokes Gained dashboard without manual entry. Shot-by-shot data from all 14 sensors.' },
             { icon: '🎯', title: 'AI Strategy on-course', desc: 'Tour-proven club recommendations for every hole, powered by 1.5 billion shots and your own dispersion profile.' },
-            { icon: '🗺️', title: 'Course fit refinement', desc: 'Your Arccos shot history at a course updates your Course Fit score automatically — no estimate, real data.' },
-            { icon: '📋', title: 'Practice session import', desc: 'Arccos tracks practice sessions too. Putting sessions, approach drills, and range work all flow into your Practice Log.' },
-            { icon: '📉', title: 'Trend alerts', desc: 'Arccos detects SG deterioration patterns before they become crises. Lumio\'s morning briefing flags them before Pete does.' },
-            { icon: '🤝', title: 'Caddie data share', desc: 'Your Arccos dispersion data populates the Caddie Workflow hole strategy notes automatically — sharing becomes instant.' },
+            { icon: '🗺️', title: 'Course fit refinement', desc: 'Your Lumio Range shot history at a course updates your Course Fit score automatically — no estimate, real data.' },
+            { icon: '📋', title: 'Practice session import', desc: 'Lumio Range tracks practice sessions too. Putting sessions, approach drills, and range work all flow into your Practice Log.' },
+            { icon: '📉', title: 'Trend alerts', desc: 'Lumio Range detects SG deterioration patterns before they become crises. Lumio\'s morning briefing flags them before Pete does.' },
+            { icon: '🤝', title: 'Caddie data share', desc: 'Your Lumio Range dispersion data populates the Caddie Workflow hole strategy notes automatically — sharing becomes instant.' },
           ].map((f, i) => (
             <div key={i} className="flex items-start gap-3 p-3 bg-black/20 rounded-lg">
               <span className="text-xl">{f.icon}</span>
@@ -5132,7 +5132,7 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
       {connected && (
         <div className="bg-[#0d0f1a] border border-teal-600/30 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-            <div className="text-sm font-semibold text-white">Live SG Feed — Arccos Data</div>
+            <div className="text-sm font-semibold text-white">Live SG Feed — Lumio Range Data</div>
             <span className="text-xs text-teal-400 bg-teal-400/10 px-2 py-0.5 rounded-full">● Auto-syncing</span>
           </div>
           <div className="overflow-x-auto">
@@ -5159,7 +5159,7 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
       )}
       {/* Tour players using it */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">Tour Players Using Arccos Pro Insights</div>
+        <div className="text-sm font-semibold text-white mb-4">Tour Players Using Lumio Range Pro Insights</div>
         <div className="space-y-3">
           {tourUsers.map((u, i) => (
             <div key={i} className="flex items-start gap-3 py-2 border-b border-gray-800/50">
@@ -5169,12 +5169,12 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
             </div>
           ))}
         </div>
-        <div className="mt-3 text-xs text-gray-600">35+ players total across PGA Tour, DP World Tour, and LPGA. Arccos Pro Insights led by Edoardo Molinari (Arccos Chief Data Strategist).</div>
+        <div className="mt-3 text-xs text-gray-600">35+ players total across PGA Tour, DP World Tour, and LPGA. Lumio Range Pro Insights led by Edoardo Molinari (Lumio Range Chief Data Strategist).</div>
       </div>
       {/* Pricing note */}
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
-        <div className="text-sm font-semibold text-blue-400 mb-1">ℹ️ Arccos Pro Insights — Access Model</div>
-        <div className="text-xs text-gray-400">Arccos Pro Insights is invitation-only for touring professionals — not purchased like the consumer app ($155/yr). Molinari's team recruits players directly. Lumio Tour's integration works with both: Arccos Pro data flows in for invited tour players, consumer Arccos data flows in for all others. The integration requires an Arccos account (consumer or Pro).</div>
+        <div className="text-sm font-semibold text-blue-400 mb-1">ℹ️ Lumio Range Pro Insights — Access Model</div>
+        <div className="text-xs text-gray-400">Lumio Range Pro Insights is invitation-only for touring professionals — not purchased like the consumer app ($155/yr). Molinari's team recruits players directly. Lumio Tour's integration works with both: Lumio Range Pro data flows in for invited tour players, consumer Lumio Range data flows in for all others. The integration requires an Lumio Range account (consumer or Pro).</div>
       </div>
       <GolfAISection context="strokes" player={player} session={session} />
     </div>
@@ -5182,7 +5182,7 @@ function ArccosView({ player, session }: { player: GolfPlayer; session: SportsDe
 }
 
 // ─── DATAGOLF INTEGRATION VIEW ────────────────────────────────────────────────
-function DataGolfView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+function GolfDataFeedLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const coverage = [
     { tour: 'DP World Tour', events: '42+', sg: '✓ Round-level', owgr: '✓ Full', courseHistory: '✓', odds: '✓' },
@@ -5204,20 +5204,20 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
   ];
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🌐" title="DataGolf Integration" subtitle="Real OWGR data, SG benchmarks, and course history from the world's best golf analytics API." />
+      <SectionHeader icon="🌐" title="Lumio Data Integration" subtitle="Real OWGR data, SG benchmarks, and course history from the world's best golf analytics API." />
       {/* Status */}
       <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>🌐</div>
             <div>
-              <div className="text-white font-semibold">DataGolf API</div>
+              <div className="text-white font-semibold">Lumio Data API</div>
               <div className="text-xs text-gray-400">PGA Tour ShotLink partnership · DP World, Korn Ferry, LIV, Asian Tour coverage</div>
             </div>
           </div>
           <button onClick={() => setConnected(!connected)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
-            {connected ? 'Disconnect' : 'Connect DataGolf'}
+            {connected ? 'Disconnect' : 'Connect Lumio Data'}
           </button>
         </div>
         {connected ? (
@@ -5230,13 +5230,13 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-400">DataGolf is the most important single integration for Lumio Tour. It powers the live OWGR tracker, the 104-week points expiry calendar, course fit scores, and SG benchmarks with real competition data — not estimates.</div>
+          <div className="text-sm text-gray-400">Lumio Data is the most important single integration for Lumio Tour. It powers the live OWGR tracker, the 104-week points expiry calendar, course fit scores, and SG benchmarks with real competition data — not estimates.</div>
         )}
       </div>
       {/* Why this matters */}
       <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Why DataGolf Is the Highest-Priority Integration</div>
-        <div className="text-sm text-gray-300 leading-relaxed">Without DataGolf, Lumio Tour's OWGR tracker relies on user-entered data. With it, every Monday morning the platform automatically pulls the updated ranking, calculates which historical points are now in their 13th week (no longer at full value), flags points entering the final quarter of their 104-week window, and updates the scenario model for the current week's event. The difference between "manually checked" and "automatically updated" is the difference between a tool and an operating system.</div>
+        <div className="text-sm font-semibold text-white mb-3">Why Lumio Data Is the Highest-Priority Integration</div>
+        <div className="text-sm text-gray-300 leading-relaxed">Without Lumio Data, Lumio Tour's OWGR tracker relies on user-entered data. With it, every Monday morning the platform automatically pulls the updated ranking, calculates which historical points are now in their 13th week (no longer at full value), flags points entering the final quarter of their 104-week window, and updates the scenario model for the current week's event. The difference between "manually checked" and "automatically updated" is the difference between a tool and an operating system.</div>
       </div>
       {/* API endpoints */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
@@ -5256,7 +5256,7 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
       </div>
       {/* Tour coverage */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Tour Coverage — DataGolf API</div></div>
+        <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Tour Coverage — Lumio Data API</div></div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead><tr className="text-gray-500 border-b border-gray-800 bg-gray-900/30">
@@ -5276,7 +5276,7 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
       </div>
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
         <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ Pricing & Access</div>
-        <div className="text-xs text-gray-400">DataGolf offers a free tier for public data. The paid API tier (needed for SG categories, course history, and real-time data) starts at approximately $150–$500/month depending on call volume and data depth. For Lumio Tour, this is a backend cost — not charged to players — absorbed as product infrastructure.</div>
+        <div className="text-xs text-gray-400">Lumio Data offers a free tier for public data. The paid API tier (needed for SG categories, course history, and real-time data) starts at approximately $150–$500/month depending on call volume and data depth. For Lumio Tour, this is a backend cost — not charged to players — absorbed as product infrastructure.</div>
       </div>
       <GolfAISection context="strokes" player={player} session={session} />
     </div>
@@ -5284,7 +5284,7 @@ function DataGolfView({ player, session }: { player: GolfPlayer; session: Sports
 }
 
 // ─── TRACKMAN INTEGRATION VIEW ────────────────────────────────────────────────
-function TrackManView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
+function GolfLaunchMonitorLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sessions = [
     { date: 'Jul 2 — Pre-tournament range (Eichenried)', club: '7-Iron', balls: 48, ballSpeed: 118, launchAngle: 17.2, spinRate: 7140, carry: 168, dispersion: '±8yd', smash: 1.34 },
@@ -5298,20 +5298,20 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
   ];
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🎯" title="TrackMan Integration" subtitle="Import practice session data from TrackMan into the practice log — bridging range work to on-course SG." />
+      <SectionHeader icon="🎯" title="Lumio Range Integration" subtitle="Import practice session data from Lumio Range into the practice log — bridging range work to on-course SG." />
       {/* Status */}
       <div className={`rounded-xl p-5 border ${connected ? 'bg-teal-900/20 border-teal-600/40' : 'bg-gray-900/30 border-gray-700'}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl border-2 ${connected ? 'border-teal-500 bg-teal-500/20' : 'border-gray-600 bg-gray-800'}`}>🎯</div>
             <div>
-              <div className="text-white font-semibold">TrackMan 4 / TrackMan iO</div>
+              <div className="text-white font-semibold">Lumio Range 4 / Lumio Range iO</div>
               <div className="text-xs text-gray-400">Pete Larsen's unit · Serial: TM4-2847 · NTC London + on-site at events</div>
             </div>
           </div>
           <button onClick={() => setConnected(!connected)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${connected ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}>
-            {connected ? 'Disconnect' : 'Connect TrackMan'}
+            {connected ? 'Disconnect' : 'Connect Lumio Range'}
           </button>
         </div>
         {connected ? (
@@ -5324,18 +5324,18 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-400">Connect Pete's TrackMan unit to automatically import every practice session. Ball speed, launch angle, spin rate, carry distance, and dispersion all flow into your Practice Log — and link to your on-course SG trends.</div>
+          <div className="text-sm text-gray-400">Connect Pete's Lumio Range unit to automatically import every practice session. Ball speed, launch angle, spin rate, carry distance, and dispersion all flow into your Practice Log — and link to your on-course SG trends.</div>
         )}
       </div>
       {/* Why it matters */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
         <div className="text-sm font-semibold text-white mb-3">The Practice ↔ Competition Bridge</div>
-        <div className="text-sm text-gray-300 leading-relaxed">Most touring professionals have excellent TrackMan data from practice — and no way to connect it to their on-course performance. Pete knows your ball speed has dropped 2mph on 7-iron. He doesn't know whether that's causing the -0.28 SG:Approach on-course, or whether it's a different problem. Lumio Tour connects these: when your TrackMan carry distance changes, the system flags whether it correlates with a shift in your competition SG:Approach. That's a genuine marginal gain.</div>
+        <div className="text-sm text-gray-300 leading-relaxed">Most touring professionals have excellent Lumio Range data from practice — and no way to connect it to their on-course performance. Pete knows your ball speed has dropped 2mph on 7-iron. He doesn't know whether that's causing the -0.28 SG:Approach on-course, or whether it's a different problem. Lumio Tour connects these: when your Lumio Range carry distance changes, the system flags whether it correlates with a shift in your competition SG:Approach. That's a genuine marginal gain.</div>
       </div>
       {/* Sessions */}
       {connected && (
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Recent TrackMan Sessions</div></div>
+          <div className="p-4 border-b border-gray-800"><div className="text-sm font-semibold text-white">Recent Lumio Range Sessions</div></div>
           <div className="divide-y divide-gray-800/50">
             {sessions.map((s, i) => (
               <div key={i} className="p-4">
@@ -5358,7 +5358,7 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
       )}
       {/* Insights */}
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-        <div className="text-sm font-semibold text-white mb-4">📊 TrackMan Insights — Pete's Flagged Findings</div>
+        <div className="text-sm font-semibold text-white mb-4">📊 Lumio Range Insights — Pete's Flagged Findings</div>
         <div className="space-y-4">
           {insights.map((ins, i) => (
             <div key={i} className="p-4 bg-black/20 rounded-lg border border-gray-800">
@@ -5370,8 +5370,8 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
         </div>
       </div>
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
-        <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ TrackMan API — Phase 2</div>
-        <div className="text-xs text-gray-400">TrackMan has a developer API for authorised integrations. Connection requires the coach or player to authorise Lumio Tour as a connected app within their TrackMan Performance Studio account. Data shared: session metadata, club averages, ball flight parameters, and dispersion charts. No video data transferred. This is scoped as a Phase 2 integration.</div>
+        <div className="text-xs font-semibold text-blue-400 mb-1">ℹ️ Lumio Range API — Phase 2</div>
+        <div className="text-xs text-gray-400">Lumio Range has a developer API for authorised integrations. Connection requires the coach or player to authorise Lumio Tour as a connected app within their Lumio Range Performance Studio account. Data shared: session metadata, club averages, ball flight parameters, and dispersion charts. No video data transferred. This is scoped as a Phase 2 integration.</div>
       </div>
       <GolfAISection context="practicelog" player={player} session={session} />
     </div>
@@ -5381,8 +5381,8 @@ function TrackManView({ player, session }: { player: GolfPlayer; session: Sports
 // ─── SHOTLINK VIEW ────────────────────────────────────────────────────────────
 function ShotLinkView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const phases = [
-    { phase: 'Phase 1 (Now)', label: 'DP World Tour — Arccos + DataGolf', desc: 'Arccos sensors provide on-course shot data. DataGolf API provides round-level SG benchmarks. No ShotLink required — DP World Tour doesn\'t use it.', status: 'active', icon: '✓' },
-    { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — DataGolf SG', desc: 'Scottish Open, Halden Motors International, and other co-sanctioned events have PGA Tour fields. DataGolf\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
+    { phase: 'Phase 1 (Now)', label: 'DP World Tour — Lumio Range + Lumio Data', desc: 'Lumio Range sensors provide on-course shot data. Lumio Data API provides round-level SG benchmarks. No ShotLink required — DP World Tour doesn\'t use it.', status: 'active', icon: '✓' },
+    { phase: 'Phase 2 (2027)', label: 'PGA Tour co-sanctions — Lumio Data SG', desc: 'Scottish Open, Halden Motors International, and other co-sanctioned events have PGA Tour fields. Lumio Data\'s PGA Tour ShotLink partnership covers these rounds at shot level.', status: 'planned', icon: '⚡' },
     { phase: 'Phase 3 (2027+)', label: 'PGA Tour Elite — Full ShotLink Integration', desc: 'Direct ShotLink partnership for PGA Tour Elite tier (£699/mo). Every shot tracked at every PGA Tour event. 256,000 data points per tournament week. Full hole strategy intelligence.', status: 'future', icon: '🔗' },
   ];
   const shotlinkData = [
@@ -5391,7 +5391,7 @@ function ShotLinkView({ player, session }: { player: GolfPlayer; session: Sports
     { metric: 'Carry distance by lie type', frequency: 'Fairway, rough, bunker', accuracy: 'High', notes: 'Allows SG:Approach breakdown by lie condition' },
     { metric: 'Putt location + length', frequency: 'Every putt', accuracy: 'High', notes: 'Powers SG:Putting from all distances and break directions' },
     { metric: 'Miss direction (left/right)', frequency: 'Every approach', accuracy: 'High', notes: 'Used for hole strategy: where misses cost most on each hole' },
-    { metric: 'Historical hole mean scores', frequency: 'Per event, 5yr avg', accuracy: 'Exact', notes: 'Foundation of hole strategy intelligence in TourIQ and DataGolf models' },
+    { metric: 'Historical hole mean scores', frequency: 'Per event, 5yr avg', accuracy: 'Exact', notes: 'Foundation of hole strategy intelligence in TourIQ and Lumio Data models' },
   ];
   return (
     <div className="space-y-6">
@@ -5399,7 +5399,7 @@ function ShotLinkView({ player, session }: { player: GolfPlayer; session: Sports
       {/* Critical context box */}
       <div className="bg-[#0d0f1a] border border-green-600/30 rounded-xl p-5">
         <div className="text-sm font-semibold text-green-400 mb-2">The Most Important Context for DP World Tour</div>
-        <div className="text-sm text-gray-300 leading-relaxed">ShotLink does not exist on the DP World Tour. It is a PGA Tour system. Every DP World Tour player (Lumio Tour's primary market) competes without ShotLink coverage at non-co-sanctioned events. This means TourIQ — which is ShotLink-dependent — simply doesn't work for these players. Lumio Tour uses DataGolf (round-level SG) and Arccos (shot-level SG) as its data layer, which covers DP World Tour completely. ShotLink is only relevant when Lumio Tour expands to a PGA Tour Elite tier.</div>
+        <div className="text-sm text-gray-300 leading-relaxed">ShotLink does not exist on the DP World Tour. It is a PGA Tour system. Every DP World Tour player (Lumio Tour's primary market) competes without ShotLink coverage at non-co-sanctioned events. This means TourIQ — which is ShotLink-dependent — simply doesn't work for these players. Lumio Tour uses Lumio Data (round-level SG) and Lumio Range (shot-level SG) as its data layer, which covers DP World Tour completely. ShotLink is only relevant when Lumio Tour expands to a PGA Tour Elite tier.</div>
       </div>
       {/* Phase roadmap */}
       <div className="space-y-3">
@@ -5439,7 +5439,7 @@ function ShotLinkView({ player, session }: { player: GolfPlayer; session: Sports
         <div className="text-sm font-semibold text-white mb-3">Path to ShotLink Partnership</div>
         <div className="space-y-2">
           {[
-            { step: '1', action: 'Establish DataGolf API integration (Phase 1) — DataGolf already has PGA Tour ShotLink access via existing partnership' },
+            { step: '1', action: 'Establish Lumio Data API integration (Phase 1) — Lumio Data already has PGA Tour ShotLink access via existing partnership' },
             { step: '2', action: 'Build DP World Tour player base to 100+ (Phase 1–2) — credibility for PGA Tour conversations' },
             { step: '3', action: 'Approach PGA Tour Innovation team (Phase 2) — position as the career OS layer above ShotLink, not a competitor' },
             { step: '4', action: 'Formalise ShotLink data agreement at the Elite tier pricing level (£699/mo) — cost of ShotLink access built into tier margin' },
@@ -5473,10 +5473,10 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
     { event: 'Halden Motors Ladies Championship', cat: 'LET Meridian', venue: 'Seomjin River CC, Korea', date: 'Oct 2026', rwgr: '60 pts', prize: '$3.25M' },
   ];
   const arccosWomen = [
-    { name: 'Emma Lindgren', flag: '🇸🇪', rank: '#1 RWGR', note: 'Full Arccos Pro analytics suite' },
+    { name: 'Emma Lindgren', flag: '🇸🇪', rank: '#1 RWGR', note: 'Full Lumio Range Pro analytics suite' },
     { name: 'Mia Harrington', flag: '🇳🇿', rank: 'Top 10 RWGR', note: 'SG tracking across LPGA season' },
-    { name: 'Sofia Lindqvist', flag: '🇨🇦', rank: 'Top 15 RWGR', note: 'Arccos course strategy tools' },
-    { name: 'Charlotte Ainsworth', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 'Top 40 RWGR', note: 'LET + LPGA Arccos user' },
+    { name: 'Sofia Lindqvist', flag: '🇨🇦', rank: 'Top 15 RWGR', note: 'Lumio Range course strategy tools' },
+    { name: 'Charlotte Ainsworth', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 'Top 40 RWGR', note: 'LET + LPGA Lumio Range user' },
   ];
   return (
     <div className="space-y-6">
@@ -5493,7 +5493,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
         <div className="space-y-4">
           <div className="bg-[#0d0f1a] border border-red-600/30 rounded-xl p-5">
             <div className="text-sm font-semibold text-white mb-3">The Women's Golf Technology Gap — Total</div>
-            <div className="text-sm text-gray-300 leading-relaxed">For women's professional golfers, the gap is not partial — it is total. There is no dedicated analytics platform for LPGA or LET players. No performance OS. No RWGR tracker. No sponsorship manager. No caddie workflow module. Nothing beyond the tour portal for entries and rankings. Arccos Pro Insights has 35+ women on tour getting on-course analytics — but nothing commercial. Lumio Tour would be the first technology platform ever built specifically for the women's professional golf career. The WTA gap in tennis is identical, and it's exactly Lumio Tour's strongest entry point in tennis. The same play is available in golf.</div>
+            <div className="text-sm text-gray-300 leading-relaxed">For women's professional golfers, the gap is not partial — it is total. There is no dedicated analytics platform for LPGA or LET players. No performance OS. No RWGR tracker. No sponsorship manager. No caddie workflow module. Nothing beyond the tour portal for entries and rankings. Lumio Range Pro Insights has 35+ women on tour getting on-course analytics — but nothing commercial. Lumio Tour would be the first technology platform ever built specifically for the women's professional golf career. The WTA gap in tennis is identical, and it's exactly Lumio Tour's strongest entry point in tennis. The same play is available in golf.</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
@@ -5511,7 +5511,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
             </table>
           </div>
           <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-            <div className="text-sm font-semibold text-white mb-4">Women Using Arccos Pro (Confirmation the Market Exists)</div>
+            <div className="text-sm font-semibold text-white mb-4">Women Using Lumio Range Pro (Confirmation the Market Exists)</div>
             {arccosWomen.map((p, i) => (
               <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
                 <span className="text-xl">{p.flag}</span>
@@ -5576,12 +5576,12 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
             <div className="text-sm font-semibold text-white mb-4">What Adapting Lumio Tour for LPGA / LET Requires</div>
             <div className="space-y-3">
               {[
-                { effort: 'Low', item: 'RWGR tracker replaces OWGR tracker', desc: 'Same rolling 104-week formula, different data source. DataGolf API covers RWGR.' },
+                { effort: 'Low', item: 'RWGR tracker replaces OWGR tracker', desc: 'Same rolling 104-week formula, different data source. Lumio Data API covers RWGR.' },
                 { effort: 'Low', item: 'Race to the CME Globe replaces Race to Dubai', desc: 'Season-long points race. Identical UI — just different data feed.' },
-                { effort: 'Low', item: 'LPGA / LET tournament calendar', desc: 'Replace DP World Tour schedule with LPGA / LET events. DataGolf covers the full LPGA calendar.' },
+                { effort: 'Low', item: 'LPGA / LET tournament calendar', desc: 'Replace DP World Tour schedule with LPGA / LET events. Lumio Data covers the full LPGA calendar.' },
                 { effort: 'Med', item: 'Female player profile and team structure', desc: 'Same team roles but caddie dynamics differ slightly. Player card adapted.' },
                 { effort: 'Med', item: 'Solheim Cup / Olympic qualification tracker', desc: 'Replaces Davis Cup / Ryder Cup module. Solheim Cup uses RWGR + LET Order of Merit.' },
-                { effort: 'High', item: 'LPGA ShotLink equivalent data', desc: 'LPGA has introduced more advanced shot tracking but not at PGA Tour ShotLink level. Use Arccos + DataGolf initially.' },
+                { effort: 'High', item: 'LPGA ShotLink equivalent data', desc: 'LPGA has introduced more advanced shot tracking but not at PGA Tour ShotLink level. Use Lumio Range + Lumio Data initially.' },
               ].map((s, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 bg-black/20 rounded-lg">
                   <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 mt-0.5 ${s.effort === 'Low' ? 'bg-teal-600/20 text-teal-400' : s.effort === 'Med' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-orange-600/20 text-orange-400'}`}>{s.effort}</span>
@@ -5592,7 +5592,7 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
           </div>
           <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4">
             <div className="text-sm font-semibold text-green-400 mb-2">Route In</div>
-            <div className="text-xs text-gray-400">The LPGA route in is via player agents (IMG, Hambric, Excel also manage women's players). Approaching Arccos directly — Edoardo Molinari already works with 35+ women — could fast-track access to the warmest leads. One well-known LPGA player on Lumio Tour is the equivalent of Erik Sandberg on the DP World Tour side.</div>
+            <div className="text-xs text-gray-400">The LPGA route in is via player agents (IMG, Hambric, Excel also manage women's players). Approaching Lumio Range directly — Edoardo Molinari already works with 35+ women — could fast-track access to the warmest leads. One well-known LPGA player on Lumio Tour is the equivalent of Erik Sandberg on the DP World Tour side.</div>
           </div>
         </div>
       )}
@@ -5605,8 +5605,8 @@ function LPGAView({ player, session }: { player: GolfPlayer; session: SportsDemo
 function MobileAppView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const features = [
     { section: 'OVERVIEW', items: ['Morning Briefing (voice playback)', 'Dashboard — today\'s schedule and alerts', 'Notification centre'] },
-    { section: 'ON COURSE', items: ['Caddie Workflow — hole strategy + carry sheet', 'In-round stat logging (fairways, GIR, putts, sand saves)', 'Post-round debrief voice note', 'WHOOP recovery check-in'] },
-    { section: 'PERFORMANCE', items: ['OWGR position and Race to Dubai standing', 'SG dashboard — last 5 rounds', 'Points expiry alert view', 'Arccos SG sync status'] },
+    { section: 'ON COURSE', items: ['Caddie Workflow — hole strategy + carry sheet', 'In-round stat logging (fairways, GIR, putts, sand saves)', 'Post-round debrief voice note', 'Lumio Wear recovery check-in'] },
+    { section: 'PERFORMANCE', items: ['OWGR position and Race to Dubai standing', 'SG dashboard — last 5 rounds', 'Points expiry alert view', 'Lumio Range SG sync status'] },
     { section: 'COMMERCIAL', items: ['Sponsor obligation due today', 'Contract expiry alerts', 'Prize money + quick financial summary', 'Agent pipeline quick view'] },
     { section: 'TEAM', items: ['Team message feed (coach notes, physio log)', 'Practice session log (quick entry)', 'Recovery score and injury status', 'Stringer contact card (direct call)'] },
   ];
@@ -5664,7 +5664,7 @@ function MobileAppView({ player, session }: { player: GolfPlayer; session: Sport
         <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
         <div className="space-y-2">
           {[
-            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of caddie yardage book + morning briefing audio. Fastest path to validating sport-specific traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Arccos / launch monitors).' },
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of caddie yardage book + morning briefing audio. Fastest path to validating sport-specific traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Lumio Range / launch monitors).' },
             { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
             { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
           ].map((o, i) => (
@@ -5728,14 +5728,14 @@ const PIPELINE: PipelineColumn[] = [
 // ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
 function GolfIntegrationsHub({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const entries: HubEntry[] = [
-    { id: 'datagolf',  icon: '🌐', label: 'DataGolf',             category: 'Data Feeds',       kind: 'custom',  render: () => <DataGolfView player={player} session={session} /> },
+    { id: 'datagolf',  icon: '🌐', label: 'Lumio Data',             category: 'Data Feeds',       kind: 'custom',  render: () => <GolfDataFeedLegacyView player={player} session={session} /> },
     { id: 'lpga',      icon: '🏆', label: 'LPGA / LET Mode',      category: 'Data Feeds',       kind: 'custom',  render: () => <LPGAView player={player} session={session} /> },
     { id: 'shotlink',  icon: '🔗', label: 'ShotLink',             category: 'Data Feeds',       kind: 'custom',  render: () => <ShotLinkView player={player} session={session} /> },
-    { id: 'arccos',    icon: '📡', label: 'Arccos',               category: 'Hardware Sensors', kind: 'custom',  render: () => <ArccosView player={player} session={session} /> },
-    { id: 'trackman',  icon: '🎯', label: 'TrackMan',             category: 'Hardware Sensors', kind: 'custom',  render: () => <TrackManView player={player} session={session} /> },
+    { id: 'arccos',    icon: '📡', label: 'Lumio Range',               category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfShotTrackingLegacyView player={player} session={session} /> },
+    { id: 'trackman',  icon: '🎯', label: 'Lumio Range',             category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
     { id: 'v1golf',    icon: '🎥', label: 'V1 Golf Video',        category: 'Hardware Sensors', kind: 'generic', config: GOLF_INTEGRATIONS.v1golf },
-    { id: 'whoop',     icon: '💚', label: 'WHOOP / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
-    { id: 'catapult',  icon: '🛰️', label: 'Catapult / STATSports', category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.catapult },
+    { id: 'whoop',     icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
+    { id: 'catapult',  icon: '🛰️', label: 'Lumio GPS / Lumio GPS', category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.catapult },
     { id: 'workspace', icon: '📧', label: 'Gmail + Calendar',     category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.workspace },
     { id: 'slack',     icon: '💬', label: 'Slack',                category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.slack },
     { id: 'broadcast', icon: '📺', label: 'Meridian Sports',      category: 'Distribution',     kind: 'generic', config: GOLF_INTEGRATIONS.broadcast },
@@ -6650,7 +6650,7 @@ function GolfRoundLogger({ onClose }: { onClose: () => void }) {
   </>)
 }
 
-function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
+function GolfLaunchMonitorAnalysis({ onClose, session, player }: { onClose: () => void; session: SportsDemoSession; player: GolfPlayer }) {
   const [club, setClub] = useState('7i')
   const [ballSpeed, setBallSpeed] = useState('')
   const [launchAngle, setLaunchAngle] = useState('')
@@ -6669,7 +6669,7 @@ function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => voi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          messages: [{ role: 'user', content: `Analyse these TrackMan numbers for a touring professional golfer: Club ${club}, Ball speed ${ballSpeed}mph, Launch ${launchAngle}°, Spin ${spinRate}rpm, Carry ${carry}yds. Compare to PGA Tour averages for this club. Identify: what's working, what needs adjustment, specific drill or setup change to improve. Technical, coaching tone. Max 300 words.` }]
+          messages: [{ role: 'user', content: `Analyse these Lumio Range numbers for a touring professional golfer: Club ${club}, Ball speed ${ballSpeed}mph, Launch ${launchAngle}°, Spin ${spinRate}rpm, Carry ${carry}yds. Compare to PGA Tour averages for this club. Identify: what's working, what needs adjustment, specific drill or setup change to improve. Technical, coaching tone. Max 300 words.` }]
         })
       })
       const data = await res.json()
@@ -6679,7 +6679,7 @@ function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => voi
   }
 
   return (<>
-    <ModalHeader icon="📡" title="TrackMan Analysis" subtitle="AI analysis of your launch monitor data" onClose={onClose} />
+    <ModalHeader icon="📡" title="Lumio Range Analysis" subtitle="AI analysis of your launch monitor data" onClose={onClose} />
     <div className="p-6 space-y-4">
       {!analysis && !loading && (<>
         <div><label className="text-xs text-gray-500 mb-2 block">Club</label>
@@ -6696,7 +6696,7 @@ function GolfTrackManAnalysis({ onClose, session, player }: { onClose: () => voi
         {ballSpeed && carry && <div className="text-xs text-center" style={{ color: '#15803D' }}>Smash factor: {smash}</div>}
         <button onClick={generate} disabled={!ballSpeed || !carry} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: ballSpeed && carry ? '#15803D' : '#374151' }}>Analyse →</button>
       </>)}
-      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">📡</div><div className="text-sm font-bold text-white">Analysing TrackMan data...</div></div>)}
+      {loading && (<div className="text-center py-10"><div className="text-4xl mb-3 animate-pulse">📡</div><div className="text-sm font-bold text-white">Analysing Lumio Range data...</div></div>)}
       {analysis && (<>
         <div className="rounded-xl p-4 text-xs leading-relaxed whitespace-pre-wrap" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#D1D5DB', maxHeight: 350, overflowY: 'auto' }}>{analysis}</div>
         <div className="flex gap-3">
@@ -6780,7 +6780,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
                 { id:'gs2', time:'08:30', label:'Caddie brief with Mick — hole plans', highlight:false },
                 { id:'gs3', time:'09:24', label:'R2 tee time — with Hartwell, Donovan', highlight:true },
                 { id:'gs4', time:'13:00', label:'Physio — lower back treatment',       highlight:false },
-                { id:'gs5', time:'15:00', label:'TrackMan session review',             highlight:false },
+                { id:'gs5', time:'15:00', label:'Lumio Range session review',             highlight:false },
                 { id:'gs6', time:'17:00', label:'Scottish Open entry deadline',        highlight:true },
                 { id:'gs7', time:'18:00', label:'Vanta Sports sponsor post — caption due', highlight:false },
                 { id:'gs8', time:'20:00', label:'Post-round media & debrief',          highlight:false },
@@ -7288,18 +7288,18 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           }}
           configFields={[
             { id: 'owgrId', label: 'OWGR Player ID', description: 'For live ranking and tournament data', kind: 'text', placeholder: 'e.g. 12345' },
-            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','TrackMan','ShotScope','Garmin','Arccos','Lumio GPS','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
+            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','Lumio Range','Lumio Range','Lumio Wear','Lumio Range','Lumio GPS','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
           ]}
           integrationGroups={[
             {
               title: 'DATA PROVIDERS',
               items: [
                 { name: 'OWGR Profile', desc: 'World ranking & points data' },
-                { name: 'TrackMan', desc: 'Launch monitor & ball flight data' },
-                { name: 'Arccos', desc: 'Shot tracking & strokes gained' },
+                { name: 'Lumio Range', desc: 'Launch monitor & ball flight data' },
+                { name: 'Lumio Range', desc: 'Shot tracking & strokes gained' },
                 { name: 'PGA/DP World Tour', desc: 'Tournament stats & leaderboards' },
-                { name: 'Veo', desc: 'Video capture & swing analysis' },
-                { name: 'STATSports', desc: 'GPS load & movement data' },
+                { name: 'Lumio Vision', desc: 'Video capture & swing analysis' },
+                { name: 'Lumio GPS', desc: 'GPS load & movement data' },
               ],
             },
             {
@@ -7371,7 +7371,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             {activeModal === 'hotel' && <GolfHotelFinder onClose={closeModal} session={session} />}
             {activeModal === 'coursestrategy' && <GolfCourseStrategyAI onClose={closeModal} session={session} />}
             {activeModal === 'loground' && <GolfRoundLogger onClose={closeModal} />}
-            {activeModal === 'trackman' && <GolfTrackManAnalysis onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'trackman' && <GolfLaunchMonitorAnalysis onClose={closeModal} session={session} player={player} />}
             {activeModal === 'caddiebriefai' && <GolfCaddieBriefAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'matchprep' && <GolfMatchPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'sponsorpost' && <GolfSponsorPost onClose={closeModal} session={session} player={player} />}

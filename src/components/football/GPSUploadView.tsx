@@ -203,7 +203,7 @@ export default function GPSUploadView({ clubId, isDemo = false }: { clubId?: str
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-bold" style={{ color: C.text }}>Upload GPS Session</h3>
-          <p className="text-xs mt-0.5" style={{ color: C.muted }}>Catapult OpenField or STATSports Sonra CSV exports.</p>
+          <p className="text-xs mt-0.5" style={{ color: C.muted }}>Lumio GPS CSV exports (standard format).</p>
         </div>
 
         <div

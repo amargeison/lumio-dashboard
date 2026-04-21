@@ -3259,8 +3259,8 @@ function NLGPSView() {
       <SectionCard title="Pitch Heatmap">
         <div className="rounded-lg p-8 text-center" style={{ backgroundColor: '#15803D22', border: `1px solid ${BORDER}` }}>
           <Activity size={32} style={{ color: TEXT_SEC, margin: '0 auto' }} />
-          <p className="text-xs mt-2" style={{ color: TEXT_SEC }}>GPS heatmap visualisation — connect Veo or GPS tracker to populate</p>
-          <p className="text-[10px] mt-1" style={{ color: PRIMARY }}>Veo integration coming soon</p>
+          <p className="text-xs mt-2" style={{ color: TEXT_SEC }}>GPS heatmap visualisation — connect Lumio Vision or GPS tracker to populate</p>
+          <p className="text-[10px] mt-1" style={{ color: PRIMARY }}>Lumio Vision integration coming soon</p>
         </div>
       </SectionCard>
 

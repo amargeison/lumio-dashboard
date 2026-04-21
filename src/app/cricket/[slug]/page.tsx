@@ -3855,7 +3855,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
           </Card>
           <Card>
             <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Integrations</div>
-            {[{n:'CricViz',on:true},{n:'Hawkeye',on:false},{n:'Catapult GPS',on:true},{n:'Play-Cricket',on:true}].map(i=>(
+            {[{n:'CricViz',on:true},{n:'Hawkeye',on:false},{n:'Lumio GPS',on:true},{n:'Play-Cricket',on:true}].map(i=>(
               <div key={i.n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:13,color:C.text}}>{i.n}</span>
                 <span style={{fontSize:11,padding:'3px 10px',borderRadius:20,background:i.on?C.greenDim:C.border,color:i.on?C.green:C.dim}}>{i.on?'Connected':'Off'}</span>

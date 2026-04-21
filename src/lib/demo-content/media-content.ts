@@ -391,7 +391,7 @@ const GOLF: MediaContentData = {
       date: 'Mon 14 Apr',
       author: 'Sam Oakeley',
       sentiment: 'positive',
-      excerpt: 'Ball-striking data from TrackMan suggests the mid-iron upgrade has added a measurable half-club of stopping power — exactly what he\'ll need on Munich\'s firm greens.',
+      excerpt: 'Ball-striking data from Lumio Range suggests the mid-iron upgrade has added a measurable half-club of stopping power — exactly what he\'ll need on Munich\'s firm greens.',
     },
     {
       id: 'p-4',

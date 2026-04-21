@@ -280,7 +280,7 @@ export default function GPSPerformanceView({ clubId, isDemo = false }: { clubId?
         <div className="rounded-xl p-8 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
           <TrendingUp size={32} style={{ color: GOLD, margin: '0 auto 12px', opacity: 0.5 }} />
           <p className="text-sm font-semibold mb-1" style={{ color: '#F9FAFB' }}>Load Trends</p>
-          <p className="text-xs" style={{ color: '#6B7280' }}>Connect Catapult or STATSports to see weekly load trends with charts.</p>
+          <p className="text-xs" style={{ color: '#6B7280' }}>Connect Lumio GPS to see weekly load trends with charts.</p>
           <p className="text-xs mt-3" style={{ color: GOLD }}>Connect your GPS provider in the Connect tab</p>
         </div>
       )}
@@ -305,13 +305,13 @@ export default function GPSPerformanceView({ clubId, isDemo = false }: { clubId?
                 <button key={p} onClick={() => setConnectProvider(p)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{
                   backgroundColor: connectProvider === p ? `${RED}20` : 'transparent', color: connectProvider === p ? RED : '#6B7280',
                   border: connectProvider === p ? `1px solid ${RED}40` : `1px solid ${BORDER}`,
-                }}>{p === 'catapult' ? 'Catapult OpenField' : 'STATSports Apex'}</button>
+                }}>{p === 'catapult' ? 'Lumio GPS' : 'Lumio GPS Pro'}</button>
               ))}
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>{connectProvider === 'catapult' ? 'Catapult API Token' : 'STATSports API Key'}</label>
-                <input value={connectToken} onChange={e => setConnectToken(e.target.value)} placeholder={connectProvider === 'catapult' ? 'Enter your Catapult OpenField API token' : 'Enter your STATSports API key'} className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER}`, color: '#F9FAFB' }} />
+                <label className="text-xs mb-1 block" style={{ color: '#6B7280' }}>{connectProvider === 'catapult' ? 'Lumio GPS API Token' : 'Lumio GPS Pro API Key'}</label>
+                <input value={connectToken} onChange={e => setConnectToken(e.target.value)} placeholder={connectProvider === 'catapult' ? 'Enter your Lumio GPS API token' : 'Enter your Lumio GPS Pro API key'} className="w-full text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER}`, color: '#F9FAFB' }} />
               </div>
               <button onClick={handleConnect} disabled={saving || !connectToken.trim()} className="px-4 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: saved ? '#22C55E' : RED, color: '#F9FAFB', opacity: saving || !connectToken.trim() ? 0.5 : 1 }}>
                 {saving ? 'Connecting...' : saved ? 'Connected!' : 'Connect'}
@@ -321,11 +321,11 @@ export default function GPSPerformanceView({ clubId, isDemo = false }: { clubId?
 
           <div className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
             <p className="text-sm font-semibold mb-2" style={{ color: '#F9FAFB' }}>Or Upload CSV</p>
-            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Export from Catapult or STATSports and upload here</p>
+            <p className="text-xs mb-3" style={{ color: '#6B7280' }}>Export from your GPS platform and upload here</p>
             <div className="rounded-xl p-6 text-center cursor-pointer" style={{ backgroundColor: '#0A0B10', border: `2px dashed ${BORDER}` }}>
               <Upload size={24} style={{ color: GOLD, margin: '0 auto 8px' }} />
               <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>Drop GPS export file here</p>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>CSV format from Catapult or STATSports</p>
+              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Standard GPS CSV format</p>
             </div>
           </div>
         </div>

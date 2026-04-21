@@ -926,7 +926,7 @@ const RecoveryChart = () => {
   const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
   return (
     <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <div className="text-sm font-semibold text-white mb-4">Lumio Wear Recovery (7-Day Trend)</div>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <defs>
           <linearGradient id="recovGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1370,13 +1370,13 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           { n:1, label:'Your tennis OS, fully connected', icon:'🎾', title:'Your tennis OS, fully connected', description:'One portal that replaces the 6 tools you probably use right now. Rankings, GPS, sponsors, travel, match prep, and your team — all here, all connected, all talking to each other.', preview:'dashboard_overview' },
           { n:2, label:'Start every day knowing everything', icon:'🌅', title:'Start every day knowing everything', description:'Your AI morning briefing reads your headlines aloud — messages, schedule, match prep, sponsor deadlines, ranking updates. Ready in 60 seconds. Press play.', preview:'morning_briefing' },
           { n:3, label:'Every action, one click away', icon:'⚡', title:'Every action, one click away', description:'16 quick actions on your dashboard — book a flight, order strings, file an injury, generate a press statement, send your agent a weekly brief. All in under 60 seconds.', preview:'quick_actions' },
-          { n:4, label:'GPS, rankings, and performance', icon:'📊', title:'Data that actually makes sense', description:'Your ATP ranking, Race to Turin, serve percentages, break point conversion, clay win rate — all in one place. Connect Catapult or STATSports for live GPS load data.', preview:'performance' },
+          { n:4, label:'GPS, rankings, and performance', icon:'📊', title:'Data that actually makes sense', description:'Your ATP ranking, Race to Turin, serve percentages, break point conversion, clay win rate — all in one place. Connect Lumio GPS or Lumio GPS for live GPS load data.', preview:'performance' },
           { n:5, label:'Your team, front and centre', icon:'👥', title:'Your team. Everyone sees their own view.', description:"Your whole team connected — but each role gets their own tailored view. Your coach, physio, sponsor and agent see only what's relevant to them. You control what each role can see.", preview:'team' },
           { n:6, label:'AI that actually helps you win', icon:'🤖', title:'AI that actually helps you win', description:"Match Prep AI searches the web for your opponent's recent stats, tendencies and weaknesses — then generates a tactical brief in 30 seconds. Real data, real insights.", preview:'match_prep' },
           { n:7, label:'Travel sorted in 60 seconds', icon:'✈️', title:'Travel sorted in 60 seconds', description:'Smart Flight Finder searches BA, easyJet, Ryanair, Air France and more simultaneously — scores each flight and sends a booking email to your agent in one tap.', preview:'travel' },
           { n:8, label:'Sponsors managed automatically', icon:'🤝', title:'Sponsors managed automatically', description:"AI generates authentic sponsor posts in your voice — right tone, right platform, right hashtags. Tracks obligations, content calendar and renewal dates so nothing slips.", preview:'sponsor' },
           { n:9, label:'Nothing falls through the cracks', icon:'🔴', title:'Nothing falls through the cracks', description:"Don't Miss flags your most critical items — wildcard deadlines, medical flags, contract renewals, sponsor obligations. Sorted by urgency. Dismissable when done.", preview:'dontmiss' },
-          { n:10, label:'Unlock GPS & Video Intelligence', icon:'🛰️', title:'Unlock GPS & Video Intelligence', description:'Connect SwingVision for shot tracking and AI video clips. Pair with your Lumio GPS Tracker to get court heatmaps, movement load scores and an AI coaching brief generated automatically at the end of every session and set.', preview:'gps_video' },
+          { n:10, label:'Unlock GPS & Video Intelligence', icon:'🛰️', title:'Unlock GPS & Video Intelligence', description:'Connect Lumio Vision for shot tracking and AI video clips. Pair with your Lumio GPS Tracker to get court heatmaps, movement load scores and an AI coaching brief generated automatically at the end of every session and set.', preview:'gps_video' },
           { n:11, label:"You've seen enough — let's go", icon:'🚀', title:"You've seen enough. Let's go.", description:'Your portal is ready. Every section is live with demo data. Explore freely — or sign up for your 3-month free trial to connect your real ATP data, Gmail, calendar and GPS.', preview:'cta' },
         ]
         const step = TOUR_STEPS[tourStep]
@@ -1406,7 +1406,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <h2 className="text-xl font-black text-white mb-2">{step.title}</h2>
                   <p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>{step.description}</p>
 
-                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Vega · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Catapult GPS</div></div>
+                  {step.preview === 'dashboard_overview' && (<><div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><div><div className="text-xs font-bold text-white">Good morning, {firstName} 👋</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>Today: Match vs Vega · 13:30 Court 4 · Monte-Carlo</div></div><div className="grid grid-cols-4 gap-2">{[{ icon:'📊', v:`#${player.ranking ?? 67}`, label:'ATP Rank', c:'#0ea5e9' },{ icon:'✅', v:'Match Today', label:'Schedule', c:'#22C55E' },{ icon:'🔴', v:'2 Urgent', label:'Messages', c:'#EF4444' },{ icon:'💰', v:'£387k', label:'Prize YTD', c:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="text-[10px] text-center" style={{ color: '#374151' }}>Powered by ATP API · Gmail · Google Calendar · Lumio GPS GPS</div></div>
                   {/* Brand Colours — only in step 1 detail */}
                   <div className="mt-4 space-y-3">
                     <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div>
@@ -1438,7 +1438,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
                   {step.preview === 'quick_actions' && (<div className="space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#4B5563' }}>Quick actions</div><div className="flex flex-wrap gap-2">{[{ icon:'✈️', label:'Smart Flights', color:'#0ea5e9', hot:true },{ icon:'🎾', label:'Match Prep AI', color:'#22C55E', hot:true },{ icon:'📱', label:'Sponsor Post', color:'#F59E0B', hot:false },{ icon:'📣', label:'Press Statement', color:'#8B5CF6', hot:false },{ icon:'💼', label:'Agent Brief', color:'#F59E0B', hot:true },{ icon:'🎯', label:'Wildcard Request', color:'#EF4444', hot:false },{ icon:'💊', label:'Log Injury', color:'#EF4444', hot:false },{ icon:'⏱️', label:'Warm-up Timer', color:'#F59E0B', hot:false }].map((a, i) => (<div key={i} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold relative" style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}</div>))}</div><div className="text-xs p-3 rounded-xl" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.15)', color: '#93C5FD' }}>💡 Smart Flights searches 8+ airlines simultaneously — you shouldn&apos;t be able to find cheaper on Google.</div></div>)}
 
-                  {step.preview === 'performance' && (<div className="space-y-3"><div className="grid grid-cols-2 gap-3">{[{ label:'ATP Ranking', value:`#${player.ranking ?? 67}`, sub:'↑2 this week', color:'#0ea5e9' },{ label:'Race to Turin', value:`#${player.race_ranking ?? 54}`, sub:'Top 8 qualifies', color:'#22C55E' },{ label:'Clay win rate', value:'68%', sub:'Above ATP avg', color:'#15803D' },{ label:'First serve %', value:'64%', sub:'↑6% last 5 matches', color:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.sub}</div></div></div>))}</div><div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🔌 Connect Catapult OpenField or STATSports Sonra in Settings for live GPS load, ACWR and heatmaps.</div></div>)}
+                  {step.preview === 'performance' && (<div className="space-y-3"><div className="grid grid-cols-2 gap-3">{[{ label:'ATP Ranking', value:`#${player.ranking ?? 67}`, sub:'↑2 this week', color:'#0ea5e9' },{ label:'Race to Turin', value:`#${player.race_ranking ?? 54}`, sub:'Top 8 qualifies', color:'#22C55E' },{ label:'Clay win rate', value:'68%', sub:'Above ATP avg', color:'#15803D' },{ label:'First serve %', value:'64%', sub:'↑6% last 5 matches', color:'#F59E0B' }].map((s, i) => (<div key={i} className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div><div><div className="text-xs font-bold text-white">{s.label}</div><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.sub}</div></div></div>))}</div><div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>🔌 Connect Lumio GPS OpenField or Lumio GPS Sonra in Settings for live GPS load, ACWR and heatmaps.</div></div>)}
 
                   {step.preview === 'team' && (<><div className="grid grid-cols-2 md:grid-cols-3 gap-3">{[{ initials:'CM', name:'Carlos Mendez', role:'Head Coach', status:'Match notes ready', color:'#22C55E' },{ initials:'SL', name:'Dr Sarah Lee', role:'Physiotherapist', status:'12:30 treatment', color:'#EF4444' },{ initials:'JW', name:'James Wright', role:'Agent', status:'3 inquiries pending', color:'#F59E0B' },{ initials:'TE', name:'Tom Ellis', role:'Stringer', status:'11:45 confirmed', color:'#0ea5e9' },{ initials:'MW', name:'Meridian Watches', role:'Sponsor', status:'Content shoot 14:00 today', color:'#8B5CF6' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${m.color}20`, border: `1px solid ${m.color}40`, color: m.color }}>{m.initials}</div><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{m.name}</div><div className="text-[10px]" style={{ color: m.color }}>{m.role}</div><div className="text-[10px] truncate" style={{ color: '#4B5563' }}>{m.status}</div></div><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#22C55E' }} /></div>))}</div><div className="mt-4 mb-3"><div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>Everyone gets their own view</div><p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Your coach sees training & tactical data. Your physio sees medical & recovery only. Your sponsor sees brand activation & ROI. Your agent sees contracts & commercials. You stay in control — switch role any time from the bottom of the sidebar.</p><div className="grid grid-cols-2 gap-2">{[{ icon:'🎯', role:'Player view', desc:'Full access — everything', color:'#0ea5e9' },{ icon:'📋', role:'Coach view', desc:'Training, tactics, performance', color:'#22C55E' },{ icon:'⚕️', role:'Medical / Physio', desc:'Injury log, load, recovery only', color:'#EF4444' },{ icon:'🤝', role:'Sponsor / Partner', desc:'Brand visibility, obligations, ROI', color:'#F59E0B' },{ icon:'💼', role:'Agent / Manager', desc:'Contracts, commercials, schedule', color:'#0ea5e9' }].map((v, i) => (<div key={i} className="flex items-center gap-2 rounded-lg p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base flex-shrink-0">{v.icon}</span><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{v.role}</div><div className="text-[10px] truncate" style={{ color: v.color }}>{v.desc}</div></div></div>))}</div></div><div className="mt-3 rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>📨 One tap from a card messages the right person — coach, physio, agent, stringer or sponsor — without leaving Lumio.</div></>)}
 
@@ -1454,9 +1454,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.2)' }}>
                         <div className="text-2xl mb-2">🎾</div>
-                        <div className="text-sm font-bold text-white mb-1">SwingVision</div>
+                        <div className="text-sm font-bold text-white mb-1">Lumio Vision</div>
                         <div className="text-[10px] mb-3" style={{ color: '#6B7280' }}>AI shot tracking · video clips · serve analysis</div>
-                        <button className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }}>Connect SwingVision</button>
+                        <button className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }}>Connect Lumio Vision</button>
                       </div>
                       <div className="rounded-xl p-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.2)' }}>
                         <div className="text-2xl mb-2">📡</div>
@@ -2424,7 +2424,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
               {[
                 { icon: '📦', text: '£299 one-off hardware + included in your plan' },
                 { icon: '📡', text: 'Pairs automatically with your portal' },
-                { icon: '🎾', text: 'Combines with SwingVision for AI post-session briefs' },
+                { icon: '🎾', text: 'Combines with Lumio Vision for AI post-session briefs' },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs" style={{ color: '#D1D5DB' }}><span>{f.icon}</span>{f.text}</div>
               ))}
@@ -2524,7 +2524,7 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
     player: `Good morning, ${player.name.split(' ')[0]}. You're ranked ${player.ranking}th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average of 65%. Today you're facing Carlos Vega, ranked 34th. He favours the inside-out forehand on break points on clay — Marco has left a full breakdown in your match prep. Stringing is at 11:45 with Carlos at your usual clay tensions — Luxilon ALU at 24kg mains, 23kg crosses. Your Apex Performance Instagram post is due today — James has drafted a caption for your review. First match is at 13:00 on Court 4. You've beaten Vega 3 times on clay. Everything is ready.`,
     coach: `Morning briefing for Marco Bianchi. Alex's recovery score is 82 out of 100 — shoulder flagged as mild yesterday by Sarah. Practice plan for 10am: 45 minutes serve patterns focusing on body serve percentages, then 45 minutes return drill — Carlos Vega's second serve sits wide on the deuce side 68% of the time. H2H against Vega: Alex leads 3-1 overall, 3-0 on clay. Main tactical note: Vega breaks down mentally after losing the first set. Apply pressure early. Stringing confirmed 11:45. Alex's meal plan from Luis is in the system.`,
     agent: `Morning briefing for James Whitfield. Apex Performance Instagram post is due today — draft is in the sponsorship tab awaiting Alex's approval. The Meridian Watches deal renewal is 47 days out — agenda item for Friday's call. Performance bonus trigger: if Alex reaches the semi-final this week, the Vanta Sports performance clause activates — GBP 8,500 bonus. Race standing is 54th — 312 points behind the cut-off for the 8-man Turin field. Next ranking report to Meridian Watches is due end of month. No press obligations today.`,
-    physio: `Morning briefing for Sarah Okafor. Alex's WHOOP recovery score is 82. Right shoulder flagged mild yesterday — completed 20-minute treatment this morning, strapping applied, cleared for full practice. Pre-match treatment window is 12:00-12:30 before the 13:00 match. Watch for serve load during warm-up — cap at 40 serves in practice. Travel departs Saturday — next event is Barcelona ATP 500, clay, 13-19 April. No new injury flags from the training log.`,
+    physio: `Morning briefing for Sarah Okafor. Alex's Lumio Wear recovery score is 82. Right shoulder flagged mild yesterday — completed 20-minute treatment this morning, strapping applied, cleared for full practice. Pre-match treatment window is 12:00-12:30 before the 13:00 match. Watch for serve load during warm-up — cap at 40 serves in practice. Travel departs Saturday — next event is Barcelona ATP 500, clay, 13-19 April. No new injury flags from the training log.`,
   };
 
   const recipients = [
@@ -4088,14 +4088,14 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
 
 // ─── VIDEO LIBRARY VIEW ────────────────────────────────────────────────────────
 
-// ─── SWINGVISION CARDS ────────────────────────────────────────────────────────
-function SwingVisionCards() {
+// ─── LUMIO VISION CARDS ──────────────────────────────────────────────────────
+function LumioVisionCards() {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   const svVideos = [
     {
       title: 'Match vs. Ferreira — Roland Garros',
-      source: 'Imported from SwingVision',
+      source: 'Imported from Lumio Vision',
       duration: '2h 14m',
       stats: { shots: 187, firstServe: '72%', aces: 3 },
       breakdown: [
@@ -4109,7 +4109,7 @@ function SwingVisionCards() {
     },
     {
       title: 'Serve Practice Session — 45 min',
-      source: 'SwingVision Auto-Track',
+      source: 'Lumio Vision Auto-Track',
       duration: '45m',
       stats: { shots: 234, firstServe: '68% in', aces: null, avgSpeed: '201 km/h' },
       breakdown: [
@@ -4123,7 +4123,7 @@ function SwingVisionCards() {
     },
     {
       title: 'Baseline Drill — Cross Court Forehands',
-      source: 'SwingVision Auto-Track',
+      source: 'Lumio Vision Auto-Track',
       duration: '30m',
       stats: { shots: 89, accuracy: '81%' },
       breakdown: [
@@ -4143,7 +4143,7 @@ function SwingVisionCards() {
         <div key={i} className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors">
           <div className="h-28 flex items-center justify-center text-4xl relative" style={{ background: 'linear-gradient(135deg, rgba(108,63,197,0.15) 0%, rgba(13,148,136,0.1) 100%)' }}>
             🎬
-            <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 border border-purple-500/30 font-medium">SwingVision</span>
+            <span className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 border border-purple-500/30 font-medium">Lumio Vision</span>
           </div>
           <div className="p-4">
             <div className="text-sm text-white font-medium mb-1">{v.title}</div>
@@ -4244,9 +4244,9 @@ function VideoLibraryView({ player, session }: { player: TennisPlayer; session: 
         ))}
       </div>
 
-      {/* SwingVision Integration */}
+      {/* Lumio Vision Integration */}
       <div className="mt-8 space-y-4">
-        <div className="text-sm font-semibold text-white">SwingVision Integration</div>
+        <div className="text-sm font-semibold text-white">Lumio Vision Integration</div>
 
         {/* Connection Card */}
         <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/20 border border-purple-600/30 rounded-xl p-5">
@@ -4256,19 +4256,19 @@ function VideoLibraryView({ player, session }: { player: TennisPlayer; session: 
                 <span className="text-xs font-bold text-purple-400">SV</span>
               </div>
               <div>
-                <div className="text-white font-bold">SwingVision</div>
+                <div className="text-white font-bold">Lumio Vision</div>
                 <div className="text-xs text-gray-400">AI-powered shot tracking & analysis</div>
                 <div className="text-xs text-red-400 mt-0.5">Not connected</div>
               </div>
             </div>
             <button className="px-4 py-2 rounded-lg text-xs font-medium bg-purple-600/20 text-purple-400 border border-purple-600/30 hover:bg-purple-600/30 transition-colors">
-              Connect SwingVision
+              Connect Lumio Vision
             </button>
           </div>
         </div>
 
-        {/* SwingVision Video Cards */}
-        <SwingVisionCards />
+        {/* Lumio Vision Video Cards */}
+        <LumioVisionCards />
       </div>
       <TennisAISection context="video" player={player} session={session} />
     </div>
@@ -4370,7 +4370,7 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
   const maxMatchesInWeek = Math.max(...MATCH_LOAD_DATA.map(w=>w.matches));
 
   // Recovery score drives the Cleared-for-match banner colour. Demo: 82
-  // (hardcoded alongside the WHOOP StatCard). Founder: undefined → amber
+  // (hardcoded alongside the Lumio Wear StatCard). Founder: undefined → amber
   // warning gradient on the "no data" banner.
   const recoveryScore = isDemoShellTennis ? 82 : null;
   const recoveryBelowThreshold = recoveryScore !== null && recoveryScore < 65;
@@ -4404,10 +4404,10 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
   return (
     <div className="space-y-6">
 
-      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, WHOOP recovery scores, and treatment protocols." />
+      <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, Lumio Wear recovery scores, and treatment protocols." />
 
       <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Recovery Score" value="82/100" sub="Today (WHOOP)" color="green" />
+        <StatCard label="Recovery Score" value="82/100" sub="Today (Lumio Wear)" color="green" />
         <StatCard label="HRV" value="68ms" sub="^7ms vs yesterday" color="teal" />
         <StatCard label="Resting HR" value="48 bpm" sub="Match day normal" color="blue" />
         <StatCard label="Sleep" value="7.2 hrs" sub="76 sleep score" color="purple" />
@@ -4606,7 +4606,7 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
         </div>
       </div>
 
-      {/* WHOOP Recovery Chart */}
+      {/* Lumio Wear Recovery Chart */}
       <RecoveryChart />
 
       {/* Recovery Trend */}
@@ -7701,7 +7701,7 @@ const DataHubView = ({ player, session }: { player: TennisPlayer; session: Sport
     { section: 'H2H / Opponent Scout', source: 'API-Tennis' },
     { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
     { section: 'Performance Rating', source: 'Lumio analytics engine' },
-    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Video Library', source: 'Lumio Vision + manual upload' },
     { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
   ];
   return (
@@ -7917,7 +7917,7 @@ function GPSCourtView({ player, session: demoSession }: { player: TennisPlayer; 
             <div className="flex items-center gap-3"><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /><span className="text-green-400">Connected</span></span><span className="text-gray-500">Battery: 87%</span><span className="text-gray-500">Sync: 2 min ago</span></div>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2"><span>🎾</span><span className="text-white">SwingVision</span></div>
+            <div className="flex items-center gap-2"><span>🎾</span><span className="text-white">Lumio Vision</span></div>
             <div className="flex items-center gap-3"><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /><span className="text-green-400">Connected</span></span><span className="text-gray-500">127 shots logged</span></div>
           </div>
         </div>
@@ -8100,7 +8100,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
 
   const courtSurface = '#b45309'
 
-  const aiBrief = "Your session load of 74 sits in the optimal training zone. Court coverage at 4.2km is above your 12-session average — you've been moving more aggressively to the deuce side baseline, where 60% of your rally exposure came today. Top speed of 28.4km/h was logged on a set-2 sprint to recover a drop shot — faster than 74% of your tracked sessions on clay.\n\nSwingVision logged 14 winners against 8 unforced errors, a clean +6 on the margin. First-serve percentage at 68% gives you a platform; the target for your next session is to push that to 72% without losing the 12% ace rate.\n\nNet points won at 71% suggests you were rewarded when you advanced — consider scripting 2-3 forced net approaches per service game in your next match."
+  const aiBrief = "Your session load of 74 sits in the optimal training zone. Court coverage at 4.2km is above your 12-session average — you've been moving more aggressively to the deuce side baseline, where 60% of your rally exposure came today. Top speed of 28.4km/h was logged on a set-2 sprint to recover a drop shot — faster than 74% of your tracked sessions on clay.\n\nLumio Vision logged 14 winners against 8 unforced errors, a clean +6 on the margin. First-serve percentage at 68% gives you a platform; the target for your next session is to push that to 72% without losing the 12% ace rate.\n\nNet points won at 71% suggests you were rewarded when you advanced — consider scripting 2-3 forced net approaches per service game in your next match."
 
   const movementPoints = [
     { x: 150, y: 510, r: 50, grad: 'movHot' }, { x: 90, y: 505, r: 45, grad: 'movHot' },
@@ -8311,14 +8311,14 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
   const AiBriefPanel = () => (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', borderLeft: '4px solid #06b6d4', border: '1px solid #1F2937' }}>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-        <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + SwingVision Combined</span></div>
+        <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-white">AI Coaching Brief — GPS + Lumio Vision Combined</span></div>
         {isDemoShell && <span className="text-[10px]" style={{ color: '#6B7280' }}>Generated: just now</span>}
       </div>
       <div className="px-5 py-4">
         {isDemoShell ? (
           <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D1D5DB' }}>{aiBrief}</div>
         ) : (
-          <EmptyConnect feature="Connect your SwingVision + Lumio GPS Tracker to unlock AI coaching briefs." />
+          <EmptyConnect feature="Connect your Lumio Vision + Lumio GPS Tracker to unlock AI coaching briefs." />
         )}
       </div>
     </div>
@@ -8326,7 +8326,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🛰️" title="GPS & Video" subtitle="Court coverage, shot tracking, and SwingVision clip review." />
+      <SectionHeader icon="🛰️" title="GPS & Video" subtitle="Court coverage, shot tracking, and Lumio Vision clip review." />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
@@ -8346,7 +8346,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
         <div className="space-y-6">
           <div className="flex flex-wrap gap-3">
             <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🛰️</span><span className="text-sm font-semibold text-white">Lumio GPS Tracker</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: isDemoShell ? '#22C55E' : '#6B7280' }} /><span className="text-xs" style={{ color: isDemoShell ? '#22C55E' : '#6B7280' }}>{isDemoShell ? 'Connected' : 'Not connected'}</span>{isDemoShell && <><span className="text-xs" style={{ color: '#6B7280' }}>Battery: 87%</span><span className="text-xs" style={{ color: '#6B7280' }}>Last sync: 2 mins ago</span></>}<button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>Settings</button></div>
-            <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🎾</span><span className="text-sm font-semibold text-white">SwingVision</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: isDemoShell ? '#22C55E' : '#6B7280' }} /><span className="text-xs" style={{ color: isDemoShell ? '#22C55E' : '#6B7280' }}>{isDemoShell ? 'Connected' : 'Not connected'}</span>{isDemoShell && <span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span>}<button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{isDemoShell ? 'View Clips' : 'Connect'}</button></div>
+            <div className="flex-1 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><span className="text-lg">🎾</span><span className="text-sm font-semibold text-white">Lumio Vision</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: isDemoShell ? '#22C55E' : '#6B7280' }} /><span className="text-xs" style={{ color: isDemoShell ? '#22C55E' : '#6B7280' }}>{isDemoShell ? 'Connected' : 'Not connected'}</span>{isDemoShell && <span className="text-xs" style={{ color: '#6B7280' }}>Session: 127 shots logged</span>}<button className="ml-auto text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{isDemoShell ? 'View Clips' : 'Connect'}</button></div>
           </div>
           <div className="grid grid-cols-5 gap-3">{[{ label:'Court Coverage', value: isDemoShell ? '4.2 km' : '—', color:'#06b6d4' },{ label:'Sprint Distance', value: isDemoShell ? '1.8 km' : '—', color:'#06b6d4' },{ label:'Top Speed', value: isDemoShell ? '28.4 km/h' : '—', color:'#06b6d4' },{ label:'Load Score', value: isDemoShell ? '74 / 100' : '—', color:'#F59E0B' },{ label:'Recovery Index', value: isDemoShell ? 'Good' : '—', color:'#22C55E' }].map(s => (<div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><div className="text-lg font-black" style={{ color: isDemoShell ? s.color : '#4B5563' }}>{s.value}</div><div className="text-xs mt-1" style={{ color: '#6B7280' }}>{s.label}</div></div>))}</div>
 
@@ -8358,7 +8358,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
                 <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Opponent</div><div className="text-sm text-white font-medium mt-1">M. Lindqvist</div></div>
                 <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Result</div><div className="text-sm font-medium mt-1" style={{ color: '#22C55E' }}>W 6-4, 7-5</div></div>
                 <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Coverage</div><div className="text-sm text-white font-medium mt-1">3.8km · Load 68</div></div>
-                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">SwingVision</div><div className="text-sm text-white font-medium mt-1">12 W / 9 UE · 64% 1st</div></div>
+                <div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Lumio Vision</div><div className="text-sm text-white font-medium mt-1">12 W / 9 UE · 64% 1st</div></div>
               </div>
             ) : (
               <EmptyConnect feature="Connect your Lumio GPS Tracker to log session summaries." />
@@ -8440,7 +8440,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
                     <HeatLegend />
                   </>
                 ) : (
-                  <EmptyConnect feature="Connect SwingVision to log shot placement." />
+                  <EmptyConnect feature="Connect Lumio Vision to log shot placement." />
                 )}
               </div>
 
@@ -8472,7 +8472,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
                     </div>
                   </>
                 ) : (
-                  <EmptyConnect feature="Connect SwingVision to log serve placement." />
+                  <EmptyConnect feature="Connect Lumio Vision to log serve placement." />
                 )}
               </div>
             </div>
@@ -8489,9 +8489,9 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-bold text-white">Highlight Clips</div>
-              <div className="text-[11px] text-gray-500">SwingVision auto-tagged moments from this session.</div>
+              <div className="text-[11px] text-gray-500">Lumio Vision auto-tagged moments from this session.</div>
             </div>
-            <button className="px-3 py-1.5 bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 text-xs font-medium rounded-lg hover:bg-cyan-600/30 transition-colors">View in SwingVision →</button>
+            <button className="px-3 py-1.5 bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 text-xs font-medium rounded-lg hover:bg-cyan-600/30 transition-colors">View in Lumio Vision →</button>
           </div>
           {isDemoShell ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -8511,7 +8511,7 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
             </div>
           ) : (
             <div className="rounded-xl" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <EmptyConnect feature="Connect SwingVision to auto-capture and tag highlight clips." />
+              <EmptyConnect feature="Connect Lumio Vision to auto-capture and tag highlight clips." />
             </div>
           )}
         </div>
@@ -10841,7 +10841,7 @@ function DataHubView({ player, session }: { player: TennisPlayer; session: Sport
     { section: 'Surface Analysis', source: 'API-Tennis + Lumio' },
     { section: 'Shot Heatmaps', source: 'Lumio analytics engine' },
     { section: 'Performance Rating', source: 'Lumio analytics engine' },
-    { section: 'Video Library', source: 'SwingVision + manual upload' },
+    { section: 'Video Library', source: 'Lumio Vision + manual upload' },
     { section: 'Match Reports', source: 'Claude AI (Anthropic)' },
   ];
 
@@ -11022,7 +11022,7 @@ function TennisMobileAppView({ player, session }: { player: TennisPlayer; sessio
         <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
         <div className="space-y-2">
           {[
-            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of opponent scout + morning briefing audio. Fastest path to validating tennis traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Catapult / WHOOP).' },
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of opponent scout + morning briefing audio. Fastest path to validating tennis traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for Lumio GPS / Lumio Wear).' },
             { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
             { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
           ].map((o, i) => (
@@ -11063,10 +11063,10 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
     { id: 'atp-api',     icon: '🏆', label: 'ATP Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['atp-api'] },
     { id: 'wta-api',     icon: '🎾', label: 'WTA Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['wta-api'] },
     { id: 'hawkeye',     icon: '👁️', label: 'Hawk-Eye',           category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.hawkeye },
-    { id: 'swingvision', icon: '📹', label: 'SwingVision',        category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.swingvision },
+    { id: 'lumio-vision', icon: '📹', label: 'Lumio Vision',        category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.lumioVision },
     { id: 'playsight',   icon: '🎥', label: 'PlaySight',          category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.playsight },
-    { id: 'catapult',    icon: '🛰️', label: 'Catapult GPS',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.catapult },
-    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.whoop },
+    { id: 'catapult',    icon: '🛰️', label: 'Lumio GPS GPS',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.catapult },
+    { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.whoop },
     { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.workspace },
     { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.slack },
     { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',    category: 'Distribution',     kind: 'generic', config: TENNIS_INTEGRATIONS.broadcast },
@@ -11215,7 +11215,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
               items: [
                 { name: 'ATP/WTA Profile', desc: 'Rankings, results & draw data' },
                 { name: 'Hawk-Eye', desc: 'Ball tracking & court analytics' },
-                { name: 'TrackMan Tennis', desc: 'Serve speed, spin & shot data' },
+                { name: 'Lumio Range Tennis', desc: 'Serve speed, spin & shot data' },
                 { name: 'Tennis Abstract', desc: 'Historical stats & match records' },
                 { name: 'IBM SlamTracker', desc: 'Grand Slam live analytics' },
               ],
@@ -11223,9 +11223,9 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
             {
               title: 'VIDEO & TRACKING',
               items: [
-                { name: 'SwingVision', desc: 'Shot tracking, video clips & AI coaching' },
-                { name: 'STATSports GPS', desc: 'Movement load & court coverage data' },
-                { name: 'Catapult', desc: 'Elite GPS & athlete monitoring' },
+                { name: 'Lumio Vision', desc: 'Shot tracking, video clips & AI coaching' },
+                { name: 'Lumio GPS GPS', desc: 'Movement load & court coverage data' },
+                { name: 'Lumio GPS', desc: 'Elite GPS & athlete monitoring' },
                 { name: 'PlayerTek', desc: 'GPS vest tracking for training sessions' },
               ],
             },

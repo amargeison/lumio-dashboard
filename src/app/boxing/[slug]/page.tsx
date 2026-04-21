@@ -2604,7 +2604,7 @@ function BoxingRecoveryChartInline() {
   const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
   return (
     <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <div className="text-sm font-semibold text-white mb-4">Lumio Wear Recovery (7-Day Trend)</div>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <defs>
           <linearGradient id="boxingRecovGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2664,7 +2664,7 @@ function BoxingPhysioRecoveryView({ fighter, session, onNavigate }: { fighter: B
       {/* Section 2 — 4 StatCards (inline tile style to match boxing) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Recovery Score', value: '74/100', sub: 'Today (WHOOP)',          accent: '#14b8a6' },
+          { label: 'Recovery Score', value: '74/100', sub: 'Today (Lumio Wear)',          accent: '#14b8a6' },
           { label: 'HRV',            value: '58ms',   sub: '+6ms vs yesterday',       accent: '#0ea5e9' },
           { label: 'Resting HR',     value: '54 bpm', sub: 'Camp-day elevated',       accent: '#6366f1' },
           { label: 'Sleep',          value: '6.9 hrs', sub: 'Below 7.5 target',       accent: '#f59e0b' },
@@ -2853,7 +2853,7 @@ function BoxingPhysioRecoveryView({ fighter, session, onNavigate }: { fighter: B
         </div>
       </div>
 
-      {/* Section 6 — WHOOP Recovery Chart */}
+      {/* Section 6 — Lumio Wear Recovery Chart */}
       <BoxingRecoveryChartInline />
 
       {/* Section 7 — Recovery Trend — Last 5 Days */}
@@ -8317,7 +8317,7 @@ function BoxingMobileAppView({ fighter, session }: { fighter: BoxingFighter; ses
         <div className="text-sm font-semibold text-white mb-3">Recommended Technical Approach</div>
         <div className="space-y-2">
           {[
-            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of corner sheet + opposition film cue. Fastest path to validating boxing traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for GPS vest / WHOOP / smart scales).' },
+            { opt: 'Progressive Web App (Phase 1)', pros: 'Zero new codebase. Installable from browser. Service workers enable offline caching of corner sheet + opposition film cue. Fastest path to validating boxing traction.', cons: 'iOS PWA push notifications limited pre-16.4. No App Store listing. No native sensor APIs (Bluetooth pairing for GPS vest / Lumio Wear / smart scales).' },
             { opt: 'Capacitor.js Wrap (Phase 2)', pros: 'Wraps the existing Next.js PWA in a native iOS + Android shell. Full App Store / Play Store distribution. Native push, Bluetooth, background sync. Single codebase still.', cons: 'Some performance trade-off vs fully native. Native plugin work needed for advanced sensor flows.' },
             { opt: 'React Native or Native (Phase 3)', pros: 'Best performance + deepest hardware integration. Justified once a sport hits sustained pro adoption.', cons: 'Separate codebase from web portal. Significantly more dev/maintenance cost.' },
           ].map((o, i) => (
@@ -8358,7 +8358,7 @@ function BoxingIntegrationsHub({ fighter, session }: { fighter: BoxingFighter; s
     { id: 'boxrec',      icon: '📊', label: 'BoxRec Database',      category: 'Data Feeds',       kind: 'generic', config: BOXING_INTEGRATIONS.boxrec },
     { id: 'compubox',    icon: '🥊', label: 'CompuBox Stats',       category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.compubox },
     { id: 'striketec',   icon: '📡', label: 'Punch Sensors',        category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.striketec },
-    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',         category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS.whoop },
+    { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS.whoop },
     { id: 'gps-vest',    icon: '🛰️', label: 'Lumio GPS Vest',       category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS['gps-vest'] },
     { id: 'sanctioning', icon: '🏆', label: 'WBC / WBA / WBO / IBF', category: 'Compliance',       kind: 'generic', config: BOXING_INTEGRATIONS.sanctioning },
     { id: 'bbbofc',      icon: '📋', label: 'BBBofC Licensing',     category: 'Compliance',       kind: 'generic', config: BOXING_INTEGRATIONS.bbbofc },
@@ -8592,8 +8592,8 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
                 { name: 'WBA Rankings', desc: 'World Boxing Association ratings', connected: !isFoundingMember },
                 { name: 'WBO Rankings', desc: 'World Boxing Organization ratings' },
                 { name: 'IBF Rankings', desc: 'International Boxing Federation ratings' },
-                { name: 'STATSports', desc: 'Movement & load tracking' },
-                { name: 'Veo', desc: 'Sparring video capture & analysis' },
+                { name: 'Lumio GPS', desc: 'Movement & load tracking' },
+                { name: 'Lumio Vision', desc: 'Sparring video capture & analysis' },
                 { name: 'Compubox', desc: 'Live punch stats', connected: !isFoundingMember },
               ],
             },

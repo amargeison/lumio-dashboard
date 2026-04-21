@@ -3,10 +3,10 @@ import type { IntegrationConfig } from './integration-detail-view'
 export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
   whoop: {
     icon: '💚',
-    title: 'WHOOP / Oura',
+    title: 'Lumio Wear / Oura',
     subtitle: 'Sleep, HRV, recovery and strain piped into every morning briefing.',
-    partnerBadge: 'OAuth available · WHOOP + Oura · ring or strap',
-    connectLabel: 'Connect WHOOP / Oura',
+    partnerBadge: 'OAuth available · Lumio Wear + Oura · ring or strap',
+    connectLabel: 'Connect Lumio Wear / Oura',
     summaryText: 'Pipe HRV, recovery score, sleep duration and strain into Lumio every morning — so your coach sees red-flag recovery scores before you walk onto the range.',
     connectedStats: [
       { label: 'Last Sync', value: '06:12' },
@@ -14,35 +14,35 @@ export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { label: 'HRV', value: '62 ms' },
       { label: 'Sleep', value: '7h 48m' },
     ],
-    whyHeading: 'Why WHOOP / Oura is a complementary integration',
+    whyHeading: 'Why Lumio Wear / Oura is a complementary integration',
     whyBody: 'Physical recovery is the single biggest predictor of short-game feel on tour. Piping recovery scores into the morning briefing lets Lumio pre-empt deterioration — if HRV is 20% below baseline the day before Round 3, the briefing flags it, your physio sees it, and the practice plan gets dialled back before anyone has to ask.',
     endpointsTitle: 'Data Flows Used by Lumio Golf',
     endpoints: [
-      { endpoint: 'Recovery Score (WHOOP)', desc: 'Daily 0-100 score blending HRV, RHR, sleep and respiratory rate.', status: 'Live' },
+      { endpoint: 'Recovery Score (Lumio Wear)', desc: 'Daily 0-100 score blending HRV, RHR, sleep and respiratory rate.', status: 'Live' },
       { endpoint: 'Readiness Score (Oura)', desc: 'Oura Ring equivalent of recovery — pulled via OAuth in the same flow.', status: 'Live' },
       { endpoint: 'HRV (RMSSD)', desc: 'Overnight heart-rate variability — the leading indicator of parasympathetic recovery.', status: 'Live' },
       { endpoint: 'Sleep Stages', desc: 'REM / deep / light split plus total sleep vs. target — powers the sleep debt tile.', status: 'Live' },
-      { endpoint: 'Strain / Activity', desc: 'Daily strain (WHOOP) or activity (Oura) — cross-referenced with round/practice load.', status: 'Live' },
+      { endpoint: 'Strain / Activity', desc: 'Daily strain (Lumio Wear) or activity (Oura) — cross-referenced with round/practice load.', status: 'Live' },
       { endpoint: 'Respiratory Rate', desc: 'Overnight breath rate — an early illness flag during travel-heavy swings.', status: 'Beta' },
       { endpoint: 'Strain Coach Alerts', desc: 'Suggested target strain given yesterday\'s recovery — delivered into the morning briefing.', status: 'Planned' },
     ],
-    pricing: 'Free if the player already has a WHOOP or Oura subscription (both consumer wearables). No additional cost to Lumio — OAuth connection only. If neither is connected, the morning briefing hides the Recovery tile rather than showing a placeholder.',
+    pricing: 'Free if the player already has a Lumio Wear or Oura subscription (both consumer wearables). No additional cost to Lumio — OAuth connection only. If neither is connected, the morning briefing hides the Recovery tile rather than showing a placeholder.',
   },
 
   catapult: {
     icon: '🛰️',
-    title: 'Catapult / STATSports',
+    title: 'Lumio GPS / Lumio GPS Pro',
     subtitle: 'Per-session load tracking across range, course walks, and gym work.',
-    partnerBadge: 'API key required · Catapult Vector + STATSports APEX / EDGE supported',
-    connectLabel: 'Connect Catapult / STATSports',
+    partnerBadge: 'API key required · Lumio GPS Vector + Lumio GPS Pro APEX / EDGE supported',
+    connectLabel: 'Connect Lumio GPS / Lumio GPS Pro',
     summaryText: 'Track per-session load across range, course walks, and gym work. Critical for multi-week Majors stretches where cumulative fatigue impacts short-game feel.',
     connectedStats: [
       { label: 'Sessions (30d)', value: '42' },
       { label: 'Avg Distance', value: '9.2 km' },
       { label: 'Load 7-day', value: '1,840 AU' },
-      { label: 'Provider', value: 'Catapult Vector' },
+      { label: 'Provider', value: 'Lumio GPS Vector' },
     ],
-    whyHeading: 'Why Catapult / STATSports matters on tour',
+    whyHeading: 'Why Lumio GPS / Lumio GPS Pro matters on tour',
     whyBody: 'Golf looks low-intensity but 72 holes of competitive walking plus range and gym sessions stacks real cumulative load — especially on hilly links or in heat. Feeding the GPS vest data into Lumio lets the fitness coach see if the player is cumulatively trending into a strain bracket that historically correlates with short-game dropoff. It\'s the difference between "he felt off on Sunday" and "Sunday was inevitable from Wednesday".',
     endpointsTitle: 'Data Flows Used by Lumio Golf',
     endpoints: [
@@ -54,7 +54,7 @@ export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Gym Sessions', desc: 'Indoor IMU sessions for strength work — tagged separately from range / course.', status: 'Beta' },
       { endpoint: 'Sleep + Load Correlation', desc: 'Cross-references wearable sleep data to flag under-recovery before an acute spike.', status: 'Planned' },
     ],
-    pricing: 'Catapult Vector licences run approximately £800–£1,400/year per unit. STATSports APEX/EDGE is approximately £400–£700/year. Lumio is hardware-agnostic — whichever vendor the player\'s fitness coach uses, the same dashboard shows the data.',
+    pricing: 'Lumio GPS Vector licences run approximately £800–£1,400/year per unit. Lumio GPS Pro APEX/EDGE is approximately £400–£700/year. Lumio is hardware-agnostic — whichever vendor the player\'s fitness coach uses, the same dashboard shows the data.',
   },
 
   v1golf: {

@@ -6,15 +6,15 @@ import { PlayerProfileModal } from './LeagueViews'
 const C = { card: '#0d0f1a', border: '#1F2937', text: '#F9FAFB', muted: '#6B7280', teal: '#0D9488', blue: '#003DA5', yellow: '#F1C40F' } as const
 
 // ─── WYSCOUT / VIDEO ANALYSIS VIEW ───────────────────────────────────────────
-export function WyscoutView() {
+export function FootballScoutIntegrationView() {
   const [connected, setConnected] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview'|'players'|'video'|'roadmap'>('overview')
 
   const recentSearches = [
-    { player: 'Marcus Haraldsen', pos: 'CM', club: 'IFK Göteborg', age: 22, market: '€2.1M', wyscoutScore: 7.4, flag: '🇸🇪', status: 'Shortlisted' },
-    { player: 'Dani Moreno', pos: 'LW', club: 'Real Valladolid', age: 24, market: '€3.8M', wyscoutScore: 7.9, flag: '🇪🇸', status: 'Under review' },
-    { player: 'Kaan Yilmaz', pos: 'CB', club: 'Göztepe', age: 20, market: '€1.4M', wyscoutScore: 7.1, flag: '🇹🇷', status: 'Flagged' },
-    { player: 'Luca Ferretti', pos: 'ST', club: 'Spezia', age: 26, market: '€4.2M', wyscoutScore: 8.1, flag: '🇮🇹', status: 'In pipeline' },
+    { player: 'Marcus Haraldsen', pos: 'CM', club: 'IFK Göteborg', age: 22, market: '€2.1M', scoutScore: 7.4, flag: '🇸🇪', status: 'Shortlisted' },
+    { player: 'Dani Moreno', pos: 'LW', club: 'Real Valladolid', age: 24, market: '€3.8M', scoutScore: 7.9, flag: '🇪🇸', status: 'Under review' },
+    { player: 'Kaan Yilmaz', pos: 'CB', club: 'Göztepe', age: 20, market: '€1.4M', scoutScore: 7.1, flag: '🇹🇷', status: 'Flagged' },
+    { player: 'Luca Ferretti', pos: 'ST', club: 'Spezia', age: 26, market: '€4.2M', scoutScore: 8.1, flag: '🇮🇹', status: 'In pipeline' },
   ]
   const recentVideos = [
     { title: 'Opposition — Stockport (A) — Full Match', date: 'Apr 3', analyst: 'Jake Pearson', tags: ['opposition', 'set pieces', 'press triggers'], duration: '95 min' },
@@ -26,16 +26,16 @@ export function WyscoutView() {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <div className="flex items-center gap-2"><span className="text-xl">🎬</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Wyscout Integration</h2></div>
-        <p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Video analysis, player scouting database, and opposition research — powered by Hudl Wyscout.</p>
+        <div className="flex items-center gap-2"><span className="text-xl">🎬</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Lumio Scout Integration</h2></div>
+        <p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Video analysis, player scouting database, and opposition research — powered by Lumio Vision Lumio Scout.</p>
       </div>
       <div className="rounded-xl p-5" style={{ backgroundColor: connected ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${connected ? 'rgba(0,61,165,0.3)' : C.border}` }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ border: `2px solid ${connected ? C.blue : '#4B5563'}`, backgroundColor: connected ? 'rgba(0,61,165,0.15)' : '#1F2937' }}>🎬</div>
-            <div><div className="font-semibold" style={{ color: C.text }}>Hudl Wyscout</div><div className="text-xs" style={{ color: C.muted }}>600+ competitions · 550,000+ player profiles</div></div>
+            <div><div className="font-semibold" style={{ color: C.text }}>Lumio Vision Lumio Scout</div><div className="text-xs" style={{ color: C.muted }}>600+ competitions · 550,000+ player profiles</div></div>
           </div>
-          <button onClick={() => setConnected(!connected)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: connected ? 'rgba(0,61,165,0.15)' : C.blue, color: connected ? C.yellow : C.text, border: connected ? `1px solid rgba(0,61,165,0.3)` : 'none' }}>{connected ? 'Disconnect' : 'Connect Wyscout'}</button>
+          <button onClick={() => setConnected(!connected)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: connected ? 'rgba(0,61,165,0.15)' : C.blue, color: connected ? C.yellow : C.text, border: connected ? `1px solid rgba(0,61,165,0.3)` : 'none' }}>{connected ? 'Disconnect' : 'Connect Lumio Scout'}</button>
         </div>
         {connected ? (
           <div className="grid grid-cols-4 gap-3">
@@ -44,7 +44,7 @@ export function WyscoutView() {
             ))}
           </div>
         ) : (
-          <div className="text-sm" style={{ color: C.muted }}>Connect your Wyscout account to embed player video clips, pull performance data, and link your scouting shortlist directly into the Lumio transfer pipeline.</div>
+          <div className="text-sm" style={{ color: C.muted }}>Connect your Lumio Scout account to embed player video clips, pull performance data, and link your scouting shortlist directly into the Lumio transfer pipeline.</div>
         )}
       </div>
       <div className="flex gap-2 flex-wrap">
@@ -55,10 +55,10 @@ export function WyscoutView() {
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { icon: '🔗', title: 'Shortlist sync', desc: 'Players flagged in Wyscout automatically appear in the Lumio transfer pipeline.' },
-            { icon: '🎬', title: 'Embedded video clips', desc: 'Wyscout clips embed directly in player profiles. Board presentations include video.' },
-            { icon: '📊', title: 'Performance data pull', desc: 'Key Wyscout metrics (xG, xA, progressive passes) surface in Lumio player cards.' },
-            { icon: '🆚', title: 'Opposition analysis link', desc: 'Wyscout opposition reports link to match-day planning in Lumio.' },
+            { icon: '🔗', title: 'Shortlist sync', desc: 'Players flagged in Lumio Scout automatically appear in the Lumio transfer pipeline.' },
+            { icon: '🎬', title: 'Embedded video clips', desc: 'Lumio Scout clips embed directly in player profiles. Board presentations include video.' },
+            { icon: '📊', title: 'Performance data pull', desc: 'Key Lumio Scout metrics (xG, xA, progressive passes) surface in Lumio player cards.' },
+            { icon: '🆚', title: 'Opposition analysis link', desc: 'Lumio Scout opposition reports link to match-day planning in Lumio.' },
             { icon: '🏟️', title: 'Competition coverage', desc: '600+ competitions including all EFL, La Liga, Bundesliga, Serie A, and more.' },
             { icon: '👤', title: 'Agent & agency data', desc: 'Representing agency for every shortlisted player appears in the transfer pipeline.' },
           ].map((f, i) => (
@@ -71,13 +71,13 @@ export function WyscoutView() {
       )}
       {activeTab === 'players' && (
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
-          <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>Wyscout Shortlist → Lumio Transfer Pipeline</div></div>
+          <div className="p-4" style={{ borderBottom: `1px solid ${C.border}` }}><div className="text-sm font-semibold" style={{ color: C.text }}>Lumio Scout Shortlist → Lumio Transfer Pipeline</div></div>
           {recentSearches.map((p, i) => (
             <div key={i} className="flex items-center gap-3 p-4" style={{ borderBottom: i < recentSearches.length - 1 ? `1px solid ${C.border}` : undefined }}>
               <span className="text-xl">{p.flag}</span>
               <div className="flex-1"><div className="text-sm font-semibold" style={{ color: C.text }}>{p.player}</div><div className="text-xs" style={{ color: C.muted }}>{p.pos} · {p.club} · Age {p.age}</div></div>
               <div className="text-sm font-bold" style={{ color: C.text }}>{p.market}</div>
-              <div className="text-sm font-bold" style={{ color: p.wyscoutScore >= 8 ? C.teal : C.yellow }}>{p.wyscoutScore}</div>
+              <div className="text-sm font-bold" style={{ color: p.scoutScore >= 8 ? C.teal : C.yellow }}>{p.scoutScore}</div>
               <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: p.status === 'In pipeline' ? 'rgba(13,148,136,0.15)' : 'rgba(0,61,165,0.15)', color: p.status === 'In pipeline' ? C.teal : C.yellow }}>{p.status}</span>
             </div>
           ))}
@@ -98,9 +98,9 @@ export function WyscoutView() {
       {activeTab === 'roadmap' && (
         <div className="space-y-3">
           {[
-            { phase: 'Phase 1 — Now', status: 'active', items: ['Wyscout account connection (OAuth)', 'Shortlisted player sync to transfer pipeline', 'Club and player data pull', 'Agent / agency display'] },
+            { phase: 'Phase 1 — Now', status: 'active', items: ['Lumio Scout account connection (OAuth)', 'Shortlisted player sync to transfer pipeline', 'Club and player data pull', 'Agent / agency display'] },
             { phase: 'Phase 2 — Q3 2026', status: 'planned', items: ['Embedded video clips in player profiles', 'Opposition report linking to fixture module', 'Performance data in player comparison cards', 'Analyst tagging sync'] },
-            { phase: 'Phase 3 — Q1 2027', status: 'future', items: ['Wyscout Talent Centre integration', 'API data export for custom analytics', 'Multi-league performance trendlines', 'Auto-attach reports to DoF review tasks'] },
+            { phase: 'Phase 3 — Q1 2027', status: 'future', items: ['Lumio Scout Talent Centre integration', 'API data export for custom analytics', 'Multi-league performance trendlines', 'Auto-attach reports to DoF review tasks'] },
           ].map((p, i) => (
             <div key={i} className="rounded-xl p-4" style={{ backgroundColor: p.status === 'active' ? 'rgba(13,148,136,0.06)' : C.card, border: `1px solid ${p.status === 'active' ? 'rgba(13,148,136,0.3)' : C.border}` }}>
               <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: p.status === 'active' ? 'rgba(13,148,136,0.15)' : 'rgba(0,61,165,0.15)', color: p.status === 'active' ? C.teal : C.yellow }}>{p.phase}</span>
@@ -185,8 +185,8 @@ export function GPSHardwareView() {
     { name: 'N. Asiimwe', pos: 'RB', totalDist: 31.2, hsr: 6.1, accel: 88, acwr: 0.71, readiness: 74, flag: '🟡' },
   ]
   const providerData = {
-    catapult: { name: 'Catapult (Vector T7)', desc: 'Market leader in elite performance tracking.', cost: '£40,000–£120,000/yr', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
-    statsports: { name: 'STATSports (APEX Pro)', desc: 'Challenger to Catapult — better value at League One level.', cost: '£20,000–£60,000/yr', metrics: ['Total distance', 'High metabolic load', 'Sprint speed (peak)', 'Repeated sprint ability', 'Mechanical load', 'Dynamic stress load', 'Live tablet monitoring', 'OLED display'] },
+    catapult: { name: 'Lumio GPS (Vector T7)', desc: 'Market leader in elite performance tracking.', cost: '£40,000–£120,000/yr', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
+    statsports: { name: 'Lumio GPS Pro (APEX Pro)', desc: 'Challenger to Lumio GPS — better value at League One level.', cost: '£20,000–£60,000/yr', metrics: ['Total distance', 'High metabolic load', 'Sprint speed (peak)', 'Repeated sprint ability', 'Mechanical load', 'Dynamic stress load', 'Live tablet monitoring', 'OLED display'] },
   }
   const current = providerData[provider]
   const connected = provider === 'catapult' ? catConnected : statConnected
@@ -194,7 +194,7 @@ export function GPSHardwareView() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Catapult and STATSports wearable data flows into Lumio&apos;s performance and medical modules.</p></div>
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Lumio GPS and Lumio GPS Pro wearable data flows into Lumio&apos;s performance and medical modules.</p></div>
       <div className="grid grid-cols-2 gap-3">
         {(['catapult', 'statsports'] as const).map(p => (
           <button key={p} onClick={() => setProvider(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: provider === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${provider === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>
@@ -251,21 +251,21 @@ export function GPSHardwareView() {
 }
 
 // ─── OPTA / STATSBOMB VIEW ───────────────────────────────────────────────────
-export function OptaStatsBombView() {
+export function FootballEventDataView() {
   const [dataSource, setDataSource] = useState<'statsbomb' | 'opta'>('statsbomb')
   const [sbConnected, setSbConnected] = useState(false)
   const [optaConnected, setOptaConnected] = useState(false)
   const sampleMetrics = [
     { metric: 'xG (Expected Goals)', desc: 'Probability of a shot resulting in a goal', provider: 'Both', use: 'Match dashboard, opposition analysis' },
     { metric: 'xA (Expected Assists)', desc: 'Probability that a pass leads to a goal', provider: 'Both', use: 'Player evaluation, recruitment' },
-    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'StatsBomb', use: 'Tactical analysis, press comparison' },
-    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'StatsBomb', use: 'Player comparison in transfers' },
+    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'Lumio Data', use: 'Tactical analysis, press comparison' },
+    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'Lumio Data', use: 'Player comparison in transfers' },
     { metric: 'Progressive passes/carries', desc: 'Actions advancing the ball toward goal', provider: 'Both', use: 'Midfielder evaluation' },
-    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'StatsBomb', use: 'Pre-match tactical briefing' },
+    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'Lumio Data', use: 'Pre-match tactical briefing' },
   ]
   const providers = {
-    statsbomb: { name: 'Hudl StatsBomb', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
-    opta: { name: 'Opta (StatsPerform)', desc: 'The original and most widely licensed provider', cost: '£50,000–£200,000+/yr' },
+    statsbomb: { name: 'Lumio Data', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
+    opta: { name: 'Lumio Data Pro', desc: 'The widest-coverage event data feed', cost: '£50,000–£200,000+/yr' },
   }
   const current = providers[dataSource]
   const connected = dataSource === 'statsbomb' ? sbConnected : optaConnected
@@ -280,7 +280,7 @@ export function OptaStatsBombView() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📊</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Opta / StatsBomb Event Data</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Elite event data for tactical analytics — xG, xA, pressure, possession value.</p></div>
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📊</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Lumio Data Pro / Lumio Data Event Data</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Elite event data for tactical analytics — xG, xA, pressure, possession value.</p></div>
       <div className="grid grid-cols-2 gap-3">
         {(['statsbomb', 'opta'] as const).map(p => (
           <button key={p} onClick={() => setDataSource(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: dataSource === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${dataSource === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>

@@ -36,7 +36,7 @@ const SPORTS: SportPricing[] = [
       { name: 'Pro Club', price: '£799', period: '/mo', bestFor: 'National League, League Two and League One clubs', recommended: true, features: ['All Starter features, plus:', 'Full PSR/FSR compliance — live headroom', 'FIFA-style pitch view with set pieces (90+ routines)', 'Transfer pipeline and agent contacts', 'Full Board Suite — chairman, DoF, commercial views', 'Scouting reports and opposition analysis', 'AI team selection and tactical briefings', 'Unlimited user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Elite', price: '£1,800', period: '/mo', bestFor: 'League One, Championship and full professional clubs', features: ['All Pro Club features, plus:', 'Advanced PSR modelling and multi-season projections', 'Full commercial pipeline and partner activation', 'Custom board reporting and investor narrative', 'Priority account manager and quarterly review', 'White-label option for multi-club groups', 'API access for custom integrations'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
-    included: ['Lumio GPS integration (FIFA Quality Certified)', 'AI morning briefing — voice and text', 'FA compliance calendar and deadline alerts', 'Demo pre-seeded with Oakridge FC data', '14-day free trial on Starter and Pro Club', 'UK data hosting · GDPR compliant'],
+    included: ['Lumio GPS integration', 'AI morning briefing — voice and text', 'FA compliance calendar and deadline alerts', 'Demo pre-seeded with Oakridge FC data', '14-day free trial on Starter and Pro Club', 'UK data hosting · GDPR compliant'],
   },
   {
     id: 'nonleague', icon: '🏟️', label: 'Non-League', color: '#F59E0B',
@@ -70,7 +70,7 @@ const SPORTS: SportPricing[] = [
       { name: 'WSL Non-Big Four', price: '£2,500', period: '/mo', bestFor: 'Non-Big Four WSL clubs', recommended: true, features: ['All WSL2 features, plus:', 'Full sponsorship pipeline with FSR attribution', 'Bundled sponsorship attribution tool', 'Board Suite with investor tools', 'Club Planner — 1/3/5/10yr FSR models', 'Athlete Content and Social Suite', 'Set pieces library', 'Dedicated account manager'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Standalone', price: '£3,500', period: '/mo', bestFor: 'Clubs decoupling from parent structures', features: ['All WSL features, plus:', 'Demerger Readiness Tracker', 'Standalone valuation model', 'Multi-club ownership dashboard', 'White-label option', 'Quarterly business review'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
-    included: ['FSR compliance tracking', 'Karen Carney Review welfare standards', 'Kitman Labs integration', 'Demo pre-seeded with WSL club data', 'UK data hosting · GDPR compliant'],
+    included: ['FSR compliance tracking', 'Karen Carney Review welfare standards', 'Lumio Health integration', 'Demo pre-seeded with WSL club data', 'UK data hosting · GDPR compliant'],
   },
   {
     id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6',
@@ -78,10 +78,10 @@ const SPORTS: SportPricing[] = [
     desc: 'Annual contracts aligned to the RFU salary cap year.',
     tiers: [
       { name: 'National League 1', price: '£800', period: '/mo', bestFor: '16 National League 1 clubs', features: ['Salary cap manager (ceiling + floor)', 'Squad availability tracker', 'Basic commercial pipeline', 'Morning briefing — DoR', 'Franchise readiness dashboard', 'Concussion & HIA tracker'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Champ Rugby', price: '£2,500', period: '/mo', bestFor: '14 Champ Rugby clubs', recommended: true, features: ['All NL1 features, plus:', 'Full salary cap suite — scenario modeller, audit', 'Franchise readiness — all 6 criteria + EOI builder', 'Recruitment pipeline with cap impact modeller', 'Kitman Labs integration', 'Club-to-country data interface (MPGP)', "Women's rugby — PWR compliance", 'Commercial OS — sponsorship, matchday, stadium', 'Dedicated account manager'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'Champ Rugby', price: '£2,500', period: '/mo', bestFor: '14 Champ Rugby clubs', recommended: true, features: ['All NL1 features, plus:', 'Full salary cap suite — scenario modeller, audit', 'Franchise readiness — all 6 criteria + EOI builder', 'Recruitment pipeline with cap impact modeller', 'Lumio Health integration', 'Club-to-country data interface (MPGP)', "Women's rugby — PWR compliance", 'Commercial OS — sponsorship, matchday, stadium', 'Dedicated account manager'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Premiership', price: '£4,000', period: '/mo', bestFor: 'Gallagher Premiership clubs', features: ['All Champ features, plus:', 'Legal-grade concussion audit trail', 'Full RFU salary cap audit export', 'Premiership-specific franchise modules', 'Advanced club-to-country interface', 'Quarterly strategic review'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
-    included: ['Annual contracts — aligned to RFU cap year', 'Kitman Labs data integration', 'Franchise readiness criteria mapping', 'Demo pre-seeded with Hartfield RFC data', 'UK data hosting · GDPR compliant'],
+    included: ['Annual contracts — aligned to RFU cap year', 'Lumio Health data integration', 'Franchise readiness criteria mapping', 'Demo pre-seeded with Hartfield RFC data', 'UK data hosting · GDPR compliant'],
     addon: { name: "Women's PWR Add-On", price: '£600/mo', features: ["Women's squad management", 'PWR compliance tracking', 'Shared facility scheduling', "Women's commercial pipeline"] },
   },
   {
@@ -100,7 +100,7 @@ const SPORTS: SportPricing[] = [
     desc: 'Per-player pricing for the touring professional and team.',
     tiers: [
       { name: 'Tour', price: '£299', period: '/mo', bestFor: 'DP World and PGA Tour professionals', recommended: true, features: ['OWGR tracker with points forecaster', 'Race to Dubai and FedExCup standings', 'Strokes Gained deep-dive (4 categories)', 'Course fit AI across 47+ venues', 'Caddie workflow dashboard', 'Sponsorship manager', 'Prize money ledger and tax tracker', 'AI morning briefing — 4 role views', 'Up to 6 team accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Elite', price: '£599', period: '/mo', bestFor: 'Top 50 OWGR with full management', features: ['All Tour features, plus:', 'Advanced tournament prep packs', 'Full career financial planning', 'Athlete content tracker', 'Priority account manager', 'Custom integrations (Arccos, TrackMan, ShotLink)'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+      { name: 'Elite', price: '£599', period: '/mo', bestFor: 'Top 50 OWGR with full management', features: ['All Tour features, plus:', 'Advanced tournament prep packs', 'Full career financial planning', 'Athlete content tracker', 'Priority account manager', 'Custom integrations (Lumio Range, ShotLink)'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Demo pre-seeded with OWGR #87 James Halton', 'Caddie view included in all tiers', 'UK data hosting · GDPR compliant'],
   },

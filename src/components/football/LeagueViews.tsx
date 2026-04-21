@@ -37,7 +37,7 @@ interface SBCompetition { competition_id: number; season_id: number; competition
 interface SBMatch { match_id: number; match_date: string; home_team: { home_team_name: string }; away_team: { away_team_name: string }; home_score: number; away_score: number; competition_stage?: { name: string } }
 interface SBEvent { id: string; type: { id: number; name: string }; minute: number; second: number; location?: number[]; shot?: { statsbomb_xg: number; outcome: { name: string }; end_location?: number[] }; pass?: { outcome?: { name: string } }; dribble?: { outcome?: { name: string } }; team: { name: string }; player?: { name: string }; possession_team?: { name: string } }
 
-// Allowed StatsBomb competitions
+// Allowed Lumio Data competitions
 const SB_ALLOWED_COMP_IDS = [2, 37, 16, 43, 11]
 
 // ─── Shared: loading spinner ─────────────────────────────────────────────────
@@ -50,17 +50,17 @@ function Spinner({ text }: { text?: string }) {
   )
 }
 
-// ─── Shared: StatsBomb powered badge ─────────────────────────────────────────
-function StatsBombBadge() {
+// ─── Shared: Lumio Data powered badge ─────────────────────────────────────────
+function FootballDataBadge() {
   return (
     <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #1F2937' }}>
-      <span style={{ fontSize: 11, color: '#6B7280' }}>Powered by <span style={{ fontWeight: 600, color: '#F9FAFB' }}>StatsBomb</span> Open Data · Free tier — historical competitions only</span>
+      <span style={{ fontSize: 11, color: '#6B7280' }}>Powered by <span style={{ fontWeight: 600, color: '#F9FAFB' }}>Lumio Data</span> Open Data · Free tier — historical competitions only</span>
     </div>
   )
 }
 
 // ─── Shared: fetch competitions (filtered to allowed list) ──────────────────
-function useStatsBombCompetitions() {
+function useFootballLeagueCompetitions() {
   const [competitions, setCompetitions] = useState<SBCompetition[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -310,7 +310,7 @@ function MatchAnalyticsPanel({ match, events, onBack }: { match: SBMatch; events
         </div>
       </div>
 
-      <StatsBombBadge />
+      <FootballDataBadge />
     </div>
   )
 }
@@ -736,7 +736,7 @@ export function TeamsView() {
             })()}
           </div>
           <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'statsbomb', 'injuries', 'staff'] as const).map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} StatsBomb' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
+            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} Lumio Data' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <Spinner text="Loading..." />}
           {activeTab === 'squad' && !squadLoading && (
@@ -786,7 +786,7 @@ export function TeamsView() {
               {teamFixtures.filter((f: any) => activeTab === 'fixtures' ? f.fixture?.status?.short === 'NS' : f.fixture?.status?.short !== 'NS').length === 0 && <div className="p-8 text-center text-sm" style={{ color: C.muted }}>No data — connect API-Football key</div>}
             </div>
           )}
-          {activeTab === 'statsbomb' && <StatsBombPanel teamName={selectedTeam.team?.name || ''} />}
+          {activeTab === 'statsbomb' && <FootballDataPanel teamName={selectedTeam.team?.name || ''} />}
 
           {activeTab === 'injuries' && !squadLoading && (
             <div className="space-y-4">
@@ -1010,8 +1010,8 @@ export function TeamsView() {
 }
 
 // ─── STATSBOMB PANEL (Club Profile — Step 3) ────────────────────────────────
-function StatsBombPanel({ teamName }: { teamName: string }) {
-  const { competitions, loading: compLoading } = useStatsBombCompetitions()
+function FootballDataPanel({ teamName }: { teamName: string }) {
+  const { competitions, loading: compLoading } = useFootballLeagueCompetitions()
   const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
   const [matches, setMatches] = useState<SBMatch[]>([])
   const [filteredMatches, setFilteredMatches] = useState<SBMatch[]>([])
@@ -1047,9 +1047,9 @@ function StatsBombPanel({ teamName }: { teamName: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data — available for selected competitions</span>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by Lumio Data Open Data — available for selected competitions</span>
       </div>
-      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>StatsBomb open data covers historical seasons of selected competitions. For current season data, a StatsBomb Pro licence is required.</div>
+      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>Lumio Data open data covers historical seasons of selected competitions. For current season data, a Lumio Data Pro licence is required.</div>
 
       {(compLoading || loading) && <Spinner />}
 
@@ -1079,7 +1079,7 @@ function StatsBombPanel({ teamName }: { teamName: string }) {
             ))}
             {filteredMatches.length === 0 && <div className="text-center py-6 text-sm" style={{ color: C.muted }}>No matches found for {teamName} in this competition</div>}
           </div>
-          <StatsBombBadge />
+          <FootballDataBadge />
         </div>
       )}
 
@@ -1091,7 +1091,7 @@ function StatsBombPanel({ teamName }: { teamName: string }) {
         <div className="rounded-xl p-8 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
           <div className="text-3xl mb-2">📊</div>
           <div className="text-sm font-semibold" style={{ color: C.text }}>No event data available</div>
-          <div className="text-xs mt-1" style={{ color: C.muted }}>This match may not have detailed event data in the StatsBomb open dataset</div>
+          <div className="text-xs mt-1" style={{ color: C.muted }}>This match may not have detailed event data in the Lumio Data open dataset</div>
         </div>
       )}
     </div>
@@ -1300,7 +1300,7 @@ export function LeaguesView({
 
 // ─── ADVANCED STATS PANEL (League View — Step 2) ────────────────────────────
 function AdvancedStatsPanel() {
-  const { competitions, loading: compLoading } = useStatsBombCompetitions()
+  const { competitions, loading: compLoading } = useFootballLeagueCompetitions()
   const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
   const [matches, setMatches] = useState<SBMatch[]>([])
   const [selectedMatch, setSelectedMatch] = useState<SBMatch | null>(null)
@@ -1360,9 +1360,9 @@ function AdvancedStatsPanel() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data</span>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by Lumio Data Open Data</span>
       </div>
-      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>StatsBomb open data covers historical seasons of selected competitions. For current season data, a StatsBomb Pro licence is required.</div>
+      <div className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#FBBF24' }}>Lumio Data open data covers historical seasons of selected competitions. For current season data, a Lumio Data Pro licence is required.</div>
 
       {(compLoading || loading) && <Spinner />}
 
@@ -1429,7 +1429,7 @@ function AdvancedStatsPanel() {
             </div>
           </div>
 
-          <StatsBombBadge />
+          <FootballDataBadge />
         </div>
       )}
 
@@ -1441,7 +1441,7 @@ function AdvancedStatsPanel() {
         <div className="rounded-xl p-8 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
           <div className="text-3xl mb-2">📊</div>
           <div className="text-sm font-semibold" style={{ color: C.text }}>No event data available</div>
-          <div className="text-xs mt-1" style={{ color: C.muted }}>This match may not have detailed event data in the StatsBomb open dataset</div>
+          <div className="text-xs mt-1" style={{ color: C.muted }}>This match may not have detailed event data in the Lumio Data open dataset</div>
         </div>
       )}
     </div>
@@ -1532,7 +1532,7 @@ export function FixturesView() {
 }
 
 // ─── STATSBOMB VIEW ─────────────────────────────────────────────────────────
-export function StatsBombView() {
+export function FootballLeagueDataView() {
   const [competitions, setCompetitions] = useState<SBCompetition[]>([])
   const [selectedComp, setSelectedComp] = useState<SBCompetition | null>(null)
   const [matches, setMatches] = useState<SBMatch[]>([])
@@ -1617,10 +1617,10 @@ export function StatsBombView() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xl">📊</span>
-        <h2 className="text-xl font-bold" style={{ color: C.text }}>StatsBomb Open Data</h2>
+        <h2 className="text-xl font-bold" style={{ color: C.text }}>Lumio Data Open Data</h2>
       </div>
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by StatsBomb Open Data</span>
+        <span className="text-xs font-semibold" style={{ color: '#F87171' }}>Powered by Lumio Data Open Data</span>
       </div>
 
       {/* Breadcrumb */}
@@ -1904,7 +1904,7 @@ export function StatsBombView() {
         <div className="rounded-xl p-10 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
           <div className="text-4xl mb-3">📊</div>
           <div className="font-semibold mb-1" style={{ color: C.text }}>No event data available</div>
-          <div className="text-sm" style={{ color: C.muted }}>This match may not have detailed event data in the StatsBomb open dataset</div>
+          <div className="text-sm" style={{ color: C.muted }}>This match may not have detailed event data in the Lumio Data open dataset</div>
         </div>
       )}
     </div>
