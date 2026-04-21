@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
   // /demo/** is exempted above; /api, /about, /blog, /privacy, /cookies,
   // /terms, /contact and /coming-soon remain live.
   {
-    const cmsHost = request.nextUrl.hostname
+    const cmsHost = (request.headers.get('host') || '').replace(/:\d+$/, '').toLowerCase()
     const isLumioCms = cmsHost === 'lumiocms.com' || cmsHost === 'www.lumiocms.com'
     if (isLumioCms) {
       const ALWAYS_LIVE_PATHS = [
