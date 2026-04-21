@@ -71,14 +71,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ── lumiocms.com takedown (production only) ─────────────────────────
+  // ── lumiocms.com takedown ───────────────────────────────────────────
   // Business + schools sit behind coming-soon waitlists until launch.
-  // Fires only when NODE_ENV === 'production' AND host is lumiocms.com —
-  // localhost and lumiosports.com are never affected. Rewrites (not
-  // redirects) so the URL the visitor typed stays in the bar. /demo/**
-  // is exempted above; /api, /about, /blog, /privacy, /cookies, /terms,
-  // /contact and /coming-soon remain live.
-  if (process.env.NODE_ENV === 'production') {
+  // Gated purely on host: localhost and lumiosports.com are never affected
+  // because they never carry a `lumiocms.com` Host header. NODE_ENV is
+  // intentionally NOT checked here — Edge middleware env-var evaluation in
+  // Next 16 standalone proved unreliable for this guard, and the hostname
+  // check alone is tight enough (lumiocms.com only resolves in production).
+  // /demo/** is exempted above; /api, /about, /blog, /privacy, /cookies,
+  // /terms, /contact and /coming-soon remain live.
+  {
     const cmsHost = request.nextUrl.hostname
     const isLumioCms = cmsHost === 'lumiocms.com' || cmsHost === 'www.lumiocms.com'
     if (isLumioCms) {
