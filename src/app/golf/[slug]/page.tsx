@@ -7338,7 +7338,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           }}
           configFields={[
             { id: 'owgrId', label: 'OWGR Player ID', description: 'For live ranking and tournament data', kind: 'text', placeholder: 'e.g. 12345' },
-            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','TrackMan','ShotScope','Garmin','Arccos','PlayerData EDGE Air','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
+            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Shot tracking system', kind: 'select', options: ['None','TrackMan','ShotScope','Garmin','Arccos','Lumio GPS','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
           ]}
           integrationGroups={[
             {

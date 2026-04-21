@@ -11207,7 +11207,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
           }}
           configFields={[
             { id: 'atpwtaId', label: 'ATP/WTA Player ID', description: 'For live ranking and draw data', kind: 'text', placeholder: 'e.g. atpR123' },
-            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Player tracking system', kind: 'select', options: ['None','PlayerData EDGE Air (recommended)','PlayerData EDGE Pro (with live data)','STATSports APEX (legacy — manual sync)','Catapult One (legacy — manual sync)','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
+            { id: 'gpsProvider', label: 'GPS Hardware Provider', description: 'Player tracking system', kind: 'select', options: ['None','Lumio GPS (recommended)','Lumio GPS Pro (with live data)','CSV Upload (manual)'], defaultValue: isFoundingMember ? '' : 'None' },
           ]}
           integrationGroups={[
             {

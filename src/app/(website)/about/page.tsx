@@ -17,7 +17,7 @@ const SPORTS_VALUES = [
 
 const SPORTS_PORTALS = [
   { emoji: '⚽', title: 'Football Pro Club', accent: '#10B981', href: '/football',
-    desc: 'Pro Club portal for National League System clubs. Squad management, GPS performance (PlayerData), PSR compliance, FIFA-style pitch view, set pieces library and AI manager briefing.' },
+    desc: 'Pro Club portal for National League System clubs. Squad management, GPS performance (Lumio GPS), PSR compliance, FIFA-style pitch view, set pieces library and AI manager briefing.' },
   { emoji: '⚽', title: 'Non-League Football', accent: '#F59E0B', href: '/football',
     desc: 'Steps 3–7 of the English football pyramid. FA Ground Grading compliance, player contracts, wage bill tracker, sponsor pipeline, match day revenue and board portal.' },
   { emoji: '⚽', title: 'Grassroots Football', accent: '#F97316', href: '/football',
@@ -44,7 +44,7 @@ const SPORTS_TIMELINE = [
   { year: '2023', title: 'First prototype — Football',
     detail: 'Built the first Pro Club portal for a League Two club. GPS integration, squad management, transfer hub and PSR dashboard. The response was immediate: "Nothing like this exists."' },
   { year: '2024', title: 'Lumio Sports is born',
-    detail: 'Platform expands to Non-League, Grassroots, Women\'s Football, Tennis, Golf and Darts. AI morning briefings powered by Claude. PlayerData GPS integration goes live.' },
+    detail: 'Platform expands to Non-League, Grassroots, Women\'s Football, Tennis, Golf and Darts. AI morning briefings powered by Claude. Lumio GPS integration goes live.' },
   { year: '2025', title: 'Ten portals. One platform.',
     detail: 'Boxing, Rugby, Cricket portals launched. Franchise readiness tracker and salary cap manager for Champ Rugby. FSR compliance for Women\'s Football. Purse simulator for Boxing. The operating system for professional sport.' },
 ]

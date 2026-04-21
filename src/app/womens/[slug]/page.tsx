@@ -56,7 +56,7 @@ const SIDEBAR_ITEMS = [
   { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
   { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
-  { id: 'gps',          label: 'GPS & PlayerData',    icon: '📡', group: 'OPERATIONS' },
+  { id: 'gps',          label: 'GPS & Load',          icon: '📡', group: 'OPERATIONS' },
   { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
   { id: 'preseason',    label: 'Pre-Season',           icon: '⚽', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
@@ -3185,8 +3185,8 @@ const MatchPreparationView = () => {
   )
 }
 
-// ─── GPS & PLAYER DATA VIEW ─────────────────────────────────────────────────
-const GPSPlayerDataView = () => {
+// ─── GPS & LOAD VIEW ─────────────────────────────────────────────────────────
+const GPSLoadView = () => {
   const players: Array<{name:string;pos:string;distance:number;topSpeed:number;sprints:number;hsr:number;load:string;loadColor:string}> = [
     {name:'Emma Clarke',pos:'CB',distance:9.2,topSpeed:28.1,sprints:14,hsr:620,load:'Optimal',loadColor:'green'},
     {name:'Priya Nair',pos:'CM',distance:11.4,topSpeed:29.3,sprints:22,hsr:890,load:'Optimal',loadColor:'green'},
@@ -3202,7 +3202,7 @@ const GPSPlayerDataView = () => {
 
   return (
     <div>
-      <SectionHeader title="GPS & Player Data" subtitle="Training and match load monitoring" icon="📡" />
+      <SectionHeader title="GPS & Load" subtitle="Training and match load monitoring" icon="📡" />
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-3 mb-6 text-xs text-blue-400">
         📡 GPS data synced via Catapult integration — last sync: today 09:14. 9 of 10 devices active.
       </div>
@@ -4342,7 +4342,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'social':      return <SocialMediaView club={club} />
       case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <StaffDirectoryView />
-      case 'gps':         return <GPSPlayerDataView />
+      case 'gps':         return <GPSLoadView />
       case 'medical':     return <MedicalRecordsView />
       case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
       case 'settings':    return <SettingsViewFull club={club} />
