@@ -170,11 +170,11 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
       }}
     >
       <div
-        className={`w-full mx-auto flex max-w-7xl items-center ${isSports ? 'px-6 py-2 justify-between' : ''}`}
-        style={isSports ? { minHeight: 200 } : { display: 'flex', alignItems: 'center', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
+        className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
+        style={isSports ? { minHeight: 200 } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" style={isSports ? { flexShrink: 0, overflow: 'visible' } : { flexShrink: 0, marginRight: isSchools ? 16 : 24, overflow: 'visible' }}>
+        <Link href="/" className="flex items-center gap-2" style={{ flexShrink: 0, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isTennis ? '/tennis_transparent_logo.png' : isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
             className={isSports ? 'h-24 md:h-32 lg:h-40' : 'h-12 md:h-16 lg:h-20'}
