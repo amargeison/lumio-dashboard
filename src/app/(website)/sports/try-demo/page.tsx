@@ -1,18 +1,100 @@
 'use client'
 import Link from 'next/link'
 
-const SPORTS = [
-  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', href: '/tennis/demo', accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps' },
-  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', href: '/darts/demo', accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel' },
-  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', href: '/golf/demo', accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub' },
-  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', href: '/boxing/demo', accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator' },
-  { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', href: '/cricket/cricket-demo', accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode' },
-  { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', href: '/rugby/rugby-demo', accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite' },
-  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', href: '/football/lumio-dev', accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite' },
-  { id: 'nonleague', label: 'Non-League', logo: '/football_logo.png', href: '/football/nonleague/harfield-fc', accent: '#f59e0b', desc: 'FA Ground Grading, wage bill, sponsorship, match day revenue' },
-  { id: 'grassroots', label: 'Grassroots', logo: '/football_logo.png', href: '/football/grassroots/sunday-rovers-fc', accent: '#10b981', desc: 'AI team selection, subs collection, safeguarding, parent portal' },
-  { id: 'womens', label: "Women's FC", logo: '/womens_fc_logo.png', href: '/womens/oakridge-women-fc', accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker' },
+type Sport = {
+  id: string
+  label: string
+  logo: string
+  href: string
+  accent: string
+  desc: string
+  // Flip to `true` once each sport signs off — the href/route stays intact
+  // regardless so turning a sport on is a one-line change.
+  available: boolean
+}
+
+const SPORTS: Sport[] = [
+  { id: 'tennis',     label: 'Tennis',       logo: '/tennis_logo.png',    href: '/tennis/demo',                         accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps',            available: true  },
+  { id: 'darts',      label: 'Darts',        logo: '/darts_logo.png',     href: '/darts/demo',                          accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel',         available: true  },
+  { id: 'golf',       label: 'Golf',         logo: '/golf_logo.png',      href: '/golf/demo',                           accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub',              available: true  },
+  { id: 'boxing',     label: 'Boxing',       logo: '/boxing_logo.png',    href: '/boxing/demo',                         accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator',       available: true  },
+  { id: 'cricket',    label: 'Cricket',      logo: '/cricket_logo.png',   href: '/cricket/cricket-demo',                accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode',    available: false },
+  { id: 'rugby',      label: 'Rugby',        logo: '/rugby_logo.png',     href: '/rugby/rugby-demo',                    accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite',         available: false },
+  { id: 'football',   label: 'Football Pro', logo: '/football_logo.png',  href: '/football/lumio-dev',                  accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',          available: false },
+  { id: 'nonleague',  label: 'Non-League',   logo: '/football_logo.png',  href: '/football/nonleague/harfield-fc',      accent: '#f59e0b', desc: 'FA Ground Grading, wage bill, sponsorship, match day revenue',      available: false },
+  { id: 'grassroots', label: 'Grassroots',   logo: '/football_logo.png',  href: '/football/grassroots/sunday-rovers-fc',accent: '#10b981', desc: 'AI team selection, subs collection, safeguarding, parent portal',   available: false },
+  { id: 'womens',     label: "Women's FC",   logo: '/womens_fc_logo.png', href: '/womens/oakridge-women-fc',            accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker', available: false },
 ]
+
+const CARD_BASE_BG = '#0d1117'
+const CARD_BORDER = '#1F2937'
+
+function SportCard({ sport }: { sport: Sport }) {
+  const inner = (
+    <div
+      style={{
+        background: CARD_BASE_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        borderRadius: 16,
+        padding: 24,
+        borderTop: `3px solid ${sport.accent}`,
+        cursor: sport.available ? 'pointer' : 'default',
+        transition: 'all 0.2s',
+        opacity: sport.available ? 1 : 0.8,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        height: '100%',
+        boxSizing: 'border-box',
+      }}
+      onMouseOver={e => {
+        if (!sport.available) return
+        ;(e.currentTarget as HTMLDivElement).style.borderColor = sport.accent
+        ;(e.currentTarget as HTMLDivElement).style.background = sport.accent + '10'
+      }}
+      onMouseOut={e => {
+        if (!sport.available) return
+        ;(e.currentTarget as HTMLDivElement).style.borderColor = CARD_BORDER
+        ;(e.currentTarget as HTMLDivElement).style.background = CARD_BASE_BG
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={sport.logo}
+        alt={sport.label}
+        style={{ width: 96, height: 96, objectFit: 'contain', marginBottom: 14 }}
+      />
+      <div style={{ color: '#fff', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{sport.label}</div>
+      <div style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>{sport.desc}</div>
+      <div style={{ marginTop: 'auto' }}>
+        {sport.available ? (
+          <span style={{ color: sport.accent, fontSize: 13, fontWeight: 600 }}>Try demo →</span>
+        ) : (
+          <span style={{ color: '#64748B', fontSize: 13, fontWeight: 500 }}>Coming soon</span>
+        )}
+      </div>
+    </div>
+  )
+
+  if (sport.available) {
+    return (
+      <Link key={sport.id} href={sport.href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+        {inner}
+      </Link>
+    )
+  }
+
+  return (
+    <div
+      key={sport.id}
+      aria-disabled="true"
+      style={{ height: '100%' }}
+    >
+      {inner}
+    </div>
+  )
+}
 
 export default function TryDemoPage() {
   return (
@@ -27,19 +109,9 @@ export default function TryDemoPage() {
             Choose your sport and explore the portal. Enter your email to get instant access.
           </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, alignItems: 'stretch' }}>
           {SPORTS.map(sport => (
-            <Link key={sport.id} href={sport.href} style={{ textDecoration: 'none' }}>
-              <div style={{ background: '#0d1117', border: '1px solid #1F2937', borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s', borderTop: `3px solid ${sport.accent}` }}
-                onMouseOver={e => { (e.currentTarget as HTMLDivElement).style.borderColor = sport.accent; (e.currentTarget as HTMLDivElement).style.background = sport.accent + '10' }}
-                onMouseOut={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#1F2937'; (e.currentTarget as HTMLDivElement).style.background = '#0d1117' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={sport.logo} alt={sport.label} style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 12 }} />
-                <div style={{ color: '#fff', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{sport.label}</div>
-                <div style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.5 }}>{sport.desc}</div>
-                <div style={{ marginTop: 16, color: sport.accent, fontSize: 13, fontWeight: 600 }}>Try demo →</div>
-              </div>
-            </Link>
+            <SportCard key={sport.id} sport={sport} />
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 48 }}>
