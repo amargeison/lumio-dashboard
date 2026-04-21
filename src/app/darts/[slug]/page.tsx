@@ -68,6 +68,7 @@ import { use, useState, useEffect, useRef } from 'react';
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
@@ -9804,6 +9805,10 @@ function DartsExhibitionBooker({ onClose }: { onClose: () => void }) {
 }
 
 export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; session: SportsDemoSession; onSignOut?: () => void }) {
+  // URL decides demo-vs-founder. Session-driven gating fails for anonymous
+  // visitors (undefined === false is false, so founder URLs fell through to
+  // demo content in incognito). See src/lib/config/demo-slugs.ts.
+  session = { ...session, isDemoShell: isDemoSlug(slug) }
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);

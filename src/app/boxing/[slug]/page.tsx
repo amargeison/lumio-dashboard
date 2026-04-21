@@ -32,9 +32,11 @@
 // "Meridian Sports" broadcast brand.
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import { createBrowserClient } from '@supabase/ssr'
+import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
@@ -8370,6 +8372,12 @@ function BoxingIntegrationsHub({ fighter, session }: { fighter: BoxingFighter; s
 }
 
 export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
+  // URL decides demo-vs-founder. Session-driven gating fails for anonymous
+  // visitors (undefined === false is false, so founder URLs fell through to
+  // demo content in incognito). See src/lib/config/demo-slugs.ts.
+  const params = useParams<{ slug: string }>()
+  const slug = typeof params?.slug === 'string' ? params.slug : ''
+  session = { ...session, isDemoShell: isDemoSlug(slug) }
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);

@@ -29,9 +29,11 @@
 // "Meridian Sports" (matching the boxing portal's same swap).
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation'
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
@@ -7092,6 +7094,12 @@ export default function GolfTourPage() {
 }
 
 export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSession; onSignOut?: () => void }) {
+  // URL decides demo-vs-founder. Session-driven gating fails for anonymous
+  // visitors (undefined === false is false, so founder URLs fell through to
+  // demo content in incognito). See src/lib/config/demo-slugs.ts.
+  const params = useParams<{ slug: string }>()
+  const slug = typeof params?.slug === 'string' ? params.slug : ''
+  session = { ...session, isDemoShell: isDemoSlug(slug) }
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [roleOverride, setRoleOverride] = useState(session.role || 'player');
