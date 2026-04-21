@@ -102,6 +102,19 @@ function useGolfBrandLogo(): string {
   return logo
 }
 
+// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+// Mirrors darts/[slug]/page.tsx — rendered whenever session.isDemoShell === false
+// (a live founder without connected data) in place of demo content.
+function EmptyState({ icon, title, sub }: { icon: string; title: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', textAlign: 'center', border: '1px dashed #1F2937', borderRadius: 12, background: '#0a0c14' }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
+      <div style={{ color: '#6B7280', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{title}</div>
+      {sub && <div style={{ color: '#374151', fontSize: 12 }}>{sub}</div>}
+    </div>
+  )
+}
+
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '')
@@ -388,7 +401,7 @@ const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: 
           className="text-center hover:bg-white/5 rounded-lg p-1 -m-1 transition-all cursor-pointer"
           title="Go to OWGR & Race to Dubai"
         >
-          <div className="text-3xl font-black text-white leading-none">{player.owgr}</div>
+          <div className="text-3xl font-black text-white leading-none">{isFoundingMember ? '—' : player.owgr}</div>
           <div className="text-[10px] text-green-400 font-medium uppercase tracking-wider">OWGR</div>
         </button>
         <div className="text-2xl">{player.flag}</div>
@@ -401,9 +414,9 @@ const PlayerCard = ({ player, session, setActiveSection = () => {} }: { player: 
       <div className="text-green-400 font-bold text-xs uppercase tracking-widest text-center mb-3">{liveName.split(' ').slice(1).join(' ')}</div>
       <div className="grid grid-cols-3 gap-1 mb-2">
         {[
-          { val: player.owgr_points.toFixed(1), label: 'PTS AVG' },
-          { val: `#${player.race_to_dubai_pos}`, label: 'DUBAI' },
-          { val: `#${player.career_high_owgr}`, label: 'CAREER' },
+          { val: isFoundingMember ? '—' : player.owgr_points.toFixed(1), label: 'PTS AVG' },
+          { val: isFoundingMember ? '—' : `#${player.race_to_dubai_pos}`, label: 'DUBAI' },
+          { val: isFoundingMember ? '—' : `#${player.career_high_owgr}`, label: 'CAREER' },
         ].map((s, i) => (
           <div key={i} className="text-center bg-black/20 rounded p-1.5">
             <div className="text-white font-black text-xs leading-none">{s.val}</div>
@@ -1126,10 +1139,10 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">
             {[
-              { icon:'📊', value:`#${player.owgr}`, label:'OWGR', color:'#15803D' },
-              { icon:'🏆', value:`#${player.race_to_dubai_pos}`, label:'Race', color:'#0D9488' },
-              { icon:'💰', value:'£367k', label:'Earnings', color:'#F59E0B' },
-              { icon:'🎯', value:'70.2', label:'Scoring', color:'#8B5CF6' },
+              { icon:'📊', value: isDemoShellDash ? `#${player.owgr}` : '—', label:'OWGR', color:'#15803D' },
+              { icon:'🏆', value: isDemoShellDash ? `#${player.race_to_dubai_pos}` : '—', label:'Race', color:'#0D9488' },
+              { icon:'💰', value: isDemoShellDash ? '£367k' : '—', label:'Earnings', color:'#F59E0B' },
+              { icon:'🎯', value: isDemoShellDash ? '70.2' : '—', label:'Scoring', color:'#8B5CF6' },
             ].map((s, i) => (
               <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
                 style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
@@ -1287,7 +1300,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       {dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Col 1: Morning Roundup — expandable channels */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          {session.isDemoShell === false
+            ? <EmptyState icon="📬" title="No messages yet" sub="Connect your agent, caddie and tour accounts to unlock" />
+            : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
               <div className="flex items-center gap-2">
                 <span>🌅</span>
@@ -1368,9 +1383,13 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               })}
             </div>
             {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
-          </div>
+          </div>}
           {/* Col 2: Today's Round */}
           <div className="space-y-4">
+            {session.isDemoShell === false ? (<>
+              <EmptyState icon="⛳" title="No tee time today" sub="Round data will appear here once your tour feed is connected" />
+              <EmptyState icon="📅" title="No schedule loaded" sub="Your tournament schedule will appear here once connected" />
+            </>) : (<>
             <div className="bg-gradient-to-br from-[#15803D]/15 to-teal-900/10 border border-[#15803D]/30 rounded-xl p-5">
               <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-3">TODAY'S ROUND</div>
               <div className="text-white font-bold text-lg mb-1">Ashbourne National Golf Club</div>
@@ -1453,6 +1472,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                 <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Northbridge Sport</span></div>
               </div>
             </div>
+            </>)}
           </div>
           {/* Col 3: Photo Frame + AI Morning Summary + Performance Intelligence */}
           <div className="space-y-4">
@@ -1471,7 +1491,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   ? <img src={dashPhotoSrc} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                   : session.photoDataUrl
                     ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
-                    : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
+                    : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="mt-3">
                 <div className="text-white font-semibold text-sm">{player.name}</div>
@@ -1480,7 +1500,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               </div>
             </div>
             {/* AI Morning Summary — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your golf data to unlock your morning briefing" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ color: '#8B5CF6' }}>✨</span>
@@ -1504,10 +1526,12 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
 
             {/* Performance Intelligence — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your round data to see trends" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span>⚡</span>
@@ -1532,7 +1556,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
         </div>
       )}
@@ -7520,6 +7544,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           {/* Right column */}
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{ width: '220px' }}>
             <PlayerCard player={player} session={session} setActiveSection={setActiveSection} />
+            {session.isDemoShell !== false && (<>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">This Week</div>
               <div className="text-xs text-green-400 font-medium">● In Progress</div>
@@ -7550,6 +7575,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
                 <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500"></span><span className="text-xs text-orange-400">Approach: -0.28</span></div>
               </div>
             </div>
+            </>)}
           </div>
           </>)}
         </div>

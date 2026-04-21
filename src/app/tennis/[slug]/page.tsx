@@ -140,6 +140,19 @@ function useTennisBrandLogo(): string {
   return logo
 }
 
+// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+// Mirrors darts/[slug]/page.tsx — rendered whenever session.isDemoShell === false
+// (a live founder without connected data) in place of demo content.
+function EmptyState({ icon, title, sub }: { icon: string; title: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', textAlign: 'center', border: '1px dashed #1F2937', borderRadius: 12, background: '#0a0c14' }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
+      <div style={{ color: '#6B7280', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{title}</div>
+      {sub && <div style={{ color: '#374151', fontSize: 12 }}>{sub}</div>}
+    </div>
+  )
+}
+
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '')
@@ -1283,10 +1296,10 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             </div>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {[
-                { label:'ATP Rank', value:`#${player.ranking ?? 67}`, color:'bg-purple-500/20 text-purple-300 border-purple-500/30', icon:'📊' },
-                { label:'Race', value:`#${player.race_ranking ?? 54}`, color:'bg-green-500/20 text-green-300 border-green-500/30', icon:'✅' },
-                { label:'Points', value:(player.ranking_points ?? 1847).toLocaleString(), color:'bg-red-500/20 text-red-300 border-red-500/30', icon:'🔴' },
-                { label:'Career High', value:`#${player.career_high ?? 44}`, color:'bg-blue-500/20 text-blue-300 border-blue-500/30', icon:'📧' },
+                { label:'ATP Rank', value: isDemoShellDash ? `#${player.ranking ?? 67}` : '—', color:'bg-purple-500/20 text-purple-300 border-purple-500/30', icon:'📊' },
+                { label:'Race', value: isDemoShellDash ? `#${player.race_ranking ?? 54}` : '—', color:'bg-green-500/20 text-green-300 border-green-500/30', icon:'✅' },
+                { label:'Points', value: isDemoShellDash ? (player.ranking_points ?? 1847).toLocaleString() : '—', color:'bg-red-500/20 text-red-300 border-red-500/30', icon:'🔴' },
+                { label:'Career High', value: isDemoShellDash ? `#${player.career_high ?? 44}` : '—', color:'bg-blue-500/20 text-blue-300 border-blue-500/30', icon:'📧' },
               ].map(item => (
                 <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
                   <span className="text-base">{item.icon}</span>
@@ -1520,7 +1533,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
             {/* LEFT: Morning Roundup — expandable like football */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="📬" title="No messages yet" sub="Connect your agent, coach and tour accounts to unlock" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span>🌅</span>
@@ -1608,10 +1623,14 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                 })})()}
               </div>
               {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
-            </div>
+            </div>}
 
             {/* MIDDLE: Today's match + schedule */}
             <div className="space-y-3">
+              {session.isDemoShell === false ? (<>
+                <EmptyState icon="🎾" title="No match today" sub="Match data will appear here once your ATP feed is connected" />
+                <EmptyState icon="📅" title="No schedule loaded" sub="Your tournament schedule will appear here once connected" />
+              </>) : (<>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.3)' }}>
                 <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
                   <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0ea5e9' }}>TODAY&apos;S MATCH &mdash; ATP MONTE-CARLO MASTERS</span>
@@ -1727,6 +1746,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   </div>
                 </div>
               </div>
+              </>)}
             </div>
 
             {/* RIGHT: Photo frame + AI Morning Summary + AI Key Highlights */}
@@ -1763,14 +1783,16 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   ) : (
                     <div className="w-full h-full flex items-center justify-center flex-col gap-1">
                       <div className="text-2xl">🎾</div>
-                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Family · Holidays · Inspiration</div>
+                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Add a photo — family, holidays, inspiration</div>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* AI Morning Summary */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              {session.isDemoShell === false
+                ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your tennis data to unlock your morning briefing" />
+                : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
                     <Sparkles size={14} style={{ color: '#8B5CF6' }} />
@@ -1797,10 +1819,12 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
 
               {/* AI Key Highlights */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+              {session.isDemoShell === false
+                ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your match data to see trends" />
+                : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                   <div className="flex items-center gap-2">
                     <span>⚡</span>
@@ -1825,7 +1849,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
@@ -6838,11 +6862,11 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         {/* Ranking badges */}
         <div className="flex items-start justify-between mb-3">
           <div className="text-center">
-            <div className="text-3xl font-black text-white leading-none">{player.ranking}</div>
+            <div className="text-3xl font-black text-white leading-none">{isFoundingMember ? '—' : player.ranking}</div>
             <div className="text-[10px] text-purple-300 font-medium uppercase tracking-wider">ATP Rank</div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-black text-gray-400 leading-none">{player.doubles_ranking}</div>
+            <div className="text-lg font-black text-gray-400 leading-none">{isFoundingMember ? '—' : player.doubles_ranking}</div>
             <div className="text-[9px] text-gray-500 font-medium uppercase tracking-wider">Doubles</div>
           </div>
         </div>
@@ -6877,9 +6901,9 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
             <div key={i} className="flex items-center gap-1.5">
               <div className="text-[8px] text-gray-500 w-10">{s.surface}</div>
               <div className="flex-1 bg-gray-800 rounded-full h-1.5">
-                <div className={`${s.color} h-1.5 rounded-full`} style={{ width: `${s.pct}%` }}></div>
+                {!isFoundingMember && <div className={`${s.color} h-1.5 rounded-full`} style={{ width: `${s.pct}%` }}></div>}
               </div>
-              <div className="text-[9px] text-gray-400 w-7 text-right">{s.pct}%</div>
+              <div className="text-[9px] text-gray-400 w-7 text-right">{isFoundingMember ? '—' : `${s.pct}%`}</div>
             </div>
           ))}
         </div>
@@ -6887,9 +6911,9 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
         {/* Stats */}
         <div className="grid grid-cols-3 gap-1 mb-2">
           {[
-            { val: '63', label: 'SRV%' },
-            { val: '41', label: 'BRK%' },
-            { val: '68', label: 'WIN%' },
+            { val: isFoundingMember ? '—' : '63', label: 'SRV%' },
+            { val: isFoundingMember ? '—' : '41', label: 'BRK%' },
+            { val: isFoundingMember ? '—' : '68', label: 'WIN%' },
           ].map((s, i) => (
             <div key={i} className="text-center bg-black/20 rounded p-1.5">
               <div className="text-white font-black text-base leading-none">{s.val}</div>
@@ -6900,15 +6924,15 @@ function PlayerCard({ player, session }: { player: TennisPlayer; session?: Sport
 
         {/* Career titles + season record */}
         <div className="flex items-center justify-between text-[9px] text-gray-500 mb-2">
-          <span>Titles: <span className="text-white font-bold">{player.career_titles}</span></span>
-          <span>Season: <span className="text-white font-bold">{player.season_wins}W-{player.season_losses}L</span></span>
+          <span>Titles: <span className="text-white font-bold">{isFoundingMember ? '—' : player.career_titles}</span></span>
+          <span>Season: <span className="text-white font-bold">{isFoundingMember ? '—' : `${player.season_wins}W-${player.season_losses}L`}</span></span>
         </div>
 
         {/* Current form dots */}
         <div className="flex items-center justify-center gap-1.5 mb-2">
           <span className="text-[8px] text-gray-600 mr-1">FORM:</span>
-          {recentForm.map((r, i) => (
-            <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${r === 'W' ? 'bg-teal-600/40 text-teal-400' : 'bg-red-600/30 text-red-400'}`}>{r}</div>
+          {(isFoundingMember ? ['—','—','—','—','—'] : recentForm).map((r, i) => (
+            <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${r === 'W' ? 'bg-teal-600/40 text-teal-400' : r === 'L' ? 'bg-red-600/30 text-red-400' : 'bg-gray-800 text-gray-600'}`}>{r}</div>
           ))}
         </div>
 
@@ -11472,6 +11496,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0"
             style={{ width: '220px' }}>
             <PlayerCard player={player} session={session} />
+            {session.isDemoShell !== false && (<>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Live Match</div>
               <div className="text-xs text-teal-400 font-medium">In Progress</div>
@@ -11493,6 +11518,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
                 <div className="text-xs text-red-400">125 pts expire today</div>
               </div>
             </div>
+            </>)}
           </div>
         </div>
         )}
