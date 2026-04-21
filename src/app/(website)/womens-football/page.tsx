@@ -18,7 +18,7 @@ const STAT_PILLS = [
   'FSR compliant',
   'Karen Carney standards',
   'AI powered',
-  'Kitman Labs ready',
+  'Lumio Health ready',
   'WSL approved',
   '30 sections',
 ]
@@ -34,10 +34,10 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📋', title: 'Dual Registration', desc: 'Track dual-reg players, expiry dates, parent club agreements. Never miss a registration window.' },
   { icon: '🤖', title: 'AI Department Intelligence', desc: 'Every department has its own AI layer. Insights Report generated fresh daily — performance, compliance, welfare, commercial, all departments.' },
   { icon: '🌸', title: 'Cycle Tracking + GPS Integration', desc: 'Opt-in menstrual cycle phase tracking linked to GPS load management. Training targets auto-adjust per phase. ACL composite risk scored daily.' },
-  { icon: '🤖', title: 'AI Halftime Brief (Claude API)', desc: 'GPS + StatsBomb xG + ACL detection + cycle phase welfare flags → structured coaching brief in seconds. Physical, tactical, AND welfare in one document.' },
+  { icon: '🤖', title: 'AI Halftime Brief (Claude API)', desc: 'GPS + Lumio Data xG + ACL detection + cycle phase welfare flags → structured coaching brief in seconds. Physical, tactical, AND welfare in one document.' },
   { icon: '📊', title: 'Insights — 8 Role Dashboards', desc: 'CEO, DoF, Head Coach, Physio, Commercial, Academy, Welfare, Board — each role gets a tailored AI-generated insights report every morning.' },
   { icon: '🔁', title: 'Transfers + AI Researcher', desc: 'Transfer tracker, shortlist management, and AI-powered transfer researcher that scouts WSL, NWSL, D1 Arkema and Liga F databases.' },
-  { icon: '📉', title: 'Analytics (StatsBomb xG)', desc: 'xG timeline, pressing intensity (PPDA), progressive passes, shot map — all from StatsBomb Women\'s API with WSL benchmarks.' },
+  { icon: '📉', title: 'Analytics (Lumio Data xG)', desc: 'xG timeline, pressing intensity (PPDA), progressive passes, shot map — all from the Lumio Data feed with WSL benchmarks.' },
   { icon: '🔭', title: 'Scouting (WSL · NWSL · D1 Arkema)', desc: 'Database of 2,000+ players across 4 leagues. Filter by position, age, contract status, salary. AI scouting reports on any player.' },
   { icon: '🎓', title: 'Academy / Player Pathway', desc: 'U18 and U21 squads, CoE compliance, GPS profiling, development ratings, dual registration management, and first-team bridge tracking.' },
   { icon: '📣', title: 'Media & PR', desc: 'Press release generator, media obligations tracker, journalist database, and matchday media accreditation management.' },
@@ -46,13 +46,12 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '💗', name: 'Kitman Labs', desc: 'Player welfare and GPS monitoring' },
+  { icon: '💗', name: 'Lumio Health', desc: 'Player welfare and GPS monitoring' },
   { icon: '📡', name: 'The FA', desc: 'Registration and FSR compliance reporting' },
-  { icon: '🏃', name: 'STATSports', desc: 'Player load and injury prevention' },
-  { icon: '⚽', name: 'StatsBomb', desc: 'Match data and analytics' },
-  { icon: '📹', name: 'Wyscout', desc: 'Video and scouting' },
+  { icon: '🏃', name: 'Lumio GPS', desc: 'Player load and injury prevention' },
+  { icon: '⚽', name: 'Lumio Data', desc: 'Match data and analytics' },
+  { icon: '📹', name: 'Lumio Scout', desc: 'Video and scouting' },
   { icon: '🩺', name: 'PFA', desc: 'Player welfare referral pathway' },
-  { icon: '📊', name: 'Opta', desc: 'Live statistics' },
   { icon: '💰', name: 'Xero', desc: 'Financial management' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
   { icon: '🔔', name: 'Slack', desc: 'Staff notifications' },
@@ -61,7 +60,7 @@ const INTEGRATIONS = [
 ]
 
 const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'WSL Pro', price: '£499/mo', desc: 'Full 30-section portal. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, StatsBomb analytics, scouting, academy, transfers, board suite — the complete Club OS.' },
+  { name: 'WSL Pro', price: '£499/mo', desc: 'Full 30-section portal. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite — the complete Club OS.' },
   { name: "Women's Championship", price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: 'For WSL2 clubs meeting professionalisation standards' },
   { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
 ]
@@ -467,7 +466,7 @@ export default function WomensLandingPage() {
             The most complete women&apos;s football Club OS ever built.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 40px' }}>
-            30 purpose-built sections. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI halftime briefs, StatsBomb analytics, scouting, academy pathway — built for WSL and Women&apos;s Championship clubs.
+            30 purpose-built sections. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy pathway — built for WSL and Women&apos;s Championship clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
@@ -532,7 +531,7 @@ export default function WomensLandingPage() {
         eyebrow="SPOTLIGHT · PLAYER WELFARE HUB"
         title="Player welfare isn't a checkbox. It's a culture."
         body="The Karen Carney Review set mandatory welfare standards for women's football. Lumio builds them in from day one — ACL screening protocols, maternity leave management, mental health check-ins, PFA referral tracking. Every player, every case, properly managed."
-        bullets={['ACL risk monitoring with Kitman Labs integration', 'Maternity leave and return-to-play management', 'Mental health case tracking and PFA referrals', 'Welfare flags surfaced on every dashboard']}
+        bullets={['ACL risk monitoring with Lumio Health integration', 'Maternity leave and return-to-play management', 'Mental health case tracking and PFA referrals', 'Welfare flags surfaced on every dashboard']}
         mockup={<WelfareMockup />}
       />
 
@@ -574,7 +573,7 @@ export default function WomensLandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
             {[
               { icon: '🌸', title: "World's First Cycle + GPS + ACL Integration", body: 'Opt-in menstrual cycle tracking linked directly to GPS load management. Training targets auto-adjust per phase. Daily ACL composite risk score per player. No competitor has this.' },
-              { icon: '🤖', title: 'AI Halftime Brief with Welfare Flags', body: 'GPS + StatsBomb xG + ACL detection + cycle phase → structured Claude-powered coaching brief in seconds. Physical, tactical, AND welfare section in one document. Unique to Lumio Women\u2019s FC.' },
+              { icon: '🤖', title: 'AI Halftime Brief with Welfare Flags', body: 'GPS + Lumio Data xG + ACL detection + cycle phase → structured Claude-powered coaching brief in seconds. Physical, tactical, AND welfare section in one document. Unique to Lumio Women\u2019s FC.' },
               { icon: '🏟️', title: 'Complete Club OS — 30 Sections', body: 'FSR compliance, Karen Carney tracking, Scouting, Academy, Analytics, Transfers, Media, Fan Hub — purpose-built for professional women\u2019s football. Not a men\u2019s platform with a badge change.' },
             ].map(c => (
               <div key={c.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 28 }}>

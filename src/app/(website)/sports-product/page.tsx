@@ -24,7 +24,7 @@ const PORTALS: Portal[] = [
       { name: 'Transfer Intelligence', detail: 'Pipeline tracking, agent contacts, scouting reports and transfer window deadlines.' },
       { name: 'AI Match Intelligence', detail: 'Opponent analysis, set piece prep, tactical briefings and post-match performance review.' },
     ],
-    integrations: ['Lumio GPS', 'Hudl', 'Wyscout', 'FA Whole Game System', 'Xero'],
+    integrations: ['Lumio GPS', 'Lumio Vision', 'Lumio Scout', 'FA registration tracking', 'Xero'],
     checks: ['Live squad dashboard updated in real time', 'GPS session data synced automatically from Lumio GPS', 'AI morning briefing for manager and coaching staff', 'FA compliance alerts and registration deadlines', 'Board financial report — one click, monthly'],
     cta: 'See Football Pro live in a demo', href: '/football/lumio-dev',
   },
@@ -38,7 +38,7 @@ const PORTALS: Portal[] = [
       { name: 'Match Day Revenue', detail: 'Gate receipts, bar, programme sales and season ticket tracker per fixture.' },
       { name: 'Board Portal', detail: 'Chairman, treasurer, secretary and commercial director each with role-specific views.' },
     ],
-    integrations: ['Lumio GPS', 'FA Whole Game System', 'Stripe', 'Xero'],
+    integrations: ['Lumio GPS', 'FA registration tracking', 'Stripe', 'Xero'],
     checks: ['Wage bill vs budget — live view for chairman', 'FA Ground Grading compliance tracker with inspection dates', 'AI morning briefing for manager on training days', 'Sponsor renewal alerts — 90, 60, 30 days out', 'Monthly board report — one-click PDF export'],
     cta: 'See Non-League live in a demo', href: '/football/nonleague/harfield-fc',
   },
@@ -66,7 +66,7 @@ const PORTALS: Portal[] = [
       { name: 'Board Suite & Demerger Tracker', detail: 'FSR-constrained Club Planner, investor tools, standalone valuation model, Demerger Readiness Tracker.' },
       { name: 'Squad, Pitch & Set Pieces', detail: 'FIFA-style pitch view, dual registration management, set pieces library, team talks builder.' },
     ],
-    integrations: ['Kitman Labs', 'WSL Football', 'FA Whole Game System', 'PFA', 'Stripe', 'Xero'],
+    integrations: ['Lumio Health', 'WSL Football', 'FA registration tracking', 'PFA', 'Stripe', 'Xero'],
     checks: ['FSR headroom tracked in real time', 'Maternity and ACL welfare log — Karen Carney compliant', 'Bundled sponsorship attribution for FSR revenue', 'Dual registration expiry alerts', 'AI morning briefing — FSR, welfare, commercial, squad'],
     cta: "Book a Women's Football demo", href: '/contact',
   },
@@ -80,7 +80,7 @@ const PORTALS: Portal[] = [
       { name: 'Sponsorship & Commercial', detail: 'Deals, renewal dates, obligations and prize money ledger.' },
       { name: 'AI Morning Briefing', detail: 'Personalised daily intelligence for player, coach, agent and physio.' },
     ],
-    integrations: ['WHOOP', 'Garmin', 'Dartfish', 'ATP/WTA APIs'],
+    integrations: ['Lumio Wear', 'Lumio Vision', 'Live ATP/WTA rankings'],
     checks: ['All 4 Grand Slam entry and withdrawal deadlines tracked', 'Surface breakdown — win rates on clay, grass, hard', 'H2H records and opponent scouting notes', 'Multi-jurisdiction prize money and tax tracker', 'Team briefings at different times for each role'],
     cta: 'See Tennis Tour live in a demo', href: '/tennis/demo',
   },
@@ -94,7 +94,7 @@ const PORTALS: Portal[] = [
       { name: 'Caddie Workflow', detail: 'Yardage notes, weather adjustments, club recommendations and round prep tools.' },
       { name: 'Commercial Dashboard', detail: 'Sponsorship, Pro-Am appearances, prize money ledger and tax tracker.' },
     ],
-    integrations: ['DataGolf', 'Arccos', 'TrackMan', 'ShotLink', 'PGA Tour API'],
+    integrations: ['Lumio Data', 'Lumio Range', 'ShotLink', 'Live PGA Tour data'],
     checks: ['DP World Tour and PGA Tour schedule in one calendar', 'Strokes gained alerts when a category needs attention', 'Tour card status and exemption categories tracked', 'Caddie has their own dedicated dashboard view', 'Multi-jurisdiction tax modelling for Saudi, US, UK'],
     cta: 'See Golf Tour live in a demo', href: '/golf/demo',
   },
@@ -122,7 +122,7 @@ const PORTALS: Portal[] = [
       { name: 'Financial Dashboard', detail: 'Every pound earned, every pound spent. Fight earnings, camp costs and tax across jurisdictions.' },
       { name: 'Contract Intelligence', detail: 'Multi-fight exclusive vs one-fight Zuffa deals — understand exactly what each contract type means.' },
     ],
-    integrations: ['BoxRec', 'WHOOP', 'Garmin', 'Dartfish'],
+    integrations: ['BoxRec', 'Lumio Wear', 'Lumio Vision'],
     checks: ['Purse simulator shows real take-home before you sign', 'Saudi Arabia, USA and UK tax modes — know the difference', 'Weight trajectory projected from day 1 of camp', 'Zuffa Boxing fifth column — understand the new landscape', 'First financial transparency tool ever built for boxing'],
     cta: 'See Lumio Fight live in a demo', href: '/boxing/lumio-demo',
   },
@@ -133,11 +133,11 @@ const PORTALS: Portal[] = [
       { name: 'Salary Cap Dashboard', detail: 'Three-zone cap indicator with floor, spend and ceiling. Exclusions, academy credits and central contract discounts calculated automatically.' },
       { name: 'Franchise Readiness', detail: 'Six-criteria RAG tracker with Expression of Interest document builder for RFU Expansion Review Group.' },
       { name: 'Concussion & HIA Tracker', detail: '21-day protocol management with independent doctor clearance workflow and cumulative threshold monitoring.' },
-      { name: 'Club-to-Country Data Interface', detail: 'Automated Kitman Labs data handoff to RFU, return-to-play protocol tracking and international window calendar.' },
+      { name: 'Club-to-Country Data Interface', detail: 'Automated Lumio Health data handoff to RFU, return-to-play protocol tracking and international window calendar.' },
       { name: 'Sponsorship & Commercial', detail: 'Partnership pipeline, matchday revenue tracker, stadium venue management and sponsor obligation fulfilment dashboard.' },
     ],
-    integrations: ['Kitman Labs', 'Lumio GPS', 'RFU', 'World Rugby'],
-    checks: ['Salary cap headroom tracked in real time — ceiling and floor', 'Franchise readiness score with RFU criteria mapping', 'HIA protocol tracker with 21-day minimum enforcement', 'Club-to-country data handoff — Kitman Labs auto-sync', 'Women\'s programme compliance (PWR or regional development plan)'],
+    integrations: ['Lumio Health', 'Lumio GPS', 'RFU', 'World Rugby'],
+    checks: ['Salary cap headroom tracked in real time — ceiling and floor', 'Franchise readiness score with RFU criteria mapping', 'HIA protocol tracker with 21-day minimum enforcement', 'Club-to-country data handoff — Lumio Health auto-sync', 'Women\'s programme compliance (PWR or regional development plan)'],
     cta: 'See Lumio Rugby live in a demo', href: '/rugby/rugby-demo',
   },
   {
@@ -150,7 +150,7 @@ const PORTALS: Portal[] = [
       { name: 'Injury & Fitness Management', detail: 'Injury log, physio notes, fitness testing, return-to-play protocols and workload management across formats.' },
       { name: 'Commercial Pipeline', detail: 'Bat sponsorships, endorsements, appearance fees, social obligations and agent pipeline management.' },
     ],
-    integrations: ['ECB', 'ICC', 'Kitman Labs'],
+    integrations: ['ECB', 'ICC', 'Lumio Health'],
     checks: ['Multi-format contract tracker — county, franchise and central', 'Format-specific analytics — Test, ODI, T20', 'Franchise schedule planner — IPL, Hundred, BBL, PSL', 'Workload management across all competitions', 'NOC and federation accreditation tracking'],
     cta: 'See Lumio Cricket live in a demo', href: '/cricket/cricket-demo',
   },
@@ -158,7 +158,7 @@ const PORTALS: Portal[] = [
 
 const FEATURES = [
   { icon: '🤖', title: 'AI morning briefing', desc: 'Delivered before the day begins — for the player, coach, agent, manager and physio. Every relevant data point, every obligation, every flag — in one voice-powered briefing.' },
-  { icon: '📡', title: 'GPS performance — Lumio GPS', desc: 'FIFA Quality Certified. World Rugby Approved. Session load, ACWR, readiness scores and heat maps synced automatically from Lumio GPS units into your portal dashboard.' },
+  { icon: '📡', title: 'GPS that syncs itself.', desc: 'Session load, ACWR, readiness scores and heat maps synced automatically from Lumio GPS units into your portal dashboard.' },
   { icon: '💰', title: 'Financial transparency', desc: "The purse simulator, the wage bill tracker, the earnings ledger — built so athletes understand exactly where their money goes, before they sign anything." },
   { icon: '👥', title: 'Team hub', desc: 'Coach, physio, agent, manager, nutritionist, cutman — each with a role-specific view on the same platform. No WhatsApp threads. No spreadsheets. One system.' },
 ]
@@ -222,7 +222,7 @@ export default function SportsProductPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { num: '01', title: 'Connect your sport', body: 'Select your portal — Pro Club, Non-League, WSL, Championship Rugby, ATP/WTA, PGA/DP World Tour, PDC, professional boxing, cricket or women\'s football. Your demo environment is pre-seeded with realistic data. No setup. No configuration.' },
-              { num: '02', title: 'Add your data', body: 'Import your squad, contracts, fixture list, sponsor deals and financial data. Or start with demo data and layer in your own. Kitman Labs GPS data syncs automatically. Player registrations connect to the Whole Game System.' },
+              { num: '02', title: 'Add your data', body: 'Import your squad, contracts, fixture list, sponsor deals and financial data. Or start with demo data and layer in your own. Lumio Health GPS data syncs automatically. Player registrations connect to the FA registration system.' },
               { num: '03', title: 'Intelligence from day one', body: 'Your AI morning briefing goes live on day one. Your compliance dashboard is live. Your commercial pipeline is live. Your board reporting is live. From onboarding to first insight in under 24 hours.' },
             ].map((step: { num: string; title: string; body: string }) => (
               <div key={step.num} className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
@@ -374,7 +374,7 @@ export default function SportsProductPage() {
             {[
               { title: 'Compliance Radar', desc: 'Every deadline, every filing, every obligation — tracked, colour-coded and flagged before it becomes a problem. PSR, FSR, salary caps, ground grading, safeguarding.', tag: 'LIVE IN ALL PORTALS' },
               { title: 'Financial Health', desc: 'Wage bill vs budget, earnings vs deductions, sponsor revenue vs target. One view that tells the chairman, the agent and the athlete exactly where they stand.', tag: 'REAL-TIME' },
-              { title: 'Performance Pulse', desc: 'GPS load, session readiness, injury risk, form trajectory — pulled from Lumio GPS, Kitman Labs, WHOOP and Garmin into a single readiness score per athlete.', tag: 'AUTO-SYNCED' },
+              { title: 'Performance Pulse', desc: 'GPS load, session readiness, injury risk, form trajectory — pulled from Lumio GPS, Lumio Health and Lumio Wear into a single readiness score per athlete.', tag: 'AUTO-SYNCED' },
               { title: 'Commercial Pipeline', desc: 'Every sponsor deal, every renewal date, every obligation. Pipeline value, conversion rate and revenue attribution — whether you manage one deal or fifty.', tag: 'CRM BUILT-IN' },
             ].map((d: { title: string; desc: string; tag: string }) => (
               <div key={d.title} className="rounded-xl p-7" style={{ backgroundColor: '#0D1117', border: '1px solid #1E293B' }}>
@@ -539,9 +539,9 @@ export default function SportsProductPage() {
 
           <div className="space-y-8">
             {[
-              { category: 'Performance & GPS', items: ['Lumio GPS', 'Kitman Labs', 'WHOOP', 'Garmin', 'TrackMan', 'Arccos', 'ShotLink'] },
-              { category: 'Video & Scouting', items: ['Hudl', 'Wyscout', 'Dartfish', 'DataGolf'] },
-              { category: 'Governing Bodies', items: ['FA Whole Game System', 'RFU', 'World Rugby', 'ATP/WTA APIs', 'PGA Tour API', 'PDC Rankings', 'ECB', 'ICC', 'BoxRec'] },
+              { category: 'Performance & GPS', items: ['Lumio GPS', 'Lumio Health', 'Lumio Wear', 'Lumio Range', 'ShotLink'] },
+              { category: 'Video & Scouting', items: ['Lumio Vision', 'Lumio Scout', 'Lumio Data'] },
+              { category: 'Governing Bodies', items: ['FA registration tracking', 'RFU', 'World Rugby', 'Live ATP/WTA rankings', 'Live PGA Tour data', 'Live PDC rankings', 'ECB', 'ICC', 'BoxRec'] },
               { category: 'Finance & Payments', items: ['Xero', 'Stripe', 'QuickBooks'] },
               { category: 'Communication', items: ['WhatsApp Business', 'Google Calendar', 'Slack', 'Microsoft Teams'] },
               { category: 'Welfare & Medical', items: ['PFA', 'WSL Football', 'Club medical systems'] },

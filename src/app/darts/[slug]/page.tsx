@@ -5500,7 +5500,7 @@ function DartsRecoveryChart() {
   const areaPath = linePath + ` L${points[points.length - 1].x},${padY + chartH} L${points[0].x},${padY + chartH} Z`;
   return (
     <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-      <div className="text-sm font-semibold text-white mb-4">WHOOP Recovery (7-Day Trend)</div>
+      <div className="text-sm font-semibold text-white mb-4">Lumio Wear Recovery (7-Day Trend)</div>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         <defs>
           <linearGradient id="dartsRecovGrad" x1="0" y1="0" x2="0" y2="1">
@@ -5557,7 +5557,7 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
 
       {/* Section 2 — 4 StatCards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Recovery Score" value="78/100" sub="Today (WHOOP)" color="green" />
+        <StatCard label="Recovery Score" value="78/100" sub="Today (Lumio Wear)" color="green" />
         <StatCard label="HRV" value="62ms" sub="+4ms vs yesterday" color="teal" />
         <StatCard label="Resting HR" value="52 bpm" sub="Normal range" color="blue" />
         <StatCard label="Sleep" value="7.4 hrs" sub="78 sleep score" color="purple" />
@@ -5737,7 +5737,7 @@ function PhysioRecoveryView({ player, session }: { player: DartsPlayer; session:
           </div>
         </div>
       </div>
-      {/* Section 6 — WHOOP Recovery Chart */}
+      {/* Section 6 — Lumio Wear Recovery Chart */}
       <DartsRecoveryChart />
 
       {/* Section 7 — Recovery Trend — Last 5 Days */}
@@ -9190,9 +9190,9 @@ function DartsIntegrationsHub({ player, session }: { player: DartsPlayer; sessio
     { id: 'pdc-api',     icon: '🏆', label: 'PDC Tour API',       category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['pdc-api'] },
     { id: 'wdf-api',     icon: '🌍', label: 'WDF Data Feed',      category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['wdf-api'] },
     { id: 'dartconnect', icon: '🎯', label: 'DartConnect',        category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartconnect },
-    { id: 'dartfish',    icon: '📹', label: 'Dartfish Video',     category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartfish },
-    { id: 'whoop',       icon: '💚', label: 'WHOOP / Oura',       category: 'Wearables',        kind: 'generic', config: DARTS_INTEGRATIONS.whoop },
-    { id: 'statsports',  icon: '🛰️', label: 'STATSports / Lumio GPS', category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.statsports },
+    { id: 'dartfish',    icon: '📹', label: 'Lumio Vision Video',     category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartfish },
+    { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',       category: 'Wearables',        kind: 'generic', config: DARTS_INTEGRATIONS.whoop },
+    { id: 'statsports',  icon: '🛰️', label: 'Lumio GPS / Lumio GPS', category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.statsports },
     { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.workspace },
     { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.slack },
     { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',    category: 'Distribution',     kind: 'generic', config: DARTS_INTEGRATIONS.broadcast },
@@ -10045,9 +10045,9 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
               items: [
                 { name: 'PDC Profile', desc: 'Rankings & tour data', connected: isDemoOuter },
                 { name: 'WDF Profile', desc: 'World Darts Federation stats' },
-                { name: 'STATSports', desc: 'Movement & load tracking' },
+                { name: 'Lumio GPS', desc: 'Movement & load tracking' },
                 { name: 'Softronic', desc: 'Tournament scoring software' },
-                { name: 'Dartfish', desc: 'Video analysis' },
+                { name: 'Lumio Vision', desc: 'Video analysis' },
                 { name: 'DartConnect', desc: 'Digital scorekeeping', connected: isDemoOuter },
               ],
             },

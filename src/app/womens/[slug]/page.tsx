@@ -261,7 +261,7 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         <StatCard label="Standalone Revenue %" value="31%" sub="vs parent club benchmark" color="teal" />
       </div>
       <ICard><IH3>Sponsorship Portfolio</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Sponsor</th><th className="text-left p-3">Type</th><th className="text-left p-3">Value</th><th className="text-left p-3">Attr</th><th className="text-left p-3">Renewal</th><th className="text-left p-3">Status</th></tr></thead><tbody>{[{n:'Kestrel Finance',t:'Kit',v:'£420k',a:'100%',r:'Jun 2027',s:'Active',c:'green'},{n:'Barclays (WSL)',t:'League',v:'£85k',a:'100%',r:'League',s:'Active',c:'green'},{n:'NovaTech UK',t:'Sleeve',v:'£40k',a:'100%',r:'Dec 2026',s:'Active',c:'green'},{n:'Meridian Insurance',t:'Shared',v:'£95k',a:'11.9%',r:'Mar 2026',s:'Review',c:'amber'},{n:'Local Energy Co',t:"Women's",v:'£35k',a:'100%',r:'Apr 2026',s:'Renewal',c:'red'},{n:'Oakridge Council',t:'Community',v:'£18k',a:'100%',r:'Jun 2026',s:'Active',c:'green'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.t}</td><td className={ttd}>{r.v}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.r}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.c==='green'?'bg-green-600/20 text-green-400':r.c==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400'}`}>{r.s}</span></td></tr>)}</tbody></table></div></ICard>
-      <ICard><IH3>Pipeline Opportunities</IH3><div className="space-y-2">{['Cycle tracking app partnership — Lumio Cycle data product. Est. £60–120k/yr. In discussion.','Women\'s kit sleeve — post-Carney opportunity. Est. £25–40k/yr. Proposal stage.','GPS vest bundle — Kitman Labs co-sell. Est. £85k one-off. Scoping.'].map((o,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {o}</div>)}</div></ICard>
+      <ICard><IH3>Pipeline Opportunities</IH3><div className="space-y-2">{['Cycle tracking app partnership — Lumio Cycle data product. Est. £60–120k/yr. In discussion.','Women\'s kit sleeve — post-Carney opportunity. Est. £25–40k/yr. Proposal stage.','GPS vest bundle — Lumio Health co-sell. Est. £85k one-off. Scoping.'].map((o,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {o}</div>)}</div></ICard>
       <ICard><IH3>Revenue YoY Trend</IH3><svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{height:80}}>{[{l:'23/24',v:1.06},{l:'24/25',v:1.27},{l:'25/26',v:1.42}].map((b,i)=>{const x=i*65+10;const h=(b.v/1.5)*55;return<g key={i}><rect x={x} y={70-h} width={45} height={h} fill="#EC4899" rx="3" opacity="0.8"/><text x={x+22.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x+22.5} y={66-h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">£{b.v}M</text></g>;})}</svg></ICard>
     </div>
   );
@@ -517,7 +517,7 @@ const WelfareView = () => (
       <h3 className="text-sm font-bold text-white mb-4">Active Welfare Cases</h3>
       <div className="space-y-3">
         {[
-          { player: 'Emily Zhang', category: 'ACL Risk', detail: 'Previous bilateral ACL (2023, 2024). 6-month screening protocol active. Next screening: 18 Apr.', severity: 'High', actions: 'Kitman Labs monitoring, reduced sprint load, quarterly MRI' },
+          { player: 'Emily Zhang', category: 'ACL Risk', detail: 'Previous bilateral ACL (2023, 2024). 6-month screening protocol active. Next screening: 18 Apr.', severity: 'High', actions: 'Lumio Health monitoring, reduced sprint load, quarterly MRI' },
           { player: 'Charlotte Reed', category: 'Mental Health', detail: 'Weekly sessions with Dr. Alison Carey (performance psychologist). Progress positive.', severity: 'Medium', actions: 'Weekly check-in, welfare lead notified, PFA support offered' },
           { player: 'Ava Mitchell', category: 'Maternity', detail: 'Maternity leave commencing May 2026. Return plan: January 2027. Contract protected.', severity: 'Info', actions: 'Leave plan filed, salary protected, return-to-play programme scheduled' },
           { player: 'Sophie Turner', category: 'ACL Risk', detail: 'ACL reconstruction Dec 2024. Currently in final return-to-play phase.', severity: 'Medium', actions: 'Graduated return protocol, no competitive match until medical clearance' },
@@ -777,7 +777,7 @@ const CycleTrackingView = () => {
         </div>
       </div>
 
-      <div className="text-[10px] text-gray-600">Data source: Opt-in app (Lumio Cycle) · Kitman Labs GPS integration · Updated 06:30 today</div>
+      <div className="text-[10px] text-gray-600">Data source: Opt-in app (Lumio Cycle) · Lumio Health GPS integration · Updated 06:30 today</div>
     </div>
   );
 };
@@ -844,7 +844,7 @@ const ACLRiskMonitorView = () => {
           ))}
         </div>
         <div className="bg-amber-600/10 border border-amber-600/30 rounded-lg p-3 text-xs text-amber-400">
-          Composite score is updated daily at 06:30 using GPS data from Kitman Labs, cycle phase from opt-in Lumio Cycle app, and biomechanical assessments from the last 30 days.
+          Composite score is updated daily at 06:30 using GPS data from Lumio Health, cycle phase from opt-in Lumio Cycle app, and biomechanical assessments from the last 30 days.
         </div>
       </div>
 
@@ -1821,7 +1821,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 4,  name: 'Becca Lane',      age: 15, pos: 'GK',  gpsAvg: 55, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 11, goals: 0,  assists: 0,  notes: 'Strong shot-stopper. Distribution improving. Youngest GK in U18s.' },
     { id: 5,  name: 'Simone Ashby',    age: 17, pos: 'LB',  gpsAvg: 62, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 13, goals: 0,  assists: 6,  notes: 'Best delivery from wide areas in academy. CoE licence player.' },
     { id: 6,  name: 'Raya Obi',        age: 16, pos: 'DM',  gpsAvg: 60, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 8,  goals: 0,  assists: 1,  notes: 'Reads the game well. Physical development needed before first-team consideration.' },
-    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Wyscout flagged as one of top U18 wingers in Women's Champ region." },
+    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Lumio Scout flagged as one of top U18 wingers in Women's Champ region." },
     { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
     { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
     { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
@@ -2239,7 +2239,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
 
   return (
     <div>
-      <SectionHeader title="Scouting" subtitle="Wyscout · WSL · Women's Championship · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
+      <SectionHeader title="Scouting" subtitle="Lumio Scout · WSL · Women's Championship · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
       <div className="flex gap-1 mb-6 border-b border-gray-800">
         {[{id:'database',label:'Player Database',icon:'🔍'},{id:'watchlist',label:'Watchlist',icon:'⭐'},{id:'reports',label:'Scout Reports',icon:'📝'}].map(t=>(
           <button key={t.id} onClick={()=>{setScoutTab(t.id as typeof scoutTab);setSelectedPlayer(null)}}
@@ -2262,7 +2262,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
                 <button onClick={()=>setSelectedPlayer(null)} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
               </div>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
-                <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-pink-400">{selectedP.wyscout}</div><div className="text-[10px] text-gray-500">Wyscout</div></div>
+                <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-pink-400">{selectedP.wyscout}</div><div className="text-[10px] text-gray-500">Lumio Scout</div></div>
                 {selectedP.pos!=='GK'?<>
                   <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-purple-400">{selectedP.xG?.toFixed(2)??'—'}</div><div className="text-[10px] text-gray-500">xG/90</div></div>
                   <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2.5 text-center"><div className="text-lg font-bold text-blue-400">{selectedP.xA?.toFixed(2)??'—'}</div><div className="text-[10px] text-gray-500">xA/90</div></div>
@@ -2297,7 +2297,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
           </div>
           <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
             <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider">
-              <th className="text-left p-3">Player</th><th className="text-left p-3">Club / League</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-center p-3">Rating</th><th className="text-center p-3">Wyscout</th><th className="text-center p-3">xG</th><th className="text-center p-3">xA</th><th className="text-left p-3">Salary</th><th className="text-left p-3">FSR after</th><th className="text-left p-3">Availability</th><th className="p-3"></th>
+              <th className="text-left p-3">Player</th><th className="text-left p-3">Club / League</th><th className="text-center p-3">Pos</th><th className="text-center p-3">Age</th><th className="text-center p-3">Rating</th><th className="text-center p-3">Lumio Scout</th><th className="text-center p-3">xG</th><th className="text-center p-3">xA</th><th className="text-left p-3">Salary</th><th className="text-left p-3">FSR after</th><th className="text-left p-3">Availability</th><th className="p-3"></th>
             </tr></thead><tbody>
               {filtered.length===0?<tr><td colSpan={12} className="p-8 text-center text-gray-600 text-sm">No players match filters.</td></tr>:filtered.map(p=>{
                 const ha=FSR_HEADROOM-p.salary;const hc=ha>200000?'text-green-400':ha>80000?'text-amber-400':'text-red-400';
@@ -2318,7 +2318,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
                 </tr>;
               })}
             </tbody></table></div>
-            <div className="p-3 border-t border-gray-800 text-[10px] text-gray-600">Wyscout Women&apos;s database · Salaries estimated · FSR based on {club.league} headroom</div>
+            <div className="p-3 border-t border-gray-800 text-[10px] text-gray-600">Lumio Scout Women&apos;s database · Salaries estimated · FSR based on {club.league} headroom</div>
           </div>
         </div>
       )}
@@ -2329,7 +2329,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
           {watchlist.map(p=>{
             const ha=FSR_HEADROOM-p.salary;const hc=ha>200000?'text-green-400':ha>80000?'text-amber-400':'text-red-400';
             return<div key={p.id} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 hover:border-pink-600/30 transition-colors">
-              <div className="flex items-start justify-between mb-3"><div className="flex items-center gap-3"><span className="text-xl">{p.nat}</span><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{p.name}</span><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(p.rating)}`}>{p.rating}</span></div><p className="text-xs text-gray-500">{p.pos} · {p.club} · {p.league} · Age {p.age}</p></div></div><div className="text-right"><div className="text-sm font-bold text-pink-400">{p.wyscout}</div><div className="text-[10px] text-gray-600">Wyscout</div></div></div>
+              <div className="flex items-start justify-between mb-3"><div className="flex items-center gap-3"><span className="text-xl">{p.nat}</span><div><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{p.name}</span><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${ratingColor(p.rating)}`}>{p.rating}</span></div><p className="text-xs text-gray-500">{p.pos} · {p.club} · {p.league} · Age {p.age}</p></div></div><div className="text-right"><div className="text-sm font-bold text-pink-400">{p.wyscout}</div><div className="text-[10px] text-gray-600">Lumio Scout</div></div></div>
               <div className="grid grid-cols-4 gap-2 mb-3">
                 {p.pos!=='GK'?<><div className="text-center"><div className="text-xs font-bold text-purple-400">{p.xG?.toFixed(2)}</div><div className="text-[9px] text-gray-600">xG/90</div></div><div className="text-center"><div className="text-xs font-bold text-blue-400">{p.xA?.toFixed(2)}</div><div className="text-[9px] text-gray-600">xA/90</div></div><div className="text-center"><div className="text-xs font-bold text-teal-400">{p.progPasses}</div><div className="text-[9px] text-gray-600">Prog</div></div><div className="text-center"><div className="text-xs font-bold text-amber-400">{p.tackles}</div><div className="text-[9px] text-gray-600">Tackles</div></div></>:<><div className="text-center"><div className="text-xs font-bold text-purple-400">{(p as typeof p&{saves?:number}).saves??'—'}</div><div className="text-[9px] text-gray-600">Saves</div></div><div className="text-center"><div className="text-xs font-bold text-blue-400">{(p as typeof p&{savePct?:number}).savePct??'—'}%</div><div className="text-[9px] text-gray-600">Save%</div></div></>}
               </div>
@@ -2393,7 +2393,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
 
   return (
     <div>
-      <SectionHeader title="Analytics" subtitle="StatsBomb Women's API · xG · Pressing Intensity · Progressive Passes" icon="📉" />
+      <SectionHeader title="Analytics" subtitle="Lumio Data Women's API · xG · Pressing Intensity · Progressive Passes" icon="📉" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="xG per 90 (season)" value={avgXG.toFixed(2)} sub={`WSL avg: ${WSL_AVG_XG} — ${avgXG >= WSL_AVG_XG ? '↑ above avg' : '↓ below avg'}`} color={avgXG >= WSL_AVG_XG ? 'green' : 'amber'} />
@@ -2471,7 +2471,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 pt-3 border-t border-gray-800 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · 2025/26 WSL Season</div>
+            <div className="mt-4 pt-3 border-t border-gray-800 text-[10px] text-gray-600">Data source: Lumio Data Women&apos;s API · 2025/26 WSL Season</div>
           </div>
         )
       })()}
@@ -2585,7 +2585,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
               </div>
               <p className="text-[10px] text-gray-500 mt-2">Strong correlation: 35+ progressive passes = 100% win rate. Below 25 = 0 wins this season.</p>
             </div>
-            <div className="mt-3 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · Progressive pass = ≥10 yards toward goal</div>
+            <div className="mt-3 text-[10px] text-gray-600">Data source: Lumio Data Women&apos;s API · Progressive pass = ≥10 yards toward goal</div>
           </div>
         )
       })()}
@@ -2667,7 +2667,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
                 </div>
               ))}
             </div>
-            <div className="mt-3 text-[10px] text-gray-600">Data source: StatsBomb Women&apos;s API · Bubble size = xG value</div>
+            <div className="mt-3 text-[10px] text-gray-600">Data source: Lumio Data Women&apos;s API · Bubble size = xG value</div>
           </div>
         )
       })()}
@@ -2697,7 +2697,7 @@ const TransfersView = ({ club }: { club: WomensClub }) => {
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a women's football transfer analyst for ${club.name}, a ${club.league} club.
 Search criteria: Position: ${position}. Max salary: £${maxSalary}/yr. Style: ${style}. Target leagues: ${league}. FSR headroom: ${fmt2(FSR_HEADROOM)}.
-Generate 5 player profiles. For each: **[Name]** — [Club], [Nationality]. Age, position, est salary, FSR impact, style match (2 sentences), key stats, availability, Wyscout rating (6.8–8.4), recommended action.
+Generate 5 player profiles. For each: **[Name]** — [Club], [Nationality]. Age, position, est salary, FSR impact, style match (2 sentences), key stats, availability, Lumio Scout rating (6.8–8.4), recommended action.
 After profiles add **## FSR IMPACT SUMMARY** table and **## RECOMMENDED SIGNING** paragraph.
 Use plausible fictional names — no real WSL players. WSL salary range £28k–£120k. Format with markdown.` }]
         })
@@ -2855,7 +2855,7 @@ GPS Data (first half):
 - Distance covered: Us 42.1km vs Them 45.3km
 - Sprint count: Us 14 vs Them 22
 
-StatsBomb xG:
+Lumio Data xG:
 - xG: Us 0.31 vs Them 0.87
 - Shots: Us 2 vs Them 6
 - Progressive passes: Us 18 vs Them 31
@@ -2924,7 +2924,7 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
 
   return (
     <div>
-      <SectionHeader title="AI Halftime Brief" subtitle="GPS + StatsBomb xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
+      <SectionHeader title="AI Halftime Brief" subtitle="GPS + Lumio Data xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <StatCard label="Opponent" value="Brighton W" color="blue" />
@@ -2949,7 +2949,7 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
           ))}
         </div>
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">StatsBomb xG</h3>
+          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Lumio Data xG</h3>
           {[
             { label: 'xG', us: 0.31, them: 0.87 },
             { label: 'Shots', us: 2, them: 6 },
@@ -3008,7 +3008,7 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
       )}
 
       <div className="mt-6 bg-pink-600/10 border border-pink-600/30 rounded-xl p-4">
-        <p className="text-xs text-pink-300"><strong>Why this is world-leading:</strong> No other women&apos;s football platform combines GPS load data, StatsBomb xG, real-time ACL deceleration event detection, and menstrual cycle phase welfare flags into a single AI-generated coaching brief. This is unique to Lumio Women&apos;s FC.</p>
+        <p className="text-xs text-pink-300"><strong>Why this is world-leading:</strong> No other women&apos;s football platform combines GPS load data, Lumio Data xG, real-time ACL deceleration event detection, and menstrual cycle phase welfare flags into a single AI-generated coaching brief. This is unique to Lumio Women&apos;s FC.</p>
       </div>
     </div>
   )
@@ -3204,7 +3204,7 @@ const GPSLoadView = () => {
     <div>
       <SectionHeader title="GPS & Load" subtitle="Training and match load monitoring" icon="📡" />
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-3 mb-6 text-xs text-blue-400">
-        📡 GPS data synced via Catapult integration — last sync: today 09:14. 9 of 10 devices active.
+        📡 GPS data synced — last sync: today 09:14. 9 of 10 devices active.
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="Avg Distance" value="9.5 km" sub="Per session (outfield)" color="pink" />
@@ -3295,8 +3295,8 @@ const GPSLoadView = () => {
         <h3 className="text-sm font-bold text-white mb-3">Integration Status</h3>
         <div className="space-y-2">
           {[
-            {system:'Catapult GPS',status:'Connected',detail:'10 devices allocated, 9 active'},
-            {system:'Kitman Labs',status:'Connected',detail:'ACL risk model synced'},
+            {system:'Lumio GPS GPS',status:'Connected',detail:'10 devices allocated, 9 active'},
+            {system:'Lumio Health',status:'Connected',detail:'ACL risk model synced'},
             {system:'Second Spectrum',status:'Pending',detail:'Video analysis integration — Phase 2'},
             {system:'FA Player Registration',status:'Connected',detail:'Squad list synced daily'},
           ].map((s: {system:string;status:string;detail:string}) => (
@@ -3312,7 +3312,7 @@ const GPSLoadView = () => {
       </div>
 
       <div className="flex items-center gap-2">
-        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Connect Kitman Labs</button>
+        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Connect Lumio Health</button>
         <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">⌨ Manual data entry</button>
         <span className="text-[10px] text-gray-500">Available in live portal</span>
       </div>
@@ -3547,7 +3547,7 @@ const SettingsViewFull = ({ club }: { club: WomensClub }) => (
     </div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
       <h3 className="text-sm font-bold text-white mb-3">Integrations</h3>
-      {['Kitman Labs','FA Registration System'].map((ig: string, i: number) => (
+      {['Lumio Health','FA Registration System'].map((ig: string, i: number) => (
         <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{ig}</span><button className="px-3 py-1 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Connect</button></div>
       ))}
     </div>

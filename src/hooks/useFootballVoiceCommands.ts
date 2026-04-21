@@ -205,7 +205,7 @@ const CMDS: { patterns: RegExp[]; action: string; response: (m: RegExpMatchArray
   { patterns: [/log.*result/i, /record.*result/i, /enter.*result/i], action: 'MATCHDAY_ACTION', response: () => 'Opening result logging form.' },
   { patterns: [/player ratings.*last match/i, /post.*match.*rating/i], action: 'NAVIGATE', response: () => 'Opening post-match player ratings.', data: () => ({ dept: 'analytics' }) },
   { patterns: [/match timeline/i, /match.*events/i], action: 'NAVIGATE', response: () => 'Opening match timeline.', data: () => ({ dept: 'analytics' }) },
-  { patterns: [/xg.*last match/i, /expected goals/i, /statsbomb.*xg/i], action: 'NAVIGATE', response: () => 'Opening StatsBomb xG data.', data: () => ({ dept: 'statsbomb' }) },
+  { patterns: [/xg.*last match/i, /expected goals/i, /statsbomb.*xg/i], action: 'NAVIGATE', response: () => 'Opening Lumio Data xG feed.', data: () => ({ dept: 'statsbomb' }) },
   { patterns: [/shots on target/i, /shot.*target/i], action: 'FIXTURE_INFO', response: () => 'Last match: 6 shots on target from 14 total.' },
   { patterns: [/possession stats/i, /possession.*data/i, /how much possession/i], action: 'FIXTURE_INFO', response: () => 'Last match possession: 54 percent.' },
   { patterns: [/warm.?up plan/i, /warm.?up schedule/i], action: 'NAVIGATE', response: () => 'Opening warm-up schedule.', data: () => ({ dept: 'matchday' }) },
@@ -246,9 +246,9 @@ const CMDS: { patterns: RegExp[]; action: string; response: (m: RegExpMatchArray
   { patterns: [/show.*settings/i, /open.*settings/i], action: 'NAVIGATE', response: () => 'Opening settings.', data: () => ({ dept: 'settings' }) },
   { patterns: [/show.*pyramid/i, /football pyramid/i], action: 'NAVIGATE', response: () => 'Opening the football pyramid.', data: () => ({ dept: 'pyramid' }) },
   { patterns: [/find a club/i, /club search/i, /search.*club/i], action: 'NAVIGATE', response: () => 'Opening AI club search.', data: () => ({ dept: 'find-club' }) },
-  { patterns: [/show.*statsbomb/i, /statsbomb data/i, /open.*statsbomb/i], action: 'NAVIGATE', response: () => 'Opening StatsBomb data.', data: () => ({ dept: 'statsbomb' }) },
-  { patterns: [/show.*wyscout/i, /open.*wyscout/i, /wyscout data/i], action: 'NAVIGATE', response: () => 'Opening Wyscout.', data: () => ({ dept: 'wyscout' }) },
-  { patterns: [/opta data/i, /show.*opta/i, /open.*opta/i], action: 'NAVIGATE', response: () => 'Opening Opta data.', data: () => ({ dept: 'opta' }) },
+  { patterns: [/show.*statsbomb/i, /statsbomb data/i, /open.*statsbomb/i], action: 'NAVIGATE', response: () => 'Opening Lumio Data.', data: () => ({ dept: 'statsbomb' }) },
+  { patterns: [/show.*wyscout/i, /open.*wyscout/i, /wyscout data/i], action: 'NAVIGATE', response: () => 'Opening Lumio Scout.', data: () => ({ dept: 'wyscout' }) },
+  { patterns: [/opta data/i, /show.*opta/i, /open.*opta/i], action: 'NAVIGATE', response: () => 'Opening Lumio Data Pro.', data: () => ({ dept: 'opta' }) },
 
   // ─── HELP ────────────────────────────────────────────────────────────────────
   { patterns: [/help/i, /what can you do/i, /commands/i], action: 'HELP', response: () => 'You can say things like: show me the squad, who\'s injured, show tactics, show set pieces, show upcoming fixtures, show the league table, transfer budget, show GPS data, show the board suite, show finances, or find a player. Say any department name to navigate there.' },

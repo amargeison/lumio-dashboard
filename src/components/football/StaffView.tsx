@@ -336,7 +336,7 @@ export default function FootballStaffView() {
           <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Useful Links</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {['🔗 FA Club Portal', '🔗 EFL Management System', '🔗 Wyscout', '🔗 Catapult GPS', '🔗 Club Payroll', '🔗 EPPP Portal', '🔗 TransferRoom', '🔗 Club Website'].map(l => (
+              {['🔗 FA Club Portal', '🔗 EFL Management System', '🔗 Lumio Scout', '🔗 Lumio GPS', '🔗 Club Payroll', '🔗 EPPP Portal', '🔗 TransferRoom', '🔗 Club Website'].map(l => (
                 <span key={l} className="text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/5" style={{ color: '#9CA3AF', border: '1px solid #1F2937' }}>{l}</span>
               ))}
             </div>

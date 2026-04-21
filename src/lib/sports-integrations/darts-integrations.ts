@@ -101,10 +101,10 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
 
   dartfish: {
     icon: '📹',
-    title: 'Dartfish Video',
+    title: 'Lumio Vision Video',
     subtitle: 'High-frame video capture and motion analysis for throw breakdown.',
-    partnerBadge: 'Dartfish Live · 240fps iOS capture · coach video platform',
-    connectLabel: 'Connect Dartfish',
+    partnerBadge: 'Lumio Vision Live · 240fps iOS capture · coach video platform',
+    connectLabel: 'Connect Lumio Vision',
     summaryText: 'Sync every coached throw breakdown, slow-mo comparison, and annotated session into the Lumio video library. The standard for technical throw analysis across the sport.',
     connectedStats: [
       { label: 'Clips Synced', value: '486' },
@@ -112,26 +112,26 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { label: 'Latest Capture', value: '12 Apr' },
       { label: 'Storage', value: '6.8 GB' },
     ],
-    whyHeading: 'Why Dartfish is a complementary (high-impact) integration',
-    whyBody: 'Dartfish is the de-facto video tool used by coaches breaking down throw mechanics — stance, release point, follow-through. Connecting it means annotated comparison clips from your coach flow straight into Lumio\'s video library, tagged and searchable. Without it, the coach\'s work sits in a parallel app and the player has to switch contexts every time they want to review.',
+    whyHeading: 'Why Lumio Vision is a complementary (high-impact) integration',
+    whyBody: 'Lumio Vision is the de-facto video tool used by coaches breaking down throw mechanics — stance, release point, follow-through. Connecting it means annotated comparison clips from your coach flow straight into Lumio\'s video library, tagged and searchable. Without it, the coach\'s work sits in a parallel app and the player has to switch contexts every time they want to review.',
     endpointsTitle: 'Data Flows Used by Lumio Darts',
     endpoints: [
       { endpoint: 'Video Library', desc: 'Every captured throw clip with metadata (session, angle, distance).', status: 'Live' },
-      { endpoint: 'Coach Annotations', desc: 'Dartfish overlay drawings and voice-notes preserved on import.', status: 'Live' },
+      { endpoint: 'Coach Annotations', desc: 'Lumio Vision overlay drawings and voice-notes preserved on import.', status: 'Live' },
       { endpoint: 'Side-by-Side Comparisons', desc: 'Two-clip comparisons from the coach — imported with both clips.', status: 'Live' },
       { endpoint: 'Frame-Level Markers', desc: 'Release-point and impact markers — powers slow-mo scrubber.', status: 'Live' },
       { endpoint: 'Session Tagging', desc: 'Practice / match / exhibition tags flow into Lumio filters.', status: 'Beta' },
       { endpoint: 'AI Release-Point Detection', desc: 'Auto-flag release-point drift vs baseline — Planned for Q3.', status: 'Planned' },
     ],
-    pricing: 'Dartfish Live is approximately £50/year for individuals. Coach tiers start at approximately £200/year. Lumio-connected players typically have the subscription via their coach — OAuth connection is free.',
+    pricing: 'Lumio Vision Live is approximately £50/year for individuals. Coach tiers start at approximately £200/year. Lumio-connected players typically have the subscription via their coach — OAuth connection is free.',
   },
 
   whoop: {
     icon: '💚',
-    title: 'WHOOP / Oura',
+    title: 'Lumio Wear / Oura',
     subtitle: 'Sleep, HRV, recovery and strain piped into every morning briefing.',
-    partnerBadge: 'OAuth available · WHOOP + Oura · ring or strap',
-    connectLabel: 'Connect WHOOP / Oura',
+    partnerBadge: 'OAuth available · Lumio Wear + Oura · ring or strap',
+    connectLabel: 'Connect Lumio Wear / Oura',
     summaryText: 'Pipe HRV, recovery score, sleep duration and strain into Lumio every morning. The difference between a fresh practice session and a foggy one — now visible before you pick up the darts.',
     connectedStats: [
       { label: 'Last Sync', value: '07:02' },
@@ -139,11 +139,11 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { label: 'HRV', value: '60 ms' },
       { label: 'Sleep', value: '7h 34m' },
     ],
-    whyHeading: 'Why WHOOP / Oura matters for TV-event pacing',
-    whyBody: 'Televised darts nights are late-finishing, high-adrenaline, high-alcohol-exposure environments. A player on a run can play three matches in one evening and not fall asleep until 4am. Feeding WHOOP/Oura into Lumio means the morning after a late night, the practice plan is pre-calibrated to a 60% recovery score — not a generic "full day" block. Cumulative sleep debt across a 14-day Worlds run is the single biggest driver of late-tournament average drop.',
+    whyHeading: 'Why Lumio Wear / Oura matters for TV-event pacing',
+    whyBody: 'Televised darts nights are late-finishing, high-adrenaline, high-alcohol-exposure environments. A player on a run can play three matches in one evening and not fall asleep until 4am. Feeding Lumio Wear/Oura into Lumio means the morning after a late night, the practice plan is pre-calibrated to a 60% recovery score — not a generic "full day" block. Cumulative sleep debt across a 14-day Worlds run is the single biggest driver of late-tournament average drop.',
     endpointsTitle: 'Data Flows Used by Lumio Darts',
     endpoints: [
-      { endpoint: 'Recovery Score', desc: 'WHOOP 0-100 daily recovery or Oura Readiness score.', status: 'Live' },
+      { endpoint: 'Recovery Score', desc: 'Lumio Wear 0-100 daily recovery or Oura Readiness score.', status: 'Live' },
       { endpoint: 'HRV (RMSSD)', desc: 'Overnight HRV — leading indicator of fatigue carryover.', status: 'Live' },
       { endpoint: 'Sleep Stages', desc: 'REM / deep / light split — feeds the sleep-debt tile.', status: 'Live' },
       { endpoint: 'Daily Strain', desc: 'Strain vs target — useful for quantifying adrenaline-heavy match nights.', status: 'Live' },
@@ -151,15 +151,15 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Respiratory Rate', desc: 'Overnight breath rate — early illness flag on the winter TV circuit.', status: 'Beta' },
       { endpoint: 'Alcohol-Impact Flag', desc: 'Recovery-drop pattern detection — Planned for Q3.', status: 'Planned' },
     ],
-    pricing: 'Free to connect if the player has WHOOP or Oura. WHOOP approximately £20/month; Oura approximately £5/month plus ring hardware. Lumio adds no fee — OAuth connection only.',
+    pricing: 'Free to connect if the player has Lumio Wear or Oura. Lumio Wear approximately £20/month; Oura approximately £5/month plus ring hardware. Lumio adds no fee — OAuth connection only.',
   },
 
   statsports: {
     icon: '🛰️',
-    title: 'STATSports / Lumio GPS',
+    title: 'Lumio GPS Pro / Lumio GPS',
     subtitle: 'Step count, walk-on HR, and hydration-adjusted strain for TV-week pacing.',
-    partnerBadge: 'STATSports APEX / EDGE · Lumio GPS vest supported · OAuth + CSV',
-    connectLabel: 'Connect STATSports / Lumio GPS',
+    partnerBadge: 'Lumio GPS Pro APEX / EDGE · Lumio GPS vest supported · OAuth + CSV',
+    connectLabel: 'Connect Lumio GPS Pro / Lumio GPS',
     summaryText: 'Step count, walk-on HR spike, hydration-adjusted strain. Essential for TV-event weeks where practice-room pacing and green-room waits affect in-match sharpness.',
     connectedStats: [
       { label: 'Session (today)', value: '8,420 steps' },
@@ -167,8 +167,8 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { label: 'Load 7-day', value: '1,220 AU' },
       { label: 'Device', value: 'Lumio GPS' },
     ],
-    whyHeading: 'Why STATSports / Lumio GPS matters on TV-week',
-    whyBody: 'Darts looks static but a TV night is four hours on your feet — practice room, walk-on lane, green room, stage, back to practice. The total step count and HR-zone distribution during a TV day is a meaningful load number that correlates with late-match average drop. Feeding STATSports or the Lumio GPS vest into the platform lets the physio see hydration-adjusted strain in near-real-time and intervene between matches.',
+    whyHeading: 'Why Lumio GPS Pro / Lumio GPS matters on TV-week',
+    whyBody: 'Darts looks static but a TV night is four hours on your feet — practice room, walk-on lane, green room, stage, back to practice. The total step count and HR-zone distribution during a TV day is a meaningful load number that correlates with late-match average drop. Feeding Lumio GPS Pro or the Lumio GPS vest into the platform lets the physio see hydration-adjusted strain in near-real-time and intervene between matches.',
     endpointsTitle: 'Data Flows Used by Lumio Darts',
     endpoints: [
       { endpoint: 'Step Count', desc: 'Daily step count with practice / match / off-stage breakdown.', status: 'Live' },
@@ -179,7 +179,7 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Green-Room Recovery Window', desc: 'Between-match recovery HR curve — flags under-recovery.', status: 'Beta' },
       { endpoint: 'Tremor Proxy', desc: 'Accelerometer steadiness score during warm-ups — Planned.', status: 'Planned' },
     ],
-    pricing: 'STATSports APEX is approximately £400–£700/year per unit. Lumio GPS vest is bundled in the Premier League plan (£279/month) — no extra hardware cost. CSV upload is always available as a fallback if neither is connected.',
+    pricing: 'Lumio GPS Pro APEX is approximately £400–£700/year per unit. Lumio GPS vest is bundled in the Premier League plan (£279/month) — no extra hardware cost. CSV upload is always available as a fallback if neither is connected.',
   },
 
   workspace: {

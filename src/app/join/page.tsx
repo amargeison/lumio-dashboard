@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 const SPORTS = [
   { id: 'tennis', name: 'Tennis', emoji: '🎾', accent: '#a855f7', tag: 'ATP · WTA · ITF', bullets: ['AI morning briefing', 'Tournament scheduler', 'Sponsor management'] },
-  { id: 'golf', name: 'Golf', emoji: '⛳', accent: '#16a34a', tag: 'DP World · PGA · Challenge Tour', bullets: ['OWGR ranking tracker', 'TrackMan session logger', 'Caddie brief AI'] },
+  { id: 'golf', name: 'Golf', emoji: '⛳', accent: '#16a34a', tag: 'DP World · PGA · Challenge Tour', bullets: ['OWGR ranking tracker', 'Lumio Range session logger', 'Caddie brief AI'] },
   { id: 'darts', name: 'Darts', emoji: '🎯', accent: '#22c55e', tag: 'PDC · BDO · WDF', bullets: ['PDC ranking tracker', 'Match report AI', 'Prize money tracker'] },
   { id: 'boxing', name: 'Boxing', emoji: '🥊', accent: '#ef4444', tag: 'WBO · WBC · IBF · WBA · GPS Ring Tracking', bullets: ['GPS Ring Heatmap (world first)', 'AI opponent scouting', 'Purse breakdown + weight AI'] },
   { id: 'cricket', name: 'Cricket', emoji: '🏏', accent: '#10b981', tag: 'County · Hundred · Internationals', bullets: ['Bowling workload tracker', 'Match prep AI', 'Tour planning'] },

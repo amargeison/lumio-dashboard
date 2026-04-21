@@ -14,7 +14,7 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['200+ features', 'ATP & WTA', 'AI powered', 'ElevenLabs voice', 'StatsBomb ready']
+const STAT_PILLS = ['200+ features', 'ATP & WTA', 'AI powered', 'ElevenLabs voice', 'Lumio Data ready']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🏆', title: 'Rankings & Race Intelligence', desc: 'Live ATP/WTA ranking, Race to Turin standings, 24-month trajectory chart. Know exactly where you stand.' },
@@ -32,13 +32,13 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '🎾', name: 'ATP/WTA', desc: 'Ranking and points feed' },
-  { icon: '📹', name: 'Swing Vision', desc: 'Shot tracking and video analysis' },
-  { icon: '⚡', name: 'StatsBomb', desc: 'Match data and analytics' },
-  { icon: '🎥', name: 'Wyscout', desc: 'Video and opponent database' },
-  { icon: '✈️', name: 'Google Flights', desc: 'Travel search integration' },
-  { icon: '🏨', name: 'Booking.com', desc: 'Hotel management' },
-  { icon: '📊', name: 'Opta', desc: 'Live statistics feed' },
+  { icon: '🎾', name: 'Live ATP/WTA rankings', desc: 'Ranking and points feed' },
+  { icon: '📹', name: 'Lumio Vision', desc: 'Shot tracking and video analysis' },
+  { icon: '⚡', name: 'Lumio Data', desc: 'Match data and analytics' },
+  { icon: '🎥', name: 'Lumio Scout', desc: 'Video and opponent database' },
+  { icon: '📡', name: 'Lumio Live', desc: 'In-match live statistics' },
+  { icon: '✈️', name: 'Smart Flights', desc: 'AI-powered flight search' },
+  { icon: '🏨', name: 'Smart Hotels', desc: 'AI-powered hotel search' },
   { icon: '🎵', name: 'ElevenLabs', desc: 'Voice briefing delivery' },
   { icon: '💰', name: 'Xero', desc: 'Financial management' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
@@ -464,11 +464,11 @@ export default function TennisLandingPage() {
             <span style={{ color: '#06b6d4' }}>like a business.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 20px' }}>
-            The world&apos;s first tennis management platform with built-in GPS tracking, SwingVision integration and AI coaching briefs — all in one portal.
+            The world&apos;s first tennis management platform with built-in GPS tracking, AI video analysis and coaching briefs — all in one portal.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ World First — Lumio GPS Tracker</span>
-            <span style={{ background: '#a855f718', border: '1px solid #a855f7', color: '#a855f7', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾 SwingVision Integration</span>
+            <span style={{ background: '#a855f718', border: '1px solid #a855f7', color: '#a855f7', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎬 Lumio Vision</span>
             <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Coaching Briefs</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
@@ -497,12 +497,12 @@ export default function TennisLandingPage() {
                 <span style={{ background: '#06b6d4', color: '#000', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>⚡ World First in Tennis</span>
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 700, lineHeight: 1.2 }}>GPS Intelligence built<br /><span style={{ color: '#06b6d4' }}>specifically for tennis players.</span></h2>
-              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>Every other GPS tracker is built for team sports. Lumio GPS Tracker is the first wearable built for the individual tennis player — tracking court coverage, sprint load and recovery between points, feeding directly into your portal and combining with SwingVision for an AI coaching brief after every session and set.</p>
+              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>Every other GPS tracker is built for team sports. Lumio GPS Tracker is the first wearable built for the individual tennis player — tracking court coverage, sprint load and recovery between points, feeding directly into your portal and combining with shot and load data for an AI coaching brief after every session and set.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
                   { icon: '🛰️', title: 'Lumio GPS Tracker', color: '#06b6d4', desc: 'Lightweight clip-on device. Auto-syncs to your portal after every session. Court heatmaps, sprint zones and load scores — all in real time.', price: '£299 one-off · Included in Pro plan' },
-                  { icon: '🎾', title: 'SwingVision Integration', color: '#a855f7', desc: 'Connect SwingVision for shot tracking, AI video clips and serve analytics — all combined with your GPS movement data in one unified dashboard.', price: 'One-click connect · Auto session sync' },
-                  { icon: '🤖', title: 'AI Coaching Briefs', color: '#10b981', desc: 'At the end of every set or session, Lumio AI combines your GPS and SwingVision data to generate a coaching brief — observations, focus points and a recovery recommendation.', price: 'Auto-generated · ATP coaching tone' },
+                  { icon: '🎬', title: 'Lumio Vision', color: '#a855f7', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', price: 'Coming Soon · Rolling out through 2026' },
+                  { icon: '🤖', title: 'AI Coaching Briefs', color: '#10b981', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.', price: 'Auto-generated · ATP coaching tone' },
                 ].map((f, i) => (
                   <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
                     <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
@@ -513,7 +513,7 @@ export default function TennisLandingPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 48, padding: '24px 32px', background: '#ffffff08', borderRadius: 12, flexWrap: 'wrap', marginBottom: 40 }}>
-                {[{ stat: '4.2km', label: 'Avg court coverage tracked per session' }, { stat: '127', label: 'Shots logged per match via SwingVision' }, { stat: '<2min', label: 'AI brief generated after final point' }, { stat: '0', label: 'Other platforms doing this for tennis' }].map(s => (
+                {[{ stat: '4.2km', label: 'Avg court coverage tracked per session' }, { stat: '127', label: 'Shots logged per match' }, { stat: '<2min', label: 'AI brief generated after final point' }, { stat: '0', label: 'Other platforms doing this for tennis' }].map(s => (
                   <div key={s.stat}><div style={{ color: '#06b6d4', fontSize: 28, fontWeight: 800 }}>{s.stat}</div><div style={{ color: '#64748b', fontSize: 13, maxWidth: 160 }}>{s.label}</div></div>
                 ))}
               </div>
@@ -614,7 +614,7 @@ export default function TennisLandingPage() {
       <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Lumio Tour connects to the tools you already use.
+            Lumio Tour — built-in and connected.
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 48 }}>
             {INTEGRATIONS.map(i => (
@@ -661,20 +661,25 @@ export default function TennisLandingPage() {
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
-            {[
+            {([
               { icon: '📡', title: 'Lumio GPS Tracker', desc: 'Lightweight clip-on device. Automatic sync. Court heatmaps after every session.' },
-              { icon: '🎾', title: 'SwingVision Integration', desc: 'Connect SwingVision for shot tracking and AI video clips combined with your GPS data.' },
-              { icon: '🤖', title: 'AI Coaching Briefs', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data.' },
-            ].map((f, i) => (
+              { icon: '🎬', title: 'Lumio Vision', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', comingSoon: true },
+              { icon: '🤖', title: 'AI Coaching Briefs', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.' },
+            ] as Array<{icon:string; title:string; desc:string; comingSoon?:boolean}>).map((f, i) => (
               <div key={i} style={{ backgroundColor: CARD, border: `1px solid ${BORDER_ALT}`, borderRadius: 16, padding: 28 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
-                <h3 style={{ fontSize: 17, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: TEXT, margin: 0 }}>{f.title}</h3>
+                  {f.comingSoon && (
+                    <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 999, color: MUTED, backgroundColor: `${MUTED}15`, border: `1px solid ${MUTED}44`, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Coming Soon</span>
+                  )}
+                </div>
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
-            {['🛰️ Lumio Hardware', '🎾 SwingVision Partner', '🤖 AI Powered'].map(badge => (
+            {['🛰️ Lumio Hardware', '🎬 Lumio Vision', '🤖 AI Powered'].map(badge => (
               <span key={badge} style={{ padding: '8px 16px', borderRadius: 999, backgroundColor: `${PURPLE}15`, border: `1px solid ${PURPLE}40`, color: PURPLE_LIGHT, fontSize: 12, fontWeight: 700 }}>{badge}</span>
             ))}
           </div>

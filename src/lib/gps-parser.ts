@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// GPS CSV parser for Catapult OpenField and STATSports Sonra exports.
+// GPS CSV parser supporting Lumio GPS exports and common legacy vendor formats.
 // Two-stage matching: exact column names from spec first, then fuzzy substring
 // fallback for real-world export variance. Never throws.
 // ═══════════════════════════════════════════════════════════════════════════════

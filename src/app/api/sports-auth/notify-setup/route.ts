@@ -11,14 +11,14 @@ const SPORT_CREDENTIALS: Record<string, { name: string; why: string; powers: str
   ],
   tennis: [
     { name: 'ATP/WTA member ID', why: 'Pulls your live ranking and points breakdown', powers: 'Rankings tracker, Race to Finals, points expiry' },
-    { name: 'SwingVision account email', why: 'Syncs match video and shot analytics', powers: 'GPS court heatmap, shot analysis, serve stats' },
+    { name: 'Lumio Vision account email', why: 'Syncs match video and shot analytics (coming soon)', powers: 'GPS court heatmap, shot analysis, serve stats' },
     { name: 'Coach email', why: 'Connects your coach to the team hub', powers: 'Team hub, coach messaging, practice notes' },
     { name: 'Home airport', why: 'Pre-fills Smart Flights for every tour destination', powers: 'Smart Flights AI, hotel finder, travel planner' },
     { name: 'Sponsor names and contact emails', why: 'Tracks obligations and renewal dates', powers: 'Sponsorship pipeline, Social Media AI' },
   ],
   golf: [
     { name: 'DP World Tour / PGA Tour member ID', why: 'Pulls your OWGR ranking and exemption status', powers: 'OWGR tracker, course fit scores, exemption dashboard' },
-    { name: 'Arccos or Shot Scope account email', why: 'Syncs your strokes gained and round data', powers: 'Strokes Gained analysis, GPS course heatmap, practice log' },
+    { name: 'Lumio Range account email', why: 'Syncs your strokes gained and round data', powers: 'Strokes Gained analysis, GPS course heatmap, practice log' },
     { name: 'Home airport', why: 'Pre-fills Smart Flights for every tour stop', powers: 'Smart Flights AI, hotel finder, travel planner' },
     { name: 'Caddie name and contact', why: 'Connects your caddie to the hub', powers: 'Caddie hub, yardage books, pre-round notes' },
     { name: 'Sponsor names and contact emails', why: 'Tracks obligations and renewal dates', powers: 'Sponsorship pipeline, Social Media AI, pro-am tracker' },
@@ -28,7 +28,7 @@ const SPORT_CREDENTIALS: Record<string, { name: string; why: string; powers: str
     { name: 'Promoter name and contact email', why: 'Connects your promoter to the pipeline', powers: 'Promoter pipeline, purse simulator, contract tracker' },
     { name: 'Manager / trainer name and email', why: 'Connects your team to the hub', powers: 'Team hub, camp management, trainer notes' },
     { name: 'Weight class', why: 'Configures rankings and mandatory challenger tracking', powers: 'World rankings, Path to Title, mandatory challengers' },
-    { name: 'GPS vest model (if any — Hykso, Catapult etc)', why: 'Syncs punch data and physical load', powers: 'GPS ring heatmap, punch analytics, camp load monitoring' },
+    { name: 'GPS vest model (if any — Lumio GPS or compatible)', why: 'Syncs punch data and physical load', powers: 'GPS ring heatmap, punch analytics, camp load monitoring' },
     { name: 'Home gym name and location', why: 'Sets up camp mode and sparring log', powers: 'Fight Camp Mode, sparring log, weight tracker' },
   ],
 }

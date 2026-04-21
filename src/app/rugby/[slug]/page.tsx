@@ -281,7 +281,7 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
     { id: 'gs2', label: 'Set your club name and league', desc: 'Appears throughout the portal' },
     { id: 'gs3', label: code === 'union' ? 'Enter salary cap figures' : 'Enter salary cap details', desc: 'Enables cap dashboard and compliance tracking' },
     { id: 'gs4', label: 'Add your squad (player list)', desc: 'Unlocks availability, GPS, medical and selection views' },
-    { id: 'gs5', label: 'Connect GPS provider (Catapult / STATSports)', desc: 'Live load data feed' },
+    { id: 'gs5', label: 'Connect GPS provider (Lumio GPS / Lumio GPS)', desc: 'Live load data feed' },
     { id: 'gs6', label: code === 'union' ? 'Enter franchise readiness data' : 'Enter club compliance data', desc: 'Tracks your progress against governing body criteria' },
     { id: 'gs7', label: 'Add sponsor details', desc: 'Commercial CRM and obligation tracking' },
     { id: 'gs8', label: 'Set up AI briefing preferences', desc: 'Configure role-specific daily intelligence' },
@@ -598,9 +598,9 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
             </div>
           </Card>
 
-          {/* Kitman Labs Readiness */}
+          {/* Lumio Health Readiness */}
           <Card>
-            <div className="text-sm font-semibold text-white mb-3">Kitman Labs — Player Readiness</div>
+            <div className="text-sm font-semibold text-white mb-3">Lumio Health — Player Readiness</div>
             <div className="space-y-2">
               {SQUAD.slice(0,6).map((p:{name:string;pos:string;readiness:number;status:string},i:number)=>(
                 <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
@@ -736,7 +736,7 @@ function DoRBriefingView({club}:{club:RugbyClub}) {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3"><StatCard label="Cap Headroom" value={`£${(CONTEXT.cap.headroom/1000).toFixed(0)}k`} sub="Compliant" color="green"/><StatCard label="Franchise" value={`${CONTEXT.franchise.score}%`} sub="Target: 85%" color="orange"/><StatCard label="Squad ACWR" value={CONTEXT.gps.avgACWR} sub="2 overloaded" color={CONTEXT.gps.avgACWR>1.3?'red':'green'}/><StatCard label="HIA Active" value="1" sub={CONTEXT.welfare.hiaActive} color="red"/><StatCard label="Recruits" value={CONTEXT.recruitment.targets} sub="6 targets" color="purple"/></div>
       <div className="flex items-center gap-4"><button onClick={generate} disabled={loading} className="px-6 py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:text-purple-800 text-white transition-all flex items-center gap-2">{loading?<><span className="animate-spin inline-block">⟳</span> Generating...</>:<><span>🤖</span> Generate Today&apos;s Brief</>}</button><div className="flex items-center gap-2"><button onClick={()=>setAutoMode(!autoMode)} className={`w-10 h-5 rounded-full relative transition-colors ${autoMode?'bg-purple-600':'bg-gray-700'}`}><div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${autoMode?'right-0.5':'left-0.5'}`}/></button><span className="text-xs text-gray-400">Auto 07:30</span></div></div>
       {brief&&<Card className="border-purple-600/30"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><span className="text-purple-400 font-bold text-sm">🤖 Lumio AI · DoR Brief</span><span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">CONFIDENTIAL</span></div><button onClick={generate} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button></div><div className="divide-y divide-gray-800/30">{renderBrief(brief)}</div><div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · {CONTEXT.date}</span><button className="text-xs text-purple-400 hover:text-purple-300">Forward to Head Coach →</button></div></Card>}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{source:'Kitman Labs',status:'Live · 07:24',dot:'green'},{source:'Catapult GPS',status:'Live · last session',dot:'green'},{source:'Cap system',status:'Live',dot:'green'},{source:'Franchise tracker',status:'Updated 8 Apr',dot:'amber'}].map((s,i)=><div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-1.5 mb-1"><div className={`w-1.5 h-1.5 rounded-full ${s.dot==='green'?'bg-green-400':'bg-amber-400'}`}/><span className="text-xs text-white font-medium">{s.source}</span></div><div className="text-[10px] text-gray-500">{s.status}</div></div>)}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{source:'Lumio Health',status:'Live · 07:24',dot:'green'},{source:'Lumio GPS GPS',status:'Live · last session',dot:'green'},{source:'Cap system',status:'Live',dot:'green'},{source:'Franchise tracker',status:'Updated 8 Apr',dot:'amber'}].map((s,i)=><div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-1.5 mb-1"><div className={`w-1.5 h-1.5 rounded-full ${s.dot==='green'?'bg-green-400':'bg-amber-400'}`}/><span className="text-xs text-white font-medium">{s.source}</span></div><div className="text-[10px] text-gray-500">{s.status}</div></div>)}</div>
     </div>
   );
 }
@@ -1572,7 +1572,7 @@ function WelfareAuditView() {
             {item:'Safeguarding policy published (Updated March 2026)',done:true},
             {item:'Concussion education programme: 38/38 players',done:true},
             {item:'Annual medical screenings: 36/38',done:false},
-            {item:'Player welfare questionnaires current (Kitman Labs)',done:true},
+            {item:'Player welfare questionnaires current (Lumio Health)',done:true},
             {item:'Mental health first aider on staff',done:true},
           ].map((c:{item:string;done:boolean},i:number)=>(
             <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-800/50 text-sm">
@@ -1608,7 +1608,7 @@ function MentalPerformanceView() {
       {mpTab==='squad'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-3">Mood Trend</div><svg viewBox={`0 0 ${mW} ${mH}`} width="100%">{[0,0.5,1].map((t,i)=><line key={i} x1={mpL} x2={mW-mpR} y1={mpT+miH-t*miH} y2={mpT+miH-t*miH} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}<line x1={mpL} x2={mW-mpR} y1={mpT+miH-((7.5-mMin)/(mMax-mMin))*miH} y2={mpT+miH-((7.5-mMin)/(mMax-mMin))*miH} stroke="#22C55E" strokeWidth="1" strokeDasharray="4 3" opacity="0.5"/><path d={moodPath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{MONTHLY.map((v,i)=><g key={i}><circle cx={mpL+i*msX} cy={mpT+miH-((v-mMin)/(mMax-mMin))*miH} r="3.5" fill="#8B5CF6"/><text x={mpL+i*msX} y={mH-4} fontSize="9" fill="#6B7280" textAnchor="middle">{MONTHS[i]}</text></g>)}</svg><p className="text-[10px] text-gray-600 mt-2">Downward trend since Jan — correlates with injury run and contract uncertainty.</p></Card><Card><div className="text-sm font-semibold text-white mb-3">Check-In Scores</div><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider"><th className="text-left py-2">Player</th><th className="text-center py-2">Score</th><th className="text-center py-2">Trend</th><th className="text-center py-2">Flag</th></tr></thead><tbody>{SQUAD_MOOD.map((p,i)=><tr key={i} className={`border-b border-gray-800/40 ${p.flag?'bg-red-600/5':''}`}><td className="py-2 text-white">{p.player}</td><td className="py-2 text-center"><span className={`font-bold text-sm ${p.score>=7.5?'text-green-400':p.score>=6.5?'text-amber-400':'text-red-400'}`}>{p.score}</span></td><td className="py-2 text-center text-sm">{p.trend==='up'?'↑':p.trend==='down'?'↓':'→'}</td><td className="py-2 text-center">{p.flag&&<span className="text-red-400">🚩</span>}</td></tr>)}</tbody></table></Card></div>}
       {mpTab==='individual'&&<div className="space-y-4">{flagged.map((p,i)=><Card key={i} className="border-red-600/30"><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><span className="text-red-400 font-bold text-sm">🚩</span><span className="text-sm font-bold text-white">{p.player}</span><span className={`text-lg font-bold ${p.score<6?'text-red-400':p.score<7?'text-amber-400':'text-green-400'}`}>{p.score}/10</span></div><span className="text-xs text-gray-500">Trend: {p.trend==='down'?'↓ Declining':'→ Stable'}</span></div><p className="text-xs text-gray-300 leading-relaxed mb-3">{p.note}</p><div className="flex gap-2"><button className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">Log update</button><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600/20 text-purple-400 border border-purple-600/30">Schedule session →</button></div></Card>)}</div>}
       {mpTab==='support'&&<div className="space-y-4"><Card><div className="text-sm font-semibold text-white mb-3">Support Services</div><div className="grid grid-cols-2 gap-3">{[{name:'Dr Anna Reid',role:'Performance Psychologist',type:'In-house',sessions:'3/wk'},{name:'PFA Wellbeing Service',role:'Player support',type:'External',sessions:'On demand'},{name:'Mind Charity',role:'Referral pathway',type:'External',sessions:'On referral'},{name:'RFU HeadSmart',role:'Concussion MH support',type:'RFU',sessions:'HIA players'}].map((s,i)=><div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{s.name}</div><div className="text-[10px] text-gray-500">{s.role} · {s.type}</div><div className="text-[10px] text-purple-400 mt-1">{s.sessions}</div></div>)}</div></Card><Card><div className="text-sm font-semibold text-white mb-3">Session Log — April 2026</div>{[{date:'Fri 11 Apr',player:'Danny Foster',type:'Performance psych',provider:'Dr Reid',note:'HIA confidence + return'},{date:'Thu 10 Apr',player:'Danny Cole',type:'Performance psych',provider:'Dr Reid',note:'Form + contract anxiety'},{date:'Wed 9 Apr',player:'Ryan Patel',type:'Performance psych',provider:'Dr Reid',note:'Injury frustration + RTP'},{date:'Tue 8 Apr',player:'Group',type:'Team session',provider:'Dr Reid',note:'Pre-match resilience'}].map((s,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0 text-xs"><div><span className="text-white font-medium">{s.player}</span><span className="text-gray-500 ml-2">{s.type} · {s.provider}</span><div className="text-[10px] text-gray-600 mt-0.5">{s.note}</div></div><span className="text-gray-500 flex-shrink-0 ml-4">{s.date}</span></div>)}</Card></div>}
-      {mpTab==='checkin'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-3">Monthly Status</div><div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"><StatCard label="Completed" value="24" sub="Of 38" color="green"/><StatCard label="Outstanding" value="14" sub="Reminder sent Mon" color="amber"/><StatCard label="Flagged" value="3" sub="Below 6.5" color="red"/><StatCard label="Avg response" value="8 min" sub="Kitman Labs app" color="blue"/></div><div className="text-xs text-gray-400">Check-ins via Kitman Labs app. 6 areas (Energy, Mood, Sleep, Motivation, Soreness, Wellbeing). Below 6.5 triggers auto welfare flag.</div></Card><Card><div className="text-sm font-semibold text-white mb-3">Outstanding — Action Required</div>{['Danny Foster','Ryan Patel','Phil Dowd','Karl Briggs','Jake Rawlings','Connor Walsh','Ben Taylor','Callum Reeves'].map((name,i)=><div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0 text-xs"><span className="text-amber-400">{name}</span><button className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300">Send reminder</button></div>)}</Card></div>}
+      {mpTab==='checkin'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-3">Monthly Status</div><div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"><StatCard label="Completed" value="24" sub="Of 38" color="green"/><StatCard label="Outstanding" value="14" sub="Reminder sent Mon" color="amber"/><StatCard label="Flagged" value="3" sub="Below 6.5" color="red"/><StatCard label="Avg response" value="8 min" sub="Lumio Health app" color="blue"/></div><div className="text-xs text-gray-400">Check-ins via Lumio Health app. 6 areas (Energy, Mood, Sleep, Motivation, Soreness, Wellbeing). Below 6.5 triggers auto welfare flag.</div></Card><Card><div className="text-sm font-semibold text-white mb-3">Outstanding — Action Required</div>{['Danny Foster','Ryan Patel','Phil Dowd','Karl Briggs','Jake Rawlings','Connor Walsh','Ben Taylor','Callum Reeves'].map((name,i)=><div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0 text-xs"><span className="text-amber-400">{name}</span><button className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300">Send reminder</button></div>)}</Card></div>}
     </div>
   );
 }
@@ -2016,7 +2016,7 @@ function IndustryNewsView() {
         {[
           {headline:'Premiership franchise readiness criteria published in full',body:'The RFU\'s Expansion Review Group has released the formal assessment framework for the 2029/30 expansion to 12 Premiership teams.',note:'Franchise readiness tracker showing 71% — action needed'},
           {headline:'Salary cap floor enforced from 2026/27 — two clubs warned',body:'Premiership Rugby has formally notified two clubs that their current squad spend is below the new £5.4M minimum spend floor.',note:'Cap floor indicator: Hartfield £440,000 above floor — compliant'},
-          {headline:'Kitman Labs expands Championship partnership',body:'Kitman Labs has confirmed its expansion of the RFU partnership to include all Championship clubs from 2025/26.',note:'Lumio Rugby integration: Kitman Labs data feed active ✓'},
+          {headline:'Lumio Health expands Championship partnership',body:'Lumio Health has confirmed its expansion of the RFU partnership to include all Championship clubs from 2025/26.',note:'Lumio Rugby integration: Lumio Health data feed active ✓'},
           {headline:'World Rugby updates HIA protocol for 2026/27',body:'World Rugby has announced updates to the Head Injury Assessment protocol effective from July 2026.',note:'HIA tracker: 1 active case — Danny Foster, Day 8 of protocol'},
         ].map((n:{headline:string;body:string;note:string},i:number)=>(
           <Card key={i}>
@@ -2185,7 +2185,7 @@ function GPSLoadView() {
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="📡" title="GPS & Load — Squad Dashboard" subtitle="28-day rolling ACWR · All players · Catapult OpenField + STATSports" />
+      <SectionHeader icon="📡" title="GPS & Load — Squad Dashboard" subtitle="28-day rolling ACWR · All players · Lumio GPS + Lumio GPS" />
 
       {counts.overload > 0 && (
         <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-sm text-red-300">
@@ -2285,12 +2285,12 @@ function GPSLoadView() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Kitman Labs</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lumio Health</div>
           <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">Player readiness feed</span><span className="text-green-400 text-xs font-bold">● Live</span></div>
           <div className="text-[10px] text-gray-500">Last sync: today 07:24 · 20/38 players logged</div>
         </Card>
         <Card>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Catapult OpenField</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lumio GPS</div>
           <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">GPS vest sync</span><span className="text-green-400 text-xs font-bold">● Connected</span></div>
           <div className="text-[10px] text-gray-500">Last session: Tue 8 Apr · 29 vests active</div>
         </Card>
@@ -2491,7 +2491,7 @@ function PlayerHeatmapView() {
       </Card>
 
       <div className="text-[10px] text-gray-700 text-center">
-        GPS position data: Catapult OpenField · 10Hz sampling · Updated after each session sync
+        GPS position data: Lumio GPS · 10Hz sampling · Updated after each session sync
       </div>
     </div>
   )

@@ -33,8 +33,8 @@ import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
-import { WyscoutView, ScoutingDBView, GPSHardwareView, OptaStatsBombView, FindClubView, FindPlayerView, FootballPyramidView } from '@/components/football/IntegrationViews'
-import { TeamsView, LeaguesView, FixturesView, StatsBombView } from '@/components/football/LeagueViews'
+import { FootballScoutIntegrationView, ScoutingDBView, GPSHardwareView, FootballEventDataView, FindClubView, FindPlayerView, FootballPyramidView } from '@/components/football/IntegrationViews'
+import { TeamsView, LeaguesView, FixturesView, FootballLeagueDataView } from '@/components/football/LeagueViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -111,17 +111,17 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
   { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
-  { id: 'wyscout',     label: 'Wyscout / Video', icon: Video,          section: 'Integrations' },
+  { id: 'wyscout',     label: 'Lumio Scout / Video', icon: Video,    section: 'Integrations' },
   { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
   { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
-  { id: 'opta',        label: 'Opta / StatsBomb', icon: BarChart3,     section: 'Integrations' },
+  { id: 'opta',        label: 'Lumio Data',       icon: BarChart3,     section: 'Integrations' },
   { id: 'teams',        label: 'Teams',          icon: Users,          section: 'Leagues' },
   { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'Leagues' },
   { id: 'fixtures-results', label: 'Fixtures & Results', icon: Calendar, section: 'Leagues' },
   { id: 'pyramid',     label: 'All Leagues',    icon: BarChart3,      section: 'Leagues' },
   { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
   { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
-  { id: 'statsbomb',   label: 'StatsBomb',      icon: Activity,       section: 'Leagues' },
+  { id: 'statsbomb',   label: 'Lumio Data',     icon: Activity,       section: 'Leagues' },
   { id: 'preseason',   label: 'Pre-Season',     icon: Calendar,       section: 'Tools' },
   { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
 ]
@@ -4198,7 +4198,7 @@ Respond ONLY in JSON (no markdown):
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
               <div>
                 <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>⚽ Pitch Position Heatmap</p>
-                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>GPS positional data — last session · Catapult OpenField</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>GPS positional data — last session · Lumio GPS</p>
               </div>
               <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>LUMIO GPS VEST</span>
             </div>
@@ -5496,9 +5496,9 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
                 { name: 'API-Football', desc: 'Live fixtures, results & stats' },
-                { name: 'StatsBomb', desc: 'Advanced analytics & xG data' },
-                { name: 'Wyscout', desc: 'Scouting reports & video' },
-                { name: 'Opta', desc: 'Event-level match data' },
+                { name: 'Lumio Data', desc: 'Advanced analytics & xG data' },
+                { name: 'Lumio Scout', desc: 'Scouting reports & video' },
+                { name: 'Lumio Data Pro', desc: 'Event-level match data' },
               ].map(integ => (
                 <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
                   <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
@@ -6572,17 +6572,17 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
             {isFootballDemo && activeDept === 'preseason' && <PreSeasonCampView />}
-            {activeDept === 'wyscout' && <WyscoutView />}
+            {activeDept === 'wyscout' && <FootballScoutIntegrationView />}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
-            {activeDept === 'opta' && <OptaStatsBombView />}
+            {activeDept === 'opta' && <FootballEventDataView />}
             {activeDept === 'find-club' && <FindClubView />}
             {activeDept === 'find-player' && <FindPlayerView />}
             {activeDept === 'teams' && <TeamsView />}
             {activeDept === 'leagues' && <LeaguesView />}
             {activeDept === 'fixtures-results' && <FixturesView />}
             {activeDept === 'pyramid' && <FootballPyramidView />}
-            {activeDept === 'statsbomb' && <StatsBombView />}
+            {activeDept === 'statsbomb' && <FootballLeagueDataView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {

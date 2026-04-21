@@ -12,7 +12,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Fan Engagement', detail: 'NPS score, attendance trends, season ticket trajectory, social sentiment.' },
       { name: 'Board Report PDF', detail: 'One-click branded board report — ready for the monthly meeting.' },
     ],
-    integrations: ['Xero', 'FA Whole Game System', 'EFL Portal', 'Supabase'],
+    integrations: ['Xero', 'FA registration tracking', 'EFL Portal', 'Supabase'],
     whatYouGet: [
       'PSR compliance status — red/amber/green at a glance',
       'Wage-to-revenue ratio vs EFL ceiling',
@@ -32,7 +32,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Fan Hub', detail: 'Attendance, NPS, season tickets, social sentiment, matchday revenue.' },
       { name: 'Staff & Facilities', detail: 'Staff headcount, contracts, facilities management, and operational checklists.' },
     ],
-    integrations: ['Xero', 'HubSpot', 'Slack', 'FA Whole Game System'],
+    integrations: ['Xero', 'HubSpot', 'Slack', 'FA registration tracking'],
     whatYouGet: [
       'Morning club health dashboard — all departments in one view',
       'Priority action feed ranked by urgency',
@@ -49,11 +49,11 @@ export const FOOTBALL_ROLES: SportRole[] = [
     modules: [
       { name: 'Transfer Intelligence', detail: 'AI Transfer Researcher, 5-column Kanban pipeline, agent contacts, deadline tracker.' },
       { name: 'Squad Management', detail: 'Full squad register, contracts, availability, injury status, and form guide.' },
-      { name: 'Scouting Database', detail: 'Scout targets, watchlist, reports, and Wyscout integration.' },
+      { name: 'Scouting Database', detail: 'Scout targets, watchlist, reports, and Lumio Scout integration.' },
       { name: 'Academy', detail: 'Youth pathway tracker, development ratings, and progression monitoring.' },
       { name: 'GPS & Load', detail: 'ACWR monitoring, pitch heatmaps, training load planner, injury risk flags.' },
     ],
-    integrations: ['Wyscout', 'Lumio GPS', 'STATSports', 'Catapult', 'FA Whole Game System'],
+    integrations: ['Lumio Scout', 'Lumio GPS', 'FA registration tracking'],
     whatYouGet: [
       'AI Transfer Researcher — 5 targets with Lumio Fit Score',
       'Transfer Kanban pipeline with deadline countdown',
@@ -74,7 +74,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'AI Post-Match Analysis', detail: 'Input scoreline and formation → Claude generates headline, key moments, player ratings, and manager quote.' },
       { name: 'Press Conference', detail: 'AI-generated 5 questions + suggested responses based on last result and team news.' },
     ],
-    integrations: ['Hudl', 'Wyscout', 'Lumio GPS', 'STATSports'],
+    integrations: ['Lumio Vision', 'Lumio Scout', 'Lumio GPS'],
     whatYouGet: [
       'World-first AI half-time GPS brief in under 10 seconds',
       'AI opposition report with tactical suggestions',
@@ -95,7 +95,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Match Analytics', detail: 'xG, possession, pressing stats, formation data, and club comparison tool.' },
       { name: 'Club Comparison', detail: 'Compare vs 3 rivals + division average across 13 metrics with AI analysis.' },
     ],
-    integrations: ['Lumio GPS', 'Catapult', 'STATSports', 'Opta', 'StatsBomb'],
+    integrations: ['Lumio GPS', 'Lumio Data'],
     whatYouGet: [
       'GPS pitch heatmaps per player or full squad',
       'ACWR 28-day rolling load monitoring with risk alerts',
@@ -115,7 +115,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Return to Play', detail: 'Stage-by-stage RTP protocol with clearance sign-off and load caps.' },
       { name: 'Player Profile — Medical Tab', detail: 'Full injury timeline, severity badges, and season injury summary per player.' },
     ],
-    integrations: ['Lumio GPS', 'Catapult', 'STATSports'],
+    integrations: ['Lumio GPS'],
     whatYouGet: [
       'ACWR risk flag before every training session',
       'GPS readiness scores — know who can go harder',
@@ -158,7 +158,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'GPS Bowling Load', detail: 'Over-count + ACWR for seamers — injury prevention built in.' },
       { name: 'Signing Pipeline', detail: '5-column Kanban: Identified → Approached → Negotiating → Done → Failed.' },
     ],
-    integrations: ['CricViz', 'Catapult GPS', 'Play-Cricket', 'ECB Portal'],
+    integrations: ['CricViz', 'Lumio GPS', 'Play-Cricket', 'ECB Portal'],
     whatYouGet: [
       'Format squad optimiser — Championship XI and T20 XI simultaneously',
       'AI contract renewal memo for expiring players',
@@ -199,7 +199,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'Batting Analytics', detail: 'Format-split averages, wagon wheel, run rate trends.' },
       { name: 'D/L Calculator', detail: 'Duckworth-Lewis-Stern par score tool for weather-interrupted matches.' },
     ],
-    integrations: ['Catapult GPS', 'CricViz', 'Hawk-Eye'],
+    integrations: ['Lumio GPS', 'CricViz', 'Hawk-Eye'],
     whatYouGet: [
       'Cricket GPS heatmap — fielding zones and bowling runs',
       'ACWR bowling load with 7-day delivery planner',
@@ -264,7 +264,7 @@ export const TENNIS_ROLES: SportRole[] = [
       { name: 'Match Report PDF', detail: 'Fillable A4 match report with GPS summary, set notes, and tactical assessment.' },
       { name: 'String Tension Advisor', detail: 'Humidity slider → automated tension recommendation based on historical string log.' },
     ],
-    integrations: ['SwingVision', 'Lumio GPS Vest', 'Hawk-Eye'],
+    integrations: ['Lumio Vision', 'Lumio GPS Vest', 'Hawk-Eye'],
     whatYouGet: [
       'AI practice session analysis after every session',
       'AI post-match debrief with GPS fatigue story',
@@ -325,9 +325,9 @@ export const GOLF_ROLES: SportRole[] = [
       { name: 'AI Morning Briefing', detail: "Claude generates a daily briefing: OWGR context, today's course fit, sponsor obligations, weather." },
       { name: 'Strokes Gained', detail: 'SG profile across Off-the-Tee, Approach, Around-the-Green, Putting with trend charts.' },
       { name: 'Scorecard Entry', detail: '18-hole scorecard with GIR, fairways, putts — saves to localStorage, feeds performance trends.' },
-      { name: 'Putting Heat Map', detail: '6-band × 3-direction grid with manual putt logger and Arccos integration hint.' },
+      { name: 'Putting Heat Map', detail: '6-band × 3-direction grid with manual putt logger and Lumio Range integration hint.' },
     ],
-    integrations: ['DP World Tour API', 'PGA Tour API', 'DataGolf', 'Arccos'],
+    integrations: ['DP World Tour API', 'Live PGA Tour data', 'Lumio Data', 'Lumio Range'],
     whatYouGet: [
       'Live OWGR with 104-week rolling expiry calendar',
       'Race to Dubai position and points gap',
@@ -346,7 +346,7 @@ export const GOLF_ROLES: SportRole[] = [
       { name: 'Financial Dashboard', detail: 'Prize money ledger, earnings by category, tax jurisdiction tracker, annual expense breakdown.' },
       { name: 'AI Sponsor Pitch', detail: "Input brand, category, and value → Claude generates a formal pitch email in Sarah Mitchell's voice." },
     ],
-    integrations: ['DP World Tour API', 'PGA Tour API', 'Xero'],
+    integrations: ['DP World Tour API', 'Live PGA Tour data', 'Xero'],
     whatYouGet: [
       'Kanban deal pipeline with 4 negotiation stages',
       'AI sponsor pitch email in your agency voice',
@@ -367,7 +367,7 @@ export const GOLF_ROLES: SportRole[] = [
       { name: 'Course Fit', detail: 'Course characteristics vs SG profile — where James has an edge and where the risks are.' },
       { name: 'Competitor Tracker', detail: '6-peer watchlist with OWGR, Race to Dubai gap, last-5 results chips, and trend arrows.' },
     ],
-    integrations: ['DP World Tour API', 'DataGolf', 'Arccos'],
+    integrations: ['DP World Tour API', 'Lumio Data', 'Lumio Range'],
     whatYouGet: [
       'AI round strategy before every competitive round',
       'Printable caddie sheet — one click from the portal',
@@ -536,7 +536,7 @@ export const WOMENS_ROLES: SportRole[] = [
       { name: 'FSR Compliance', detail: 'Financial Sustainability Rules tracker with submission deadlines and compliance status.' },
       { name: 'Welfare Mandate', detail: 'Karen Carney review compliance — player welfare, education, mental health provision.' },
     ],
-    integrations: ['FA Whole Game System', 'Xero'],
+    integrations: ['FA registration tracking', 'Xero'],
     whatYouGet: [
       'FSR compliance status — automatic red/amber/green',
       'Karen Carney welfare mandate tracker',
@@ -549,16 +549,16 @@ export const WOMENS_ROLES: SportRole[] = [
     id: 'dof',
     label: 'Director of Football',
     icon: '🎯',
-    description: 'Squad management, transfers, contracts, Kitman Labs GPS integration, and player pathway across all tiers.',
+    description: 'Squad management, transfers, contracts, Lumio Health GPS integration, and player pathway across all tiers.',
     modules: [
       { name: 'Squad Manager', detail: 'Multi-format squad, fitness status, GPS load scores, welfare flags.' },
       { name: 'Transfer Hub', detail: 'Kanban pipeline, agent contacts, FSR headroom calculator, deadline tracker.' },
-      { name: 'GPS & Load', detail: 'Kitman Labs integration, ACWR monitoring, injury risk flags.' },
+      { name: 'GPS & Load', detail: 'Lumio Health integration, ACWR monitoring, injury risk flags.' },
       { name: 'Player Pathway', detail: 'Academy progression, dual-registration tracking, England pathway nominations.' },
     ],
-    integrations: ['Kitman Labs', 'FA Whole Game System', 'Wyscout'],
+    integrations: ['Lumio Health', 'FA registration tracking', 'Lumio Scout'],
     whatYouGet: [
-      'GPS load monitoring via Kitman Labs integration',
+      'GPS load monitoring via Lumio Health integration',
       'FSR headroom calculator for transfer decisions',
       'Player pathway with dual-registration tracking',
       'England pathway nomination form generator',
@@ -576,7 +576,7 @@ export const WOMENS_ROLES: SportRole[] = [
       { name: 'Player Welfare', detail: 'Welfare check-ins, mental health flags, education compliance tracking.' },
       { name: 'Post-Match Analysis', detail: 'AI-generated match report with player ratings and tactical analysis.' },
     ],
-    integrations: ['Kitman Labs', 'Hudl', 'Wyscout'],
+    integrations: ['Lumio Health', 'Lumio Vision', 'Lumio Scout'],
     whatYouGet: [
       'AI opposition report with tactical suggestions',
       'Player welfare dashboard with mental health flags',
@@ -615,7 +615,7 @@ export const RUGBY_ROLES: SportRole[] = [
       { name: 'GPS Load', detail: 'ACWR monitoring, contact load tracking, return-to-play protocol.' },
       { name: 'Transfer Pipeline', detail: 'Kanban pipeline with salary cap headroom per target.' },
     ],
-    integrations: ['Catapult', 'STATSports', 'RFU Portal'],
+    integrations: ['Lumio GPS', 'RFU Portal'],
     whatYouGet: [
       'GPS load with contact impact tracking',
       'ACWR injury risk flags before every session',
@@ -634,7 +634,7 @@ export const RUGBY_ROLES: SportRole[] = [
       { name: 'AI Opposition Report', detail: 'Formation, key threats, set piece tendencies, 3 tactical suggestions.' },
       { name: 'GPS Match Brief', detail: 'First-half GPS data → AI half-time coaching brief.' },
     ],
-    integrations: ['Catapult', 'Hudl', 'STATSports'],
+    integrations: ['Lumio GPS', 'Lumio Vision'],
     whatYouGet: [
       'AI opposition report with set piece analysis',
       'GPS half-time brief — fatigue alerts and sub recommendation',
