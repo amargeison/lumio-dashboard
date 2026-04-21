@@ -68,7 +68,15 @@ export async function generateMetadata(
       statusBarStyle: 'black-translucent',
     },
     icons: {
-      icon:  '/tennis_logo.png',
+      // Tab favicon: small Lumio-branded PNG. The 1024×1024 sport logo is
+      // unusable here — browsers can't rasterise 840 KB photo PNGs at 16×16
+      // and fall back to a dark placeholder. Sport branding lives on the
+      // apple-touch-icon below, which iOS uses at real size on the PWA
+      // home-screen install.
+      icon: [
+        { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
+      ],
       apple: '/tennis_logo.png',
     },
     other: {

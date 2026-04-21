@@ -47,7 +47,13 @@ export async function generateMetadata(
       statusBarStyle: 'black-translucent',
     },
     icons: {
-      icon:  '/golf_logo.png',
+      // Tab favicon: small Lumio-branded PNG. See tennis/[slug]/layout.tsx
+      // for rationale — 1024×1024 sport logos render as a dark placeholder.
+      // Sport branding stays on the apple-touch-icon for iOS PWA installs.
+      icon: [
+        { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
+      ],
       apple: '/golf_logo.png',
     },
     other: {
