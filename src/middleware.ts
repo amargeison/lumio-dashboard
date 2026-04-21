@@ -84,7 +84,12 @@ export async function middleware(request: NextRequest) {
     const cmsHost = (request.headers.get('host') || '').replace(/:\d+$/, '').toLowerCase()
     const isLumioCms = cmsHost === 'lumiocms.com' || cmsHost === 'www.lumiocms.com'
     if (isLumioCms) {
+      // Paths that render their real page on lumiocms.com. /home is the
+      // restored cleaned homepage; /coming-soon holds the waitlist pages;
+      // /demo keeps founder trial slugs reachable; the rest are factual /
+      // legal / blog pages.
       const ALWAYS_LIVE_PATHS = [
+        '/home',
         '/coming-soon',
         '/about',
         '/contact',
@@ -98,11 +103,24 @@ export async function middleware(request: NextRequest) {
         '/favicon',
       ]
       const STATIC_FILE_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|css|js|woff2?|ttf|map)$/i
+
+      // Root → cleaned homepage. Must intercept here before src/app/page.tsx
+      // redirects / to /home (which would also work, but rewriting keeps the
+      // URL as lumiocms.com/ for the visitor).
+      if (pathname === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/home'
+        return NextResponse.rewrite(url)
+      }
+
       const isAlwaysLive = ALWAYS_LIVE_PATHS.some(
         p => pathname === p || pathname.startsWith(p + '/'),
       )
       if (!STATIC_FILE_REGEX.test(pathname) && !isAlwaysLive) {
-        const isSchoolsPath = pathname !== '/' && pathname.startsWith('/schools')
+        // Everything still gated: /schools → schools coming-soon, everything
+        // else (/lumio-crm, /product, /pricing, /signup, …) → business
+        // coming-soon.
+        const isSchoolsPath = pathname.startsWith('/schools')
         const target = isSchoolsPath ? '/coming-soon/schools' : '/coming-soon/business'
         const url = request.nextUrl.clone()
         url.pathname = target
