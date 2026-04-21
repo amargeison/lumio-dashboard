@@ -1858,8 +1858,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       )}
 
       {/* QUICK WINS TAB */}
-      {dashTab === 'quickwins' && (
-        <div className="pt-4 space-y-3">
+      {dashTab === 'quickwins' && (session.isDemoShell === false
+        ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" />
+        : <div className="pt-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
             <div>
               <h3 className="text-sm font-semibold text-white">Quick Wins</h3>
@@ -1931,8 +1932,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       )}
 
       {/* DAILY TASKS TAB */}
-      {dashTab === 'dailytasks' && (
-        <div className="pt-4 space-y-3">
+      {dashTab === 'dailytasks' && (session.isDemoShell === false
+        ? <EmptyState icon="✅" title="No tasks for today" sub="Add your first task to unlock this" />
+        : <div className="pt-4 space-y-3">
           {/* Header + Add Task */}
           <div className="flex items-center justify-between">
             <div>
@@ -2038,8 +2040,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       )}
 
       {/* INSIGHTS TAB */}
-      {dashTab === 'insights' && (
-        <div className="pt-4 space-y-6">
+      {dashTab === 'insights' && (session.isDemoShell === false
+        ? <EmptyState icon="📊" title="No insights yet" sub="Connect your data to unlock performance insights" />
+        : <div className="pt-4 space-y-6">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
@@ -2110,7 +2113,9 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       )}
 
       {/* DON'T MISS TAB */}
-      {dashTab === 'dontmiss' && (() => {
+      {dashTab === 'dontmiss' && (session.isDemoShell === false
+        ? <EmptyState icon="🔴" title="Nothing to flag" sub="Alerts will appear here once your data is connected" />
+        : (() => {
         const DONT_MISS_ITEMS = [
           { id: 'dm-1', urgency: 'CRITICAL', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Match', deadline: 'Today 13:30', title: 'Match vs C. Vega — Court 4', desc: 'Monte-Carlo Masters QF. H2H 3-1. Clay court. Your best Masters result on clay.', consequence: 'Miss this and you drop 180 ranking points.', action: 'View match prep →', section: 'matchprep' },
           { id: 'dm-2', urgency: 'TODAY', urgencyColor: '#EF4444', urgencyBg: 'rgba(239,68,68,0.12)', category: 'Sponsor', deadline: 'Before 12:00', title: 'Apex Performance kit photo due', desc: 'Carlos needs the photo for today\'s contractual obligation post.', consequence: 'Breach of sponsor contract — penalty clause.', action: 'Open brief →', section: 'sponsorship' },
@@ -2169,10 +2174,12 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             )}
           </div>
         )
-      })()}
+      })())}
 
       {/* TEAM TAB */}
-      {dashTab === 'team' && (() => {
+      {dashTab === 'team' && (session.isDemoShell === false
+        ? <EmptyState icon="👥" title="No team members yet" sub="Add your coach, physio, agent and support staff to unlock this" />
+        : (() => {
         const demoStaffPhotos: Record<string, string> = {
           'Carlos Mendez': '/Carlos_Mendez.jpg',
           'Dr Sarah Lee': '/Sarah_Lee.jpg',
@@ -2405,7 +2412,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             )}
           </div>
         )
-      })()}
+      })())}
 
       {/* GPS Tracker Modal */}
       {showGpsModal && (
@@ -10461,7 +10468,8 @@ export function TennisPortalInner({ session, onSignOut }: { session: SportsDemoS
   // demo content in incognito). See src/lib/config/demo-slugs.ts.
   const params = useParams<{ slug: string }>()
   const slug = typeof params?.slug === 'string' ? params.slug : ''
-  session = { ...session, isDemoShell: isDemoSlug(slug) }
+  const showDemoData = isDemoSlug(slug, 'tennis')
+  session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('dashboard');
   const isMobile = useIsMobile();
   const [sidebarPinned, setSidebarPinned] = useState(false);
@@ -11126,29 +11134,36 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
   }
 
   const renderView = () => {
+    // Founder (non-demo slug) sees EmptyState instead of demo content for any
+    // section that renders hardcoded Alex Rivera data. Dashboard keeps its own
+    // internal branching (Today tab is already URL-gated via session.isDemoShell);
+    // Settings / Integrations stay accessible because founders need them.
+    const isFounder = session.isDemoShell === false
+    const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
+      isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
       case 'dashboard':    return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
-      case 'morning':      return <MorningBriefingView player={player} session={session} />;
-      case 'rankings':     return <RankingsView player={player} session={session} />;
-      case 'forecaster':   return <PointsForecasterView player={player} session={session} />;
-      case 'entries':      return <EntryManagerView player={player} session={session} />;
-      case 'schedule':     return <ScheduleView player={player} session={session} />;
-      case 'performance':  return <PerformanceView player={player} session={session} />;
-      case 'matchprep':    return <MatchPrepView player={player} session={session} />;
-      case 'matchreports': return <MatchReportsView player={player} session={session} />;
-      case 'practice':     return <PracticeLogView player={player} session={session} />;
-      case 'video':        return <VideoLibraryView player={player} session={session} />;
-      case 'shotheatmaps': return <ShotHeatmapsView player={player} session={session} />;
-      case 'perfrating':   return <PerformanceRatingView player={player} session={session} />;
-      case 'team':         return <TeamHubView player={player} session={session} />;
-      case 'physio':       return <PhysioView player={player} session={session} />;
-      case 'nutrition':    return <NutritionView player={player} session={session} />;
-      case 'pressure':     return <PressureAnalysisView player={player} session={session} />;
-      case 'acetracker':   return <AceTrackerView player={player} session={session} />;
-      case 'racket':       return <RacketView player={player} session={session} />;
-      case 'partners':     return <PlayingPartnersView player={player} session={session} />;
-      case 'doubles':      return <DoublesView player={player} session={session} />;
-      case 'sponsorship':  return <SponsorshipView player={player} session={session} />;
+      case 'morning':      return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
+      case 'rankings':     return gate('📊', 'No ranking data', 'Connect your ATP/WTA feed to unlock this', <RankingsView player={player} session={session} />);
+      case 'forecaster':   return gate('🔮', 'No forecast yet', 'Connect your ranking data to unlock scenario modelling', <PointsForecasterView player={player} session={session} />);
+      case 'entries':      return gate('📋', 'No entries yet', 'Connect your tour feed to track tournament entries', <EntryManagerView player={player} session={session} />);
+      case 'schedule':     return gate('🗓️', 'No tournaments loaded', 'Connect your tour feed to unlock this', <ScheduleView player={player} session={session} />);
+      case 'performance':  return gate('📈', 'No performance data yet', 'Connect your match history to see trends', <PerformanceView player={player} session={session} />);
+      case 'matchprep':    return gate('🎯', 'No match prep yet', 'Connect your match data to unlock this', <MatchPrepView player={player} session={session} />);
+      case 'matchreports': return gate('📝', 'No match reports', 'Connect your data to unlock this', <MatchReportsView player={player} session={session} />);
+      case 'practice':     return gate('🎾', 'No practice sessions logged', 'Connect your data to unlock this', <PracticeLogView player={player} session={session} />);
+      case 'video':        return gate('🎥', 'No video library yet', 'Upload your match footage to unlock this', <VideoLibraryView player={player} session={session} />);
+      case 'shotheatmaps': return gate('🔥', 'No shot data', 'Connect your data to unlock this', <ShotHeatmapsView player={player} session={session} />);
+      case 'perfrating':   return gate('⭐', 'No rating data', 'Connect your match data to unlock this', <PerformanceRatingView player={player} session={session} />);
+      case 'team':         return gate('👥', 'No team members yet', 'Add your coach, physio, agent and support staff to unlock this', <TeamHubView player={player} session={session} />);
+      case 'physio':       return gate('🏥', 'No physio data', 'Connect your data to unlock this', <PhysioView player={player} session={session} />);
+      case 'nutrition':    return gate('🥗', 'No nutrition data', 'Connect your data to unlock this', <NutritionView player={player} session={session} />);
+      case 'pressure':     return gate('🔥', 'No pressure data', 'Connect your match data to unlock this', <PressureAnalysisView player={player} session={session} />);
+      case 'acetracker':   return gate('⚡', 'No serve data', 'Connect your serve data to unlock this', <AceTrackerView player={player} session={session} />);
+      case 'racket':       return gate('🎾', 'No racket data logged', 'Add your rackets and string log to unlock this', <RacketView player={player} session={session} />);
+      case 'partners':     return gate('🤝', 'No playing partners', 'Add your hitting partners to unlock this', <PlayingPartnersView player={player} session={session} />);
+      case 'doubles':      return gate('👥', 'No doubles data', 'Connect your doubles schedule to unlock this', <DoublesView player={player} session={session} />);
+      case 'sponsorship':  return gate('💼', 'No sponsors added', 'Add your sponsors to unlock this', <SponsorshipView player={player} session={session} />);
       case 'media':        return session.isDemoShell !== false
         ? <MediaContentModule
             sport="tennis"
@@ -11158,19 +11173,19 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
             isDemoShell={true}
           />
         : <MediaView player={player} session={session} />;
-      case 'financial':    return <FinancialView player={player} session={session} />;
-      case 'prizeforecast': return <PrizeForecasterView player={player} session={session} />;
-      case 'exhibition':   return <ExhibitionView player={player} session={session} />;
-      case 'pipeline':     return <AgentPipelineView player={player} session={session} />;
-      case 'travel':       return <TravelView player={player} session={session} />;
-      case 'federation':   return <FederationView player={player} session={session} />;
-      case 'datahub':      return <DataHubView player={player} session={session} />;
-      case 'career':       return <CareerView player={player} session={session} />;
-      case 'academy':      return <AcademyView player={player} session={session} />;
-      case 'mental':       return <MentalPerformanceView player={player} session={session} />;
-      case 'courtbooking': return <CourtBookingView player={player} session={session} />;
-      case 'teamcomms':    return <TeamCommsView player={player} session={session} />;
-      case 'accreditations': return <AccreditationsView player={player} session={session} />;
+      case 'financial':    return gate('💰', 'No financial data', 'Connect your data to unlock this', <FinancialView player={player} session={session} />);
+      case 'prizeforecast': return gate('💵', 'No prize data', 'Connect your tour feed to unlock this', <PrizeForecasterView player={player} session={session} />);
+      case 'exhibition':   return gate('🎪', 'No exhibition enquiries yet', "We'll surface them here when they come in.", <ExhibitionView player={player} session={session} />);
+      case 'pipeline':     return gate('🤝', 'No agent pipeline', 'Connect your data to unlock this', <AgentPipelineView player={player} session={session} />);
+      case 'travel':       return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <TravelView player={player} session={session} />);
+      case 'federation':   return gate('🏛️', 'No federation data', 'Connect your data to unlock this', <FederationView player={player} session={session} />);
+      case 'datahub':      return gate('📊', 'No data connected', 'Connect your integrations to unlock this', <DataHubView player={player} session={session} />);
+      case 'career':       return gate('🚀', 'No career plan yet', 'Add your career goals to unlock this', <CareerView player={player} session={session} />);
+      case 'academy':      return gate('🎓', 'No academy data', 'Connect your academy to unlock this', <AcademyView player={player} session={session} />);
+      case 'mental':       return gate('🧘', 'No sessions logged', 'Connect your data to unlock this', <MentalPerformanceView player={player} session={session} />);
+      case 'courtbooking': return gate('🎾', 'No bookings yet', 'Connect your court calendar to unlock this', <CourtBookingView player={player} session={session} />);
+      case 'teamcomms':    return gate('💬', 'No team messages', 'Invite your team to start communicating here', <TeamCommsView player={player} session={session} />);
+      case 'accreditations': return gate('🏛️', 'No accreditations logged', 'Add your licences and registrations to unlock this', <AccreditationsView player={player} session={session} />);
       case 'integrations': return <TennisIntegrationsHub player={player} session={session} />;
       case 'settings':     return (
         <SportsSettings
@@ -11278,14 +11293,14 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
           devApiRouteOptions={['/api/ai/tennis']}
         />
       );
-      case 'livescores':  return <LiveScoresView liveScores={liveScores} fixtures={fixtures} player={player} session={session} />;
-      case 'scout':       return <OpponentScoutView h2hData={h2hData} player={player} session={session} />;
-      case 'surface':     return <SurfaceAnalysisView player={player} session={session} />;
-      case 'gps':         return <GPSCourtView player={player} session={session} />;
-      case 'gpsvideo':    return <GPSVideoView player={player} session={session} />;
-      case 'draw':        return <DrawBracketView player={player} session={session} />;
-      case 'playerdirectory': return <PlayerDirectoryView player={player} session={session} />;
-      case 'coachfinder': return <CoachFinderView player={player} session={session} />;
+      case 'livescores':  return gate('🔴', 'No live scores', 'Connect your ATP/WTA feed to unlock this', <LiveScoresView liveScores={liveScores} fixtures={fixtures} player={player} session={session} />);
+      case 'scout':       return gate('🔍', 'No opponent data', 'Connect your data to unlock this', <OpponentScoutView h2hData={h2hData} player={player} session={session} />);
+      case 'surface':     return gate('🎾', 'No surface data', 'Connect your match history to unlock this', <SurfaceAnalysisView player={player} session={session} />);
+      case 'gps':         return gate('🛰️', 'No GPS data', 'Connect your Lumio GPS to unlock this', <GPSCourtView player={player} session={session} />);
+      case 'gpsvideo':    return gate('🎬', 'No GPS or video data', 'Connect your Lumio GPS + Lumio Vision to unlock this', <GPSVideoView player={player} session={session} />);
+      case 'draw':        return gate('🏆', 'No draw data', 'Connect your tour feed to unlock this', <DrawBracketView player={player} session={session} />);
+      case 'playerdirectory': return gate('📇', 'No player directory', 'Connect your data to unlock this', <PlayerDirectoryView player={player} session={session} />);
+      case 'coachfinder': return gate('🎯', 'No coaches found', 'Connect your location to unlock this', <CoachFinderView player={player} session={session} />);
       default:             return <DashboardView player={player} session={session} photos={photos} setPhotos={setPhotos} dismissedWins={dismissedWins} onDismissWin={dismissWin} tasks={tasks} taskChecked={taskChecked} onToggleTask={toggleTask} newTaskText={newTaskText} setNewTaskText={setNewTaskText} showAddTask={showAddTask} setShowAddTask={setShowAddTask} onAddTask={addTask} dismissedAlerts={dismissedAlerts} onDismissAlert={dismissAlert} teamSubTab={teamSubTab} setTeamSubTab={setTeamSubTab} onNavigate={setActiveSection} activeModal={activeModal} onOpenModal={setActiveModal} onCloseModal={closeModal} roleConfig={roleConfig} currentRole={currentRole} />;
     }
   };

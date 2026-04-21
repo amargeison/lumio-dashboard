@@ -1513,8 +1513,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       )}
 
       {/* QUICK WINS */}
-      {dashTab === 'quickwins' && (
-        <div className="pt-4 space-y-3">
+      {dashTab === 'quickwins' && (session.isDemoShell === false
+        ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" />
+        : <div className="pt-4 space-y-3">
           {[
             { p:1, title:'Log today\'s weight — behind daily target by 0.08kg',            impact:'Critical', cat:'Weight',     icon:'⚖️', cta:'Log weight', effort:'2min', description:'Camp requirement — daily weight tracking keeps cut on schedule.' },
             { p:2, title:'Meridian Sports pre-fight interview — confirm attendance',                   impact:'Critical', cat:'Media',      icon:'📺', cta:'Confirm', effort:'2min', description:'Press tour begins today. Contractual obligation — confirm now.' },
@@ -1545,8 +1546,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       )}
 
       {/* DAILY TASKS */}
-      {dashTab === 'dailytasks' && (
-        <div className="pt-4 space-y-3">
+      {dashTab === 'dailytasks' && (session.isDemoShell === false
+        ? <EmptyState icon="✅" title="No tasks for today" sub="Add your first task to unlock this" />
+        : <div className="pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Daily Tasks</div>
             <button onClick={() => setShowAddTask(v => !v)}
@@ -1602,8 +1604,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       )}
 
       {/* INSIGHTS */}
-      {dashTab === 'insights' && (
-        <div className="pt-4 space-y-6">
+      {dashTab === 'insights' && (session.isDemoShell === false
+        ? <EmptyState icon="📊" title="No insights yet" sub="Connect your data to unlock performance insights" />
+        : <div className="pt-4 space-y-6">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
@@ -1671,8 +1674,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       )}
 
       {/* DON'T MISS */}
-      {dashTab === 'dontmiss' && (
-        <div className="pt-4 space-y-3">
+      {dashTab === 'dontmiss' && (session.isDemoShell === false
+        ? <EmptyState icon="🔴" title="Nothing to flag" sub="Alerts will appear here once your data is connected" />
+        : <div className="pt-4 space-y-3">
           {[
             { urgency:'CRITICAL', item:'Weight cut — 5.1kg to target in 48 days. If missed: dangerous rapid cut fight week.', action:'Log weight →', color:'#dc2626' },
             { urgency:'CRITICAL', item:'Right hand X-ray — Jim flagged knuckle swelling. If missed: risk fighting injured.', action:'Book appointment →', color:'#EF4444' },
@@ -1693,7 +1697,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       )}
 
       {/* TEAM — 4 sub-tabs */}
-      {dashTab === 'team' && (() => {
+      {dashTab === 'team' && (session.isDemoShell === false
+        ? <EmptyState icon="👥" title="No team members yet" sub="Add your trainer, manager, promoter and camp to unlock this" />
+        : (() => {
         const demoStaffPhotos: Record<string, string> = {
           'Jim Bevan': '/Carlos_Mendez.jpg',
           'Danny Walsh': '/Marcus_Webb.jpg',
@@ -1793,7 +1799,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           )}
         </div>
         )
-      })()}
+      })())}
     </div>
   );
 }
@@ -8377,7 +8383,8 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   // demo content in incognito). See src/lib/config/demo-slugs.ts.
   const params = useParams<{ slug: string }>()
   const slug = typeof params?.slug === 'string' ? params.slug : ''
-  session = { ...session, isDemoShell: isDemoSlug(slug) }
+  const showDemoData = isDemoSlug(slug, 'boxing')
+  session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('camp');
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
@@ -8494,33 +8501,39 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   const groups = ['OVERVIEW', 'FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'TEAM HUB', 'COMMERCIAL', 'CAREER', 'INTEL', 'SETTINGS'];
 
   const renderView = () => {
+    // Founder (non-demo slug) sees EmptyState instead of demo content. Camp
+    // dashboard keeps its own internal branching; Settings stays accessible
+    // for founders.
+    const isFounder = session.isDemoShell === false
+    const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
+      isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
       case 'camp':             return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;
-      case 'training':        return <TrainingLogView fighter={fighter} session={session} />;
-      case 'sparring':        return <SparringPlannerView fighter={fighter} session={session} />;
-      case 'opposition':      return <OppositionAnalysisView fighter={fighter} session={session} />;
-      case 'fight-night':     return <FightNightOpsView fighter={fighter} session={session} />;
-      case 'punchanalytics':  return <PunchAnalyticsView fighter={fighter} session={session} />;
-      case 'fightcamp':       return <FightCampView fighter={fighter} session={session} />;
-      case 'weight':          return <WeightTrackerView fighter={fighter} session={session} />;
-      case 'cut':             return <CutPlannerView fighter={fighter} session={session} />;
-      case 'recovery':        return <RecoveryHRVView fighter={fighter} session={session} />;
-      case 'medical':         return <MedicalRecordView fighter={fighter} session={session} />;
-      case 'physio-recovery': return <BoxingPhysioRecoveryView fighter={fighter} session={session} onNavigate={setActiveSection} />;
-      case 'rankings':        return <WorldRankingsView fighter={fighter} session={session} />;
-      case 'mandatory':       return <MandatoryTrackerView fighter={fighter} session={session} />;
-      case 'pathtotitle':     return <PathToTitleView fighter={fighter} session={session} />;
-      case 'pursebid':        return <PurseBidAlertsView fighter={fighter} session={session} />;
-      case 'career':          return <BoxingCareerPlanningView fighter={fighter} session={session} />;
-      case 'pursesim':        return <PurseSimulatorView fighter={fighter} session={session} />;
-      case 'earnings':        return <FightEarningsView fighter={fighter} session={session} />;
-      case 'campcosts':       return <CampCostsView fighter={fighter} session={session} />;
-      case 'tax':             return <TaxTrackerView fighter={fighter} session={session} />;
-      case 'teamoverview':    return <TeamOverviewView fighter={fighter} session={session} />;
-      case 'briefing':        return <FighterBriefingView fighter={fighter} session={session} />;
-      case 'trainernotes':    return <TrainerNotesView fighter={fighter} session={session} />;
-      case 'managerdash':     return <ManagerDashboardView fighter={fighter} session={session} />;
-      case 'sponsorships':    return <SponsorshipsView fighter={fighter} session={session} />;
+      case 'training':        return gate('🏋️', 'No training sessions logged', 'Connect your data to unlock this', <TrainingLogView fighter={fighter} session={session} />);
+      case 'sparring':        return gate('🥊', 'No sparring planned', 'Add your sparring calendar to unlock this', <SparringPlannerView fighter={fighter} session={session} />);
+      case 'opposition':      return gate('🔍', 'No opposition data', 'Connect your data to unlock this', <OppositionAnalysisView fighter={fighter} session={session} />);
+      case 'fight-night':     return gate('🥊', 'No fight scheduled', 'Connect your camp calendar to unlock this', <FightNightOpsView fighter={fighter} session={session} />);
+      case 'punchanalytics':  return gate('👊', 'No punch data', 'Connect your sensor data to unlock this', <PunchAnalyticsView fighter={fighter} session={session} />);
+      case 'fightcamp':       return gate('🏕️', 'No camp planned', 'Add your fight camp to unlock this', <FightCampView fighter={fighter} session={session} />);
+      case 'weight':          return gate('⚖️', 'No weight logged yet', 'Log your daily weight to unlock this', <WeightTrackerView fighter={fighter} session={session} />);
+      case 'cut':             return gate('⚖️', 'No cut plan yet', 'Connect your fight date to unlock this', <CutPlannerView fighter={fighter} session={session} />);
+      case 'recovery':        return gate('💤', 'No recovery data', 'Connect your HRV device to unlock this', <RecoveryHRVView fighter={fighter} session={session} />);
+      case 'medical':         return gate('🏥', 'No medical records', 'Add your licence and medicals to unlock this', <MedicalRecordView fighter={fighter} session={session} />);
+      case 'physio-recovery': return gate('🏥', 'No physio data', 'Connect your data to unlock this', <BoxingPhysioRecoveryView fighter={fighter} session={session} onNavigate={setActiveSection} />);
+      case 'rankings':        return gate('🏆', 'No ranking data', 'Connect your sanctioning body feeds to unlock this', <WorldRankingsView fighter={fighter} session={session} />);
+      case 'mandatory':       return gate('📋', 'No mandatory data', 'Connect your data to unlock this', <MandatoryTrackerView fighter={fighter} session={session} />);
+      case 'pathtotitle':     return gate('🥇', 'No title pathway yet', 'Connect your ranking data to unlock this', <PathToTitleView fighter={fighter} session={session} />);
+      case 'pursebid':        return gate('💰', 'No purse-bid alerts', 'Connect your data to unlock this', <PurseBidAlertsView fighter={fighter} session={session} />);
+      case 'career':          return gate('🚀', 'No career plan yet', 'Add your career goals to unlock this', <BoxingCareerPlanningView fighter={fighter} session={session} />);
+      case 'pursesim':        return gate('💰', 'No purse data', 'Add your next fight to unlock this', <PurseSimulatorView fighter={fighter} session={session} />);
+      case 'earnings':        return gate('💵', 'No earnings logged', 'Connect your data to unlock this', <FightEarningsView fighter={fighter} session={session} />);
+      case 'campcosts':       return gate('💰', 'No camp costs logged', 'Connect your data to unlock this', <CampCostsView fighter={fighter} session={session} />);
+      case 'tax':             return gate('🧾', 'No tax data', 'Connect your data to unlock this', <TaxTrackerView fighter={fighter} session={session} />);
+      case 'teamoverview':    return gate('👥', 'No team added yet', 'Add your trainer, manager, promoter and camp to unlock this', <TeamOverviewView fighter={fighter} session={session} />);
+      case 'briefing':        return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <FighterBriefingView fighter={fighter} session={session} />);
+      case 'trainernotes':    return gate('📝', 'No trainer notes', 'Add your trainer to unlock this', <TrainerNotesView fighter={fighter} session={session} />);
+      case 'managerdash':     return gate('💼', 'No manager data', 'Add your manager to unlock this', <ManagerDashboardView fighter={fighter} session={session} />);
+      case 'sponsorships':    return gate('💼', 'No sponsors added', 'Add your sponsors to unlock this', <SponsorshipsView fighter={fighter} session={session} />);
       case 'media':           return session.isDemoShell !== false
         ? <MediaContentModule
             sport="boxing"
@@ -8531,19 +8544,19 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             isDemoShell={true}
           />
         : <MediaObligationsView fighter={fighter} session={session} />;
-      case 'appearances':     return <AppearanceFeesView fighter={fighter} session={session} />;
-      case 'contracts':       return <ContractTrackerView fighter={fighter} session={session} />;
-      case 'fightrecord':     return <FightRecordView fighter={fighter} session={session} />;
-      case 'careerstats':     return <CareerStatsView fighter={fighter} session={session} />;
-      case 'promoterpipeline':return <PromoterPipelineView fighter={fighter} session={session} />;
-      case 'agentintel':      return <AgentIntelView fighter={fighter} session={session} />;
-      case 'aibriefing':      return <AIMorningBriefingView fighter={fighter} session={session} />;
-      case 'opscout':         return <OppositionScoutView fighter={fighter} session={session} />;
-      case 'broadcasttracker': return <BroadcastTrackerView fighter={fighter} session={session} />;
-      case 'news':            return <IndustryNewsView fighter={fighter} session={session} />;
-      case 'gps':             return <BoxingGpsView fighter={fighter} session={session} />;
-      case 'findpro':         return <FindProView fighter={fighter} session={session} />;
-      case 'travel':          return <BoxingTravelView fighter={fighter} session={session} />;
+      case 'appearances':     return gate('🎤', 'No appearance data', 'Connect your data to unlock this', <AppearanceFeesView fighter={fighter} session={session} />);
+      case 'contracts':       return gate('📋', 'No contracts tracked', 'Add your contracts to unlock this', <ContractTrackerView fighter={fighter} session={session} />);
+      case 'fightrecord':     return gate('🥊', 'No fight record', 'Add your fight history to unlock this', <FightRecordView fighter={fighter} session={session} />);
+      case 'careerstats':     return gate('📈', 'No career stats', 'Add your fight history to unlock this', <CareerStatsView fighter={fighter} session={session} />);
+      case 'promoterpipeline':return gate('🤝', 'No promoter pipeline', 'Connect your data to unlock this', <PromoterPipelineView fighter={fighter} session={session} />);
+      case 'agentintel':      return gate('💼', 'No agent intel', 'Add your agent to unlock this', <AgentIntelView fighter={fighter} session={session} />);
+      case 'aibriefing':      return gate('✨', 'No AI briefing yet', 'Connect your data to unlock your morning briefing', <AIMorningBriefingView fighter={fighter} session={session} />);
+      case 'opscout':         return gate('🔍', 'No opposition scout', 'Connect your data to unlock this', <OppositionScoutView fighter={fighter} session={session} />);
+      case 'broadcasttracker': return gate('📺', 'No broadcast data', 'Connect your data to unlock this', <BroadcastTrackerView fighter={fighter} session={session} />);
+      case 'news':            return gate('📰', 'No news feed', 'Connect your data to unlock this', <IndustryNewsView fighter={fighter} session={session} />);
+      case 'gps':             return gate('🛰️', 'No GPS data', 'Connect your Lumio GPS to unlock this', <BoxingGpsView fighter={fighter} session={session} />);
+      case 'findpro':         return gate('🎯', 'No directory data', 'Connect your location to unlock this', <FindProView fighter={fighter} session={session} />);
+      case 'travel':          return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <BoxingTravelView fighter={fighter} session={session} />);
       case 'integrations':    return <BoxingIntegrationsHub fighter={fighter} session={session} />;
       case 'settings':        return (
         <SportsSettings
