@@ -9808,7 +9808,8 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   // URL decides demo-vs-founder. Session-driven gating fails for anonymous
   // visitors (undefined === false is false, so founder URLs fell through to
   // demo content in incognito). See src/lib/config/demo-slugs.ts.
-  session = { ...session, isDemoShell: isDemoSlug(slug) }
+  const showDemoData = isDemoSlug(slug, 'darts')
+  session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);

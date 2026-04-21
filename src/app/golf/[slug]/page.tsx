@@ -1563,8 +1563,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       )}
 
-      {dashTab === 'quickwins' && (
-        <div className="space-y-3">
+      {dashTab === 'quickwins' && (session.isDemoShell === false
+        ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" />
+        : <div className="space-y-3">
           {[
             { id:'qw1', title:'Log R2 round score before leaderboard closes', priority:'critical' as const, category:'Performance', action:'Log round', modal:'loground', effort:'2min', description:'Leaderboard closes at 18:00 — log your R2 score to maintain live tracking.' },
             { id:'qw2', title:'Vanta Sports post due — Carlos needs caption by 18:00', priority:'high' as const, category:'Sponsor', action:'Generate post', modal:'sponsorpost', effort:'5min', description:'Contractual sponsor post obligation. AI can generate caption in your voice.' },
@@ -1597,7 +1598,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       )}
 
-      {dashTab === 'tasks' && (() => {
+      {dashTab === 'tasks' && (session.isDemoShell === false
+        ? <EmptyState icon="✅" title="No tasks for today" sub="Add your first task to unlock this" />
+        : (() => {
         const BASE_TASKS: Array<{ id: string; time: string; title: string; priority: 'critical'|'high'|'medium'|'low'; category: string; action: string; modal: string; custom?: boolean }> = [
           { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high', category:'Training', action:'Log session', modal:'loground' },
           { id:'dt2', time:'09:24', title:'Tee time R2 — with Hartwell, Donovan', priority:'critical', category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
@@ -1646,10 +1649,11 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           })}
         </div>
         )
-      })()}
+      })())}
 
-      {dashTab === 'insights' && (
-        <div className="space-y-6">
+      {dashTab === 'insights' && (session.isDemoShell === false
+        ? <EmptyState icon="📊" title="No insights yet" sub="Connect your data to unlock performance insights" />
+        : <div className="space-y-6">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
@@ -1690,8 +1694,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       )}
 
-      {dashTab === 'dontmiss' && (
-        <div className="space-y-3">
+      {dashTab === 'dontmiss' && (session.isDemoShell === false
+        ? <EmptyState icon="🔴" title="Nothing to flag" sub="Alerts will appear here once your data is connected" />
+        : <div className="space-y-3">
           {[
             { id:'dm1', urgency:'CRITICAL', urgencyColor:'#EF4444', category:'Match', when:'09:24 today', title:'R2 tee time — Hartwell & Donovan group', consequence:'If missed: disqualified', action:'Open caddie brief →', modal:'caddiebriefai' },
             { id:'dm2', urgency:'TODAY', urgencyColor:'#F59E0B', category:'Sponsor', when:'Before 18:00', title:'Vanta Sports post — contractual obligation', consequence:'If missed: contract penalty clause', action:'Generate post →', modal:'sponsorpost' },
@@ -1717,8 +1722,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         </div>
       )}
 
-      {dashTab === 'team' && (
-        <div className="space-y-4">
+      {dashTab === 'team' && (session.isDemoShell === false
+        ? <EmptyState icon="👥" title="No team members yet" sub="Add your coach, caddie, agent and support staff to unlock this" />
+        : <div className="space-y-4">
           <div className="flex gap-1 border-b border-gray-800">
             {([
               { id: 'today' as const, label: 'Team Today', icon: '👥' },
@@ -7099,7 +7105,8 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   // demo content in incognito). See src/lib/config/demo-slugs.ts.
   const params = useParams<{ slug: string }>()
   const slug = typeof params?.slug === 'string' ? params.slug : ''
-  session = { ...session, isDemoShell: isDemoSlug(slug) }
+  const showDemoData = isDemoSlug(slug, 'golf')
+  session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [roleOverride, setRoleOverride] = useState(session.role || 'player');
@@ -7226,33 +7233,38 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   }, [toastDismissed]);
 
   const renderView = () => {
+    // Founder (non-demo slug) sees EmptyState instead of demo content. Dashboard
+    // keeps its own internal branching; Settings stays accessible for founders.
+    const isFounder = session.isDemoShell === false
+    const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
+      isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
       case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
-      case 'morning':     return <MorningBriefingView player={player} session={session} />;
-      case 'owgr':        return <OWGRView player={player} session={session} />;
-      case 'schedule':    return <ScheduleView player={player} session={session} />;
-      case 'strokes':     return <StrokesGainedView player={player} session={session} />;
-      case 'coursefit':   return <CourseFitView player={player} session={session} />;
-      case 'caddie':      return <CaddieView player={player} session={session} />;
-      case 'team':        return <TeamHubView player={player} session={session} />;
-      case 'physio':      return <PhysioView player={player} session={session} />;
-      case 'equipment':   return <EquipmentView player={player} session={session} />;
-      case 'mental':      return <MentalView player={player} session={session} />;
-      case 'sponsorship': return <SponsorshipView player={player} session={session} />;
-      case 'financial':   return <FinancialView player={player} session={session} />;
-      case 'career':      return <CareerView player={player} session={session} />;
-      case 'proam':       return <ProAmView player={player} session={session} />;
-      case 'practicelog': return <PracticeLogView player={player} session={session} />;
-      case 'exemptions':  return <ExemptionsView player={player} session={session} />;
-      case 'matchprep':   return <RoundPrepView player={player} session={session} />;
+      case 'morning':     return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
+      case 'owgr':        return gate('📊', 'No OWGR data', 'Connect your tour feed to unlock this', <OWGRView player={player} session={session} />);
+      case 'schedule':    return gate('🗓️', 'No tournaments loaded', 'Connect your tour feed to unlock this', <ScheduleView player={player} session={session} />);
+      case 'strokes':     return gate('📈', 'No Strokes Gained data', 'Connect your round data to unlock this', <StrokesGainedView player={player} session={session} />);
+      case 'coursefit':   return gate('🎯', 'No course fit data', 'Connect your data to unlock this', <CourseFitView player={player} session={session} />);
+      case 'caddie':      return gate('👥', 'No caddie notes yet', 'Add your caddie to unlock this', <CaddieView player={player} session={session} />);
+      case 'team':        return gate('👥', 'No team members yet', 'Add your coach, caddie, agent and support staff to unlock this', <TeamHubView player={player} session={session} />);
+      case 'physio':      return gate('🏥', 'No physio data', 'Connect your data to unlock this', <PhysioView player={player} session={session} />);
+      case 'equipment':   return gate('⛳', 'No equipment logged', 'Add your clubs and setup to unlock this', <EquipmentView player={player} session={session} />);
+      case 'mental':      return gate('🧘', 'No sessions logged', 'Connect your data to unlock this', <MentalView player={player} session={session} />);
+      case 'sponsorship': return gate('💼', 'No sponsors added', 'Add your sponsors to unlock this', <SponsorshipView player={player} session={session} />);
+      case 'financial':   return gate('💰', 'No financial data', 'Connect your data to unlock this', <FinancialView player={player} session={session} />);
+      case 'career':      return gate('🚀', 'No career plan yet', 'Add your career goals to unlock this', <CareerView player={player} session={session} />);
+      case 'proam':       return gate('🎪', 'No Pro-Am enquiries yet', "We'll surface them here when they come in.", <ProAmView player={player} session={session} />);
+      case 'practicelog': return gate('⛳', 'No practice sessions logged', 'Connect your data to unlock this', <PracticeLogView player={player} session={session} />);
+      case 'exemptions':  return gate('🏛️', 'No exemption data', 'Connect your tour feed to unlock this', <ExemptionsView player={player} session={session} />);
+      case 'matchprep':   return gate('🎯', 'No round prep yet', 'Connect your data to unlock this', <RoundPrepView player={player} session={session} />);
       case 'media':       return session.isDemoShell !== false
         ? <MediaContentModule sport="golf" accentColor="#16a34a" isDemoShell={true} />
         : <PlaceholderView icon="📱" title="Media & Content" description="Social media calendar, sponsor content obligations, press log, and interview management." player={player} session={session} />;
-      case 'agent':       return <AgentPipelineView player={player} session={session} />;
-      case 'travel':      return <GolfTravelView player={player} session={session} />;
-      case 'qualifying':  return <GolfQSchoolView player={player} session={session} />;
-      case 'video':       return <GolfVideoLibraryView player={player} session={session} />;
-      case 'findpro':     return <GolfFindProView player={player} session={session} />;
+      case 'agent':       return gate('🤝', 'No agent pipeline', 'Connect your data to unlock this', <AgentPipelineView player={player} session={session} />);
+      case 'travel':      return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <GolfTravelView player={player} session={session} />);
+      case 'qualifying':  return gate('🃏', 'No Q-School data', 'Connect your tour feed to unlock this', <GolfQSchoolView player={player} session={session} />);
+      case 'video':       return gate('🎥', 'No video library yet', 'Upload your round footage to unlock this', <GolfVideoLibraryView player={player} session={session} />);
+      case 'findpro':     return gate('🎯', 'No directory data', 'Connect your location to unlock this', <GolfFindProView player={player} session={session} />);
       case 'settings':    return (
         <SportsSettings
           sport="golf"
