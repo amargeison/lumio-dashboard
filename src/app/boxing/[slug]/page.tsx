@@ -105,6 +105,19 @@ function useBoxingBrandLogo(): string {
   return logo
 }
 
+// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+// Mirrors darts/[slug]/page.tsx — rendered whenever session.isDemoShell === false
+// (a live founder without connected data) in place of demo content.
+function EmptyState({ icon, title, sub }: { icon: string; title: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', textAlign: 'center', border: '1px dashed #1F2937', borderRadius: 12, background: '#0a0c14' }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
+      <div style={{ color: '#6B7280', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{title}</div>
+      {sub && <div style={{ color: '#374151', fontSize: 12 }}>{sub}</div>}
+    </div>
+  )
+}
+
 // ─── CLEAN RESPONSE ──────────────────────────────────────────────────────────
 const cleanResponse = (text: string) => text
   .replace(/#{1,6}\s*/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
@@ -381,23 +394,23 @@ const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: Sp
       </div>
       <div className="text-sm font-bold text-white">{liveName}</div>
       {liveNickname ? <div className="text-[10px] text-red-400 font-semibold">&ldquo;{liveNickname}&rdquo;</div> : null}
-      <div className="text-xs text-gray-400 mt-1">{fighter.record.wins}-{fighter.record.losses} ({fighter.record.ko} KO)</div>
+      <div className="text-xs text-gray-400 mt-1">{isFoundingMember ? '—' : `${fighter.record.wins}-${fighter.record.losses} (${fighter.record.ko} KO)`}</div>
     </div>
     <div className="space-y-1.5 text-xs">
-      <div className="flex justify-between"><span className="text-gray-500">Weight Class</span><span className="text-gray-300">{fighter.weight_class}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Stance</span><span className="text-gray-300">{fighter.stance}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Height</span><span className="text-gray-300">{fighter.height}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Reach</span><span className="text-gray-300">{fighter.reach}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Age</span><span className="text-gray-300">{fighter.age}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Weight Class</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.weight_class}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Stance</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.stance}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Height</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.height}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Reach</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.reach}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Age</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.age}</span></div>
       <div className="border-t border-gray-800 my-2"></div>
-      <div className="flex justify-between"><span className="text-gray-500">WBC</span><span className="text-red-400 font-semibold">#{fighter.rankings.wbc}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">WBA</span><span className="text-red-400 font-semibold">#{fighter.rankings.wba}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">WBO</span><span className="text-red-400 font-semibold">#{fighter.rankings.wbo}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">IBF</span><span className="text-red-400 font-semibold">#{fighter.rankings.ibf}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">WBC</span><span className="text-red-400 font-semibold">{isFoundingMember ? '—' : `#${fighter.rankings.wbc}`}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">WBA</span><span className="text-red-400 font-semibold">{isFoundingMember ? '—' : `#${fighter.rankings.wba}`}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">WBO</span><span className="text-red-400 font-semibold">{isFoundingMember ? '—' : `#${fighter.rankings.wbo}`}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">IBF</span><span className="text-red-400 font-semibold">{isFoundingMember ? '—' : `#${fighter.rankings.ibf}`}</span></div>
       <div className="border-t border-gray-800 my-2"></div>
-      <div className="flex justify-between"><span className="text-gray-500">Promoter</span><span className="text-gray-300">{fighter.promoter}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Trainer</span><span className="text-gray-300">{fighter.trainer}</span></div>
-      <div className="flex justify-between"><span className="text-gray-500">Manager</span><span className="text-gray-300">{fighter.manager}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Promoter</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.promoter}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Trainer</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.trainer}</span></div>
+      <div className="flex justify-between"><span className="text-gray-500">Manager</span><span className="text-gray-300">{isFoundingMember ? '—' : fighter.manager}</span></div>
     </div>
   </div>
   )
@@ -1079,10 +1092,10 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
           </div>
           <div className="hidden md:flex items-center gap-3 ml-4">
             {[
-              { icon:'🥊', value:`#${fighter.rankings.wbc}`, label:'WBC', color:'#dc2626' },
-              { icon:'🏆', value:`#${fighter.rankings.ibf}`, label:'IBF', color:'#F97316' },
-              { icon:'⚖️', value:`${fighter.current_weight}kg`, label:'Weight', color:'#0ea5e9' },
-              { icon:'📅', value:`${fighter.next_fight.days_away}d`, label:'Fight', color:'#EF4444' },
+              { icon:'🥊', value: isDemoShellDash ? `#${fighter.rankings.wbc}` : '—', label:'WBC', color:'#dc2626' },
+              { icon:'🏆', value: isDemoShellDash ? `#${fighter.rankings.ibf}` : '—', label:'IBF', color:'#F97316' },
+              { icon:'⚖️', value: isDemoShellDash ? `${fighter.current_weight}kg` : '—', label:'Weight', color:'#0ea5e9' },
+              { icon:'📅', value: isDemoShellDash ? `${fighter.next_fight.days_away}d` : '—', label:'Fight', color:'#EF4444' },
             ].map((s, i) => (
               <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
                 style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
@@ -1246,7 +1259,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT: Morning Roundup — expandable like tennis */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          {session.isDemoShell === false
+            ? <EmptyState icon="📬" title="No messages yet" sub="Connect your manager, promoter and camp to unlock" />
+            : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
               <div className="flex items-center gap-2"><span>🌅</span><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p></div>
               <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
@@ -1320,10 +1335,14 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               })}
             </div>
             {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
-          </div>
+          </div>}
 
           {/* MIDDLE: Fight Camp Status + schedule */}
           <div className="space-y-4">
+            {session.isDemoShell === false ? (<>
+              <EmptyState icon="🥊" title="No fight scheduled" sub="Fight data will appear here once your camp calendar is connected" />
+              <EmptyState icon="📅" title="No schedule loaded" sub="Your fight camp schedule will appear here once connected" />
+            </>) : (<>
             <div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
               <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">FIGHT CAMP STATUS</div>
               <div className="flex items-center justify-between">
@@ -1396,6 +1415,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                 <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">{fighter.next_fight.broadcast}</span></div>
               </div>
             </div>
+            </>)}
           </div>
 
           {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
@@ -1419,7 +1439,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
               <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
                 {photoSrc
                   ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Family · Holidays · Inspiration</div></div>}
+                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {['3s','5s','10s','30s'].map(s => (
@@ -1429,7 +1449,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
             </div>
 
             {/* AI Morning Summary — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your boxing data to unlock your morning briefing" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ color: '#8B5CF6' }}>✨</span>
@@ -1453,10 +1475,12 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
 
             {/* Performance Intelligence — matches tennis */}
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            {session.isDemoShell === false
+              ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your fight data to see trends" />
+              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
               <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center gap-2">
                   <span>⚡</span>
@@ -1481,7 +1505,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
         </div>
       )}
@@ -8826,6 +8850,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
           <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0"
             style={{ width: '220px' }}>
             <FighterCard fighter={fighter} session={session} />
+            {session.isDemoShell !== false && (<>
             <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-3">
               <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Next Fight</div>
               <div className="text-xs text-red-400 font-medium">{fighter.next_fight.opponent} {fighter.next_fight.opponent_flag}</div>
@@ -8857,6 +8882,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
                 <div className="text-xs text-teal-400">Weight: on track</div>
               </div>
             </div>
+            </>)}
           </div>
         </div>
         )}
