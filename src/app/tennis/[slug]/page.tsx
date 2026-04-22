@@ -1186,7 +1186,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
-    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_tennis_roundup_order_v2') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
   })
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
@@ -1194,6 +1194,28 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [replyToast, setReplyToast] = useState(false)
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id:'sms', label:'SMS', icon:'📲', count:3, urgent:false, color:'#0EA5E9', messages: [
+      { id:'sms1', from:'Carlos', text:'Courts 3 + 4 open from 11:00 if you want to warm up away from the show courts.', time:'8:55am' },
+      { id:'sms2', from:'Travel desk', text:'Driver confirmed at hotel 10:45. Plate MC-7142. Back exit to avoid press.', time:'8:31am' },
+      { id:'sms3', from:'Dr Sarah Lee', text:'Don\'t forget ice 12:45 before strapping. Your window is tight.', time:'8:06am' },
+    ]},
+    { id:'whatsapp', label:'WhatsApp', icon:'💬', count:5, urgent:false, color:'#25D366', messages: [
+      { id:'wa1', from:'Team chat', text:'Carlos: gameplan doc updated on the shared drive — read before warm-up please.', time:'9:03am' },
+      { id:'wa2', from:'James Wright', text:'Hamburg agent called back. He\'ll take the wildcard fee offer. Confirm before 5pm.', time:'8:40am' },
+      { id:'wa3', from:'Family 💛', text:'Mum: landing Nice 14:10 Sunday. Proud of you. Good luck today xxx', time:'7:58am' },
+      { id:'wa4', from:'Tom Ellis', text:'Two frames strung at 23.5kg, one at 24. Bag at the locker by 11:30.', time:'7:41am' },
+      { id:'wa5', from:'Ben Parker', text:'Good luck vs Vega — he\'s been shanking the BH DTL all clay. Catch up in Halle?', time:'7:20am' },
+    ]},
+    { id:'email', label:'Email', icon:'✉️', count:8, urgent:false, color:'#6366F1', messages: [
+      { id:'em1', from:'Monte-Carlo Press Office', text:'Post-match press schedule attached. Slot 3 if you win, slot 1 if you lose. 15 min.', time:'8:50am' },
+      { id:'em2', from:'ATP Player Services', text:'April ranking bulletin — your projected points with/without QF result enclosed.', time:'8:25am' },
+      { id:'em3', from:'Meridian Watches', text:'Renewal term sheet + comparator decks attached. James has a copy. Aiming for a yes by EOW.', time:'8:04am' },
+      { id:'em4', from:'Paul Reid (accountant)', text:'Q1 VAT return filed. Monaco prize allocation note attached — review when you can.', time:'7:48am' },
+      { id:'em5', from:'Fairmont Monte Carlo', text:'Checkout extended to Sunday 13:00 at no charge. Late-stay vouchers enclosed.', time:'7:30am' },
+      { id:'em6', from:'Nutrition team', text:'Pre-match meal plan v3 — 3 hours before first serve. Carlos CC\'d.', time:'Yesterday' },
+      { id:'em7', from:'Roland-Garros Entry', text:'Main draw entry confirmed. Direct acceptance, seed band 33–48.', time:'Yesterday' },
+      { id:'em8', from:'Fan-club newsletter', text:'May mailout: 2 signed posters promised. Send a high-res match photo for the cover.', time:'2 days ago' },
+    ]},
     { id:'agent', label:'Agent Messages', icon:'📞', count:2, urgent:false, color:'#a855f7', messages: [
       { id:'a1', from:'James Wright', text:'Meridian Watches renewal — they want a response by end of week. Call me.', time:'8:14am' },
       { id:'a2', from:'James Wright', text:'Crown Wagers inquiry — new ambassador deal. £85k/yr. Interested?', time:'7:52am' },
@@ -1227,28 +1249,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
     { id:'wildcard', label:'Wildcard & Entries', icon:'📋', count:2, urgent:false, color:'#ec4899', messages: [
       { id:'w1', from:'ATP Entry', text:'Hamburg 500 wildcard — tournament director needs answer today.', time:'7:30am' },
       { id:'w2', from:'ATP Entry', text:'Winston-Salem: application submitted. Decision by 15 Aug.', time:'3 days ago' },
-    ]},
-    { id:'sms', label:'SMS', icon:'📲', count:3, urgent:false, color:'#0EA5E9', messages: [
-      { id:'sms1', from:'Carlos', text:'Courts 3 + 4 open from 11:00 if you want to warm up away from the show courts.', time:'8:55am' },
-      { id:'sms2', from:'Travel desk', text:'Driver confirmed at hotel 10:45. Plate MC-7142. Back exit to avoid press.', time:'8:31am' },
-      { id:'sms3', from:'Dr Sarah Lee', text:'Don\'t forget ice 12:45 before strapping. Your window is tight.', time:'8:06am' },
-    ]},
-    { id:'whatsapp', label:'WhatsApp', icon:'💬', count:5, urgent:false, color:'#25D366', messages: [
-      { id:'wa1', from:'Team chat', text:'Carlos: gameplan doc updated on the shared drive — read before warm-up please.', time:'9:03am' },
-      { id:'wa2', from:'James Wright', text:'Hamburg agent called back. He\'ll take the wildcard fee offer. Confirm before 5pm.', time:'8:40am' },
-      { id:'wa3', from:'Family 💛', text:'Mum: landing Nice 14:10 Sunday. Proud of you. Good luck today xxx', time:'7:58am' },
-      { id:'wa4', from:'Tom Ellis', text:'Two frames strung at 23.5kg, one at 24. Bag at the locker by 11:30.', time:'7:41am' },
-      { id:'wa5', from:'Ben Parker', text:'Good luck vs Vega — he\'s been shanking the BH DTL all clay. Catch up in Halle?', time:'7:20am' },
-    ]},
-    { id:'email', label:'Email', icon:'✉️', count:8, urgent:false, color:'#6366F1', messages: [
-      { id:'em1', from:'Monte-Carlo Press Office', text:'Post-match press schedule attached. Slot 3 if you win, slot 1 if you lose. 15 min.', time:'8:50am' },
-      { id:'em2', from:'ATP Player Services', text:'April ranking bulletin — your projected points with/without QF result enclosed.', time:'8:25am' },
-      { id:'em3', from:'Meridian Watches', text:'Renewal term sheet + comparator decks attached. James has a copy. Aiming for a yes by EOW.', time:'8:04am' },
-      { id:'em4', from:'Paul Reid (accountant)', text:'Q1 VAT return filed. Monaco prize allocation note attached — review when you can.', time:'7:48am' },
-      { id:'em5', from:'Fairmont Monte Carlo', text:'Checkout extended to Sunday 13:00 at no charge. Late-stay vouchers enclosed.', time:'7:30am' },
-      { id:'em6', from:'Nutrition team', text:'Pre-match meal plan v3 — 3 hours before first serve. Carlos CC\'d.', time:'Yesterday' },
-      { id:'em7', from:'Roland-Garros Entry', text:'Main draw entry confirmed. Direct acceptance, seed band 33–48.', time:'Yesterday' },
-      { id:'em8', from:'Fan-club newsletter', text:'May mailout: 2 signed posters promised. Send a high-res match photo for the cover.', time:'2 days ago' },
     ]},
   ]
 
@@ -1566,7 +1566,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                   <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button onClick={() => { setRoundupOrder([]); localStorage.removeItem('lumio_tennis_roundup_order') }} className="text-[10px] hover:underline" style={{ color: '#4B5563' }}>Reset order</button>
+                  <button onClick={() => { setRoundupOrder([]); localStorage.removeItem('lumio_tennis_roundup_order_v2') }} className="text-[10px] hover:underline" style={{ color: '#4B5563' }}>Reset order</button>
                   <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
                 </div>
               </div>
@@ -1585,7 +1585,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       onDragEnd={() => {
                         if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
                           const reordered = [...sorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                          const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_tennis_roundup_order', JSON.stringify(newOrder))
+                          const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_tennis_roundup_order_v2', JSON.stringify(newOrder))
                         }
                         setDragIdx(null); setDragOverIdx(null)
                       }}

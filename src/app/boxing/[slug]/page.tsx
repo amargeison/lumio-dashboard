@@ -968,7 +968,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
-    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_roundup_order_v2') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
   })
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
@@ -1042,6 +1042,27 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   }
 
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id:'sms', label:'SMS', icon:'📲', count:4, urgent:false, color:'#0EA5E9', messages:[
+      { id:'sms1', from:'Jim', text:'Pads 10:30 sharp. Bring the heavy gloves — we\'re going long today.', time:'7:25am' },
+      { id:'sms2', from:'Danny Walsh', text:'Titan on a call at 16:00. Keep the line clear. This is the purse call.', time:'8:18am' },
+      { id:'sms3', from:'Tony', text:'Wraps ready in the gym. Ricky will be there from 10:15.', time:'8:02am' },
+      { id:'sms4', from:'Travel desk', text:'Corner team flights confirmed Mon 9. Itinerary in your email.', time:'9:10am' },
+    ]},
+    { id:'whatsapp', label:'WhatsApp', icon:'💬', count:5, urgent:false, color:'#25D366', messages:[
+      { id:'wa1', from:'Corner chat', text:'Jim: open-workout order of play — shadow 5, bag 3, pads 6. Media in at round 4.', time:'9:20am' },
+      { id:'wa2', from:'Dr Sarah Mitchell', text:'Hand X-ray booked 14:30 Harley. I\'ll bring Jim\'s flagged notes.', time:'9:00am' },
+      { id:'wa3', from:'Danny Walsh', text:'Print-ready tale of the tape attached — Titan needs a yes by lunch.', time:'8:40am' },
+      { id:'wa4', from:'Family ❤️', text:'Mum: we\'re all coming down for fight week. Dad\'s got the flag ready 🥊', time:'7:15am' },
+      { id:'wa5', from:'Sparring chat', text:'Ricky: new southpaw in tomorrow — taller than Stoyan, good feet. Good look for you.', time:'6:50am' },
+    ]},
+    { id:'email', label:'Email', icon:'✉️', count:6, urgent:false, color:'#6366F1', messages:[
+      { id:'em1', from:'Titan Promotions', text:'Purse split revision + undercard confirmation attached. Signed copy due Friday.', time:'8:55am' },
+      { id:'em2', from:'BBBofC', text:'Medical pack reminder — annual MRI and pre-fight bloods expire 1 May.', time:'8:20am' },
+      { id:'em3', from:'Meridian Sports', text:'Documentary crew schedule attached. Day 1 access begins Monday 06:00.', time:'8:00am' },
+      { id:'em4', from:'Accountant', text:'Purse tax allocation memo + agent fees schedule. Need your sign-off before wire.', time:'7:40am' },
+      { id:'em5', from:'Canary Wharf Marriott', text:'Fight-week hotel reservation confirmed — 4 nights, corner-team suites.', time:'Yesterday' },
+      { id:'em6', from:'Nutritionist', text:'Weight-cut plan for week 3 attached. Target: -0.12kg/day from Monday.', time:'Yesterday' },
+    ]},
     { id:'manager', label:'Manager', icon:'💼', count:2, urgent:true, color:'#dc2626', messages:[
       { id:'m1', from:'Danny Walsh', text:'Purse split negotiation update — Titan offering 70/30. Need your call at 16:00.', time:'8:14am' },
       { id:'m2', from:'Danny Walsh', text:'Apex Performance camp deal — £85k for fight week branding. Worth taking?', time:'7:52am' },
@@ -1066,27 +1087,6 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
     { id:'fan', label:'Fan Mail', icon:'💌', count:4, urgent:false, color:'#8B5CF6', messages:[
       { id:'f1', from:'@BoxingFan92', text:'Marcus you\'re going to destroy Stoyan! The Machine! 🥊', time:'Today' },
       { id:'f2', from:'@HeavyweightWatch', text:'Can you sign a glove for my son? He\'s your biggest fan.', time:'Yesterday' },
-    ]},
-    { id:'sms', label:'SMS', icon:'📲', count:4, urgent:false, color:'#0EA5E9', messages:[
-      { id:'sms1', from:'Jim', text:'Pads 10:30 sharp. Bring the heavy gloves — we\'re going long today.', time:'7:25am' },
-      { id:'sms2', from:'Danny Walsh', text:'Titan on a call at 16:00. Keep the line clear. This is the purse call.', time:'8:18am' },
-      { id:'sms3', from:'Tony', text:'Wraps ready in the gym. Ricky will be there from 10:15.', time:'8:02am' },
-      { id:'sms4', from:'Travel desk', text:'Corner team flights confirmed Mon 9. Itinerary in your email.', time:'9:10am' },
-    ]},
-    { id:'whatsapp', label:'WhatsApp', icon:'💬', count:5, urgent:false, color:'#25D366', messages:[
-      { id:'wa1', from:'Corner chat', text:'Jim: open-workout order of play — shadow 5, bag 3, pads 6. Media in at round 4.', time:'9:20am' },
-      { id:'wa2', from:'Dr Sarah Mitchell', text:'Hand X-ray booked 14:30 Harley. I\'ll bring Jim\'s flagged notes.', time:'9:00am' },
-      { id:'wa3', from:'Danny Walsh', text:'Print-ready tale of the tape attached — Titan needs a yes by lunch.', time:'8:40am' },
-      { id:'wa4', from:'Family ❤️', text:'Mum: we\'re all coming down for fight week. Dad\'s got the flag ready 🥊', time:'7:15am' },
-      { id:'wa5', from:'Sparring chat', text:'Ricky: new southpaw in tomorrow — taller than Stoyan, good feet. Good look for you.', time:'6:50am' },
-    ]},
-    { id:'email', label:'Email', icon:'✉️', count:6, urgent:false, color:'#6366F1', messages:[
-      { id:'em1', from:'Titan Promotions', text:'Purse split revision + undercard confirmation attached. Signed copy due Friday.', time:'8:55am' },
-      { id:'em2', from:'BBBofC', text:'Medical pack reminder — annual MRI and pre-fight bloods expire 1 May.', time:'8:20am' },
-      { id:'em3', from:'Meridian Sports', text:'Documentary crew schedule attached. Day 1 access begins Monday 06:00.', time:'8:00am' },
-      { id:'em4', from:'Accountant', text:'Purse tax allocation memo + agent fees schedule. Need your sign-off before wire.', time:'7:40am' },
-      { id:'em5', from:'Canary Wharf Marriott', text:'Fight-week hotel reservation confirmed — 4 nights, corner-team suites.', time:'Yesterday' },
-      { id:'em6', from:'Nutritionist', text:'Weight-cut plan for week 3 attached. Target: -0.12kg/day from Monday.', time:'Yesterday' },
     ]},
   ]
 
@@ -1301,7 +1301,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                       if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
                         const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_ITEMS]
                         const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_boxing_roundup_order', JSON.stringify(newOrder))
+                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_boxing_roundup_order_v2', JSON.stringify(newOrder))
                       }
                       setDragIdx(null); setDragOverIdx(null)
                     }}

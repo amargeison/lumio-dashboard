@@ -735,9 +735,31 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
-    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('darts_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('darts_roundup_order_v2') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
   })
   const ROUNDUP_CHANNELS = [
+    { label: 'SMS',                icon: '📲', count: 3, color: '#0EA5E9', urgent: false, messages: [
+      { from: 'Steve Morris',    text: 'Practice board free 14:00–15:30. Bring the new flights — I want to see the grouping.', time: '09:12' },
+      { from: 'James Wright',    text: 'Crown Wagers back to us. Call me — 5 min, before you leave for Dortmund.', time: '08:30' },
+      { from: 'Travel Desk',     text: 'Car confirmed 17:00 from the hotel. Driver will text when 10 min away.', time: '07:45' },
+    ]},
+    { label: 'WhatsApp',           icon: '💬', count: 6, color: '#25D366', urgent: false, messages: [
+      { from: 'Team chat',       text: 'Steve: 501 checkout drills tomorrow AM, 90 min. Bring spare barrels.', time: '09:20' },
+      { from: 'Vanta Sports',    text: 'Content shoot call sheet for the 12:00 slot — attached. Wear the navy kit.', time: '08:55' },
+      { from: 'Dave Askew',      text: 'On the road by 16:00. I\'ll bring the backup set — yours are worn.', time: '08:02' },
+      { from: 'Partner 💚',      text: 'Good luck tonight. I\'ll be watching from Nan\'s. Text me after.', time: '07:30' },
+      { from: 'PDC group',       text: 'Aspinall: anyone got a spare room in Prague next week? Hotel fell through.', time: '06:55' },
+      { from: 'Jake\'s family',  text: 'Dad: all the lads at the club are glued to Sky tonight. Go get him son x', time: '06:20' },
+    ]},
+    { label: 'Email',              icon: '✉️', count: 7, color: '#6366F1', urgent: false, messages: [
+      { from: 'PDC Admin',        text: 'Europe Tour Order of Merit snapshot attached — you\'ve moved to #18 this week.', time: '09:30' },
+      { from: 'Crown Wagers',     text: 'Ambassador renewal — draft MoU + social obligations attached. James has a copy.', time: '08:40' },
+      { from: 'Accountant',       text: 'Players Championship prize allocation memo attached. VAT paperwork needs signing EOW.', time: '08:10' },
+      { from: 'Premier League Darts', text: 'Night 12 schedule + player obligations doc attached. Walk-on music check due Friday.', time: '07:50' },
+      { from: 'Entry Desk',       text: 'German Darts Championship pre-qualifier entry opens May 1. Confirmation of intent required.', time: 'Yesterday' },
+      { from: 'Hotel Dortmund',   text: 'Booking confirmed for tonight. Late checkout approved — 13:00 Wednesday.', time: 'Yesterday' },
+      { from: 'Tour Weekly',      text: 'Feature request: 10-min sit-down interview at Prague. Reply yes/no by Friday.', time: '2 days ago' },
+    ]},
     { label: 'Agent Messages',     icon: '📞', count: 2, color: '#0D9488', urgent: false, messages: [
       { from: 'James Wright', text: 'Crown Wagers want an answer by Friday — shall I push for better terms?', time: '08:12' },
       { from: 'James Wright', text: 'Vanta Sports renewal call confirmed Thursday 14:00', time: '07:45' },
@@ -770,28 +792,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       { from: 'Fan - Emma K.', text: 'My son loves watching you play. Any chance of a video message?', time: '10:30' },
       { from: 'Darts Forum', text: 'Thread: Jake Morrison form analysis — 47 replies', time: '09:15' },
       { from: 'Fan - Mike R.', text: 'Good luck tonight against Merrick!', time: '08:45' },
-    ]},
-    { label: 'SMS',                icon: '📲', count: 3, color: '#0EA5E9', urgent: false, messages: [
-      { from: 'Steve Morris',    text: 'Practice board free 14:00–15:30. Bring the new flights — I want to see the grouping.', time: '09:12' },
-      { from: 'James Wright',    text: 'Crown Wagers back to us. Call me — 5 min, before you leave for Dortmund.', time: '08:30' },
-      { from: 'Travel Desk',     text: 'Car confirmed 17:00 from the hotel. Driver will text when 10 min away.', time: '07:45' },
-    ]},
-    { label: 'WhatsApp',           icon: '💬', count: 6, color: '#25D366', urgent: false, messages: [
-      { from: 'Team chat',       text: 'Steve: 501 checkout drills tomorrow AM, 90 min. Bring spare barrels.', time: '09:20' },
-      { from: 'Vanta Sports',    text: 'Content shoot call sheet for the 12:00 slot — attached. Wear the navy kit.', time: '08:55' },
-      { from: 'Dave Askew',      text: 'On the road by 16:00. I\'ll bring the backup set — yours are worn.', time: '08:02' },
-      { from: 'Partner 💚',      text: 'Good luck tonight. I\'ll be watching from Nan\'s. Text me after.', time: '07:30' },
-      { from: 'PDC group',       text: 'Aspinall: anyone got a spare room in Prague next week? Hotel fell through.', time: '06:55' },
-      { from: 'Jake\'s family',  text: 'Dad: all the lads at the club are glued to Sky tonight. Go get him son x', time: '06:20' },
-    ]},
-    { label: 'Email',              icon: '✉️', count: 7, color: '#6366F1', urgent: false, messages: [
-      { from: 'PDC Admin',        text: 'Europe Tour Order of Merit snapshot attached — you\'ve moved to #18 this week.', time: '09:30' },
-      { from: 'Crown Wagers',     text: 'Ambassador renewal — draft MoU + social obligations attached. James has a copy.', time: '08:40' },
-      { from: 'Accountant',       text: 'Players Championship prize allocation memo attached. VAT paperwork needs signing EOW.', time: '08:10' },
-      { from: 'Premier League Darts', text: 'Night 12 schedule + player obligations doc attached. Walk-on music check due Friday.', time: '07:50' },
-      { from: 'Entry Desk',       text: 'German Darts Championship pre-qualifier entry opens May 1. Confirmation of intent required.', time: 'Yesterday' },
-      { from: 'Hotel Dortmund',   text: 'Booking confirmed for tonight. Late checkout approved — 13:00 Wednesday.', time: 'Yesterday' },
-      { from: 'Tour Weekly',      text: 'Feature request: 10-min sit-down interview at Prague. Reply yes/no by Friday.', time: '2 days ago' },
     ]},
   ]
 
@@ -1285,7 +1285,7 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
                     if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
                       const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_CHANNELS]
                       const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                      const newOrder = reordered.map(c => c.label); setRoundupOrder(newOrder); localStorage.setItem('darts_roundup_order', JSON.stringify(newOrder))
+                      const newOrder = reordered.map(c => c.label); setRoundupOrder(newOrder); localStorage.setItem('darts_roundup_order_v2', JSON.stringify(newOrder))
                     }
                     setDragIdx(null); setDragOverIdx(null)
                   }}

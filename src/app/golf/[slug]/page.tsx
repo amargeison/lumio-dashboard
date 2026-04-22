@@ -943,7 +943,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [roundupOrder, setRoundupOrder] = useState<string[]>(() => {
-    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_roundup_order') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
+    try { const saved = typeof window !== 'undefined' ? localStorage.getItem('lumio_golf_roundup_order_v2') : null; return saved ? JSON.parse(saved) : [] } catch { return [] }
   });
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -1015,6 +1015,27 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 
   // ─── MORNING ROUNDUP DATA ──────────────────────────────────────────────────
   const ROUNDUP_ITEMS: { id: string; label: string; icon: string; count: number; urgent: boolean; color: string; messages: { id: string; from: string; text: string; time: string }[] }[] = [
+    { id: 'sms', label: 'SMS', icon: '📲', count: 2, urgent: false, color: '#0EA5E9', messages: [
+      { id: 'sms1', from: 'Mick Sullivan', text: 'Back on the range at 07:45 — bring the 3-wood, I want to check the face angle from yesterday.', time: '06:55' },
+      { id: 'sms2', from: 'James Crawford', text: 'Vanta reply needed today. Call me when you\'re off the range — 5 min, no more.', time: '08:18' },
+    ]},
+    { id: 'whatsapp', label: 'WhatsApp', icon: '💬', count: 4, urgent: false, color: '#25D366', messages: [
+      { id: 'wa1', from: 'Team chat', text: 'Mick: yardage book updated with R2 pin sheet. Attached.', time: '08:40' },
+      { id: 'wa2', from: 'Dr Anna Price', text: 'Heat pack on before breakfast — 10 min lower back. See you 13:00.', time: '07:15' },
+      { id: 'wa3', from: 'Sarah Chen', text: 'Caption draft for Vanta post — check the tone. Needs to go live before 18:00.', time: '09:05' },
+      { id: 'wa4', from: 'Home 💙', text: 'Kids up early watching the stream. Go get it dad ⛳', time: '06:30' },
+    ]},
+    { id: 'email', label: 'Email', icon: '✉️', count: 9, urgent: false, color: '#6366F1', messages: [
+      { id: 'em1', from: 'DP World Tour Admin', text: 'R2 tee times official release attached. Draw for R3 posted by 20:00 local.', time: '07:20' },
+      { id: 'em2', from: 'Vanta Sports Partnerships', text: 'Extension term sheet + brand obligations doc attached. James has the summary.', time: '07:48' },
+      { id: 'em3', from: 'Accountant', text: 'Q1 tax residency memo — sign and return before the Scottish Open swing.', time: '08:02' },
+      { id: 'em4', from: 'Range Coach', text: 'Lumio Range session data + launch-monitor notes attached. 7-iron carry +1.3 yards on average.', time: '08:15' },
+      { id: 'em5', from: 'Marine North Berwick', text: 'Scottish Open reservation confirmed — 4 nights, partial release window 30 Jun.', time: '08:30' },
+      { id: 'em6', from: 'Entry Desk', text: 'Scottish Open entry submitted. Exemption confirmed. Confirmation email attached.', time: '08:45' },
+      { id: 'em7', from: 'Halden Motors', text: 'Pro-Am pairing memo attached — your partner is a Halden board member.', time: 'Yesterday' },
+      { id: 'em8', from: 'Tour Weekly', text: 'Feature request: 5-minute interview after R2 if top-10. Reply yes/no.', time: 'Yesterday' },
+      { id: 'em9', from: 'Fan-club', text: 'May mailout — 50 signed caps promised. Courier booked for Monday pickup.', time: '2 days ago' },
+    ]},
     { id: 'agent', label: 'Agent Messages', icon: '📞', count: 2, urgent: true, color: '#8B5CF6', messages: [
       { id: 'ag1', from: 'James Crawford', text: 'Vanta Sports want to extend the deal — new terms attached. £65k/yr + equipment. Need your sign-off by Friday.', time: '08:12' },
       { id: 'ag2', from: 'James Crawford', text: 'Halden Motors Pro-Am appearance fee confirmed: £12,000 + travel. Hospitality tent tomorrow 14:30.', time: '07:45' },
@@ -1042,27 +1063,6 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
     ]},
     { id: 'financial', label: 'Financial', icon: '💰', count: 1, urgent: false, color: '#EAB308', messages: [
       { id: 'fi1', from: 'Accountant', text: 'Prize money YTD: £367,000. Season target: £450k. Munich expenses need submitting by EOD Friday.', time: '09:10' },
-    ]},
-    { id: 'sms', label: 'SMS', icon: '📲', count: 2, urgent: false, color: '#0EA5E9', messages: [
-      { id: 'sms1', from: 'Mick Sullivan', text: 'Back on the range at 07:45 — bring the 3-wood, I want to check the face angle from yesterday.', time: '06:55' },
-      { id: 'sms2', from: 'James Crawford', text: 'Vanta reply needed today. Call me when you\'re off the range — 5 min, no more.', time: '08:18' },
-    ]},
-    { id: 'whatsapp', label: 'WhatsApp', icon: '💬', count: 4, urgent: false, color: '#25D366', messages: [
-      { id: 'wa1', from: 'Team chat', text: 'Mick: yardage book updated with R2 pin sheet. Attached.', time: '08:40' },
-      { id: 'wa2', from: 'Dr Anna Price', text: 'Heat pack on before breakfast — 10 min lower back. See you 13:00.', time: '07:15' },
-      { id: 'wa3', from: 'Sarah Chen', text: 'Caption draft for Vanta post — check the tone. Needs to go live before 18:00.', time: '09:05' },
-      { id: 'wa4', from: 'Home 💙', text: 'Kids up early watching the stream. Go get it dad ⛳', time: '06:30' },
-    ]},
-    { id: 'email', label: 'Email', icon: '✉️', count: 9, urgent: false, color: '#6366F1', messages: [
-      { id: 'em1', from: 'DP World Tour Admin', text: 'R2 tee times official release attached. Draw for R3 posted by 20:00 local.', time: '07:20' },
-      { id: 'em2', from: 'Vanta Sports Partnerships', text: 'Extension term sheet + brand obligations doc attached. James has the summary.', time: '07:48' },
-      { id: 'em3', from: 'Accountant', text: 'Q1 tax residency memo — sign and return before the Scottish Open swing.', time: '08:02' },
-      { id: 'em4', from: 'Range Coach', text: 'Lumio Range session data + launch-monitor notes attached. 7-iron carry +1.3 yards on average.', time: '08:15' },
-      { id: 'em5', from: 'Marine North Berwick', text: 'Scottish Open reservation confirmed — 4 nights, partial release window 30 Jun.', time: '08:30' },
-      { id: 'em6', from: 'Entry Desk', text: 'Scottish Open entry submitted. Exemption confirmed. Confirmation email attached.', time: '08:45' },
-      { id: 'em7', from: 'Halden Motors', text: 'Pro-Am pairing memo attached — your partner is a Halden board member.', time: 'Yesterday' },
-      { id: 'em8', from: 'Tour Weekly', text: 'Feature request: 5-minute interview after R2 if top-10. Reply yes/no.', time: 'Yesterday' },
-      { id: 'em9', from: 'Fan-club', text: 'May mailout — 50 signed caps promised. Courier booked for Monday pickup.', time: '2 days ago' },
     ]},
   ];
 
@@ -1346,7 +1346,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
                       if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
                         const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_ITEMS]
                         const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_golf_roundup_order', JSON.stringify(newOrder))
+                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_golf_roundup_order_v2', JSON.stringify(newOrder))
                       }
                       setDragIdx(null); setDragOverIdx(null)
                     }}
