@@ -1,6 +1,14 @@
 'use client'
 import React from 'react'
 
+export type MobileMatchCardPlayer = {
+  initials: string
+  name: string
+  rank: string
+  /** Optional photo URL — falls back to initials avatar when absent. */
+  photoUrl?: string | null
+}
+
 export type MobileMatchCardProps = {
   /** e.g. "Today 13:00" */
   whenLabel: string
@@ -10,8 +18,8 @@ export type MobileMatchCardProps = {
   roundLabel: string
   /** e.g. "CLAY · H2H 3–1" */
   metaLabel: string
-  home: { initials: string; name: string; rank: string }
-  away: { initials: string; name: string; rank: string }
+  home: MobileMatchCardPlayer
+  away: MobileMatchCardPlayer
   onPrep?: () => void
   onTactics?: () => void
 }
@@ -138,18 +146,24 @@ export function MobileMatchCard({
   )
 }
 
-function PlayerBlob({ initials, name, rank, align }: { initials: string; name: string; rank: string; align: 'left' | 'right' }) {
+function PlayerBlob({ initials, name, rank, photoUrl, align }: MobileMatchCardPlayer & { align: 'left' | 'right' }) {
   return (
     <div className={`flex items-center gap-2 min-w-0 flex-1 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
       <div
-        className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+        className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
         style={{
           background: align === 'left'
             ? 'linear-gradient(135deg, var(--violet), var(--fuchsia))'
             : 'linear-gradient(135deg, rgb(71, 85, 105), rgb(30, 41, 59))',
+          border: '1.5px solid rgba(168, 85, 247, 0.45)',
         }}
       >
-        {initials}
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
       </div>
       <div className={`min-w-0 ${align === 'right' ? 'text-right' : ''}`}>
         <div

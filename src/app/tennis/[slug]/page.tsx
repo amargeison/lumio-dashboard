@@ -68,6 +68,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { createBrowserClient } from '@supabase/ssr'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
+import { useAudioBriefing } from '@/hooks/useAudioBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
@@ -82,6 +83,7 @@ import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integr
 import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { MobileTennisHome } from '@/components/mobile/MobileTennisHome'
+import { MobileTrainingHome } from '@/components/mobile/MobileTrainingHome'
 import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
@@ -1068,19 +1070,11 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
 
-  // Speech state
-  const [isSpeaking, setIsSpeaking] = useState(false)
-
-  const getVoicesReady = (): Promise<SpeechSynthesisVoice[]> => new Promise(resolve => {
-    const v = window.speechSynthesis.getVoices()
-    if (v.length > 0) return resolve(v)
-    window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices())
-  })
-
-  const speakBriefing = async () => {
-    if (typeof window === 'undefined') return
-    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return }
-    window.speechSynthesis.cancel()
+  // Audio briefing — extracted to `useAudioBriefing` so mobile surfaces
+  // (MobileHero + AI Morning Summary card) share the exact same TTS engine,
+  // voice selection, and state machine. `getText` is lazy so the schedule /
+  // roundup / ranking passed in reflect state at click time.
+  const { isSpeaking, toggle: speakBriefing } = useAudioBriefing(() => {
     const scheduleRaw = [
       { id:'s1', time:'07:30', label:'AI Morning Briefing',        highlight:false },
       { id:'s2', time:'08:30', label:'Physio — right shoulder',    highlight:false },
@@ -1090,7 +1084,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       { id:'s6', time:'15:30', label:'Post-match physio',          highlight:false },
       { id:'s7', time:'17:00', label:'Coach debrief',              highlight:false },
     ]
-    const briefingText = generateSmartBriefing({
+    return generateSmartBriefing({
       now: new Date(),
       playerName: displayPlayerName,
       schedule: buildScheduleItems(scheduleRaw, completedItems, cancelledItems),
@@ -1100,30 +1094,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       timezone: getUserTimezone(),
       extra: `You're ranked ${player.ranking ?? 67} on the ATP tour with ${(player.ranking_points ?? 1847).toLocaleString()} points.`,
     })
-    const allVoices = await getVoicesReady()
-    const savedVoiceName = localStorage.getItem('lumio_tts_voice_name') || 'Sarah'
-    const voiceMap: Record<string, string[]> = {
-      'Sarah': ['Google UK English Female', 'Microsoft Libby', 'Karen', 'Veena'],
-      'Charlotte': ['Microsoft Hazel', 'Fiona', 'Samantha', 'Google UK English Female'],
-      'George': ['Google UK English Male', 'Microsoft George', 'Daniel', 'Alex'],
-    }
-    const preferred = voiceMap[savedVoiceName] || voiceMap['Sarah']
-    const match = allVoices.find(v => preferred.some(p => v.name.includes(p)))
-      || allVoices.find(v => savedVoiceName === 'George'
-        ? v.lang.startsWith('en') && v.name.toLowerCase().includes('male')
-        : v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'))
-    const utterance = new SpeechSynthesisUtterance(briefingText)
-    if (match) utterance.voice = match
-    utterance.pitch = savedVoiceName === 'George' ? 0.75 : savedVoiceName === 'Charlotte' ? 1.25 : 1.1
-    utterance.rate = savedVoiceName === 'George' ? 0.92 : 0.95
-    utterance.volume = 1.0
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
-    window.speechSynthesis.speak(utterance)
-  }
-
-  useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+  })
 
   // Schedule state
   const [completedItems, setCompletedItems] = useState<Set<string>>(() => {
@@ -4437,11 +4408,13 @@ function PhysioView({ player, session }: { player: TennisPlayer; session: Sports
 
       <SectionHeader icon="⚕️" title="Physio & Recovery" subtitle="Injury log, medical clearance, Lumio Wear recovery scores, and treatment protocols." />
 
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Recovery Score" value="82/100" sub="Today (Lumio Wear)" color="green" />
-        <StatCard label="HRV" value="68ms" sub="^7ms vs yesterday" color="teal" />
-        <StatCard label="Resting HR" value="48 bpm" sub="Match day normal" color="blue" />
-        <StatCard label="Sleep" value="7.2 hrs" sub="76 sleep score" color="purple" />
+      {/* 4-stat row — responsive: 2 cols on mobile (so values like "82/100"
+          and "68ms" don't overflow), 4 cols at md+. min-h keeps cards aligned. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="min-h-[96px]"><StatCard label="Recovery Score" value="82/100" sub="Today (Lumio Wear)" color="green" /></div>
+        <div className="min-h-[96px]"><StatCard label="HRV" value="68ms" sub="^7ms vs yesterday" color="teal" /></div>
+        <div className="min-h-[96px]"><StatCard label="Resting HR" value="48 bpm" sub="Match day normal" color="blue" /></div>
+        <div className="min-h-[96px]"><StatCard label="Sleep" value="7.2 hrs" sub="76 sleep score" color="purple" /></div>
       </div>
 
       {/* Cleared-for-match banner — green when recovery ≥ 65, amber below. */}
@@ -11340,12 +11313,13 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
         onNavigate={setActiveSection}
         sidebarItems={SIDEBAR_ITEMS}
         groupOrder={['PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS']}
-        inboxBadge={13}
       >
         <PwaInstaller sport="tennis" />
         {activeSection === 'dashboard'
           ? <MobileTennisHome session={session} player={player} onNavigate={setActiveSection} />
-          : <div className="px-4 py-4">{renderView()}</div>
+          : activeSection === 'training'
+            ? <MobileTrainingHome session={session} player={player} onNavigate={setActiveSection} />
+            : <div className="px-4 py-4">{renderView()}</div>
         }
       </MobileSportLayout>
     )

@@ -65,6 +65,7 @@ next-env.d.ts
 !public/*_logo.png
 !public/Lumio_Sports_logo.png
 !public/badges/*
+!public/opponents/*
 !public/jake_morrison.jpg
 !public/alex_thompson.jpg
 !public/james_hargreaves.jpg

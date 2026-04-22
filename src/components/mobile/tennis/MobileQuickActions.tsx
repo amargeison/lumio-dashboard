@@ -7,6 +7,8 @@ export type MobileQuickAction = {
   label: string
   onPress?: () => void
   active?: boolean
+  /** Mirrors desktop `hot:true` — renders an "AI" badge in the corner. */
+  hot?: boolean
 }
 
 export type MobileQuickActionsProps = {
@@ -46,7 +48,7 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
             <button
               key={a.id}
               onClick={a.onPress}
-              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-transform active:scale-[0.95]"
+              className="relative flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-transform active:scale-[0.95]"
               style={{
                 background: active ? 'rgba(168, 85, 247, 0.2)' : 'var(--bg-card)',
                 border: `1px solid ${active ? 'rgba(168, 85, 247, 0.5)' : 'var(--border, rgba(168, 85, 247, 0.18))'}`,
@@ -60,6 +62,19 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
                 {a.icon}
               </span>
               <span>{a.label}</span>
+              {a.hot && (
+                <span
+                  className="absolute -top-1 -right-1 px-1 py-0.5 rounded-full font-black leading-none"
+                  style={{
+                    fontSize: 8,
+                    background: 'rgba(168, 85, 247, 0.95)',
+                    color: '#fff',
+                    border: '1px solid rgba(217, 70, 239, 0.65)',
+                  }}
+                >
+                  AI
+                </span>
+              )}
             </button>
           )
         })}

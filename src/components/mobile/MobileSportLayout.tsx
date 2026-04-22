@@ -12,8 +12,6 @@ export type MobileSportLayoutProps = {
   /** Sections already surfaced via the bottom nav — hidden from the More sheet. */
   hiddenNavIds?: Set<string>
   groupOrder?: string[]
-  /** Inbox badge count for the bottom nav. */
-  inboxBadge?: number
   /** Navigation key → section id. Override per sport if needed. */
   navMap?: Partial<Record<MobileNavKey, string>>
   children: React.ReactNode
@@ -46,15 +44,20 @@ const SPORT_TOKENS: Record<MobileSportLayoutProps['sport'], Record<string, strin
 }
 
 const DEFAULT_NAV_MAP: Record<MobileNavKey, string> = {
-  home:  'dashboard',
-  today: 'today',
-  inbox: 'morning',
-  match: 'matchprep',
+  home:     'dashboard',
+  match:    'matchprep',
+  // 'training' is a mobile-specific section — the page consumer renders
+  // <MobileTrainingHome /> when activeSection === 'training'. Each card on
+  // that hub deep-links into a real desktop section (physio / gps / video /
+  // nutrition / etc.) which falls back to its desktop view inside the
+  // scrollable shell.
+  training: 'training',
+  team:     'team',
   // `more` is handled as a sheet open, not a navigation target
-  more:  '',
+  more:     '',
 }
 
-const DEFAULT_HIDDEN_IDS = new Set(['dashboard', 'morning', 'matchprep'])
+const DEFAULT_HIDDEN_IDS = new Set(['dashboard', 'matchprep', 'training', 'team'])
 
 function resolveActiveNavKey(activeSection: string, navMap: Record<MobileNavKey, string>): MobileNavKey {
   const entry = (Object.entries(navMap) as [MobileNavKey, string][]).find(([, id]) => id && id === activeSection)
@@ -68,7 +71,6 @@ export function MobileSportLayout({
   sidebarItems,
   hiddenNavIds,
   groupOrder,
-  inboxBadge,
   navMap,
   children,
 }: MobileSportLayoutProps) {
@@ -146,7 +148,6 @@ export function MobileSportLayout({
         <MobileBottomNav
           active={activeKey}
           onSelect={handleNavSelect}
-          inboxBadge={inboxBadge}
         />
 
         <MobileMoreSheet

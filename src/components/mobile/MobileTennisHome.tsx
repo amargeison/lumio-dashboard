@@ -1,7 +1,10 @@
 'use client'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Sparkles, Volume2 } from 'lucide-react'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
+import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
+import { useAudioBriefing } from '@/hooks/useAudioBriefing'
 import { MobileTopBar } from './tennis/MobileTopBar'
 import { MobileHero, type MobileHeroStat, type MobileHeroClock, type MobileHeroWeather } from './tennis/MobileHero'
 import { MobileMatchCard } from './tennis/MobileMatchCard'
@@ -9,6 +12,8 @@ import { MobileQuickActions, type MobileQuickAction } from './tennis/MobileQuick
 import { MobileRoundupStrip, type MobileRoundupChannel } from './tennis/MobileRoundupStrip'
 import { MobileSponsorAlert } from './tennis/MobileSponsorAlert'
 import { MobilePerformanceIntel } from './tennis/MobilePerformanceIntel'
+import { MobileMessageSheet } from './tennis/MobileMessageSheet'
+import { ComingSoonModal } from './ComingSoonModal'
 import { useMobileLayout } from './MobileLayoutContext'
 
 export type MobileTennisPlayerLike = {
@@ -63,7 +68,7 @@ export function MobileTennisHome({
   session,
   player,
   onNavigate,
-  roundupCount = 18,
+  roundupCount,
 }: MobileTennisHomeProps) {
   const { openMore } = useMobileLayout()
   const now = useMemo(() => new Date(), [])
@@ -71,8 +76,18 @@ export function MobileTennisHome({
   const greeting = partOfDay(hour)
   const firstName = firstNameFrom(session.userName)
   const avatarInitials = initialsFrom(session.userName)
+  const aiSummaryLabel = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary'
 
   const quote = getDailyQuote(TENNIS_QUOTES)
+
+  // Class A placeholder modal — speaker icon, every Quick Action, "All N →"
+  // link, AI Summary speaker icon, and the disabled Reply button on the
+  // MessageSheet all route through this single state.
+  const [comingSoonLabel, setComingSoonLabel] = useState<string | null>(null)
+  const stub = (label: string) => () => setComingSoonLabel(label)
+
+  // Morning Roundup row tap → message sheet.
+  const [activeChannel, setActiveChannel] = useState<MobileRoundupChannel | null>(null)
 
   const stats: MobileHeroStat[] = [
     { label: 'ATP',    value: `#${player.ranking ?? 67}`,                         tint: 'violet' },
@@ -88,30 +103,134 @@ export function MobileTennisHome({
     { city: 'TOK', time: formatTzTime(now, 'Asia/Tokyo')    || '20:58' },
   ]
 
+  // 18 actions ported from desktop (src/app/tennis/[slug]/page.tsx). Every tap
+  // routes to ComingSoonModal — placeholder pattern until each lands.
   const quickActions: MobileQuickAction[] = [
-    { id: 'send',      icon: '💬', label: 'Send Message',    onPress: () => onNavigate('teamcomms'),  active: true },
-    { id: 'matchprep', icon: '🎯', label: 'Match Prep AI',   onPress: () => onNavigate('matchprep') },
-    { id: 'injury',    icon: '⚕️', label: 'Log Injury',      onPress: () => onNavigate('physio') },
-    { id: 'warmup',    icon: '⏱️', label: 'Warm-up Timer',   onPress: () => onNavigate('matchprep') },
-    { id: 'book',      icon: '📅', label: 'Book Practice',   onPress: () => onNavigate('courtbooking') },
-    { id: 'press',     icon: '📰', label: 'Press Statement', onPress: () => onNavigate('media') },
-    { id: 'ranksim',   icon: '📈', label: 'Ranking Sim',     onPress: () => onNavigate('forecaster') },
-    { id: 'string',    icon: '🎾', label: 'String Order',    onPress: () => onNavigate('racket') },
+    { id: 'sendmessage',   icon: '📨',  label: 'Send Message',        onPress: stub('Send Message') },
+    { id: 'socialmedia',   icon: '📱',  label: 'Social Media',        onPress: stub('Social Media'),        hot: true },
+    { id: 'flights',       icon: '✈️',  label: 'Smart Flights',       onPress: stub('Smart Flights'),       hot: true },
+    { id: 'hotel',         icon: '🏨',  label: 'Find Hotel',          onPress: stub('Find Hotel') },
+    { id: 'matchprep',     icon: '🎾',  label: 'Match Prep AI',       onPress: stub('Match Prep AI'),       hot: true },
+    { id: 'practicecourt', icon: '🏟️', label: 'Book Practice Court', onPress: stub('Book Practice Court') },
+    { id: 'warmup',        icon: '⏱️',  label: 'Warm-up Timer',       onPress: stub('Warm-up Timer') },
+    { id: 'sponsor',       icon: '📱',  label: 'Sponsor Post',        onPress: stub('Sponsor Post') },
+    { id: 'press',         icon: '📣',  label: 'Press Statement',     onPress: stub('Press Statement') },
+    { id: 'ranking',       icon: '📊',  label: 'Ranking Simulator',   onPress: stub('Ranking Simulator') },
+    { id: 'wildcard',      icon: '🎯',  label: 'Wildcard Request',    onPress: stub('Wildcard Request') },
+    { id: 'agentbrief',    icon: '💼',  label: 'Agent Brief',         onPress: stub('Agent Brief'),         hot: true },
+    { id: 'entries',       icon: '🏆',  label: 'Entry Manager',       onPress: stub('Entry Manager') },
+    { id: 'injury',        icon: '💊',  label: 'Log Injury',          onPress: stub('Log Injury') },
+    { id: 'expense',       icon: '🧾',  label: 'Log Expense',         onPress: stub('Log Expense') },
+    { id: 'strings',       icon: '🎵',  label: 'String Order',        onPress: stub('String Order') },
+    { id: 'visa',          icon: '🌍',  label: 'Visa Check',          onPress: stub('Visa Check') },
+    { id: 'notes',         icon: '📝',  label: 'Match Notes',         onPress: stub('Match Notes') },
   ]
 
   const roundupChannels: MobileRoundupChannel[] = [
-    { id: 'agent',     label: 'Agent',              icon: '✉', count: 2, color: 'rgb(168, 85, 247)' },
-    { id: 'tournament', label: 'Tournament',        icon: '⚡', count: 3, color: 'rgb(245, 158, 11)', urgent: 1 },
-    { id: 'sponsor',   label: 'Media & Sponsor',    icon: '◉', count: 4, color: 'rgb(96, 165, 250)' },
-    { id: 'physio',    label: 'Physio & Medical',   icon: '✚', count: 1, color: 'rgb(239, 68, 68)', urgent: 1 },
-    { id: 'coach',     label: 'Coach',              icon: '◆', count: 2, color: 'rgb(16, 185, 129)' },
-    { id: 'prize',     label: 'Prize Money',        icon: '$', count: 1, color: 'rgb(34, 211, 238)' },
-    { id: 'travel',    label: 'Travel & Logistics', icon: '✈', count: 3, color: 'rgb(236, 72, 153)' },
-    { id: 'wildcard',  label: 'Wildcard',           icon: '★', count: 2, color: 'rgb(217, 70, 239)' },
+    {
+      id: 'agent', label: 'Agent', icon: '✉', count: 2, color: 'rgb(168, 85, 247)',
+      demoMessages: [
+        { sender: 'James Wright (Agent)', timestamp: '09:32 today', body: 'Meridian Watches renewal terms came back — 3-year deal at £120k/yr + bonuses. Need your call by Friday. TAG Heuer have surfaced a counter-offer; happy to brief you on both before you decide.' },
+        { sender: 'James Wright (Agent)', timestamp: 'Yesterday 18:14', body: 'Hamburg 500 wildcard offer is on the table — director needs an answer in 24 hours. Clashes with Eastbourne prep though, so let\'s talk before you commit.' },
+      ],
+    },
+    {
+      id: 'tournament', label: 'Tournament', icon: '⚡', count: 3, color: 'rgb(245, 158, 11)', urgent: 1,
+      demoMessages: [
+        { sender: 'ATP Tournament Desk', timestamp: '08:47 today', body: 'Court 4 time moved 30 minutes earlier — your QF is now 13:00 sharp. Confirm receipt so we can update broadcast schedules. Press call shifts to 11:30.' },
+        { sender: 'Roland-Garros Entry', timestamp: 'Yesterday 14:02', body: 'Direct entry confirmed for the main draw. Player accreditation pickup window is Sunday 28 May, 10:00–18:00. Bring photo ID and your ATP card.' },
+        { sender: 'Madrid Open Logistics', timestamp: '2 days ago', body: 'Practice court allocation for Madrid published. You\'re on Court 8, 11:00 daily. Hitting partner request received — we\'ll match before you arrive.' },
+      ],
+    },
+    {
+      id: 'sponsor', label: 'Media & Sponsor', icon: '◉', count: 4, color: 'rgb(96, 165, 250)',
+      demoMessages: [
+        { sender: 'Carlos (Apex Performance)', timestamp: '11:08 today', body: 'Need that match-day kit photo before 12:00 today — content goes live at 13:30 to coincide with your QF. Penalty clause if we miss the window.' },
+        { sender: 'Meridian Sport Press', timestamp: '07:44 today', body: 'Quick post-match interview request after today\'s match — 5 minutes max. Two questions on clay-court form, one on Roland-Garros prep. Approve?' },
+        { sender: 'Vanta Sports Comms', timestamp: 'Yesterday', body: 'Two Instagram posts outstanding from March. Captions drafted — just need your sign-off. Renewal review meeting moved to 12 May.' },
+        { sender: 'Tour Pulse Magazine', timestamp: '2 days ago', body: 'Cover story slot for July issue is yours if you want it. Deep-dive on the clay swing. Photoshoot Madrid week, copy approval rights included.' },
+      ],
+    },
+    {
+      id: 'physio', label: 'Physio & Medical', icon: '✚', count: 1, color: 'rgb(239, 68, 68)', urgent: 1,
+      demoMessages: [
+        { sender: 'Dr Lee (Physio)', timestamp: '10:21 today', body: 'Right shoulder shows minor inflammation flag on this morning\'s scan — nothing match-stopping but I want to see you at 12:30 before warm-up. Bring strapping.' },
+      ],
+    },
+    {
+      id: 'coach', label: 'Coach', icon: '◆', count: 2, color: 'rgb(16, 185, 129)',
+      demoMessages: [
+        { sender: 'Marco (Head Coach)', timestamp: '06:50 today', body: 'Vega\'s last 5 clay matches uploaded to the share. He\'s leaking second-serve returns to the deuce side — kick serve into the body should give you a free point pattern. Look at the 11-min mark.' },
+        { sender: 'Marco (Head Coach)', timestamp: 'Yesterday 19:30', body: 'Practice plan for Madrid attached — 60 min serve patterns, 45 min cross-court rallies, 30 min match scenarios. Stringer has tensions ready for clay.' },
+      ],
+    },
+    {
+      id: 'prize', label: 'Prize Money', icon: '$', count: 1, color: 'rgb(34, 211, 238)',
+      demoMessages: [
+        { sender: 'ATP Finance', timestamp: 'Yesterday', body: 'Brighton ATP 250 prize money cleared — €38,400 net of taxes wired to your London account. Statement attached. R3 bonus paid separately on 30-day schedule.' },
+      ],
+    },
+    {
+      id: 'travel', label: 'Travel & Logistics', icon: '✈', count: 3, color: 'rgb(236, 72, 153)',
+      demoMessages: [
+        { sender: 'Travel Desk', timestamp: '08:12 today', body: 'Roland-Garros apartment owner needs deposit by 1 May or releases the booking. €2,400. Need card details — usual card on file?' },
+        { sender: 'Travel Desk', timestamp: 'Yesterday', body: 'Madrid hotel confirmed — NH Eurobuilding, 26 Apr–4 May, 2 rooms (you + Carlos). Driver booked airport→hotel. Tournament shuttle daily from lobby.' },
+        { sender: 'Travel Desk', timestamp: '3 days ago', body: 'Visa for the US Open swing — paperwork submitted to embassy. Standard 4-week turnaround. Backup ESTA route is in place if anything slips.' },
+      ],
+    },
+    {
+      id: 'wildcard', label: 'Wildcard', icon: '★', count: 2, color: 'rgb(217, 70, 239)',
+      demoMessages: [
+        { sender: 'ATP Entry', timestamp: 'Yesterday', body: 'Hamburg 500 wildcard offer — tournament director needs your answer today. Direct entry rank improves your seeding by 4 spots. Replies via James (agent).' },
+        { sender: 'ATP Entry', timestamp: '3 days ago', body: 'Winston-Salem application submitted on your behalf. Decision letter expected by 15 August. Travel desk ringfenced flights pending confirmation.' },
+      ],
+    },
   ]
 
   const totalRoundup = roundupChannels.reduce((sum, c) => sum + c.count, 0)
   const derivedRoundupCount = roundupCount ?? totalRoundup
+
+  // ── Today's Schedule (mirrors desktop tennis Today tab) ──────────────────
+  const scheduleItems = [
+    { id: 's1', time: '07:30', label: 'AI Morning Briefing',       highlight: false },
+    { id: 's2', time: '08:30', label: 'Physio — right shoulder',   highlight: false },
+    { id: 's3', time: '10:00', label: 'Practice — serve patterns', highlight: false },
+    { id: 's4', time: '11:45', label: 'Stringing with Carlos',     highlight: false },
+    { id: 's5', time: '13:00', label: 'Match vs C. Vitelli',        highlight: true  },
+    { id: 's6', time: '15:30', label: 'Post-match physio',          highlight: false },
+    { id: 's7', time: '17:00', label: 'Coach debrief',              highlight: false },
+  ]
+
+  const aiSummaryItems = [
+    { icon: '🎾', text: 'Match today vs C. Vitelli — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
+    { icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
+    { icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
+    { icon: '🤝', text: 'Apex Performance post due today — Carlos needs kit photo before 12:00. Reply to agent about Meridian Watches renewal this week.' },
+    { icon: '✈️', text: 'Madrid hotel confirmed (NH Eurobuilding, 26 Apr). Roland-Garros apartment deposit due 1 May — travel desk waiting.' },
+  ]
+
+  // ── Audio briefing (shared hook — same TTS engine as desktop) ────────────
+  const [audioErrorMsg, setAudioErrorMsg] = useState<string | null>(null)
+  useEffect(() => {
+    if (!audioErrorMsg) return
+    const t = setTimeout(() => setAudioErrorMsg(null), 3000)
+    return () => clearTimeout(t)
+  }, [audioErrorMsg])
+  const { isSpeaking, toggle: toggleBriefing } = useAudioBriefing(
+    () => generateSmartBriefing({
+      now: new Date(),
+      playerName: session.userName || firstName,
+      schedule: buildScheduleItems(scheduleItems, new Set(), new Set()),
+      match: { opponent: 'C. Vitelli', time: '13:00', result: null },
+      roundupSummary: buildRoundupSummary(
+        roundupChannels.map(c => ({ label: c.label, count: c.count, urgent: (c.urgent ?? 0) > 0 })),
+      ),
+      sport: 'tennis',
+      timezone: getUserTimezone(),
+      extra: `You're ranked ${player.ranking ?? 67} on the ATP tour with ${(player.ranking_points ?? 1847).toLocaleString()} points.`,
+    }),
+    { onError: () => setAudioErrorMsg('Audio briefing unavailable') },
+  )
 
   return (
     <div className="w-full">
@@ -133,12 +252,14 @@ export function MobileTennisHome({
         stats={stats}
         weather={weather}
         clocks={clocks}
+        onSpeakerTap={toggleBriefing}
+        isSpeaking={isSpeaking}
       />
 
       <MobileQuickActions
-        total={18}
+        total={quickActions.length}
         actions={quickActions}
-        onAll={openMore}
+        onAll={stub(`All ${quickActions.length} actions`)}
       />
 
       <MobileMatchCard
@@ -146,8 +267,21 @@ export function MobileTennisHome({
         eventLabel="ATP Monte-Carlo"
         roundLabel="R16"
         metaLabel="Clay · H2H 3–1"
-        home={{ initials: avatarInitials, name: firstName, rank: `ATP #${player.ranking ?? 67}` }}
-        away={{ initials: 'CV', name: 'C. Vitelli', rank: 'ATP #41' }}
+        home={{
+          initials: avatarInitials,
+          name: firstName,
+          rank: `ATP #${player.ranking ?? 67}`,
+          // Demo player photo — falls back to initials for live founder accounts
+          // that have no avatar uploaded yet.
+          photoUrl: session.photoDataUrl ?? '/alex_rivera.jpg',
+        }}
+        away={{
+          initials: 'CV',
+          name: 'C. Vitelli',
+          rank: 'ATP #41',
+          // Demo opponent stand-in (see /public/opponents/c-vitelli.jpg).
+          photoUrl: '/opponents/c-vitelli.jpg',
+        }}
         onPrep={() => onNavigate('matchprep')}
         onTactics={() => onNavigate('scout')}
       />
@@ -157,7 +291,7 @@ export function MobileTennisHome({
         sinceLabel="06:00"
         channels={roundupChannels}
         onOpen={() => onNavigate('morning')}
-        onChannel={() => onNavigate('morning')}
+        onChannel={(channel) => setActiveChannel(channel)}
       />
 
       <MobileSponsorAlert
@@ -166,6 +300,186 @@ export function MobileTennisHome({
         onPress={() => onNavigate('sponsorship')}
       />
 
+      {/* ── Today's Schedule (ported from desktop Today tab) ────────────── */}
+      <div className="mx-4 mt-5">
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(168, 85, 247, 0.18)',
+          }}
+        >
+          <div
+            className="px-4 py-3 flex items-center justify-between"
+            style={{ borderBottom: '1px solid rgba(168, 85, 247, 0.12)' }}
+          >
+            <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              Today&apos;s Schedule
+            </span>
+            <span
+              className="uppercase"
+              style={{
+                fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+                fontSize: 9.5,
+                letterSpacing: '0.9px',
+                color: 'var(--text-meta)',
+              }}
+            >
+              7 items
+            </span>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'rgba(168, 85, 247, 0.08)' }}>
+            {scheduleItems.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center gap-3 px-4 py-2.5"
+                style={{ borderTop: '1px solid rgba(168, 85, 247, 0.08)' }}
+              >
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{
+                    background: s.highlight ? 'var(--violet)' : 'rgba(168, 85, 247, 0.25)',
+                    boxShadow: s.highlight ? '0 0 8px rgba(217, 70, 239, 0.55)' : undefined,
+                  }}
+                />
+                <span
+                  className="uppercase font-bold w-12 flex-shrink-0"
+                  style={{
+                    fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+                    fontSize: 10.5,
+                    letterSpacing: '0.7px',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {s.time}
+                </span>
+                <span
+                  className="text-[13px] flex-1 min-w-0 truncate"
+                  style={{
+                    color: s.highlight ? 'var(--text-primary)' : 'rgba(245, 243, 255, 0.78)',
+                    fontWeight: s.highlight ? 600 : 500,
+                  }}
+                >
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Today's Venue ───────────────────────────────────────────────── */}
+      <div className="mx-4 mt-4">
+        <div
+          className="rounded-2xl p-4"
+          style={{
+            background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-alt) 100%)',
+            border: '1px solid rgba(168, 85, 247, 0.18)',
+          }}
+        >
+          <div
+            className="uppercase font-bold mb-2"
+            style={{
+              fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+              fontSize: 10,
+              letterSpacing: '1.1px',
+              color: 'var(--text-meta)',
+            }}
+          >
+            Today&apos;s Venue
+          </div>
+          <div className="text-[14px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            Monte-Carlo Country Club
+          </div>
+          <div className="text-[11.5px] mb-3" style={{ color: 'rgba(196, 181, 253, 0.7)' }}>
+            18°C · Sunny · Court 4 open 10:00
+          </div>
+          <div
+            className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-3"
+            style={{ borderTop: '1px solid rgba(168, 85, 247, 0.12)' }}
+          >
+            {[
+              { label: 'Match',   value: '13:00' },
+              { label: 'Court',   value: 'Court 4 · Clay' },
+              { label: 'Prize W', value: '£342,000', tint: 'var(--green)' },
+              { label: 'Prize L', value: '£57,000' },
+              { label: 'TV',      value: 'Apex Tennis Network' },
+            ].map(row => (
+              <React.Fragment key={row.label}>
+                <span
+                  className="uppercase"
+                  style={{
+                    fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
+                    fontSize: 9.5,
+                    letterSpacing: '0.8px',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {row.label}
+                </span>
+                <span
+                  className="text-[11.5px] font-semibold text-right"
+                  style={{ color: row.tint ?? 'rgba(245, 243, 255, 0.92)' }}
+                >
+                  {row.value}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── AI Morning Summary ──────────────────────────────────────────── */}
+      <div className="mx-4 mt-4">
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(168, 85, 247, 0.18)',
+          }}
+        >
+          <div
+            className="px-4 py-3 flex items-center justify-between gap-2"
+            style={{ borderBottom: '1px solid rgba(168, 85, 247, 0.12)' }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles size={14} style={{ color: 'var(--violet)' }} />
+              <span className="text-[12.5px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                {aiSummaryLabel}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleBriefing}
+              aria-label={isSpeaking ? 'Stop reading' : 'Play summary'}
+              aria-pressed={isSpeaking}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-colors active:scale-[0.95]"
+              style={{
+                background: isSpeaking ? 'rgba(14, 165, 233, 0.22)' : 'rgba(168, 85, 247, 0.18)',
+                border: `1px solid ${isSpeaking ? 'rgba(14, 165, 233, 0.55)' : 'rgba(168, 85, 247, 0.4)'}`,
+                color: isSpeaking ? 'rgb(56, 189, 248)' : 'var(--text-accent)',
+              }}
+            >
+              <Volume2 size={12} strokeWidth={2} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider">
+                {isSpeaking ? 'Stop' : 'Listen'}
+              </span>
+            </button>
+          </div>
+          <div className="px-4 py-3 space-y-2.5">
+            {aiSummaryItems.map((item, i) => (
+              <div key={i} className="flex gap-2.5 text-[12.5px]">
+                <span className="text-base flex-shrink-0 leading-tight">{item.icon}</span>
+                <span style={{ color: 'rgba(245, 243, 255, 0.85)', lineHeight: 1.55 }}>
+                  {item.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Performance Intelligence (existing component, reused) ───────── */}
       <MobilePerformanceIntel
         timestampLabel="AI · 12:58"
         body={<>
@@ -174,6 +488,42 @@ export function MobileTennisHome({
         </>}
         onPress={() => onNavigate('performance')}
       />
+
+      {/* ── Modals + sheets (mounted at the end so they stack above content) ─ */}
+      {comingSoonLabel && (
+        <ComingSoonModal
+          label={comingSoonLabel}
+          onClose={() => setComingSoonLabel(null)}
+        />
+      )}
+
+      <MobileMessageSheet
+        open={activeChannel != null}
+        onClose={() => setActiveChannel(null)}
+        channelLabel={activeChannel?.label ?? ''}
+        channelIcon={activeChannel?.icon ?? '·'}
+        channelColor={activeChannel?.color ?? 'rgb(168, 85, 247)'}
+        messages={activeChannel?.demoMessages ?? []}
+        onReplyTap={stub(`Reply to ${activeChannel?.label ?? 'channel'}`)}
+      />
+
+      {/* Transient toast — audio-briefing failures (no SpeechSynthesis support,
+          offline, .speak() threw). 3-second auto-dismiss. */}
+      {audioErrorMsg && (
+        <div
+          className="fixed left-4 right-4 z-50 rounded-xl px-4 py-3 text-center text-[13px] font-semibold"
+          style={{
+            bottom: 'calc(64px + 22px + env(safe-area-inset-bottom) + 12px)',
+            background: 'rgba(22, 16, 43, 0.96)',
+            border: '1px solid rgba(239, 68, 68, 0.5)',
+            color: 'rgb(254, 202, 202)',
+            boxShadow: '0 12px 30px -6px rgba(0, 0, 0, 0.6)',
+            animation: 'mobileCardIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+          }}
+        >
+          {audioErrorMsg}
+        </div>
+      )}
     </div>
   )
 }

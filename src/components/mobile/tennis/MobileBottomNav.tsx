@@ -1,13 +1,12 @@
 'use client'
 import React from 'react'
-import { Home, CalendarDays, Inbox, Menu } from 'lucide-react'
+import { Home, Activity, Users, MoreHorizontal } from 'lucide-react'
 
-export type MobileNavKey = 'home' | 'today' | 'inbox' | 'match' | 'more'
+export type MobileNavKey = 'home' | 'match' | 'training' | 'team' | 'more'
 
 export type MobileBottomNavProps = {
   active: MobileNavKey
   onSelect: (key: MobileNavKey) => void
-  inboxBadge?: number
 }
 
 function TennisBallIcon({ size = 22, strokeWidth = 1.8 }: { size?: number; strokeWidth?: number }) {
@@ -27,14 +26,14 @@ type NavItem = {
 }
 
 const ITEMS: NavItem[] = [
-  { key: 'home',  label: 'Home',  Icon: Home },
-  { key: 'today', label: 'Today', Icon: CalendarDays },
-  { key: 'inbox', label: 'Inbox', Icon: Inbox },
-  { key: 'match', label: 'Match', Icon: TennisBallIcon },
-  { key: 'more',  label: 'More',  Icon: Menu },
+  { key: 'home',     label: 'Home',     Icon: Home },
+  { key: 'match',    label: 'Match',    Icon: TennisBallIcon },
+  { key: 'training', label: 'Training', Icon: Activity },
+  { key: 'team',     label: 'Team',     Icon: Users },
+  { key: 'more',     label: 'More',     Icon: MoreHorizontal },
 ]
 
-export function MobileBottomNav({ active, onSelect, inboxBadge }: MobileBottomNavProps) {
+export function MobileBottomNav({ active, onSelect }: MobileBottomNavProps) {
   return (
     <nav
       className="fixed left-0 right-0 bottom-0 z-40 mobile-bottom-nav"
@@ -63,24 +62,10 @@ export function MobileBottomNav({ active, onSelect, inboxBadge }: MobileBottomNa
                 className="relative flex items-center justify-center"
                 style={{
                   color: isActive ? 'var(--fuchsia)' : 'var(--text-muted)',
-                  // For the Home icon, the prototype shows a subtle fill glow.
                   filter: isActive && key === 'home' ? 'drop-shadow(0 0 6px rgba(217, 70, 239, 0.45))' : undefined,
                 }}
               >
                 <Icon size={22} strokeWidth={isActive ? 2.4 : 1.8} />
-                {key === 'inbox' && inboxBadge && inboxBadge > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-[3px] rounded-lg flex items-center justify-center text-white"
-                    style={{
-                      background: 'var(--red)',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {inboxBadge > 99 ? '99+' : inboxBadge}
-                  </span>
-                )}
               </div>
               <span
                 className="font-semibold"

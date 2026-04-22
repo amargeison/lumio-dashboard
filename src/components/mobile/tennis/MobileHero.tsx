@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { Volume2 } from 'lucide-react'
 
 export type MobileHeroStat = {
   label: string
@@ -33,6 +34,13 @@ export type MobileHeroProps = {
   stats: MobileHeroStat[]
   weather?: MobileHeroWeather
   clocks?: MobileHeroClock[]
+  /**
+   * Tap handler for the audio briefing icon next to the greeting. Wired to
+   * `useAudioBriefing().toggle` — identical TTS engine as the desktop portal.
+   */
+  onSpeakerTap?: () => void
+  /** When true, the speaker button shows the "playing" visual state. */
+  isSpeaking?: boolean
 }
 
 const TINT_MAP: Record<NonNullable<MobileHeroStat['tint']>, string> = {
@@ -50,6 +58,8 @@ export function MobileHero({
   stats,
   weather,
   clocks,
+  onSpeakerTap,
+  isSpeaking = false,
 }: MobileHeroProps) {
   return (
     <div className="px-4 mt-2">
@@ -100,13 +110,32 @@ export function MobileHero({
             {dateLabel}
           </div>
 
-          {/* Greeting */}
-          <h1
-            className="mt-3 text-[26px] leading-[1.15] font-bold"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {greeting}, {firstName} <span className="inline-block" style={{ animation: 'mobileWave 1.2s ease-in-out 1' }}>👋</span>
-          </h1>
+          {/* Greeting + audio briefing button (mirrors desktop portal's Volume2) */}
+          <div className="mt-3 flex items-center gap-2.5">
+            <h1
+              className="text-[26px] leading-[1.15] font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {greeting}, {firstName}
+            </h1>
+            <button
+              type="button"
+              onClick={onSpeakerTap}
+              aria-label={isSpeaking ? 'Stop reading' : 'Audio briefing'}
+              aria-pressed={isSpeaking}
+              className="flex items-center justify-center rounded-lg transition-colors active:scale-[0.92]"
+              style={{
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                background: isSpeaking ? 'rgba(14, 165, 233, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                border: `1px solid ${isSpeaking ? 'rgba(14, 165, 233, 0.55)' : 'rgba(255, 255, 255, 0.12)'}`,
+                color: isSpeaking ? 'rgb(56, 189, 248)' : 'rgba(245, 243, 255, 0.85)',
+              }}
+            >
+              <Volume2 size={15} strokeWidth={1.75} />
+            </button>
+          </div>
 
           {/* Quote card */}
           <div

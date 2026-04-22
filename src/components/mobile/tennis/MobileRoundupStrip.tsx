@@ -2,6 +2,12 @@
 import React from 'react'
 import { ChevronRight } from 'lucide-react'
 
+export type MobileRoundupMessage = {
+  sender: string
+  timestamp: string
+  body: string
+}
+
 export type MobileRoundupChannel = {
   id: string
   label: string
@@ -9,6 +15,12 @@ export type MobileRoundupChannel = {
   count: number
   color: string
   urgent?: number
+  /**
+   * Demo messages surfaced when the row is tapped. Most-recent first; one
+   * entry per `count` is the convention but not enforced — render whatever
+   * is supplied.
+   */
+  demoMessages?: MobileRoundupMessage[]
 }
 
 export type MobileRoundupStripProps = {
@@ -16,7 +28,8 @@ export type MobileRoundupStripProps = {
   sinceLabel: string
   channels: MobileRoundupChannel[]
   onOpen?: () => void
-  onChannel?: (id: string) => void
+  /** Receives the full channel object so the consumer can open a message sheet. */
+  onChannel?: (channel: MobileRoundupChannel) => void
 }
 
 export function MobileRoundupStrip({
@@ -67,7 +80,7 @@ export function MobileRoundupStrip({
         {channels.map((ch, i) => (
           <button
             key={ch.id}
-            onClick={() => onChannel?.(ch.id)}
+            onClick={() => onChannel?.(ch)}
             className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors active:bg-[rgba(168,85,247,0.08)]"
             style={{
               borderLeft: `3px solid ${ch.color}`,
