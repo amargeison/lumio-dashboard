@@ -41,7 +41,10 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
         </button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+      {/* pt-2 reserves vertical room for the negative-offset "AI" badge.
+          Without it, overflow-x: auto forces overflow-y: auto (CSS spec) and
+          the badge gets clipped at the top of the scroll strip. */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pt-2 pb-1">
         {actions.map(a => {
           const active = !!a.active
           return (

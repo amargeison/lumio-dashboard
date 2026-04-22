@@ -13,6 +13,7 @@ import { MobileRoundupStrip, type MobileRoundupChannel } from './tennis/MobileRo
 import { MobileSponsorAlert } from './tennis/MobileSponsorAlert'
 import { MobilePerformanceIntel } from './tennis/MobilePerformanceIntel'
 import { MobileMessageSheet } from './tennis/MobileMessageSheet'
+import { MobileNotificationsSheet } from './tennis/MobileNotificationsSheet'
 import { ComingSoonModal } from './ComingSoonModal'
 import { useMobileLayout } from './MobileLayoutContext'
 
@@ -88,6 +89,8 @@ export function MobileTennisHome({
 
   // Morning Roundup row tap → message sheet.
   const [activeChannel, setActiveChannel] = useState<MobileRoundupChannel | null>(null)
+  // Top-bar bell → notifications sheet (flat list across all channels).
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const stats: MobileHeroStat[] = [
     { label: 'ATP',    value: `#${player.ranking ?? 67}`,                         tint: 'violet' },
@@ -127,6 +130,37 @@ export function MobileTennisHome({
   ]
 
   const roundupChannels: MobileRoundupChannel[] = [
+    {
+      id: 'sms', label: 'SMS', icon: '📲', count: 3, color: 'rgb(14, 165, 233)',
+      demoMessages: [
+        { sender: 'Carlos',       timestamp: '8:55 today', body: 'Courts 3 + 4 open from 11:00 if you want to warm up away from the show courts. Bring the new frames — I want to feel the 23.5kg tension off the ground before we talk match plan.' },
+        { sender: 'Travel desk',  timestamp: '8:31 today', body: 'Driver confirmed at hotel 10:45. Plate MC-7142. Back exit to avoid press. Traffic clear on Boulevard Princesse Charlotte — 9 minutes to the club.' },
+        { sender: 'Dr Sarah Lee', timestamp: '8:06 today', body: "Don't forget ice 12:45 before strapping. Your window is tight — I want 20 minutes on the shoulder, not 10. Come straight to treatment room B after warm-up." },
+      ],
+    },
+    {
+      id: 'whatsapp', label: 'WhatsApp', icon: '💬', count: 5, color: 'rgb(37, 211, 102)',
+      demoMessages: [
+        { sender: 'Team chat',    timestamp: '9:03 today', body: 'Carlos: gameplan doc updated on the shared drive — read before warm-up please. Serve patterns on page 3, return formations on page 5, pressure triggers on page 6.' },
+        { sender: 'James Wright', timestamp: '8:40 today', body: "Hamburg agent called back. He'll take the wildcard fee offer. Confirm before 5pm — I need to sign off the commercial terms today or they move to the next player on the list." },
+        { sender: 'Family 💛',    timestamp: '7:58 today', body: 'Mum: landing Nice 14:10 Sunday. Proud of you. Good luck today xxx — whatever happens on court, we love you and we\'re on our way.' },
+        { sender: 'Tom Ellis',    timestamp: '7:41 today', body: "Two frames strung at 23.5kg, one at 24. Bag at the locker by 11:30. Vanta Sports Luxe Pro throughout — same cross on all three so there's zero feel difference swapping mid-match." },
+        { sender: 'Ben Parker',   timestamp: '7:20 today', body: "Good luck vs Vega — he's been shanking the BH DTL all clay. Keep the ball deep in the ad court and you'll force the short ball every time. Catch up in Halle?" },
+      ],
+    },
+    {
+      id: 'email', label: 'Email', icon: '✉️', count: 8, color: 'rgb(99, 102, 241)',
+      demoMessages: [
+        { sender: 'Monte-Carlo Press Office', timestamp: '8:50 today',    body: 'Post-match press schedule attached. Slot 3 if you win, slot 1 if you lose. 15 min cap. English + French press in the room; FFT have provided the interpreter.' },
+        { sender: 'ATP Player Services',      timestamp: '8:25 today',    body: 'April ranking bulletin — your projected points with/without QF result enclosed. Reminder: 312 points drop off after Monte-Carlo. Madrid entry deadline is also flagged in the PDF.' },
+        { sender: 'Meridian Watches',         timestamp: '8:04 today',    body: 'Renewal term sheet + comparator decks attached. James has a copy. Aiming for a yes by EOW — TAG Heuer\'s counter-offer lands tomorrow and we\'d rather finalise before that noise hits.' },
+        { sender: 'Paul Reid (accountant)',   timestamp: '7:48 today',    body: 'Q1 VAT return filed. Monaco prize allocation note attached — review when you can. One flag: double-taxation relief on the Brighton prize may need a sign-off before 30 April.' },
+        { sender: 'Fairmont Monte Carlo',     timestamp: '7:30 today',    body: 'Checkout extended to Sunday 13:00 at no charge. Late-stay vouchers enclosed. Car transfer to Nice airport pre-booked; driver will be waiting at the front door from 10:30.' },
+        { sender: 'Nutrition team',           timestamp: 'Yesterday',     body: "Pre-match meal plan v3 — 3 hours before first serve. Carlos CC'd. Slight tweak to the carb load vs Brighton; more complex carbs, less simple sugar, same timing." },
+        { sender: 'Roland-Garros Entry',      timestamp: 'Yesterday',     body: 'Main draw entry confirmed. Direct acceptance, seed band 33–48. Player accreditation collection window: Sunday 28 May, 10:00–18:00. Bring photo ID and your ATP card.' },
+        { sender: 'Fan-club newsletter',      timestamp: '2 days ago',    body: 'May mailout: 2 signed posters promised. Send a high-res match photo for the cover by Friday. Ideally something from the Brighton run — that serve moment in the Brennan match was a great capture.' },
+      ],
+    },
     {
       id: 'agent', label: 'Agent', icon: '✉', count: 2, color: 'rgb(168, 85, 247)',
       demoMessages: [
@@ -196,13 +230,13 @@ export function MobileTennisHome({
     { id: 's2', time: '08:30', label: 'Physio — right shoulder',   highlight: false },
     { id: 's3', time: '10:00', label: 'Practice — serve patterns', highlight: false },
     { id: 's4', time: '11:45', label: 'Stringing with Carlos',     highlight: false },
-    { id: 's5', time: '13:00', label: 'Match vs C. Vitelli',        highlight: true  },
+    { id: 's5', time: '13:00', label: 'Match vs C. Vega',        highlight: true  },
     { id: 's6', time: '15:30', label: 'Post-match physio',          highlight: false },
     { id: 's7', time: '17:00', label: 'Coach debrief',              highlight: false },
   ]
 
   const aiSummaryItems = [
-    { icon: '🎾', text: 'Match today vs C. Vitelli — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
+    { icon: '🎾', text: 'Match today vs C. Vega — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
     { icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
     { icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
     { icon: '🤝', text: 'Apex Performance post due today — Carlos needs kit photo before 12:00. Reply to agent about Meridian Watches renewal this week.' },
@@ -221,7 +255,7 @@ export function MobileTennisHome({
       now: new Date(),
       playerName: session.userName || firstName,
       schedule: buildScheduleItems(scheduleItems, new Set(), new Set()),
-      match: { opponent: 'C. Vitelli', time: '13:00', result: null },
+      match: { opponent: 'C. Vega', time: '13:00', result: null },
       roundupSummary: buildRoundupSummary(
         roundupChannels.map(c => ({ label: c.label, count: c.count, urgent: (c.urgent ?? 0) > 0 })),
       ),
@@ -236,10 +270,15 @@ export function MobileTennisHome({
     <div className="w-full">
       <MobileTopBar
         subtitle="TENNIS · MONTE-CARLO"
-        photoUrl={session.photoDataUrl ?? null}
+        // Demo URLs show Alex Rivera's photo; founders fall back to initials
+        // (their own avatar if they've uploaded one).
+        photoUrl={session.photoDataUrl ?? (session.isDemoShell !== false ? '/alex_rivera.jpg' : null)}
         initials={avatarInitials}
+        // Club crest renders for demo; founders get the generic Lumio "L" badge.
+        logoUrl={session.isDemoShell !== false ? '/lumio_tennis_club_crest.svg' : null}
+        unreadCount={derivedRoundupCount}
         onSearch={openMore}
-        onBell={() => onNavigate('morning')}
+        onBell={() => setNotificationsOpen(true)}
         onAvatar={() => onNavigate('settings')}
       />
 
@@ -277,10 +316,10 @@ export function MobileTennisHome({
         }}
         away={{
           initials: 'CV',
-          name: 'C. Vitelli',
+          name: 'C. Vega',
           rank: 'ATP #41',
-          // Demo opponent stand-in (see /public/opponents/c-vitelli.jpg).
-          photoUrl: '/opponents/c-vitelli.jpg',
+          // Demo opponent stand-in (see /public/opponents/c-vega.jpg).
+          photoUrl: '/opponents/c-vega.jpg',
         }}
         onPrep={() => onNavigate('matchprep')}
         onTactics={() => onNavigate('scout')}
@@ -505,6 +544,16 @@ export function MobileTennisHome({
         channelColor={activeChannel?.color ?? 'rgb(168, 85, 247)'}
         messages={activeChannel?.demoMessages ?? []}
         onReplyTap={stub(`Reply to ${activeChannel?.label ?? 'channel'}`)}
+      />
+
+      <MobileNotificationsSheet
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        channels={roundupChannels}
+        onSelectChannel={(channel) => {
+          setNotificationsOpen(false)
+          setActiveChannel(channel)
+        }}
       />
 
       {/* Transient toast — audio-briefing failures (no SpeechSynthesis support,

@@ -1651,7 +1651,12 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                       <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Clay · H2H: 3–1</div>
                     </div>
                     <div className="text-center">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-1" style={{ background: '#1F2937', color: '#9CA3AF' }}>CM</div>
+                      <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 flex items-center justify-center text-sm font-bold" style={{ background: '#1F2937', color: '#9CA3AF' }}>
+                        {isDemoShellDash ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src="/opponents/c-vega.jpg" alt="C. Vega" className="w-full h-full object-cover" />
+                        ) : 'CV'}
+                      </div>
                       <div className="text-xs font-bold text-white">C. Vega</div>
                       <div className="text-[10px]" style={{ color: '#6B7280' }}>#34 ATP</div>
                     </div>
