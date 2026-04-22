@@ -1067,6 +1067,27 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       { id:'f1', from:'@BoxingFan92', text:'Marcus you\'re going to destroy Stoyan! The Machine! 🥊', time:'Today' },
       { id:'f2', from:'@HeavyweightWatch', text:'Can you sign a glove for my son? He\'s your biggest fan.', time:'Yesterday' },
     ]},
+    { id:'sms', label:'SMS', icon:'📲', count:4, urgent:false, color:'#0EA5E9', messages:[
+      { id:'sms1', from:'Jim', text:'Pads 10:30 sharp. Bring the heavy gloves — we\'re going long today.', time:'7:25am' },
+      { id:'sms2', from:'Danny Walsh', text:'Titan on a call at 16:00. Keep the line clear. This is the purse call.', time:'8:18am' },
+      { id:'sms3', from:'Tony', text:'Wraps ready in the gym. Ricky will be there from 10:15.', time:'8:02am' },
+      { id:'sms4', from:'Travel desk', text:'Corner team flights confirmed Mon 9. Itinerary in your email.', time:'9:10am' },
+    ]},
+    { id:'whatsapp', label:'WhatsApp', icon:'💬', count:5, urgent:false, color:'#25D366', messages:[
+      { id:'wa1', from:'Corner chat', text:'Jim: open-workout order of play — shadow 5, bag 3, pads 6. Media in at round 4.', time:'9:20am' },
+      { id:'wa2', from:'Dr Sarah Mitchell', text:'Hand X-ray booked 14:30 Harley. I\'ll bring Jim\'s flagged notes.', time:'9:00am' },
+      { id:'wa3', from:'Danny Walsh', text:'Print-ready tale of the tape attached — Titan needs a yes by lunch.', time:'8:40am' },
+      { id:'wa4', from:'Family ❤️', text:'Mum: we\'re all coming down for fight week. Dad\'s got the flag ready 🥊', time:'7:15am' },
+      { id:'wa5', from:'Sparring chat', text:'Ricky: new southpaw in tomorrow — taller than Stoyan, good feet. Good look for you.', time:'6:50am' },
+    ]},
+    { id:'email', label:'Email', icon:'✉️', count:6, urgent:false, color:'#6366F1', messages:[
+      { id:'em1', from:'Titan Promotions', text:'Purse split revision + undercard confirmation attached. Signed copy due Friday.', time:'8:55am' },
+      { id:'em2', from:'BBBofC', text:'Medical pack reminder — annual MRI and pre-fight bloods expire 1 May.', time:'8:20am' },
+      { id:'em3', from:'Meridian Sports', text:'Documentary crew schedule attached. Day 1 access begins Monday 06:00.', time:'8:00am' },
+      { id:'em4', from:'Accountant', text:'Purse tax allocation memo + agent fees schedule. Need your sign-off before wire.', time:'7:40am' },
+      { id:'em5', from:'Canary Wharf Marriott', text:'Fight-week hotel reservation confirmed — 4 nights, corner-team suites.', time:'Yesterday' },
+      { id:'em6', from:'Nutritionist', text:'Weight-cut plan for week 3 attached. Target: -0.12kg/day from Monday.', time:'Yesterday' },
+    ]},
   ]
 
   return (

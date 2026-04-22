@@ -771,6 +771,28 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
       { from: 'Darts Forum', text: 'Thread: Jake Morrison form analysis — 47 replies', time: '09:15' },
       { from: 'Fan - Mike R.', text: 'Good luck tonight against Merrick!', time: '08:45' },
     ]},
+    { label: 'SMS',                icon: '📲', count: 3, color: '#0EA5E9', urgent: false, messages: [
+      { from: 'Steve Morris',    text: 'Practice board free 14:00–15:30. Bring the new flights — I want to see the grouping.', time: '09:12' },
+      { from: 'James Wright',    text: 'Crown Wagers back to us. Call me — 5 min, before you leave for Dortmund.', time: '08:30' },
+      { from: 'Travel Desk',     text: 'Car confirmed 17:00 from the hotel. Driver will text when 10 min away.', time: '07:45' },
+    ]},
+    { label: 'WhatsApp',           icon: '💬', count: 6, color: '#25D366', urgent: false, messages: [
+      { from: 'Team chat',       text: 'Steve: 501 checkout drills tomorrow AM, 90 min. Bring spare barrels.', time: '09:20' },
+      { from: 'Vanta Sports',    text: 'Content shoot call sheet for the 12:00 slot — attached. Wear the navy kit.', time: '08:55' },
+      { from: 'Dave Askew',      text: 'On the road by 16:00. I\'ll bring the backup set — yours are worn.', time: '08:02' },
+      { from: 'Partner 💚',      text: 'Good luck tonight. I\'ll be watching from Nan\'s. Text me after.', time: '07:30' },
+      { from: 'PDC group',       text: 'Aspinall: anyone got a spare room in Prague next week? Hotel fell through.', time: '06:55' },
+      { from: 'Jake\'s family',  text: 'Dad: all the lads at the club are glued to Sky tonight. Go get him son x', time: '06:20' },
+    ]},
+    { label: 'Email',              icon: '✉️', count: 7, color: '#6366F1', urgent: false, messages: [
+      { from: 'PDC Admin',        text: 'Europe Tour Order of Merit snapshot attached — you\'ve moved to #18 this week.', time: '09:30' },
+      { from: 'Crown Wagers',     text: 'Ambassador renewal — draft MoU + social obligations attached. James has a copy.', time: '08:40' },
+      { from: 'Accountant',       text: 'Players Championship prize allocation memo attached. VAT paperwork needs signing EOW.', time: '08:10' },
+      { from: 'Premier League Darts', text: 'Night 12 schedule + player obligations doc attached. Walk-on music check due Friday.', time: '07:50' },
+      { from: 'Entry Desk',       text: 'German Darts Championship pre-qualifier entry opens May 1. Confirmation of intent required.', time: 'Yesterday' },
+      { from: 'Hotel Dortmund',   text: 'Booking confirmed for tonight. Late checkout approved — 13:00 Wednesday.', time: 'Yesterday' },
+      { from: 'Tour Weekly',      text: 'Feature request: 10-min sit-down interview at Prague. Reply yes/no by Friday.', time: '2 days ago' },
+    ]},
   ]
 
   return (
