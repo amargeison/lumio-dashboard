@@ -47,6 +47,10 @@ next-env.d.ts
 *.png
 *.webp
 *.gif
+
+# saved-page archives — never ship these (large binaries,
+# browser-generated, typically dropped into /public by accident)
+*.mhtml
 !public/lumio*
 !public/dfe*
 !public/NELI*
