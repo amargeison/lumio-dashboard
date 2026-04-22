@@ -46,6 +46,11 @@ import { CADDIES_ROSTER, COURSES_ROSTER, DRIVING_RANGES_ROSTER } from '@/lib/dem
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { GOLF_INTEGRATIONS } from '@/lib/sports-integrations/golf-integrations'
 import { PwaInstaller } from '@/components/PwaInstaller'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
+import { MobileSportHome } from '@/components/mobile/MobileSportHome'
+import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
+import { golfMobileConfig } from '@/lib/mobile/configs/golf'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useGolfProfileName(): string | null {
@@ -7179,6 +7184,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   const showDemoData = isDemoSlug(slug, 'golf')
   session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('dashboard');
+  const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [roleOverride, setRoleOverride] = useState(session.role || 'player');
   const activeRole = roleOverride;
@@ -7442,6 +7448,28 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   // back to player. Sponsor view is now rendered inline in the main content
   // area below (matches the boxing/darts pattern), so the sidebar +
   // RoleSwitcher remain accessible.
+
+  // Mobile shell — short-circuit the desktop chrome so the mobile home
+  // renders edge-to-edge with the bottom nav. Mirrors tennis/[slug]/page.tsx.
+  if (isMobile) {
+    return (
+      <MobileSportLayout
+        sport="golf"
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        sidebarItems={SIDEBAR_ITEMS}
+        groupOrder={['OVERVIEW', 'PERFORMANCE', 'TEAM', 'COMMERCIAL', 'OPERATIONS', 'SETTINGS']}
+      >
+        <PwaInstaller sport="golf" />
+        {activeSection === 'dashboard'
+          ? <MobileSportHome session={session} config={golfMobileConfig} onNavigate={setActiveSection} />
+          : activeSection === 'training'
+            ? <MobileSportTraining session={session} config={golfMobileConfig} onNavigate={setActiveSection} />
+            : <div className="px-4 py-4">{renderView()}</div>
+        }
+      </MobileSportLayout>
+    )
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>

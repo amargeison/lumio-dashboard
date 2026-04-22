@@ -80,6 +80,11 @@ import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { DARTS_INTEGRATIONS } from '@/lib/sports-integrations/darts-integrations'
 import { PwaInstaller } from '@/components/PwaInstaller'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
+import { MobileSportHome } from '@/components/mobile/MobileSportHome'
+import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
+import { dartsMobileConfig } from '@/lib/mobile/configs/darts'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useDartsProfileName(): string | null {
@@ -9833,6 +9838,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
   const showDemoData = isDemoSlug(slug, 'darts')
   session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('dashboard');
+  const isMobile = useIsMobile();
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -10169,6 +10175,34 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       default:              return <DashboardView player={player} session={session} onOpenModal={setActiveModal} />;
     }
   };
+
+  // Mobile shell — short-circuit the desktop chrome (sidebar, top banner,
+  // etc.) so the mobile home renders edge-to-edge with the bottom nav on
+  // every section. Mirrors tennis/[slug]/page.tsx.
+  if (isMobile) {
+    return (
+      <MobileSportLayout
+        sport="darts"
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        sidebarItems={SIDEBAR_ITEMS}
+        groupOrder={['OVERVIEW', 'PERFORMANCE', 'MATCH', 'TEAM', 'COMMERCIAL', 'TOOLS', 'SETTINGS']}
+        // Darts uses 'match-prep' (with hyphen) and 'teamhub' — without this
+        // override, bottom-nav Match/Team would route to non-existent IDs and
+        // fall through to the desktop Getting Started tour.
+        navMap={{ home: 'dashboard', match: 'match-prep', team: 'teamhub' }}
+        hiddenNavIds={new Set(['dashboard', 'match-prep', 'training', 'teamhub'])}
+      >
+        <PwaInstaller sport="darts" />
+        {activeSection === 'dashboard'
+          ? <MobileSportHome session={session} config={dartsMobileConfig} onNavigate={setActiveSection} />
+          : activeSection === 'training'
+            ? <MobileSportTraining session={session} config={dartsMobileConfig} onNavigate={setActiveSection} />
+            : <div className="px-4 py-4">{renderView()}</div>
+        }
+      </MobileSportLayout>
+    )
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>

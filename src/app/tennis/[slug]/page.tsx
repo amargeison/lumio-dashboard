@@ -82,9 +82,10 @@ import { PwaInstaller } from '@/components/PwaInstaller'
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { TENNIS_INTEGRATIONS } from '@/lib/sports-integrations/tennis-integrations'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { MobileTennisHome } from '@/components/mobile/MobileTennisHome'
-import { MobileTrainingHome } from '@/components/mobile/MobileTrainingHome'
+import { MobileSportHome } from '@/components/mobile/MobileSportHome'
+import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
 import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
+import { tennisMobileConfig } from '@/lib/mobile/configs/tennis'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -11321,9 +11322,9 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
       >
         <PwaInstaller sport="tennis" />
         {activeSection === 'dashboard'
-          ? <MobileTennisHome session={session} player={player} onNavigate={setActiveSection} />
+          ? <MobileSportHome session={session} config={tennisMobileConfig} onNavigate={setActiveSection} />
           : activeSection === 'training'
-            ? <MobileTrainingHome session={session} player={player} onNavigate={setActiveSection} />
+            ? <MobileSportTraining session={session} config={tennisMobileConfig} onNavigate={setActiveSection} />
             : <div className="px-4 py-4">{renderView()}</div>
         }
       </MobileSportLayout>

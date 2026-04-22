@@ -48,6 +48,11 @@ import { TRAINERS_ROSTER, GYMS_ROSTER, SPARRING_ROSTER } from '@/lib/demo-conten
 import { IntegrationsHub, type HubEntry } from '@/lib/sports-integrations/integrations-hub'
 import { BOXING_INTEGRATIONS } from '@/lib/sports-integrations/boxing-integrations'
 import { PwaInstaller } from '@/components/PwaInstaller'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
+import { MobileSportHome } from '@/components/mobile/MobileSportHome'
+import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
+import { boxingMobileConfig } from '@/lib/mobile/configs/boxing'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -8407,6 +8412,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   const showDemoData = isDemoSlug(slug, 'boxing')
   session = { ...session, isDemoShell: showDemoData }
   const [activeSection, setActiveSection] = useState('camp');
+  const isMobile = useIsMobile();
   const [toast, setToast] = useState<{message: string; sponsor: string} | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   const isFoundingMember = session.isDemoShell === false
@@ -8691,6 +8697,37 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       default:                return <CampDashboardView fighter={fighter} session={session} onOpenModal={setActiveModal} />;
     }
   };
+
+  // Mobile shell — short-circuit the desktop chrome so the mobile home
+  // renders edge-to-edge with the bottom nav. Mirrors tennis/[slug]/page.tsx.
+  // Boxing's "dashboard" lives at activeSection === 'camp'; navMap maps
+  // bottom-nav home → camp so the highlight tracks correctly.
+  if (isMobile) {
+    return (
+      <MobileSportLayout
+        sport="boxing"
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        sidebarItems={SIDEBAR_ITEMS}
+        groupOrder={['OVERVIEW', 'FIGHT CAMP', 'WEIGHT & HEALTH', 'RANKINGS', 'FINANCIALS', 'COMMERCIAL', 'TOOLS', 'SETTINGS']}
+        // Boxing's dashboard slug is 'camp'. Match nav routes to Fight Night
+        // Ops; Team nav routes to Team Overview. Without these overrides,
+        // tapping Match or Team fell through to the desktop Getting Started
+        // tour because the default 'matchprep' / 'team' IDs don't exist in
+        // the boxing renderView switch.
+        navMap={{ home: 'camp', match: 'fight-night', team: 'teamoverview' }}
+        hiddenNavIds={new Set(['camp', 'fight-night', 'training', 'teamoverview'])}
+      >
+        <PwaInstaller sport="boxing" />
+        {activeSection === 'camp'
+          ? <MobileSportHome session={session} config={boxingMobileConfig} onNavigate={setActiveSection} />
+          : activeSection === 'training'
+            ? <MobileSportTraining session={session} config={boxingMobileConfig} onNavigate={setActiveSection} />
+            : <div className="px-4 py-4">{renderView()}</div>
+        }
+      </MobileSportLayout>
+    )
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>

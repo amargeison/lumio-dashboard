@@ -9,9 +9,16 @@ export type MobileMatchCardPlayer = {
   photoUrl?: string | null
 }
 
+export type MobileMatchCardTimeTint = 'green' | 'amber' | 'red'
+
 export type MobileMatchCardProps = {
   /** e.g. "Today 13:00" */
   whenLabel: string
+  /**
+   * Time-pill colour. Green = today/live, amber = future (e.g. fight camp
+   * counting down), red = urgent / past-due.
+   */
+  whenTint?: MobileMatchCardTimeTint
   /** e.g. "ATP MONTE-CARLO" */
   eventLabel: string
   /** e.g. "R16" */
@@ -20,20 +27,52 @@ export type MobileMatchCardProps = {
   metaLabel: string
   home: MobileMatchCardPlayer
   away: MobileMatchCardPlayer
+  /** Primary button label — defaults to "Match Prep AI". */
+  primaryLabel?: string
+  /** Secondary button label — defaults to "Tactics". */
+  secondaryLabel?: string
   onPrep?: () => void
   onTactics?: () => void
 }
 
+const TINT_TOKENS: Record<MobileMatchCardTimeTint, { bg: string; border: string; dot: string; text: string; pulse: string }> = {
+  green: {
+    bg:     'rgba(16, 185, 129, 0.18)',
+    border: 'rgba(16, 185, 129, 0.4)',
+    dot:    'var(--green)',
+    text:   'var(--green)',
+    pulse:  'mobileGreenPulse',
+  },
+  amber: {
+    bg:     'rgba(245, 158, 11, 0.18)',
+    border: 'rgba(245, 158, 11, 0.4)',
+    dot:    'var(--amber)',
+    text:   'var(--amber)',
+    pulse:  'mobileGreenPulse',
+  },
+  red: {
+    bg:     'rgba(239, 68, 68, 0.18)',
+    border: 'rgba(239, 68, 68, 0.4)',
+    dot:    'var(--red)',
+    text:   'var(--red)',
+    pulse:  'mobileRedPulse',
+  },
+}
+
 export function MobileMatchCard({
   whenLabel,
+  whenTint = 'green',
   eventLabel,
   roundLabel,
   metaLabel,
   home,
   away,
+  primaryLabel = 'Match Prep AI',
+  secondaryLabel = 'Tactics',
   onPrep,
   onTactics,
 }: MobileMatchCardProps) {
+  const tint = TINT_TOKENS[whenTint]
   return (
     <div
       className="mx-4 mt-4 rounded-2xl overflow-hidden relative"
@@ -48,15 +87,15 @@ export function MobileMatchCard({
         <div
           className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
           style={{
-            background: 'rgba(16, 185, 129, 0.18)',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
+            background: tint.bg,
+            border: `1px solid ${tint.border}`,
           }}
         >
           <span
             className="w-[5px] h-[5px] rounded-full"
             style={{
-              background: 'var(--green)',
-              animation: 'mobileGreenPulse 1.5s ease-in-out infinite',
+              background: tint.dot,
+              animation: `${tint.pulse} 1.5s ease-in-out infinite`,
             }}
           />
           <span
@@ -65,7 +104,7 @@ export function MobileMatchCard({
               fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
               fontSize: 9.5,
               letterSpacing: '1.1px',
-              color: 'var(--green)',
+              color: tint.text,
             }}
           >
             {whenLabel}
@@ -128,7 +167,7 @@ export function MobileMatchCard({
             animation: 'mobileMatchGlow 2s ease-in-out infinite',
           }}
         >
-          Match Prep AI
+          {primaryLabel}
         </button>
         <button
           onClick={onTactics}
@@ -139,7 +178,7 @@ export function MobileMatchCard({
             color: 'var(--text-accent)',
           }}
         >
-          Tactics
+          {secondaryLabel}
         </button>
       </div>
     </div>
