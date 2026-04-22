@@ -1360,7 +1360,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       </div>
 
       {/* ── TAB BAR ── */}
-      <div className="border-b overflow-x-auto scrollbar-none" style={{ backgroundColor: '#0D0E14', borderColor: '#1F2937' }}>
+      <div className="mt-4 border-b border-gray-800 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-0 min-w-max px-2">
           {/* Getting Started tab with badge */}
           <button onClick={() => setDashTab('gettingstarted')}
@@ -1519,38 +1519,40 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* ── TODAY TAB ── */}
       {dashTab === 'today' && (
         <div className="pt-4 space-y-6">
-          {/* Quick Actions — football pro bar style */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-3 mb-3" style={{ backgroundColor: '#0D0E14' }}>
-            <span className="text-xs font-semibold shrink-0 mr-1 w-full mb-1" style={{ color: '#4B5563' }}>Quick actions</span>
-            {[
-              { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
-              { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
-              { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
-              { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
-              { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
-              { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
-              { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
-              { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
-              { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
-              { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
-              { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
-              { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
-              { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
-              { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
-              { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
-              { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
-              { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
-              { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
-            ].map((a) => (
-              <button key={a.id}
-                onClick={() => onOpenModal(a.id)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-                style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
-                <span>{a.icon}</span>
-                {a.label}
-                {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'var(--brand-secondary)' }}>AI</span>}
-              </button>
-            ))}
+          {/* Quick Actions — matches darts reference: label + pills, no container */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
+                { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
+                { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
+                { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
+                { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
+                { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
+                { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
+                { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
+                { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
+                { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
+                { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
+                { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
+                { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
+                { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
+                { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
+                { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
+                { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
+                { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
+              ].map((a) => (
+                <button key={a.id}
+                  onClick={() => onOpenModal(a.id)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
+                  style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
+                  <span>{a.icon}</span>
+                  {a.label}
+                  {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'var(--brand-secondary)' }}>AI</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 3-column grid */}
