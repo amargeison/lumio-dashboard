@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import CookieBanner from '@/components/gdpr/CookieBanner'
+import PageViewTracker from '@/components/analytics/PageViewTracker'
 
 const geist = Geist({
   variable: '--font-geist-sans',
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body className="h-full" style={{ backgroundColor: '#07080F' }}>
         {children}
         <CookieBanner />
+        <PageViewTracker />
       </body>
     </html>
   )

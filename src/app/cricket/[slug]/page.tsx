@@ -7,6 +7,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import SportsSettings from '@/components/sports/SportsSettings'
+import QuickActionModal, { type QuickActionSpec } from '@/components/cricket/QuickActionModal'
 import { Volume2 } from 'lucide-react'
 
 
@@ -3028,6 +3029,228 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
   const [taskChecked, setTaskChecked] = useState<Record<string, boolean>>({ 't-briefing': true })
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'>('today')
+  const [activeQuickAction, setActiveQuickAction] = useState<QuickActionSpec | null>(null)
+
+  // ── 16 Quick Actions — 7 AI-live + 9 form-based ─────────────────────
+  // AI-live buttons fire real LLM calls server-side; context is seeded
+  // from current state (squad, fixtures, pitch) before the modal opens
+  // so the prompt has something specific to chew on.
+  const QUICK_ACTIONS: QuickActionSpec[] = [
+    // ─── AI-LIVE ──────────────────────────────────────────────────────
+    {
+      kind:'ai', id:'team-selection', icon:'👥', color:C.purple,
+      title:'Team Selection AI',
+      description:'Optimal XI for the next fixture',
+      ai: {
+        type:'team-selection',
+        fields: [
+          { kind:'select', id:'format', label:'Format', options:['Championship','T20 Blast','One Day Cup','The Hundred'], defaultValue:'Championship' },
+          { kind:'text',   id:'opposition', label:'Opposition', defaultValue:'Lancashire' },
+          { kind:'textarea', id:'fitSquad', label:'Fit squad notes', defaultValue:'Top order solid, Harrison RTP phase 3, Dawson workload capped', rows:2 },
+        ],
+        context: { venue:'Oakridge Park (home)', date:'Friday', workloadFlags:'Dawson A:C 1.62 — red' },
+      },
+    },
+    {
+      kind:'ai', id:'toss-advisor', icon:'🌤️', color:C.teal,
+      title:'Toss Advisor',
+      description:'Bat or bowl, with a one-data-point justification',
+      ai: {
+        type:'toss-advisor',
+        fields: [
+          { kind:'text',   id:'ground',     label:'Ground',     defaultValue:'Oakridge Park' },
+          { kind:'select', id:'weather',    label:'Weather',    options:['Sunny','Overcast','Rain risk','Hot & dry'], defaultValue:'Overcast' },
+          { kind:'select', id:'pitch',      label:'Pitch look', options:['Green and grassy','Dry and brown','Normal','Damp'], defaultValue:'Green and grassy' },
+          { kind:'select', id:'oppBatting', label:'Opposition batting', options:['Strong top order','Balanced','Tail-heavy'], defaultValue:'Strong top order' },
+        ],
+        context: { format:'County Championship', squadForm:'Top order averaging 42.1 last 5 matches' },
+      },
+    },
+    {
+      kind:'ai', id:'sponsor-post', icon:'📱', color:C.amber,
+      title:'Sponsor Post AI',
+      description:'Match-day social post meeting the sponsor brief',
+      ai: {
+        type:'sponsor-post',
+        fields: [
+          { kind:'text',   id:'sponsor',     label:'Sponsor',         defaultValue:'Crownmark Cricket' },
+          { kind:'text',   id:'sponsorTier', label:'Tier',            defaultValue:'Official kit partner' },
+          { kind:'text',   id:'obligation',  label:'Obligation',      defaultValue:'Matchday bat photo post' },
+          { kind:'text',   id:'player',      label:'Featured player', defaultValue:'Harry Fairweather' },
+          { kind:'select', id:'tone',        label:'Tone',            options:['Confident, match-day energy','Thoughtful, reflective','Fun, community-first'], defaultValue:'Confident, match-day energy' },
+        ],
+        context: { match:'vs Lancashire, Friday, Oakridge Park' },
+      },
+    },
+    {
+      kind:'ai', id:'press-statement', icon:'🗞️', color:C.red,
+      title:'Press Statement AI',
+      description:'Short on-the-record statement from the director',
+      ai: {
+        type:'press-statement',
+        fields: [
+          { kind:'text',     id:'topic', label:'Topic',     defaultValue:'Contract renewal — Harry Fairweather' },
+          { kind:'textarea', id:'facts', label:'Key facts', defaultValue:'3-year extension, central + county combined, through 2029', rows:3 },
+          { kind:'select',   id:'tone',  label:'Tone',      options:['Measured confidence','Celebratory','Neutral factual','Firm / corrective'], defaultValue:'Measured confidence' },
+        ],
+        context: { audience:'national cricket press' },
+      },
+    },
+    {
+      kind:'ai', id:'agent-brief', icon:'🤝', color:C.purple,
+      title:'Agent Brief AI',
+      description:'Concise negotiation-ready brief for an agent',
+      ai: {
+        type:'agent-brief',
+        fields: [
+          { kind:'text',   id:'player',   label:'Player',    defaultValue:'Harry Fairweather' },
+          { kind:'text',   id:'agent',    label:'Agency',    defaultValue:'Oakridge Sports' },
+          { kind:'select', id:'purpose',  label:'Purpose',   options:['Open extension talks','Initial offer','Counter-offer','Declaring interest','Final position'], defaultValue:'Open extension talks' },
+          { kind:'textarea', id:'offer',  label:'Offer',     defaultValue:'£135k/yr, 2 years, county + Hundred release window', rows:2 },
+          { kind:'text',   id:'timeline', label:'Timeline',  defaultValue:'Respond before 30 Apr' },
+        ],
+      },
+    },
+    {
+      kind:'ai', id:'match-prep', icon:'🎯', color:C.teal,
+      title:'Match Prep AI',
+      description:'Tactical brief vs the next opposition — 4-6 bullets',
+      ai: {
+        type:'match-prep',
+        fields: [
+          { kind:'select', id:'format',        label:'Format',        options:['County Championship','T20 Blast','One Day Cup','The Hundred'], defaultValue:'County Championship' },
+          { kind:'text',   id:'opposition',    label:'Opposition',    defaultValue:'Lancashire' },
+          { kind:'textarea', id:'oppTopOrder',  label:'Opp top order', defaultValue:'Sinclair, Kellett, Ravenhill', rows:1 },
+          { kind:'textarea', id:'oppWeaknesses',label:'Their weaknesses', defaultValue:'Sinclair avg 17 vs nip-backer, Kellett struggles vs LAS', rows:2 },
+        ],
+        context: { venue:'Oakridge Park (home)', date:'Friday 10:30', ourAttack:'Ridley, Fenwick (seam), Kent (LAS), Merriman (OS)', pitch:'seam-friendly first two sessions, softens after tea' },
+      },
+    },
+    {
+      kind:'ai', id:'innings-brief', icon:'🧠', color:C.amber,
+      title:'Innings Brief AI',
+      description:'Mid-match tactical brief for the next session',
+      ai: {
+        type:'innings-brief',
+        fields: [
+          { kind:'text',   id:'score',        label:'Current score',         defaultValue:'247/8 after 65 overs' },
+          { kind:'number', id:'day',          label:'Match day',             defaultValue:'1' },
+          { kind:'textarea', id:'partnerships',label:'Recent partnerships',  defaultValue:'Webb-Shaw 83 in 20 overs, Cole-Hill 51 in 12', rows:2 },
+          { kind:'text',   id:'projected',    label:'Projected total',       defaultValue:'342 @ current rate' },
+        ],
+        context: { pitch:'softening, seam movement reducing after tea', leakyBowlers:'Singh (leg-spin) 58 off 12' },
+      },
+    },
+
+    // ─── FORM-BASED (local only) ──────────────────────────────────────
+    {
+      kind:'form', id:'send-message', icon:'💬', color:'#0ea5e9',
+      title:'Send Message',
+      description:'Ping a staff member or channel',
+      submitLabel:'Send',
+      fields: [
+        { kind:'select',   id:'to',      label:'To',      options:['Head Coach','Captain','Medical','Analytics','Operations','Director','Squad group','Senior players'], defaultValue:'Head Coach' },
+        { kind:'select',   id:'channel', label:'Channel', options:['SMS','WhatsApp','Slack','Email'], defaultValue:'WhatsApp' },
+        { kind:'textarea', id:'body',    label:'Message', placeholder:'Type your message…', rows:4 },
+      ],
+    },
+    {
+      kind:'form', id:'smart-flights', icon:'✈️', color:'#0ea5e9',
+      title:'Smart Flights',
+      description:'Compare travel options for away fixtures',
+      submitLabel:'Search',
+      fields: [
+        { kind:'text',   id:'dest',      label:'Destination',        defaultValue:'Manchester (Old Trafford)' },
+        { kind:'text',   id:'date',      label:'Date',               defaultValue:'10 Apr' },
+        { kind:'number', id:'pax',       label:'Passengers',         defaultValue:'18' },
+        { kind:'select', id:'preference',label:'Preference',         options:['Cheapest','Fastest','Direct only','Most flexible'], defaultValue:'Cheapest' },
+      ],
+    },
+    {
+      kind:'form', id:'find-hotel', icon:'🏨', color:'#0ea5e9',
+      title:'Find Hotel',
+      description:'Team accommodation near the ground',
+      submitLabel:'Search',
+      fields: [
+        { kind:'text',   id:'city',    label:'City',      defaultValue:'Manchester' },
+        { kind:'text',   id:'dates',   label:'Dates',     defaultValue:'10–12 Apr' },
+        { kind:'number', id:'rooms',   label:'Rooms',     defaultValue:'12' },
+        { kind:'select', id:'grade',   label:'Grade',     options:['3★','4★','5★','Boutique'], defaultValue:'4★' },
+      ],
+    },
+    {
+      kind:'form', id:'book-nets', icon:'🏏', color:C.teal,
+      title:'Book Net Session',
+      description:'Reserve a net + schedule coaches',
+      submitLabel:'Book',
+      fields: [
+        { kind:'select', id:'net',      label:'Net',         options:['Indoor 1','Indoor 2','Indoor 3','Outdoor A','Outdoor B'], defaultValue:'Indoor 1' },
+        { kind:'text',   id:'date',     label:'Date',        defaultValue:'Thu 10 Apr' },
+        { kind:'text',   id:'time',     label:'Time',        defaultValue:'10:30 – 12:00' },
+        { kind:'text',   id:'attendees',label:'Attendees',   defaultValue:'First XI batters + spinners' },
+      ],
+    },
+    {
+      kind:'form', id:'log-injury', icon:'🏥', color:C.red,
+      title:'Log Injury',
+      description:'Medical record + RTP start',
+      submitLabel:'Log',
+      fields: [
+        { kind:'text',     id:'player',    label:'Player',    placeholder:'e.g. Jake Harrison' },
+        { kind:'select',   id:'severity',  label:'Severity',  options:['Monitoring','Grade 1','Grade 2','Grade 3'], defaultValue:'Grade 1' },
+        { kind:'text',     id:'area',      label:'Area',      placeholder:'e.g. L hamstring' },
+        { kind:'text',     id:'eta',       label:'Expected RTP', placeholder:'e.g. 10 days' },
+        { kind:'textarea', id:'notes',     label:'Notes',     rows:3 },
+      ],
+    },
+    {
+      kind:'form', id:'log-workload', icon:'🦾', color:C.amber,
+      title:'Log Workload',
+      description:'Bowling load entry (overs + intensity)',
+      submitLabel:'Log',
+      fields: [
+        { kind:'text',   id:'player',    label:'Bowler',       placeholder:'e.g. Chris Dawson' },
+        { kind:'number', id:'overs',     label:'Overs bowled', defaultValue:'6' },
+        { kind:'number', id:'deliveries',label:'High-intensity deliveries', defaultValue:'36' },
+        { kind:'select', id:'session',   label:'Session',      options:['Match','Nets','Gym','Recovery'], defaultValue:'Nets' },
+      ],
+    },
+    {
+      kind:'form', id:'add-expense', icon:'💰', color:C.green,
+      title:'Add Expense',
+      description:'Team expense line against the budget',
+      submitLabel:'Save',
+      fields: [
+        { kind:'text',   id:'desc',     label:'Description', placeholder:'Team dinner — Manchester' },
+        { kind:'number', id:'amount',   label:'Amount (£)',  placeholder:'420' },
+        { kind:'select', id:'category', label:'Category',    options:['Travel','Accommodation','Meals','Kit','Medical','Analyst','Other'], defaultValue:'Travel' },
+        { kind:'text',   id:'date',     label:'Date',        defaultValue:'Today' },
+      ],
+    },
+    {
+      kind:'form', id:'match-notes', icon:'📋', color:C.purple,
+      title:'Match Notes',
+      description:'Quick notes for the match report',
+      submitLabel:'Save',
+      fields: [
+        { kind:'text',     id:'fixture',label:'Fixture', defaultValue:'vs Lancashire · Fri 11 Apr' },
+        { kind:'textarea', id:'notes',  label:'Notes',   rows:6, placeholder:'Key partnerships, bowling spells, field decisions…' },
+      ],
+    },
+    {
+      kind:'form', id:'pitch-report', icon:'🌱', color:C.green,
+      title:'Pitch Report',
+      description:'Groundsman pitch assessment entry',
+      submitLabel:'Save',
+      fields: [
+        { kind:'text',   id:'strip',      label:'Strip',       defaultValue:'Oakridge Park — Main strip' },
+        { kind:'select', id:'condition',  label:'Condition',   options:['Hard & dry','Firm','Green','Damp','Soft / wet'], defaultValue:'Firm' },
+        { kind:'select', id:'bounce',     label:'Bounce',      options:['Low','Medium','High'], defaultValue:'Medium' },
+        { kind:'select', id:'expectedMovement', label:'Expected movement', options:['Seam-friendly','Balanced','Flat','Turning'], defaultValue:'Seam-friendly' },
+        { kind:'textarea', id:'notes',    label:'Notes',       rows:3 },
+      ],
+    },
+  ]
 
   // Live weather — same source as football pro's banner. Condition → emoji
   // map so we can drop the hardcoded ⛅ and still get a sensible glyph for
@@ -3301,35 +3524,52 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar */}
+      {/* Quick Actions — 16 buttons. AI-live buttons fire real LLM calls
+          via /api/ai/cricket/quick-action (rate-limited + daily cap);
+          form-based buttons are local state only. */}
       <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: C.dim }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
-          {[
-            { label:'Book Flight', icon:'✈️', color:'#0ea5e9' },
-            { label:'Team Selection AI', icon:'👥', color:C.purple, hot:true },
-            { label:'Toss Advisor', icon:'🌤️', color:C.teal, hot:true },
-            { label:'Sponsor Post', icon:'📱', color:C.amber },
-            { label:'Log Injury', icon:'🏥', color:C.red },
-            { label:'Add Expense', icon:'💰', color:C.dim },
-            { label:'Match Report', icon:'📋', color:C.purple },
-            { label:'Visa Check', icon:'🌍', color:C.dim },
-          ].map((a, i) => (
-            <button key={i} className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
-              style={{ background: (a as {hot?:boolean}).hot ? `${a.color}18` : '#111318', border: (a as {hot?:boolean}).hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: (a as {hot?:boolean}).hot ? a.color : C.muted }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = (a as {hot?:boolean}).hot ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = (a as {hot?:boolean}).hot ? a.color : C.muted }}>
-              <span>{a.icon}</span>{a.label}
-              {(a as {hot?:boolean}).hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-            </button>
-          ))}
+          {QUICK_ACTIONS.map(a => {
+            const isAI = a.kind === 'ai'
+            return (
+              <button key={a.id} onClick={() => setActiveQuickAction(a)}
+                className="relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap"
+                style={{ background: isAI ? `${a.color}18` : '#111318', border: isAI ? `1px solid ${a.color}50` : '1px solid #1F2937', color: isAI ? a.color : C.muted, cursor:'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}60`; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = isAI ? `${a.color}50` : '#1F2937'; e.currentTarget.style.color = isAI ? a.color : C.muted }}>
+                <span>{a.icon}</span>{a.title}
+                {isAI && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+              </button>
+            )
+          })}
         </div>
       </div>
+      <QuickActionModal spec={activeQuickAction} onClose={() => setActiveQuickAction(null)} />
 
-      {/* GETTING STARTED */}
+      {/* GETTING STARTED — aspirational value-prop tour (matches tennis tone) */}
       {dashTab === 'gettingstarted' && (() => {
-        const STEPS = [
-          { n:1, label:'Connect your ECB/county profile' },{ n:2, label:'Add your coaching team' },{ n:3, label:'Set your fixture schedule' },{ n:4, label:'Upload sponsor agreements' },{ n:5, label:'Set your budget target' },{ n:6, label:'Configure squad availability' },{ n:7, label:'Set up GPS tracking' },{ n:8, label:'Add your analyst' },{ n:9, label:'Connect opposition scouting' },{ n:10, label:"You're ready — good luck out there" },
+        const STEPS: Array<{ n:number; short:string; title:string; sub:string }> = [
+          { n:1,  short:'Your cricket OS',                title:'Your cricket OS, fully connected',
+            sub:'Every system that matters for a county — ECB, PCA, sponsors, county board, agents — in one dashboard. No more spreadsheets. No more WhatsApp threads.' },
+          { n:2,  short:'Match-day briefing',             title:'Start every match day knowing everything',
+            sub:"10 channels in one briefing, sorted by urgency, scored by impact. Director's-eye view in 90 seconds." },
+          { n:3,  short:'One click to anywhere',           title:'Every action, one click away',
+            sub:'Team selection. Toss call. Media brief. Workload check. One button. One response.' },
+          { n:4,  short:'PCA, ECB, county in sync',        title:'PCA, ECB, county — all in sync',
+            sub:'DBS expiry alerts. Compliance logs. Overseas slot tracking. Play-Cricket sync. Safeguarding audit-ready.' },
+          { n:5,  short:'Workload protection',             title:'Workload protection that actually works',
+            sub:'ICC guidelines baked in. Red/amber/green flags per bowler. Spell-length caps auto-calculated.' },
+          { n:6,  short:'AI that helps you win',           title:'AI that actually helps you win',
+            sub:'Toss decisions informed by 20,000 pitch readings. Team selection optimised for opposition weakness. Tactical briefs at innings breaks.' },
+          { n:7,  short:'Your team, front and centre',     title:'Your team, front and centre',
+            sub:"10 role dashboards for 10 different jobs. Director's board. Head Coach's squad. Groundsman's pitch view." },
+          { n:8,  short:'Sponsors managed automatically',  title:'Sponsors managed automatically',
+            sub:'Deliverable tracking. Deadline alerts. Renewal pipeline. No more "forgot to post the kit photo" at 23:59.' },
+          { n:9,  short:'Nothing falls through the cracks',title:'Nothing falls through the cracks',
+            sub:'Travel, kit, accommodation, entries, medicals, mental check-ins — all tracked, all flagged.' },
+          { n:10, short:'Run your club like a business',   title:'Run your cricket club like a business',
+            sub:"Because that's what it is." },
         ]
         const step = STEPS[tourStep]
         return (
@@ -3350,15 +3590,15 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                       style={{ backgroundColor: i < tourStep ? C.green : tourStep === i ? C.purple : 'rgba(255,255,255,0.05)', color: i <= tourStep ? '#fff' : C.dim }}>
                       {i < tourStep ? '✓' : s.n}
                     </div>
-                    <span className="text-sm" style={{ color: tourStep === i ? C.text : C.dim }}>{s.label}</span>
+                    <span className="text-sm" style={{ color: tourStep === i ? C.text : C.dim }}>{s.short}</span>
                   </button>
                 ))}
               </div>
               <div className="lg:col-span-2">
                 <div className="rounded-2xl p-8" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 400 }}>
                   <div className="text-5xl mb-4">🏏</div>
-                  <h2 className="text-2xl font-black mb-3" style={{ color: C.text }}>{step.label}</h2>
-                  <p className="text-sm leading-relaxed mb-6" style={{ color: C.muted }}>Set up your Lumio Cricket portal step by step. Each item connects a key part of Oakridge CC to your director&apos;s dashboard.</p>
+                  <h2 className="text-2xl font-black mb-3" style={{ color: C.text }}>{step.title}</h2>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: C.muted }}>{step.sub}</p>
                   <div className="rounded-xl p-4 mb-6" style={{ background: C.purpleDim, border: `1px solid ${C.purple}33` }}>
                     <div className="grid grid-cols-4 gap-2">
                       {[{ icon:'🏆', v:'2nd', label:'Div One', c:C.teal },{ icon:'🏏', v:'Fri 11', label:'Next Match', c:C.purple },{ icon:'👥', v:'16/18', label:'Squad', c:C.green },{ icon:'💰', v:'£3.2m', label:'Budget', c:C.amber }].map((s, i) => (

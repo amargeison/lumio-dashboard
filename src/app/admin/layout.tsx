@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, Building2, GraduationCap, Activity, Settings, LogOut, Search, Bell, Sparkles, FlaskConical,
+  LayoutDashboard, Building2, GraduationCap, Activity, Settings, LogOut, Search, Bell, Sparkles, FlaskConical, BarChart3,
 } from 'lucide-react'
 
 const NAV = [
@@ -15,6 +15,7 @@ const NAV = [
   { href: '/admin/football', label: 'Football', icon: Activity },
   { href: '/admin/trials', label: 'Trials', icon: FlaskConical },
   { href: '/admin/insights', label: 'Insights', icon: Sparkles },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/activity-log', label: 'Activity Log', icon: Activity },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
