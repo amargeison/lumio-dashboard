@@ -3623,14 +3623,9 @@ function MatchdayView() {
       const highLoad = htManualData.filter(p => Number(p.load) > 240).map(p => `${p.name} (${p.load} AU)`);
       const highACWR = htManualData.filter(p => p.acwr > 1.3).map(p => `${p.name} (ACWR ${p.acwr.toFixed(2)})`);
       const avgDist = (htManualData.reduce((a,p) => a + Number(p.dist), 0) / htManualData.length).toFixed(1);
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/football', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 800,
@@ -3983,14 +3978,9 @@ function PerformanceGPSView() {
       const lowACWR = GPS_PLAYER_DEMO.filter(p => p.acwr < 0.8);
       const avgLoad = Math.round(GPS_PLAYER_DEMO.reduce((a,p) => a+p.load, 0) / GPS_PLAYER_DEMO.length);
       const avgDist = (GPS_PLAYER_DEMO.reduce((a,p) => a+p.distance, 0) / GPS_PLAYER_DEMO.length).toFixed(1);
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/football', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 700,
