@@ -7,6 +7,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import SportsSettings from '@/components/sports/SportsSettings'
+import { Volume2 } from 'lucide-react'
 
 
 export const CRICKET_ROLES = [
@@ -3021,6 +3022,151 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [roundupOpen, setRoundupOpen] = useState<string | null>(null)
+  const [weather, setWeather] = useState<{ temp:string; condition:string; icon:string; location?:string }>({ temp:'--', condition:'Loading...', icon:'🌤️' })
+  const [dismissedWins, setDismissedWins] = useState<Set<string>>(new Set())
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
+  const [taskChecked, setTaskChecked] = useState<Record<string, boolean>>({ 't-briefing': true })
+  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'>('today')
+
+  // Live weather — same source as football pro's banner. Condition → emoji
+  // map so we can drop the hardcoded ⛅ and still get a sensible glyph for
+  // whatever open-meteo returns (Rain / Storm / Snow / etc).
+  useEffect(() => {
+    fetch('/api/home/weather').then(r => r.json()).then((d: { temp?:string; condition?:string; location?:string }) => {
+      const cond = d.condition || 'Partly cloudy'
+      const icon = /storm/i.test(cond) ? '⛈️'
+                 : /snow/i.test(cond)  ? '🌨️'
+                 : /rain/i.test(cond)  ? '🌧️'
+                 : /drizzle/i.test(cond) ? '🌦️'
+                 : /fog/i.test(cond)   ? '🌫️'
+                 : /sunny|clear/i.test(cond) ? '☀️'
+                 : '⛅'
+      setWeather({ temp: d.temp || '--', condition: cond, location: d.location, icon })
+    }).catch(() => {})
+  }, [])
+
+  // ── Morning Roundup — per-channel demo messages (tap row → sheet) ─────
+  type RoundupMessage = { id:string; from:string; avatar:string; time:string; subject:string; preview:string; urgent?:boolean }
+  type RoundupChannel = { id:string; icon:string; label:string; count:number; urgent?:boolean; color:string; bg:string; border:string; messages:RoundupMessage[] }
+  const ROUNDUP_CHANNELS: RoundupChannel[] = [
+    { id:'sms',      icon:'💬', label:'SMS (Urgent)',      count:3, urgent:true,  color:'#f87171', bg:'rgba(248,113,113,0.08)', border:'rgba(248,113,113,0.4)', messages:[
+      { id:'sms1', from:'Director',            avatar:'DR', time:'07:12', subject:'Board prep — need 2pm slot',       preview:'Can you free up 2pm today? Chair wants a quick read on the Westcombe contract before she heads to Lord’s tomorrow.', urgent:true },
+      { id:'sms2', from:'Head Coach Caldwell', avatar:'MC', time:'06:58', subject:'Dawson — scan booked',              preview:'Stress-fracture screening confirmed Wed 16:00. Need medical sign-off before we finalise Friday XI.', urgent:true },
+      { id:'sms3', from:'Physio Lawson',       avatar:'NL', time:'06:42', subject:'Harrison RTP — phase 3',            preview:'Phase 3 nets went well yesterday. Recommend 6 overs/innings cap for Friday if selected.' },
+    ]},
+    { id:'whatsapp', icon:'📱', label:'WhatsApp',           count:4, urgent:false, color:'#22c55e', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.4)', messages:[
+      { id:'wa1', from:'Squad Group',     avatar:'SG', time:'07:05', subject:'Travel call — Old Trafford',    preview:'Coach leaves 14:00 Thu from Oakridge Park. Kit drop 13:30. Reply 👍 to confirm.' },
+      { id:'wa2', from:'Senior Players',  avatar:'SP', time:'Yesterday', subject:'Team dinner Sun',           preview:'Skipper wants the senior group out Sun evening. Local place at 19:30 — reply if you’re in.' },
+      { id:'wa3', from:'Overseas Chat',   avatar:'OS', time:'Yesterday', subject:'Steenkamp landed',          preview:'Wheels down 14:20. Bags into the team hotel. Will come to training tomorrow — not bowling yet.' },
+      { id:'wa4', from:'Analysts',        avatar:'AN', time:'06:30', subject:'Lancs LH match-up file',        preview:'Dropped the LH batters pack in the analyst drive. 3 clips per batter, 2 weaknesses each. Ready for selection.' },
+    ]},
+    { id:'slack',    icon:'#',  label:'Slack',              count:4, urgent:false, color:'#a855f7', bg:'rgba(168,85,247,0.08)', border:'rgba(168,85,247,0.4)', messages:[
+      { id:'sl1', from:'#cricket-ops',  avatar:'OP', time:'07:22', subject:'Ground prep — 06:45 mow',         preview:'Pitch rolled overnight, strip covered until 09:00. Main Stand hospitality set for 240 pax Fri.' },
+      { id:'sl2', from:'#analysts',     avatar:'AN', time:'07:14', subject:'Opposition batting splits',       preview:'Pulled 5-year Lancs home/away splits for the top 7. Sinclair avg 17 vs the nip-backer first 10 overs.' },
+      { id:'sl3', from:'#media-comms',  avatar:'MC', time:'Yesterday', subject:'Press room Wed 14:00',        preview:'Press conf confirmed with Fairweather + Caldwell. Q-list prepared. Northbridge + 4 nationals attending.' },
+      { id:'sl4', from:'#dressing-room', avatar:'DR',time:'Yesterday', subject:'Team meeting 09:30',          preview:'Full squad, pavilion room 2. Selection announce + Lancs plans. Coffee laid on from 09:15.' },
+    ]},
+    { id:'email',    icon:'✉️', label:'Email',              count:6, urgent:false, color:'#60a5fa', bg:'rgba(96,165,250,0.08)', border:'rgba(96,165,250,0.4)', messages:[
+      { id:'em1', from:'Oakridge Sports',   avatar:'OS', time:'07:30', subject:'Fairweather — renewal terms',          preview:'Attaching the heads of terms for the new central + county deal. Client wants sign-off by end of week before the Champ opener.' },
+      { id:'em2', from:'Pennine Mutual',    avatar:'PM', time:'06:55', subject:'Renewal — Q3 discussions',             preview:'Pennine Mutual’s renewal meeting hasn’t yet been booked. 92 days to expiry. Can we lock a date this week?' },
+      { id:'em3', from:'ECB Compliance',    avatar:'EC', time:'Yesterday', subject:'CPA 2.0 — 3 sections outstanding', preview:'Player welfare log and wage cap declaration are the two critical items. Deadline 30 Apr for full submission.' },
+      { id:'em4', from:'The Broadsheet',    avatar:'TB', time:'Yesterday', subject:'Long-form feature — Fairweather',   preview:'Reply by 14 Apr please. 2,500 words for the Saturday supplement. Ideally 20 minutes with Harry next week.' },
+      { id:'em5', from:'Oakridge Chronicle', avatar:'OC', time:'2 days ago', subject:'Caldwell Q&A',                     preview:'Print spread for Friday’s match-day edition. 8 questions, 600-word answers. Draft back by Thu 12:00.' },
+      { id:'em6', from:'Brightline Telecoms',avatar:'BT', time:'2 days ago', subject:'Shirt-front renewal proposal',     preview:'Draft proposal attached. 4-year term, £620k/yr. Matchday activation schedule in appendix B.' },
+    ]},
+    { id:'agent',    icon:'🤝', label:'Agent Messages',     count:3, urgent:true,  color:C.purple, bg:`${C.purple}14`, border:`${C.purple}40`, messages:[
+      { id:'ag1', from:'Thornton Sports',     avatar:'TS', time:'07:18', subject:'Kingsley — extension ask',        preview:'Client wants to open talks before the Champ opener. Initial ask is £135k/yr for 2 years. Thoughts?', urgent:true },
+      { id:'ag2', from:'Meridian Group',      avatar:'MG', time:'Yesterday', subject:'Abbas visa — minor query',     preview:'Home Office came back with one document clarification. Non-blocking, but we’ll need it signed off by Fri.' },
+      { id:'ag3', from:'Lancaster Mgmt',      avatar:'LM', time:'2 days ago', subject:'Ridley — release clause',      preview:'Durham enquiry came in yesterday. £95k release active Oct. Client open to talking — wants reassurance on Champ minutes.', urgent:true },
+    ]},
+    { id:'board',    icon:'🏛️', label:'Board Messages',     count:2, urgent:false, color:C.teal,   bg:`${C.teal}14`,   border:`${C.teal}40`, messages:[
+      { id:'bd1', from:'Board Chair',       avatar:'BC', time:'Yesterday', subject:'Windfall programme review',     preview:'Need a 15-min read on the Indoor Centre spend before Fri. Currently 32% of budget consumed — on track or slipping?' },
+      { id:'bd2', from:'Finance Director',  avatar:'FD', time:'2 days ago', subject:'Wage cap declaration',          preview:'CPA wage cap declaration due 30 Apr. Have the numbers — need director sign-off before submission.' },
+    ]},
+    { id:'media',    icon:'📰', label:'Media & Press',      count:4, urgent:false, color:C.amber,  bg:`${C.amber}14`,  border:`${C.amber}40`, messages:[
+      { id:'md1', from:'Willow Quarterly',    avatar:'WQ', time:'Yesterday', subject:'Fairweather profile',         preview:'Pitching a long-form piece on Fairweather’s central + county balance. Would like 45 min with him before the Champ opener.' },
+      { id:'md2', from:'Cricket Digest',      avatar:'CD', time:'2 days ago', subject:'Podcast — 30 min',            preview:'Drive-time cricket podcast. 30 min slot with Fairweather on Champ form. Reply by 12 Apr.' },
+      { id:'md3', from:'The Cricket Almanack',avatar:'CA', time:'2 days ago', subject:'Captain panel',               preview:'Retrospective panel on Oakridge vs Lancs rivalry. Looking for Shaw + one senior pro. Low urgency — reply by 18 Apr.' },
+      { id:'md4', from:'Northbridge Sport',   avatar:'NS', time:'3 days ago', subject:'Pre-match pitch tour',         preview:'Broadcast crew want a pitch tour with groundsman Wed morning. Reply by 10 Apr so we can lock the crew booking.' },
+    ]},
+    { id:'transfer', icon:'🔁', label:'Transfer Activity',  count:2, urgent:true,  color:C.red,    bg:`${C.red}14`,    border:`${C.red}40`, messages:[
+      { id:'tr1', from:'Recruitment',       avatar:'RC', time:'07:08', subject:'Hendricks — WK cover',         preview:'Long-term Pennington cover. Kent willing to sell for £72k/yr. Shortlist him before we see Surrey’s offer.', urgent:true },
+      { id:'tr2', from:'Scouting',          avatar:'SC', time:'Yesterday', subject:'Beukes — OS slot',          preview:'SA passport, would use overseas slot. T20 + OD only. 30yo, strong red-ball avg. Priority call before he signs elsewhere.', urgent:true },
+    ]},
+    { id:'staff',    icon:'👔', label:'Staff Updates',      count:2, urgent:false, color:'#0ea5e9', bg:'rgba(14,165,233,0.08)', border:'rgba(14,165,233,0.4)', messages:[
+      { id:'st1', from:'Operations',   avatar:'OP', time:'Yesterday', subject:'DBS — Grant + Park',            preview:'Phil Grant’s DBS expired Apr 2026 and Julie Park’s also lapsed. Both need resolving before academy resumes.' },
+      { id:'st2', from:'HR',           avatar:'HR', time:'2 days ago', subject:'Batting coach interview',        preview:'Three candidates shortlisted. Rao + Winterbourne recommend we push to final. Need dates before end of April.' },
+    ]},
+    { id:'academy',  icon:'🎓', label:'Academy',            count:2, urgent:false, color:C.green, bg:`${C.green}14`, border:`${C.green}40`, messages:[
+      { id:'ac1', from:'Academy Director', avatar:'AD', time:'Yesterday', subject:'Noah Patel — contract',      preview:'Decision overdue since 31 Mar. Recommend offer full contract — England U19 caps + pathway A-grade.' },
+      { id:'ac2', from:'Pathway',          avatar:'PW', time:'2 days ago', subject:'Clarke 1st XI debut',        preview:'Ready for debut. Scored back-to-back 2nd XI centuries. Suggest selection for Somerset round.' },
+    ]},
+  ]
+
+  // ── Format filter helper — maps ch/t2/od/hu tab to format strings ─────
+  const formatToLabel = (id:string) => id==='ch' ? '4-day' : id==='t2' ? 'T20' : id==='od' ? 'OD' : 'Hundred'
+  const FORMAT_LABEL = formatToLabel(format)
+
+  // Per-format demo fixtures + results for the Today tab cards. Real
+  // CRICKET_FIXTURES / CRICKET_RESULTS arrays stay untouched — those feed
+  // other pages (Match Centre etc). These smaller decks are scoped to the
+  // dashboard so the format tab buttons can visibly filter without having
+  // to invent new Hundred entries on the existing master lists.
+  const FORMAT_FIXTURES: Record<string, Array<{ date:string; opponent:string; venue:'Home'|'Away'; time:string; competition:string }>> = {
+    ch: [
+      { date:'Fri 11 Apr',  opponent:'Lancashire',     venue:'Home', time:'10:30', competition:'Championship' },
+      { date:'Tue 22 Apr',  opponent:'Surrey',         venue:'Away', time:'10:30', competition:'Championship' },
+      { date:'Fri 2 May',   opponent:'Essex',          venue:'Home', time:'10:30', competition:'Championship' },
+      { date:'Fri 16 May',  opponent:'Somerset',       venue:'Away', time:'10:30', competition:'Championship' },
+    ],
+    t2: [
+      { date:'Fri 6 Jun',   opponent:'Warwickshire',   venue:'Home', time:'18:30', competition:'T20 Blast' },
+      { date:'Sun 8 Jun',   opponent:'Lancashire',     venue:'Away', time:'14:30', competition:'T20 Blast' },
+      { date:'Fri 13 Jun',  opponent:'Derbyshire',     venue:'Home', time:'18:30', competition:'T20 Blast' },
+      { date:'Sat 21 Jun',  opponent:'Nottinghamshire',venue:'Away', time:'14:30', competition:'T20 Blast' },
+    ],
+    od: [
+      { date:'Sun 18 May',  opponent:'Durham',         venue:'Home', time:'11:00', competition:'One Day Cup' },
+      { date:'Wed 28 May',  opponent:'Notts',          venue:'Away', time:'11:00', competition:'One Day Cup' },
+      { date:'Sun 1 Jun',   opponent:'Leicestershire', venue:'Home', time:'11:00', competition:'One Day Cup' },
+    ],
+    hu: [
+      { date:'Sat 2 Aug',   opponent:'Manchester Originals', venue:'Home', time:'19:00', competition:'The Hundred' },
+      { date:'Wed 6 Aug',   opponent:'London Spirit',        venue:'Away', time:'19:00', competition:'The Hundred' },
+      { date:'Sun 10 Aug',  opponent:'Oval Invincibles',     venue:'Home', time:'15:00', competition:'The Hundred' },
+    ],
+  }
+  const FORMAT_RESULTS: Record<string, Array<{ date:string; opponent:string; venue:'Home'|'Away'; result:'W'|'L'|'D'; score:string; oppScore:string; format:string }>> = {
+    ch: [
+      { date:'4 Apr',  opponent:'Durham MCCU',        venue:'Home', result:'W', score:'412/7d', oppScore:'198 & 204', format:'Championship' },
+      { date:'15 Sep', opponent:'Warwickshire',       venue:'Away', result:'W', score:'388 & 221/4d', oppScore:'342 & 198', format:'Championship' },
+      { date:'5 Sep',  opponent:'Somerset',           venue:'Home', result:'L', score:'312 & 288', oppScore:'412 & 190/3', format:'Championship' },
+    ],
+    t2: [
+      { date:'28 Aug', opponent:'Derbyshire',         venue:'Home', result:'W', score:'184/5', oppScore:'162/9',      format:'T20 Blast' },
+      { date:'22 Aug', opponent:'Lancashire',         venue:'Away', result:'L', score:'149/8', oppScore:'151/4',      format:'T20 Blast' },
+      { date:'15 Aug', opponent:'Warwickshire',       venue:'Home', result:'W', score:'201/6', oppScore:'186/9',      format:'T20 Blast' },
+    ],
+    od: [
+      { date:'28 Mar', opponent:'Leeds/Bradford',     venue:'Home', result:'W', score:'286/6', oppScore:'241',        format:'One Day Cup' },
+      { date:'22 Mar', opponent:'Oakridge 2nd XI',    venue:'Home', result:'L', score:'348',   oppScore:'352/8',      format:'One Day Cup' },
+      { date:'14 Mar', opponent:'Durham',             venue:'Away', result:'W', score:'262/7', oppScore:'248',        format:'One Day Cup' },
+    ],
+    hu: [
+      { date:'24 Aug', opponent:'Northern Superchargers', venue:'Home', result:'W', score:'152/6', oppScore:'144/8', format:'The Hundred' },
+      { date:'18 Aug', opponent:'Welsh Fire',             venue:'Away', result:'L', score:'138/9', oppScore:'142/5', format:'The Hundred' },
+    ],
+  }
+  const FORMAT_KEYSTAT: Record<string, { topRuns:string; topWickets:string; form:string }> = {
+    ch: { topRuns:'Fairweather · 412',  topWickets:'Ridley · 18',   form:'W W L W W' },
+    t2: { topRuns:'Pennington · 284',   topWickets:'Sterling · 11',  form:'W L W W L' },
+    od: { topRuns:'Kingsley · 198',     topWickets:'Fenwick · 9',   form:'W L W W' },
+    hu: { topRuns:'Hill · 124',         topWickets:'Kent · 8',      form:'W L' },
+  }
+  const fxForFormat      = FORMAT_FIXTURES[format]      || FORMAT_FIXTURES.ch
+  const resultsForFormat = FORMAT_RESULTS[format]       || FORMAT_RESULTS.ch
+  const keyStatForFormat = FORMAT_KEYSTAT[format]       || FORMAT_KEYSTAT.ch
 
   // TTS speaker
   const speakBriefing = () => {
@@ -3067,76 +3213,70 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
 
   const Dashboard=()=>(
     <div className="space-y-6">
-      {/* Morning Banner — club crest left, greeting + speaker, world clock right.
-          Layout mirrors the football pro banner so the dashboards feel like the
-          same product family. Crest asset: /public/cricket_logo.png (the generic
-          Lumio cricket badge — swap for a Oakridge CC crest when supplied). */}
-      <div className="relative rounded-2xl p-6 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(7,8,15,0.95) 60%)', border: `1px solid ${C.purple}33` }}>
-        {/* Crest watermark — fades into the gradient like football pro's BG crest */}
-        <img src="/cricket_logo.png" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
-        {/* Crest foreground — left badge */}
-        <img src="/cricket_logo.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 100, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
-        <div className="relative z-10" style={{ paddingLeft: 120 }}>
-        <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold" style={{ color: C.text }}>Good morning, Director. 🏏</h1>
-              {/* TTS speaker — moved next to greeting to match football pro layout */}
-              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-                style={{ background: isSpeaking ? `${C.purple}40` : 'rgba(255,255,255,0.08)', border: isSpeaking ? `1px solid ${C.purple}80` : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? C.purple : C.muted, fontSize: 14 }}>
-                {isSpeaking ? '⏹' : '🔊'}
-              </button>
+      {/* Morning Banner — ported 1:1 from football pro. Crest on the left,
+          greeting + speaker + quote, compact stat pills middle, weather card
+          + world clock on the right. Purple gradient instead of football's
+          navy; cricket crest replaces FC crest; stats swapped to cricket
+          context (Squad / Fit / Injured / DBS). */}
+      <div className="relative overflow-hidden rounded-2xl border mx-1" style={{ background: 'linear-gradient(to right, rgba(139,92,246,0.18), rgba(11,13,27,0.92))', borderColor: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: '#F1C40F' }} />
+        <img src="/badges/oakridge_cc_crest.svg" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
+        <img src="/badges/oakridge_cc_crest.svg" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 120, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
+        <div className="relative z-10 px-6 py-5" style={{ paddingLeft: 140 }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-black text-white tracking-tight">Good morning, Director 🏏</h1>
+                <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Morning briefing — squad, fixtures, key items'} className="flex items-center justify-center rounded-lg transition-all"
+                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? `${C.purple}40` : 'rgba(255,255,255,0.08)', border: isSpeaking ? `1px solid ${C.purple}80` : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#F1C40F' : '#9CA3AF' }}>
+                  <Volume2 size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+              <p className="text-sm mb-2" style={{ color: '#F1C40F' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+              <p style={{ color: '#F1C40F' }} className="text-sm italic">&ldquo;{cricketQuote.text}&rdquo; — {cricketQuote.author}</p>
             </div>
-            <p className="text-sm mt-1" style={{ color: C.muted }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
-            <p className="text-xs italic mt-2" style={{ color: C.amber }}>&ldquo;{cricketQuote.text}&rdquo; &mdash; {cricketQuote.author}</p>
-          </div>
-          {/* World clock — 2x2 grid card matching football pro's WorldClock component */}
-          <div className="hidden md:block bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-shrink-0" style={{ minWidth: 200 }}>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-              {[{ city:'London', tz:'Europe/London' },{ city:'Mumbai', tz:'Asia/Kolkata' },{ city:'Sydney', tz:'Australia/Sydney' },{ city:'Cape Town', tz:'Africa/Johannesburg' }].map(({ city, tz }) => (
-                <div key={city} className="flex items-center gap-1.5">
-                  <span className="font-mono text-sm font-black" style={{ color: C.text }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit', hour12: false })}</span>
-                  <span className="text-xs" style={{ color: C.muted }}>{city}</span>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {(() => {
+                const fitCount     = CRICKET_SQUAD.filter(p => p.fitness === 'fit').length
+                const injuredCount = CRICKET_SQUAD.filter(p => p.fitness === 'injured' || p.fitness === 'monitoring').length
+                const dbsIssues    = CRICKET_STAFF_EXT.filter(s => s.dbs !== 'valid').length
+                return [
+                  { label: 'Squad',    value: CRICKET_SQUAD.length, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',   icon: '👥' },
+                  { label: 'Fit',      value: fitCount,             color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: '✅' },
+                  { label: 'Injured',  value: injuredCount,         color: 'bg-red-500/20 text-red-300 border-red-500/30',       icon: '🏥' },
+                  { label: 'DBS',      value: dbsIssues,            color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: '📋' },
+                ].map(item => (
+                  <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
+                    <span className="text-base">{item.icon}</span>
+                    <span className="text-lg font-black text-white">{item.value}</span>
+                    <span className="text-xs opacity-70">{item.label}</span>
+                  </div>
+                ))
+              })()}
+            </div>
+            <div className="flex items-start gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                <span className="text-3xl">{weather.icon}</span>
+                <div>
+                  <div className="text-xl font-black text-white">{weather.temp}</div>
+                  <div className="text-xs" style={{ color: '#F1C40F' }}>{weather.condition}{weather.location ? ` · ${weather.location}` : ''}</div>
                 </div>
-              ))}
+              </div>
+              <div className="hidden md:block bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-shrink-0" style={{ minWidth: 200 }}>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  {[{ city:'London', tz:'Europe/London' },{ city:'Mumbai', tz:'Asia/Kolkata' },{ city:'Sydney', tz:'Australia/Sydney' },{ city:'Cape Town', tz:'Africa/Johannesburg' }].map(({ city, tz }) => (
+                    <div key={city} className="flex items-center gap-1.5">
+                      <span className="font-mono text-sm font-black text-white">{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit', hour12: false })}</span>
+                      <span className="text-xs" style={{ color: '#F1C40F' }}>{city}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs mt-1" style={{ color: C.purple }}>World Clock</div>
+              </div>
             </div>
-            <div className="text-xs mt-1" style={{ color: C.purple }}>World Clock</div>
           </div>
-        </div>
-        {/* Weather strip */}
-        <div className="flex items-center gap-6 mb-4 px-1">
-          {[{ city:'London', tz:'Europe/London', icon:'🌥️' },{ city:'Mumbai', tz:'Asia/Kolkata', icon:'☀️' },{ city:'Sydney', tz:'Australia/Sydney', icon:'🌤️' },{ city:'Cape Town', tz:'Africa/Johannesburg', icon:'⛅' }].map(({ city, icon }) => (
-            <div key={city} className="flex items-center gap-1.5 text-xs">
-              <span>{icon}</span>
-              <span style={{ color: C.dim }}>{city}</span>
-              <span style={{ color: C.muted, fontWeight: 600 }}>{city === 'London' ? '14°C' : city === 'Mumbai' ? '34°C' : city === 'Sydney' ? '18°C' : '22°C'}</span>
-            </div>
-          ))}
-        </div>
-        {/* Stat boxes inside banner */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
-          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
-            <div className="text-2xl font-black" style={{ color: C.text }}>2nd</div>
-            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Division One</div>
-            <div className="text-[10px] mt-1" style={{ color: C.teal }}>Championship</div>
-          </div>
-          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
-            <div className="text-2xl font-black" style={{ color: C.text }}>Fri 11 Apr</div>
-            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Next Match</div>
-            <div className="text-[10px] mt-1" style={{ color: C.purple }}>vs Lancashire</div>
-          </div>
-          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
-            <div className="text-2xl font-black" style={{ color: C.text }}>16/18</div>
-            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Squad Available</div>
-            <div className="text-[10px] mt-1" style={{ color: C.green }}>1 injury · 1 monitoring</div>
-          </div>
-          <div className="rounded-xl p-4" style={{ background: `${C.bg}99`, border: `1px solid ${C.purple}33` }}>
-            <div className="text-2xl font-black" style={{ color: C.text }}>£3.2m</div>
-            <div className="text-xs mt-0.5" style={{ color: C.muted }}>Budget Remaining</div>
-            <div className="text-[10px] mt-1" style={{ color: C.amber }}>of £9.8m annual</div>
-          </div>
-        </div>
         </div>
       </div>
 
@@ -3237,12 +3377,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         )
       })()}
 
-      {/* TODAY tab — existing dashboard content */}
+      {/* TODAY tab — 3-col top grid, format tabs, filtered results/injury,
+          weather + pitch, bottom stat strip. AI lives only inside the right
+          column now (AI Morning Summary + Performance Intelligence). */}
       {dashTab === 'today' && (<div>
 
-      {/* ── 3-column grid (football-pro parity): Morning Roundup | This Week's
-            Fixtures | Photo Frame + AI Morning Highlights. Inlined here so we
-            don't fork football's JSX tree wholesale; styling lifted to match. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch mb-4">
         {/* Morning Roundup */}
         <div className="lg:col-span-1 flex flex-col rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
@@ -3251,19 +3390,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             <span className="text-xs" style={{ color: C.dim }}>Since you were last here</span>
           </div>
           <div className="space-y-2">
-            {[
-              { id:'agent',     icon:'🤝', label:'Agent Messages',    count:3, urgent:true,  color:C.purple, bg:`${C.purple}14`, border:`${C.purple}40` },
-              { id:'board',     icon:'🏛️', label:'Board Messages',    count:2, urgent:false, color:C.teal,   bg:`${C.teal}14`,   border:`${C.teal}40` },
-              { id:'media',     icon:'📰', label:'Media & Press',     count:4, urgent:false, color:C.amber,  bg:`${C.amber}14`,  border:`${C.amber}40` },
-              { id:'transfer',  icon:'🔁', label:'Transfer Activity', count:2, urgent:true,  color:C.red,    bg:`${C.red}14`,    border:`${C.red}40` },
-              { id:'staff',     icon:'👔', label:'Staff Updates',     count:2, urgent:false, color:'#0ea5e9',bg:'rgba(14,165,233,0.08)', border:'rgba(14,165,233,0.4)' },
-              { id:'academy',   icon:'🎓', label:'Academy',           count:2, urgent:false, color:C.green,  bg:`${C.green}14`,  border:`${C.green}40` },
-              { id:'sms',       icon:'💬', label:'SMS / Text',        count:3, urgent:true,  color:'#f87171',bg:'rgba(248,113,113,0.08)', border:'rgba(248,113,113,0.4)' },
-              { id:'whatsapp',  icon:'📱', label:'WhatsApp Business', count:4, urgent:false, color:'#22c55e',bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.4)' },
-              { id:'slack',     icon:'#',  label:'Slack',             count:4, urgent:false, color:'#a855f7',bg:'rgba(168,85,247,0.08)', border:'rgba(168,85,247,0.4)' },
-            ].map(item => (
-              <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
-                <div className="w-full flex items-center justify-between p-3 text-left">
+            {ROUNDUP_CHANNELS.map(item => (
+              <button key={item.id} type="button" onClick={() => setRoundupOpen(item.id)}
+                className="w-full rounded-xl overflow-hidden text-left transition-all hover:brightness-110"
+                style={{ backgroundColor: item.bg, border: `1px solid ${item.border}`, cursor:'pointer' }}>
+                <div className="w-full flex items-center justify-between p-3">
                   <div className="flex items-center gap-2.5">
                     <span className="text-base">{item.icon}</span>
                     <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
@@ -3271,52 +3402,65 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
-                    <span className="text-xs" style={{ color: C.dim }}>▼</span>
+                    <span className="text-xs" style={{ color: C.dim }}>›</span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* This Week's Fixtures */}
-        <div className="lg:col-span-1 flex flex-col rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm" style={{ color: C.text }}>📅 This Week&apos;s Fixtures</h3>
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: C.border, color: C.dim }}>5 matches</span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { date:'Fri 11 Apr', opponent:'Lancashire',    venue:'Away', time:'10:30', competition:'Championship' },
-              { date:'Sat 19 Apr', opponent:'Surrey',        venue:'Home', time:'14:30', competition:'T20 Blast' },
-              { date:'Fri 25 Apr', opponent:'Somerset',      venue:'Away', time:'10:30', competition:'Championship' },
-              { date:'Sat 3 May',  opponent:'Nottinghamshire',venue:'Home', time:'14:30', competition:'T20 Blast' },
-              { date:'Fri 9 May',  opponent:'Essex',         venue:'Away', time:'10:30', competition:'Championship' },
-            ].map((f, i) => (
-              <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? `${C.purple}14` : 'rgba(255,255,255,0.02)', border: i === 0 ? `1px solid ${C.purple}40` : `1px solid ${C.border}` }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500" />}
-                    <span className="text-sm font-bold" style={{ color: i === 0 ? C.amber : C.text }}>{f.opponent}</span>
+        {/* Middle column — Upcoming Fixtures (format-filtered) + Today's Schedule */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          <div className="rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-sm" style={{ color: C.text }}>📅 Upcoming Fixtures</h3>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: C.border, color: C.dim }}>{fxForFormat.length} {FORMAT_LABEL === '4-day' ? 'matches' : 'games'}</span>
+            </div>
+            <div className="space-y-3">
+              {fxForFormat.map((f, i) => (
+                <div key={`${format}-${i}`} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? `${C.purple}14` : 'rgba(255,255,255,0.02)', border: i === 0 ? `1px solid ${C.purple}40` : `1px solid ${C.border}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500" />}
+                      <span className="text-sm font-bold" style={{ color: i === 0 ? C.amber : C.text }}>{f.opponent}</span>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>{f.venue}</span>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>{f.venue}</span>
+                  <div className="flex items-center gap-4 text-xs" style={{ color: C.muted }}>
+                    <span>{f.date}</span>
+                    <span>{f.time} start</span>
+                    <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>{f.competition}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs" style={{ color: C.muted }}>
-                  <span>{f.date}</span>
-                  <span>{f.time} start</span>
-                  <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>{f.competition}</span>
-                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+              <div className="text-xs" style={{ color: C.dim }}>
+                <span className="font-semibold" style={{ color: C.muted }}>Team Sheet Deadline:</span> Wednesday 5pm for Friday&apos;s match
               </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
-            <div className="text-xs" style={{ color: C.dim }}>
-              <span className="font-semibold" style={{ color: C.muted }}>Team Sheet Deadline:</span> Wednesday 5pm for Friday&apos;s match
             </div>
           </div>
+
+          <div className="rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+            <div className="text-xs font-semibold uppercase mb-3" style={{ color: C.muted, letterSpacing:'0.05em' }}>Today&apos;s Schedule</div>
+            {[
+              {t:'07:00',e:'Gym & S&C — main squad'},
+              {t:'09:30',e:'Team meeting — selection announce'},
+              {t:'10:30',e:'Nets — batters + spinners'},
+              {t:'13:00',e:'Media session (Northbridge Sport)'},
+              {t:'15:00',e:'Fielding session'},
+              {t:'17:30',e:'Physio clinic'},
+            ].map((s,i,a)=>(
+              <div key={i} style={{display:'flex',gap:10,padding:'7px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:12,color:C.teal,fontWeight:600,width:42}}>{s.t}</span>
+                <span style={{fontSize:12,color:C.muted}}>{s.e}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Photo Frame + AI Morning Highlights */}
+        {/* Right column — Photo Frame + AI Morning Summary + Performance Intelligence */}
         <div className="lg:col-span-1 flex flex-col gap-4">
           <div className="rounded-2xl p-5 flex flex-col items-center justify-center text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 240 }}>
             <div className="flex items-center gap-2 mb-3 self-start">
@@ -3333,6 +3477,8 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
               <button className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg" style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.muted }}>iCloud ✦</button>
             </div>
           </div>
+
+          {/* AI Morning Summary — general match-day insights */}
           <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${C.purple}40` }}>
             <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: `${C.purple}14`, borderBottom: `1px solid ${C.purple}40` }}>
               <span className="text-sm">✨</span>
@@ -3341,15 +3487,40 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             </div>
             <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '14rem' }}>
               {[
-                '2 injured players — Rafiq (strain, 10 days), Cooper (bruise, back Saturday)',
-                'Smith unavailable Fri — international call-up, Williams to open',
-                'Contract target Harris — Durham countered at £340k. Budget remaining: £2.6m',
-                'Press conference at 2pm today. AI briefing notes prepared',
-                '2nd XI won by 4 wickets yesterday. Academy bowler hat-trick — recommended for first-team squad',
+                'Rafiq + Cooper on the injury list · Harrison RTP phase 3 · 15 fully fit for Fri',
+                'Kingsley international call-up confirmed — Hargreaves promoted to open',
+                'Contract target Hendricks — Kent willing at £72k/yr · decision window this week',
+                'Press conference 14:00 today (Fairweather + Caldwell) · Q-list approved',
+                'Pennine Mutual renewal meeting still unbooked — 92 days to expiry',
+                '2nd XI won by 4 wickets yesterday · Clarke recommended for 1st XI debut',
               ].map((item, i) => (
                 <div key={i} className="flex gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${C.purple}33`, color: C.amber }}>{i + 1}</span>
-                  <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{item}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#E5E7EB' }}>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Performance Intelligence — performance-specific */}
+          <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${C.teal}40` }}>
+            <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: `${C.teal}14`, borderBottom: `1px solid ${C.teal}40` }}>
+              <span className="text-sm">📊</span>
+              <span className="text-sm font-bold" style={{ color: C.text }}>Performance Intelligence</span>
+              <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: `${C.teal}33`, color: C.teal }}>{fmtMeta.pos.value}</span>
+            </div>
+            <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '14rem' }}>
+              {[
+                `Top run-scorer (${FORMAT_LABEL}): ${keyStatForFormat.topRuns}`,
+                `Leading wicket-taker (${FORMAT_LABEL}): ${keyStatForFormat.topWickets}`,
+                `Last 5 form line (${FORMAT_LABEL}): ${keyStatForFormat.form}`,
+                'Dawson A:C ratio 1.62 — spell-length capped to 5 overs next match',
+                'Opposition scout: Lancs LH batters avg 18 vs left-arm spin last 12 months',
+                'Pitch softening — expect seam movement to drop after tea on Day 1',
+              ].map((item, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${C.teal}33`, color: C.teal }}>{i + 1}</span>
+                  <p className="text-xs leading-relaxed" style={{ color: '#E5E7EB' }}>{item}</p>
                 </div>
               ))}
             </div>
@@ -3357,62 +3528,34 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         </div>
       </div>
 
-      {/* AI Summary Card */}
-      <div className="rounded-xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${C.card}, ${C.cardAlt})`, border: `1px solid ${C.purple}33` }}>
-        <div className="flex items-center gap-2 mb-3">
-          <div style={{width:28,height:28,borderRadius:'50%',background:C.purpleDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
-          <span className="text-xs font-bold" style={{ color: C.purple }}>Lumio AI — Morning Summary</span>
-          {aiLoading && <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{ background: C.purpleDim, color: C.purple }}>Generating...</span>}
-        </div>
-        {aiLoading ? (
-          <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-3 rounded animate-pulse" style={{width:`${80+i*5}%`, background: C.border}}/>)}</div>
-        ) : aiSummary ? (
-          <div className="text-sm leading-relaxed" style={{ color: C.text, fontStyle:'italic', borderLeft:`3px solid ${C.purple}`, paddingLeft:14 }}>{aiSummary}</div>
-        ) : (
-          <div className="text-sm leading-relaxed" style={{ color: C.text, fontStyle:'italic', borderLeft:`3px solid ${C.purple}`, paddingLeft:14 }}>
-            Good morning. Championship opener in 3 days. Fairweather passed his final fitness check — full availability confirmed. Ridley bowled 12 overs unbroken in nets. Lancashire&apos;s opener Sinclair flagged as vulnerable to the nip-backer early. Weather looks good. Ticket sales at 94% capacity.
-          </div>
-        )}
-      </div>
-
-      {/* Format tabs */}
+      {/* Format tabs — filter Recent Results / Upcoming Fixtures / Form / Stats */}
       <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
         {FORMAT_TABS.map(t => {
           const active = format === t.id;
           return (
             <button key={t.id} type="button" onClick={() => setFormat(t.id)}
               style={{ padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
-                border:`1px solid ${active ? C.teal : C.border}`, background: active ? C.tealDim : 'transparent',
-                color: active ? C.teal : C.muted, transition:'all 0.15s ease' }}>
+                border:`1px solid ${active ? C.purple : C.border}`, background: active ? C.purpleDim : 'transparent',
+                color: active ? C.purple : C.muted, transition:'all 0.15s ease' }}>
               {t.label}
             </button>
           );
         })}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
+
+      {/* Mid grid — Recent Results (filtered) | Injury Room */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
         <Card>
-          <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Today's Schedule</div>
-          {[
-            {t:'07:00',e:'Gym & S&C — main squad'},
-            {t:'09:30',e:'Team meeting — selection announce'},
-            {t:'10:30',e:'Nets — batters + spinners'},
-            {t:'13:00',e:'Media session (Northbridge Sport)'},
-            {t:'15:00',e:'Fielding session'},
-            {t:'17:30',e:'Physio clinic'},
-          ].map((s,i)=>(
-            <div key={i} style={{display:'flex',gap:10,padding:'7px 0',borderBottom:i<5?`1px solid ${C.border}`:'none'}}>
-              <span style={{fontSize:12,color:C.teal,fontWeight:600,width:42}}>{s.t}</span>
-              <span style={{fontSize:12,color:C.muted}}>{s.e}</span>
-            </div>
-          ))}
-        </Card>
-        <Card>
-          <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Recent Results</div>
-          {CRICKET_RESULTS.map((r,i)=>(
-            <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<CRICKET_RESULTS.length-1?`1px solid ${C.border}`:'none'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>Recent Results · {FORMAT_LABEL}</div>
+            <span style={{fontSize:11,color:C.dim}}>Form: {keyStatForFormat.form}</span>
+          </div>
+          {resultsForFormat.length === 0 && <div style={{fontSize:11,color:C.dim,fontStyle:'italic',padding:'10px 0'}}>No {FORMAT_LABEL} results recorded yet.</div>}
+          {resultsForFormat.map((r,i)=>(
+            <div key={`${format}-${i}`} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<resultsForFormat.length-1?`1px solid ${C.border}`:'none'}}>
               <div>
-                <div style={{fontSize:12,color:C.text}}>vs {r.opponent} ({r.homeAway})</div>
-                <div style={{fontSize:10,color:C.dim}}>{r.date} · {r.format}</div>
+                <div style={{fontSize:12,color:C.text}}>vs {r.opponent} ({r.venue === 'Home' ? 'H' : 'A'})</div>
+                <div style={{fontSize:10,color:C.dim}}>{r.date} · {r.score} vs {r.oppScore}</div>
               </div>
               <span style={{padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600,background:resultColor(r.result)+'22',color:resultColor(r.result)}}>{r.result}</span>
             </div>
@@ -3432,134 +3575,66 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <div style={{fontSize:11,color:C.green,marginTop:10}}>✓ {CRICKET_SQUAD.filter(p=>p.fitness==='fit').length} fully fit</div>
         </Card>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:12,marginBottom:12}}>
+
+      {/* Weather + pitch — full width */}
+      <div style={{marginBottom:12}}>
         <Card>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Oakridge Park Weather — Fri</div>
-          <div style={{display:'flex',alignItems:'center',gap:16}}>
-            <div style={{fontSize:48}}>⛅</div>
-            <div>
-              <div style={{fontSize:28,fontWeight:600,color:C.text}}>14°C</div>
-              <div style={{fontSize:11,color:C.muted}}>Partly cloudy · 22% rain</div>
-              <div style={{fontSize:11,color:C.dim}}>Wind SW 14 km/h · Humidity 68%</div>
-            </div>
-          </div>
-          <div style={{marginTop:12}}>
-            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
-              <span style={{fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,flex:1}}>Pitch</span>
-              {[
-                {k:null,l:'Pre'},
-                {k:1,l:'D1'},
-                {k:2,l:'D2'},
-                {k:3,l:'D3'},
-                {k:4,l:'D4'},
-              ].map((d,i)=>{
-                const active = matchDay === d.k;
-                return (
-                  <button key={i}
-                    type="button"
-                    onClick={()=>setMatchDay(d.k)}
-                    style={{
-                      padding:'3px 8px', borderRadius:4, fontSize:10, fontWeight:600,
-                      cursor:'pointer',
-                      border:`1px solid ${active ? pitch.color : C.border}`,
-                      background: active ? `${pitch.color}22` : 'transparent',
-                      color: active ? pitch.color : C.muted,
-                    }}>
-                    {d.l}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{padding:10,background:`${pitch.color}1A`,border:`1px solid ${pitch.color}55`,borderRadius:6,fontSize:11,color:pitch.color,display:'flex',alignItems:'flex-start',gap:8}}>
-              <span style={{fontSize:13,lineHeight:1}}>{pitch.icon}</span>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:16,alignItems:'center'}}>
+            <div style={{display:'flex',alignItems:'center',gap:16}}>
+              <div style={{fontSize:48}}>⛅</div>
               <div>
-                <div style={{fontWeight:700,marginBottom:2}}>{pitch.label}</div>
-                <div style={{color:C.muted,fontSize:10,lineHeight:1.5}}>{pitch.description}</div>
+                <div style={{fontSize:28,fontWeight:600,color:C.text}}>14°C</div>
+                <div style={{fontSize:11,color:C.muted}}>Partly cloudy · 22% rain</div>
+                <div style={{fontSize:11,color:C.dim}}>Wind SW 14 km/h · Humidity 68%</div>
               </div>
             </div>
-          </div>
-        </Card>
-        <Card style={{background:'linear-gradient(135deg,#0F1629 0%,#141d35 100%)',borderColor:C.purpleDim}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <div style={{width:32,height:32,borderRadius:'50%',background:C.purpleDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>🤖</div>
-            <div style={{fontSize:12,fontWeight:600,color:C.purple}}>Lumio AI — Morning Summary</div>
-          </div>
-          <div style={{fontSize:13,color:C.text,lineHeight:1.7,fontStyle:'italic',borderLeft:`3px solid ${C.purple}`,paddingLeft:14}}>
-            "Good morning. Championship opener in 3 days. Fairweather passed his final fitness check yesterday — full availability confirmed. Ridley bowled 12 overs unbroken in nets, on track for match workload. Lancashire's opener Sinclair returned from injury last week — scout report flags he's been vulnerable to the nip-backer early. Weather looks good for toss decisions. Media training this afternoon with Sky — I'd suggest Fairweather and Caldwell. Ticket sales at 94% of capacity for Friday — we're on track for a full Main Stand."
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                <span style={{fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,flex:1}}>Pitch</span>
+                {[
+                  {k:null,l:'Pre'},
+                  {k:1,l:'D1'},
+                  {k:2,l:'D2'},
+                  {k:3,l:'D3'},
+                  {k:4,l:'D4'},
+                ].map((d,i)=>{
+                  const active = matchDay === d.k;
+                  return (
+                    <button key={i}
+                      type="button"
+                      onClick={()=>setMatchDay(d.k)}
+                      style={{
+                        padding:'3px 8px', borderRadius:4, fontSize:10, fontWeight:600,
+                        cursor:'pointer',
+                        border:`1px solid ${active ? pitch.color : C.border}`,
+                        background: active ? `${pitch.color}22` : 'transparent',
+                        color: active ? pitch.color : C.muted,
+                      }}>
+                      {d.l}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{padding:10,background:`${pitch.color}1A`,border:`1px solid ${pitch.color}55`,borderRadius:6,fontSize:11,color:pitch.color,display:'flex',alignItems:'flex-start',gap:8}}>
+                <span style={{fontSize:13,lineHeight:1}}>{pitch.icon}</span>
+                <div>
+                  <div style={{fontWeight:700,marginBottom:2}}>{pitch.label}</div>
+                  <div style={{color:C.muted,fontSize:10,lineHeight:1.5}}>{pitch.description}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
-      {/* AI Toss Decision Advisor */}
-      <Card style={{marginBottom:12}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>🌤️ AI Toss Decision Advisor</div>
-          <button onClick={getTossAdvice} disabled={tossLoading} style={{padding:'6px 14px',borderRadius:6,border:'none',background:tossLoading?C.cardAlt:C.teal,color:tossLoading?C.muted:'#07080F',fontSize:11,fontWeight:700,cursor:tossLoading?'wait':'pointer'}}>
-            {tossLoading?'Thinking…':'Get Toss Advice'}
-          </button>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:12}}>
-          <div>
-            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Ground</div>
-            <input value={tossGround} onChange={e=>setTossGround(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}} />
-          </div>
-          <div>
-            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Weather</div>
-            <select value={tossWeather} onChange={e=>setTossWeather(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
-              {['Sunny','Overcast','Rain risk','Hot & dry'].map(o=><option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-          <div>
-            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Pitch look</div>
-            <select value={tossPitch} onChange={e=>setTossPitch(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
-              {['Green and grassy','Dry and brown','Normal','Damp'].map(o=><option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-          <div>
-            <div style={{fontSize:10,color:C.dim,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.04em'}}>Opposition batting</div>
-            <select value={tossBatting} onChange={e=>setTossBatting(e.target.value)} style={{width:'100%',padding:'6px 8px',borderRadius:4,border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,fontSize:12}}>
-              {['Strong top order','Balanced','Tail-heavy'].map(o=><option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-        </div>
-        {tossError && <div style={{padding:10,background:C.redDim,border:`1px solid ${C.red}55`,borderRadius:6,fontSize:11,color:C.red}}>⚠ {tossError}</div>}
-        {tossResult && !tossError && (()=>{
-          const bat = tossResult.decision?.toUpperCase().includes('BAT');
-          const color = bat ? C.green : C.amber;
-          const bg = bat ? C.greenDim : C.amberDim;
-          return (
-            <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:14,alignItems:'start'}}>
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-                <div style={{padding:'14px 20px',borderRadius:8,background:bg,border:`2px solid ${color}`,color,fontSize:20,fontWeight:800,letterSpacing:'0.03em',whiteSpace:'nowrap'}}>
-                  {bat ? 'BAT FIRST' : 'FIELD FIRST'}
-                </div>
-                <div style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,background:C.cardAlt,color:C.muted,border:`1px solid ${C.border}`,textTransform:'uppercase',letterSpacing:'0.04em'}}>
-                  {tossResult.confidence} confidence
-                </div>
-              </div>
-              <div>
-                <div style={{fontSize:12,color:C.text,lineHeight:1.6,marginBottom:10}}>{tossResult.reasoning}</div>
-                {tossResult.key_factor && (
-                  <div style={{padding:10,background:C.tealDim,border:`1px solid ${C.teal}55`,borderRadius:6,fontSize:11,color:C.teal}}>
-                    <strong>Key factor:</strong> {tossResult.key_factor}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-        {!tossResult && !tossLoading && !tossError && (
-          <div style={{fontSize:11,color:C.dim,fontStyle:'italic'}}>Enter match conditions above and click Get Toss Advice.</div>
-        )}
-      </Card>
 
-      {/* ── Bottom stat tiles (football-pro parity). 4 compact pills with
-            label + big number + colour-coded icon stripe. */}
+      {/* Bottom stat tiles */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
         {[
-          { label:'Squad Size',       value:String(CRICKET_SQUAD.length), icon:'👥', color:C.purple },
-          { label:'Fit Players',      value:String(CRICKET_SQUAD.filter(p=>p.fitness==='fit').length), icon:'✅', color:C.green },
-          { label:'Budget Remaining', value:'£3.2m',                       icon:'💰', color:C.amber },
-          { label:'Next Match',       value:'3 days',                      icon:'🏏', color:C.teal },
+          { label:'League Position',  value:fmtMeta.pos.value,                sub:fmtMeta.pos.sub,  icon:'🏆', color:C.teal },
+          { label:fmtMeta.next.label, value:fmtMeta.next.value,               sub:fmtMeta.next.sub, icon:'🏏', color:C.purple },
+          { label:'Squad Available',  value:`${CRICKET_SQUAD.filter(p=>p.fitness!=='injured').length}/${CRICKET_SQUAD.length}`, sub:'Incl. monitoring', icon:'👥', color:C.green },
+          { label:'Budget Remaining', value:'£3.2m',                          sub:'of £9.8m annual', icon:'💰', color:C.amber },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: C.card, border: `1px solid ${s.color}33` }}>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: `${s.color}1F`, border: `1px solid ${s.color}55` }}>
@@ -3568,18 +3643,465 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             <div className="flex-1 min-w-0">
               <div className="text-xs" style={{ color: C.dim }}>{s.label}</div>
               <div className="text-xl font-black truncate" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-[10px] truncate" style={{ color: C.muted }}>{s.sub}</div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Morning Roundup message sheet — tap-to-open modal (shared pattern) */}
+      {roundupOpen && (() => {
+        const ch = ROUNDUP_CHANNELS.find(c => c.id === roundupOpen)
+        if (!ch) return null
+        return (
+          <div onClick={() => setRoundupOpen(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:560, maxHeight:'80vh', background:C.card, border:`1px solid ${ch.border}`, borderRadius:14, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+              <div style={{ padding:'14px 18px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10, background:ch.bg }}>
+                <span style={{ fontSize:18 }}>{ch.icon}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:ch.color }}>{ch.label}</div>
+                  <div style={{ fontSize:11, color:C.dim }}>{ch.messages.length} message{ch.messages.length === 1 ? '' : 's'}</div>
+                </div>
+                <button onClick={() => setRoundupOpen(null)} style={{ background:'transparent', border:'none', color:C.muted, fontSize:20, cursor:'pointer', padding:'0 6px', lineHeight:1 }} aria-label="Close">×</button>
+              </div>
+              <div style={{ flex:1, overflowY:'auto', padding:'10px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+                {ch.messages.map(m => (
+                  <div key={m.id} style={{ border:`1px solid ${C.border}`, background:C.cardAlt, borderRadius:10, padding:'12px 14px' }}>
+                    <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:6 }}>
+                      <div style={{ width:32, height:32, borderRadius:'50%', background:`${ch.color}22`, color:ch.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>{m.avatar}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                          <span style={{ fontSize:13, fontWeight:600, color:C.text }}>{m.from}</span>
+                          {m.urgent && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:8, background:'rgba(239,68,68,0.15)', color:'#F87171' }}>Urgent</span>}
+                        </div>
+                        <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>{m.subject}</div>
+                      </div>
+                      <span style={{ fontSize:10, color:C.dim, flexShrink:0 }}>{m.time}</span>
+                    </div>
+                    <p style={{ fontSize:12, color:C.text, lineHeight:1.6, margin:'6px 0 10px 42px' }}>{m.preview}</p>
+                    <div style={{ marginLeft:42, display:'flex', gap:6 }}>
+                      <button disabled title="Coming soon" style={{ fontSize:11, padding:'5px 12px', borderRadius:6, background:'transparent', border:`1px solid ${C.border}`, color:C.dim, cursor:'not-allowed' }}>Reply</button>
+                      <button disabled title="Coming soon" style={{ fontSize:11, padding:'5px 12px', borderRadius:6, background:'transparent', border:`1px solid ${C.border}`, color:C.dim, cursor:'not-allowed' }}>Forward</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding:'10px 18px', borderTop:`1px solid ${C.border}`, fontSize:10, color:C.dim, textAlign:'right' }}>Tap outside to close · Reply coming soon</div>
+            </div>
+          </div>
+        )
+      })()}
+
       </div>)}
 
       {/* Other tabs — placeholder content */}
-      {dashTab === 'quickwins' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Quick win suggestions will appear here based on your upcoming fixtures and squad availability.</div>}
-      {dashTab === 'dailytasks' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Your daily tasks for today — team selection, media sessions, net bookings, and admin.</div>}
-      {dashTab === 'insights' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Performance insights, squad analytics, and competition trends across all formats.</div>}
-      {dashTab === 'dontmiss' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Time-sensitive items — ECB deadlines, contract renewals, overseas player visa status.</div>}
-      {dashTab === 'team' && <div className="pt-4 text-sm" style={{ color: C.muted }}>Your coaching and support staff — availability, recent notes, and contact details.</div>}
+      {/* QUICK WINS TAB */}
+      {dashTab === 'quickwins' && (() => {
+        const CRICKET_QUICK_WINS: Array<{ id:string; impact:'high'|'medium'|'low'; effort:string; category:string; title:string; description:string; source:string; action:string; actionSection:string }> = [
+          { id:'qw-1', impact:'high',   effort:'2min',  category:'Travel',     title:'Book Lancashire trip flights — prices rising daily',       description:'Departing 10 Apr. Train £180 vs flight £95 this week. Window closes Wed.',               source:'Operations · travel desk',     action:'Search flights',    actionSection:'travel' },
+          { id:'qw-2', impact:'high',   effort:'5min',  category:'Commercial', title:'Reply to Pennine Mutual renewal inquiry',                  description:'Agent Oakridge Sports sent the renewal brief 3 days ago. Decision needed this week.',   source:'Sponsorship pipeline',         action:'Open sponsorship', actionSection:'sponsorship' },
+          { id:'qw-3', impact:'high',   effort:'2min',  category:'Sponsor',    title:'Crownmark post overdue today',                             description:'Photographer needs bat shot by 14:00 today to meet the contractual matchday post slot.', source:'Media & Content',              action:'View obligation',   actionSection:'media' },
+          { id:'qw-4', impact:'high',   effort:'5min',  category:'Entries',    title:'T20 Blast quarter-final entry — deadline today',           description:'ECB needs squad submitted by 17:00. Pending 2 signatures (Director + Head Coach).',     source:'ECB Compliance Hub',           action:'Manage entries',    actionSection:'vitality-blast' },
+          { id:'qw-5', impact:'medium', effort:'10min', category:'Match Prep', title:'Review Lancashire bowling patterns',                        description:"Friday's match at 10:30. Analysis team uploaded 4 tagged clips for the top 6 batters.",  source:'Analyst — Opposition Scout',   action:'View match prep',   actionSection:'opposition' },
+          { id:'qw-6', impact:'medium', effort:'5min',  category:'Staff',      title:'DBS check expiring — Assistant Coach Winterbourne',        description:'Renewal required by 20 Apr. ECB compliance flag — signed DBS-3 form outstanding.',     source:'Compliance / Safeguarding',    action:'Open compliance',   actionSection:'compliance' },
+          { id:'qw-7', impact:'medium', effort:'15min', category:'Medical',    title:'Ridley workload review',                                   description:'142 high-intensity efforts in 7 days vs 130 ceiling. Adjust Thu session before Friday.', source:'Medical / S&C',                action:'Review plan',       actionSection:'bowling-workload' },
+          { id:'qw-8', impact:'low',    effort:'20min', category:'Academy',    title:'Second XI hat-trick bowler — first-team shortlist',        description:'Academy Director flagged Clarke for Monday selection meeting. Profile ready to review.', source:'Academy — Pathway',           action:'View report',       actionSection:'academy' },
+        ]
+        const impactColor = (imp:string) => imp === 'high' ? C.red : imp === 'medium' ? C.amber : C.teal
+        const impactBg    = (imp:string) => imp === 'high' ? C.redDim : imp === 'medium' ? C.amberDim : C.tealDim
+        const visible = CRICKET_QUICK_WINS.filter(w => !dismissedWins.has(w.id))
+        return (
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: C.text }}>Quick Wins</h3>
+                <p className="text-[11px]" style={{ color: C.dim }}>{visible.length} actions remaining</p>
+              </div>
+              {dismissedWins.size > 0 && (
+                <span className="text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: C.greenDim, color: C.green }}>
+                  {dismissedWins.size} completed
+                </span>
+              )}
+            </div>
+            {visible.length === 0 ? (
+              <div className="text-center py-12 rounded-xl" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                <div className="text-3xl mb-3">🎉</div>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>All done!</div>
+                <div className="text-xs" style={{ color: C.dim }}>You have cleared all your quick wins for today.</div>
+              </div>
+            ) : (
+              visible.map(win => (
+                <div key={win.id} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: impactBg(win.impact), color: impactColor(win.impact) }}>
+                          {win.impact === 'high' ? 'HIGH IMPACT' : win.impact === 'medium' ? 'MEDIUM IMPACT' : 'LOW IMPACT'}
+                        </span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#38bdf8' }}>⏱ {win.effort}</span>
+                        <span className="text-xs" style={{ color: C.dim }}>{win.category}</span>
+                      </div>
+                      <h3 className="font-bold mb-1" style={{ color: C.text }}>{win.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: C.muted }}>{win.description}</p>
+                      <p className="text-xs mt-2" style={{ color: C.dim }}>Source: {win.source}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button onClick={() => setPage(win.actionSection)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: C.purple }}>
+                        {win.action} →
+                      </button>
+                      <button onClick={() => setDismissedWins(s => { const n = new Set(s); n.add(win.id); return n })} className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: C.muted }}>
+                        Mark done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            {CRICKET_QUICK_WINS.filter(w => dismissedWins.has(w.id)).length > 0 && (
+              <div className="pt-2 space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.dim }}>Completed</div>
+                {CRICKET_QUICK_WINS.filter(w => dismissedWins.has(w.id)).map(win => (
+                  <div key={win.id} className="flex items-center gap-3 rounded-lg px-4 py-2" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span className="text-xs" style={{ color: C.green }}>✓</span>
+                    <span className="text-xs" style={{ color: C.dim, textDecoration: 'line-through' }}>{win.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* DAILY TASKS TAB */}
+      {dashTab === 'dailytasks' && (() => {
+        const CRICKET_TASKS: Array<{ id:string; priority:'critical'|'high'|'medium'|'low'; category:string; title:string; due:string; description?:string; action?:string; actionSection?:string }> = [
+          { id:'t-briefing',  priority:'low',      category:'Admin',    title:'Morning briefing recorded',                       due:'Done 06:45',        description:'Director briefing listened to — all key items logged.' },
+          { id:'t-teamsheet', priority:'critical', category:'Selection',title:'Team sheet submitted — deadline 17:00',           due:'Today 17:00',       description:'Friday XI + travel group. Pending final sign-off from Head Coach.',     action:'Submit team sheet', actionSection:'squad' },
+          { id:'t-injury',    priority:'high',     category:'Medical',  title:'Injury status updated',                            due:'Today 12:00',       description:'Rafiq + Cooper latest readings. Harrison RTP phase 3 assessment.',       action:'Open medical',      actionSection:'medical' },
+          { id:'t-dbs',       priority:'high',     category:'Compliance',title:'DBS compliance review (4 outstanding)',            due:'By 20 Apr',         description:'Winterbourne, Tremayne, Cavendish, Rao. Renewals required by month end.', action:'Open compliance',   actionSection:'compliance' },
+          { id:'t-oppo',      priority:'high',     category:'Match Prep',title:'Opposition scout review',                          due:'Today 15:00',       description:'Lancashire batters + bowling patterns. Analyst deck ready to approve.',  action:'Open scout',        actionSection:'opposition' },
+          { id:'t-workload',  priority:'medium',   category:'Medical',  title:'Workload dashboard checked (2 amber flags)',        due:'Today',             description:'Dawson A:C 1.62 · Harrison RTP phase 3. Review cap for Friday selection.',action:'Open workload',     actionSection:'bowling-workload' },
+          { id:'t-mental',    priority:'medium',   category:'Welfare',  title:'Mental Performance check-ins reviewed',             due:'Today',             description:'18/18 complete · 2 amber flags (Cole, Harrison). Confidentiality preserved.', action:'Open mental perf', actionSection:'mental-performance' },
+          { id:'t-media',     priority:'medium',   category:'Media',    title:'Media request reviewed (2 pending)',                due:'Today',             description:'Willow Quarterly long-form + Cricket Digest podcast. Reply by Fri.',     action:'Open media hub',    actionSection:'media-hub' },
+          { id:'t-sponsor',   priority:'low',      category:'Commercial',title:'Sponsor content approved (Pennine Mutual)',        due:'This week',         description:'Matchday social post + hospitality brief. Agent awaiting sign-off.',     action:'Open sponsorship',  actionSection:'sponsorship' },
+        ]
+        const PRIORITY_STYLES: Record<string,{ label:string; color:string; bg:string; dot:string }> = {
+          critical: { label:'CRITICAL', color:C.red,   bg:C.redDim,   dot:C.red },
+          high:     { label:'HIGH',     color:C.amber, bg:C.amberDim, dot:C.amber },
+          medium:   { label:'MEDIUM',   color:C.teal,  bg:C.tealDim,  dot:C.teal },
+          low:      { label:'LOW',      color:C.dim,   bg:'rgba(75,85,99,0.15)', dot:C.dim },
+        }
+        const remaining = CRICKET_TASKS.filter(t => !taskChecked[t.id]).length
+        const done = Object.values(taskChecked).filter(Boolean).length
+        return (
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: C.text }}>Daily Tasks</h3>
+                <p className="text-[11px]" style={{ color: C.dim }}>{remaining} remaining · {done} done</p>
+              </div>
+            </div>
+            {CRICKET_TASKS.map(t => {
+              const checked = taskChecked[t.id] || false
+              const ps = PRIORITY_STYLES[t.priority] || PRIORITY_STYLES.medium
+              return (
+                <div key={t.id} className="rounded-xl p-4 flex items-start gap-4 border transition-all" style={{ backgroundColor: checked ? 'rgba(255,255,255,0.01)' : C.card, borderColor: t.priority === 'critical' && !checked ? `${C.red}55` : C.border, opacity: checked ? 0.55 : 1 }}>
+                  <button onClick={() => setTaskChecked(m => ({ ...m, [t.id]: !checked }))} className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ borderColor: checked ? C.green : C.dim, background: checked ? C.greenDim : 'transparent' }}>
+                    {checked && <span className="text-[9px] font-bold" style={{ color: C.green }}>✓</span>}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: ps.bg, color: ps.color }}>{ps.label}</span>
+                      <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: C.border, color: C.muted }}>{t.category}</span>
+                      <span className="text-xs ml-auto" style={{ color: C.dim }}>{t.due}</span>
+                    </div>
+                    <h4 className="font-semibold text-sm" style={{ color: checked ? C.dim : C.text, textDecoration: checked ? 'line-through' : 'none' }}>{t.title}</h4>
+                    {!checked && t.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: C.muted }}>{t.description}</p>}
+                  </div>
+                  {!checked && t.action && t.actionSection && (
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button onClick={() => setPage(t.actionSection!)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: C.purple }}>{t.action} →</button>
+                      <button onClick={() => setTaskChecked(m => ({ ...m, [t.id]: true }))} className="px-4 py-2 text-xs rounded-xl whitespace-nowrap" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: C.muted }}>Mark done</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
+
+      {/* INSIGHTS TAB */}
+      {dashTab === 'insights' && (
+        <div className="pt-4 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label:'Championship Position', value:'2nd',      sub:'Division One',                color:C.purple, icon:'🏆' },
+              { label:'Batting Avg (team)',    value:'38.4',     sub:'Season rank: 3rd',            color:C.teal,   icon:'🏏' },
+              { label:'Bowling Avg (team)',    value:'24.7',     sub:'Season rank: 2nd',            color:C.green,  icon:'🎯' },
+              { label:'Format Win Rate',       value:'72%',      sub:'All formats · last 8',        color:C.amber,  icon:'📈' },
+              { label:'Form',                  value:'3W-1L-1D', sub:'Last 5 Championship matches', color:'#EC4899',icon:'🔥' },
+            ].map((kpi, i) => (
+              <div key={i} className="rounded-xl p-4 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                <div className="text-lg mb-1">{kpi.icon}</div>
+                <div className="text-[10px] mb-0.5" style={{ color: C.dim }}>{kpi.label}</div>
+                <div className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>{kpi.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { type:'ALERT',       icon:'⚠️', color:C.red,    bg:`${C.red}14`,    border:`${C.red}40`,    title:'DBS compliance: 4 staff overdue',           desc:'Winterbourne, Tremayne, Cavendish, Rao. Renewals required by end of month.',                                           action:'View compliance →',     section:'compliance' },
+              { type:'OPPORTUNITY', icon:'💡', color:C.amber,  bg:`${C.amber}14`,  border:`${C.amber}40`,  title:'Pennine Mutual shirt sponsor renewal',       desc:'Proposal from agent Oakridge Sports — £340k/yr vs current £280k. Decision needed by end of month.',                      action:'View pipeline →',       section:'sponsorship' },
+              { type:'TREND',       icon:'📈', color:C.green,  bg:`${C.green}14`,  border:`${C.green}40`,  title:'Bowling unit SR improving',                  desc:'Last 5 matches: 24.7 vs 27.1 season avg. Ridley + Fenwick partnership working on Division One pitches.',               action:'View bowling stats →',  section:'bowling-analytics' },
+              { type:'ACHIEVEMENT', icon:'🏆', color:C.purple, bg:`${C.purple}14`, border:`${C.purple}40`, title:'Most Division One wickets in a week',        desc:'42 wickets across 2 matches. Club record since 2004. Analyst team pulling the breakdown for the board pack.',           action:'View match reports →',  section:'match-report' },
+            ].map((tile, i) => (
+              <div key={i} className="rounded-xl p-5" style={{ backgroundColor: tile.bg, border: `1px solid ${tile.border}` }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">{tile.icon}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: tile.color }}>{tile.type}</span>
+                </div>
+                <p className="text-sm font-semibold mb-1" style={{ color: C.text }}>{tile.title}</p>
+                <p className="text-xs mb-3" style={{ color: C.muted }}>{tile.desc}</p>
+                <button onClick={() => setPage(tile.section)} className="text-[11px] font-semibold transition-all" style={{ color: tile.color, background:'transparent', border:'none', cursor:'pointer', padding:0 }}>{tile.action}</button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: C.dim }}>Key Metrics</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label:'Batting Avg (team)',    value:'38.4',  trend:'↑ 2.1',  trendColor:C.green },
+                { label:'Bowling Avg (team)',    value:'24.7',  trend:'↓ 1.8',  trendColor:C.green },
+                { label:'Strike Rate (bat)',     value:'62.3',  trend:'→ 0',    trendColor:C.dim },
+                { label:'Economy Rate (bowl)',   value:'3.4',   trend:'↓ 0.2',  trendColor:C.green },
+                { label:'Catches / Drops',       value:'42/6',  trend:'↑ 3',    trendColor:C.green },
+                { label:'Boundary %',            value:'48%',   trend:'↑ 2%',   trendColor:C.green },
+                { label:'Run Rate (first 15)',   value:'4.8',   trend:'↑ 0.3',  trendColor:C.green },
+                { label:'Death-over Economy',    value:'7.1',   trend:'↓ 0.4',  trendColor:C.green },
+              ].map((m, i) => (
+                <div key={i} className="rounded-lg p-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                  <div className="text-[10px] mb-1" style={{ color: C.dim }}>{m.label}</div>
+                  <div className="text-lg font-black" style={{ color: C.text }}>{m.value}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: m.trendColor }}>{m.trend}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${C.purple}40` }}>
+              <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: `${C.purple}14`, borderBottom: `1px solid ${C.purple}40` }}>
+                <span className="text-sm">✨</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>AI Department Intelligence — Summary</span>
+              </div>
+              <div className="p-5" style={{ backgroundColor: '#0f0e17' }}>
+                <p className="text-xs leading-relaxed" style={{ color: C.text }}>
+                  Oakridge go into the Championship opener with the best red-ball bowling average in the division after 5 matches — 24.7 is a club high since the 2004 title run. Batting depth is the question: Fairweather + Pennington + Endicott carrying the top order, middle order still a selection toss-up with Harrison in RTP phase 3. Dawson&apos;s A:C ratio 1.62 is the biggest workload flag and Friday's XI likely caps his spell length. Commercial side: Pennine Mutual renewal at £340k/yr is on the table and needs board sign-off before month end — that's the single biggest revenue lever live right now.
+                </p>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${C.teal}40` }}>
+              <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: `${C.teal}14`, borderBottom: `1px solid ${C.teal}40` }}>
+                <span className="text-sm">📊</span>
+                <span className="text-sm font-bold" style={{ color: C.text }}>Performance Intelligence</span>
+              </div>
+              <div className="p-5 space-y-3" style={{ backgroundColor: '#0f0e17' }}>
+                {[
+                  'Team batting avg trending up — 38.4 now vs 35.8 this time last year (+7%).',
+                  'Bowling unit cohesion: Ridley + Fenwick partnership has 42 wickets at 18.6 across last 5 games.',
+                  'Fielding alerts: 6 drops flagged in the review — 4 at slip. Recommend extra catching block Fri AM.',
+                  'Fitness scores: 15/18 above threshold, 2 monitoring, 1 injured. Harrison RTP phase 3.',
+                  'Opposition weakness: Lancs LH batters avg 18 vs left-arm spin last 12 months — Kent and Talbot to exploit.',
+                ].map((line, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${C.teal}33`, color: C.teal }}>{i + 1}</span>
+                    <p className="text-xs leading-relaxed" style={{ color: C.text }}>{line}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DON'T MISS TAB */}
+      {dashTab === 'dontmiss' && (() => {
+        const DONT_MISS = [
+          { id:'dm-1',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Entries',     deadline:'Today 17:00',  title:'T20 Blast squad submission',             desc:'ECB needs squad submitted by 17:00. Pending 2 signatures.',                                  consequence:'Forfeit of quarter-final entry.',                       action:'Manage entries →',  section:'vitality-blast' },
+          { id:'dm-2',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Sponsor',     deadline:'Today 14:00',  title:'Sponsor content: Crownmark bat photo',   desc:'Photographer needs bat shot by 14:00 for contractual matchday post.',                        consequence:'Breach of sponsor obligation — penalty clause.',        action:'Open brief →',      section:'media' },
+          { id:'dm-3',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Compliance',  deadline:'Today',        title:'DBS renewal: Winterbourne signature needed',desc:'Assistant Coach DBS-3 form outstanding. ECB compliance flag — blocks Thu academy session.', consequence:'Academy activity paused until renewed.',                action:'Open compliance →', section:'compliance' },
+          { id:'dm-4',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Selection',   deadline:'Wed 17:00',    title:'Team sheet deadline for Lancashire',      desc:'Friday XI + travel group. Head Coach sign-off pending.',                                    consequence:'Auto-submission of Wednesday draft XI.',                action:'Submit team sheet →',section:'squad' },
+          { id:'dm-5',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Media',       deadline:'Wed 14:00',    title:'Media availability: 14:00 press conference',desc:'Fairweather + Caldwell confirmed. Q-list approved, Northbridge + 4 nationals attending.',   consequence:'Loss of pre-match media window.',                        action:'Open media hub →',   section:'media-hub' },
+          { id:'dm-6',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Medical',     deadline:'Thu 10:00',    title:'Workload review meeting',                 desc:'Medical + Head Coach sign-off. Dawson + Harrison on the agenda.',                           consequence:'Workload caps default to conservative — loss of selection flexibility.', action:'Open workload →', section:'bowling-workload' },
+          { id:'dm-7',  urgency:'30 APR', group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Compliance',deadline:'30 Apr',      title:'ECB Compliance quarterly audit',          desc:'CPA self-assessment submission + 3 outstanding welfare log entries.',                        consequence:'Audit flag on club profile for the following quarter.',  action:'Open compliance →', section:'compliance' },
+          { id:'dm-8',  urgency:'5 MAY',  group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Commercial',deadline:'5 May',      title:'Sponsorship renewal decision',            desc:'Pennine Mutual £340k/yr or retain current £280k. Board decision required.',                  consequence:'Auto-renewal at current terms.',                         action:'View pipeline →',   section:'sponsorship' },
+          { id:'dm-9',  urgency:'15 MAY', group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Overseas',  deadline:'15 May',     title:'Overseas player review',                  desc:'Steenkamp + Mason mid-season review. Visa renewals + performance window decisions.',         consequence:'Late slot changes cost 2–3 weeks of match availability.',action:'Open overseas →',   section:'overseas' },
+          { id:'dm-10', urgency:'FRI',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Fri 10:30',    title:'vs Lancashire — Oakridge Park',           desc:'Championship opener. Pitch verdict + selection announce 09:30.',                             consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
+          { id:'dm-11', urgency:'SAT',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Sat',          title:'vs Surrey — Away (T20 Blast)',            desc:'Travel Thursday PM. Overseas player rotation — Mason visa cleared.',                         consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
+        ]
+        const visible = DONT_MISS.filter(d => !dismissedAlerts.has(d.id))
+        const groups = ['Today','This week','Coming up','Fixtures'] as const
+        const grouped: Record<string, typeof visible> = {}
+        for (const g of groups) grouped[g] = visible.filter(v => v.group === g)
+        return (
+          <div className="pt-4 space-y-5">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: C.text }}>Don&apos;t Miss</h3>
+                <p className="text-[11px]" style={{ color: C.dim }}>{visible.length} items need attention</p>
+              </div>
+            </div>
+            {visible.length === 0 ? (
+              <div className="text-center py-12 rounded-xl" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                <div className="text-3xl mb-3">✅</div>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>All clear</div>
+                <div className="text-xs" style={{ color: C.dim }}>No urgent items remaining. Check back later.</div>
+              </div>
+            ) : groups.map(g => grouped[g].length === 0 ? null : (
+              <div key={g}>
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.dim }}>{g === 'Today' ? '🚨 Today' : g === 'This week' ? '⚠️ This week' : g === 'Coming up' ? '📅 Coming up' : '🏆 Fixtures'}</h4>
+                <div className="space-y-3">
+                  {grouped[g].map(d => (
+                    <div key={d.id} className="rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] px-2 py-1 rounded font-black flex-shrink-0 mt-0.5" style={{ background: d.urgencyBg, color: d.urgencyColor }}>{d.urgency}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: C.border, color: C.dim }}>{d.category}</span>
+                            <span className="text-[10px]" style={{ color: C.dim }}>Due: {d.deadline}</span>
+                          </div>
+                          <p className="text-sm font-semibold mb-1" style={{ color: C.text }}>{d.title}</p>
+                          <p className="text-xs mb-1" style={{ color: C.muted }}>{d.desc}</p>
+                          {d.consequence !== '—' && <p className="text-[11px] italic mb-3" style={{ color: C.red }}>If missed: {d.consequence}</p>}
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setPage(d.section)} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all" style={{ backgroundColor: C.purple, color: '#fff', border:'none', cursor:'pointer' }}>{d.action}</button>
+                            <button onClick={() => setDismissedAlerts(s => { const n = new Set(s); n.add(d.id); return n })} className="text-[11px] px-3 py-1.5 rounded-lg transition-all" style={{ border: `1px solid ${C.border}`, color: C.muted, background:'transparent', cursor:'pointer' }}>Dismiss</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
+      {/* TEAM TAB */}
+      {dashTab === 'team' && (() => {
+        type StaffMember = { name:string; role:string; dept:'Coaching'|'Medical'|'Analytics'|'Support'; initials:string; status:string; available:boolean; location:string; phone:string; speciality:string; focus:string }
+        const TEAM_MEMBERS: StaffMember[] = [
+          { name:'Marcus Caldwell',   role:'Head Coach',            dept:'Coaching',  initials:'MC', status:'Selection call 09:30 today',     available:true,  location:'Oakridge Park',    phone:'+44 7700 xxx xxx', speciality:'Tactical & selection',        focus:'Friday XI sign-off · Lancs prep' },
+          { name:'Ashley Winterbourne',role:'Assistant Coach',       dept:'Coaching',  initials:'AW', status:'DBS renewal pending',            available:true,  location:'Oakridge Park',    phone:'+44 7700 xxx xxx', speciality:'Fielding & 2nd XI',           focus:'2nd XI promotion review' },
+          { name:'Richard Cavendish', role:'Bowling Coach',          dept:'Coaching',  initials:'RC', status:'Video session 11:00',            available:true,  location:'Indoor Nets',      phone:'+44 7700 xxx xxx', speciality:'Seam & swing analysis',       focus:'Ridley + Fenwick partnership film' },
+          { name:'Kunal Rao',         role:'Batting Coach',          dept:'Coaching',  initials:'KR', status:'Net session 10:30',              available:true,  location:'Main Nets',        phone:'+44 7700 xxx xxx', speciality:'Red-ball batting technique',  focus:'Top-order balance vs new-ball' },
+          { name:'Ian Tremayne',      role:'Academy Director',       dept:'Coaching',  initials:'IT', status:'DBS expiring Jun',                available:false, location:'Academy — remote', phone:'+44 7700 xxx xxx', speciality:'Pathway development',         focus:'Noah Patel contract · Clarke debut' },
+          { name:'Dr Nick Lawson',    role:'Club Doctor',            dept:'Medical',   initials:'NL', status:'Clinic 17:30 today',             available:true,  location:'Medical suite',    phone:'+44 7700 xxx xxx', speciality:'Sports medicine',              focus:'Rafiq + Cooper recovery window' },
+          { name:'Kofi Oduya',        role:'Head Physio',            dept:'Medical',   initials:'KO', status:'Harrison RTP phase 3',           available:true,  location:'Medical suite',    phone:'+44 7700 xxx xxx', speciality:'Rehab & return-to-play',       focus:'Harrison RTP · Dawson workload' },
+          { name:'Sarah Hollis',      role:'S&C Lead',               dept:'Medical',   initials:'SH', status:'Gym block 07:00',                available:true,  location:'S&C Suite',        phone:'+44 7700 xxx xxx', speciality:'Strength & bowling load',      focus:'Bowling A:C monitoring' },
+          { name:'A. Patel',          role:'Head of Analysis',       dept:'Analytics', initials:'AP', status:'Opposition deck ready',          available:true,  location:'Analyst room',     phone:'+44 7700 xxx xxx', speciality:'Opposition scout + data',      focus:'Lancs LH batter match-ups' },
+          { name:'R. Khan',           role:'Performance Analyst',    dept:'Analytics', initials:'RK', status:'Pitch profile report — Wed',     available:true,  location:'Analyst room',     phone:'+44 7700 xxx xxx', speciality:'Pitch + bounce modelling',     focus:'Oakridge Park 5y trend' },
+          { name:'Sarah Hollis',      role:'Team Manager',           dept:'Support',   initials:'SH', status:'Travel brief 12:00',             available:true,  location:'Oakridge Park',    phone:'+44 7700 xxx xxx', speciality:'Operations & logistics',      focus:'Lancs travel + kit drop' },
+          { name:'Phil Grant',        role:'Kit & Equipment',        dept:'Support',   initials:'PG', status:'DBS expired — renewal in progress',available:false,location:'Equipment store',  phone:'+44 7700 xxx xxx', speciality:'Match-day setup',              focus:'Crownmark ball reorder · 24 units' },
+          { name:'Darren Ellesmere',  role:'Director of Cricket',    dept:'Support',   initials:'DE', status:'Board prep today',                available:true,  location:'Oakridge Park',    phone:'+44 7700 xxx xxx', speciality:'Strategy & board',             focus:'Pennine Mutual renewal briefing' },
+        ]
+        const byDept = (d: StaffMember['dept']) => TEAM_MEMBERS.filter(m => m.dept === d)
+        const deptColor = (d: StaffMember['dept']) => d === 'Coaching' ? C.purple : d === 'Medical' ? C.red : d === 'Analytics' ? C.teal : C.amber
+        return (
+          <div className="pt-4 space-y-4">
+            <div className="flex gap-1 border-b pb-0" style={{ borderColor: C.border, overflowX: 'hidden' }}>
+              {([
+                { id:'today' as const, label:'Team Today',  icon:'📍' },
+                { id:'org'   as const, label:'Org Chart',   icon:'🏗️' },
+                { id:'info'  as const, label:'Departments', icon:'📋' },
+              ]).map(t => (
+                <button key={t.id} onClick={() => setTeamSubTab(t.id)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
+                  style={{ borderBottomColor: teamSubTab === t.id ? C.purple : 'transparent', color: teamSubTab === t.id ? C.purple : C.dim, backgroundColor: teamSubTab === t.id ? `${C.purple}0d` : 'transparent' }}>
+                  <span className="text-base">{t.icon}</span>{t.label}
+                </button>
+              ))}
+            </div>
+
+            {teamSubTab === 'today' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {TEAM_MEMBERS.map((m, i) => (
+                  <div key={i} className="flex items-center gap-4 rounded-xl p-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${deptColor(m.dept)}20`, border: `1px solid ${deptColor(m.dept)}55`, color: deptColor(m.dept) }}>
+                      {m.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold" style={{ color: C.text }}>{m.name}</span>
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.available ? C.green : C.dim }} />
+                      </div>
+                      <div className="text-[10px]" style={{ color: deptColor(m.dept) }}>{m.role}</div>
+                      <div className="text-[10px] truncate" style={{ color: C.muted }}>{m.status}</div>
+                      <div className="text-[10px]" style={{ color: C.dim }}>📍 {m.location}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {teamSubTab === 'org' && (
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <div className="rounded-xl p-4 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.purple}55`, minWidth: 200 }}>
+                    <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-2" style={{ background: C.purpleDim, border: `2px solid ${C.purple}`, color: C.purple }}>DR</div>
+                    <div className="text-sm font-semibold" style={{ color: C.text }}>Director</div>
+                    <div className="text-[10px]" style={{ color: C.purple }}>Oakridge CC</div>
+                  </div>
+                </div>
+                <div className="flex justify-center"><div className="w-px h-6" style={{ background: C.border }} /></div>
+                {(['Coaching','Medical','Analytics','Support'] as const).map(dept => (
+                  <div key={dept}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: deptColor(dept) }}>{dept}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {byDept(dept).map((m, i) => (
+                        <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                          <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-[10px] font-bold mb-1.5" style={{ background: `${deptColor(dept)}20`, border: `1px solid ${deptColor(dept)}55`, color: deptColor(dept) }}>{m.initials}</div>
+                          <div className="text-xs font-semibold" style={{ color: C.text }}>{m.name}</div>
+                          <div className="text-[10px]" style={{ color: deptColor(dept) }}>{m.role}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {teamSubTab === 'info' && (
+              <div className="space-y-4">
+                {(['Coaching','Medical','Analytics','Support'] as const).map(dept => (
+                  <div key={dept} className="rounded-xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: deptColor(dept) }}>{dept}</span>
+                      <span className="text-[10px]" style={{ color: C.dim }}>{byDept(dept).length} staff</span>
+                    </div>
+                    <div className="space-y-2">
+                      {byDept(dept).map((m, i) => (
+                        <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: i < byDept(dept).length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold" style={{ color: C.text }}>{m.name}</div>
+                            <div className="text-[11px]" style={{ color: C.muted }}>{m.role} · <span style={{ color: C.dim }}>{m.speciality}</span></div>
+                            <div className="text-[10px] mt-0.5" style={{ color: C.dim }}>Current focus: {m.focus}</div>
+                          </div>
+                          <div className="text-[10px] flex-shrink-0 ml-4" style={{ color: C.muted }}>{m.phone}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   );
 
@@ -5945,7 +6467,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
 
         <div className="flex items-center shrink-0" style={{ borderBottom: `1px solid ${C.border}`, minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${C.purple},${C.teal})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🏏</div>
+            <img src="/badges/oakridge_cc_crest.svg" alt="Oakridge CC" style={{width:32,height:32,borderRadius:6,flexShrink:0,objectFit:'contain'}}/>
             {sidebarExpanded && <div><div style={{fontSize:13,fontWeight:700,color:C.text}}>Lumio Cricket</div><div style={{fontSize:10,color:C.dim}}>Oakridge CC</div></div>}
           </div>
           {sidebarExpanded && (
