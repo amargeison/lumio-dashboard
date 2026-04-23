@@ -5,7 +5,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 
-type RugbyCode = 'union' | 'league'
+type RugbyCode = 'union'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface RugbyClub {
@@ -215,7 +215,7 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
   const available = SQUAD.filter((p:{status:string})=>p.status==='available').length;
   const headroom = club.capCeiling - club.currentSpend;
   const floorBuffer = club.currentSpend - club.capFloor;
-  const code = rugbyCode || 'union';
+  // Rugby League removed — Union is the only variant.
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today');
   const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_rugby_checklist') : null; return s ? JSON.parse(s) : {} } catch { return {} }
@@ -279,13 +279,13 @@ function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyCl
   const GETTING_STARTED = [
     { id: 'gs1', label: 'Upload your club badge', desc: 'Personalise your portal' },
     { id: 'gs2', label: 'Set your club name and league', desc: 'Appears throughout the portal' },
-    { id: 'gs3', label: code === 'union' ? 'Enter salary cap figures' : 'Enter salary cap details', desc: 'Enables cap dashboard and compliance tracking' },
+    { id: 'gs3', label: 'Enter salary cap figures', desc: 'Enables cap dashboard and compliance tracking' },
     { id: 'gs4', label: 'Add your squad (player list)', desc: 'Unlocks availability, GPS, medical and selection views' },
     { id: 'gs5', label: 'Connect GPS provider (Lumio GPS / Lumio GPS)', desc: 'Live load data feed' },
-    { id: 'gs6', label: code === 'union' ? 'Enter franchise readiness data' : 'Enter club compliance data', desc: 'Tracks your progress against governing body criteria' },
+    { id: 'gs6', label: 'Enter franchise readiness data', desc: 'Tracks your progress against governing body criteria' },
     { id: 'gs7', label: 'Add sponsor details', desc: 'Commercial CRM and obligation tracking' },
     { id: 'gs8', label: 'Set up AI briefing preferences', desc: 'Configure role-specific daily intelligence' },
-    { id: 'gs9', label: code === 'union' ? 'Add international duty players' : 'Add representative duty players', desc: 'Club-to-country data handoff' },
+    { id: 'gs9', label: 'Add international duty players', desc: 'Club-to-country data handoff' },
     { id: 'gs10', label: 'Invite your coaching and medical staff', desc: 'Role-based access control' },
   ];
 
@@ -2926,7 +2926,7 @@ function RugbyAISection({ context, club, session, rugbyCode }: RugbyAISectionPro
   const [generated, setGenerated] = useState(false)
   const hasGenerated = useRef(false)
 
-  const codeLabel = rugbyCode === 'union' ? 'Rugby Union' : 'Rugby League'
+  const codeLabel = 'Rugby Union'
 
   const HIGHLIGHTS: Record<string, string[]> = {
     dashboard: [
@@ -2934,13 +2934,13 @@ function RugbyAISection({ context, club, session, rugbyCode }: RugbyAISectionPro
       `Cap headroom: ${fmt(club.capCeiling - club.currentSpend)} — compliant`,
       `Franchise readiness: ${club.franchiseScore}% (target 85%)`,
       `Next fixture: ${club.nextFixture} — ${club.nextFixtureDate}`,
-      rugbyCode === 'union' ? 'Lineout success: 85% — above league avg' : 'Tackle busts per game: 14.2 — 3rd in Super League',
+      'Lineout success: 85% — above league avg',
     ],
     performance: [
-      rugbyCode === 'union' ? 'Lineout retention: 85% — top 4 in Championship' : 'Completion rate: 82% — above league avg',
+      'Lineout retention: 85% — top 4 in Championship',
       'GPS avg ACWR: 1.22 — amber zone',
       '2 players in overload — Barnes, Foster',
-      rugbyCode === 'union' ? 'Scrum success: 71% — needs improvement' : 'Metres per carry: 8.4m — strong',
+      'Scrum success: 71% — needs improvement',
       'Tackle miss rate: 10% — within target (<12%)',
     ],
     medical: [
@@ -4300,10 +4300,9 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const club = DEMO_CLUB;
   const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','PERFORMANCE','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
 
-  // Rugby code picker
-  const [rugbyCode, setRugbyCode] = useState<RugbyCode | null>(() => {
-    try { return (localStorage.getItem('lumio_rugby_code') as RugbyCode) || null } catch { return null }
-  })
+  // Rugby League removed — Union is the only variant. Code retained as a
+  // const so existing prop wiring (rugbyCode={rugbyCode}) keeps working.
+  const rugbyCode: RugbyCode = 'union'
 
   // ALL hooks must be declared before any early return
   const [sidebarPinned, setSidebarPinned] = useState(false)
@@ -4327,27 +4326,6 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
   const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
-
-  // If code not chosen, show picker
-  if (!rugbyCode) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#07080F' }}>
-      <div className="text-center max-w-lg">
-        <div className="text-6xl mb-4">🏉</div>
-        <h1 className="text-3xl font-black text-white mb-2">Which code do you play?</h1>
-        <p className="text-sm mb-8" style={{ color: '#6B7280' }}>We&apos;ll personalise your portal for your game.</p>
-        <div className="grid grid-cols-2 gap-4">
-          {[{ code: 'union' as const, label: 'Rugby Union', sub: 'Premiership · Championship · European' }, { code: 'league' as const, label: 'Rugby League', sub: 'Super League · Championship · Challenge Cup' }].map(c => (
-            <button key={c.code} onClick={() => { localStorage.setItem('lumio_rugby_code', c.code); setRugbyCode(c.code) }}
-              className="rounded-2xl p-6 text-center transition-all hover:scale-105" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-4xl mb-3">🏉</div>
-              <div className="text-lg font-bold text-white">{c.label}</div>
-              <div className="text-xs mt-1" style={{ color: '#6B7280' }}>{c.sub}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 
   const renderView = () => {
     switch(activeSection) {
