@@ -65,8 +65,25 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
   }, [sport])
 
   useEffect(() => {
+    // Never run a service worker in dev. Previously the SW would cache
+    // stale dev HTML and then serve the offline fallback whenever the
+    // dev server restarted or recompiled — so localhost would render
+    // "You're offline" even while `next dev` was healthy. Keeping the
+    // SW prod-only also auto-unregisters any worker already installed
+    // on an existing dev machine, so no one has to hand-nuke storage.
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+      if (process.env.NODE_ENV === 'production') {
+        navigator.serviceWorker.register('/sw.js').catch(() => {})
+      } else {
+        navigator.serviceWorker.getRegistrations()
+          .then(regs => { regs.forEach(r => r.unregister()) })
+          .catch(() => {})
+        if ('caches' in window) {
+          caches.keys()
+            .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+            .catch(() => {})
+        }
+      }
     }
 
     const installHandler = (e: Event) => {
