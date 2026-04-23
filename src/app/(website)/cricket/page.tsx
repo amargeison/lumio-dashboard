@@ -91,12 +91,12 @@ function DashboardMockup() {
   return (
     <MockupFrame>
       <div style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE_LIGHT})`, borderRadius: 10, padding: 10, marginBottom: 10, color: '#fff' }}>
-        <div style={{ fontSize: 10, fontWeight: 900 }}>Yorkshire CCC — Director&apos;s Dashboard</div>
-        <div style={{ fontSize: 8, marginTop: 4, opacity: 0.9 }}>Good morning, Ottis. Championship opens in 6 days.</div>
+        <div style={{ fontSize: 10, fontWeight: 900 }}>Oakridge CC — Director&apos;s Dashboard</div>
+        <div style={{ fontSize: 8, marginTop: 4, opacity: 0.9 }}>Good morning, Marcus. Championship opens in 6 days.</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
         <KPI value="2nd" label="Div 1" sub="County Champ" color={PURPLE} />
-        <KPI value="Fri 11" label="vs Lancs" sub="Apr · Headingley" color={PURPLE_LIGHT} />
+        <KPI value="Fri 11" label="vs Lancs" sub="Apr · Oakridge Park" color={PURPLE_LIGHT} />
         <KPI value="16/18" label="Fit" sub="Squad available" color="#10B981" />
         <KPI value="£3.2m" label="Budget" sub="Wage cap 91%" color="#3B82F6" />
       </div>
