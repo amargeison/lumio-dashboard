@@ -14,7 +14,12 @@
 //                              links and some marketing copy
 // Everything else (including unknown slugs) renders as founder / empty.
 
-const VALID_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing'])
+// Team sports (football, cricket, rugby, womens) are listed here so future
+// callers can use the same gating helper for them. They currently resolve
+// /<sport>/demo via tier-level redirect pages (src/app/<sport>/demo/page.tsx
+// → /<sport>/<canonical-slug>) rather than calling isDemoSlug, but adding
+// them keeps the URL convention uniform across the product.
+const VALID_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing', 'football', 'cricket', 'rugby', 'womens'])
 
 export function isDemoSlug(slug: string, sport: string): boolean {
   if (!VALID_SPORTS.has(sport)) return false
