@@ -91,7 +91,7 @@ export default function MarketingPage() {
       const mcpServers = []
       if (useEmail) mcpServers.push({ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' })
       if (useCalendar) mcpServers.push({ type: 'url', url: 'https://gcal.mcp.claude.com/mcp', name: 'gcal' })
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/marketing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

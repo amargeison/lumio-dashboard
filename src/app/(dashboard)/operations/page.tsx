@@ -64,7 +64,7 @@ export default function OperationsPage() {
     setSubmitting(true)
     try {
       const mcpServers = useEmail ? [{ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' }] : []
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/marketing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
