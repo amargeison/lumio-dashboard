@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { getSpendState, DAILY_CAP_USD, MODEL_RATES } from '@/lib/ai/guards'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -8,19 +9,42 @@ import { getSpendState, DAILY_CAP_USD, MODEL_RATES } from '@/lib/ai/guards'
 // — today that means cricket/quick-action + the 7 sport generic proxies.
 // Per-sport breakdown is included for the admin dashboard tile.
 //
-// Guard: ADMIN_API_TOKEN env var. Send as `x-admin-token` header. This is
-// shared with the rest of the admin API surface.
+// Auth — either of:
+//   (a) ADMIN_API_TOKEN env var via x-admin-token header (curl / CI access)
+//   (b) a valid admin_sessions row via x-admin-token header (admin UI flow
+//       that sets localStorage.admin_session_token on OTP login)
 //
 // Counter is in-memory; resets at UTC midnight or on process restart.
 // ──────────────────────────────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+async function isAuthorised(req: NextRequest): Promise<boolean> {
   const token = req.headers.get('x-admin-token')
-  const expected = process.env.ADMIN_API_TOKEN
-  if (!expected) {
-    return NextResponse.json({ error: 'ADMIN_API_TOKEN not configured on the server.' }, { status: 500 })
+  if (!token) return false
+
+  // (a) static env token — used by curl + VPS tooling
+  const envToken = process.env.ADMIN_API_TOKEN
+  if (envToken && token === envToken) return true
+
+  // (b) admin_sessions row — used by the admin UI after OTP login
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return false
+  try {
+    const supabase = createClient(url, key)
+    const { data } = await supabase
+      .from('admin_sessions')
+      .select('admin_id')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()
+    return !!data
+  } catch {
+    return false
   }
-  if (token !== expected) {
+}
+
+export async function GET(req: NextRequest) {
+  if (!(await isAuthorised(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
