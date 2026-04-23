@@ -204,7 +204,7 @@ export default function MarketingEventsPage() {
     // Call Anthropic API
     try {
       const audienceList = audiences.map(a => AUDIENCE_OPTIONS.find(o => o.id === a)?.label ?? a).join(', ')
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/marketing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
