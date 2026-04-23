@@ -9,19 +9,32 @@ import MediaContentModule from '@/components/sports/media-content/MediaContentMo
 
 
 export const CRICKET_ROLES = [
-  { id: 'director',   label: 'Director',         icon: '🏛️', description: 'Board & strategy'    },
-  { id: 'head_coach', label: 'Head Coach',       icon: '🎯', description: 'Coaching & analytics' },
+  { id: 'director',   label: 'Director',          icon: '🏛️', description: 'Board & strategy'    },
+  { id: 'head_coach', label: 'Head Coach',        icon: '🎯', description: 'Coaching & analytics' },
   { id: 'captain',    label: 'Captain',           icon: '🏆', description: 'Squad & fixtures'     },
   { id: 'analyst',    label: 'Analyst',           icon: '📊', description: 'Data & performance'   },
   { id: 'sponsor',    label: 'Sponsor',           icon: '🤝', description: 'Sponsorship & events' },
+  { id: 'groundsman', label: 'Groundsman',        icon: '🌱', description: 'Pitch & facilities'   },
+  { id: 'medical',    label: 'Medical',           icon: '🏥', description: 'Physio + S&C'         },
+  { id: 'media',      label: 'Media',             icon: '📣', description: 'Press & social'       },
+  { id: 'operations', label: 'Operations',        icon: '🧰', description: 'Team manager & ops'   },
+  { id: 'mental',     label: 'Mental',            icon: '🧠', description: 'Mental performance'   },
 ]
 
 const CRICKET_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
   director:   { label: 'Director',    icon: '🏛️', accent: '#8B5CF6', sidebar: 'all', message: null },
-  head_coach: { label: 'Head Coach',  icon: '🎯', accent: '#22C55E', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','practice-log','declaration','net-planner','performance-stats','squad','medical','gps','pathway','overseas','settings'], message: 'Coaching and performance view.' },
-  captain:    { label: 'Captain',     icon: '🏆', accent: '#3B82F6', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','squad','medical','opposition','livescores','team-comms','settings'], message: 'Squad and match view.' },
-  analyst:    { label: 'Analyst',     icon: '📊', accent: '#F59E0B', sidebar: ['dashboard','briefing','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','performance-stats','gps','livescores','settings'], message: 'Data and analytics view.' },
-  sponsor:    { label: 'Sponsor',     icon: '🤝', accent: '#EC4899', sidebar: ['dashboard','sponsorship','media','ticket-matchday','fan-engagement','commercial','settings'], message: null },
+  head_coach: { label: 'Head Coach',  icon: '🎯', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','practice-log','declaration','net-planner','performance-stats','squad','medical','gps','pathway','overseas','settings'], message: 'Coaching and performance view.' },
+  captain:    { label: 'Captain',     icon: '🏆', accent: '#3B82F6', sidebar: ['dashboard','briefing','insights','match-centre','batting-analytics','bowling-analytics','squad','medical','opposition','livescores','team-comms','settings'], message: 'Squad and match view.' },
+  analyst:    { label: 'Analyst',     icon: '📊', accent: '#F59E0B', sidebar: ['dashboard','briefing','insights','match-centre','batting-analytics','bowling-analytics','video-analysis','opposition','performance-stats','gps','livescores','settings'], message: 'Data and analytics view.' },
+  sponsor:    { label: 'Sponsor',     icon: '🤝', accent: '#EC4899', sidebar: ['dashboard','insights','sponsorship','media','ticket-matchday','fan-engagement','commercial','settings'], message: null },
+  // ── New roles (Insights expansion). Each gets dashboard + briefing +
+  //    insights + the sidebar sections most relevant to their day-to-day.
+  //    Permission system unchanged — these slot into the existing shape.
+  groundsman: { label: 'Groundsman',  icon: '🌱', accent: '#16A34A', sidebar: ['dashboard','briefing','insights','grounds','facilities','match-centre','livescores','team-comms','settings'], message: 'Pitch + facilities view.' },
+  medical:    { label: 'Medical',     icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','briefing','insights','medical','gps','squad','match-centre','team-comms','settings'], message: 'Physio, S&C and workload view.' },
+  media:      { label: 'Media',       icon: '📣', accent: '#06B6D4', sidebar: ['dashboard','briefing','insights','media-hub','media','sponsorship','ticket-matchday','fan-engagement','team-comms','settings'], message: 'Media + comms view.' },
+  operations: { label: 'Operations',  icon: '🧰', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','operations','staff','facilities','kit','travel','team-comms','safeguarding','settings'], message: 'Team manager + ops view.' },
+  mental:     { label: 'Mental',      icon: '🧠', accent: '#A855F7', sidebar: ['dashboard','briefing','insights','medical','squad','team-comms','settings'], message: 'Mental performance view.' },
 }
 
 const C = {
@@ -271,6 +284,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
   {section:'OVERVIEW',items:[
     {id:'dashboard',label:'Dashboard',icon:'🏠'},
     {id:'briefing',label:'Morning Briefing',icon:'☀'},
+    {id:'insights',label:'Insights',icon:'📊'},
   ]},
   {section:'PERFORMANCE',items:[
     {id:'match-centre',label:'Match Centre',icon:'🏏'},
@@ -304,7 +318,14 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'womens',label:"Women's Cricket",icon:'🏏'},
     {id:'academy',label:'Academy & Youth',icon:'🎓'},
   ]},
+  {section:'GROUNDS',items:[
+    {id:'grounds',label:'Grounds & Facilities',icon:'🌱',badge:'NEW'},
+  ]},
+  {section:'COMMS',items:[
+    {id:'media-hub',label:'Media Hub',icon:'📣',badge:'NEW'},
+  ]},
   {section:'OPERATIONS',items:[
+    {id:'operations',label:'Operations',icon:'🧰',badge:'NEW'},
     {id:'staff',label:'Staff & HR',icon:'👤'},
     {id:'facilities',label:'Facilities & Grounds',icon:'🏟'},
     {id:'kit',label:'Kit & Equipment',icon:'👕'},
@@ -1157,6 +1178,787 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
               </div>
             </div>
           ))}
+        </Card>
+      </div>
+    </div>
+  );
+
+  // ── PAGE: INSIGHTS ────────────────────────────────────────────────
+  // Mirrors the womens FC Insights pattern (src/app/womens/[slug]/page.tsx
+  // ~line 121). Single component, internal role-tab state, per-role
+  // content function. Demo data inline (no shared config). Cloned rather
+  // than extracted because cricket and womens use different helper
+  // primitives (Card/SectionHead vs ICard/SectionHeader/StatCard).
+  const Insights=()=>{
+    const [insightsRole, setInsightsRole] = useState<'director'|'head_coach'|'captain'|'analyst'|'sponsor'|'groundsman'|'medical'|'media'|'operations'|'mental'>('director');
+    const insightsRoles = [
+      { id:'director' as const,   label:'Director',    icon:'🏛️', accent:C.purple },
+      { id:'head_coach' as const, label:'Head Coach',  icon:'🎯', accent:C.green },
+      { id:'captain' as const,    label:'Captain',     icon:'🏆', accent:'#3B82F6' },
+      { id:'analyst' as const,    label:'Analyst',     icon:'📊', accent:C.amber },
+      { id:'sponsor' as const,    label:'Sponsor',     icon:'🤝', accent:'#EC4899' },
+      { id:'groundsman' as const, label:'Groundsman',  icon:'🌱', accent:'#16A34A' },
+      { id:'medical' as const,    label:'Medical',     icon:'🏥', accent:'#DC2626' },
+      { id:'media' as const,      label:'Media',       icon:'📣', accent:'#06B6D4' },
+      { id:'operations' as const, label:'Operations',  icon:'🧰', accent:'#0EA5E9' },
+      { id:'mental' as const,     label:'Mental',      icon:'🧠', accent:'#A855F7' },
+    ];
+    const Tile=({label,value,sub,color}:{label:string;value:string;sub?:string;color:string})=>(
+      <div style={{background:C.card,border:`1px solid ${color}33`,borderRadius:12,padding:18}}>
+        <div style={{fontSize:11,color:C.dim,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{label}</div>
+        <div style={{fontSize:24,fontWeight:800,color}}>{value}</div>
+        {sub&&<div style={{fontSize:11,color:C.muted,marginTop:4}}>{sub}</div>}
+      </div>
+    );
+    const PanelHead=({children}:{children:React.ReactNode})=>(
+      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>{children}</div>
+    );
+
+    const directorContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Director View" sub="Revenue, squad cost, fixtures, and board KPIs" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Revenue YTD"     value="£6.4m"  sub="vs £6.8m budget · 94%" color={C.purple} />
+          <Tile label="Squad Cost"      value="£3.8m"  sub="58% of revenue · within target" color={C.green} />
+          <Tile label="Fixtures Booked" value="42/42"  sub="Full county season + CC + T20" color={C.teal} />
+          <Tile label="Board KPIs"      value="6/8"    sub="2 amber · 0 red" color={C.amber} />
+        </div>
+        <Card>
+          <PanelHead>Board Review — Q1 2026</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Revenue vs Budget',       text:'£6.4m delivered vs £6.8m forecast — 94%. Tracking on T20 Blast hospitality (£185k below) but ahead on membership renewal (+£75k).',color:C.amber},
+              {label:'Squad Investment',        text:'Harris contract closing — £340k against £450k budget. Headroom for one more overseas signing in winter window.',color:C.green},
+              {label:'Decisions Pending',       text:'(1) Approve Harris signing by 18 Apr · (2) Sign off Headingley East Stand redevelopment scoping · (3) ECB safeguarding audit response by 5 May.',color:C.red},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const headCoachContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Head Coach View" sub="Squad readiness, form, and performance flags" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Squad Available"      value="16/18" sub="2 unavailable · Ahmed (strain) · Cooper (bruise)" color={C.green} />
+          <Tile label="Form (last 5)"        value="3W-1L-1D" sub="Championship · 4 of last 5 chasing scores" color={C.purple} />
+          <Tile label="Top Run-Scorer"       value="Brook" sub="412 runs · avg 58.9 · SR 87" color={C.amber} />
+          <Tile label="Leading Wicket-Taker" value="Coad"  sub="18 wickets · avg 19.2 · econ 2.4" color={C.teal} />
+        </div>
+        <Card>
+          <PanelHead>Squad Readiness — Friday vs Lancashire</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {n:'Brook',          pos:'Bat',     status:'Fit',      load:'92%',   note:'Cleared fitness check Wed. Confirmed for No.4.'},
+              {n:'Bairstow',       pos:'WK-Bat',  status:'Fit',      load:'88%',   note:'Strong nets — push for opener role discussion this week.'},
+              {n:'Root',           pos:'Bat',     status:'Fit',      load:'95%',   note:'Captain confirmed. Net session 09:30 Thu.'},
+              {n:'Coad',           pos:'Bowl',    status:'Fit',      load:'82%',   note:'12 overs unbroken Wed nets — workload monitored.'},
+              {n:'Ahmed',          pos:'Bowl',    status:'Injured',  load:'—',     note:'Hamstring strain — out 10 days. Replaced by Hartley.'},
+              {n:'Cooper',         pos:'Bat',     status:'Doubt',    load:'60%',   note:'Bruise from net session — back Saturday for T20 Blast opener.'},
+            ].map((p,i)=>{
+              const sc = p.status==='Fit'?C.green:p.status==='Doubt'?C.amber:C.red;
+              return (
+                <div key={i} style={{display:'grid',gridTemplateColumns:'140px 80px 70px 60px 1fr',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<5?`1px solid ${C.border}`:'none'}}>
+                  <span style={{fontSize:13,color:C.text,fontWeight:600}}>{p.n}</span>
+                  <span style={{fontSize:11,color:C.muted}}>{p.pos}</span>
+                  <span style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:`${sc}22`,color:sc,textAlign:'center',fontWeight:600}}>{p.status}</span>
+                  <span style={{fontSize:11,color:C.dim}}>{p.load}</span>
+                  <span style={{fontSize:11,color:C.muted}}>{p.note}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Performance Trend — Last 5 Championship Matches</PanelHead>
+          <div style={{display:'flex',gap:8,marginBottom:14}}>
+            {['W','L','W','D','W'].map((r,i)=>{
+              const c = r==='W'?C.green:r==='L'?C.red:C.amber;
+              return <span key={i} style={{width:32,height:32,borderRadius:8,background:`${c}22`,color:c,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700}}>{r}</span>;
+            })}
+          </div>
+          <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Avg runs scored per match (last 5)</div>
+          <svg viewBox="0 0 200 40" style={{width:'100%',maxWidth:280,height:40}}>
+            {[342,287,398,356,412].map((v,i,a)=>{const x=i*50;const y=40-((v-200)/250)*36;return i<a.length-1?<line key={i} x1={x} y1={y} x2={(i+1)*50} y2={40-((a[i+1]-200)/250)*36} stroke={C.purple} strokeWidth="2"/>:null;})}
+            {[342,287,398,356,412].map((v,i)=><circle key={i} cx={i*50} cy={40-((v-200)/250)*36} r="3" fill={C.purple}/>)}
+          </svg>
+        </Card>
+      </div>
+    );
+
+    const captainContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Captain View" sub="Match-day decisions, opposition intel, pitch & toss" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Next Match"   value="Fri 11 Apr" sub="vs Lancashire (A) · Old Trafford" color={C.purple} />
+          <Tile label="H2H Record"   value="6-3"        sub="Last 10 vs Lancs CC · 1 draw" color={C.green} />
+          <Tile label="Pitch Report" value="Seam-friendly" sub="Lateral movement Sessions 1–3" color={C.teal} />
+          <Tile label="Toss Win Rate" value="58%"       sub="Bat first away · 11/19 last 2 seasons" color={C.amber} />
+        </div>
+        <Card>
+          <PanelHead>Match-Day Decisions — Lancashire (A)</PanelHead>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+            <div style={{padding:12,borderRadius:8,background:`${C.purple}10`,border:`1px solid ${C.purple}33`}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Bowling Plan</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>Coad + Ali first 12 overs — exploit lateral movement. Switch to Hartley + spinner from over 25.</div>
+            </div>
+            <div style={{padding:12,borderRadius:8,background:`${C.teal}10`,border:`1px solid ${C.teal}33`}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.teal,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Field Setups</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>3-4 slips + gully for Jennings. Drop deep cover after over 20 — bring man to short midwicket.</div>
+            </div>
+            <div style={{padding:12,borderRadius:8,background:`${C.amber}10`,border:`1px solid ${C.amber}33`}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.amber,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Batting Order</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>Promote Bairstow to open with Lyth. Brook 4. Hold Root at 5 to anchor middle session if collapse.</div>
+            </div>
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Opposition Key Players — Lancashire</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {n:'Keaton Jennings', pos:'Opener', threat:'Avg 17 vs nip-back ball',          plan:'Full + straight. Target stumps from over the wicket. Forcing chest-high LBW shape.'},
+              {n:'Tom Bailey',     pos:'Pace',   threat:'Reverse swing after over 35',       plan:'Rotate strike against him in spell 2. Don\'t let him bowl maidens.'},
+              {n:'Tom Hartley',    pos:'Spin',   threat:'Bowls full + flat to lefties',      plan:'Sweep early. Use feet to disrupt length once set.'},
+            ].map((p,i)=>(
+              <div key={i} style={{padding:12,background:C.cardAlt,borderRadius:8,border:`1px solid ${C.border}`}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.text}}>{p.n}</span>
+                  <span style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:C.purpleDim,color:C.purple}}>{p.pos}</span>
+                </div>
+                <div style={{fontSize:11,color:C.amber,marginBottom:4}}><strong>Threat:</strong> {p.threat}</div>
+                <div style={{fontSize:11,color:C.text,lineHeight:1.5}}><strong style={{color:C.green}}>Plan:</strong> {p.plan}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const analystContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Analyst View" sub="Data pipelines, deep dives, and scout reports" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Data Streams Live"  value="8/8"  sub="Hawk-Eye · CricViz · GPS · Wear · 4 ECB feeds" color={C.green} />
+          <Tile label="Reports Delivered"  value="12"   sub="This week · 3 to coaches · 9 to scouts" color={C.purple} />
+          <Tile label="Videos Tagged"      value="284"  sub="Last 7 days · 47 player highlights" color={C.teal} />
+          <Tile label="Scout Reports Open" value="6"    sub="3 high-priority · 2 contract decisions pending" color={C.amber} />
+        </div>
+        <Card>
+          <PanelHead>Deep Dives In Progress</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {title:'Lancashire — Spin Vulnerability Study',     owner:'A. Patel',  due:'Thu 10 Apr', status:'In review',   color:C.green},
+              {title:'Harris (target) — 3-year T20 form analysis', owner:'M. Singh',  due:'Fri 11 Apr', status:'Drafting',    color:C.amber},
+              {title:'Brook — Off-side Strike Rate Decomposition',  owner:'A. Patel',  due:'Mon 14 Apr', status:'Data pull',   color:C.teal},
+              {title:'Headingley — Pitch Bounce Profile (5y trend)',owner:'R. Khan',   due:'Wed 16 Apr', status:'Scoping',     color:'#3B82F6'},
+            ].map((d,i)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 120px 120px 100px',gap:12,alignItems:'center',padding:'10px 0',borderBottom:i<3?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:12,color:C.text,fontWeight:600}}>{d.title}</span>
+                <span style={{fontSize:11,color:C.muted}}>{d.owner}</span>
+                <span style={{fontSize:11,color:C.dim}}>Due {d.due}</span>
+                <span style={{fontSize:10,padding:'3px 10px',borderRadius:10,background:`${d.color}22`,color:d.color,textAlign:'center',fontWeight:600}}>{d.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Pipeline — Upcoming Analysis Tasks</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {[
+              'Surrey T20 prep dossier — 3 days post Lancashire result',
+              'Coad workload review — bridging Championship → T20 transition',
+              'Academy bowler hat-trick clip set — recommend for first-team trial',
+              'ECB top-order spinner exposure rates — quarterly update',
+              'Northbridge Sport interview prep — stats sheet for Brook & Bairstow',
+            ].map((t,i)=>(
+              <div key={i} style={{padding:'8px 12px',background:C.cardAlt,borderRadius:6,fontSize:11,color:C.muted,display:'flex',alignItems:'center',gap:8}}>
+                <span style={{color:C.dim}}>•</span>{t}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const sponsorContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Sponsor View" sub="Brand exposure, engagement, ROI, and active campaigns" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Brand Exposure"   value="14.2M" sub="Impressions YTD · across broadcast + digital" color="#EC4899" />
+          <Tile label="Engagement Rate"  value="6.4%"  sub="Above industry benchmark of 4.1%" color={C.green} />
+          <Tile label="ROI"              value="3.8x"  sub="Across portfolio · Northbridge top performer" color={C.purple} />
+          <Tile label="Active Campaigns" value="6"     sub="3 broadcast · 2 social · 1 hospitality" color={C.amber} />
+        </div>
+        <Card>
+          <PanelHead>Sponsor Summary — April 2026</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Deliverables This Month',  text:'5 broadcast spots delivered (vs 6 contracted) · 12 social posts (target 10) · 3 player appearances (target 4 — 1 deferred to May).',color:C.amber},
+              {label:'KPI Performance vs Contract', text:'Northbridge Financial: 102% impressions, 138% engagement (over-delivering). Crown Wagers: 87% impressions (under by 1.4M — TV slot reschedule).',color:C.green},
+              {label:'Renewals & Pipeline',     text:'Northbridge renewing for 2 years at +12% (£185k → £207k). Meridian Sports proposing a 3-year hospitality bundle worth £340k.',color:C.purple},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Active Campaigns</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {sponsor:'Northbridge Financial', campaign:'Championship Title Partner — Boundary Boards', status:'Live',      color:C.green},
+              {sponsor:'Crown Wagers',          campaign:'T20 Blast — Player of the Match nightly',       status:'Live',      color:C.green},
+              {sponsor:'Meridian Sports',       campaign:'Hospitality activation — Headingley test week', status:'Pending',   color:C.amber},
+              {sponsor:'Apex Performance',      campaign:'Kit sponsor — full season jersey + warmup',     status:'Live',      color:C.green},
+              {sponsor:'Vanta Sports',          campaign:'Pre-match social reels (8-week run)',           status:'Live',      color:C.green},
+              {sponsor:'Briar & Stoke',         campaign:'In-stand brand activation — T20 Blast Fri',     status:'Scoping',   color:'#3B82F6'},
+            ].map((c,i,a)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'160px 1fr 100px',gap:12,alignItems:'center',padding:'8px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:12,color:C.text,fontWeight:600}}>{c.sponsor}</span>
+                <span style={{fontSize:11,color:C.muted}}>{c.campaign}</span>
+                <span style={{fontSize:10,padding:'3px 10px',borderRadius:10,background:`${c.color}22`,color:c.color,textAlign:'center',fontWeight:600}}>{c.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const groundsmanContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Groundsman View" sub="Pitch preparation, weather, and ground readiness" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Pitch Prep Status" value="Day 3 of 5" sub="Final cut Thu · Roll Fri 06:00" color="#16A34A" />
+          <Tile label="48hr Rain Risk"    value="22%"        sub="Showers possible Thu evening" color={C.amber} />
+          <Tile label="Ground Condition"  value="Amber"      sub="Surface firming · 1 light water Wed" color={C.amber} />
+          <Tile label="Days to Match"     value="3 days"     sub="vs Lancashire · 10:30 start" color="#16A34A" />
+        </div>
+        <Card>
+          <PanelHead>Pitch Report — Headingley · Friday Strip</PanelHead>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:14}}>
+            {[
+              {l:'Hardness',     v:'7.2 / 10', sub:'Firm — pace-friendly day 1'},
+              {l:'Grass Cover',  v:'4mm',      sub:'Slight green tinge'},
+              {l:'Moisture',     v:'12%',      sub:'Within target band 10–14'},
+              {l:'Profile',      v:'Seam day', sub:'Spinning by day 3'},
+            ].map(s=>(
+              <div key={s.l} style={{padding:12,background:C.cardAlt,border:`1px solid ${C.border}`,borderRadius:8}}>
+                <div style={{fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{s.l}</div>
+                <div style={{fontSize:16,fontWeight:700,color:C.text,margin:'4px 0'}}>{s.v}</div>
+                <div style={{fontSize:10,color:C.muted}}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:12,background:`${C.green}10`,border:`1px solid ${C.green}33`,borderRadius:8,fontSize:12,color:C.text,lineHeight:1.6}}>
+            <strong style={{color:C.green}}>Assessment:</strong> Lateral movement first 2 sessions, batting day 2, increasing turn from session 5. Recommend 2 spinners + 3 seamers for the XI. No covers needed overnight unless 8mm+ rain.
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Pitch Preparation Schedule — Next 5 Days</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {[
+              {day:'Mon 7 Apr',  task:'Heavy roll · 2hr · then water if temp >18°C',     done:true},
+              {day:'Tue 8 Apr',  task:'Light water 06:00 · cut to 8mm · weather check',  done:true},
+              {day:'Wed 9 Apr',  task:'Roll 1hr · cut to 6mm · final sub-soil moisture', done:true},
+              {day:'Thu 10 Apr', task:'Final cut to 4mm · strip cover ON for evening',    done:false},
+              {day:'Fri 11 Apr', task:'06:00 cover OFF · final roll · ground inspection 09:00', done:false},
+            ].map((d,i,a)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'120px 24px 1fr',gap:12,alignItems:'center',padding:'8px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:12,color:C.muted,fontFamily:'monospace'}}>{d.day}</span>
+                <span style={{fontSize:14,color:d.done?C.green:C.dim}}>{d.done?'✓':'○'}</span>
+                <span style={{fontSize:12,color:C.text,opacity:d.done?0.7:1}}>{d.task}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const medicalContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Medical View" sub="Fitness, injuries, RTP plans, and workload flags" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Fit Players"      value="16 of 18"  sub="2 unavailable · 1 monitored" color={C.green} />
+          <Tile label="Active Injuries"  value="2 players" sub="1 strain · 1 contusion"      color="#DC2626" />
+          <Tile label="On RTP Plans"     value="1"         sub="Cooper · phase 3 of 4"        color={C.amber} />
+          <Tile label="Workload Flags"   value="1 amber"   sub="Coad — bowling load over threshold" color={C.amber} />
+        </div>
+        <Card>
+          <PanelHead>Medical Priorities — This Week</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Active Injuries',     text:'Ahmed — left hamstring strain Grade 1. Day 4 of estimated 10. Modified bike + pool work today, return to running Mon 14 Apr.', color:'#DC2626'},
+              {label:'RTP Plans',            text:'Cooper — quad contusion. Cleared for net session Thu, full training Fri morning. Confirmed available for T20 Blast opener Sat.', color:C.amber},
+              {label:'Workload Risk',        text:'Coad — bowling load 142 high-intensity efforts last 7 days vs ceiling of 130. Recommend reduced run-up Wed nets, no live bowling Thu.', color:C.amber},
+              {label:'Wellness Screening',   text:'18/18 morning check-ins logged. 1 sleep flag (Bairstow — 5.2hrs avg this week) — referred to mental performance.', color:C.green},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Player Fitness Register</PanelHead>
+          <div style={{display:'grid',gridTemplateColumns:'160px 160px 120px 100px 1fr',gap:12,padding:'8px 0',borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
+            <span>Player</span><span>Issue</span><span>ETA Return</span><span>Status</span><span>Notes</span>
+          </div>
+          {[
+            {n:'Ahmed',    issue:'L hamstring (Gr 1)', eta:'Mon 14 Apr',  status:'Injured', sc:'#DC2626', notes:'Modified rehab · pool + bike day 4'},
+            {n:'Cooper',   issue:'Quad contusion',     eta:'Thu 10 Apr',  status:'RTP',     sc:C.amber,   notes:'Phase 3 · cleared for nets Thu'},
+            {n:'Coad',     issue:'Bowling load amber',  eta:'Active',      status:'Manage',  sc:C.amber,   notes:'Reduced run-up Wed · no live Thu'},
+            {n:'Bairstow', issue:'Sleep flag',          eta:'Active',      status:'Monitor', sc:'#3B82F6', notes:'Referred to mental performance'},
+            {n:'Brook',    issue:'—',                   eta:'—',           status:'Fit',     sc:C.green,   notes:'Full availability confirmed'},
+            {n:'Root',     issue:'—',                   eta:'—',           status:'Fit',     sc:C.green,   notes:'Full availability confirmed'},
+          ].map((r,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'160px 160px 120px 100px 1fr',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:12,color:C.text,fontWeight:600}}>{r.n}</span>
+              <span style={{fontSize:11,color:C.muted}}>{r.issue}</span>
+              <span style={{fontSize:11,color:C.dim}}>{r.eta}</span>
+              <span style={{fontSize:10,padding:'3px 10px',borderRadius:10,background:`${r.sc}22`,color:r.sc,textAlign:'center',fontWeight:600}}>{r.status}</span>
+              <span style={{fontSize:11,color:C.muted}}>{r.notes}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+    );
+
+    const mediaContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Media View" sub="Press, social calendar, requests, and brand sentiment" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Press Confs This Week"   value="2"            sub="Wed 14:00 · Sat post-match" color="#06B6D4" />
+          <Tile label="Social Posts Scheduled"  value="8"            sub="6 IG · 4 X · 2 TikTok"      color={C.purple} />
+          <Tile label="Media Requests"          value="5 pending"    sub="2 print · 2 broadcast · 1 podcast" color={C.amber} />
+          <Tile label="Brand Sentiment"         value="Positive 78%" sub="Last 7 days · +6% vs prior week" color={C.green} />
+        </div>
+        <Card>
+          <PanelHead>Media Priorities — Week of 7 April</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Upcoming Press Conf', text:'Wed 14:00 Headingley press room — Brook + Head Coach. Approved Q list shared. Northbridge Sport + 4 nationals confirmed.', color:'#06B6D4'},
+              {label:'Interview Requests',  text:'2 podcast requests pending review (Cricket Weekly + Wisden). 1 long-form feature (The Times) on Brook — recommend approval given form story.', color:C.amber},
+              {label:'Crisis Comms',         text:'No active items. Standby line drafted re: Ahmed injury — pending head coach sign-off before publishing if asked.', color:C.green},
+              {label:'Social Campaign',      text:'#YorkshireRising hashtag tracking 2.4k mentions this week (+38%). Brook fitness clip = top post — 184k impressions, 6.8% engagement.', color:C.purple},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Content Calendar — Next 7 Days</PanelHead>
+          <div style={{display:'grid',gridTemplateColumns:'120px 80px 80px 1fr',gap:12,padding:'8px 0',borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
+            <span>Date / Time</span><span>Platform</span><span>Type</span><span>Asset / Caption</span>
+          </div>
+          {[
+            {when:'Tue 09:00',     plat:'Instagram', type:'Reel',     asset:'Brook fitness check montage · 30s'},
+            {when:'Tue 17:30',     plat:'X',         type:'Quote',    asset:'Captain pre-match build-up quote graphic'},
+            {when:'Wed 12:00',     plat:'TikTok',    type:'BTS',      asset:'Pitch prep day-in-the-life with groundsman'},
+            {when:'Wed 15:00',     plat:'YouTube',   type:'Recap',    asset:'Press conf highlights · 90s edit'},
+            {when:'Thu 08:30',     plat:'Instagram', type:'Carousel', asset:'Squad fitness scoreboard graphic + captions'},
+            {when:'Fri 06:00',     plat:'X',         type:'Live',     asset:'Match-day countdown thread (5 posts)'},
+            {when:'Fri 10:25',     plat:'Instagram', type:'Story',    asset:'Walk-out tunnel POV · 15s'},
+            {when:'Fri 18:00',     plat:'TikTok',    type:'Reel',     asset:'Post-match interview cuts · 45s'},
+          ].map((c,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'120px 80px 80px 1fr',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:11,color:C.muted,fontFamily:'monospace'}}>{c.when}</span>
+              <span style={{fontSize:11,color:C.text,fontWeight:600}}>{c.plat}</span>
+              <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:C.purpleDim,color:C.purple,textAlign:'center'}}>{c.type}</span>
+              <span style={{fontSize:11,color:C.text}}>{c.asset}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+    );
+
+    const operationsContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Operations View" sub="Travel, kit, accommodation, and safeguarding" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Next Away Trip"         value="Lancs (A)"       sub="Fri 11 Apr · Old Trafford"  color="#0EA5E9" />
+          <Tile label="Accommodation Booked"   value="21 of 21"        sub="Hilton Manchester · 2 nights" color={C.green} />
+          <Tile label="Kit Ready"              value="Yes"             sub="Match + training · checked Tue" color={C.green} />
+          <Tile label="Safeguarding Status"    value="Compliant"       sub="DBS 100% · last audit 2 Apr" color={C.green} />
+        </div>
+        <Card>
+          <PanelHead>Operations Checklist — Lancashire (Away)</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Travel',          text:'Coach booked Thu 14:00 from Headingley. ETA Old Trafford 17:30. Backup train tickets held for 6 staff (return Sun).', color:'#0EA5E9'},
+              {label:'Hotel & Meals',    text:'Hilton Manchester 2 nights (21 rooms). Pre-match meal Fri 07:30 (Chef Marco — agreed menu). Recovery shake bar on bus.', color:C.green},
+              {label:'Kit & Equipment',  text:'Match kit + 2 sets training kit packed Tue. Match balls (12) signed off by umpires. Stringer attending Friday — 4 spare bats.', color:C.green},
+              {label:'Safeguarding',     text:'No youth players on tour. Welfare officer (Dr. Patel) on call. Code-of-conduct briefing Thu 16:00. Anti-doping rep on standby.', color:C.purple},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Match-Day Logistics</PanelHead>
+          <div style={{display:'grid',gridTemplateColumns:'100px 140px 1fr 100px',gap:12,padding:'8px 0',borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
+            <span>Time</span><span>Activity</span><span>Detail</span><span>Lead</span>
+          </div>
+          {[
+            {t:'07:00', act:'Hotel breakfast',     d:'Function room A · pre-match menu',          lead:'Chef Marco'},
+            {t:'08:15', act:'Coach to ground',     d:'Lobby pickup · 12 min transfer',            lead:'Operations'},
+            {t:'08:45', act:'Arrival + setup',     d:'Dressing room 2 · physio table + ice baths', lead:'Medical'},
+            {t:'09:30', act:'Ground inspection',    d:'Captain + umpires + groundsman',            lead:'Captain'},
+            {t:'10:00', act:'Toss',                d:'Pitch-side · live broadcast',                lead:'Captain'},
+            {t:'10:30', act:'Match start',          d:'First session 10:30–13:10',                  lead:'Match referee'},
+            {t:'13:10', act:'Lunch',                d:'Squad room · 40 min · meal plan v2',         lead:'Chef'},
+            {t:'18:30', act:'Post-match recovery',  d:'Ice baths + nutrition + media',              lead:'Medical + Media'},
+          ].map((r,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'100px 140px 1fr 100px',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:11,color:C.muted,fontFamily:'monospace'}}>{r.t}</span>
+              <span style={{fontSize:11,color:C.text,fontWeight:600}}>{r.act}</span>
+              <span style={{fontSize:11,color:C.muted}}>{r.d}</span>
+              <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:C.cardAlt,color:C.muted,textAlign:'center',border:`1px solid ${C.border}`}}>{r.lead}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+    );
+
+    const mentalContent=()=>(
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
+        <SectionHead title="Mental Performance View" sub="Wellbeing, flagged players, sessions, and team morale" />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          <Tile label="Wellbeing Check-ins" value="18 / 18"  sub="100% completion · last Tue 09:00"   color="#A855F7" />
+          <Tile label="Flagged Players"     value="1 amber"  sub="Bairstow — sleep + form pressure"   color={C.amber} />
+          <Tile label="Sessions Booked"     value="3"        sub="Wed 1:1 · Thu group · Sat 1:1"      color="#A855F7" />
+          <Tile label="Team Morale Trend"   value="Stable+"  sub="Net positive · trending up vs prior week" color={C.green} />
+        </div>
+        <Card>
+          <PanelHead>Mental Performance Focus</PanelHead>
+          <div style={{padding:10,background:`${C.purple}10`,border:`1px solid ${C.purple}33`,borderRadius:8,fontSize:11,color:C.muted,marginBottom:10,fontStyle:'italic'}}>
+            Confidentiality notice — names visible to coaching staff with welfare clearance only. Detail intentionally light.
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {label:'Flagged Players',  text:'1 active flag — Bairstow (amber). Sleep avg 5.2h last 7 days, mild pre-season form anxiety. Voluntary 1:1 booked Wed 17:00 with Dr. Lewis. Captain + head coach informed at high-level only.', color:C.amber},
+              {label:'Upcoming Sessions', text:'Group session Thu 09:00 — visualisation + pre-match routines. 2 individual 1:1 (Bairstow Wed, Coad Sat). All voluntary, all logged.', color:'#A855F7'},
+              {label:'Resources Used',    text:'Squad accessing the breathing app daily (avg 14 mins). Sleep journals returning steady data — usable trends after 4 weeks. No adverse incidents.', color:C.green},
+              {label:'Team Morale',       text:'Pulse survey Mon: 78% positive (vs 72% prior week). Pre-season build-up + Brook return appear to be lifting the room. Watch leg of T20 Blast opener — historically dip post-Championship round 1.', color:'#3B82F6'},
+            ].map((row,i)=>(
+              <div key={i} style={{padding:12,borderRadius:8,background:`${row.color}10`,border:`1px solid ${row.color}33`}}>
+                <div style={{fontSize:11,fontWeight:700,color:row.color,marginBottom:4,textTransform:'uppercase',letterSpacing:'0.05em'}}>{row.label}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{row.text}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <PanelHead>Upcoming Session Schedule</PanelHead>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {[
+              {when:'Wed 17:00', who:'1:1 — voluntary',         topic:'Sleep + pre-season anxiety',     led:'Dr. Lewis'},
+              {when:'Thu 09:00', who:'Group — 14 attending',     topic:'Visualisation + pre-match routine', led:'Dr. Lewis'},
+              {when:'Sat 16:00', who:'1:1 — voluntary',          topic:'Bowling pressure decompression',  led:'Dr. Lewis'},
+              {when:'Sun 19:00', who:'Captain check-in',         topic:'Match reflection + week ahead',   led:'Dr. Lewis'},
+            ].map((s,i,a)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'120px 180px 1fr 120px',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:11,color:C.muted,fontFamily:'monospace'}}>{s.when}</span>
+                <span style={{fontSize:11,color:C.text,fontWeight:600}}>{s.who}</span>
+                <span style={{fontSize:11,color:C.muted}}>{s.topic}</span>
+                <span style={{fontSize:11,color:C.dim}}>{s.led}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+    const renderInsightsRole=()=>{
+      switch(insightsRole){
+        case 'director':   return directorContent();
+        case 'head_coach': return headCoachContent();
+        case 'captain':    return captainContent();
+        case 'analyst':    return analystContent();
+        case 'sponsor':    return sponsorContent();
+        case 'groundsman': return groundsmanContent();
+        case 'medical':    return medicalContent();
+        case 'media':      return mediaContent();
+        case 'operations': return operationsContent();
+        case 'mental':     return mentalContent();
+      }
+    };
+
+    return (
+      <div>
+        <SectionHead title="Yorkshire CCC — Insights" sub="Role-based dashboards — 10 views across the cricket club" />
+        <div style={{display:'flex',gap:6,marginBottom:24,overflowX:'auto',paddingBottom:4}}>
+          {insightsRoles.map(r=>(
+            <button key={r.id} onClick={()=>setInsightsRole(r.id)}
+              style={{padding:'8px 14px',borderRadius:6,border:`1px solid ${insightsRole===r.id ? r.accent : C.border}`,background:insightsRole===r.id ? `${r.accent}1A` : 'transparent',color:insightsRole===r.id ? r.accent : C.muted,fontSize:12,fontWeight:600,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:6,whiteSpace:'nowrap',transition:'all 0.15s ease'}}>
+              <span>{r.icon}</span>{r.label}
+            </button>
+          ))}
+        </div>
+        {renderInsightsRole()}
+      </div>
+    );
+  };
+
+  // ── PAGE: GROUNDS & FACILITIES ────────────────────────────────────
+  const Grounds=()=>(
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <SectionHead title="Grounds & Facilities" sub="Pitch preparation, weather, ground conditions, and match-day readiness" />
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Match Day Readiness</div><div style={{fontSize:24,fontWeight:800,color:'#16A34A'}}>92 / 100</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Green · final check Fri 09:00</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Pitch Prep</div><div style={{fontSize:24,fontWeight:800,color:C.purple}}>Day 3 of 5</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Final cut Thu · roll Fri 06:00</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>48hr Weather</div><div style={{fontSize:24,fontWeight:800,color:C.amber}}>22% rain</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Showers Thu PM · Fri dry</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Outfield</div><div style={{fontSize:24,fontWeight:800,color:'#16A34A'}}>Excellent</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Drainage tested 2 Apr · pass</div></Card>
+      </div>
+
+      <Card>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Pitch Prep Schedule — This Week</div>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          {[
+            {day:'Mon 7 Apr',  task:'Heavy roll · 2hr · then water if temp >18°C',     done:true},
+            {day:'Tue 8 Apr',  task:'Light water 06:00 · cut to 8mm · weather check',  done:true},
+            {day:'Wed 9 Apr',  task:'Roll 1hr · cut to 6mm · sub-soil moisture log',   done:true},
+            {day:'Thu 10 Apr', task:'Final cut to 4mm · strip cover ON for evening',    done:false},
+            {day:'Fri 11 Apr', task:'06:00 cover OFF · final roll · ground inspection 09:00', done:false},
+            {day:'Sat 12 Apr', task:'Post-match assessment · re-cover · renovate weak spots', done:false},
+            {day:'Sun 13 Apr', task:'Aerate · top-dress · seed worn areas',              done:false},
+          ].map((d,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'120px 24px 1fr',gap:12,alignItems:'center',padding:'8px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:12,color:C.muted,fontFamily:'monospace'}}>{d.day}</span>
+              <span style={{fontSize:14,color:d.done?C.green:C.dim}}>{d.done?'✓':'○'}</span>
+              <span style={{fontSize:12,color:C.text,opacity:d.done?0.7:1}}>{d.task}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Weather Forecast — Next 5 Days</div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {[
+              {d:'Wed',  t:'14°', icon:'⛅', wind:'SW 12', rain:'5%'},
+              {d:'Thu',  t:'13°', icon:'🌦️', wind:'SW 18', rain:'48%'},
+              {d:'Fri',  t:'15°', icon:'🌤️', wind:'W 9',   rain:'12%'},
+              {d:'Sat',  t:'17°', icon:'☀️', wind:'W 6',   rain:'4%'},
+              {d:'Sun',  t:'16°', icon:'⛅', wind:'NW 14', rain:'18%'},
+            ].map((w,i,a)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'60px 36px 60px 1fr 70px',gap:10,alignItems:'center',padding:'6px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:12,color:C.text,fontWeight:600}}>{w.d}</span>
+                <span style={{fontSize:18,textAlign:'center'}}>{w.icon}</span>
+                <span style={{fontSize:12,color:C.text}}>{w.t}</span>
+                <span style={{fontSize:11,color:C.muted}}>{w.wind} km/h</span>
+                <span style={{fontSize:11,color:parseInt(w.rain)>30?C.amber:C.dim,textAlign:'right'}}>{w.rain} rain</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Ground Conditions Log</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {when:'Tue 09:00', metric:'Pitch hardness', val:'7.2 / 10',  note:'Within target band'},
+              {when:'Tue 09:00', metric:'Grass cover',    val:'4mm',       note:'Cut to 4mm Thu'},
+              {when:'Tue 14:00', metric:'Sub-soil moisture', val:'12%',    note:'Within 10–14 target'},
+              {when:'Mon 16:00', metric:'Outfield drainage', val:'Pass',   note:'Test load 30mm/hr'},
+              {when:'Mon 12:00', metric:'Square — practice strip', val:'Wear visible', note:'Schedule renovation Sun'},
+            ].map((l,i,a)=>(
+              <div key={i} style={{padding:'8px 10px',background:C.cardAlt,borderRadius:6,border:`1px solid ${C.border}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                  <span style={{fontSize:11,color:C.muted}}>{l.when}</span>
+                  <span style={{fontSize:11,color:C.text,fontWeight:600}}>{l.val}</span>
+                </div>
+                <div style={{fontSize:11,color:C.text}}>{l.metric}</div>
+                <div style={{fontSize:10,color:C.dim,marginTop:2}}>{l.note}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+
+  // ── PAGE: MEDIA HUB ──────────────────────────────────────────────
+  const MediaHub=()=>(
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <SectionHead title="Media Hub" sub="Press conferences, social calendar, media requests, and brand mentions" />
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Press Confs</div><div style={{fontSize:24,fontWeight:800,color:'#06B6D4'}}>2 this week</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Wed 14:00 · Sat post-match</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Posts Scheduled</div><div style={{fontSize:24,fontWeight:800,color:C.purple}}>8</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Across IG · X · TikTok · YT</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Pending Requests</div><div style={{fontSize:24,fontWeight:800,color:C.amber}}>5</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>2 print · 2 broadcast · 1 podcast</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Sentiment</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>78% Positive</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>+6% vs prior 7 days</div></Card>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Press Conference Schedule</div>
+          {[
+            {when:'Wed 9 Apr · 14:00', who:'Brook + Head Coach', topic:'Championship build-up · pitch + selection', venue:'Headingley press room'},
+            {when:'Fri 11 Apr · 17:00', who:'Captain (post-toss)', topic:'Day 1 close · session-by-session review', venue:'Old Trafford media centre'},
+            {when:'Sat 12 Apr · 18:30', who:'Match-winner (TBC)', topic:'Post-match — full quotes + 1:1 slots', venue:'Old Trafford media centre'},
+            {when:'Mon 14 Apr · 11:00', who:'Director + Coach', topic:'Pre T20 Blast season launch', venue:'Headingley pavilion'},
+          ].map((p,i,a)=>(
+            <div key={i} style={{padding:'10px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <div style={{fontSize:11,color:'#06B6D4',marginBottom:3,fontFamily:'monospace'}}>{p.when}</div>
+              <div style={{fontSize:12,color:C.text,fontWeight:600,marginBottom:2}}>{p.who}</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:2}}>{p.topic}</div>
+              <div style={{fontSize:10,color:C.dim}}>{p.venue}</div>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Social Calendar — This Week</div>
+          {[
+            {when:'Tue 09:00', plat:'IG · Reel',     asset:'Brook fitness check montage · 30s'},
+            {when:'Tue 17:30', plat:'X · Quote',      asset:'Captain pre-match build-up'},
+            {when:'Wed 12:00', plat:'TikTok · BTS',   asset:'Pitch prep day-in-the-life'},
+            {when:'Wed 15:00', plat:'YT · Recap',     asset:'Press conf highlights · 90s'},
+            {when:'Thu 08:30', plat:'IG · Carousel',  asset:'Squad fitness scoreboard'},
+            {when:'Fri 06:00', plat:'X · Live',       asset:'Match-day countdown thread'},
+            {when:'Fri 10:25', plat:'IG · Story',     asset:'Walk-out tunnel POV · 15s'},
+            {when:'Fri 18:00', plat:'TikTok · Reel',  asset:'Post-match interview cuts'},
+          ].map((c,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'90px 130px 1fr',gap:8,alignItems:'center',padding:'7px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:10,color:C.muted,fontFamily:'monospace'}}>{c.when}</span>
+              <span style={{fontSize:11,color:C.text,fontWeight:600}}>{c.plat}</span>
+              <span style={{fontSize:11,color:C.muted}}>{c.asset}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <Card>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Media Requests — Pending Review</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {[
+            {outlet:'Cricket Weekly',   type:'Podcast',  asks:'30 min slot with Brook on Championship form', dl:'Reply by 12 Apr', urgency:'medium'},
+            {outlet:'Wisden',            type:'Podcast',  asks:'Captain panel — Yorkshire vs Lancs rivalry retrospective', dl:'Reply by 18 Apr', urgency:'low'},
+            {outlet:'The Times',         type:'Print',    asks:'Long-form feature — Brook return narrative', dl:'Reply by 14 Apr', urgency:'medium'},
+            {outlet:'Northbridge Sport', type:'Broadcast', asks:'Pre-match pitch tour with groundsman', dl:'Reply by 10 Apr', urgency:'high'},
+            {outlet:'YCCC Members Mag',  type:'Print',    asks:'Q&A with Director — vision for 2026/27 season', dl:'Reply by 25 Apr', urgency:'low'},
+          ].map((r,i,a)=>{
+            const c = r.urgency==='high'?C.red:r.urgency==='medium'?C.amber:C.dim;
+            return (
+              <div key={i} style={{padding:10,background:C.cardAlt,borderRadius:6,border:`1px solid ${C.border}`,display:'grid',gridTemplateColumns:'140px 90px 1fr 110px 80px',gap:10,alignItems:'center'}}>
+                <span style={{fontSize:11,color:C.text,fontWeight:600}}>{r.outlet}</span>
+                <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:C.purpleDim,color:C.purple,textAlign:'center'}}>{r.type}</span>
+                <span style={{fontSize:11,color:C.muted}}>{r.asks}</span>
+                <span style={{fontSize:10,color:C.dim,fontFamily:'monospace'}}>{r.dl}</span>
+                <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:`${c}22`,color:c,textAlign:'center',fontWeight:600,textTransform:'uppercase'}}>{r.urgency}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Brand Mentions — Last 7 Days</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+          {[
+            {label:'Total Mentions', value:'2,420',  sub:'+38% vs prior week', color:C.purple},
+            {label:'Reach',          value:'1.8M',    sub:'TV + social combined', color:'#06B6D4'},
+            {label:'Top Hashtag',    value:'#YorkshireRising', sub:'2.4k uses · trending', color:C.amber},
+            {label:'Influencer Posts', value:'14',    sub:'7 athlete · 4 media · 3 brand', color:C.green},
+          ].map(s=>(
+            <div key={s.label} style={{padding:12,background:C.cardAlt,borderRadius:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>{s.label}</div>
+              <div style={{fontSize:18,fontWeight:800,color:s.color,margin:'4px 0'}}>{s.value}</div>
+              <div style={{fontSize:10,color:C.muted}}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  // ── PAGE: OPERATIONS ─────────────────────────────────────────────
+  const Operations=()=>(
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <SectionHead title="Operations" sub="Travel, kit, accommodation, and safeguarding" />
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Next Away Trip</div><div style={{fontSize:18,fontWeight:800,color:'#0EA5E9'}}>Lancs (A)</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Fri 11 Apr · Old Trafford</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Accommodation</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>21 / 21</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Hilton Manchester · 2 nights</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Kit Status</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>Ready</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Match + 2 training sets · Tue check</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Safeguarding</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>Compliant</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>DBS 100% · last audit 2 Apr</div></Card>
+      </div>
+
+      <Card>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Travel Plan — Lancashire Away</div>
+        <div style={{display:'grid',gridTemplateColumns:'120px 140px 1fr 100px',gap:12,padding:'8px 0',borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
+          <span>When</span><span>Mode</span><span>Detail</span><span>Owner</span>
+        </div>
+        {[
+          {w:'Thu 14:00', m:'Coach',  d:'Headingley → Old Trafford · ETA 17:30 · 21 seats + kit',           o:'Operations'},
+          {w:'Thu 17:45', m:'Hilton', d:'Check-in · 21 rooms · briefing room booked 19:00–20:30',           o:'Operations'},
+          {w:'Fri 07:30', m:'Hotel',  d:'Pre-match meal · function room A · agreed menu (Chef Marco)',     o:'Operations'},
+          {w:'Fri 08:15', m:'Coach',  d:'Hotel → ground · 12 min transfer',                                 o:'Operations'},
+          {w:'Sat 19:00', m:'Coach',  d:'Ground → Hotel · post-match recovery',                             o:'Operations'},
+          {w:'Sun 11:00', m:'Coach',  d:'Hotel → Headingley · ETA 14:30 · Sun 11 returns by train',         o:'Operations'},
+        ].map((r,i,a)=>(
+          <div key={i} style={{display:'grid',gridTemplateColumns:'120px 140px 1fr 100px',gap:12,padding:'8px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+            <span style={{fontSize:11,color:C.muted,fontFamily:'monospace'}}>{r.w}</span>
+            <span style={{fontSize:11,color:C.text,fontWeight:600}}>{r.m}</span>
+            <span style={{fontSize:11,color:C.muted}}>{r.d}</span>
+            <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:C.cardAlt,color:C.muted,textAlign:'center',border:`1px solid ${C.border}`}}>{r.o}</span>
+          </div>
+        ))}
+      </Card>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Kit Inventory</div>
+          {[
+            {item:'Match shirts (LS)', qty:'42 (2 per player)', status:'Ready', sc:C.green},
+            {item:'Training kit',      qty:'63 (3 per player)', status:'Ready', sc:C.green},
+            {item:'Match trousers',    qty:'42',                status:'Ready', sc:C.green},
+            {item:'Caps + sun hats',    qty:'21 + 21',           status:'Ready', sc:C.green},
+            {item:'Match balls',        qty:'12 (signed off)',   status:'Ready', sc:C.green},
+            {item:'Spare bats',         qty:'4 (Stringer Fri)',   status:'In transit', sc:C.amber},
+            {item:'Helmets + grilles',  qty:'21',                status:'Ready', sc:C.green},
+            {item:'Pads + gloves',      qty:'Set per player',    status:'Ready', sc:C.green},
+          ].map((k,i,a)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 130px 80px',gap:8,padding:'7px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:11,color:C.text}}>{k.item}</span>
+              <span style={{fontSize:10,color:C.muted}}>{k.qty}</span>
+              <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:`${k.sc}22`,color:k.sc,textAlign:'center',fontWeight:600}}>{k.status}</span>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Safeguarding Log — Recent Items</div>
+          {[
+            {when:'2 Apr',  item:'Annual safeguarding audit',  status:'Pass',   notes:'All actions closed. Next audit Oct 2026.'},
+            {when:'4 Apr',  item:'Welfare officer briefing',    status:'Done',   notes:'Squad + staff · code-of-conduct refresher.'},
+            {when:'5 Apr',  item:'DBS register review',         status:'100%',   notes:'21 squad + 8 staff · all current.'},
+            {when:'Thu 10', item:'Anti-doping rep on call',     status:'Pending',notes:'Standby for surprise testing — confirmed.'},
+            {when:'Thu 10', item:'Code-of-conduct briefing',    status:'Pending',notes:'16:00 hotel briefing room · all squad.'},
+            {when:'Sat 12', item:'Match-day welfare check',     status:'Pending',notes:'Welfare officer present · on-site contact.'},
+          ].map((s,i,a)=>{
+            const sc = s.status==='Pass'||s.status==='Done'||s.status==='100%'?C.green:C.amber;
+            return (
+              <div key={i} style={{display:'grid',gridTemplateColumns:'70px 1fr 80px',gap:8,padding:'7px 0',alignItems:'center',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontSize:10,color:C.muted,fontFamily:'monospace'}}>{s.when}</span>
+                <div>
+                  <div style={{fontSize:11,color:C.text,fontWeight:600}}>{s.item}</div>
+                  <div style={{fontSize:10,color:C.dim,marginTop:2}}>{s.notes}</div>
+                </div>
+                <span style={{fontSize:10,padding:'3px 8px',borderRadius:8,background:`${sc}22`,color:sc,textAlign:'center',fontWeight:600}}>{s.status}</span>
+              </div>
+            );
+          })}
         </Card>
       </div>
     </div>
@@ -2259,27 +3061,41 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
 
   const Dashboard=()=>(
     <div className="space-y-6">
-      {/* Morning Banner — all in one card */}
-      <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(7,8,15,0.95) 60%)', border: `1px solid ${C.purple}33` }}>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: C.text }}>Good morning, Director. 🏏</h1>
+      {/* Morning Banner — club crest left, greeting + speaker, world clock right.
+          Layout mirrors the football pro banner so the dashboards feel like the
+          same product family. Crest asset: /public/cricket_logo.png (the generic
+          Lumio cricket badge — swap for a Yorkshire CCC crest when supplied). */}
+      <div className="relative rounded-2xl p-6 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(7,8,15,0.95) 60%)', border: `1px solid ${C.purple}33` }}>
+        {/* Crest watermark — fades into the gradient like football pro's BG crest */}
+        <img src="/cricket_logo.png" alt="" style={{ position: 'absolute', right: '320px', top: '50%', transform: 'translateY(-50%)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }} />
+        {/* Crest foreground — left badge */}
+        <img src="/cricket_logo.png" alt="Club badge" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 16, height: 100, width: 'auto', zIndex: 10, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }} />
+        <div className="relative z-10" style={{ paddingLeft: 120 }}>
+        <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-bold" style={{ color: C.text }}>Good morning, Director. 🏏</h1>
+              {/* TTS speaker — moved next to greeting to match football pro layout */}
+              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+                style={{ background: isSpeaking ? `${C.purple}40` : 'rgba(255,255,255,0.08)', border: isSpeaking ? `1px solid ${C.purple}80` : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? C.purple : C.muted, fontSize: 14 }}>
+                {isSpeaking ? '⏹' : '🔊'}
+              </button>
+            </div>
             <p className="text-sm mt-1" style={{ color: C.muted }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
             <p className="text-xs italic mt-2" style={{ color: C.amber }}>&ldquo;{cricketQuote.text}&rdquo; &mdash; {cricketQuote.author}</p>
           </div>
-          <div className="flex items-center gap-4">
-            {/* TTS speaker */}
-            <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Read briefing aloud'}
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-              style={{ background: isSpeaking ? `${C.purple}40` : 'rgba(255,255,255,0.08)', border: isSpeaking ? `1px solid ${C.purple}80` : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? C.purple : C.muted, fontSize: 14 }}>
-              {isSpeaking ? '⏹' : '🔊'}
-            </button>
-            {/* World clock */}
-            <div className="hidden md:flex items-center gap-5 text-xs text-right">
+          {/* World clock — 2x2 grid card matching football pro's WorldClock component */}
+          <div className="hidden md:block bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-shrink-0" style={{ minWidth: 200 }}>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
               {[{ city:'London', tz:'Europe/London' },{ city:'Mumbai', tz:'Asia/Kolkata' },{ city:'Sydney', tz:'Australia/Sydney' },{ city:'Cape Town', tz:'Africa/Johannesburg' }].map(({ city, tz }) => (
-                <div key={city}><div className="font-bold" style={{ color: C.text }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</div><div style={{ color: C.dim }}>{city}</div></div>
+                <div key={city} className="flex items-center gap-1.5">
+                  <span className="font-mono text-sm font-black" style={{ color: C.text }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit', hour12: false })}</span>
+                  <span className="text-xs" style={{ color: C.muted }}>{city}</span>
+                </div>
               ))}
             </div>
+            <div className="text-xs mt-1" style={{ color: C.purple }}>World Clock</div>
           </div>
         </div>
         {/* Weather strip */}
@@ -2314,6 +3130,7 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
             <div className="text-xs mt-0.5" style={{ color: C.muted }}>Budget Remaining</div>
             <div className="text-[10px] mt-1" style={{ color: C.amber }}>of £9.8m annual</div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -2416,6 +3233,124 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
 
       {/* TODAY tab — existing dashboard content */}
       {dashTab === 'today' && (<div>
+
+      {/* ── 3-column grid (football-pro parity): Morning Roundup | This Week's
+            Fixtures | Photo Frame + AI Morning Highlights. Inlined here so we
+            don't fork football's JSX tree wholesale; styling lifted to match. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch mb-4">
+        {/* Morning Roundup */}
+        <div className="lg:col-span-1 flex flex-col rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm" style={{ color: C.text }}>🌅 Morning Roundup</h3>
+            <span className="text-xs" style={{ color: C.dim }}>Since you were last here</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              { id:'agent',     icon:'🤝', label:'Agent Messages',    count:3, urgent:true,  color:C.purple, bg:`${C.purple}14`, border:`${C.purple}40` },
+              { id:'board',     icon:'🏛️', label:'Board Messages',    count:2, urgent:false, color:C.teal,   bg:`${C.teal}14`,   border:`${C.teal}40` },
+              { id:'media',     icon:'📰', label:'Media & Press',     count:4, urgent:false, color:C.amber,  bg:`${C.amber}14`,  border:`${C.amber}40` },
+              { id:'transfer',  icon:'🔁', label:'Transfer Activity', count:2, urgent:true,  color:C.red,    bg:`${C.red}14`,    border:`${C.red}40` },
+              { id:'staff',     icon:'👔', label:'Staff Updates',     count:2, urgent:false, color:'#0ea5e9',bg:'rgba(14,165,233,0.08)', border:'rgba(14,165,233,0.4)' },
+              { id:'academy',   icon:'🎓', label:'Academy',           count:2, urgent:false, color:C.green,  bg:`${C.green}14`,  border:`${C.green}40` },
+              { id:'sms',       icon:'💬', label:'SMS / Text',        count:3, urgent:true,  color:'#f87171',bg:'rgba(248,113,113,0.08)', border:'rgba(248,113,113,0.4)' },
+              { id:'whatsapp',  icon:'📱', label:'WhatsApp Business', count:4, urgent:false, color:'#22c55e',bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.4)' },
+              { id:'slack',     icon:'#',  label:'Slack',             count:4, urgent:false, color:'#a855f7',bg:'rgba(168,85,247,0.08)', border:'rgba(168,85,247,0.4)' },
+            ].map(item => (
+              <div key={item.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}` }}>
+                <div className="w-full flex items-center justify-between p-3 text-left">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{item.icon}</span>
+                    <span className="text-sm font-bold" style={{ color: item.color }}>{item.label}</span>
+                    {item.urgent && <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#F87171' }}>Urgent</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-black" style={{ color: item.color }}>{item.count}</span>
+                    <span className="text-xs" style={{ color: C.dim }}>▼</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* This Week's Fixtures */}
+        <div className="lg:col-span-1 flex flex-col rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm" style={{ color: C.text }}>📅 This Week&apos;s Fixtures</h3>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: C.border, color: C.dim }}>5 matches</span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { date:'Fri 11 Apr', opponent:'Lancashire',    venue:'Away', time:'10:30', competition:'Championship' },
+              { date:'Sat 19 Apr', opponent:'Surrey',        venue:'Home', time:'14:30', competition:'T20 Blast' },
+              { date:'Fri 25 Apr', opponent:'Somerset',      venue:'Away', time:'10:30', competition:'Championship' },
+              { date:'Sat 3 May',  opponent:'Nottinghamshire',venue:'Home', time:'14:30', competition:'T20 Blast' },
+              { date:'Fri 9 May',  opponent:'Essex',         venue:'Away', time:'10:30', competition:'Championship' },
+            ].map((f, i) => (
+              <div key={i} className="rounded-xl p-4" style={{ backgroundColor: i === 0 ? `${C.purple}14` : 'rgba(255,255,255,0.02)', border: i === 0 ? `1px solid ${C.purple}40` : `1px solid ${C.border}` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {i === 0 && <span className="w-2 h-2 rounded-full bg-red-500" />}
+                    <span className="text-sm font-bold" style={{ color: i === 0 ? C.amber : C.text }}>{f.opponent}</span>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-lg" style={{ backgroundColor: f.venue === 'Home' ? 'rgba(34,197,94,0.12)' : 'rgba(59,130,246,0.12)', color: f.venue === 'Home' ? '#22C55E' : '#60A5FA' }}>{f.venue}</span>
+                </div>
+                <div className="flex items-center gap-4 text-xs" style={{ color: C.muted }}>
+                  <span>{f.date}</span>
+                  <span>{f.time} start</span>
+                  <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>{f.competition}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+            <div className="text-xs" style={{ color: C.dim }}>
+              <span className="font-semibold" style={{ color: C.muted }}>Team Sheet Deadline:</span> Wednesday 5pm for Friday&apos;s match
+            </div>
+          </div>
+        </div>
+
+        {/* Photo Frame + AI Morning Highlights */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          <div className="rounded-2xl p-5 flex flex-col items-center justify-center text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 240 }}>
+            <div className="flex items-center gap-2 mb-3 self-start">
+              <span className="text-base">🖼️</span>
+              <span className="font-bold text-sm" style={{ color: C.text }}>Photo Frame</span>
+            </div>
+            <div className="flex-1 w-full flex flex-col items-center justify-center gap-2 rounded-xl" style={{ border: `2px dashed ${C.border}` }}>
+              <div className="text-3xl">📷</div>
+              <div className="text-xs" style={{ color: C.muted }}>Add your club photos</div>
+              <div className="text-[10px]" style={{ color: C.dim }}>Drag to reposition · up to 5 photos</div>
+            </div>
+            <div className="mt-3 w-full pt-3 flex gap-2" style={{ borderTop: `1px solid ${C.border}` }}>
+              <button className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg" style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.muted }}>Google Photos ✦</button>
+              <button className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg" style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.muted }}>iCloud ✦</button>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${C.purple}40` }}>
+            <div className="flex items-center gap-2 px-5 py-4" style={{ backgroundColor: `${C.purple}14`, borderBottom: `1px solid ${C.purple}40` }}>
+              <span className="text-sm">✨</span>
+              <span className="text-sm font-bold" style={{ color: C.text }}>AI Morning Summary</span>
+              <span className="rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: `${C.purple}33`, color: C.amber }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short' })}</span>
+            </div>
+            <div className="flex flex-col gap-3 p-5 overflow-y-auto" style={{ backgroundColor: '#0f0e17', maxHeight: '14rem' }}>
+              {[
+                '2 injured players — Ahmed (strain, 10 days), Cooper (bruise, back Saturday)',
+                'Smith unavailable Fri — international call-up, Williams to open',
+                'Contract target Harris — Durham countered at £340k. Budget remaining: £2.6m',
+                'Press conference at 2pm today. AI briefing notes prepared',
+                '2nd XI won by 4 wickets yesterday. Academy bowler hat-trick — recommended for first-team squad',
+              ].map((item, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${C.purple}33`, color: C.amber }}>{i + 1}</span>
+                  <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* AI Summary Card */}
       <div className="rounded-xl p-5 mb-4" style={{ background: `linear-gradient(135deg, ${C.card}, ${C.cardAlt})`, border: `1px solid ${C.purple}33` }}>
         <div className="flex items-center gap-2 mb-3">
@@ -2610,6 +3545,27 @@ function CricketPortalInner({ session }: { session?: SportsDemoSession } = {}){
           <div style={{fontSize:11,color:C.dim,fontStyle:'italic'}}>Enter match conditions above and click Get Toss Advice.</div>
         )}
       </Card>
+
+      {/* ── Bottom stat tiles (football-pro parity). 4 compact pills with
+            label + big number + colour-coded icon stripe. */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
+        {[
+          { label:'Squad Size',       value:String(CRICKET_SQUAD.length), icon:'👥', color:C.purple },
+          { label:'Fit Players',      value:String(CRICKET_SQUAD.filter(p=>p.fitness==='fit').length), icon:'✅', color:C.green },
+          { label:'Budget Remaining', value:'£3.2m',                       icon:'💰', color:C.amber },
+          { label:'Next Match',       value:'3 days',                      icon:'🏏', color:C.teal },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: C.card, border: `1px solid ${s.color}33` }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style={{ backgroundColor: `${s.color}1F`, border: `1px solid ${s.color}55` }}>
+              {s.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs" style={{ color: C.dim }}>{s.label}</div>
+              <div className="text-xl font-black truncate" style={{ color: s.color }}>{s.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
       </div>)}
 
       {/* Other tabs — placeholder content */}
@@ -4477,7 +5433,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
   }
 
   const pages={
-    dashboard: isSponsor ? <CricketSponsorDashboard/> : <Dashboard/>,briefing:<Briefing/>,
+    dashboard: isSponsor ? <CricketSponsorDashboard/> : <Dashboard/>,briefing:<Briefing/>,insights:<Insights/>,
+    grounds:<Grounds/>,'media-hub':<MediaHub/>,operations:<Operations/>,
     'match-centre':<MatchCentre/>,'batting-analytics':<BattingAnalytics/>,'bowling-analytics':<BowlingAnalytics/>,
     'video-analysis':<VideoAnalysis/>,opposition:<Opposition/>,livescores:<LiveScores/>,'practice-log':<PracticeLog/>,declaration:<DeclarationPlanner/>,dls:<DLSCalculator/>,'fan-engagement':<FanEngagement/>,'performance-stats':<PerformanceStats/>,
     squad:<Squad/>,medical:<Medical/>,gps:<GPS/>,pathway:<Pathway/>,overseas:<Overseas/>,'contract-hub':<ContractHub/>,'agent-pipeline':<AgentPipeline/>,signings:<SigningPipeline/>,'net-planner':<NetSessionPlanner/>,'match-report':<MatchReport/>,
