@@ -3591,29 +3591,43 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
 
       {/* GETTING STARTED — aspirational value-prop tour (matches tennis tone) */}
       {dashTab === 'gettingstarted' && (() => {
-        const STEPS: Array<{ n:number; short:string; title:string; sub:string }> = [
-          { n:1,  short:'Your cricket OS',                title:'Your cricket OS, fully connected',
-            sub:'Every system that matters for a county — ECB, PCA, sponsors, county board, agents — in one dashboard. No more spreadsheets. No more WhatsApp threads.' },
-          { n:2,  short:'Match-day briefing',             title:'Start every match day knowing everything',
-            sub:"10 channels in one briefing, sorted by urgency, scored by impact. Director's-eye view in 90 seconds." },
-          { n:3,  short:'One click to anywhere',           title:'Every action, one click away',
-            sub:'Team selection. Toss call. Media brief. Workload check. One button. One response.' },
-          { n:4,  short:'PCA, ECB, county in sync',        title:'PCA, ECB, county — all in sync',
-            sub:'DBS expiry alerts. Compliance logs. Overseas slot tracking. Play-Cricket sync. Safeguarding audit-ready.' },
-          { n:5,  short:'Workload protection',             title:'Workload protection that actually works',
-            sub:'ICC guidelines baked in. Red/amber/green flags per bowler. Spell-length caps auto-calculated.' },
-          { n:6,  short:'AI that helps you win',           title:'AI that actually helps you win',
-            sub:'Toss decisions informed by 20,000 pitch readings. Team selection optimised for opposition weakness. Tactical briefs at innings breaks.' },
-          { n:7,  short:'Your team, front and centre',     title:'Your team, front and centre',
-            sub:"10 role dashboards for 10 different jobs. Director's board. Head Coach's squad. Groundsman's pitch view." },
-          { n:8,  short:'Sponsors managed automatically',  title:'Sponsors managed automatically',
-            sub:'Deliverable tracking. Deadline alerts. Renewal pipeline. No more "forgot to post the kit photo" at 23:59.' },
-          { n:9,  short:'Nothing falls through the cracks',title:'Nothing falls through the cracks',
-            sub:'Travel, kit, accommodation, entries, medicals, mental check-ins — all tracked, all flagged.' },
-          { n:10, short:'Run your club like a business',   title:'Run your cricket club like a business',
-            sub:"Because that's what it is." },
+        // Per-step showcase keys. Body switches on step.preview and renders
+        // an interactive fragment — same pattern tennis uses. Callout card
+        // at the bottom of each showcase is purple-tinted (cricket theme).
+        const STEPS: Array<{ n:number; short:string; icon:string; title:string; sub:string; preview:string }> = [
+          { n:1,  short:'Your cricket OS',                icon:'🏏', title:'Your cricket OS, fully connected',
+            sub:'Every system that matters for a county — ECB, PCA, sponsors, county board, agents — in one dashboard. No more spreadsheets. No more WhatsApp threads.',
+            preview:'cricket_os' },
+          { n:2,  short:'Match-day briefing',             icon:'🌅', title:'Start every match day knowing everything',
+            sub:"10 channels in one briefing, sorted by urgency, scored by impact. Director's-eye view in 90 seconds.",
+            preview:'matchday_briefing' },
+          { n:3,  short:'One click to anywhere',           icon:'⚡', title:'Every action, one click away',
+            sub:'Team selection. Toss call. Media brief. Workload check. One button. One response.',
+            preview:'quick_actions' },
+          { n:4,  short:'PCA, ECB, county in sync',        icon:'📋', title:'PCA, ECB, county — all in sync',
+            sub:'DBS expiry alerts. Compliance logs. Overseas slot tracking. Play-Cricket sync. Safeguarding audit-ready.',
+            preview:'compliance' },
+          { n:5,  short:'Workload protection',             icon:'🦾', title:'Workload protection that actually works',
+            sub:'ICC guidelines baked in. Red/amber/green flags per bowler. Spell-length caps auto-calculated.',
+            preview:'workload' },
+          { n:6,  short:'AI that helps you win',           icon:'🧠', title:'AI that actually helps you win',
+            sub:'Toss decisions informed by 20,000 pitch readings. Team selection optimised for opposition weakness. Tactical briefs at innings breaks.',
+            preview:'ai_advisor' },
+          { n:7,  short:'Your team, front and centre',     icon:'👥', title:'Your team, front and centre',
+            sub:"10 role dashboards for 10 different jobs. Director's board. Head Coach's squad. Groundsman's pitch view.",
+            preview:'roles' },
+          { n:8,  short:'Sponsors managed automatically',  icon:'🤝', title:'Sponsors managed automatically',
+            sub:'Deliverable tracking. Deadline alerts. Renewal pipeline. No more "forgot to post the kit photo" at 23:59.',
+            preview:'sponsorship' },
+          { n:9,  short:'Nothing falls through the cracks',icon:'🔴', title:'Nothing falls through the cracks',
+            sub:'Travel, kit, accommodation, entries, medicals, mental check-ins — all tracked, all flagged.',
+            preview:'dontmiss' },
+          { n:10, short:'Run your club like a business',   icon:'💼', title:'Run your cricket club like a business',
+            sub:"Because that's what it is.",
+            preview:'business' },
         ]
         const step = STEPS[tourStep]
+        const calloutBox: React.CSSProperties = { backgroundColor: `${C.purple}14`, border: `1px solid ${C.purple}40`, color: '#E9D5FF' }
         return (
           <div className="pt-4">
             <div className="flex items-center justify-between mb-4">
@@ -3637,21 +3651,272 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                 ))}
               </div>
               <div className="lg:col-span-2">
-                <div className="rounded-2xl p-8" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 400 }}>
-                  <div className="text-5xl mb-4">🏏</div>
-                  <h2 className="text-2xl font-black mb-3" style={{ color: C.text }}>{step.title}</h2>
-                  <p className="text-sm leading-relaxed mb-6" style={{ color: C.muted }}>{step.sub}</p>
-                  <div className="rounded-xl p-4 mb-6" style={{ background: C.purpleDim, border: `1px solid ${C.purple}33` }}>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[{ icon:'🏆', v:'2nd', label:'Div One', c:C.teal },{ icon:'🏏', v:'Fri 11', label:'Next Match', c:C.purple },{ icon:'👥', v:'16/18', label:'Squad', c:C.green },{ icon:'💰', v:'£3.2m', label:'Budget', c:C.amber }].map((s, i) => (
-                        <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: C.bg }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: C.dim }}>{s.label}</div></div>
-                      ))}
-                    </div>
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, minHeight: 480 }}>
+                  <div className="p-8">
+                    <div className="text-4xl mb-3">{step.icon}</div>
+                    <h2 className="text-xl font-black mb-2" style={{ color: C.text }}>{step.title}</h2>
+                    <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted }}>{step.sub}</p>
+
+                    {/* ── STEP 1 — cricket OS overview ───────────────────── */}
+                    {step.preview === 'cricket_os' && (<>
+                      <div className="rounded-xl p-4" style={{ background: `${C.purple}0f`, border: `1px solid ${C.purple}33` }}>
+                        <div className="text-xs font-bold mb-3" style={{ color: C.text }}>Director dashboard · Oakridge CC</div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[{ icon:'🏆', v:'2nd',      label:'Div One',    c:C.teal },
+                            { icon:'🏏', v:'Fri 11',   label:'Next Match', c:C.purple },
+                            { icon:'👥', v:'16/18',    label:'Squad',      c:C.green },
+                            { icon:'💰', v:'£3.2m',    label:'Budget',     c:C.amber }].map((s, i) => (
+                            <div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: C.bg }}>
+                              <div className="text-lg">{s.icon}</div>
+                              <div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div>
+                              <div className="text-[9px] mt-0.5" style={{ color: C.dim }}>{s.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-center mt-3" style={{ color: C.dim }}>Powered by Play-Cricket · ECB Hub · Gmail · Calendar · Lumio GPS</div>
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        💡 Every county system in one dashboard — no more tab-hopping between Play-Cricket, the Hub, and your 12 WhatsApp groups.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 2 — Morning Roundup preview ──────────────── */}
+                    {step.preview === 'matchday_briefing' && (<>
+                      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+                        <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+                          <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold" style={{ color: C.text }}>Morning Roundup</span></div>
+                          <span className="text-[10px]" style={{ color: C.dim }}>Since you were last here · 06:00</span>
+                        </div>
+                        {[{ icon:'💬', label:'SMS (Urgent)',   count:3, urgent:true,  color:'#f87171' },
+                          { icon:'📱', label:'WhatsApp',       count:4, urgent:false, color:'#22c55e' },
+                          { icon:'🤝', label:'Agent Messages', count:3, urgent:true,  color:C.purple },
+                          { icon:'🏥', label:'Physio & Medical',count:2, urgent:true, color:C.red },
+                          { icon:'🏛️', label:'Board Messages', count:2, urgent:false, color:C.teal }].map((ch, i, a) => (
+                          <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: i < a.length - 1 ? `1px solid ${C.border}` : 'none', backgroundColor: C.card }}>
+                            <div className="flex items-center gap-2">
+                              <span>{ch.icon}</span>
+                              <span className="text-xs" style={{ color: C.text }}>{ch.label}</span>
+                              {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: C.red }}>Urgent</span>}
+                            </div>
+                            <span className="text-sm font-bold" style={{ color: ch.color }}>{ch.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        🔊 10 channels collapse into one director&apos;s-eye view every morning at 06:00. Already triaged, already sorted.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 3 — Quick Actions pills ──────────────────── */}
+                    {step.preview === 'quick_actions' && (<>
+                      <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.dim }}>Quick actions</div>
+                      <div className="flex flex-wrap gap-2">
+                        {[{ icon:'👥', label:'Team Selection AI',  color:C.purple, hot:true },
+                          { icon:'🌤️', label:'Toss Advisor',       color:C.teal,   hot:true },
+                          { icon:'📱', label:'Sponsor Post AI',    color:C.amber,  hot:true },
+                          { icon:'🗞️', label:'Press Statement AI', color:C.red,    hot:true },
+                          { icon:'🤝', label:'Agent Brief AI',     color:C.purple, hot:true },
+                          { icon:'🎯', label:'Match Prep AI',      color:C.teal,   hot:true },
+                          { icon:'🧠', label:'Innings Brief AI',   color:C.amber,  hot:true },
+                          { icon:'🏥', label:'Log Injury',         color:C.red,    hot:false }].map((a, i) => (
+                          <div key={i} className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                            style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : `1px solid ${C.border}`, color: a.hot ? a.color : C.muted }}>
+                            <span>{a.icon}</span>{a.label}
+                            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        💡 16 quick actions on your dashboard — pick your XI, draft a press statement, log an injury, brief your agent. All in under 60 seconds.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 4 — Compliance checklist ─────────────────── */}
+                    {step.preview === 'compliance' && (<>
+                      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+                        <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+                          <div className="flex items-center gap-2"><span>📋</span><span className="text-sm font-bold" style={{ color: C.text }}>Compliance status</span></div>
+                          <span className="text-[10px]" style={{ color: C.dim }}>ECB · PCA · Play-Cricket</span>
+                        </div>
+                        {[{ label:'DBS renewals', sub:'18/19 staff current', flag:'✓', color:C.green },
+                          { label:'Overseas player slots', sub:'2/2 allocated · Steenkamp + Mason', flag:'✓', color:C.green },
+                          { label:'Safeguarding audit', sub:'Last passed 12 Feb', flag:'✓', color:C.green },
+                          { label:'Play-Cricket fixture sync', sub:'Last sync 06:12', flag:'✓', color:C.green },
+                          { label:'Winterbourne DBS', sub:'Due in 14 days', flag:'!', color:C.amber }].map((r, i, a) => (
+                          <div key={i} className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom: i < a.length - 1 ? `1px solid ${C.border}` : 'none', backgroundColor: C.card }}>
+                            <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${r.color}22`, color: r.color, border: `1px solid ${r.color}55` }}>{r.flag}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold" style={{ color: C.text }}>{r.label}</div>
+                              <div className="text-[10px]" style={{ color: C.dim }}>{r.sub}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        🛡 DBS, CPA, overseas slots, safeguarding — every county compliance item flagged before it becomes a problem.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 5 — Bowling workload mini-table ──────────── */}
+                    {step.preview === 'workload' && (<>
+                      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+                        <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+                          <div className="flex items-center gap-2"><span>🦾</span><span className="text-sm font-bold" style={{ color: C.text }}>Bowling Workload Tracker</span></div>
+                          <span className="text-[10px]" style={{ color: C.dim }}>ICC fast-bowler guidelines · last 7 days</span>
+                        </div>
+                        <div className="grid grid-cols-4 px-4 py-2 text-[10px] font-bold uppercase" style={{ color: C.dim, borderBottom: `1px solid ${C.border}`, backgroundColor: C.cardAlt }}>
+                          <div>Bowler</div><div>Overs 7d</div><div>Recovery</div><div className="text-right">Flag</div>
+                        </div>
+                        {[{ name:'Chris Dawson',  overs:'48 (A:C 1.62)', recovery:'2 days', flag:'RED',   color:C.red,    note:'Spell cap 5 overs' },
+                          { name:'Sam Reed',      overs:'38',            recovery:'1 day',  flag:'AMBER', color:C.amber,  note:'Reduce T20 block' },
+                          { name:'Rajan Steenkamp',overs:'32',           recovery:'3 days', flag:'GREEN', color:C.green,  note:'Within guideline' }].map((r, i, a) => (
+                          <div key={i} className="grid grid-cols-4 items-center px-4 py-3 text-xs" style={{ borderBottom: i < a.length - 1 ? `1px solid ${C.border}` : 'none', backgroundColor: C.card }}>
+                            <div>
+                              <div className="font-bold" style={{ color: C.text }}>{r.name}</div>
+                              <div className="text-[10px]" style={{ color: C.dim }}>{r.note}</div>
+                            </div>
+                            <div style={{ color: C.muted }}>{r.overs}</div>
+                            <div style={{ color: C.muted }}>{r.recovery}</div>
+                            <div className="text-right">
+                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: `${r.color}22`, color: r.color }}>{r.flag}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        🛡 ICC guidelines baked in. Your physio&apos;s spell-length calculator, automated per bowler per format.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 6 — Toss Advisor sample response ─────────── */}
+                    {step.preview === 'ai_advisor' && (<>
+                      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.teal}40` }}>
+                        <div className="px-4 py-3" style={{ backgroundColor: `${C.teal}14`, borderBottom: `1px solid ${C.teal}40` }}>
+                          <div className="text-xs font-bold flex items-center gap-2" style={{ color: C.teal }}>
+                            <span>🌤️</span> Toss Advisor · Oakridge Park · Fri 10:30
+                            <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-black" style={{ backgroundColor: C.teal, color: '#07080F' }}>AI</span>
+                          </div>
+                        </div>
+                        <div className="p-4" style={{ backgroundColor: C.card }}>
+                          <div className="inline-block px-3 py-1.5 rounded-lg text-lg font-black mb-3" style={{ backgroundColor: C.greenDim, color: C.green, border: `2px solid ${C.green}` }}>BAT FIRST</div>
+                          <div className="text-xs leading-relaxed mb-3" style={{ color: C.text }}>
+                            Pitch moisture gone after the overnight cover. Our top order averages 44.2 batting first on this ground since 2022, and Lancashire&apos;s opening attack leaks in the first hour — particularly to left-handers pushing hard at the fourth stump.
+                          </div>
+                          <div className="rounded-lg p-2 text-[11px]" style={{ backgroundColor: `${C.teal}14`, border: `1px solid ${C.teal}33`, color: C.teal }}>
+                            <b>Key factor:</b> Top-order avg 44.2 batting first · home ground · April conditions
+                          </div>
+                        </div>
+                        <div className="px-4 py-2 text-[10px]" style={{ backgroundColor: C.bg, color: C.dim }}>Generated from 20,000+ pitch readings · live weather · squad form splits</div>
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        ✨ Decisions informed by 20,000+ pitch readings. Tactical brief ready at innings breaks, not three overs too late.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 7 — 10-role picker ───────────────────────── */}
+                    {step.preview === 'roles' && (<>
+                      <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.dim }}>10 role dashboards · one portal</div>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {CRICKET_ROLES.map(r => (
+                          <div key={r.id} className="rounded-lg p-2 text-center" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+                            <div className="text-lg">{r.icon}</div>
+                            <div className="text-[11px] font-bold mt-0.5" style={{ color: C.text }}>{r.label}</div>
+                            <div className="text-[9px] mt-0.5" style={{ color: C.dim }}>{r.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        👥 10 dashboards for 10 jobs. Everyone sees what they need, nothing they don&apos;t — switch role any time from the bottom of the sidebar.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 8 — Sponsorship Pipeline preview ─────────── */}
+                    {step.preview === 'sponsorship' && (<>
+                      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+                        <div className="px-4 py-3" style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+                          <div className="text-xs font-bold flex items-center gap-2" style={{ color: C.text }}>
+                            <span>🤝</span> Sponsorship Pipeline
+                            <span className="ml-auto text-[10px]" style={{ color: C.dim }}>£4.7m annual · 3 renewals Q3</span>
+                          </div>
+                        </div>
+                        {[{ n:'Pennine Mutual',     tier:'Shirt Front',     stage:'Negotiating', val:'£340k/yr', color:C.amber, emoji:'⚡' },
+                          { n:'Midlands Bank',      tier:'Naming Rights',   stage:'Active',      val:'£1.8m/yr', color:C.green, emoji:'✓' },
+                          { n:'Brightline Telecoms',tier:'Official Partner',stage:'Prospecting', val:'£620k/yr', color:C.teal,  emoji:'•' }].map((s, i, a) => (
+                          <div key={i} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < a.length - 1 ? `1px solid ${C.border}` : 'none', backgroundColor: C.card }}>
+                            <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${s.color}22`, color: s.color }}>{s.emoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold" style={{ color: C.text }}>{s.n}</div>
+                              <div className="text-[10px]" style={{ color: C.dim }}>{s.tier} · {s.val}</div>
+                            </div>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: `${s.color}22`, color: s.color }}>{s.stage.toUpperCase()}</span>
+                          </div>
+                        ))}
+                        <div className="px-4 py-2.5 text-[11px] flex items-center gap-2" style={{ backgroundColor: `${C.red}14`, borderTop: `1px solid ${C.red}40`, color: C.red }}>
+                          <span>🚨</span><span><b>Acme Insurance</b> — 92 days to expiry · renewal meeting not yet booked</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        🤝 Deliverables, deadlines, renewals — all tracked, all alerted. No more missed kit photos at 23:59.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 9 — Don't Miss grouped alerts ────────────── */}
+                    {step.preview === 'dontmiss' && (<>
+                      <div className="space-y-2">
+                        {[{ urgency:'URGENT',  urgencyColor:C.red,   urgencyBg:C.redDim,   item:'T20 Blast squad submission — today 17:00. Pending 2 signatures.' },
+                          { urgency:'THIS WK', urgencyColor:C.amber, urgencyBg:C.amberDim, item:'Team sheet deadline — Wed 17:00 for Lancashire Friday opener.' },
+                          { urgency:'30 APR',  urgencyColor:C.dim,   urgencyBg:'rgba(75,85,99,0.15)', item:'ECB Compliance quarterly audit · CPA self-assessment outstanding.' },
+                          { urgency:'FRI',     urgencyColor:C.purple,urgencyBg:C.purpleDim, item:'vs Lancashire — Oakridge Park · Championship opener · 10:30.' }].map((d, i) => (
+                          <div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.urgencyBg, color: d.urgencyColor }}>{d.urgency}</span>
+                            <span className="text-xs" style={{ color: C.text }}>{d.item}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        ⚠ Travel, kit, medicals, safeguarding, entries — tracked across every surface. Nothing lost in a thread.
+                      </div>
+                    </>)}
+
+                    {/* ── STEP 10 — Director business snapshot ──────────── */}
+                    {step.preview === 'business' && (<>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[{ icon:'💰', label:'Annual Revenue',    v:'£14.2m', sub:'+8% vs last season',      color:C.green },
+                          { icon:'👕', label:'Squad Cost',        v:'£9.8m',  sub:'ECB wage cap 91%',         color:C.amber },
+                          { icon:'📅', label:'Fixtures Booked',   v:'38/38',  sub:'All formats · 2026 season', color:C.purple },
+                          { icon:'🏛️', label:'Board KPIs Met',    v:'8/10',   sub:'Windfall spend on track',  color:C.teal }].map((s, i) => (
+                          <div key={i} className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+                            <div className="text-2xl">{s.icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[10px]" style={{ color: C.dim }}>{s.label}</div>
+                              <div className="text-xl font-black" style={{ color: s.color }}>{s.v}</div>
+                              <div className="text-[10px]" style={{ color: C.muted }}>{s.sub}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-xl p-3 text-xs" style={{ background: `${C.purple}12`, border: `1px solid ${C.purple}33` }}>
+                        <div className="text-[10px] font-bold uppercase mb-1" style={{ color: C.purple }}>Board briefing — Q2</div>
+                        <div className="text-xs" style={{ color: C.muted }}>Revenue tracking ahead of budget. Pennine Mutual renewal at £340k/yr adds £60k vs current. CPA compliance clean · wage cap 91% with headroom for one late signing.</div>
+                      </div>
+                      <div className="mt-4 rounded-xl p-3 text-xs leading-relaxed" style={calloutBox}>
+                        💼 Because that&apos;s what it is. And because that&apos;s how the clubs staying solvent do it.
+                      </div>
+                    </>)}
                   </div>
-                  <button onClick={() => { if (tourStep < STEPS.length - 1) setTourStep(tourStep + 1); else { localStorage.setItem('lumio_cricket_onboarding', 'true'); setDashTab('today') } }}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: C.purple }}>
-                    {tourStep < STEPS.length - 1 ? 'Next →' : "Let's go 🏏"}
-                  </button>
+
+                  {/* ── Back / counter / Next footer ────────────────────── */}
+                  <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
+                    <button onClick={() => setTourStep(Math.max(0, tourStep - 1))} disabled={tourStep === 0}
+                      className="px-4 py-2 rounded-xl text-sm transition-all"
+                      style={{ backgroundColor: tourStep === 0 ? 'transparent' : C.border, color: tourStep === 0 ? C.dim : C.muted, cursor: tourStep === 0 ? 'not-allowed' : 'pointer' }}>← Back</button>
+                    <span className="text-xs" style={{ color: C.dim }}>{tourStep + 1} / {STEPS.length}</span>
+                    {tourStep < STEPS.length - 1 ? (
+                      <button onClick={() => setTourStep(tourStep + 1)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: C.purple }}>Next →</button>
+                    ) : (
+                      <button onClick={() => { localStorage.setItem('lumio_cricket_onboarding', 'true'); setDashTab('today') }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: C.green }}>You&apos;re ready — let&apos;s go 🏏</button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
