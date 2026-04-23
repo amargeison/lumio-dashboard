@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Building2, GraduationCap, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
+import AiSpendTile from '@/components/admin/AiSpendTile'
 import { calculateRag } from '@/lib/rag-score'
 
 type Tab = 'business' | 'schools'
@@ -86,6 +87,11 @@ export default function AdminDashboard() {
         <StatCard label="Suspended" value={suspended} icon={AlertTriangle} color="#EF4444" />
         <StatCard label="MRR" value={`£${(active * 49).toLocaleString()}`} icon={TrendingUp} color="#0D9488" />
         <StatCard label="New This Month" value={accounts.filter(a => new Date(a.created_at) > new Date(Date.now() - 30 * 86400000)).length} icon={Users} color="#6C3FC5" />
+      </div>
+
+      {/* Platform ops — AI spend + (future: cache hit, error rate, etc.) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <AiSpendTile />
       </div>
 
       {/* Table */}
