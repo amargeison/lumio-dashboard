@@ -39,6 +39,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, GOLF_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
@@ -490,6 +491,13 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
 
   const generateSummary = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setSummary(cleanResponse(CANNED.golf.dashboardSummary ?? ''))
+      setGenerated(true)
+      setError(null)
+      setLoading(false)
+      return
+    }
     try {
       const sectionContext = SECTION_PROMPTS[context] || 'General overview of the player\'s current status.'
       const res = await fetch('/api/ai/golf', {
@@ -2401,6 +2409,13 @@ function MorningBriefingView({ player, session }: { player: GolfPlayer; session:
   async function generateBriefings() {
     setLoading(true);
     setError(null);
+    if (session?.isDemoShell !== false) {
+      const brief = CANNED.golf.morningBriefing ?? '';
+      setBriefings({ player: brief, caddie: brief, coach: brief, agent: brief });
+      setGenerated(true);
+      setLoading(false);
+      return;
+    }
     try {
       const prompt = `You are Lumio AI, the golf performance assistant for ${player.name}. Generate four morning briefings (player, caddie, coach, agent) for today. Context: OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos}, current event Halden Motors International Open Munich, tee time 09:42 Thursday, SG Putting -1.18 (critical weakness from 8-15ft), Vanta Sports post due today, Vanta Sports call 16:00, sponsor renewal in 18 days. Respond ONLY with valid JSON: { "player": "...", "caddie": "...", "coach": "...", "agent": "..." } — each value is a 2-3 sentence briefing, no markdown.`;
       const res = await fetch('/api/ai/golf', {
@@ -6382,6 +6397,11 @@ function GolfSocialMediaAI({ onClose, session, player }: { onClose: () => void; 
 
   const generate = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setResult(cleanResponse(CANNED.golf.contentPlanner ?? ''))
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
@@ -6696,6 +6716,11 @@ function GolfLaunchMonitorAnalysis({ onClose, session, player }: { onClose: () =
 
   const generate = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setAnalysis(CANNED.golf.rangeAnalysis ?? '')
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/golf', {
         method: 'POST',
@@ -6752,6 +6777,11 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
 
   const generate = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setBrief(CANNED.golf.preRoundBrief ?? '')
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/golf', {
         method: 'POST',

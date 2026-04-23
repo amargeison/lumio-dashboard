@@ -41,6 +41,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, BOXING_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
@@ -535,6 +536,13 @@ function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
 
   const generateSummary = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setSummary(cleanResponse(CANNED.boxing.dashboardSummary ?? ''))
+      setGenerated(true)
+      setError(null)
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/boxing', {
         method: 'POST',
@@ -4649,6 +4657,17 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
 
   const generateDebrief = async () => {
     setDebriefLoading(true);
+    if (session?.isDemoShell !== false) {
+      setDebrief({
+        performance_rating: '8.5/10 — championship-level composure',
+        strengths: 'The jab-step pattern from camp did exactly what we built it for — 41 jabs landed in rounds 1-4 set the rhythm of the whole fight. Championship rounds 10-12 were outscored 46 to 21 in landed punches.',
+        weaknesses: 'Round 8 drifted to the ropes twice after clinch breaks and took three clean counters. The pivot-out drill was in camp but absent on the night — first priority for the next review.',
+        gps_insight: 'Centre-ring time sat at 52% through rounds 9-12 — above the 45% target, which matched the late-fight control we saw on tape.',
+        next_camp_focus: 'Rebuild the pivot-out drill into every sparring session; hold everything else the same.',
+      });
+      setDebriefLoading(false);
+      return;
+    }
     try {
       const response = await fetch('/api/ai/boxing', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -6357,6 +6376,11 @@ function BoxingMatchPrepAI({ onClose, session, fighter }: { onClose: () => void;
 
   const generate = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setBrief(CANNED.boxing.fightWeekBrief ?? '')
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/boxing', {
         method: 'POST',
@@ -6756,7 +6780,7 @@ function BoxingSponsorDashboard({ session, fighter }: { session: SportsDemoSessi
 
 // ─── SETTINGS VIEW ───────────────────────────────────────────────────────────
 // ─── MODAL: SOCIAL MEDIA AI ─────────────────────────────────────────────────
-function BoxingSocialMediaAI({ onClose, fighter }: { onClose: () => void; fighter: BoxingFighter }) {
+function BoxingSocialMediaAI({ onClose, fighter, isDemoShell }: { onClose: () => void; fighter: BoxingFighter; isDemoShell: boolean }) {
   const [topic, setTopic] = useState('')
   const [platforms, setPlatforms] = useState<Record<string, boolean>>({ Twitter: true, Instagram: true, LinkedIn: false, Facebook: false, TikTok: false })
   const [tone, setTone] = useState('Motivational')
@@ -6765,6 +6789,11 @@ function BoxingSocialMediaAI({ onClose, fighter }: { onClose: () => void; fighte
 
   const generate = async () => {
     setLoading(true)
+    if (isDemoShell) {
+      setResult(cleanResponse(CANNED.boxing.contentPlanner ?? ''))
+      setLoading(false)
+      return
+    }
     try {
       const selectedPlatforms = Object.entries(platforms).filter(([,v]) => v).map(([k]) => k).join(', ')
       const res = await fetch('/api/ai/boxing', {
@@ -8982,7 +9011,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
             {activeModal === 'expense' && <BoxingExpenseLogger onClose={closeModal} />}
             {activeModal === 'weight' && <BoxingWeightCheck onClose={closeModal} fighter={fighter} />}
             {activeModal === 'visa' && <BoxingVisaCheck onClose={closeModal} fighter={fighter} />}
-            {activeModal === 'socialmedia' && <BoxingSocialMediaAI onClose={closeModal} fighter={fighter} />}
+            {activeModal === 'socialmedia' && <BoxingSocialMediaAI onClose={closeModal} fighter={fighter} isDemoShell={session?.isDemoShell !== false} />}
             {activeModal === 'hotel' && <BoxingHotelFinder onClose={closeModal} fighter={fighter} />}
             {activeModal === 'weightcut' && <BoxingWeightCutAI onClose={closeModal} fighter={fighter} />}
             {activeModal === 'opponentscout' && <BoxingOpponentScout onClose={closeModal} fighter={fighter} />}

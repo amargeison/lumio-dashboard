@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  getClientIp,
+  checkRateLimit,
+  checkDailyCap,
+  recordSpend,
+  rateLimitedResponse,
+  capReachedResponse,
+} from '@/lib/ai/guards'
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const rl = checkRateLimit(ip)
+    if (!rl.ok) return rateLimitedResponse(rl.retryInSec)
+    const cap = checkDailyCap()
+    if (!cap.ok) return capReachedResponse(cap.spent)
+
     const body = await req.json()
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
@@ -26,6 +40,9 @@ export async function POST(req: NextRequest) {
     })
 
     const data = await response.json()
+    if (data?.usage?.input_tokens != null && data?.usage?.output_tokens != null) {
+      recordSpend(data.usage.input_tokens, data.usage.output_tokens, data.model || body.model, 'cricket')
+    }
     return NextResponse.json(data)
   } catch {
     return NextResponse.json({ error: 'Failed to call AI' }, { status: 500 })

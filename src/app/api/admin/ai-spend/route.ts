@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSpendState, DEMO_AI_DAILY_CAP_USD, MODEL_RATES } from '@/app/api/ai/cricket/quick-action/route'
+import { getSpendState, DAILY_CAP_USD, MODEL_RATES } from '@/lib/ai/guards'
 
 // ──────────────────────────────────────────────────────────────────────────
-// Admin-only read endpoint for the cricket demo daily AI spend counter.
+// Admin-only read endpoint for the GLOBAL daily AI spend counter.
 //
-// Guard: ADMIN_API_TOKEN env var. Send as `x-admin-token` header. Not
-// meant to be bulletproof auth — good enough to keep the counter out of
-// public view. When we have a proper admin auth stack wired, swap to it.
+// Aggregate across all /api/ai/* routes that import from src/lib/ai/guards
+// — today that means cricket/quick-action + the 7 sport generic proxies.
+// Per-sport breakdown is included for the admin dashboard tile.
 //
-// Counter is in-memory (per route.ts). Resets at UTC midnight or on
-// process restart. GET-only.
+// Guard: ADMIN_API_TOKEN env var. Send as `x-admin-token` header. This is
+// shared with the rest of the admin API surface.
+//
+// Counter is in-memory; resets at UTC midnight or on process restart.
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -23,15 +25,22 @@ export async function GET(req: NextRequest) {
   }
 
   const s = getSpendState()
-  const utilisation = s.spendUsd / DEMO_AI_DAILY_CAP_USD
+  const bySport = Object.fromEntries(
+    Object.entries(s.bySport).map(([k, v]) => [
+      k,
+      { spendUsd: Number(v.spendUsd.toFixed(4)), calls: v.calls },
+    ]),
+  )
+
   return NextResponse.json({
     date:         s.date,
     spendUsd:     Number(s.spendUsd.toFixed(4)),
-    capUsd:       DEMO_AI_DAILY_CAP_USD,
+    capUsd:       DAILY_CAP_USD,
     calls:        s.calls,
     lastCallAt:   s.lastCallAt ? new Date(s.lastCallAt).toISOString() : null,
-    utilisation:  Number(utilisation.toFixed(3)),
-    remainingUsd: Number((DEMO_AI_DAILY_CAP_USD - s.spendUsd).toFixed(4)),
+    utilisation:  Number(s.utilisation.toFixed(3)),
+    remainingUsd: Number((DAILY_CAP_USD - s.spendUsd).toFixed(4)),
+    bySport,
     modelRates:   MODEL_RATES,
     storage:      'in-memory (resets on process restart)',
   })

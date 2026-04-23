@@ -72,6 +72,7 @@ import { useAudioBriefing } from '@/hooks/useAudioBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, TENNIS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
@@ -519,6 +520,13 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
 
   const generateSummary = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setSummary(cleanResponse(CANNED.tennis.dashboardSummary ?? ''))
+      setGenerated(true)
+      setError(null)
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',
@@ -2472,6 +2480,11 @@ function MorningBriefingView({ player, session }: { player: TennisPlayer; sessio
 
   const generateBriefing = async () => {
     setLoading(true);
+    if (session?.isDemoShell !== false) {
+      setBriefing(cleanResponse(CANNED.tennis.morningBriefing ?? ''));
+      setLoading(false);
+      return;
+    }
     try {
       const todayGPS = GPS_SESSIONS_TENNIS[GPS_SESSIONS_TENNIS.length - 1];
       const res = await fetch('/api/ai/tennis', {
@@ -3841,6 +3854,10 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
 
   const handleAiAnalysis = async (sessionIdx: number) => {
     setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: true, result: null } }));
+    if (session?.isDemoShell !== false) {
+      setAiAnalysis(prev => ({ ...prev, [sessionIdx]: { loading: false, result: CANNED.tennis.practiceReview ?? '' } }));
+      return;
+    }
     const practiceSession = sessions[sessionIdx];
     try {
       const response = await fetch('/api/ai/tennis', {
@@ -10640,6 +10657,18 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
 
   const generateDebrief = async () => {
     setDebriefLoading(true);
+    if (session?.isDemoShell !== false) {
+      setDebrief({
+        headline: 'Monte-Carlo R2 vs Caballero — won in three, the plan held',
+        serve_analysis: 'The wide-serve out-swing on the ad court was the match-winner — 71% of first serves landed inside the 18-inch target zone and we won 14 of 19 points that started there.',
+        return_analysis: 'Set two unravelled through the service games at 3-3 and 4-3 when the second-serve kick flattened; tape review will tell us whether that was fatigue or a grip-cue lapse.',
+        gps_fatigue: 'GPS load held up cleanly — ACWR 1.17 and the decider came off fresh legs, not a drop in the back half.',
+        pattern_insight: 'Baseline positioning at 65% under pressure says the wide-stretch patterns are landing; the Caldwell plan is the next-round plan.',
+        next_week: 'Keep the ad-court pattern. Tape review at 09:00. Focus is the 3-3 set-two service game.',
+      });
+      setDebriefLoading(false);
+      return;
+    }
     try {
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',

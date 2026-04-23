@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  getClientIp,
+  checkRateLimit,
+  checkDailyCap,
+  recordSpend,
+  scrubContext,
+  rateLimitedResponse,
+  capReachedResponse,
+} from '@/lib/ai/guards'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Cricket Quick Action — live LLM dispatcher
 //
 // 7 action types, each with its own system prompt + user-message template.
-// All go through this one route so we can share rate-limiting + auditing.
-// Separate typed routes would be tidier if each action grows independent
-// prompt/model config — revisit when that happens.
+// All go through this one route so we can share rate-limiting + auditing
+// with the rest of /api/ai/* via src/lib/ai/guards.ts.
 //
-// Server-side only. ANTHROPIC_API_KEY never leaves the process. Do not add
-// a NEXT_PUBLIC_ prefix to any key used here.
+// Server-side only. ANTHROPIC_API_KEY never leaves the process.
 // ──────────────────────────────────────────────────────────────────────────
 
 type ActionType =
@@ -24,68 +31,6 @@ type ActionType =
 interface QuickActionRequest {
   type: ActionType
   context?: Record<string, unknown>
-}
-
-// ─── Rate limit — per-IP rolling window, in-memory ───────────────────────
-// 10 calls per IP per 10-minute window. Resets on process restart, which
-// is fine for a public demo. Swap for Redis when we have more than one
-// node handling traffic.
-const RATE_LIMIT_MAX     = 10
-const RATE_LIMIT_WINDOW  = 10 * 60 * 1000 // 10 min
-const rateLimitStore: Map<string, number[]> = (globalThis as { __cricketRL?: Map<string, number[]> }).__cricketRL ?? new Map()
-;(globalThis as { __cricketRL?: Map<string, number[]> }).__cricketRL = rateLimitStore
-
-function rateLimit(ip: string): { allowed: boolean; retryInSec: number } {
-  const now = Date.now()
-  const entries = rateLimitStore.get(ip) ?? []
-  const fresh = entries.filter(t => now - t < RATE_LIMIT_WINDOW)
-  if (fresh.length >= RATE_LIMIT_MAX) {
-    const oldest = fresh[0]
-    return { allowed: false, retryInSec: Math.ceil((RATE_LIMIT_WINDOW - (now - oldest)) / 1000) }
-  }
-  fresh.push(now)
-  rateLimitStore.set(ip, fresh)
-  return { allowed: true, retryInSec: 0 }
-}
-
-// ─── Daily spend circuit breaker ─────────────────────────────────────────
-// Global USD ceiling across all demo AI calls. Resets at midnight UTC.
-// In-memory for MVP — loses history on process restart, which means the
-// cap resets early if PM2 bounces. Good enough until a proper Supabase
-// table is added; see /api/admin/ai-spend for the read endpoint.
-export const DEMO_AI_DAILY_CAP_USD = 5.0
-
-// Claude Sonnet 4 rate card (USD / 1M tokens) — keep in sync with the
-// model string used below and with whatever admin tooling reads this.
-export const MODEL_RATES = { input: 3, output: 15 } as const
-
-type SpendState = { date: string; spendUsd: number; calls: number; lastCallAt: number }
-const defaultSpend = (): SpendState => ({
-  date: new Date().toISOString().slice(0, 10),
-  spendUsd: 0,
-  calls: 0,
-  lastCallAt: 0,
-})
-const spendState: SpendState = (globalThis as { __cricketSpend?: SpendState }).__cricketSpend ?? defaultSpend()
-;(globalThis as { __cricketSpend?: SpendState }).__cricketSpend = spendState
-
-export function getSpendState(): SpendState {
-  const today = new Date().toISOString().slice(0, 10)
-  if (spendState.date !== today) {
-    // UTC-midnight roll-over. Reset counters for the new day.
-    spendState.date = today
-    spendState.spendUsd = 0
-    spendState.calls = 0
-    spendState.lastCallAt = 0
-  }
-  return spendState
-}
-
-function recordSpend(usd: number) {
-  const s = getSpendState()
-  s.spendUsd += usd
-  s.calls += 1
-  s.lastCallAt = Date.now()
 }
 
 // ─── Prompt catalogue ────────────────────────────────────────────────────
@@ -130,57 +75,17 @@ const PROMPTS: Record<ActionType, { system: string; user: (ctx: Record<string, u
   },
 }
 
-// ─── Input hygiene ───────────────────────────────────────────────────────
-// Accept user-supplied free text in ctx fields but cap length and strip
-// obvious prompt-injection patterns. Not bulletproof, but blocks the low
-// effort stuff.
-const INJECTION_PATTERNS = [
-  /ignore (all )?previous instructions/i,
-  /disregard (all )?previous/i,
-  /system\s*:/i,
-  /you are now/i,
-  /\bDAN\b|\bdeveloper mode\b/i,
-]
-function scrubContext(ctx: unknown): Record<string, unknown> {
-  if (!ctx || typeof ctx !== 'object') return {}
-  const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(ctx as Record<string, unknown>)) {
-    if (typeof v !== 'string') { out[k] = v; continue }
-    let s = v.slice(0, 500)
-    for (const re of INJECTION_PATTERNS) s = s.replace(re, '[blocked]')
-    out[k] = s
-  }
-  return out
-}
-
 // ─── Handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const started = Date.now()
   try {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-            ?? req.headers.get('x-real-ip')
-            ?? 'unknown'
-    const gate = rateLimit(ip)
-    if (!gate.allowed) {
-      return NextResponse.json(
-        { error: 'Demo rate limit hit — try again in a few minutes.', retryInSec: gate.retryInSec },
-        { status: 429 },
-      )
-    }
+    const ip = getClientIp(req)
 
-    // Daily-spend circuit breaker — hit the ceiling, everyone waits for
-    // the UTC-midnight reset. Precedes the upstream call.
-    const spend = getSpendState()
-    if (spend.spendUsd >= DEMO_AI_DAILY_CAP_USD) {
-      return NextResponse.json(
-        {
-          error: 'Demo AI quota for today has been reached — resets tomorrow at 00:00 UTC',
-          spendUsd: Number(spend.spendUsd.toFixed(4)),
-          capUsd: DEMO_AI_DAILY_CAP_USD,
-        },
-        { status: 503 },
-      )
-    }
+    const rl = checkRateLimit(ip)
+    if (!rl.ok) return rateLimitedResponse(rl.retryInSec)
+
+    const cap = checkDailyCap()
+    if (!cap.ok) return capReachedResponse(cap.spent)
 
     const body = (await req.json()) as QuickActionRequest
     const type = body?.type
@@ -230,13 +135,10 @@ export async function POST(req: NextRequest) {
       ? { input: data.usage.input_tokens, output: data.usage.output_tokens }
       : undefined
 
-    // Cost visibility — log every call + bump the daily spend counter.
     if (tokens) {
-      const estUsd = (tokens.input / 1_000_000) * MODEL_RATES.input + (tokens.output / 1_000_000) * MODEL_RATES.output
-      recordSpend(estUsd)
-      const s = getSpendState()
+      const estUsd = recordSpend(tokens.input, tokens.output, data?.model, 'cricket')
       // eslint-disable-next-line no-console
-      console.log(`[cricket/quick-action] ${type} ip=${ip} in=${tokens.input} out=${tokens.output} cost=$${estUsd.toFixed(4)} latency=${latencyMs}ms dailyTotal=$${s.spendUsd.toFixed(4)}/$${DEMO_AI_DAILY_CAP_USD}`)
+      console.log(`[cricket/quick-action] ${type} ip=${ip} in=${tokens.input} out=${tokens.output} cost=$${estUsd.toFixed(4)} latency=${latencyMs}ms`)
     }
 
     return NextResponse.json({

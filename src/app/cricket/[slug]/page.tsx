@@ -9,6 +9,7 @@ import MediaContentModule from '@/components/sports/media-content/MediaContentMo
 import SportsSettings from '@/components/sports/SportsSettings'
 import QuickActionModal, { type QuickActionSpec } from '@/components/cricket/QuickActionModal'
 import { Volume2 } from 'lucide-react'
+import { CANNED } from '@/lib/ai/canned-demo-responses'
 
 
 export const CRICKET_ROLES = [
@@ -387,7 +388,7 @@ const SIGNING_PIPELINE = [
 ];
 
 // ─── CRICKET PRE-SEASON / TOUR PREP CAMP VIEW ────────────────────────────────
-function CricketPreSeasonView() {
+function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
   const SK = 'lumio_cricket_preseason'
   const CK = 'lumio_cricket_training_camp'
   const scoreColor = (s: number) => s >= 80 ? C.green : s >= 60 ? C.amber : '#EF4444'
@@ -409,7 +410,23 @@ function CricketPreSeasonView() {
   const pctRemaining = camp ? daysTo / totalDays : 1
   const phase = pctRemaining > 0.66 ? 'Fitness Block' : pctRemaining > 0.33 ? 'Skills Block' : 'Match Sharpness'
   const phaseColor = pctRemaining > 0.66 ? '#3B82F6' : pctRemaining > 0.33 ? '#F59E0B' : '#22C55E'
-  useEffect(() => { if (!camp) return; setAiLoading(true); const tourNote = camp.isAway ? `, away tour to ${camp.destination}` : ''; Promise.all([fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:`Cricket pre-season AI summary for director/head coach. Opening fixture vs ${camp.opposition} (${camp.format}), ${daysTo} days remaining, ${phase} phase, squad of ${camp.squad}${tourNote}. 6 bullet points: squad fitness, batting readiness, bowling workload, fielding sharpness, injury concerns, one watch-out. No intro.`}]})}).then(r=>r.json()).then(d=>setAiSummary(d.content?.[0]?.text||null)).catch(()=>{}),fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:`5 urgent pre-season action items for cricket director, ${daysTo} days from opener vs ${camp.opposition} in ${phase} phase${tourNote}. Cover: fitness gaps, batting concerns, bowling load, fielding issues, conditions prep. No intro.`}]})}).then(r=>r.json()).then(d=>setAiHighlights(d.content?.[0]?.text||null)).catch(()=>{})]).finally(()=>setAiLoading(false)); // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!camp) return;
+    // Demo sessions short-circuit to canned pre-season content — critical:
+    // this fires automatically on camp activation, so a live /api/ai/cricket
+    // call would burn credits on every founder demo.
+    if (session?.isDemoShell !== false) {
+      setAiSummary(CANNED.cricket.preSeasonSummary ?? null);
+      setAiHighlights('1. Close the last two fitness gaps before the Abu Dhabi block closes out.\n2. One more simulated middle-order innings from Webb and Shaw before the Lancashire opener.\n3. Dawson workload flag (A:C 1.62) — opening four-day XI needs a seam backup plan.\n4. Ridley\'s reverse-seam consistency is the headline — keep the work intact.\n5. Top-order pitch-read drills before the season opener (seam-friendly surfaces expected).');
+      return;
+    }
+    setAiLoading(true);
+    const tourNote = camp.isAway ? `, away tour to ${camp.destination}` : '';
+    Promise.all([
+      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:`Cricket pre-season AI summary for director/head coach. Opening fixture vs ${camp.opposition} (${camp.format}), ${daysTo} days remaining, ${phase} phase, squad of ${camp.squad}${tourNote}. 6 bullet points: squad fitness, batting readiness, bowling workload, fielding sharpness, injury concerns, one watch-out. No intro.`}]})}).then(r=>r.json()).then(d=>setAiSummary(d.content?.[0]?.text||null)).catch(()=>{}),
+      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:`5 urgent pre-season action items for cricket director, ${daysTo} days from opener vs ${camp.opposition} in ${phase} phase${tourNote}. Cover: fitness gaps, batting concerns, bowling load, fielding issues, conditions prep. No intro.`}]})}).then(r=>r.json()).then(d=>setAiHighlights(d.content?.[0]?.text||null)).catch(()=>{})
+    ]).finally(()=>setAiLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camp?.opener])
   const readinessScores = [{label:'Fitness Base',score:71},{label:'Batting Form',score:63},{label:'Bowling Workload',score:57,warn:true},{label:'Fielding',score:69},{label:'Squad Balance',score:74},{label:'Injury Status',score:79}]
   const overallScore = Math.round(readinessScores.reduce((a,s)=>a+s.score,0)/readinessScores.length)
@@ -446,7 +463,20 @@ function CricketPreSeasonView() {
   useEffect(() => { localStorage.setItem(`${CK}_content`, JSON.stringify(contentSlots)) }, [contentSlots])
   const [contentIdeas, setContentIdeas] = useState<string | null>(null)
   const [contentLoading, setContentLoading] = useState(false)
-  const generateContentIdeas = async () => { setContentLoading(true); try { const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a county cricket club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) }); const data = await res.json(); setContentIdeas(data.content?.[0]?.text || null) } catch { setContentIdeas('Failed to generate ideas') } setContentLoading(false) }
+  const generateContentIdeas = async () => {
+    setContentLoading(true);
+    if (session?.isDemoShell !== false) {
+      setContentIdeas(CANNED.cricket.contentPlanner ?? null);
+      setContentLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a county cricket club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) });
+      const data = await res.json();
+      setContentIdeas(data.content?.[0]?.text || null);
+    } catch { setContentIdeas('Failed to generate ideas'); }
+    setContentLoading(false);
+  }
 
   const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 12 }
   const sectionHeader = (label: string, key: string, emoji: string) => (
@@ -800,6 +830,18 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
 
   async function getContractAiSummary() {
     setContractAiLoading(true); setContractAiError(null);
+    if (session?.isDemoShell !== false) {
+      setContractAiResult({
+        urgent: [
+          { player: 'Harry Fairweather', recommendation: 'Extend 3 years to end-2029 on the drafted combined county/central tier', reason: 'Peak-form top-order anchor; retaining him underpins the Crownmark Cricket image-rights schedule.' },
+          { player: 'Ben Ridley',        recommendation: 'Open extension talks immediately, 2-year deal with Hundred release window', reason: 'Leading Championship bowler — reverse-swing work from camp is a rare asset to lose.' },
+          { player: 'Adam Kingsley',     recommendation: 'One-year extension with a structured retirement path', reason: 'At 37, succession planning is on the table; the club keeps the dressing-room voice.' },
+        ],
+        strategy_note: 'Prioritise Fairweather + Ridley before the Lancashire opener so the announce lands inside commercial-partner sign-off. Kingsley\'s one-year is a morale move — worth it. Shan Abbas\'s Pakistan commitments warrant a separate conversation and are not urgent for this board cycle.',
+      });
+      setContractAiLoading(false);
+      return;
+    }
     try {
       const expiring2026 = CRICKET_CONTRACTS.filter(c => c.expiry.includes('2026'));
       const res = await fetch('/api/ai/cricket', {
@@ -6001,6 +6043,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     };
     async function runAiReview() {
       setNetAiLoading(true); setNetAiError(null);
+      if (session?.isDemoShell !== false) {
+        setNetAiResult(CANNED.cricket.netsReview ?? '');
+        setNetAiLoading(false);
+        return;
+      }
       try {
         const res = await fetch('/api/ai/cricket', {
           method: 'POST',
@@ -6114,6 +6161,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     const lbl = { fontSize:10, color:C.dim, textTransform:'uppercase' as const, letterSpacing:'0.04em', marginBottom:3, display:'block' as const };
     async function generateReport() {
       setReportLoading(true); setReportError(null); setReportText(null);
+      if (session?.isDemoShell !== false) {
+        setReportText(CANNED.cricket.matchReport ?? '');
+        setReportLoading(false);
+        return;
+      }
       try {
         const res = await fetch('/api/ai/cricket', {
           method: 'POST',
@@ -6687,7 +6739,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
     commercial:<Commercial/>,sponsorship:<SponsorshipPipelineV2/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} isDemoShell={session?.isDemoShell !== false} />,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
-    preseason:<CricketPreSeasonView/>,
+    preseason:<CricketPreSeasonView session={session}/>,
   };
 
   return(
