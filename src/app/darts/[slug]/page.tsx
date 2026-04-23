@@ -74,6 +74,7 @@ import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUser
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
+import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
@@ -389,6 +390,13 @@ function DartsAISection({ context, player, session }: DartsAISectionProps) {
 
   const generateSummary = async () => {
     setLoading(true)
+    if (session?.isDemoShell !== false) {
+      setSummary(cleanResponse(CANNED.darts.dashboardSummary ?? ''))
+      setGenerated(true)
+      setError(null)
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
@@ -2479,6 +2487,10 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
 
   const handleAiAnalysis = async (idx: number) => {
     setAiAnalysis(prev => ({ ...prev, [idx]: { loading: true, result: null } }));
+    if (session?.isDemoShell !== false) {
+      setAiAnalysis(prev => ({ ...prev, [idx]: { loading: false, result: CANNED.darts.sessionReview ?? '' } }));
+      return;
+    }
     const s = sessions[idx];
     try {
       const res = await fetch('/api/ai/darts', {
@@ -9418,13 +9430,18 @@ function DartsPracticeLogger({ onClose }: { onClose: () => void }) {
 }
 
 // ─── MODAL: MATCH REPORT ─────────────────────────────────────────────────────
-function DartsMatchReport({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+function DartsMatchReport({ onClose, player, isDemoShell }: { onClose: () => void; player: DartsPlayer; isDemoShell: boolean }) {
   const [form, setForm] = useState({ opponent: '', tournament: '', myAvg: '', oppAvg: '', won: true, score: '', })
   const [report, setReport] = useState('')
   const [loading, setLoading] = useState(false)
 
   const generate = async () => {
     setLoading(true)
+    if (isDemoShell) {
+      setReport(CANNED.darts.matchDebrief ?? '')
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -9730,7 +9747,7 @@ function DartsExpenseLogger({ onClose }: { onClose: () => void }) {
 }
 
 // ─── MODAL: SOCIAL MEDIA AI ─────────────────────────────────────────────────
-function DartsSocialMediaAI({ onClose, player }: { onClose: () => void; player: DartsPlayer }) {
+function DartsSocialMediaAI({ onClose, player, isDemoShell }: { onClose: () => void; player: DartsPlayer; isDemoShell: boolean }) {
   const [topic, setTopic] = useState('')
   const [platforms, setPlatforms] = useState<Record<string, boolean>>({ Twitter: true, Instagram: true, LinkedIn: false, Facebook: false, TikTok: false })
   const [tone, setTone] = useState('Motivational')
@@ -9739,6 +9756,11 @@ function DartsSocialMediaAI({ onClose, player }: { onClose: () => void; player: 
 
   const generate = async () => {
     setLoading(true)
+    if (isDemoShell) {
+      setResult(cleanResponse(CANNED.darts.contentPlanner ?? ''))
+      setLoading(false)
+      return
+    }
     try {
       const selectedPlatforms = Object.entries(platforms).filter(([,v]) => v).map(([k]) => k).join(', ')
       const res = await fetch('/api/ai/darts', {
@@ -10482,7 +10504,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             {activeModal === 'flights' && <DartsFlightFinder onClose={closeModal} player={player} session={session} />}
             {activeModal === 'hotel' && <DartsHotelFinder onClose={closeModal} />}
             {activeModal === 'practice' && <DartsPracticeLogger onClose={closeModal} />}
-            {activeModal === 'matchreport' && <DartsMatchReport onClose={closeModal} player={player} />}
+            {activeModal === 'matchreport' && <DartsMatchReport onClose={closeModal} player={player} isDemoShell={session?.isDemoShell !== false} />}
             {activeModal === 'equipment' && <DartsEquipmentCheck onClose={closeModal} />}
             {activeModal === 'prizes' && <DartsPrizeTracker onClose={closeModal} />}
             {activeModal === 'sponsor' && <DartsSponsorPost onClose={closeModal} player={player} />}
@@ -10491,7 +10513,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
             {activeModal === 'physio' && <DartsPhysioLog onClose={closeModal} />}
             {activeModal === 'expense' && <DartsExpenseLogger onClose={closeModal} />}
             {activeModal === 'exhibition' && <DartsExhibitionBooker onClose={closeModal} />}
-            {activeModal === 'socialmedia' && <DartsSocialMediaAI onClose={closeModal} player={player} />}
+            {activeModal === 'socialmedia' && <DartsSocialMediaAI onClose={closeModal} player={player} isDemoShell={session?.isDemoShell !== false} />}
           </div>
         </div>
       )}
