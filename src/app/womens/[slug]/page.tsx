@@ -2691,7 +2691,7 @@ const TransfersView = ({ club }: { club: WomensClub }) => {
   const runSearch = async () => {
     setLoading(true); setResults(null);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/womens', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
@@ -2891,7 +2891,7 @@ One short, direct motivational paragraph for the manager to adapt.
 
 Keep the tone professional, concise, and match-ready. This will be read in a 15-minute halftime window.`
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/ai/womens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
