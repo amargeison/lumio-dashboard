@@ -31,7 +31,7 @@ export async function GET(
       display:           'standalone',
       orientation:       'portrait',
       background_color:  '#0D0820',
-      theme_color:       '#A855F7',
+      theme_color:       '#DC2626',
       icons: [
         { src: '/boxing_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

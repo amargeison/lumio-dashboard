@@ -14,7 +14,7 @@ export function MobileSponsorAlert({ dueLabel, message, onPress }: MobileSponsor
       onClick={onPress}
       className="mx-4 mt-3 w-[calc(100%-2rem)] rounded-2xl p-3 flex items-start gap-3 text-left transition-transform active:scale-[0.99]"
       style={{
-        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 70, 239, 0.15))',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--amber) 15%, transparent), color-mix(in srgb, var(--fuchsia) 15%, transparent))',
         border: '1px solid rgba(245, 158, 11, 0.35)',
       }}
     >

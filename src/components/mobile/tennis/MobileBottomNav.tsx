@@ -62,7 +62,7 @@ export function MobileBottomNav({ active, onSelect }: MobileBottomNavProps) {
                 className="relative flex items-center justify-center"
                 style={{
                   color: isActive ? 'var(--fuchsia)' : 'var(--text-muted)',
-                  filter: isActive && key === 'home' ? 'drop-shadow(0 0 6px rgba(217, 70, 239, 0.45))' : undefined,
+                  filter: isActive && key === 'home' ? 'drop-shadow(0 0 6px color-mix(in srgb, var(--fuchsia) 45%, transparent))' : undefined,
                 }}
               >
                 <Icon size={22} strokeWidth={isActive ? 2.4 : 1.8} />

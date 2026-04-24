@@ -31,7 +31,7 @@ export async function GET(
       display:           'standalone',
       orientation:       'portrait',
       background_color:  '#0D0820',
-      theme_color:       '#A855F7',
+      theme_color:       '#16A34A',
       icons: [
         { src: '/golf_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/golf_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

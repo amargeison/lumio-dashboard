@@ -15,8 +15,8 @@ export function MobilePerformanceIntel({ timestampLabel, body, onPress }: Mobile
       onClick={onPress}
       className="mx-4 mt-3 w-[calc(100%-2rem)] rounded-2xl p-3.5 text-left transition-transform active:scale-[0.99]"
       style={{
-        background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(34, 211, 238, 0.08))',
-        border: '1px solid rgba(168, 85, 247, 0.22)',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--violet) 14%, transparent), color-mix(in srgb, var(--cyan) 8%, transparent))',
+        border: '1px solid color-mix(in srgb, var(--violet) 22%, transparent)',
       }}
     >
       <div className="flex items-center justify-between">
