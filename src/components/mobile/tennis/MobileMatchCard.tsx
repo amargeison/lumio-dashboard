@@ -78,7 +78,7 @@ export function MobileMatchCard({
       className="mx-4 mt-4 rounded-2xl overflow-hidden relative"
       style={{
         background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-alt) 100%)',
-        border: '1px solid rgba(168, 85, 247, 0.18)',
+        border: '1px solid var(--border)',
         animation: 'mobileCardIn 500ms 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
       }}
     >
@@ -174,7 +174,7 @@ export function MobileMatchCard({
           className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
           style={{
             background: 'transparent',
-            border: '1px solid rgba(168, 85, 247, 0.4)',
+            border: '1px solid color-mix(in srgb, var(--violet) 40%, transparent)',
             color: 'var(--text-accent)',
           }}
         >
@@ -194,7 +194,7 @@ function PlayerBlob({ initials, name, rank, photoUrl, align }: MobileMatchCardPl
           background: align === 'left'
             ? 'linear-gradient(135deg, var(--violet), var(--fuchsia))'
             : 'linear-gradient(135deg, rgb(71, 85, 105), rgb(30, 41, 59))',
-          border: '1.5px solid rgba(168, 85, 247, 0.45)',
+          border: '1.5px solid color-mix(in srgb, var(--violet) 45%, transparent)',
         }}
       >
         {photoUrl ? (

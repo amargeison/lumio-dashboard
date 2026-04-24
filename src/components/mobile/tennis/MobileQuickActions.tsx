@@ -35,7 +35,7 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
         <button
           onClick={onAll}
           className="text-[11px] font-semibold"
-          style={{ color: 'rgb(196, 181, 253)' }}
+          style={{ color: 'var(--text-accent)' }}
         >
           All {total} →
         </button>
@@ -53,9 +53,9 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
               onClick={a.onPress}
               className="relative flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-transform active:scale-[0.95]"
               style={{
-                background: active ? 'rgba(168, 85, 247, 0.2)' : 'var(--bg-card)',
-                border: `1px solid ${active ? 'rgba(168, 85, 247, 0.5)' : 'var(--border, rgba(168, 85, 247, 0.18))'}`,
-                color: active ? 'rgb(233, 213, 255)' : 'var(--text-accent)',
+                background: active ? 'color-mix(in srgb, var(--violet) 20%, transparent)' : 'var(--bg-card)',
+                border: `1px solid ${active ? 'color-mix(in srgb, var(--violet) 50%, transparent)' : 'var(--border)'}`,
+                color: active ? 'var(--text-primary)' : 'var(--text-accent)',
               }}
             >
               <span
@@ -70,7 +70,7 @@ export function MobileQuickActions({ total, actions, onAll }: MobileQuickActions
                   className="absolute -top-1 -right-1 px-1 py-0.5 rounded-full font-black leading-none"
                   style={{
                     fontSize: 8,
-                    background: 'rgba(168, 85, 247, 0.95)',
+                    background: 'var(--violet)',
                     color: '#fff',
                     border: '1px solid rgba(217, 70, 239, 0.65)',
                   }}

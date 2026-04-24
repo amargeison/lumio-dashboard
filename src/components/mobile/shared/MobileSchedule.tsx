@@ -15,12 +15,12 @@ export function MobileSchedule({ items, title = "Today's Schedule" }: MobileSche
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'var(--bg-card)',
-          border: '1px solid rgba(168, 85, 247, 0.18)',
+          border: '1px solid var(--border)',
         }}
       >
         <div
           className="px-4 py-3 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(168, 85, 247, 0.12)' }}
+          style={{ borderBottom: '1px solid color-mix(in srgb, var(--violet) 12%, transparent)' }}
         >
           <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>
             {title}
@@ -37,18 +37,18 @@ export function MobileSchedule({ items, title = "Today's Schedule" }: MobileSche
             {items.length} items
           </span>
         </div>
-        <div className="divide-y" style={{ borderColor: 'rgba(168, 85, 247, 0.08)' }}>
+        <div className="divide-y" style={{ borderColor: 'color-mix(in srgb, var(--violet) 8%, transparent)' }}>
           {items.map((s) => (
             <div
               key={s.id}
               className="flex items-center gap-3 px-4 py-2.5"
-              style={{ borderTop: '1px solid rgba(168, 85, 247, 0.08)' }}
+              style={{ borderTop: '1px solid color-mix(in srgb, var(--violet) 8%, transparent)' }}
             >
               <span
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{
-                  background: s.highlight ? 'var(--violet)' : 'rgba(168, 85, 247, 0.25)',
-                  boxShadow: s.highlight ? '0 0 8px rgba(217, 70, 239, 0.55)' : undefined,
+                  background: s.highlight ? 'var(--violet)' : 'color-mix(in srgb, var(--violet) 25%, transparent)',
+                  boxShadow: s.highlight ? '0 0 8px color-mix(in srgb, var(--fuchsia) 55%, transparent)' : undefined,
                 }}
               />
               <span
@@ -65,7 +65,7 @@ export function MobileSchedule({ items, title = "Today's Schedule" }: MobileSche
               <span
                 className="text-[13px] flex-1 min-w-0 truncate"
                 style={{
-                  color: s.highlight ? 'var(--text-primary)' : 'rgba(245, 243, 255, 0.78)',
+                  color: s.highlight ? 'var(--text-primary)' : 'color-mix(in srgb, var(--text-primary) 78%, transparent)',
                   fontWeight: s.highlight ? 600 : 500,
                 }}
               >

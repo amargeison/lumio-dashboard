@@ -18,12 +18,12 @@ export function MobileAISummary({ title, items, isSpeaking, onToggle }: MobileAI
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'var(--bg-card)',
-          border: '1px solid rgba(168, 85, 247, 0.18)',
+          border: '1px solid var(--border)',
         }}
       >
         <div
           className="px-4 py-3 flex items-center justify-between gap-2"
-          style={{ borderBottom: '1px solid rgba(168, 85, 247, 0.12)' }}
+          style={{ borderBottom: '1px solid color-mix(in srgb, var(--violet) 12%, transparent)' }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <Sparkles size={14} style={{ color: 'var(--violet)' }} />
@@ -38,8 +38,8 @@ export function MobileAISummary({ title, items, isSpeaking, onToggle }: MobileAI
             aria-pressed={isSpeaking}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-colors active:scale-[0.95]"
             style={{
-              background: isSpeaking ? 'rgba(14, 165, 233, 0.22)' : 'rgba(168, 85, 247, 0.18)',
-              border: `1px solid ${isSpeaking ? 'rgba(14, 165, 233, 0.55)' : 'rgba(168, 85, 247, 0.4)'}`,
+              background: isSpeaking ? 'rgba(14, 165, 233, 0.22)' : 'var(--border)',
+              border: `1px solid ${isSpeaking ? 'rgba(14, 165, 233, 0.55)' : 'color-mix(in srgb, var(--violet) 40%, transparent)'}`,
               color: isSpeaking ? 'rgb(56, 189, 248)' : 'var(--text-accent)',
             }}
           >
@@ -53,7 +53,7 @@ export function MobileAISummary({ title, items, isSpeaking, onToggle }: MobileAI
           {items.map((item, i) => (
             <div key={i} className="flex gap-2.5 text-[12.5px]">
               <span className="text-base flex-shrink-0 leading-tight">{item.icon}</span>
-              <span style={{ color: 'rgba(245, 243, 255, 0.85)', lineHeight: 1.55 }}>
+              <span style={{ color: 'color-mix(in srgb, var(--text-primary) 85%, transparent)', lineHeight: 1.55 }}>
                 {item.text}
               </span>
             </div>

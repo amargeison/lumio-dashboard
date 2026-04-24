@@ -51,9 +51,9 @@ export function MobileTopBar({
               ? 'rgba(255, 255, 255, 0.06)'
               : 'linear-gradient(135deg, var(--violet), var(--fuchsia))',
             border: logoUrl && logoOk
-              ? '1px solid rgba(168, 85, 247, 0.28)'
+              ? '1px solid color-mix(in srgb, var(--violet) 28%, transparent)'
               : undefined,
-            boxShadow: '0 4px 14px -4px rgba(168, 85, 247, 0.6)',
+            boxShadow: '0 4px 14px -4px color-mix(in srgb, var(--violet) 60%, transparent)',
           }}
         >
           {logoUrl && logoOk ? (
@@ -106,10 +106,10 @@ export function MobileTopBar({
             <span
               className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-[4px] rounded-lg flex items-center justify-center font-extrabold text-white"
               style={{
-                background: 'rgb(239, 68, 68)',
+                background: 'var(--red)',
                 fontSize: 9,
                 lineHeight: 1,
-                border: '1.5px solid rgb(13, 8, 32)',
+                border: '1.5px solid var(--bg-base)',
               }}
             >
               {unreadPill}
@@ -127,9 +127,9 @@ export function MobileTopBar({
           className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-bold text-white"
           style={{
             background: photoUrl && photoOk
-              ? 'rgb(22, 16, 43)'
+              ? 'var(--bg-card)'
               : 'linear-gradient(135deg, var(--violet), var(--fuchsia))',
-            boxShadow: '0 0 0 2px rgb(13, 8, 32), 0 0 0 4px rgb(168, 85, 247)',
+            boxShadow: '0 0 0 2px var(--bg-base), 0 0 0 4px var(--violet)',
           }}
         >
           {photoUrl && photoOk ? (

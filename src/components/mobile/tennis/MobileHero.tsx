@@ -44,8 +44,8 @@ export type MobileHeroProps = {
 }
 
 const TINT_MAP: Record<NonNullable<MobileHeroStat['tint']>, string> = {
-  violet: 'rgb(196, 181, 253)',
-  white: 'rgb(245, 243, 255)',
+  violet: 'var(--text-accent)',
+  white: 'var(--text-primary)',
   yellow: 'var(--yellow)',
 }
 
@@ -66,8 +66,8 @@ export function MobileHero({
       <div
         className="relative rounded-3xl overflow-hidden"
         style={{
-          background: 'linear-gradient(160deg, rgb(13, 8, 32) 0%, rgb(30, 16, 57) 35%, rgb(76, 29, 149) 70%, rgb(168, 85, 247) 100%)',
-          boxShadow: 'rgba(168, 85, 247, 0.44) 0px 12px 40px -8px',
+          background: 'var(--hero-gradient)',
+          boxShadow: 'var(--hero-shadow) 0px 12px 40px -8px',
           padding: '20px 18px 18px 18px',
         }}
       >
@@ -80,7 +80,7 @@ export function MobileHero({
             width: 220,
             height: 220,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(217,70,239,0.53) 0%, rgba(217,70,239,0) 65%)',
+            background: 'radial-gradient(circle, var(--hero-glow) 0%, transparent 65%)',
             filter: 'blur(10px)',
           }}
         />
@@ -157,7 +157,7 @@ export function MobileHero({
                 fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
                 fontSize: 10.5,
                 letterSpacing: '1.2px',
-                color: 'rgba(196, 181, 253, 0.9)',
+                color: 'color-mix(in srgb, var(--text-accent) 90%, transparent)',
               }}
             >
               — {quoteAuthor}
@@ -182,7 +182,7 @@ export function MobileHero({
                     fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
                     fontSize: 9,
                     letterSpacing: '0.8px',
-                    color: 'rgba(196, 181, 253, 0.85)',
+                    color: 'color-mix(in srgb, var(--text-accent) 85%, transparent)',
                   }}
                 >
                   {s.label}
@@ -200,7 +200,7 @@ export function MobileHero({
                       fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
                       fontSize: 8.5,
                       letterSpacing: '0.6px',
-                      color: 'rgba(196, 181, 253, 0.6)',
+                      color: 'color-mix(in srgb, var(--text-accent) 60%, transparent)',
                     }}
                   >
                     {s.sub}
@@ -234,7 +234,7 @@ export function MobileHero({
                       fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
                       fontSize: 9,
                       letterSpacing: '0.8px',
-                      color: 'rgba(196, 181, 253, 0.75)',
+                      color: 'color-mix(in srgb, var(--text-accent) 75%, transparent)',
                     }}
                   >
                     {weather.city}
@@ -264,7 +264,7 @@ export function MobileHero({
                           fontFamily: 'var(--font-jetbrains-mono), ui-monospace, monospace',
                           fontSize: 8.5,
                           letterSpacing: '0.8px',
-                          color: 'rgba(196, 181, 253, 0.65)',
+                          color: 'color-mix(in srgb, var(--text-accent) 65%, transparent)',
                         }}
                       >
                         {c.city}

@@ -63,7 +63,7 @@ export async function generateMetadata(
 }
 
 export const viewport: Viewport = {
-  themeColor: '#A855F7',
+  themeColor: '#DC2626', // boxing brand red
 }
 
 export default function BoxingSlugLayout({ children }: { children: React.ReactNode }) {

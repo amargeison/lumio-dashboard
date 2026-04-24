@@ -6,7 +6,7 @@ const TINT_MAP: Record<NonNullable<MobileVenueConfig['rows'][number]['tint']>, s
   green:   'var(--green)',
   amber:   'var(--amber)',
   red:     'var(--red)',
-  default: 'rgba(245, 243, 255, 0.92)',
+  default: 'color-mix(in srgb, var(--text-primary) 92%, transparent)',
 }
 
 export function MobileVenue({ eyebrow, name, conditionsLine, rows }: MobileVenueConfig) {
@@ -16,7 +16,7 @@ export function MobileVenue({ eyebrow, name, conditionsLine, rows }: MobileVenue
         className="rounded-2xl p-4"
         style={{
           background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-alt) 100%)',
-          border: '1px solid rgba(168, 85, 247, 0.18)',
+          border: '1px solid var(--border)',
         }}
       >
         <div
@@ -33,12 +33,12 @@ export function MobileVenue({ eyebrow, name, conditionsLine, rows }: MobileVenue
         <div className="text-[14px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
           {name}
         </div>
-        <div className="text-[11.5px] mb-3" style={{ color: 'rgba(196, 181, 253, 0.7)' }}>
+        <div className="text-[11.5px] mb-3" style={{ color: 'color-mix(in srgb, var(--text-accent) 70%, transparent)' }}>
           {conditionsLine}
         </div>
         <div
           className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-3"
-          style={{ borderTop: '1px solid rgba(168, 85, 247, 0.12)' }}
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--violet) 12%, transparent)' }}
         >
           {rows.map(row => (
             <React.Fragment key={row.label}>

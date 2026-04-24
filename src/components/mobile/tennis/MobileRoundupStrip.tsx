@@ -64,7 +64,7 @@ export function MobileRoundupStrip({
         <button
           onClick={onOpen}
           className="text-[11px] font-semibold"
-          style={{ color: 'rgb(196, 181, 253)' }}
+          style={{ color: 'var(--text-accent)' }}
         >
           Open triage →
         </button>

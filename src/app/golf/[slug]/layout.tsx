@@ -63,7 +63,7 @@ export async function generateMetadata(
 }
 
 export const viewport: Viewport = {
-  themeColor: '#A855F7',
+  themeColor: '#16A34A', // golf brand green
 }
 
 export default function GolfSlugLayout({ children }: { children: React.ReactNode }) {

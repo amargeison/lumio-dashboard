@@ -264,7 +264,7 @@ export function MobileSportHome({ session, config, onNavigate, roundupCount }: M
         onClose={() => setActiveChannel(null)}
         channelLabel={activeChannel?.label ?? ''}
         channelIcon={activeChannel?.icon ?? '·'}
-        channelColor={activeChannel?.color ?? 'rgb(168, 85, 247)'}
+        channelColor={activeChannel?.color ?? 'var(--violet)'}
         messages={activeChannel?.demoMessages ?? []}
         onReplyTap={stub(`Reply to ${activeChannel?.label ?? 'channel'}`)}
       />
