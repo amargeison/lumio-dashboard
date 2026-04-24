@@ -9,8 +9,10 @@ import {
   ClipboardList, Calendar, Database, Network, GitBranch, FileText, Settings,
   LogOut, Bell, Menu, X, Pin, ChevronRight, ChevronUp, ChevronDown,
   Sparkles, Volume2, Mic, Search, GraduationCap, BookOpen, FolderOpen,
-  CalendarCheck, Download, Loader2, Printer,
+  CalendarCheck, Download, Loader2, Printer, Briefcase,
 } from 'lucide-react'
+import { partnerForSlug } from '@/lib/partners/tenant-partner'
+import { RGRDashboard } from '@/components/telted/rgr/RGRDashboard'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import { T, PUPILS, ALERTS, TRUST, STAFF, neliPupils, neliAvgGain, classAvgI, classAvgE, getLight, lc, lb, ll } from '@/components/neli/neliData'
@@ -249,6 +251,7 @@ const SIDEBAR_NAV = [
   { section: 'Tools',  id: 'workflows',    label: 'Workflows',          icon: GitBranch },
   { section: null,     id: 'reports',      label: 'Reports',            icon: FileText },
   { section: null,     id: 'settings',     label: 'Settings',           icon: Settings },
+  { section: 'Partners', id: 'rgr',        label: 'RGR',                icon: Briefcase, partner: 'RGR' as const },
 ]
 
 // ─── Tab definitions ─────────────────────────────────────────────────────────
@@ -1683,6 +1686,10 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const expanded = pinned || hovered
   const sidebarW = expanded ? EXPANDED_W : COLLAPSED_W
 
+  // Partner-scoped nav items (e.g. Partners > RGR shows only for RGR tenants)
+  const partner = partnerForSlug(pathname?.split('/')[2])
+  const visibleNav = SIDEBAR_NAV.filter(item => !('partner' in item) || partner === item.partner)
+
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
 
@@ -1876,6 +1883,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         return <ReportsToolPage />
       case 'settings':
         return <TelTedSettings />
+      case 'rgr':
+        return <RGRDashboard />
       default:
         return null
     }
@@ -1941,8 +1950,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto px-1.5 py-3 space-y-0.5">
-          {SIDEBAR_NAV.map((item, i) => {
-            const prev = SIDEBAR_NAV[i - 1]
+          {visibleNav.map((item, i) => {
+            const prev = visibleNav[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
             const isActive = sidebarPage === item.id
             const Icon = item.icon
@@ -1992,8 +2001,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-            {SIDEBAR_NAV.map((item, i) => {
-              const prev = SIDEBAR_NAV[i - 1]
+            {visibleNav.map((item, i) => {
+              const prev = visibleNav[i - 1]
               const showSection = item.section && item.section !== prev?.section
               const isActive = sidebarPage === item.id
               const Icon = item.icon
