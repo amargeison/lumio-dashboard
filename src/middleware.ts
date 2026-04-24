@@ -101,6 +101,11 @@ export async function middleware(request: NextRequest) {
         '/api',
         '/_next',
         '/favicon',
+        // Partner assets (standalone HTML download, e.g. RGR dashboard
+        // template served from /public/partners/). Without this, the
+        // coming-soon rewrite below swallows .html requests and Next
+        // returns the coming-soon page instead of the static asset.
+        '/partners',
       ]
       const STATIC_FILE_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|css|js|woff2?|ttf|map)$/i
 
