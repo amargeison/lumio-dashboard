@@ -1661,6 +1661,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('today')
   const [sidebarPage, setSidebarPage] = useState('overview')
+  // Last non-partner page the user was on, so "Back to School View" restores context
+  const [lastSchoolPage, setLastSchoolPage] = useState('overview')
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -1688,7 +1690,19 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
 
   // Partner-scoped nav items (e.g. Partners > RGR shows only for RGR tenants)
   const partner = partnerForSlug(pathname?.split('/')[2])
-  const visibleNav = SIDEBAR_NAV.filter(item => !('partner' in item) || partner === item.partner)
+  const availableNav = SIDEBAR_NAV.filter(item => !('partner' in item) || partner === item.partner)
+
+  // Partner mode: on a partner nav page, collapse the sidebar down to just
+  // the partner section + a back-to-school button. The "Current School"
+  // card is swapped for a "Partner Portfolio" card.
+  const activeNavItem = SIDEBAR_NAV.find(n => n.id === sidebarPage)
+  const isPartnerMode = !!(activeNavItem && 'partner' in activeNavItem)
+  const partnerName = isPartnerMode && activeNavItem && 'partner' in activeNavItem
+    ? activeNavItem.partner
+    : null
+  const visibleNav = isPartnerMode
+    ? availableNav.filter(item => 'partner' in item)
+    : availableNav
 
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
@@ -1729,10 +1743,23 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   function handleMouseLeave() { leaveTimer.current = setTimeout(() => setHovered(false), 200) }
 
   function handleSidebarNav(id: string) {
+    // When leaving school view for a partner page, remember where we were
+    // so the Back button can restore context.
+    const target = SIDEBAR_NAV.find(n => n.id === id)
+    const targetIsPartner = !!(target && 'partner' in target)
+    if (targetIsPartner && !isPartnerMode) setLastSchoolPage(sidebarPage)
+
     setSidebarPage(id)
     setSelectedClass(null)
     setSelectedPupil(null)
     if (id === 'overview') setActiveTab('today')
+  }
+
+  function handleBackToSchoolView() {
+    setSidebarPage(lastSchoolPage || 'overview')
+    setSelectedClass(null)
+    setSelectedPupil(null)
+    if ((lastSchoolPage || 'overview') === 'overview') setActiveTab('today')
   }
 
   function handleQuickAction(action: string, label: string) {
@@ -1936,12 +1963,19 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
           </div>
         )}
 
-        {/* School info */}
-        {expanded && (
+        {/* Tenant context card — School info in school mode, Partner portfolio in partner mode */}
+        {expanded && !isPartnerMode && (
           <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Current School</p>
             <p className="text-xs font-bold mt-1" style={{ color: '#F9FAFB' }}>🏫 Parkside Elementary</p>
             <p className="text-[10px]" style={{ color: '#6B7280' }}>Oak Valley District · Kindergarten</p>
+          </div>
+        )}
+        {expanded && isPartnerMode && (
+          <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Partner Portfolio</p>
+            <p className="text-xs font-bold mt-1" style={{ color: '#F9FAFB' }}>🏢 {partnerName === 'RGR' ? 'Really Great Reading' : partnerName}</p>
+            <p className="text-[10px]" style={{ color: '#6B7280' }}>{partner === 'RGR' ? '68 schools · US portfolio' : '—'}</p>
           </div>
         )}
 
@@ -1950,6 +1984,16 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto px-1.5 py-3 space-y-0.5">
+          {expanded && isPartnerMode && (
+            <button
+              onClick={handleBackToSchoolView}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 mb-2 text-xs font-semibold transition-colors w-full"
+              style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+            >
+              <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
+              Back to School View
+            </button>
+          )}
           {visibleNav.map((item, i) => {
             const prev = visibleNav[i - 1]
             const showSection = expanded && item.section && item.section !== prev?.section
@@ -2001,6 +2045,16 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
             <button onClick={() => setMobileOpen(false)} style={{ color: '#9CA3AF' }}><X size={16} /></button>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+            {isPartnerMode && (
+              <button
+                onClick={() => { handleBackToSchoolView(); setMobileOpen(false) }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 mb-2 text-xs font-semibold w-full"
+                style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}
+              >
+                <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
+                Back to School View
+              </button>
+            )}
             {visibleNav.map((item, i) => {
               const prev = visibleNav[i - 1]
               const showSection = item.section && item.section !== prev?.section
