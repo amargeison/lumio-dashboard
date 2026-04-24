@@ -165,7 +165,7 @@ export function RGRDashboard() {
   async function downloadStandalone(p: Payload) {
     setDownloading(true)
     try {
-      const template = await fetch('/partners/rgr/template.html').then(r => r.text())
+      const template = await fetch(`/partners/rgr/template.html?v=${Date.now()}`, { cache: 'no-store' }).then(r => r.text())
       const html = template.replace(
         /<script id="app-data"[^>]*>[\s\S]*?<\/script>/,
         `<script id="app-data" type="application/json">${JSON.stringify(p)}</script>`,
