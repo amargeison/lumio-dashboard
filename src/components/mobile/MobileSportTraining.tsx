@@ -43,15 +43,15 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<Activity size={16} />}
           title="Recovery"
           subtitle={isDemo ? 'Lumio Wear · today' : 'Connect Lumio Wear to start tracking'}
-          accent="rgb(16, 185, 129)"
+          accent="var(--green)"
           onTap={() => onNavigate('physio')}
         >
           {isDemo ? (
             <div className="grid grid-cols-2 gap-2 mt-3">
-              <RecoveryStat label="Recovery"  value={t.recovery.score}     tint="rgb(16, 185, 129)" />
-              <RecoveryStat label="HRV"       value={t.recovery.hrv}       tint="rgb(34, 211, 238)" />
-              <RecoveryStat label="Resting"   value={t.recovery.restingHr} tint="rgb(96, 165, 250)" />
-              <RecoveryStat label="Sleep"     value={t.recovery.sleep}     tint="rgb(196, 181, 253)" />
+              <RecoveryStat label="Recovery"  value={t.recovery.score}     tint="var(--green)" />
+              <RecoveryStat label="HRV"       value={t.recovery.hrv}       tint="var(--cyan)" />
+              <RecoveryStat label="Resting"   value={t.recovery.restingHr} tint="var(--blue)" />
+              <RecoveryStat label="Sleep"     value={t.recovery.sleep}     tint="var(--text-accent)" />
             </div>
           ) : (
             <EmptyMessage>No recovery data yet — Connect Lumio Wear</EmptyMessage>
@@ -63,7 +63,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<TrendingUp size={16} />}
           title="Performance"
           subtitle={isDemo ? t.performance.subtitle : 'Log a match to see trends'}
-          accent="rgb(217, 70, 239)"
+          accent="var(--fuchsia)"
           onTap={() => onNavigate('performance')}
         >
           {isDemo ? (
@@ -73,7 +73,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
                   key={s.label}
                   label={s.label}
                   value={s.value}
-                  tint={i === 0 ? 'rgb(16, 185, 129)' : i === 1 ? 'rgb(196, 181, 253)' : 'rgb(245, 243, 255)'}
+                  tint={i === 0 ? 'var(--green)' : i === 1 ? 'var(--text-accent)' : 'var(--text-primary)'}
                   small={i === 2 && s.value.length > 6}
                 />
               ))}
@@ -88,7 +88,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<Calendar size={16} />}
           title="Today's Practice"
           subtitle={isDemo ? t.practice.subtitle : 'No practice scheduled'}
-          accent="rgb(168, 85, 247)"
+          accent="var(--violet)"
           onTap={stub('Log Practice')}
         >
           {isDemo ? (
@@ -104,7 +104,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
             icon={<Satellite size={16} />}
             title="GPS Session"
             subtitle={isDemo ? t.gps.subtitle : 'Not connected'}
-            accent="rgb(34, 211, 238)"
+            accent="var(--cyan)"
             onTap={() => onNavigate('gps')}
           >
             {isDemo ? (
@@ -120,7 +120,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<Video size={16} />}
           title="Video Review"
           subtitle={isDemo ? t.video.subtitle : 'Upload your first match footage'}
-          accent="rgb(96, 165, 250)"
+          accent="var(--blue)"
           onTap={() => onNavigate('video')}
         >
           {isDemo ? (
@@ -135,7 +135,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<Utensils size={16} />}
           title="Nutrition"
           subtitle={isDemo ? t.nutrition.subtitle : 'No nutrition plan yet'}
-          accent="rgb(245, 158, 11)"
+          accent="var(--amber)"
           onTap={() => onNavigate('nutrition')}
         >
           {isDemo ? (
@@ -150,7 +150,7 @@ export function MobileSportTraining({ session, config, onNavigate }: MobileSport
           icon={<Brain size={16} />}
           title="Mental Performance"
           subtitle={isDemo ? t.mental.subtitle : 'Add your first session'}
-          accent="rgb(196, 181, 253)"
+          accent="var(--text-accent)"
           onTap={() => onNavigate('mental')}
         >
           {isDemo ? (

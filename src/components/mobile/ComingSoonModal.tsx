@@ -71,13 +71,13 @@ export function ComingSoonModal({ label, onClose }: ComingSoonModalProps) {
         </div>
         <div
           className="text-xl font-bold mb-2"
-          style={{ color: 'rgb(245, 243, 255)' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           Coming soon
         </div>
         <p
           className="text-sm leading-relaxed mb-5"
-          style={{ color: 'rgba(196, 181, 253, 0.75)' }}
+          style={{ color: 'color-mix(in srgb, var(--text-accent) 75%, transparent)' }}
         >
           This is a Class A placeholder while the underlying flow ships.
           Tap close to keep exploring.
@@ -87,7 +87,7 @@ export function ComingSoonModal({ label, onClose }: ComingSoonModalProps) {
           onClick={onClose}
           className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-transform active:scale-[0.98]"
           style={{
-            background: 'linear-gradient(135deg, rgb(168, 85, 247), rgb(217, 70, 239))',
+            background: 'linear-gradient(135deg, var(--violet), var(--fuchsia))',
           }}
         >
           Got it

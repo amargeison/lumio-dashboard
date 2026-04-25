@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
-import { MobileBottomNav, type MobileNavKey } from './tennis/MobileBottomNav'
-import { MobileMoreSheet, type MoreSheetItem } from './tennis/MobileMoreSheet'
+import { MobileBottomNav, type MobileNavKey } from './sport/MobileBottomNav'
+import { MobileMoreSheet, type MoreSheetItem } from './sport/MobileMoreSheet'
 import { MobileLayoutContext } from './MobileLayoutContext'
 
 export type MobileSportLayoutProps = {
