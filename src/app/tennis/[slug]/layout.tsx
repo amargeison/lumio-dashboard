@@ -28,7 +28,10 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params
-  let manifestHref = `/tennis/${slug}/manifest.webmanifest`
+  // Anonymous renders use a stable `/m/anon/...` path so iOS keeps a single
+  // cache entry for the email-gate persona. Authed renders below swap to a
+  // per-render cache-buster so iOS refetches and picks up the install_token.
+  let manifestHref = `/tennis/${slug}/m/anon/manifest.webmanifest`
   let debugReason = 'anon'
 
   try {
@@ -49,7 +52,11 @@ export async function generateMetadata(
     } else {
       try {
         const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'tennis', slug })
-        manifestHref = `/tennis/${slug}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
+        // Per-render path segment so iOS Safari sees a brand-new manifest URL
+        // every time and bypasses its path-keyed manifest cache (which ignores
+        // Cache-Control headers on the response).
+        const cacheBuster = Date.now().toString(36)
+        manifestHref = `/tennis/${slug}/m/${cacheBuster}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
         debugReason = 'minted'
       } catch (e) {
         debugReason = `mint-error:${e instanceof Error ? e.message : String(e)}`
