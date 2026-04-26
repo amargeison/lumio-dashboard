@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-type PendingCookie = { name: string; value: string; options: Record<string, unknown> }
 import { trackSportsEvent } from '@/lib/sports-events'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 
@@ -88,8 +87,21 @@ async function ensureDemoUser(
 
 export async function POST(req: NextRequest) {
   const anon = getAnonClient()
-  const cookiesToSet: PendingCookie[] = []
   const cookieStore = await cookies()
+
+  // Build the response shell up-front so the SSR client's cookie writer
+  // can push Set-Cookie attributes directly onto it. This is the App
+  // Router pattern documented for @supabase/ssr — anything fancier
+  // (buffering, setting cookies after building a fresh response) loses
+  // the cookies silently.
+  //
+  // Cookie options: force `Secure` + `HttpOnly` + `SameSite=Lax`. iOS
+  // Safari ITP increasingly downgrades or discards cookies on HTTPS that
+  // omit `Secure`, which is why DevTools showed zero cookies after OTP
+  // even though the server was returning Set-Cookie. The default options
+  // bag from @supabase/ssr v0.9 doesn't include these — we set them
+  // explicitly here.
+  let response = NextResponse.json({ verified: false }) // placeholder, replaced before return
   const ssr = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -98,7 +110,13 @@ export async function POST(req: NextRequest) {
         getAll: () => cookieStore.getAll(),
         setAll: (toSet) => {
           for (const c of toSet) {
-            cookiesToSet.push({ name: c.name, value: c.value, options: (c.options ?? {}) as Record<string, unknown> })
+            response.cookies.set(c.name, c.value, {
+              ...(c.options ?? {}),
+              secure:   true,
+              httpOnly: true,
+              sameSite: 'lax',
+              path:     '/',
+            })
           }
         },
       },
@@ -238,18 +256,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const response = NextResponse.json({
+    // Replace the placeholder body. Cookies were written directly onto
+    // `response` by the SSR client's setAll during verifyOtp() above —
+    // we only need to overwrite the JSON payload, not re-attach cookies.
+    const finalResponse = NextResponse.json({
       success: true,
       verified: true,
       sessionMinted,
       userId: supabaseUserId,
     })
-    for (const { name, value, options } of cookiesToSet) {
-      // ResponseCookies.set accepts a ResponseCookie record; cast the
-      // opaque options bag through.
-      response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+    for (const c of response.cookies.getAll()) {
+      finalResponse.cookies.set(c.name, c.value, c)
     }
-    return response
+
+    const cookieNames = finalResponse.cookies.getAll().map(c => c.name)
+    console.log('[verify-otp] ' + JSON.stringify({
+      sessionMinted, cookiesWritten: cookieNames.length, cookieNames,
+    }))
+
+    return finalResponse
   } catch (err) {
     console.error('[sports-demo/verify-otp] Error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
