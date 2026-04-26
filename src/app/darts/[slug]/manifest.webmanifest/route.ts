@@ -21,23 +21,29 @@ export async function GET(
     }
   }
 
-  return NextResponse.json(
-    {
-      name:              `Lumio Darts — ${slug}`,
-      short_name:        'Darts',
-      description:       'Your darts OS — walk-on cue, opponent intel, practice log, prize money.',
-      start_url:         startUrl,
-      scope:             portalPath,
-      display:           'standalone',
-      orientation:       'portrait',
-      background_color:  '#0D0820',
-      theme_color:       '#A855F7',
-      icons: [
-        { src: '/darts_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/darts_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/darts_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ],
+  // scope widened to /<sport> + Vary overridden to drop Next's RSC
+  // header list — see tennis route for full rationale.
+  const manifest = {
+    name:              `Lumio Darts — ${slug}`,
+    short_name:        'Darts',
+    description:       'Your darts OS — walk-on cue, opponent intel, practice log, prize money.',
+    start_url:         startUrl,
+    scope:             '/darts',
+    display:           'standalone',
+    orientation:       'portrait',
+    background_color:  '#0D0820',
+    theme_color:       '#A855F7',
+    icons: [
+      { src: '/darts_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/darts_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/darts_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  }
+  return new NextResponse(JSON.stringify(manifest), {
+    headers: {
+      'Content-Type':  'application/manifest+json',
+      'Cache-Control': 'no-store, must-revalidate',
+      'Vary':          'Accept-Encoding',
     },
-    { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store, must-revalidate' } },
-  )
+  })
 }

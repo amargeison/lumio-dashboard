@@ -21,23 +21,29 @@ export async function GET(
     }
   }
 
-  return NextResponse.json(
-    {
-      name:              `Lumio Boxing — ${slug}`,
-      short_name:        'Boxing',
-      description:       'Your fight OS — fight camp, weigh-in, corner sheet, sparring log.',
-      start_url:         startUrl,
-      scope:             portalPath,
-      display:           'standalone',
-      orientation:       'portrait',
-      background_color:  '#0D0820',
-      theme_color:       '#DC2626',
-      icons: [
-        { src: '/boxing_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ],
+  // scope widened to /<sport> + Vary overridden to drop Next's RSC
+  // header list — see tennis route for full rationale.
+  const manifest = {
+    name:              `Lumio Boxing — ${slug}`,
+    short_name:        'Boxing',
+    description:       'Your fight OS — fight camp, weigh-in, corner sheet, sparring log.',
+    start_url:         startUrl,
+    scope:             '/boxing',
+    display:           'standalone',
+    orientation:       'portrait',
+    background_color:  '#0D0820',
+    theme_color:       '#DC2626',
+    icons: [
+      { src: '/boxing_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/boxing_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  }
+  return new NextResponse(JSON.stringify(manifest), {
+    headers: {
+      'Content-Type':  'application/manifest+json',
+      'Cache-Control': 'no-store, must-revalidate',
+      'Vary':          'Accept-Encoding',
     },
-    { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store, must-revalidate' } },
-  )
+  })
 }

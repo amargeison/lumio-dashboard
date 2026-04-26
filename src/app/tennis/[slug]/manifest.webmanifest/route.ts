@@ -35,28 +35,39 @@ export async function GET(
     }
   }
 
-  return NextResponse.json(
-    {
-      name:              `Lumio Tennis — ${slug}`,
-      short_name:        'Tennis',
-      description:       'Your tennis OS — morning briefings, match prep, GPS, sponsors.',
-      start_url:         startUrl,
-      scope:             portalPath,
-      display:           'standalone',
-      orientation:       'portrait',
-      background_color:  '#0D0820',
-      theme_color:       '#A855F7',
-      icons: [
-        { src: '/tennis_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/tennis_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/tennis_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ],
+  // scope is widened to /<sport> (not /<sport>/<slug>) so iOS Safari
+  // accepts this manifest from any sub-route under /tennis. Tighter
+  // scope was triggering a fallback to the global /manifest.json when
+  // the page where Add-to-Home-Screen was triggered didn't exactly
+  // match /<sport>/<slug>. start_url stays precise so the installed
+  // PWA still launches into the user's specific portal.
+  const manifest = {
+    name:              `Lumio Tennis — ${slug}`,
+    short_name:        'Tennis',
+    description:       'Your tennis OS — morning briefings, match prep, GPS, sponsors.',
+    start_url:         startUrl,
+    scope:             '/tennis',
+    display:           'standalone',
+    orientation:       'portrait',
+    background_color:  '#0D0820',
+    theme_color:       '#A855F7',
+    icons: [
+      { src: '/tennis_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/tennis_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/tennis_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  }
+
+  // Use new NextResponse(string) rather than NextResponse.json so the
+  // framework's RSC-aware Vary list (rsc, next-router-state-tree, …)
+  // doesn't get appended. iOS WebKit treats those as a hint that the
+  // resource is per-request-variant and can re-fetch with a different
+  // result, which has historically triggered manifest fallback.
+  return new NextResponse(JSON.stringify(manifest), {
+    headers: {
+      'Content-Type':  'application/manifest+json',
+      'Cache-Control': 'no-store, must-revalidate',
+      'Vary':          'Accept-Encoding',
     },
-    {
-      headers: {
-        'Content-Type':  'application/manifest+json',
-        'Cache-Control': 'no-store, must-revalidate',
-      },
-    },
-  )
+  })
 }
