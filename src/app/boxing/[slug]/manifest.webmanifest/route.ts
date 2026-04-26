@@ -15,7 +15,7 @@ export async function GET(
   // arrives via query string instead of cookies.
   const requestUrl = new URL(request.url)
   const token = requestUrl.searchParams.get('install_token')
-  console.log('[manifest]', { sport: 'boxing', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() })
+  console.log('[manifest] ' + JSON.stringify({ sport: 'boxing', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() }))
   if (token) {
     const payload = verifyInstallToken(token)
     if (payload && payload.sport === 'boxing' && payload.slug === slug) {
