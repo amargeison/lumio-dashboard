@@ -48,12 +48,12 @@ export async function GET(request: NextRequest) {
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
                 ?? request.headers.get('x-real-ip')
                 ?? 'unknown'
-  console.log('[pwa-consume] hit', { hasToken: !!token, hasNext: !!nextRaw && nextRaw !== '/', ip: clientIp })
+  console.log('[pwa-consume] hit ' + JSON.stringify({ hasToken: !!token, hasNext: !!nextRaw && nextRaw !== '/', ip: clientIp }))
 
   if (!token) return NextResponse.redirect(cleanTarget)
 
   const payload = verifyInstallToken(token)
-  console.log('[pwa-consume] verify', { ok: !!payload, sport: payload?.sport, slug: payload?.slug })
+  console.log('[pwa-consume] verify ' + JSON.stringify({ ok: !!payload, sport: payload?.sport, slug: payload?.slug }))
   if (!payload) {
     console.warn('[pwa/consume-token] invalid token')
     return NextResponse.redirect(cleanTarget)
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     email: payload.eml,
     options: { redirectTo: callback.toString() },
   })
-  console.log('[pwa-consume] generateLink', { ok: !linkRes.error && !!linkRes.data?.properties?.action_link })
+  console.log('[pwa-consume] generateLink ' + JSON.stringify({ ok: !linkRes.error && !!linkRes.data?.properties?.action_link }))
 
   if (linkRes.error || !linkRes.data?.properties?.action_link) {
     console.warn('[pwa/consume-token] generateLink failed')
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
   try {
     const verifyRes = await fetch(linkRes.data.properties.action_link, { redirect: 'manual' })
     const location = verifyRes.headers.get('location')
-    console.log('[pwa-consume] supabase verify fetch', { status: verifyRes.status, hasLocation: !!location })
+    console.log('[pwa-consume] supabase verify fetch ' + JSON.stringify({ status: verifyRes.status, hasLocation: !!location }))
     if (!location) {
       console.warn('[pwa/consume-token] verify hop returned no location')
       return NextResponse.redirect(cleanTarget)
@@ -146,12 +146,12 @@ export async function GET(request: NextRequest) {
   )
 
   const { error: exchErr } = await supabase.auth.exchangeCodeForSession(code)
-  console.log('[pwa-consume] exchangeCodeForSession', { ok: !exchErr })
+  console.log('[pwa-consume] exchangeCodeForSession ' + JSON.stringify({ ok: !exchErr }))
   if (exchErr) {
     console.warn('[pwa/consume-token] exchange failed')
     return NextResponse.redirect(cleanTarget)
   }
 
-  console.log('[pwa-consume] redirect', { to: cleanTarget.pathname + cleanTarget.search })
+  console.log('[pwa-consume] redirect ' + JSON.stringify({ to: cleanTarget.pathname + cleanTarget.search }))
   return outResponse
 }

@@ -38,7 +38,7 @@ export async function generateMetadata(
     debugReason = `cookies-error:${e instanceof Error ? e.message : String(e)}`
   }
 
-  console.log('[layout-meta]', { sport: 'darts', slug, hasUser: debugReason === 'minted', mintedToken: debugReason === 'minted', reason: debugReason })
+  console.log('[layout-meta] ' + JSON.stringify({ sport: 'darts', slug, hasUser: debugReason === 'minted', mintedToken: debugReason === 'minted', reason: debugReason }))
 
   return {
     title:        `Lumio Darts — ${slug}`,

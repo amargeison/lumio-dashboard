@@ -27,7 +27,7 @@ export async function GET(
 
   const requestUrl = new URL(request.url)
   const token = requestUrl.searchParams.get('install_token')
-  console.log('[manifest]', { sport: 'tennis', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() })
+  console.log('[manifest] ' + JSON.stringify({ sport: 'tennis', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() }))
   if (token) {
     const payload = verifyInstallToken(token)
     if (payload && payload.sport === 'tennis' && payload.slug === slug) {
