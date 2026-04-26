@@ -25,13 +25,17 @@ export async function GET(
   const portalPath = `/tennis/${slug}`
   let startUrl = portalPath
 
-  const token = new URL(request.url).searchParams.get('install_token')
+  const requestUrl = new URL(request.url)
+  const token = requestUrl.searchParams.get('install_token')
+  console.log('[manifest]', { sport: 'tennis', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() })
   if (token) {
     const payload = verifyInstallToken(token)
     if (payload && payload.sport === 'tennis' && payload.slug === slug) {
       // Token rides on the portal path; middleware redeems it
       // transparently via /api/pwa/consume-token.
       startUrl = `${portalPath}?install_token=${encodeURIComponent(token)}`
+    } else {
+      console.warn('[manifest] tennis install_token verify failed', { hasPayload: !!payload, payloadSport: payload?.sport, payloadSlug: payload?.slug })
     }
   }
 

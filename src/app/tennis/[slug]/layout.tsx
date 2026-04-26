@@ -59,6 +59,8 @@ export async function generateMetadata(
     debugReason = `cookies-error:${e instanceof Error ? e.message : String(e)}`
   }
 
+  console.log('[layout-meta]', { sport: 'tennis', slug, hasUser: debugReason === 'minted', mintedToken: debugReason === 'minted', reason: debugReason })
+
   return {
     title:        `Lumio Tennis — ${slug}`,
     manifest:     manifestHref,
