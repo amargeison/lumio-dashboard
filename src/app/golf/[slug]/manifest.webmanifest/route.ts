@@ -13,7 +13,9 @@ export async function GET(
 
   // See src/app/tennis/[slug]/layout.tsx for why the install token
   // arrives via query string instead of cookies.
-  const token = new URL(request.url).searchParams.get('install_token')
+  const requestUrl = new URL(request.url)
+  const token = requestUrl.searchParams.get('install_token')
+  console.log('[manifest]', { sport: 'golf', slug, hasInstallToken: !!token, queryRaw: requestUrl.searchParams.toString() })
   if (token) {
     const payload = verifyInstallToken(token)
     if (payload && payload.sport === 'golf' && payload.slug === slug) {
