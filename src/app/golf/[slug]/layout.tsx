@@ -7,7 +7,9 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params
-  let manifestHref = `/golf/${slug}/manifest.webmanifest`
+  // See tennis layout — per-render manifest path segment defeats iOS's
+  // path-keyed manifest cache.
+  let manifestHref = `/golf/${slug}/m/anon/manifest.webmanifest`
   let debugReason = 'anon'
 
   try {
@@ -28,7 +30,8 @@ export async function generateMetadata(
     } else {
       try {
         const token = signInstallToken({ sub: user.id, eml: user.email, sport: 'golf', slug })
-        manifestHref = `/golf/${slug}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
+        const cacheBuster = Date.now().toString(36)
+        manifestHref = `/golf/${slug}/m/${cacheBuster}/manifest.webmanifest?install_token=${encodeURIComponent(token)}`
         debugReason = 'minted'
       } catch (e) {
         debugReason = `mint-error:${e instanceof Error ? e.message : String(e)}`
