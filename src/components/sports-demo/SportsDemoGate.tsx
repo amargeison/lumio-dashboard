@@ -677,7 +677,19 @@ export default function SportsDemoGate({
       // generateMetadata re-runs and mints the install_token onto the
       // manifest link for this session.
       if (data.sessionMinted) {
-        try { router.refresh() } catch {}
+        // Full page reload (not router.refresh) — iOS Safari needs a fresh
+        // document load to re-evaluate the <link rel="manifest"> href.
+        // router.refresh() only updates the React tree; the document head
+        // is preserved, and Safari's manifest cache stays anchored to the
+        // anon manifest URL captured during the email-gate phase. Forcing
+        // window.location triggers a new server render → new manifest URL
+        // (with the per-render [v] cache-buster) → Safari refetches the
+        // token-bearing manifest. Brief reload flash post-OTP is the
+        // trade-off; PWA install only works with this.
+        if (typeof window !== 'undefined') {
+          window.location.href = window.location.pathname
+          return
+        }
       }
       // Check for existing demo profile — skip setup if found
       try {
