@@ -22,68 +22,13 @@ function getAdminClient() {
   })
 }
 
-/**
- * Look up a Supabase auth user by email, or create one if missing. Demo users
- * live in `auth.users` only — no `sports_profiles` row. We stamp `role: 'demo'`
- * + `sport` into `app_metadata` (server-only, clients cannot mutate it) so the
- * rest of the app can tell demo vs. founder identity without an extra query.
- */
-async function ensureDemoUser(
-  admin: NonNullable<ReturnType<typeof getAdminClient>>,
-  email: string,
-  sport: string,
-  displayName: string | null,
-): Promise<string | null> {
-  const normalised = email.toLowerCase()
-  const appMeta = {
-    role: 'demo' as const,
-    sport,
-    demo_last_login: new Date().toISOString(),
-  }
-
-  const createResult = await admin.auth.admin.createUser({
-    email: normalised,
-    email_confirm: true,
-    user_metadata: displayName ? { display_name: displayName } : {},
-    app_metadata: { ...appMeta, demo_created_at: new Date().toISOString() },
-  })
-
-  if (!createResult.error && createResult.data.user) {
-    return createResult.data.user.id
-  }
-
-  // Already-exists → look up and refresh app_metadata so the role stays correct.
-  const msg = (createResult.error?.message || '').toLowerCase()
-  const alreadyExists = msg.includes('already') || msg.includes('exist') || msg.includes('duplicate') || msg.includes('registered')
-  if (!alreadyExists) {
-    console.error('[sports-demo/verify-otp] createUser unexpected error:', createResult.error)
-    return null
-  }
-
-  const { data: existing, error: lookupErr } = await admin
-    .schema('auth')
-    .from('users')
-    .select('id, raw_app_meta_data')
-    .eq('email', normalised)
-    .maybeSingle()
-  if (lookupErr || !existing?.id) {
-    console.error('[sports-demo/verify-otp] could not look up existing auth user:', lookupErr)
-    return null
-  }
-
-  // Preserve a founder's role/sport on app_metadata — never downgrade. Only
-  // refresh demo_last_login for existing demo users.
-  const prior = (existing.raw_app_meta_data ?? {}) as Record<string, unknown>
-  const priorRole = typeof prior.role === 'string' ? prior.role : null
-  if (priorRole === 'founder') {
-    return existing.id
-  }
-
-  await admin.auth.admin.updateUserById(existing.id, {
-    app_metadata: { ...prior, ...appMeta },
-  })
-  return existing.id
-}
+// Note: previous versions had an `ensureDemoUser` helper that used
+// `admin.schema('auth').from('users').select(...)` to look up existing users.
+// That path returned `PGRST106 Invalid schema: auth` because the `auth`
+// schema isn't exposed via PostgREST by default — every existing-user OTP
+// silently failed before reaching the session-mint step. The provisioning
+// flow is now inlined into POST() and uses `admin.auth.admin.generateLink`
+// (which auto-creates new users and returns the existing user otherwise).
 
 export async function POST(req: NextRequest) {
   const anon = getAnonClient()
@@ -170,9 +115,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 })
     }
 
-    // ── Path C: provision a Supabase auth user + set a session cookie ──
-    // Without this, /<sport>/[slug]/layout.tsx's install-token mint can't
-    // see the demo user and PWA install lands on the generic manifest.
+    // ── Path C: mint a Supabase session cookie via magic-link ──
+    // generateLink works for both new and existing users (it auto-creates
+    // the auth.users row when missing) and the response carries the user
+    // object — so we don't need a separate lookup. We then hand the
+    // hashed_token to the SSR client's verifyOtp which writes
+    // sb-*-auth-token onto our outgoing response (Secure + HttpOnly forced
+    // in setAll above).
     let supabaseUserId: string | null = null
     let sessionMinted = false
     const admin = getAdminClient()
@@ -180,24 +129,53 @@ export async function POST(req: NextRequest) {
       console.error('[sports-demo/verify-otp] SUPABASE_SERVICE_ROLE_KEY missing — cannot provision demo user')
     } else {
       try {
-        supabaseUserId = await ensureDemoUser(admin, normalisedEmail, sport, userName ?? null)
-        if (supabaseUserId) {
-          // Mint a magic-link hashed_token and verify it via the SSR client
-          // to set sb-*-auth-token cookies on the response.
-          const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-            type: 'magiclink',
-            email: normalisedEmail,
-          })
-          if (!linkErr && linkData?.properties?.hashed_token) {
-            const { error: verifyErr } = await ssr.auth.verifyOtp({
-              token_hash: linkData.properties.hashed_token,
-              type: 'magiclink',
-            })
-            if (!verifyErr) sessionMinted = true
-            else console.error('[sports-demo/verify-otp] verifyOtp session mint failed:', verifyErr)
-          } else if (linkErr) {
-            console.error('[sports-demo/verify-otp] generateLink failed:', linkErr)
+        const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: normalisedEmail,
+        })
+        if (linkErr || !linkData?.properties?.hashed_token || !linkData?.user) {
+          console.error('[sports-demo/verify-otp] generateLink failed:', linkErr)
+        } else {
+          const linkUser = linkData.user
+          supabaseUserId = linkUser.id
+
+          // Founder protection: never downgrade a founder's role/sport.
+          // First-sight users get demo_created_at; subsequent demo logins
+          // refresh demo_last_login only.
+          const priorMeta = (linkUser.app_metadata ?? {}) as Record<string, unknown>
+          const priorRole = typeof priorMeta.role === 'string' ? priorMeta.role : null
+          if (priorRole !== 'founder') {
+            const nowIso = new Date().toISOString()
+            const nextMeta: Record<string, unknown> = {
+              ...priorMeta,
+              role: 'demo',
+              sport,
+              demo_last_login: nowIso,
+              ...(priorRole ? {} : { demo_created_at: nowIso }),
+            }
+            const updateAttrs: Parameters<typeof admin.auth.admin.updateUserById>[1] = {
+              app_metadata: nextMeta,
+            }
+            if (userName) {
+              updateAttrs.user_metadata = {
+                ...(linkUser.user_metadata ?? {}),
+                display_name: userName,
+              }
+            }
+            await admin.auth.admin.updateUserById(linkUser.id, updateAttrs).catch(
+              (e: unknown) => console.error('[sports-demo/verify-otp] updateUserById failed:', e),
+            )
           }
+
+          // Verify the magic-link's hashed_token via the SSR client to mint
+          // the session — this fires the setAll callback which sets
+          // sb-*-auth-token directly onto `response`.
+          const { error: verifyErr } = await ssr.auth.verifyOtp({
+            token_hash: linkData.properties.hashed_token,
+            type: 'magiclink',
+          })
+          if (!verifyErr) sessionMinted = true
+          else console.error('[sports-demo/verify-otp] verifyOtp session mint failed:', verifyErr)
         }
       } catch (provisionErr) {
         // Non-fatal — OTP flow succeeds, the client still gets the demo
