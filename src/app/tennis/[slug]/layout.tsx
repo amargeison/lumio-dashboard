@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { signInstallToken } from '@/lib/pwa-install-token'
+import { PwaInstallRedeemer } from '@/components/pwa/PwaInstallRedeemer'
 
 // Server component wrapping the client [slug]/page.tsx so we can export
 // generateMetadata. Sets the per-slug manifest link + iOS standalone tags
@@ -99,5 +100,10 @@ export const viewport: Viewport = {
 }
 
 export default function TennisSlugLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <>
+      <PwaInstallRedeemer />
+      {children}
+    </>
+  )
 }

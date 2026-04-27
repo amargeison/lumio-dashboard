@@ -666,28 +666,41 @@ export default function SportsDemoGate({
     if (!code || code.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true); setError('')
     try {
+      // Slug is the second path segment (/<sport>/<slug>) — defaults to
+      // 'demo' on a bare /<sport> visit. Sent so verify-otp can mint a
+      // slug-bound install_token (consume-token requires it to match).
+      let postSlug: string | undefined
+      if (typeof window !== 'undefined') {
+        const segs = window.location.pathname.split('/').filter(Boolean)
+        if (segs.length >= 2) postSlug = segs[1]
+      }
       const res = await fetch('/api/sports-demo/verify-otp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, sport }),
+        body: JSON.stringify({ email, code, sport, slug: postSlug }),
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
-      // Path C: verify-otp now sets an sb-*-auth-token cookie for the
-      // provisioned demo user. Re-fetch server components so layout.tsx
-      // generateMetadata re-runs and mints the install_token onto the
-      // manifest link for this session.
+      // Path C: verify-otp set an sb-*-auth-token cookie for the
+      // provisioned demo user. Reload to /<sport>/<slug>?pwa_install=
+      // <JWT> so iOS Safari's Share → Add to Home Screen captures the
+      // install token verbatim from the URL bar as start_url. The
+      // PwaInstallRedeemer client component on the layout then redeems
+      // it on first PWA cold-launch (?pwa_install is intentionally NOT
+      // intercepted by middleware — see src/middleware.ts comment on
+      // install_token; this token name is different and stays in the URL).
       if (data.sessionMinted) {
-        // Full page reload (not router.refresh) — iOS Safari needs a fresh
-        // document load to re-evaluate the <link rel="manifest"> href.
-        // router.refresh() only updates the React tree; the document head
-        // is preserved, and Safari's manifest cache stays anchored to the
-        // anon manifest URL captured during the email-gate phase. Forcing
-        // window.location triggers a new server render → new manifest URL
-        // (with the per-render [v] cache-buster) → Safari refetches the
-        // token-bearing manifest. Brief reload flash post-OTP is the
-        // trade-off; PWA install only works with this.
         if (typeof window !== 'undefined') {
-          window.location.href = window.location.pathname
+          if (data.installToken) {
+            const url = new URL(window.location.href)
+            url.searchParams.set('pwa_install', data.installToken)
+            console.log('[gate] redirecting to URL with pwa_install token')
+            window.location.href = url.toString()
+          } else {
+            // Bare-manifest fallback — full reload still re-runs
+            // generateMetadata so the legacy install_token-on-manifest
+            // path can pick up the session.
+            window.location.href = window.location.pathname
+          }
           return
         }
       }

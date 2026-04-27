@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 
 import { trackSportsEvent } from '@/lib/sports-events'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
+import { signInstallToken, type InstallTokenPayload } from '@/lib/pwa-install-token'
 
 function getAnonClient() {
   return createClient(
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   )
 
   try {
-    const { email, code, sport, clubName, userName, role, nickname } = await req.json()
+    const { email, code, sport, slug, clubName, userName, role, nickname } = await req.json()
 
     if (!email || !code || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -234,6 +235,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Mint a PWA install_token for the URL-bar handoff path. The token
+    // travels back to the gate in the response body so the client can
+    // append ?pwa_install=<JWT> to the page URL — that bakes the token
+    // into iOS Safari's Share → Add to Home Screen capture as start_url,
+    // sidestepping iOS's persistent manifest cache. Only minted for the
+    // four sports that ship a per-sport [slug]/layout.tsx + sport mount
+    // of <PwaInstallRedeemer> (tennis, golf, darts, boxing). Failure
+    // here is non-fatal — the OTP flow still succeeds.
+    let installToken: string | null = null
+    const PWA_SPORTS = new Set<InstallTokenPayload['sport']>(['tennis', 'golf', 'darts', 'boxing'])
+    const resolvedSlug = (typeof slug === 'string' && /^[a-z0-9-]{1,64}$/i.test(slug)) ? slug : 'demo'
+    if (sessionMinted && supabaseUserId && PWA_SPORTS.has(sport as InstallTokenPayload['sport'])) {
+      try {
+        installToken = signInstallToken({
+          sub:   supabaseUserId,
+          eml:   normalisedEmail,
+          sport: sport as InstallTokenPayload['sport'],
+          slug:  resolvedSlug,
+        })
+        console.log('[verify-otp] installToken issued')
+      } catch (e) {
+        console.error('[sports-demo/verify-otp] signInstallToken failed:', e)
+      }
+    }
+
     // Replace the placeholder body. Cookies were written directly onto
     // `response` by the SSR client's setAll during verifyOtp() above —
     // we only need to overwrite the JSON payload, not re-attach cookies.
@@ -242,6 +268,7 @@ export async function POST(req: NextRequest) {
       verified: true,
       sessionMinted,
       userId: supabaseUserId,
+      installToken,
     })
     for (const c of response.cookies.getAll()) {
       finalResponse.cookies.set(c.name, c.value, c)

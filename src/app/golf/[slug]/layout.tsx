@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { signInstallToken } from '@/lib/pwa-install-token'
+import { PwaInstallRedeemer } from '@/components/pwa/PwaInstallRedeemer'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
@@ -72,5 +73,10 @@ export const viewport: Viewport = {
 }
 
 export default function GolfSlugLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <>
+      <PwaInstallRedeemer />
+      {children}
+    </>
+  )
 }
