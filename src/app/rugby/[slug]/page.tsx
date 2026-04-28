@@ -184,13 +184,10 @@ const QuickActionsBar = () => {
 };
 
 // ─── CLUB DASHBOARD VIEW (v2 modular grid + polish) ──────────────────────────
-// Tab bar (Getting Started / Today / Quick Wins / Daily Tasks / Insights /
-// Don't Miss / Team) · Quick Actions row · v2 grid (HeroToday · TodaySchedule ·
-// StatTiles · AIBrief · Interactive Inbox · Squad 15+8 · Fixtures · Perf ·
-// AI Morning Summary · Performance Intelligence · Recents · Season) · Match
-// Brief overlay opened from HeroToday.
-
-type RugbyDashTab = 'gettingstarted' | 'today' | 'quickwins' | 'dailytasks' | 'insights' | 'dontmiss' | 'team'
+// Quick Actions row (8 modal-opening buttons + Ask Lumio) · v2 grid (HeroToday ·
+// TodaySchedule · StatTiles · Morning brief · Interactive Inbox · Squad 15+8 ·
+// Fixtures · Perf signals · Recents · Season) · Match Brief overlay from
+// HeroToday. No tab bar — rugby v1 didn't have tabs.
 
 type RugbyInboxBody = { body: string }
 const RUGBY_INBOX_BODIES: Record<string, RugbyInboxBody> = {
@@ -373,13 +370,56 @@ function btnPrimary(accent: typeof RUGBY_ACCENT, T: typeof THEMES.dark): React.C
   return { fontSize: 11.5, padding: '5px 12px', background: accent.hex, color: T.btnText, border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
 }
 
-function ClubDashboardView() {
+
+type RugbyDashTab = 'gettingstarted' | 'today' | 'quickwins' | 'dailytasks' | 'insights' | 'dontmiss' | 'team'
+
+// Club leadership panel for the Team tab — values match the demo club
+// (Hartfield RFC) defined at the top of this file so the names line up
+// with everything else the user sees in the portal.
+function TeamLeadershipPanel() {
+  const leadership = [
+    { name: 'Steve Whitfield',  role: 'Director of Rugby',          icon: '🏉' },
+    { name: 'Mark Ellison',     role: 'Head Coach',                 icon: '🎽' },
+    { name: 'Caroline Hughes',  role: 'CEO',                        icon: '🏛️' },
+    { name: 'Dr. James Marsh',  role: 'Head of Medical',            icon: '🏥' },
+    { name: 'Rachel Turner',    role: "Head of Women's Rugby",       icon: '⭐' },
+  ]
+  return (
+    <Card>
+      <div className="text-sm font-semibold text-white mb-3">Club Leadership</div>
+      <div className="space-y-2">
+        {leadership.map((p, i) => (
+          <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+            <span className="text-lg">{p.icon}</span>
+            <div>
+              <div className="text-xs text-white font-medium">{p.name}</div>
+              <div className="text-[10px] text-gray-500">{p.role}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+const RUGBY_GETTING_STARTED: { id: string; label: string; desc: string }[] = [
+  { id: 'gs1',  label: 'Upload your club badge',                                            desc: 'Personalise your portal' },
+  { id: 'gs2',  label: 'Set your club name and league',                                     desc: 'Appears throughout the portal' },
+  { id: 'gs3',  label: 'Enter salary cap figures',                                          desc: 'Enables cap dashboard and compliance tracking' },
+  { id: 'gs4',  label: 'Add your squad (player list)',                                      desc: 'Unlocks availability, GPS, medical and selection views' },
+  { id: 'gs5',  label: 'Connect GPS provider (Lumio GPS)',                                   desc: 'Live load data feed' },
+  { id: 'gs6',  label: 'Enter franchise readiness data',                                    desc: 'Tracks your progress against governing body criteria' },
+  { id: 'gs7',  label: 'Add sponsor details',                                               desc: 'Commercial CRM and obligation tracking' },
+  { id: 'gs8',  label: 'Set up AI briefing preferences',                                    desc: 'Configure role-specific daily intelligence' },
+  { id: 'gs9',  label: 'Add international duty players',                                    desc: 'Club-to-country data handoff' },
+  { id: 'gs10', label: 'Invite your coaching and medical staff',                             desc: 'Role-based access control' },
+]
+
+function ClubDashboardView({ onOpenModal }: { onOpenModal: (id: string) => void }) {
   const T       = THEMES.dark
   const accent  = RUGBY_ACCENT
   const density = DENSITY.regular
   const greeting = getGreeting('matchday')
-
-  const [tab, setTab] = useState<RugbyDashTab>('today')
 
   const [openFixture, setOpenFixture] = useState<RugbyFixture | null>(null)
   const [cmdOpen,     setCmdOpen]     = useState(false)
@@ -387,46 +427,39 @@ function ClubDashboardView() {
   const [briefOpen,   setBriefOpen]   = useState(false)
   const [dashToast,   showDashToast]  = useV2Toast()
 
+  // Tab system restored from rugby v1 — same pattern across all Lumio
+  // sport portals (cricket / tennis / darts / etc). 'today' renders the
+  // v2 dashboard grid; other tabs render their v1 content recovered from
+  // commit 43c7eadb. The rich role-based <InsightsView /> is reached via
+  // the sidebar nav, NOT this dashboard tab — these two namespaces both
+  // existed in v1 and we keep them separate.
+  const [dashTab, setDashTab] = useState<RugbyDashTab>('today')
+  const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_rugby_checklist') : null; return s ? JSON.parse(s) as Record<string, boolean> : {} } catch { return {} }
+  })
+  const toggleCheck = (id: string) => setChecklist(prev => {
+    const next = { ...prev, [id]: !prev[id] }
+    try { localStorage.setItem('lumio_rugby_checklist', JSON.stringify(next)) } catch { /* private mode etc */ }
+    return next
+  })
+  const completedCount  = RUGBY_GETTING_STARTED.filter(g => checklist[g.id]).length
+  const remainingCount  = RUGBY_GETTING_STARTED.length - completedCount
+
   useV2Key('cmdk', () => setCmdOpen(o => !o))
 
-  // ── Tab bar ────────────────────────────────────────────────────────────
-  const TABS: { id: RugbyDashTab; label: string; icon: string }[] = [
-    { id: 'gettingstarted', label: 'Getting Started', icon: '🚀' },
-    { id: 'today',          label: 'Today',           icon: '📅' },
-    { id: 'quickwins',      label: 'Quick Wins',      icon: '⚡' },
-    { id: 'dailytasks',     label: 'Daily Tasks',     icon: '✓' },
-    { id: 'insights',       label: 'Insights',        icon: '🎯' },
-    { id: 'dontmiss',       label: "Don't Miss",      icon: '⚠' },
-    { id: 'team',           label: 'Team',            icon: '👥' },
-  ]
-
-  // ── Quick Actions (desaturated) ────────────────────────────────────────
-  const QUICK_ACTIONS = [
-    { label: 'Confirm starting XV',     icon: '🏉', ai: false, onClick: () => showDashToast('Starting XV confirmed · squad notified') },
-    { label: 'Match brief',             icon: '📄', ai: true,  onClick: () => setBriefOpen(true) },
-    { label: 'Ask Lumio',               icon: '✨', ai: true,  onClick: () => setAskOpen(true) },
-    { label: 'Log injury',              icon: '🏥', ai: false, onClick: () => showDashToast('Injury logger ready') },
-    { label: 'Generate halftime brief', icon: '⏱',  ai: true,  onClick: () => showDashToast('Halftime brief queued') },
-  ]
-
-  // ── AI Morning Summary (rugby content, time-aware) ─────────────────────
-  const summaryHour = new Date().getHours()
-  const summaryLabel = summaryHour < 12 ? 'AI Morning Summary' : summaryHour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
-  const SUMMARY_BULLETS = [
-    { icon: '🏉', text: 'Match week vs Jersey Reds — 23 named, 1 HIA Day 4 (Williams), Henderson cleared.' },
-    { icon: '📡', text: 'Squad ACWR 1.22 (amber) — 2 overloaded (Barnes, Foster), 1 managed (K. Foster).' },
-    { icon: '⚖️', text: 'Cap status compliant — £460k headroom, salary cap return due 10 May.' },
-    { icon: '🏆', text: 'Franchise score 71% — Investment (48%) + Women\'s Game (42%) flagged RED.' },
-    { icon: '🎯', text: 'Recruitment: LHP target Donovan offer made; FH meeting (Flynn) Thursday.' },
-    { icon: '💼', text: 'Commercial: Hartfield Building Society renewal meeting 3 May, terms drafted.' },
-  ]
-  // ── Performance Intelligence ──────────────────────────────────────────
-  const PERF_ITEMS = [
-    { txt: 'Tackle success 89% — season avg 91%, trending down',           delta: '↓ 2 pp', tone: 'bad'  as const },
-    { txt: 'Metres gained 412/match — above league avg (385)',              delta: '↑ 7%',   tone: 'good' as const },
-    { txt: 'Lineout win 68% last 3 — below 75% target',                     delta: '↓ 7 pp', tone: 'bad'  as const },
-    { txt: 'Scrum penalty rate 4.2/match — above 3.0 threshold',            delta: '↑ 40%',  tone: 'bad'  as const },
-    { txt: 'Carry dominance 58% — 1st in division',                          delta: '↑ 3 pp', tone: 'good' as const },
+  // ── Quick Actions — restored from rugby v1 (8 modal-opening buttons) ──
+  // "Match brief" intentionally NOT here — it lives in the hero panel.
+  // "Ask Lumio" added (matches the hero affordance).
+  const QUICK_ACTIONS: { icon: string; label: string; ai?: boolean; onClick: () => void }[] = [
+    { icon: '🎯', label: 'Match Prep',   ai: true, onClick: () => onOpenModal('matchprep') },
+    { icon: '✈️', label: 'Flights',                onClick: () => onOpenModal('flights') },
+    { icon: '📱', label: 'Sponsor Post', ai: true, onClick: () => onOpenModal('sponsorpost') },
+    { icon: '⚕️', label: 'Log Injury',             onClick: () => onOpenModal('injury') },
+    { icon: '🧾', label: 'Expense',                onClick: () => onOpenModal('expense') },
+    { icon: '🎬', label: 'Video',                  onClick: () => onOpenModal('video') },
+    { icon: '📋', label: 'Contracts',              onClick: () => onOpenModal('contracts') },
+    { icon: '🌍', label: 'Visa Check',             onClick: () => onOpenModal('visa') },
+    { icon: '✨', label: 'Ask Lumio',    ai: true, onClick: () => setAskOpen(true) },
   ]
 
   return (
@@ -440,28 +473,54 @@ function ClubDashboardView() {
       `}</style>
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
-        {/* ── Tab bar ─────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${T.border}`, paddingBottom: 0 }}>
-          {TABS.map(t => {
-            const active = tab === t.id
+        {/* Tab bar — restored from rugby v1, styled to match v2 aesthetic
+            (clean text labels + monochrome Lucide icons + accent underline). */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          borderBottom: `1px solid ${T.border}`, overflowX: 'auto',
+        }}>
+          {([
+            { id: 'gettingstarted', label: 'Getting Started', icon: 'sparkles', badge: remainingCount > 0 ? remainingCount : undefined },
+            { id: 'today',          label: 'Today',           icon: 'home' },
+            { id: 'quickwins',      label: 'Quick Wins',      icon: 'lightning' },
+            { id: 'dailytasks',     label: 'Daily Tasks',     icon: 'check' },
+            { id: 'insights',       label: 'Insights',        icon: 'bars' },
+            { id: 'dontmiss',       label: "Don't Miss",      icon: 'flag' },
+            { id: 'team',           label: 'Team',            icon: 'people' },
+          ] as { id: RugbyDashTab; label: string; icon: string; badge?: number }[]).map(t => {
+            const active = dashTab === t.id
             return (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button key={t.id} onClick={() => setDashTab(t.id)}
                 style={{
-                  appearance: 'none', border: 'none', background: 'transparent',
-                  padding: '10px 14px', fontSize: 12.5, fontFamily: FONT, cursor: 'pointer',
-                  color: active ? T.text : T.text3,
-                  fontWeight: active ? 600 : 500,
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px',
+                  fontFamily: FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : T.text3,
                   borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
-                  marginBottom: -1, display: 'flex', alignItems: 'center', gap: 6,
+                  marginBottom: -1,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
                   transition: 'color .12s, border-color .12s',
-                }}>
-                <span style={{ fontSize: 13 }}>{t.icon}</span>{t.label}
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}>
+                <V2Icon name={t.icon} size={12} stroke={1.6} />
+                {t.label}
+                {t.badge !== undefined && (
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 600,
+                    padding: '1px 6px', borderRadius: 9,
+                    background: T.hover, color: T.text3,
+                    border: `1px solid ${T.border}`,
+                    fontFamily: 'var(--font-geist-mono, monospace)',
+                  }}>{t.badge}</span>
+                )}
               </button>
             )
           })}
         </div>
 
-        {/* ── Quick Actions (desaturated) ─────────────────────────────── */}
+        {/* Quick Actions — desaturated row */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {QUICK_ACTIONS.map((qa, i) => (
             <button key={i} onClick={qa.onClick}
@@ -470,8 +529,7 @@ function ClubDashboardView() {
               style={{
                 appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 14px', borderRadius: 8,
-                background: 'transparent',
-                border: '1px solid #2d3139',
+                background: 'transparent', border: '1px solid #2d3139',
                 color: '#9CA3AF', fontSize: 12, fontFamily: FONT, cursor: 'pointer',
                 transition: 'border-color .12s, color .12s',
               }}>
@@ -484,9 +542,10 @@ function ClubDashboardView() {
           ))}
         </div>
 
-        {/* ── TODAY tab ───────────────────────────────────────────────── */}
-        {tab === 'today' && (
+        {/* TODAY tab — full v2 dashboard grid */}
+        {dashTab === 'today' && (
           <>
+            {/* Row 1 — Hero + Today schedule */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <RugbyHeroToday
                 T={T} accent={accent} density={density} greeting={greeting}
@@ -497,87 +556,144 @@ function ClubDashboardView() {
               <RugbyTodaySchedule T={T} accent={accent} density={density} />
             </div>
 
+            {/* Row 2 — Stat tiles */}
             <RugbyStatTiles T={T} accent={accent} density={density} />
 
+            {/* Row 3 — Morning brief + Inbox + Squad */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <RugbyAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
               <InteractiveRugbyInbox T={T} accent={accent} density={density} />
               <RugbySquadModule T={T} accent={accent} density={density} />
             </div>
 
-            {/* AI Morning Summary + Performance Intelligence */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-              <div style={{ gridColumn: '1 / span 7', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{summaryLabel}</div>
-                  <span style={{ marginLeft: 'auto', fontSize: 9.5, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 4, background: accent.dim, color: accent.hex, letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700 }}>
-                    {RUGBY_ORG.date}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {SUMMARY_BULLETS.map((b, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-                      <span style={{ fontSize: 14, lineHeight: 1.4 }}>{b.icon}</span>
-                      <span style={{ flex: 1, fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>{b.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ gridColumn: '8 / span 5', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Performance Intelligence</div>
-                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>L7d</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {PERF_ITEMS.map((p, i) => {
-                    const tone = p.tone === 'good' ? T.good : T.bad
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-                        <span className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'monospace', minWidth: 18 }}>{i + 1}.</span>
-                        <span style={{ flex: 1, fontSize: 12, color: T.text, lineHeight: 1.4 }}>{p.txt}</span>
-                        <span className="tnum" style={{ fontSize: 11, fontFamily: 'monospace', color: tone }}>{p.delta}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
+            {/* Row 4 — Fixtures + Performance signals */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <RugbyFixturesModule T={T} accent={accent} density={density} onPick={f => setOpenFixture(f)} />
               <RugbyPerf           T={T} accent={accent} density={density} />
             </div>
 
+            {/* Row 5 — Recents + Season */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <RugbyRecents T={T} accent={accent} density={density} />
               <RugbySeason  T={T} accent={accent} density={density} />
             </div>
-
-            <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
-              <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
-            </div>
           </>
         )}
 
-        {/* ── Other tabs (placeholder content) ───────────────────────── */}
-        {tab !== 'today' && (
-          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: 28, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, fontFamily: 'monospace', color: accent.hex, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 8, fontWeight: 700 }}>
-              {TABS.find(t => t.id === tab)?.label}
+        {/* GETTING STARTED tab — 10-step onboarding checklist */}
+        {dashTab === 'gettingstarted' && (
+          <Card>
+            <div className="text-sm font-semibold text-white mb-1">Getting Started — {completedCount}/{RUGBY_GETTING_STARTED.length} complete</div>
+            <div className="text-xs text-gray-500 mb-4">Set up your portal · 10 steps</div>
+            <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+              <div className="h-2 rounded-full bg-purple-500 transition-all" style={{ width: `${(completedCount / RUGBY_GETTING_STARTED.length) * 100}%` }} />
             </div>
-            <div style={{ fontSize: 14, color: T.text, marginBottom: 4 }}>
-              Switch to <button onClick={() => setTab('today')} style={{ background: 'transparent', border: 'none', color: accent.hex, cursor: 'pointer', fontSize: 14, padding: 0, fontFamily: FONT }}>Today</button> for the live match-week dashboard.
+            <div className="space-y-2">
+              {RUGBY_GETTING_STARTED.map(g => (
+                <button key={g.id} onClick={() => toggleCheck(g.id)}
+                  className={`w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-lg border transition-all ${checklist[g.id] ? 'border-green-600/30 bg-green-600/5' : 'border-gray-800 hover:border-gray-700'}`}>
+                  <span className={`text-xs ${checklist[g.id] ? 'text-green-400' : 'text-gray-600'}`}>{checklist[g.id] ? '✓' : '○'}</span>
+                  <div>
+                    <div className={`text-xs font-medium ${checklist[g.id] ? 'text-gray-500 line-through' : 'text-white'}`}>{g.label}</div>
+                    <div className="text-[10px] text-gray-600">{g.desc}</div>
+                  </div>
+                </button>
+              ))}
             </div>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>
-              {tab === 'gettingstarted' && 'Onboarding tour, first-week checklist, role configuration.'}
-              {tab === 'quickwins'      && '5-minute high-impact actions: load reviews, contract flags, opposition clips.'}
-              {tab === 'dailytasks'     && "Today's task list: confirm XV, sign off pre-season pack, brief media."}
-              {tab === 'insights'       && 'Role-pivoted intelligence: DoR · Recruitment · Commercial · CEO views.'}
-              {tab === 'dontmiss'       && 'Critical alerts: HIA returns, contract expiries, regulatory deadlines.'}
-              {tab === 'team'           && 'Today across the staff group — coach notes, medical updates, ops sync.'}
-            </div>
+          </Card>
+        )}
+
+        {/* QUICK WINS tab — high-impact short-effort tasks */}
+        {dashTab === 'quickwins' && (
+          <div className="space-y-3">
+            {[
+              { icon: '📋', title: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start', impact: 'high'   as const, effort: '15min', category: 'Franchise',   description: 'Investment Capacity criterion needs documentation — Caroline Hughes waiting.' },
+              { icon: '🤝', title: 'Schedule Hartfield Building Society renewal meeting',              action: 'Book',  impact: 'high'   as const, effort: '5min',  category: 'Sponsor',     description: 'Renewal due June 2026. Early meeting secures better terms.' },
+              { icon: '📡', title: 'Review GPS overload flags before Thursday session',                action: 'View',  impact: 'medium' as const, effort: '5min',  category: 'Performance', description: '3 players flagged with high ACWR — review before training.' },
+            ].map((w, i) => (
+              <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: w.impact === 'high' ? '#EF4444' : '#F59E0B' }}>{w.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7C3AED1a', color: '#c084fc' }}>⏱ {w.effort}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{w.category}</span>
+                    </div>
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
+                    <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: Club systems</p>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>{w.action} →</button>
+                    <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
+
+        {/* DAILY TASKS tab — today's schedule with priority tags */}
+        {dashTab === 'dailytasks' && (
+          <div className="space-y-3">
+            {[
+              { time: '10:00', task: 'Team meeting — game plan finalised',     cat: 'Coaching',   priority: 'high'   as const },
+              { time: '11:00', task: 'Pre-match press conference',              cat: 'Media',      priority: 'medium' as const },
+              { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole',  cat: 'Medical',    priority: 'high'   as const },
+              { time: '16:00', task: 'Sponsor call — Hartfield Building Society', cat: 'Commercial', priority: 'medium' as const },
+            ].map((t, i) => (
+              <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority === 'high' ? 'rgba(249,115,22,0.12)' : 'rgba(245,158,11,0.12)', color: t.priority === 'high' ? '#F97316' : '#F59E0B' }}>{t.priority}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
+                  </div>
+                  <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{t.task}</h4>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>Open →</button>
+                  <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* INSIGHTS tab — quick-glance bullets (NOT the rich role InsightsView,
+            which is a separate sidebar destination) */}
+        {dashTab === 'insights' && (
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Key Insights</div>
+            <div className="space-y-2 text-xs">
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Tackle success rate improved 4% over last 3 games</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">↓</span><span className="text-gray-300">Scrum penalty rate increasing — 3 in last match</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Matchday revenue up 8% vs same fixture last season</span></div>
+              <div className="flex gap-2 py-1.5"><span className="text-amber-400">→</span><span className="text-gray-300">Franchise score static at 71% — needs Investment Capacity action</span></div>
+            </div>
+            <div className="text-[10px] text-gray-600 mt-4">For role-based deep-dive intelligence, open the Insights item in the sidebar.</div>
+          </Card>
+        )}
+
+        {/* DON'T MISS tab — urgent deadlines */}
+        {dashTab === 'dontmiss' && (
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Don&apos;t Miss</div>
+            <div className="space-y-2 text-xs">
+              <div className="bg-red-600/5 border border-red-600/30 rounded-lg p-3"><span className="text-red-400 font-bold">URGENT:</span> Women&apos;s PWR registration deadline — 30 April (24 days)</div>
+              <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">DUE SOON:</span> Salary cap return — 10 May (34 days)</div>
+              <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">RENEWAL:</span> Hartfield Building Society sponsorship — June 2026</div>
+            </div>
+          </Card>
+        )}
+
+        {/* TEAM tab — club leadership */}
+        {dashTab === 'team' && <TeamLeadershipPanel />}
+
+        <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
+          <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
+        </div>
       </div>
 
       <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
@@ -7349,7 +7465,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch(activeSection) {
-      case 'dashboard':       return <ClubDashboardView/>;
+      case 'dashboard':       return <ClubDashboardView onOpenModal={setActiveModal}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
       case 'insights':        return <InsightsView club={club} activeRole={session.role}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
@@ -7400,7 +7516,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
-      default:                return <ClubDashboardView/>;
+      default:                return <ClubDashboardView onOpenModal={setActiveModal}/>;
     }
   };
 
