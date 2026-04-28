@@ -480,11 +480,13 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
         @keyframes cricketV2SlideLeft  { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: none } }
         @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
       `}</style>
-      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
-
-        {/* Hero — FIRST, visible on every tab. Match-day countdown is the
-            anchor of this dashboard and stays in view regardless of which
-            tab the user is on (matches the cricket v2 layout pattern). */}
+      {/* Hero banner — match-day context, persistent across tabs.
+          Mirrors cricket v1's hero wrapper exactly: own padded block with
+          marginBottom: density.gap, NOT inside a flex-column container.
+          Previously the hero was inside a single flex-column wrapper which
+          stacked outer padding (14) + flex gap (14) + inner Card padding
+          (16) creating extra vertical space the cricket layout doesn't have. */}
+      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
           <RugbyHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
@@ -494,6 +496,9 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
           />
           <RugbyTodaySchedule T={T} accent={accent} density={density} />
         </div>
+      </div>
+
+      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
         {/* Tab bar — restored from rugby v1, styled to match v2 aesthetic
             (clean text labels + monochrome Lucide icons + accent underline). */}
