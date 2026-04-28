@@ -482,6 +482,19 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
       `}</style>
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
+        {/* Hero — FIRST, visible on every tab. Match-day countdown is the
+            anchor of this dashboard and stays in view regardless of which
+            tab the user is on (matches the cricket v2 layout pattern). */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <RugbyHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onConfirm={() => showDashToast('Starting XV confirmed · squad notified')}
+            onAsk={() => setAskOpen(true)}
+            onMatchBrief={() => setBriefOpen(true)}
+          />
+          <RugbyTodaySchedule T={T} accent={accent} density={density} />
+        </div>
+
         {/* Tab bar — restored from rugby v1, styled to match v2 aesthetic
             (clean text labels + monochrome Lucide icons + accent underline). */}
         <div style={{
@@ -551,20 +564,10 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
           ))}
         </div>
 
-        {/* TODAY tab — full v2 dashboard grid */}
+        {/* TODAY tab — full v2 dashboard grid (hero is rendered above for
+            all tabs; this block holds the rest of the today layout). */}
         {dashTab === 'today' && (
           <>
-            {/* Row 1 — Hero + Today schedule */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-              <RugbyHeroToday
-                T={T} accent={accent} density={density} greeting={greeting}
-                onConfirm={() => showDashToast('Starting XV confirmed · squad notified')}
-                onAsk={() => setAskOpen(true)}
-                onMatchBrief={() => setBriefOpen(true)}
-              />
-              <RugbyTodaySchedule T={T} accent={accent} density={density} />
-            </div>
-
             {/* Row 2 — Stat tiles */}
             <RugbyStatTiles T={T} accent={accent} density={density} />
 
