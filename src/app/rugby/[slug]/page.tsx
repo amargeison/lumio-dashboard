@@ -415,7 +415,7 @@ const RUGBY_GETTING_STARTED: { id: string; label: string; desc: string }[] = [
   { id: 'gs10', label: 'Invite your coaching and medical staff',                             desc: 'Role-based access control' },
 ]
 
-function ClubDashboardView({ onOpenModal }: { onOpenModal: (id: string) => void }) {
+function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: string) => void; onNavigate?: (section: string) => void }) {
   const T       = THEMES.dark
   const accent  = RUGBY_ACCENT
   const density = DENSITY.regular
@@ -447,19 +447,28 @@ function ClubDashboardView({ onOpenModal }: { onOpenModal: (id: string) => void 
 
   useV2Key('cmdk', () => setCmdOpen(o => !o))
 
-  // ── Quick Actions — restored from rugby v1 (8 modal-opening buttons) ──
-  // "Match brief" intentionally NOT here — it lives in the hero panel.
-  // "Ask Lumio" added (matches the hero affordance).
+  // ── Quick Actions — full v1 set (8 buttons) plus team-sport extensions
+  // wired into existing sidebar destinations. "Match brief" intentionally
+  // NOT here — it lives in the hero panel. Removed: Flights and Visa Check
+  // (individual-athlete actions; the club has logistics + ops staff). Each
+  // button either opens an existing modal renderer (defined further down
+  // in this file) or navigates to an existing sidebar section.
   const QUICK_ACTIONS: { icon: string; label: string; ai?: boolean; onClick: () => void }[] = [
-    { icon: '🎯', label: 'Match Prep',   ai: true, onClick: () => onOpenModal('matchprep') },
-    { icon: '✈️', label: 'Flights',                onClick: () => onOpenModal('flights') },
-    { icon: '📱', label: 'Sponsor Post', ai: true, onClick: () => onOpenModal('sponsorpost') },
-    { icon: '⚕️', label: 'Log Injury',             onClick: () => onOpenModal('injury') },
-    { icon: '🧾', label: 'Expense',                onClick: () => onOpenModal('expense') },
-    { icon: '🎬', label: 'Video',                  onClick: () => onOpenModal('video') },
-    { icon: '📋', label: 'Contracts',              onClick: () => onOpenModal('contracts') },
-    { icon: '🌍', label: 'Visa Check',             onClick: () => onOpenModal('visa') },
-    { icon: '✨', label: 'Ask Lumio',    ai: true, onClick: () => setAskOpen(true) },
+    { icon: '🎯', label: 'Match Prep',     ai: true, onClick: () => onOpenModal('matchprep') },
+    { icon: '🏉', label: 'Selection',                onClick: () => onNavigate?.('selection') },
+    { icon: '📱', label: 'Sponsor Post',   ai: true, onClick: () => onOpenModal('sponsorpost') },
+    { icon: '⚕️', label: 'Log Injury',               onClick: () => onOpenModal('injury') },
+    { icon: '🏋️', label: 'Log Training',             onClick: () => onNavigate?.('training-planner') },
+    { icon: '🏥', label: 'Medical Review',           onClick: () => onNavigate?.('medical') },
+    { icon: '💰', label: 'Cap Check',                onClick: () => onNavigate?.('capdashboard') },
+    { icon: '🔍', label: 'Scouting',                 onClick: () => onNavigate?.('scouting') },
+    { icon: '🌅', label: 'AI Briefing',    ai: true, onClick: () => onNavigate?.('dorbriefing') },
+    { icon: '🤖', label: 'Halftime Brief', ai: true, onClick: () => onNavigate?.('halftime') },
+    { icon: '🎬', label: 'Video',                    onClick: () => onOpenModal('video') },
+    { icon: '📋', label: 'Contracts',                onClick: () => onOpenModal('contracts') },
+    { icon: '💼', label: 'Agent Brief',    ai: true, onClick: () => onNavigate?.('agents') },
+    { icon: '🧾', label: 'Expense',                  onClick: () => onOpenModal('expense') },
+    { icon: '✨', label: 'Ask Lumio',      ai: true, onClick: () => setAskOpen(true) },
   ]
 
   return (
@@ -7465,7 +7474,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
 
   const renderView = () => {
     switch(activeSection) {
-      case 'dashboard':       return <ClubDashboardView onOpenModal={setActiveModal}/>;
+      case 'dashboard':       return <ClubDashboardView onOpenModal={setActiveModal} onNavigate={setActiveSection}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
       case 'insights':        return <InsightsView club={club} activeRole={session.role}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
