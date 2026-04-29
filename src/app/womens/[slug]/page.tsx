@@ -5414,11 +5414,11 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
         {/* Sponsor dashboard override */}
         {isSponsor && activeSection === 'dashboard' ? (
-          <div className="p-6 max-w-6xl flex-1">
+          <div className="p-6 flex-1">
             <WomensSponsorDashboard club={club} session={session} />
           </div>
         ) : activeSection !== 'dashboard' ? (
-          <div className="p-6 max-w-6xl flex-1">
+          <div className="p-6 flex-1">
             {renderView()}
           </div>
         ) : (
@@ -5485,7 +5485,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             </div>
 
             {/* Tab content */}
-            <div className="p-6 max-w-6xl flex-1">
+            <div className="p-6 flex-1 w-full">
               {/* Getting Started tab */}
               {dashTab === 'gettingstarted' && (
                 <div className="space-y-4">
