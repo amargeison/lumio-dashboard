@@ -33,6 +33,8 @@ import { useParams } from 'next/navigation'
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { GolfDashboardView, GOLF_THEME, GOLF_ACCENT } from './_components/GolfDashboardModules'
+import { GolfSidebarNav } from './_components/GolfShell'
 import { createBrowserClient } from '@supabase/ssr'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
@@ -7346,7 +7348,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
     const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
       isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
+      case 'dashboard':   return <GolfDashboardView
+                                    onAskLumio={() => setActiveModal('caddiebriefai')}
+                                    onCourseStrategy={() => setActiveModal('coursestrategy')}
+                                    photoDataUrl={session.photoDataUrl ?? null}
+                                  />;
       case 'morning':     return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
       case 'owgr':        return gate('📊', 'No OWGR data', 'Connect your tour feed to unlock this', <OWGRView player={player} session={session} />);
       case 'schedule':    return gate('🗓️', 'No tournaments loaded', 'Connect your tour feed to unlock this', <ScheduleView player={player} session={session} />);
@@ -7502,7 +7508,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
       <PwaInstaller sport="golf" />
       {/* Modal overlay */}
       {activeModal && (
@@ -7601,35 +7607,14 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             </button>
           )}
         </div>
-        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
-          {groups.map(group => {
-            const items = visibleSidebarItems
-              .filter(i => i.group === group)
-              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
-            if (items.length === 0) return null;
-            return (
-              <div key={group} className="mb-3">
-                {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
-                {items.map(item => (
-                  <button key={item.id}
-                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
-                    style={{
-                      backgroundColor: activeSection === item.id ? 'rgba(21,128,61,0.12)' : 'transparent',
-                      color: activeSection === item.id ? '#86efac' : '#6B7280',
-                      borderLeft: activeSection === item.id ? '2px solid #15803D' : '2px solid transparent',
-                      paddingLeft: sidebarExpanded ? 10 : 0,
-                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
-                    }}
-                    title={sidebarExpanded ? undefined : item.label}>
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
+        <GolfSidebarNav
+          T={GOLF_THEME}
+          accent={GOLF_ACCENT}
+          items={visibleSidebarItems.map(i => ({ id: i.id, label: i.label, icon: i.icon, group: i.group }))}
+          expanded={sidebarExpanded}
+          activeId={activeSection}
+          onSelect={(id: string) => { setActiveSection(id); if (!sidebarPinned) setSidebarHovered(false) }}
+        />
         <RoleSwitcher
           session={liveSession}
           roles={GOLF_ROLES}
