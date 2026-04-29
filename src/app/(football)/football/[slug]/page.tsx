@@ -21,11 +21,36 @@ import {
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
-  Maximize2, Printer, Share2,
+  Maximize2, Printer, Share2, Flame,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import FootballActionModal from '@/components/modals/FootballActionModal'
+// ─── Football v2 dashboard imports ────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import {
+  HeroToday as FbHeroToday,
+  TodaySchedule as FbTodaySchedule,
+  StatTiles as FbStatTiles,
+  AIBrief as FbAIBrief,
+  Inbox as FbInbox,
+  Squad as FbSquadModule,
+  Fixtures as FbFixturesModule,
+  Perf as FbPerf,
+  Recents as FbRecents,
+  Season as FbSeason,
+} from './_components/FootballDashboardModules'
+import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
+import type { FbFixture } from './_lib/football-dashboard-data'
 import DeptAISummary from '@/components/DeptAISummary'
 import AIInsightsReport from '@/components/AIInsightsReport'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
@@ -48,14 +73,14 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
-  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
+  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
   | 'find-club' | 'find-player' | 'pyramid'
   | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
   | 'preseason'
 
 type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools' | 'Leagues' | 'Integrations'
+type SidebarSection = null | 'Departments' | 'Tools' | 'GPS & Load' | 'Leagues' | 'Integrations'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -104,7 +129,9 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
   { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
   { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
-  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'Tools' },
+  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'GPS & Load' },
+  { id: 'gps-heatmaps', label: 'Heatmaps',       icon: Flame,          section: 'GPS & Load' },
+  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'GPS & Load' },
   { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
   { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
   { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
@@ -113,7 +140,6 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
   { id: 'wyscout',     label: 'Lumio Scout / Video', icon: Video,    section: 'Integrations' },
   { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
-  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
   { id: 'opta',        label: 'Lumio Data',       icon: BarChart3,     section: 'Integrations' },
   { id: 'teams',        label: 'Teams',          icon: Users,          section: 'Leagues' },
   { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'Leagues' },
@@ -500,6 +526,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
     { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
     { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
+    { label: 'GPS & Load', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & Load') },
     { label: 'Leagues', items: SIDEBAR_ITEMS.filter(i => i.section === 'Leagues') },
     { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
   ]
@@ -1729,138 +1756,305 @@ function InjuryRoomCard() {
   )
 }
 
-// ─── Overview View ──────────────────────────────────────────────────────────
+// ─── Overview View (v2 modular grid + tabs + quick actions) ────────────────
+
+const FOOTBALL_INBOX_BODIES: Record<string, string> = {
+  'SMS · Coaches':      'Evans: confirm Saturday XI please. Walsh ban served, Henderson scan at 14:00. Need team sheet by 13:30 for league submission.',
+  'WhatsApp · Squad':   'Captain: pitch walk done, surface firm but soft underfoot. 4G studs recommended. Met steward, away end open from 13:30.',
+  'Email · Selectors':  'Henderson scan results — Grade 1 hamstring, 10 days minimum. Recommend Wilson holds the 8 spot, monitor Saturday training intensity.',
+  'Agent messages':     'Okafor — wants 3-year extension at £8k/wk. Current expires June. Competing offer from Championship side reportedly £10k. Decision Friday.',
+  'Board messages':     'Caroline: Q3 financials filed. Cap return due 10 May. PSR position remains compliant. Stadium feasibility doc ready Monday.',
+  'Medical Hub':        'Dr Patel: Osei ACL review with consultant — 4 months minimum. Targeted return September pre-season. Trescott ankle scan clear.',
+  'Media & Press':      'Northbridge Sport — pre-match feature with you + captain Friday 14:00. Talking points: Walsh return, Henderson absence, automatic vs play-off race.',
+  'Scouting':           'Okafor (Ridgefield) watched twice — strong, deceptive pace, weak right foot. Suggest one more live look before recommending.',
+  'Academy':            'U18s won 3-1 last night — Bryant brace + assist, Patel scored. Two prospects (Bryant, Lopez) ready for first-team training next week.',
+}
+
+function fbBtnGhost(): React.CSSProperties {
+  return { fontSize: 11, padding: '5px 10px', background: 'transparent', color: '#9CA3AF', border: '1px solid #2d3139', borderRadius: 6, cursor: 'pointer', transition: 'border-color .12s, color .12s' }
+}
+function fbBtnPrimary(accentHex: string): React.CSSProperties {
+  return { fontSize: 11.5, padding: '5px 12px', background: accentHex, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
+}
+
+function InteractiveFootballInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof FOOTBALL_ACCENT; density: typeof DENSITY.regular }) {
+  type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
+  const init = (): Record<string, RowState> => Object.fromEntries(FOOTBALL_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }]))
+  const [state, setState] = useState<Record<string, RowState>>(init)
+  const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
+  const items = FOOTBALL_INBOX.filter(c => !state[c.ch]?.dismissed)
+  return (
+    <div style={{ gridColumn: '6 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
+        <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 420, overflow: 'auto' }}>
+        {items.map((c, i) => {
+          const s = state[c.ch] ?? { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }
+          const body = FOOTBALL_INBOX_BODIES[c.ch] ?? c.last
+          return (
+            <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
+                  <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'monospace' }}>{c.time}</div>
+                <div className="tnum" style={{ minWidth: 22, height: 18, padding: '0 6px', borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 600, background: c.urgent ? 'rgba(199,90,90,0.12)' : T.hover, color: c.urgent ? T.bad : T.text2 }}>{c.count}</div>
+              </div>
+              {s.expanded && (
+                <div style={{ padding: '6px 6px 12px 22px' }}>
+                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, padding: 10, background: T.panel2, borderRadius: 6, border: `1px solid ${T.border}` }}>{body}</div>
+                  {s.sentLabel && <div style={{ marginTop: 6, fontSize: 11, color: T.good, fontFamily: 'monospace' }}>{s.sentLabel}</div>}
+                  {s.mode === 'idle' && !s.sentLabel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => update(c.ch, { mode: 'replying' })}   style={fbBtnGhost()}>Reply</button>
+                      <button onClick={() => update(c.ch, { mode: 'forwarding' })} style={fbBtnGhost()}>Forward</button>
+                      <button onClick={() => update(c.ch, { dismissed: true })}    style={fbBtnGhost()}>Dismiss</button>
+                    </div>
+                  )}
+                  {s.mode === 'replying' && (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={s.reply} onChange={e => update(c.ch, { reply: e.target.value })}
+                        placeholder="Type your reply…" rows={3}
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: 8, fontSize: 12, fontFamily: V2_FONT, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '', sentLabel: 'Sent ✓' })} style={fbBtnPrimary(accent.hex)}>Send</button>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '' })} style={fbBtnGhost()}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {s.mode === 'forwarding' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: T.text3 }}>Forward to:</span>
+                      <select value={s.forwardTo} onChange={e => update(c.ch, { forwardTo: e.target.value })}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontFamily: V2_FONT }}>
+                        <option>Head Coach</option><option>Assistant Manager</option><option>Director of Football</option>
+                        <option>Medical Lead</option><option>CEO</option><option>Head of Recruitment</option>
+                      </select>
+                      <button onClick={() => update(c.ch, { mode: 'idle', sentLabel: `Forwarded to ${s.forwardTo} ✓` })} style={fbBtnPrimary(accent.hex)}>Forward</button>
+                      <button onClick={() => update(c.ch, { mode: 'idle' })} style={fbBtnGhost()}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {items.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+      </div>
+    </div>
+  )
+}
+
+function FootballMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof FOOTBALL_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Oakridge FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Hartwell Town</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>League One · MD-39</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sat 02 May 2026 · Oakridge Park · Kick-off 15:00</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
+
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 12°C light cloud, 11 mph SW wind.</div>
+          <div><strong style={{ color: T.text }}>Pitch:</strong> Natural grass, firm surface, soft underfoot — 4G studs recommended.</div>
+          <div><strong style={{ color: T.text }}>Wind factor:</strong> Slight cross-wind, attacking the south end first half preferred for set-piece delivery.</div>
+          <div><strong style={{ color: T.text }}>Referee:</strong> M. Carter — strict on holding at corners (12 fouls/match avg). Yellow-card-prone, watch reckless tackles.</div>
+        </Section>
+
+        <Section title="02 · Opposition Analysis · Hartwell Town">
+          <div><strong style={{ color: T.text }}>Position:</strong> 11th in League One. <strong style={{ color: T.text }}>Last 5:</strong> W L L W D — middle-of-the-table form.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Striker <strong>R. Kanu</strong> — 14 league goals, dangerous off the shoulder of the last defender.</li>
+            <li>Winger <strong>J. Doyle</strong> — quick on the half-turn, 6 assists, takes set-pieces left-foot.</li>
+            <li>Midfielder <strong>L. Greenway</strong> — sets the tempo, top in the league for forward passes (12.4/match).</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Weakness:</strong> High press from goal kicks but back four play very flat — space behind for runners. Their LB pushes high; exploit the channel with Morris diagonal.</div>
+        </Section>
+
+        <Section title="03 · Our Team News">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Walsh:</strong> 3-match ban served — available for selection. Decision: start or hold for Tuesday cup.</li>
+            <li><strong style={{ color: T.text }}>Henderson:</strong> Hamstring tightness — light training only. Scan results 14:00. Likely unavailable.</li>
+            <li><strong style={{ color: T.text }}>Osei:</strong> Long-term ACL — 4 months. Out.</li>
+            <li><strong style={{ color: T.text }}>Front line:</strong> Forwards coach recommends Morris–Porter pairing; Rowe off the bench from 65 minutes.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Priorities">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Short build-up vs their high press from goal kicks — split CBs wide, bring 6 deep.</li>
+            <li>Attack the LB channel — Morris diagonal runs, Tilley overlap.</li>
+            <li>Set pieces — 22% of our goals come from these. Three rehearsed routines, target near post.</li>
+            <li>PPDA target 8.0 — press their CB on first pass, force long ball to Kanu (in the air we win).</li>
+            <li>Late-game tempo — substitutions 60'/70'/80' to hold a lead or chase a goal.</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Kit van: confirmed 09:00, all GPS vests charged.</li>
+            <li>Warm-up: 14:15 on main pitch, set-piece runs 14:35.</li>
+            <li>Media: Northbridge Sport pitchside from 14:00, manager + captain post-match.</li>
+            <li>Medical: Dr Patel pitchside, ambulance confirmed, away medics briefed.</li>
+            <li>Backup venue: Glenmoor Park (3G) on standby if pitch fails inspection.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>('today')
+  const T       = THEMES.dark
+  const accent  = FOOTBALL_ACCENT
+  const density = DENSITY.regular
+  const greeting = v2GetGreeting('matchday')
+
+  const [openFixture, setOpenFixture] = useState<FbFixture | null>(null)
+  const [cmdOpen,     setCmdOpen]     = useState(false)
+  const [askOpen,     setAskOpen]     = useState(false)
+  const [briefOpen,   setBriefOpen]   = useState(false)
+  const [dashToast,   showDashToast]  = useV2Toast()
+
+  useV2Key('cmdk', () => setCmdOpen(o => !o))
+
+  const tabIcon = (id: OverviewTab): string => ({
+    today: 'home',
+    'quick-wins': 'lightning',
+    'match-week': 'flag',
+    insights: 'bars',
+    'dont-miss': 'flame',
+    staff: 'people',
+  } as const)[id]
 
   return (
-    <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
-      <TabBar tab={tab} onChange={setTab} />
+    <>
+      <style jsx global>{`
+        .tnum { font-variant-numeric: tabular-nums; }
+        @keyframes cricketV2PulseDim   { 0%,100% { opacity: .5 } 50% { opacity: .95 } }
+        @keyframes cricketV2FadeUp     { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideLeft  { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+      `}</style>
 
-      {tab === 'today' ? (
-        <div className="space-y-4">
-          <QuickActionsBar onAction={onAction} />
+      <div style={{ background: T.bg, color: T.text, fontFamily: V2_FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
-          {!isDemo && (
-            <>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="text-5xl mb-4">⚽</div>
-              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
-              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
-              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>✨ Explore with Demo Data</button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📨 Match Inbox</h3>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your communications to see WhatsApp, email and Slack messages in one place.</p>
-                <div className="space-y-2">
-                  {['WhatsApp Group Chat', 'Club Email', 'Slack Channel'].map(s => (
-                    <div key={s} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{s}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>Connect</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📅 Fixtures This Week</h3>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your calendar to see training sessions, matches and meetings.</p>
-                <div className="flex items-center justify-center py-6">
-                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.3)' }}>Connect Calendar →</button>
-                </div>
-              </div>
-              <div className="lg:col-span-1 flex flex-col gap-4">
-                <PhotoFrame />
-                <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>🤖 AI Match Summary</h3>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your tools to generate your AI match day summary with squad news, form analysis and tactical suggestions.</p>
-                </div>
-              </div>
-            </div>
-            </>
-          )}
-
-          {isDemo && <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-            <div className="lg:col-span-1 flex flex-col">
-              <MorningRoundup />
-            </div>
-            <div className="lg:col-span-1 flex flex-col">
-              <FixturesPanel />
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-4">
-              <PhotoFrame />
-              <MorningAIPanel />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
-                <StatCard label="Fit Players" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
-                <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#F59E0B" />
-                <StatCard label="Next Match" value={FIXTURES[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
-              </div>
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-                  <span className="text-xs" style={{ color: '#003DA5' }}>Live</span>
-                </div>
-                {WORKFLOW_FEED.map((run, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < WORKFLOW_FEED.length - 1 ? '1px solid #1F2937' : undefined }}>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <WFStatusBadge status={run.status} />
-                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Squad Readiness — GPS */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #003DA5' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(0,61,165,0.06)' }}>
-                  <div className="flex items-center gap-2">
-                    <Activity size={14} style={{ color: '#003DA5' }} />
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Readiness</p>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>GPS</span>
-                  </div>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>ACWR-based</span>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="flex items-center gap-1.5"><span>🟢</span><span className="text-sm font-bold" style={{ color: '#22C55E' }}>7</span><span className="text-xs" style={{ color: '#6B7280' }}>ready</span></div>
-                    <div className="flex items-center gap-1.5"><span>🟡</span><span className="text-sm font-bold" style={{ color: '#F59E0B' }}>3</span><span className="text-xs" style={{ color: '#6B7280' }}>manage</span></div>
-                    <div className="flex items-center gap-1.5"><span>🔴</span><span className="text-sm font-bold" style={{ color: '#EF4444' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>rest</span></div>
-                    <div className="flex items-center gap-1.5"><span>🔵</span><span className="text-sm font-bold" style={{ color: '#3B82F6' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>under</span></div>
-                  </div>
-                  {/* Injury Risk Alert */}
-                  <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                    <div className="flex items-center gap-2">
-                      <AlertCircle size={14} style={{ color: '#EF4444' }} />
-                      <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>GPS Injury Risk: Sean O&apos;Brien (ACWR 1.58) — rest recommended</p>
-                    </div>
-                  </div>
-                  <p className="text-xs mb-2" style={{ color: '#6B7280' }}>Last session: 31 Mar — Tactical Session — Set Pieces</p>
-                  <button className="text-xs font-semibold" style={{ color: '#003DA5' }}>View Performance Dashboard →</button>
-                </div>
-              </div>
-
-              {/* Injury Room */}
-              <InjuryRoomCard />
-            </div>
-          </div>
-          </>}
+        {/* Hero — match-day banner FIRST, persistent across tabs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <FbHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
+            onAsk={() => setAskOpen(true)}
+            onMatchBrief={() => setBriefOpen(true)}
+          />
+          <FbTodaySchedule T={T} accent={accent} density={density} />
         </div>
-      ) : (
-        <TabContent tab={tab} />
-      )}
-    </div>
+
+        {/* Tab bar — Lucide icons + accent underline (matches rugby v2). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>
+          {OVERVIEW_TABS.map(t => {
+            const active = tab === t.id
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}
+                style={{
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px',
+                  fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : T.text3,
+                  borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
+                  marginBottom: -1,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  transition: 'color .12s, border-color .12s',
+                }}>
+                <V2Icon name={tabIcon(t.id)} size={12} stroke={1.6} />
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Quick Actions — rectangular desaturated buttons (matches rugby v2). */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {FOOTBALL_QUICK_ACTIONS.map(a => (
+            <button key={a.label} onClick={() => onAction(a.label)}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+              }}>
+              <a.icon size={13} />
+              <span>{a.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* TAB CONTENT — Today renders v2 grid; others fall through to v1 TabContent */}
+        {tab === 'today' ? (
+          <>
+            <FbStatTiles T={T} accent={accent} density={density} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              <InteractiveFootballInbox T={T} accent={accent} density={density} />
+              <FbSquadModule T={T} accent={accent} density={density} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <FbFixturesModule T={T} accent={accent} density={density} onPick={f => setOpenFixture(f)} />
+              <FbPerf            T={T} accent={accent} density={density} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <FbRecents T={T} accent={accent} density={density} />
+              <FbSeason  T={T} accent={accent} density={density} />
+            </div>
+
+            <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
+              <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
+            </div>
+          </>
+        ) : (
+          <TabContent tab={tab} />
+        )}
+      </div>
+
+      <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
+      <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
+      <V2Toast          T={T} accent={accent} msg={dashToast} />
+      <FootballMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+    </>
   )
 }
 
@@ -4571,6 +4765,774 @@ Respond ONLY in JSON (no markdown):
   )
 }
 
+// ─── GPS Heatmaps View ──────────────────────────────────────────────────────
+// Showpiece visualisation hub — pure inline SVG, green→red heat scale,
+// brand colours pulled from localStorage at mount. All data is demo seed
+// (deterministic per player so the view is stable across re-renders).
+
+const HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
+const heatColor = (intensity: number) => {
+  const t = Math.max(0, Math.min(1, intensity))
+  const idx = Math.min(HEAT_STOPS.length - 1, Math.floor(t * (HEAT_STOPS.length - 1)))
+  return HEAT_STOPS[idx]
+}
+
+// Deterministic pseudo-random — keeps heat clouds stable across renders
+// without seeding a full PRNG. Inputs collapse name + index into a hash.
+function hashAt(str: string, salt: number): number {
+  let h = 2166136261 ^ salt
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 16777619)
+  }
+  return ((h >>> 0) % 10000) / 10000
+}
+
+const GPS_HEATMAP_PLAYERS = [
+  { name: 'Tom Fletcher',  position: 'LB',  group: 'Defenders' },
+  { name: 'Daniel Webb',   position: 'CB',  group: 'Defenders' },
+  { name: 'Marcus Reid',   position: 'CB',  group: 'Defenders' },
+  { name: 'Kyle Osei',     position: 'RB',  group: 'Defenders' },
+  { name: 'Liam Barker',   position: 'CM',  group: 'Midfielders' },
+  { name: 'Connor Walsh',  position: 'CM',  group: 'Midfielders' },
+  { name: 'Ryan Cole',     position: 'CM',  group: 'Midfielders' },
+  { name: 'Paul Granger',  position: 'CDM', group: 'Midfielders' },
+  { name: 'Dean Morris',   position: 'LW',  group: 'Forwards' },
+  { name: 'Sam Porter',    position: 'ST',  group: 'Forwards' },
+  { name: 'Myles Okafor',  position: 'LW',  group: 'Forwards' },
+  { name: 'James Tilley',  position: 'RW',  group: 'Forwards' },
+]
+
+const GPS_HEATMAP_MATCHES = [
+  'Northgate City (H) — 1-2 L',
+  'Plymouth Argyle (A) — 1-2 L',
+  'Fernbrook Athletic (H) — 1-1 D',
+  'Castleton Rovers (A) — 2-0 W',
+  'Redmill United (H) — 2-2 D',
+]
+
+const GPS_HEATMAP_TRAINING = [
+  'Tue — Tactical (90min)',
+  'Wed — High Intensity (75min)',
+  'Thu — S&C (60min)',
+  "Fri — Captain's Run (45min)",
+]
+
+function FootballPitch({ width, height, lineCol = 'rgba(255,255,255,0.18)' }: { width: number; height: number; lineCol?: string }) {
+  const W = width, H = height
+  return (
+    <g>
+      <rect width={W} height={H} fill="#06140a" rx={6} />
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={lineCol} strokeWidth={1.5} />
+      <line x1={W / 2} y1={0} x2={W / 2} y2={H} stroke={lineCol} strokeWidth={1.2} />
+      <circle cx={W / 2} cy={H / 2} r={H * 0.13} fill="none" stroke={lineCol} strokeWidth={1} />
+      <circle cx={W / 2} cy={H / 2} r={2.5} fill={lineCol} />
+      {/* Penalty boxes */}
+      <rect x={0} y={H * 0.22} width={W * 0.16} height={H * 0.56} fill="none" stroke={lineCol} strokeWidth={1} />
+      <rect x={W - W * 0.16} y={H * 0.22} width={W * 0.16} height={H * 0.56} fill="none" stroke={lineCol} strokeWidth={1} />
+      {/* 6-yard boxes */}
+      <rect x={0} y={H * 0.36} width={W * 0.06} height={H * 0.28} fill="none" stroke={lineCol} strokeWidth={1} />
+      <rect x={W - W * 0.06} y={H * 0.36} width={W * 0.06} height={H * 0.28} fill="none" stroke={lineCol} strokeWidth={1} />
+      {/* Goals */}
+      <line x1={0} y1={H * 0.44} x2={0} y2={H * 0.56} stroke="rgba(255,255,255,0.55)" strokeWidth={3} />
+      <line x1={W} y1={H * 0.44} x2={W} y2={H * 0.56} stroke="rgba(255,255,255,0.55)" strokeWidth={3} />
+      {/* Penalty arcs */}
+      <path d={`M ${W * 0.16} ${H * 0.4} A ${H * 0.13} ${H * 0.13} 0 0 1 ${W * 0.16} ${H * 0.6}`} fill="none" stroke={lineCol} strokeWidth={1} />
+      <path d={`M ${W - W * 0.16} ${H * 0.4} A ${H * 0.13} ${H * 0.13} 0 0 0 ${W - W * 0.16} ${H * 0.6}`} fill="none" stroke={lineCol} strokeWidth={1} />
+    </g>
+  )
+}
+
+function PositionalHeatmap({ width, height, player, matchIdx, intensity = 1 }: {
+  width: number; height: number; player: string; matchIdx: number; intensity?: number
+}) {
+  const W = width, H = height
+  // 12x8 cell grid sampled deterministically. Anchor the densest cell on a
+  // player-specific zone so each squad member's heatmap has a believable
+  // shape (LB hugs left flank, ST hovers around the box, etc).
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  const anchor = (() => {
+    switch (meta?.position) {
+      case 'LB': return { x: 0.18, y: 0.22 }
+      case 'RB': return { x: 0.18, y: 0.78 }
+      case 'CB': return { x: 0.22, y: 0.5 }
+      case 'CM': return { x: 0.5, y: 0.5 }
+      case 'CDM': return { x: 0.36, y: 0.5 }
+      case 'CAM': return { x: 0.62, y: 0.5 }
+      case 'LW': return { x: 0.78, y: 0.22 }
+      case 'RW': return { x: 0.78, y: 0.78 }
+      case 'ST':
+      case 'CF': return { x: 0.82, y: 0.5 }
+      default: return { x: 0.5, y: 0.5 }
+    }
+  })()
+  const cols = 14, rows = 9
+  const cellW = W / cols, cellH = H / rows
+  const cells: { x: number; y: number; t: number }[] = []
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = (c + 0.5) / cols
+      const cy = (r + 0.5) / rows
+      const dx = cx - anchor.x
+      const dy = cy - anchor.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const noise = hashAt(`${player}-${matchIdx}-${r}-${c}`, 7) * 0.45
+      const base = Math.max(0, 1 - dist * 1.9) + noise * 0.5
+      const t = Math.min(1, base * intensity)
+      if (t > 0.08) cells.push({ x: c * cellW, y: r * cellH, t })
+    }
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 360 }}>
+      <defs>
+        <filter id={`blur-${player.replace(/\s+/g, '')}-${matchIdx}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <FootballPitch width={W} height={H} />
+      <g filter={`url(#blur-${player.replace(/\s+/g, '')}-${matchIdx})`} opacity={0.85}>
+        {cells.map((cell, i) => (
+          <rect
+            key={i}
+            x={cell.x}
+            y={cell.y}
+            width={cellW + 2}
+            height={cellH + 2}
+            fill={heatColor(cell.t)}
+            opacity={0.35 + cell.t * 0.55}
+          />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function TouchMap({ width, height, player, matchIdx, brandPrimary }: {
+  width: number; height: number; player: string; matchIdx: number; brandPrimary: string
+}) {
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  const cluster = (() => {
+    switch (meta?.position) {
+      case 'LB': return { x: 0.22, y: 0.2, spread: 0.18 }
+      case 'RB': return { x: 0.22, y: 0.8, spread: 0.18 }
+      case 'CB': return { x: 0.18, y: 0.5, spread: 0.14 }
+      case 'CM': return { x: 0.5, y: 0.5, spread: 0.22 }
+      case 'CDM': return { x: 0.34, y: 0.5, spread: 0.18 }
+      case 'LW': return { x: 0.74, y: 0.22, spread: 0.18 }
+      case 'RW': return { x: 0.74, y: 0.78, spread: 0.18 }
+      case 'ST':
+      case 'CF': return { x: 0.82, y: 0.5, spread: 0.16 }
+      default: return { x: 0.5, y: 0.5, spread: 0.2 }
+    }
+  })()
+  const touches = 48
+  const dots: { x: number; y: number; r: number }[] = []
+  for (let i = 0; i < touches; i++) {
+    const a = hashAt(`${player}-tm-${matchIdx}-${i}-a`, 11) * Math.PI * 2
+    const r = hashAt(`${player}-tm-${matchIdx}-${i}-r`, 13) * cluster.spread
+    const x = (cluster.x + Math.cos(a) * r) * width
+    const y = (cluster.y + Math.sin(a) * r) * height
+    dots.push({ x, y, r: 2.5 + hashAt(`${player}-tm-${matchIdx}-${i}-s`, 19) * 2.5 })
+  }
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <FootballPitch width={width} height={height} />
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={d.r} fill={brandPrimary} opacity={0.75} stroke="white" strokeOpacity={0.35} strokeWidth={0.6} />
+      ))}
+    </svg>
+  )
+}
+
+function ZoneThirdsMap({ width, height, player, matchIdx }: {
+  width: number; height: number; player: string; matchIdx: number
+}) {
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  // Skew thirds by role
+  const baseDef = (() => {
+    if (meta?.group === 'Defenders') return 58
+    if (meta?.group === 'Midfielders') return 32
+    return 12
+  })()
+  const baseAtt = (() => {
+    if (meta?.group === 'Forwards') return 56
+    if (meta?.group === 'Midfielders') return 30
+    return 10
+  })()
+  const noise = Math.round((hashAt(`${player}-zt-${matchIdx}`, 23) - 0.5) * 8)
+  const def = Math.max(5, Math.min(80, baseDef + noise))
+  const att = Math.max(5, Math.min(80, baseAtt - noise))
+  const mid = Math.max(5, 100 - def - att)
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={width} height={height} />
+      <rect x={0} y={0} width={width / 3} height={height} fill={heatColor(def / 80)} opacity={0.45} />
+      <rect x={width / 3} y={0} width={width / 3} height={height} fill={heatColor(mid / 80)} opacity={0.45} />
+      <rect x={(width / 3) * 2} y={0} width={width / 3} height={height} fill={heatColor(att / 80)} opacity={0.45} />
+      <text x={width / 6} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{def}%</text>
+      <text x={width / 2} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{mid}%</text>
+      <text x={(width / 6) * 5} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{att}%</text>
+      <text x={width / 6} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>DEFENSIVE</text>
+      <text x={width / 2} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>MIDDLE</text>
+      <text x={(width / 6) * 5} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>ATTACKING</text>
+    </svg>
+  )
+}
+
+function SprintPathOverlay({ width, height, player, matchIdx, brandSecondary }: {
+  width: number; height: number; player: string; matchIdx: number; brandSecondary: string
+}) {
+  const sprintCount = 8 + Math.floor(hashAt(`${player}-sp-${matchIdx}`, 29) * 6)
+  const sprints: { x1: number; y1: number; x2: number; y2: number; speed: number }[] = []
+  for (let i = 0; i < sprintCount; i++) {
+    const sx = hashAt(`${player}-sp-${matchIdx}-${i}-x`, 31)
+    const sy = hashAt(`${player}-sp-${matchIdx}-${i}-y`, 37)
+    const ex = sx + (hashAt(`${player}-sp-${matchIdx}-${i}-dx`, 41) - 0.5) * 0.5
+    const ey = sy + (hashAt(`${player}-sp-${matchIdx}-${i}-dy`, 43) - 0.5) * 0.4
+    sprints.push({
+      x1: sx * width,
+      y1: sy * height,
+      x2: Math.max(8, Math.min(width - 8, ex * width)),
+      y2: Math.max(8, Math.min(height - 8, ey * height)),
+      speed: 0.5 + hashAt(`${player}-sp-${matchIdx}-${i}-s`, 47) * 0.5,
+    })
+  }
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={width} height={height} />
+      {sprints.map((s, i) => (
+        <g key={i}>
+          <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={heatColor(s.speed)} strokeWidth={2.2} strokeLinecap="round" opacity={0.85} />
+          <circle cx={s.x2} cy={s.y2} r={3.2} fill={brandSecondary} stroke={heatColor(s.speed)} strokeWidth={1.5} />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function HighIntensityZones({ width, height, sessionIdx }: { width: number; height: number; sessionIdx: number }) {
+  const W = width, H = height
+  const blobs: { cx: number; cy: number; r: number; t: number }[] = []
+  for (let i = 0; i < 16; i++) {
+    blobs.push({
+      cx: hashAt(`hi-${sessionIdx}-${i}-x`, 53) * W,
+      cy: hashAt(`hi-${sessionIdx}-${i}-y`, 59) * H,
+      r: 18 + hashAt(`hi-${sessionIdx}-${i}-r`, 61) * 38,
+      t: 0.4 + hashAt(`hi-${sessionIdx}-${i}-t`, 67) * 0.6,
+    })
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 320 }}>
+      <defs>
+        <filter id={`hi-blur-${sessionIdx}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="8" />
+        </filter>
+      </defs>
+      <FootballPitch width={W} height={H} />
+      <g filter={`url(#hi-blur-${sessionIdx})`}>
+        {blobs.map((b, i) => (
+          <circle key={i} cx={b.cx} cy={b.cy} r={b.r} fill={heatColor(b.t)} opacity={0.45} />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function WeeklyLoadCalendar({ brandPrimary, brandSecondary }: { brandPrimary: string; brandSecondary: string }) {
+  void brandPrimary
+  void brandSecondary
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const labels = ['Recovery', 'Tactical', 'High Intensity', 'S&C', "Captain's Run", 'MATCH', 'Off']
+  // Authentic football week microcycle: peak Wed, MD-1 (Fri) light, match Sat
+  const intensities = [0.18, 0.62, 0.92, 0.45, 0.3, 1.0, 0.05]
+  const distances = [3.2, 7.4, 9.8, 5.1, 4.0, 11.2, 0]
+  const loads = [320, 740, 1140, 560, 420, 1410, 0]
+  const cellW = 100 / 7
+  return (
+    <svg viewBox="0 0 700 200" width="100%" style={{ maxHeight: 220 }}>
+      <rect width={700} height={200} fill="#0d1117" rx={8} />
+      {days.map((d, i) => {
+        const x = i * (700 / 7)
+        const w = 700 / 7 - 6
+        return (
+          <g key={d}>
+            <rect x={x + 3} y={28} width={w} height={150} rx={6}
+              fill={heatColor(intensities[i])} opacity={0.18 + intensities[i] * 0.55} />
+            <rect x={x + 3} y={28} width={w} height={150} rx={6}
+              fill="none" stroke={heatColor(intensities[i])} strokeOpacity={0.6} strokeWidth={1} />
+            <text x={x + (700 / 7) / 2} y={20} textAnchor="middle" fontSize={11} fontWeight={700} fill="rgba(255,255,255,0.7)">{d}</text>
+            <text x={x + (700 / 7) / 2} y={62} textAnchor="middle" fontSize={10} fill="white" opacity={0.85}>{labels[i]}</text>
+            <text x={x + (700 / 7) / 2} y={110} textAnchor="middle" fontSize={26} fontWeight={800} fill="white">{loads[i]}</text>
+            <text x={x + (700 / 7) / 2} y={128} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.6)">AU load</text>
+            <text x={x + (700 / 7) / 2} y={158} textAnchor="middle" fontSize={11} fontWeight={600} fill="white" opacity={0.9}>{distances[i] > 0 ? `${distances[i]} km` : '—'}</text>
+          </g>
+        )
+      })}
+      <text x={4} y={195} fontSize={9} fill="rgba(255,255,255,0.4)">Squad average · 7-day rolling intensity</text>
+      <text x={696} y={195} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.4)">Cell colour = relative session intensity</text>
+      <line x1={0} y1={0} x2={cellW} y2={0} stroke="transparent" />
+    </svg>
+  )
+}
+
+function SpeedZoneBars({ player, brandPrimary }: { player: string; brandPrimary: string }) {
+  void brandPrimary
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  // Default split adjusted by group
+  const base = meta?.group === 'Forwards'
+    ? [10, 22, 28, 24, 16]
+    : meta?.group === 'Defenders'
+    ? [16, 30, 28, 18, 8]
+    : [12, 26, 30, 20, 12]
+  const noise = (i: number) => Math.round((hashAt(`${player}-sz-${i}`, 71) - 0.5) * 6)
+  const dist = base.map((v, i) => Math.max(2, v + noise(i)))
+  const total = dist.reduce((a, b) => a + b, 0)
+  const pct = dist.map(v => (v / total) * 100)
+  const labels = ['Stand 0–2 km/h', 'Walk 2–7', 'Jog 7–14', 'Run 14–20', 'Sprint 20+']
+  const colors = [HEAT_STOPS[0], HEAT_STOPS[1], HEAT_STOPS[2], HEAT_STOPS[3], HEAT_STOPS[4]]
+  const W = 700, BAR_H = 30, GAP = 14
+  const totalH = labels.length * (BAR_H + GAP) + 16
+  return (
+    <svg viewBox={`0 0 ${W} ${totalH}`} width="100%" style={{ maxHeight: totalH + 8 }}>
+      {labels.map((label, i) => {
+        const y = 8 + i * (BAR_H + GAP)
+        const barW = (pct[i] / 100) * (W - 220)
+        return (
+          <g key={label}>
+            <text x={4} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={600} fill="rgba(255,255,255,0.85)">{label}</text>
+            <rect x={150} y={y} width={W - 220} height={BAR_H} rx={4} fill="rgba(255,255,255,0.04)" />
+            <rect x={150} y={y} width={barW} height={BAR_H} rx={4} fill={colors[i]} opacity={0.85} />
+            <text x={150 + barW + 8} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={700} fill="white">
+              {pct[i].toFixed(1)}% · {(dist[i] * 0.13).toFixed(2)} km
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function TopSpeedScatter({ brandPrimary }: { brandPrimary: string }) {
+  const players = GPS_HEATMAP_PLAYERS
+  const W = 700, H = 240, padL = 36, padB = 28
+  const minSpeed = 24, maxSpeed = 34
+  const points = players.flatMap((p, pi) => {
+    return Array.from({ length: 6 }, (_, si) => {
+      const session = si
+      const baseSpeed = p.group === 'Forwards' ? 31 : p.group === 'Midfielders' ? 29 : 28.5
+      const v = baseSpeed + (hashAt(`${p.name}-ts-${si}`, 79) - 0.5) * 4
+      const clamped = Math.max(minSpeed, Math.min(maxSpeed, v))
+      const x = padL + (session / 5) * (W - padL - 16)
+      const y = H - padB - ((clamped - minSpeed) / (maxSpeed - minSpeed)) * (H - padB - 16)
+      return { x, y, v: clamped, group: p.group, pi, si }
+    })
+  })
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 280 }}>
+      <rect width={W} height={H} fill="#0d1117" rx={6} />
+      {/* Y axis ticks */}
+      {[24, 26, 28, 30, 32, 34].map(v => {
+        const y = H - padB - ((v - minSpeed) / (maxSpeed - minSpeed)) * (H - padB - 16)
+        return (
+          <g key={v}>
+            <line x1={padL} y1={y} x2={W - 8} y2={y} stroke="rgba(255,255,255,0.06)" />
+            <text x={padL - 6} y={y + 3} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.45)">{v}</text>
+          </g>
+        )
+      })}
+      {/* X axis labels */}
+      {['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].map((s, i) => {
+        const x = padL + (i / 5) * (W - padL - 16)
+        return <text key={s} x={x} y={H - 8} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.5)">{s}</text>
+      })}
+      <text x={padL - 30} y={14} fontSize={10} fill="rgba(255,255,255,0.6)" fontWeight={700}>km/h</text>
+      {points.map((p, i) => {
+        const norm = (p.v - minSpeed) / (maxSpeed - minSpeed)
+        return (
+          <circle key={i} cx={p.x + (p.pi % 5) * 1.2 - 3} cy={p.y} r={3.6}
+            fill={heatColor(norm)} stroke={brandPrimary} strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
+        )
+      })}
+    </svg>
+  )
+}
+
+function AccelDecelMap({ width, height }: { width: number; height: number }) {
+  const W = width, H = height
+  const events = Array.from({ length: 24 }, (_, i) => ({
+    x: hashAt(`accel-${i}-x`, 83) * W,
+    y: hashAt(`accel-${i}-y`, 89) * H,
+    accel: hashAt(`accel-${i}-a`, 97) > 0.5,
+    intensity: 0.4 + hashAt(`accel-${i}-int`, 101) * 0.6,
+  }))
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={W} height={H} />
+      {events.map((e, i) => (
+        <g key={i}>
+          <circle cx={e.x} cy={e.y} r={6 + e.intensity * 6} fill={heatColor(e.intensity)} opacity={0.25} />
+          <polygon
+            points={e.accel
+              ? `${e.x},${e.y - 5} ${e.x - 4},${e.y + 4} ${e.x + 4},${e.y + 4}`
+              : `${e.x},${e.y + 5} ${e.x - 4},${e.y - 4} ${e.x + 4},${e.y - 4}`}
+            fill={e.accel ? '#22C55E' : '#EF4444'}
+            stroke="white" strokeOpacity={0.3} strokeWidth={0.6}
+          />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function GPSHeatmapsView() {
+  const [brandPrimary, setBrandPrimary] = useState('#003DA5')
+  const [brandSecondary, setBrandSecondary] = useState('#F1C40F')
+  const [matchIdx, setMatchIdx] = useState(0)
+  const [selectedPlayer, setSelectedPlayer] = useState(GPS_HEATMAP_PLAYERS[0].name)
+  const [trainingIdx, setTrainingIdx] = useState(0)
+  const [compareSessionA, setCompareSessionA] = useState(0)
+  const [compareSessionB, setCompareSessionB] = useState(1)
+  const [comparePlayers, setComparePlayers] = useState<string[]>([
+    GPS_HEATMAP_PLAYERS[0].name,
+    GPS_HEATMAP_PLAYERS[4].name,
+    GPS_HEATMAP_PLAYERS[8].name,
+    GPS_HEATMAP_PLAYERS[9].name,
+  ])
+
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem('lumio_football_brand_primary')
+      const s = localStorage.getItem('lumio_football_brand_secondary')
+      if (p) setBrandPrimary(p)
+      if (s) setBrandSecondary(s)
+    } catch { /* localStorage may be unavailable */ }
+  }, [])
+
+  const PW = 600, PH = 380
+  const PW_S = 360, PH_S = 230
+
+  const Section = ({ title, subtitle, children, accentColor }: { title: string; subtitle?: string; children: React.ReactNode; accentColor?: string }) => (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold" style={{ color: accentColor || brandPrimary }}>{title}</h2>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+        <div className="hidden md:flex items-center gap-3 text-[10px] text-gray-500">
+          <span className="uppercase tracking-wider">Heat scale</span>
+          <div className="flex h-2 rounded overflow-hidden border border-gray-800" style={{ width: 220 }}>
+            {HEAT_STOPS.map(c => <div key={c} style={{ flex: 1, background: c }} />)}
+          </div>
+          <span className="text-gray-500">low → high</span>
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+
+  const Card = ({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) => (
+    <div className="rounded-xl p-4 border" style={{ background: '#0d1117', borderColor: '#1F2937' }}>
+      {(title || subtitle) && (
+        <div className="mb-3">
+          {title && <div className="text-sm font-semibold text-white">{title}</div>}
+          {subtitle && <div className="text-[11px] text-gray-500 mt-0.5">{subtitle}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+
+  return (
+    <div className="space-y-10">
+      {/* Page header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${brandPrimary}, ${brandSecondary})` }}>
+              <Flame className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white">GPS Heatmaps</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Spatial movement analysis across matches, training, and the season — squad and individual.</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[10px]">
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: `${brandPrimary}20`, color: brandPrimary, border: `1px solid ${brandPrimary}50` }}>
+            10Hz GPS
+          </span>
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.4)' }}>
+            Live · synced 12 min ago
+          </span>
+        </div>
+      </div>
+
+      {/* ─── 1. MATCH HEATMAPS ─────────────────────────────────────── */}
+      <Section title="1 · Match Heatmaps" subtitle="Match-day positional intelligence — who covered which space, where they touched the ball, and what they did under load.">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Player</label>
+            <div className="flex flex-wrap gap-1">
+              {GPS_HEATMAP_PLAYERS.map(p => (
+                <button key={p.name} onClick={() => setSelectedPlayer(p.name)}
+                  className="px-2.5 py-1 rounded text-[11px] font-medium transition-all border"
+                  style={selectedPlayer === p.name
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0d1117', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {p.name} <span className="opacity-60">· {p.position}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Match</label>
+            <select value={matchIdx} onChange={e => setMatchIdx(Number(e.target.value))}
+              className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              style={{ borderColor: '#1F2937' }}>
+              {GPS_HEATMAP_MATCHES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Positional Heatmap" subtitle={`${selectedPlayer} — full pitch density`}>
+            <PositionalHeatmap width={PW} height={PH} player={selectedPlayer} matchIdx={matchIdx} />
+          </Card>
+          <Card title="Touch Map" subtitle="Every ball touch logged by GPS-synced event data">
+            <TouchMap width={PW} height={PH} player={selectedPlayer} matchIdx={matchIdx} brandPrimary={brandPrimary} />
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Defensive vs Attacking Thirds" subtitle="% of total time spent in each third of the pitch">
+            <ZoneThirdsMap width={PW} height={PH * 0.8} player={selectedPlayer} matchIdx={matchIdx} />
+          </Card>
+          <Card title="Sprint Path Overlay" subtitle="High-speed runs (>20 km/h) — colour = peak speed">
+            <SprintPathOverlay width={PW} height={PH * 0.8} player={selectedPlayer} matchIdx={matchIdx} brandSecondary={brandSecondary} />
+          </Card>
+        </div>
+      </Section>
+
+      {/* ─── 2. TRAINING HEATMAPS ──────────────────────────────────── */}
+      <Section title="2 · Training Heatmaps" subtitle="Session-level distribution and weekly load microcycle." accentColor={brandSecondary}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Session</label>
+            <select value={trainingIdx} onChange={e => setTrainingIdx(Number(e.target.value))}
+              className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Session Movement Heatmap" subtitle={`${GPS_HEATMAP_TRAINING[trainingIdx]} — squad aggregate`}>
+            <PositionalHeatmap width={PW} height={PH} player="Liam Barker" matchIdx={trainingIdx + 100} intensity={0.85} />
+          </Card>
+          <Card title="High-Intensity Zones" subtitle="Sprints + accelerations density (≥3 m/s²)">
+            <HighIntensityZones width={PW} height={PH} sessionIdx={trainingIdx} />
+          </Card>
+        </div>
+
+        <Card title="Session vs Session Comparison" subtitle="Side-by-side movement footprint">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <select value={compareSessionA} onChange={e => setCompareSessionA(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+            <select value={compareSessionB} onChange={e => setCompareSessionB(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{GPS_HEATMAP_TRAINING[compareSessionA]}</div>
+              <PositionalHeatmap width={PW_S} height={PH_S} player="Connor Walsh" matchIdx={compareSessionA + 200} intensity={0.85} />
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{GPS_HEATMAP_TRAINING[compareSessionB]}</div>
+              <PositionalHeatmap width={PW_S} height={PH_S} player="Connor Walsh" matchIdx={compareSessionB + 200} intensity={0.85} />
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Weekly Load Calendar" subtitle="7-day microcycle — match Saturday">
+          <WeeklyLoadCalendar brandPrimary={brandPrimary} brandSecondary={brandSecondary} />
+        </Card>
+      </Section>
+
+      {/* ─── 3. SPEED & INTENSITY ZONES ────────────────────────────── */}
+      <Section title="3 · Speed & Intensity Zones" subtitle="How distance, speed and accel/decel events distribute across the squad.">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Distance by Speed Zone" subtitle={`${selectedPlayer} — match average across last 5`}>
+            <SpeedZoneBars player={selectedPlayer} brandPrimary={brandPrimary} />
+          </Card>
+          <Card title="Top Speed Distribution" subtitle="All squad members across last 6 sessions">
+            <TopSpeedScatter brandPrimary={brandPrimary} />
+          </Card>
+        </div>
+        <Card title="Acceleration & Deceleration Map" subtitle="Where high-magnitude accel (▲ green) and decel (▼ red) events happen on the pitch">
+          <AccelDecelMap width={PW} height={PH * 0.7} />
+        </Card>
+      </Section>
+
+      {/* ─── 4. SQUAD COMPARISON ───────────────────────────────────── */}
+      <Section title="4 · Squad Comparison" subtitle="Up to 4 players side-by-side — grouped by role.">
+        <Card>
+          <div className="mb-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Comparing 4 players (click a slot to change)</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {comparePlayers.map((p, slot) => (
+                <select key={slot} value={p}
+                  onChange={e => {
+                    const next = [...comparePlayers]
+                    next[slot] = e.target.value
+                    setComparePlayers(next)
+                  }}
+                  className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-2 py-1.5 text-[11px] text-white">
+                  {GPS_HEATMAP_PLAYERS.map(pl => <option key={pl.name} value={pl.name}>{pl.name} · {pl.position}</option>)}
+                </select>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {comparePlayers.map((p, slot) => {
+              const meta = GPS_HEATMAP_PLAYERS.find(pl => pl.name === p)
+              return (
+                <div key={`${p}-${slot}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold text-white">{p}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                      style={{ background: `${brandPrimary}25`, color: brandPrimary }}>
+                      {meta?.position}
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-gray-500 mb-1">{meta?.group}</div>
+                  <PositionalHeatmap width={300} height={190} player={p} matchIdx={matchIdx} />
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+
+        <Card title="Position Group Aggregates" subtitle="Combined heat for each role group">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(['Defenders', 'Midfielders', 'Forwards'] as const).map(group => {
+              const groupAnchor = GPS_HEATMAP_PLAYERS.find(p => p.group === group)?.name ?? GPS_HEATMAP_PLAYERS[0].name
+              return (
+                <div key={group}>
+                  <div className="text-[11px] font-bold text-white mb-1" style={{ color: brandSecondary }}>{group}</div>
+                  <PositionalHeatmap width={400} height={250} player={groupAnchor} matchIdx={matchIdx + 1000} intensity={0.95} />
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      </Section>
+
+      {/* ─── 5. SEASON OVERVIEW ────────────────────────────────────── */}
+      <Section title="5 · Season Overview" subtitle="Trend grids and home/away differentials across the campaign.">
+        <Card title="Rolling 10-Match Load Grid" subtitle="Rows = players · columns = last 10 matches · cell colour = relative load (AU)">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="text-left p-1.5 text-gray-500 font-semibold">Player</th>
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <th key={i} className="p-1.5 text-gray-500 font-semibold">M{i + 1}</th>
+                  ))}
+                  <th className="p-1.5 text-gray-400 font-semibold">Avg</th>
+                </tr>
+              </thead>
+              <tbody>
+                {GPS_HEATMAP_PLAYERS.map(p => {
+                  const cells = Array.from({ length: 10 }, (_, i) => {
+                    const baseRange = p.group === 'Forwards' ? [0.55, 0.95] : p.group === 'Midfielders' ? [0.6, 0.98] : [0.5, 0.85]
+                    const t = baseRange[0] + hashAt(`${p.name}-rolling-${i}`, 103) * (baseRange[1] - baseRange[0])
+                    return t
+                  })
+                  const avg = cells.reduce((a, b) => a + b, 0) / cells.length
+                  return (
+                    <tr key={p.name} className="border-t border-gray-900">
+                      <td className="p-1.5 text-white whitespace-nowrap">
+                        {p.name} <span className="text-gray-600">· {p.position}</span>
+                      </td>
+                      {cells.map((t, i) => (
+                        <td key={i} className="p-0.5">
+                          <div className="rounded text-center font-bold text-white"
+                            style={{
+                              background: heatColor(t),
+                              opacity: 0.45 + t * 0.5,
+                              padding: '6px 0',
+                              minWidth: 28,
+                              fontSize: 10,
+                            }}>
+                            {Math.round(800 + t * 800)}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="p-0.5">
+                        <div className="rounded text-center font-bold text-white"
+                          style={{
+                            background: heatColor(avg),
+                            opacity: 0.6 + avg * 0.4,
+                            padding: '6px 0',
+                            minWidth: 36,
+                            fontSize: 10,
+                            border: '1px solid rgba(255,255,255,0.2)',
+                          }}>
+                          {Math.round(800 + avg * 800)}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card title="Home vs Away Positional Difference" subtitle="Δ density — which zones each side of the squad covers more away vs home">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[11px] mb-1 font-semibold" style={{ color: brandPrimary }}>Home — squad average</div>
+              <PositionalHeatmap width={PW_S + 60} height={PH_S + 30} player="Liam Barker" matchIdx={500} intensity={0.95} />
+            </div>
+            <div>
+              <div className="text-[11px] mb-1 font-semibold" style={{ color: brandSecondary }}>Away — squad average</div>
+              <PositionalHeatmap width={PW_S + 60} height={PH_S + 30} player="Liam Barker" matchIdx={501} intensity={0.78} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 mt-4 gap-3 text-[11px]">
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Home territory</div>
+              <div className="text-white text-xl font-black">+8.4%</div>
+              <div className="text-gray-400">more time in opp half at home</div>
+            </div>
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Defensive shape (away)</div>
+              <div className="text-white text-xl font-black">−12 m</div>
+              <div className="text-gray-400">deeper defensive line away</div>
+            </div>
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Sprint volume</div>
+              <div className="text-white text-xl font-black">+14%</div>
+              <div className="text-gray-400">higher away (more transitions)</div>
+            </div>
+          </div>
+        </Card>
+      </Section>
+
+      <div className="text-[10px] text-gray-700 text-center pt-2">
+        GPS data sourced from Lumio GPS · 10Hz sampling · Demo data shown — connect Catapult / STATSports for live feed
+      </div>
+    </div>
+  )
+}
+
 // ─── Training View ──────────────────────────────────────────────────────────
 
 function TrainingView() {
@@ -6495,7 +7457,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   if (!fbMounted) return null
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden', zoom: 0.9 }}>
       <Toast message={toast} />
 
       {/* Demo banner */}
@@ -6554,6 +7516,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
+            {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
             {isFootballDemo && activeDept === 'finance' && <FinanceView />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
