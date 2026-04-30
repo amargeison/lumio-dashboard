@@ -72,6 +72,12 @@ export function HeroToday({
     return () => clearInterval(id)
   }, [])
 
+  // GHOST BADGE — sport-specific crest rendered behind hero content.
+  // Asset: /badges/oakridge_cc_crest.svg
+  // Specs: opacity 0.05, rotation 15deg, right-anchored with partial
+  // bleed. Maintain consistent specs if extending to other portals.
+  // This hero is the canonical reference for football's HeroToday — keep
+  // the content shape (eyebrow row, 4 detail items) aligned across both.
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
@@ -82,6 +88,18 @@ export function HeroToday({
         </defs>
         <rect width="100%" height="100%" fill="url(#ptn-hero)" />
       </svg>
+      <img
+        src="/badges/oakridge_cc_crest.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: 'absolute', right: '-12%', top: '50%',
+          height: '140%', width: 'auto',
+          transform: 'translateY(-50%) rotate(15deg)',
+          opacity: 0.05, pointerEvents: 'none', zIndex: 0,
+          objectFit: 'contain',
+        }}
+      />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
         <div style={{ flex: 1 }}>

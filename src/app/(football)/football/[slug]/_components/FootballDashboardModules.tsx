@@ -73,6 +73,18 @@ export function HeroToday({
     return () => clearInterval(id)
   }, [])
 
+  // BANNER SIZING — content shape aligned to cricket reference
+  // (HeroToday in src/app/cricket/[slug]/v2/_components/Modules.tsx).
+  // Rules:
+  //   - eyebrow row: single line, no flexWrap, no formation badge
+  //   - detail row: 4 items max (Kick-off, Venue, Squad, Form)
+  //   - h1 fontSize/lineHeight, padding, gaps, button sizes — all match cricket
+  // Adding/removing items here will change banner height vs cricket. Don't.
+  //
+  // GHOST BADGE — sport-specific crest rendered behind hero content.
+  // Asset: /badges/oakridge_fc_crest.svg
+  // Specs: opacity 0.05, rotation 15deg, right-anchored with partial
+  // bleed. Maintain consistent specs if extending to other portals.
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
@@ -83,14 +95,25 @@ export function HeroToday({
         </defs>
         <rect width="100%" height="100%" fill="url(#fb-hero-ptn)" />
       </svg>
+      <img
+        src="/badges/oakridge_fc_crest.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: 'absolute', right: '-12%', top: '50%',
+          height: '140%', width: 'auto',
+          transform: 'translateY(-50%) rotate(15deg)',
+          opacity: 0.05, pointerEvents: 'none', zIndex: 0,
+          objectFit: 'contain',
+        }}
+      />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, whiteSpace: 'nowrap', overflow: 'hidden' }}>
             <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}</span>
-            <span style={{ width: 1, height: 10, background: T.borderHi }} />
-            <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{f.comp} · MD-{FOOTBALL_ORG.season.played + 1}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 10, color: '#F1C40F', fontFamily: FONT_MONO, padding: '2px 8px', borderRadius: 4, background: 'rgba(241,196,15,0.12)', border: '1px solid rgba(241,196,15,0.3)', fontWeight: 700, letterSpacing: '0.1em' }}>{FOOTBALL_ORG.formation}</span>
+            <span style={{ width: 1, height: 10, background: T.borderHi, flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO, overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.comp} · MD-{FOOTBALL_ORG.season.played + 1}</span>
           </div>
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: density.h1 + 4, fontWeight: 600, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             {FOOTBALL_ORG.clubShort} <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> {f.opp}
@@ -99,7 +122,6 @@ export function HeroToday({
             <div><span style={{ color: T.text3 }}>Kick-off</span> <span className="tnum" style={{ color: T.text, fontFamily: FONT_MONO, marginLeft: 6 }}>{f.time}</span></div>
             <div><span style={{ color: T.text3 }}>Venue</span> <span style={{ color: T.text, marginLeft: 6 }}>Oakridge Park</span></div>
             <div><span style={{ color: T.text3 }}>Squad</span> <span style={{ color: T.good, marginLeft: 6, fontWeight: 600 }}>22 named</span></div>
-            <div><span style={{ color: T.text3 }}>League</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>8th · 57 pts</span></div>
             <div><span style={{ color: T.text3 }}>Form</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>W L D W W</span></div>
           </div>
         </div>
@@ -120,7 +142,7 @@ export function HeroToday({
           onClick={() => { setConfirmed(true); onConfirm?.() }}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
-            background: confirmed ? T.good : accent.hex, color: '#fff',
+            background: confirmed ? T.good : accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
           }}>
           <Icon name="check" size={14} stroke={2} /> {confirmed ? 'Starting XI confirmed' : 'Confirm starting XI'}
