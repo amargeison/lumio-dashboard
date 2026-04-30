@@ -588,7 +588,7 @@ export function TeamsView() {
   const [squadLoading, setSquadLoading] = useState(false)
   const [standingsData, setStandingsData] = useState<any[]>([])
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'statsbomb' | 'injuries' | 'staff'>('squad')
+  const [activeTab, setActiveTab] = useState<'squad' | 'fixtures' | 'results' | 'lumio-data-pro' | 'injuries' | 'staff'>('squad')
   const [injuryData, setInjuryData] = useState<any[]>([])
   const [injuryLoading, setInjuryLoading] = useState(false)
   const [showInjuredOnly, setShowInjuredOnly] = useState(false)
@@ -735,8 +735,8 @@ export function TeamsView() {
               )
             })()}
           </div>
-          <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'statsbomb', 'injuries', 'staff'] as const).map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'statsbomb' ? '\u{1F4CA} Lumio Data' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
+          <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'lumio-data-pro', 'injuries', 'staff'] as const).map(tab => (
+            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'lumio-data-pro' ? '\u{1F4CA} Lumio Data Pro' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <Spinner text="Loading..." />}
           {activeTab === 'squad' && !squadLoading && (
@@ -786,7 +786,7 @@ export function TeamsView() {
               {teamFixtures.filter((f: any) => activeTab === 'fixtures' ? f.fixture?.status?.short === 'NS' : f.fixture?.status?.short !== 'NS').length === 0 && <div className="p-8 text-center text-sm" style={{ color: C.muted }}>No data — connect API-Football key</div>}
             </div>
           )}
-          {activeTab === 'statsbomb' && <FootballDataPanel teamName={selectedTeam.team?.name || ''} />}
+          {activeTab === 'lumio-data-pro' && <FootballDataPanel teamName={selectedTeam.team?.name || ''} />}
 
           {activeTab === 'injuries' && !squadLoading && (
             <div className="space-y-4">

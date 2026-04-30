@@ -211,7 +211,7 @@ export const FOOTBALL_NAV_GROUPS: FbNavGroup[] = [
   ]},
   { g: 'Data & Leagues', items: [
     { id: 'opta',             label: 'Lumio Data',           icon: 'bars' },
-    { id: 'statsbomb',        label: 'Lumio Data',           icon: 'lightning' },
+    { id: 'lumio-data-pro',   label: 'Lumio Data Pro',       icon: 'lightning' },
     { id: 'teams',            label: 'Teams',                icon: 'people' },
     { id: 'leagues',          label: 'Leagues & Tables',     icon: 'trophy' },
     { id: 'fixtures-results', label: 'Fixtures & Results',   icon: 'calendar' },

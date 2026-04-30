@@ -250,26 +250,26 @@ export function GPSHardwareView() {
   )
 }
 
-// ─── OPTA / STATSBOMB VIEW ───────────────────────────────────────────────────
+// ─── OPTA / LUMIO DATA PRO EVENT-DATA VIEW ─────────────────────────────────
 export function FootballEventDataView() {
-  const [dataSource, setDataSource] = useState<'statsbomb' | 'opta'>('statsbomb')
+  const [dataSource, setDataSource] = useState<'lumio-data-pro' | 'opta'>('lumio-data-pro')
   const [sbConnected, setSbConnected] = useState(false)
   const [optaConnected, setOptaConnected] = useState(false)
   const sampleMetrics = [
     { metric: 'xG (Expected Goals)', desc: 'Probability of a shot resulting in a goal', provider: 'Both', use: 'Match dashboard, opposition analysis' },
     { metric: 'xA (Expected Assists)', desc: 'Probability that a pass leads to a goal', provider: 'Both', use: 'Player evaluation, recruitment' },
-    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'Lumio Data', use: 'Tactical analysis, press comparison' },
-    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'Lumio Data', use: 'Player comparison in transfers' },
+    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'Lumio Data Pro', use: 'Tactical analysis, press comparison' },
+    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'Lumio Data Pro', use: 'Player comparison in transfers' },
     { metric: 'Progressive passes/carries', desc: 'Actions advancing the ball toward goal', provider: 'Both', use: 'Midfielder evaluation' },
-    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'Lumio Data', use: 'Pre-match tactical briefing' },
+    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'Lumio Data Pro', use: 'Pre-match tactical briefing' },
   ]
   const providers = {
-    statsbomb: { name: 'Lumio Data', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
-    opta: { name: 'Lumio Data Pro', desc: 'The widest-coverage event data feed', cost: '£50,000–£200,000+/yr' },
+    'lumio-data-pro': { name: 'Lumio Data Pro', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
+    opta: { name: 'Lumio Data', desc: 'The widest-coverage event data feed', cost: '£50,000–£200,000+/yr' },
   }
   const current = providers[dataSource]
-  const connected = dataSource === 'statsbomb' ? sbConnected : optaConnected
-  const setConnected = dataSource === 'statsbomb' ? setSbConnected : setOptaConnected
+  const connected = dataSource === 'lumio-data-pro' ? sbConnected : optaConnected
+  const setConnected = dataSource === 'lumio-data-pro' ? setSbConnected : setOptaConnected
   const matchXG = [
     { opp: 'Stockport (A)', xgFor: 1.84, xgAg: 0.62, result: 'W 2-0' },
     { opp: 'Huddersfield (H)', xgFor: 0.91, xgAg: 1.42, result: 'L 0-1' },
@@ -282,7 +282,7 @@ export function FootballEventDataView() {
     <div className="space-y-6">
       <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📊</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Lumio Data Pro / Lumio Data Event Data</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Elite event data for tactical analytics — xG, xA, pressure, possession value.</p></div>
       <div className="grid grid-cols-2 gap-3">
-        {(['statsbomb', 'opta'] as const).map(p => (
+        {(['lumio-data-pro', 'opta'] as const).map(p => (
           <button key={p} onClick={() => setDataSource(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: dataSource === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${dataSource === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>
             <div className="font-semibold mb-1" style={{ color: C.text }}>{providers[p].name}</div>
             <div className="text-xs" style={{ color: C.muted }}>{providers[p].desc}</div>
