@@ -7264,7 +7264,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
           backgroundColor: C.sidebar,
           borderRight: `1px solid ${C.border}`,
           transition: 'width 250ms ease',
-          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
+          position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -7281,7 +7281,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
           )}
         </div>
 
-        <nav style={{flex:1,overflowY:'auto',padding:'14px 10px',display:'flex',flexDirection:'column',gap:10}}>
+        <nav style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',padding:'14px 10px',display:'flex',flexDirection:'column',gap:10}}>
           {SECTIONED_NAV.map((sec,si)=>{
             const filteredItems = roleConfig.sidebar === 'all' ? sec.items : sec.items.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
             if (filteredItems.length === 0) return null
@@ -7323,6 +7323,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
         </nav>
 
         {session && (
+          <div style={{ flexShrink: 0 }}>
           <RoleSwitcher
             session={liveSession ?? session}
             roles={CRICKET_ROLES}
@@ -7345,9 +7346,10 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
             }}
             sidebarCollapsed={!sidebarExpanded}
           />
+          </div>
         )}
 
-        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: C.border }}>
+        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: C.border, flexShrink: 0 }}>
           {sidebarExpanded
             ? <img src="/cricket_logo.png" alt="Lumio Cricket" style={{ maxHeight: 32, objectFit: 'contain' }} className="opacity-70 hover:opacity-100 transition-opacity" />
             : <span className="text-lg">🏏</span>}

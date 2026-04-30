@@ -446,7 +446,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: 
 
   return (
     <>
-      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 220 : 72, backgroundColor: BG, borderRight: `1px solid ${BORDER}`, position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 220 : 72, backgroundColor: BG, borderRight: `1px solid ${BORDER}`, position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: `1px solid ${BORDER}`, minHeight: 52 }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: tierColor, color: '#fff' }}>SR</div>
           {expanded && (<><div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: TEXT }}>Sunday Rovers FC</p><p className="text-[10px] truncate" style={{ color: TEXT_SEC }}>Grassroots Portal</p></div>

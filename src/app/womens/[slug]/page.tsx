@@ -26,9 +26,11 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
   medical: Cross, preseason: Calendar, settings: Settings,
+  'player-welfare': Heart, 'club-operations': Landmark,
 }
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -86,6 +88,8 @@ const SIDEBAR_ITEMS = [
   { id: 'cycle',        label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
   { id: 'maternity',    label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
   { id: 'mental',       label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
+  { id: 'player-welfare', label: 'Player Welfare Hub', icon: '🌍', group: 'WELFARE' },
+  { id: 'club-operations', label: 'Club Operations',   icon: '🏟️', group: 'OPERATIONS' },
   { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
@@ -5261,6 +5265,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'gps-heatmaps': return <WomensGPSHeatmapsView club={club} />
       case 'medical':     return <MedicalRecordsView />
       case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
+      case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'settings':    return <SettingsViewFull club={club} />
       default:            return null
     }
@@ -5337,7 +5343,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }}>
+      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
@@ -5362,7 +5368,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                   }`}>
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {!sidebarCollapsed && item.id === 'preseason' && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {!sidebarCollapsed && (item.id === 'preseason' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}

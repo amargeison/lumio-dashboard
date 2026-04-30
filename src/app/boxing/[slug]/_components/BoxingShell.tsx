@@ -47,7 +47,7 @@ export function BoxingSidebar({
         flexDirection: 'column',
         background: T.bg,
         overflow: 'hidden',
-        height: '100vh',
+        height: 'calc(100vh / 0.9)',
         position: 'sticky',
         top: 0,
         zIndex: 40,

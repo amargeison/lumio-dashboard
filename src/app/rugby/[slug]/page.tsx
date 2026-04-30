@@ -7548,7 +7548,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           backgroundColor: THEMES.dark.bg,
           borderRight: `1px solid ${THEMES.dark.border}`,
           transition: 'width 250ms ease',
-          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
+          position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', flexShrink: 0, zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           fontFamily: FONT,
         }}>

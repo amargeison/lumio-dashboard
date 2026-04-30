@@ -7570,7 +7570,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'width 250ms ease',
-          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
+          position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
