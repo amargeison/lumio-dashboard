@@ -556,9 +556,13 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
   return (
     <>
       {/* Desktop sidebar */}
+      {/* SIDEBAR/PADDING ALIGNMENT — values aligned to cricket reference
+          (cricket/[slug]/page.tsx). Same fonts and densities; horizontal
+          width parity needs identical sidebar width + main padding to
+          prevent "football looks bigger" perception. */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}
+        style={{ width: expanded ? 220 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -2029,7 +2033,13 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
       <div style={{ background: T.bg, color: T.text, fontFamily: V2_FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
         {/* Hero — match-day banner FIRST, persistent across tabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        {/* align-items: start prevents sibling cards from stretching the
+            hero. Without this, FOOTBALL_TODAY / TODAY differing in row
+            count drags the hero card to match the taller sibling, leaving
+            empty space below the buttons. Six prior banner-alignment
+            attempts failed because they targeted hero content instead of
+            grid alignment. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <FbHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
             onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
@@ -7340,7 +7350,11 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
         />
 
         <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
-          <main className="flex-1 p-4 sm:p-5">
+          {/* SIDEBAR/PADDING ALIGNMENT — values aligned to cricket reference
+              (cricket/[slug]/page.tsx). Same fonts and densities; horizontal
+              width parity needs identical sidebar width + main padding to
+              prevent "football looks bigger" perception. */}
+          <main className="flex-1" style={{ padding: '24px 28px' }}>
             {activeDept !== 'overview' && (
               <div className="flex items-center justify-between mb-4">
                 <div>

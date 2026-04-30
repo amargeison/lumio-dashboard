@@ -3852,8 +3852,14 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         `}</style>
 
       {/* Hero banner — match-day context, persistent across tabs */}
+      {/* align-items: start prevents sibling cards from stretching the
+          hero. Without this, FOOTBALL_TODAY / TODAY differing in row
+          count drags the hero card to match the taller sibling, leaving
+          empty space below the buttons. Six prior banner-alignment
+          attempts failed because they targeted hero content instead of
+          grid alignment. */}
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <HeroToday
             T={T} accent={accent} density={density} greeting={greeting}
             onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
