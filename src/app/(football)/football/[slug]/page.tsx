@@ -78,9 +78,9 @@ type DeptId =
   | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
   | 'preseason'
 
-type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
+type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools' | 'GPS & Load' | 'Leagues' | 'Integrations'
+type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'LEAGUES' | 'INTEGRATIONS'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -113,43 +113,43 @@ const BG_GRADIENTS = [
 ]
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
-  { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
-  { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
-  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
-  { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
-  { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
-  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
-  { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
-  { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
-  { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
-  { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'Departments' },
-  { id: 'analytics',   label: 'Analytics',      icon: BarChart3,      section: 'Departments' },
-  { id: 'dynamics',    label: 'Dynamics',       icon: Heart,          section: 'Departments' },
-  { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
-  { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
-  { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
-  { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
-  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'GPS & Load' },
-  { id: 'gps-heatmaps', label: 'Heatmaps',       icon: Flame,          section: 'GPS & Load' },
-  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'GPS & Load' },
-  { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
-  { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
-  { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
-  { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
-  { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
-  { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
-  { id: 'wyscout',     label: 'Lumio Scout / Video', icon: Video,    section: 'Integrations' },
-  { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
-  { id: 'opta',        label: 'Lumio Data',       icon: BarChart3,     section: 'Integrations' },
-  { id: 'teams',        label: 'Teams',          icon: Users,          section: 'Leagues' },
-  { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'Leagues' },
-  { id: 'fixtures-results', label: 'Fixtures & Results', icon: Calendar, section: 'Leagues' },
-  { id: 'pyramid',     label: 'All Leagues',    icon: BarChart3,      section: 'Leagues' },
-  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
-  { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
-  { id: 'statsbomb',   label: 'Lumio Data',     icon: Activity,       section: 'Leagues' },
-  { id: 'preseason',   label: 'Pre-Season',     icon: Calendar,       section: 'Tools' },
-  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+  { id: 'overview',    label: 'Dashboard',      icon: Home,           section: 'OVERVIEW' },
+  { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: 'OVERVIEW' },
+  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: 'BOARD' },
+  { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'BOARD' },
+  { id: 'facilities',  label: 'Stadium & Facilities', icon: MapPin,   section: 'BOARD' },
+  { id: 'matchday',    label: 'Match Centre',   icon: Trophy,         section: 'PERFORMANCE' },
+  { id: 'wyscout',     label: 'Video Analysis', icon: Video,          section: 'PERFORMANCE' },
+  { id: 'analytics',   label: 'Performance Stats', icon: BarChart3,   section: 'PERFORMANCE' },
+  { id: 'set-pieces',  label: 'Set Piece Analysis', icon: Target,     section: 'PERFORMANCE' },
+  { id: 'scouting',    label: 'Opposition Scout', icon: Eye,          section: 'PERFORMANCE' },
+  { id: 'squad',       label: 'Squad Manager',  icon: Shirt,          section: 'FIRST TEAM' },
+  { id: 'squad-planner', label: 'Team Selection', icon: Clipboard,    section: 'FIRST TEAM' },
+  { id: 'tactics',     label: 'Formation Builder', icon: Clipboard,   section: 'FIRST TEAM' },
+  { id: 'training',    label: 'Training Planner', icon: Activity,     section: 'FIRST TEAM' },
+  { id: 'preseason',   label: 'Pre-Season',     icon: Calendar,       section: 'FIRST TEAM' },
+  { id: 'staff',       label: 'Staff',          icon: Users,          section: 'FIRST TEAM' },
+  { id: 'medical',     label: 'Medical Hub',    icon: Heart,          section: 'MEDICAL' },
+  { id: 'dynamics',    label: 'Mental Performance', icon: Heart,      section: 'MEDICAL' },
+  { id: 'performance', label: 'GPS Tracking',   icon: Activity,       section: 'GPS & LOAD' },
+  { id: 'gps-heatmaps', label: 'Heatmaps',      icon: Flame,          section: 'GPS & LOAD' },
+  { id: 'gps-hardware', label: 'GPS Hardware',  icon: Activity,       section: 'GPS & LOAD' },
+  { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'RECRUITMENT' },
+  { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'RECRUITMENT' },
+  { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'COMMERCIAL' },
+  { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'psr',         label: 'PSR',            icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'teams',        label: 'Teams',         icon: Users,          section: 'LEAGUES' },
+  { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'LEAGUES' },
+  { id: 'fixtures-results', label: 'Fixtures & Results', icon: Calendar, section: 'LEAGUES' },
+  { id: 'pyramid',     label: 'All Leagues',    icon: BarChart3,      section: 'LEAGUES' },
+  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'LEAGUES' },
+  { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'LEAGUES' },
+  { id: 'scouting-db', label: 'Scouting Database', icon: Search,      section: 'INTEGRATIONS' },
+  { id: 'opta',        label: 'Lumio Data',     icon: BarChart3,      section: 'INTEGRATIONS' },
+  { id: 'statsbomb',   label: 'Lumio StatsBomb', icon: Activity,      section: 'INTEGRATIONS' },
+  { id: 'settings',    label: 'Settings',       icon: Settings,       section: null },
 ]
 
 const FOOTBALL_ROLE_OPTIONS = [
@@ -521,14 +521,20 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const DARK = '#002D7A'
   const SECONDARY = '#F1C40F'
 
-  // group items by section
+  // group items by section — granular grouping matches Women's FC pattern
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
+    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW') },
+    { label: 'BOARD', items: SIDEBAR_ITEMS.filter(i => i.section === 'BOARD') },
+    { label: 'PERFORMANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'PERFORMANCE') },
+    { label: 'FIRST TEAM', items: SIDEBAR_ITEMS.filter(i => i.section === 'FIRST TEAM') },
+    { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL') },
+    { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD') },
+    { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT') },
+    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL') },
+    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE') },
+    { label: 'LEAGUES', items: SIDEBAR_ITEMS.filter(i => i.section === 'LEAGUES') },
+    { label: 'INTEGRATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'INTEGRATIONS') },
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
-    { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
-    { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
-    { label: 'GPS & Load', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & Load') },
-    { label: 'Leagues', items: SIDEBAR_ITEMS.filter(i => i.section === 'Leagues') },
-    { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
   ]
 
   return (
@@ -748,12 +754,26 @@ function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
 // ─── Tab Bar ─────────────────────────────────────────────────────────────────
 
 const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
   { id: 'today', label: 'Today', icon: '🏠' },
   { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
   { id: 'match-week', label: 'Match Week', icon: '⚽' },
   { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'dont-miss', label: "Don't Miss", icon: '🔴' },
   { id: 'staff', label: 'Staff', icon: '👥' },
+]
+
+const FB_ONBOARDING_ITEMS = [
+  'Connect your club profile',
+  'Upload squad & staff data (25 players)',
+  'Set up Board Suite (directors, reporting schedule)',
+  'Configure team formation (4-3-3 default)',
+  'Add upcoming fixtures',
+  'Connect GPS tracking (Johan Sports)',
+  'Set up scouting pipeline',
+  'Configure medical records',
+  'Upload sponsor agreements',
+  'Invite coaching staff',
 ]
 
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
@@ -1346,10 +1366,46 @@ function TeamInfoTab() {
 
 function TabContent({ tab }: { tab: OverviewTab }) {
   const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'|'teaminfo'>('today')
+  const [onboarding, setOnboarding] = useState<boolean[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_onboarding') : null; return s ? JSON.parse(s) : Array(10).fill(false) } catch { return Array(10).fill(false) }
+  })
+  const toggleOnboarding = (idx: number) => {
+    const next = [...onboarding]; next[idx] = !next[idx]; setOnboarding(next)
+    try { localStorage.setItem('lumio_football_onboarding', JSON.stringify(next)); if (next.every(Boolean)) localStorage.setItem('football_getting_started_seen', '1') } catch {}
+  }
   if (tab === 'today') return null // handled separately
 
+  if (tab === 'getting-started') return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">🚀</span>
+        <div>
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Getting Started</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Complete these 10 steps to set up your club</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {FB_ONBOARDING_ITEMS.map((item, idx) => (
+          <button key={idx} onClick={() => toggleOnboarding(idx)}
+            className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+            style={{ backgroundColor: onboarding[idx] ? '#111318' : '#0D1117', border: onboarding[idx] ? '1px solid #22C55E30' : '1px solid #1F2937' }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: onboarding[idx] ? '#22C55E20' : '#1F2937', border: onboarding[idx] ? '1px solid #22C55E50' : '1px solid #374151' }}>
+              {onboarding[idx] ? <span className="text-green-400 text-xs">✓</span> : <span className="text-gray-500 text-xs">{idx + 1}</span>}
+            </div>
+            <span className={`text-xs ${onboarding[idx] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{item}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 p-3 rounded-xl text-xs" style={{ backgroundColor: '#003DA515', border: '1px solid #003DA530' }}>
+        <span style={{ color: '#F1C40F' }} className="font-semibold">{onboarding.filter(Boolean).length}/10 complete</span>
+        <span className="text-gray-500 ml-2">— {onboarding.every(Boolean) ? 'All done! Switch to Today tab.' : 'Keep going, you\'re doing great!'}</span>
+      </div>
+    </div>
+  )
+
   if (tab === 'quick-wins') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
@@ -1395,7 +1451,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'match-week') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📅 Match Week</h2>
@@ -1468,7 +1524,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'dont-miss') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
@@ -1928,7 +1984,9 @@ function FootballMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEME
 }
 
 function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
-  const [tab, setTab] = useState<OverviewTab>('today')
+  const [tab, setTab] = useState<OverviewTab>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('football_getting_started_seen') : null; return seen ? 'today' : 'getting-started' } catch { return 'today' }
+  })
   const T       = THEMES.dark
   const accent  = FOOTBALL_ACCENT
   const density = DENSITY.regular
@@ -1943,6 +2001,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
   useV2Key('cmdk', () => setCmdOpen(o => !o))
 
   const tabIcon = (id: OverviewTab): string => ({
+    'getting-started': 'sparkles',
     today: 'home',
     'quick-wins': 'lightning',
     'match-week': 'flag',

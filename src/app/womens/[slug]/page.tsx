@@ -4,7 +4,29 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
-import { ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2, Target, Zap, Calendar, FileText, DollarSign, Award } from 'lucide-react'
+import {
+  ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2,
+  Target, Zap, Calendar, FileText, DollarSign, Award,
+  Home, Sunrise, BarChart3, Activity, Flower2, Baby, Brain,
+  RefreshCw, CircleDot, ArrowLeftRight, TrendingDown, Telescope,
+  GraduationCap, Bot, Handshake, Construction, Landmark,
+  Smartphone, Share2, HeartHandshake, ClipboardList, Radio, Flame,
+  Cross, Settings, type LucideIcon,
+} from 'lucide-react'
+
+// ─── SIDEBAR ICON MAP — Lucide icons keyed by nav item id ─────────────────────
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  dashboard: Home, briefing: Sunrise, insights: BarChart3,
+  fsr: BarChart2, salary: DollarSign, revenue: TrendingUp,
+  welfare: Heart, acl: Activity, cycle: Flower2, maternity: Baby, mental: Brain,
+  squad: Users, dualreg: RefreshCw, tactics: Target, match: CircleDot,
+  transfers: ArrowLeftRight, analytics: TrendingDown, scouting: Telescope,
+  academy: GraduationCap, halftime: Bot,
+  sponsorship: Handshake, standalone: Construction, board: Landmark,
+  financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
+  team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
+  medical: Cross, preseason: Calendar, settings: Settings,
+}
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
@@ -5331,16 +5353,19 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             return (
             <div key={group}>
               {!sidebarCollapsed && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
-              {items.map((item: { id: string; label: string; icon: string }) => (
+              {items.map((item: { id: string; label: string; icon: string }) => {
+                const NavIcon = NAV_ICON_MAP[item.id] ?? CircleDot
+                return (
                 <button key={item.id} onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center gap-2.5 px-4 py-2 text-xs transition-all ${
                     activeSection === item.id ? 'bg-pink-600/10 text-pink-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}>
-                  <span className="text-sm">{item.icon}</span>
+                  <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
                   {!sidebarCollapsed && item.id === 'preseason' && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
-              ))}
+                )
+              })}
             </div>
             )
           })}

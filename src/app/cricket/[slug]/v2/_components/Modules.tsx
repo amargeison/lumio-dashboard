@@ -73,7 +73,7 @@ export function HeroToday({
   }, [])
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: density.pad + 8 }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="ptn-hero" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -112,11 +112,11 @@ export function HeroToday({
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO FIRST BALL</div>
         </div>
       </div>
-      <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+      <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <button
           onClick={() => { setConfirmed(true); onConfirm?.() }}
           style={{
-            appearance: 'none', border: 0, padding: '10px 16px', borderRadius: 9,
+            appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
             background: confirmed ? T.good : accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
             transition: 'background .15s, transform .1s',
@@ -125,7 +125,7 @@ export function HeroToday({
         </button>
         <button
           onClick={onMatchBrief}
-          style={{ appearance: 'none', padding: '10px 14px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
+          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
         >
@@ -133,7 +133,7 @@ export function HeroToday({
         </button>
         <button
           onClick={onAsk}
-          style={{ appearance: 'none', padding: '10px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
+          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text2 }}>
           <Icon name="sparkles" size={14} stroke={1.6} /> Ask Lumio
