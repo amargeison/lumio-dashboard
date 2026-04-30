@@ -32,11 +32,11 @@ const SPORTS: SportPricing[] = [
     subtitle: 'Pro Club · National League System',
     desc: 'Built for clubs from National League to League Two and beyond.',
     tiers: [
-      { name: 'Starter', price: '£299', period: '/mo', bestFor: 'Step 3-4 clubs, part-time professional squads', features: ['Club dashboard and AI morning briefing', 'Squad management — register, availability, form', 'GPS performance (Lumio GPS)', 'Fixture calendar and match day centre', 'Basic financial dashboard', 'Up to 3 board user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'Starter', price: '£299', period: '/mo', bestFor: 'Step 3-4 clubs, part-time professional squads', features: ['Club dashboard and AI morning briefing', 'Squad management — register, availability, form', 'GPS performance (Johan Sports)', 'Fixture calendar and match day centre', 'Basic financial dashboard', 'Up to 3 board user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Pro Club', price: '£799', period: '/mo', bestFor: 'National League, League Two and League One clubs', recommended: true, features: ['All Starter features, plus:', 'Full PSR/FSR compliance — live headroom', 'FIFA-style pitch view with set pieces (90+ routines)', 'Transfer pipeline and agent contacts', 'Full Board Suite — chairman, DoF, commercial views', 'Scouting reports and opposition analysis', 'AI team selection and tactical briefings', 'Unlimited user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Elite', price: '£1,800', period: '/mo', bestFor: 'League One, Championship and full professional clubs', features: ['All Pro Club features, plus:', 'Advanced PSR modelling and multi-season projections', 'Full commercial pipeline and partner activation', 'Custom board reporting and investor narrative', 'Priority account manager and quarterly review', 'White-label option for multi-club groups', 'API access for custom integrations'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
-    included: ['Lumio GPS integration', 'AI morning briefing — voice and text', 'FA compliance calendar and deadline alerts', 'Demo pre-seeded with Oakridge FC data', '14-day free trial on Starter and Pro Club', 'UK data hosting · GDPR compliant'],
+    included: ['Johan Sports integration', 'AI morning briefing — voice and text', 'FA compliance calendar and deadline alerts', 'Demo pre-seeded with Oakridge FC data', '14-day free trial on Starter and Pro Club', 'UK data hosting · GDPR compliant'],
   },
   {
     id: 'nonleague', icon: '🏟️', label: 'Non-League', color: '#F59E0B',
@@ -45,7 +45,7 @@ const SPORTS: SportPricing[] = [
     tiers: [
       { name: 'Essential', price: '£99', period: '/mo', bestFor: 'Steps 6-7, volunteer-run clubs', features: ['Club dashboard and AI briefing', 'Squad register and availability tracker', 'Fixture calendar and match results', 'FA compliance calendar', 'Basic financial dashboard'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
       { name: 'Club Pro', price: '£299', period: '/mo', bestFor: 'Steps 3-5 — NPL, Isthmian, Southern League', recommended: true, features: ['All Essential features, plus:', 'Player contract and wage bill tracker', 'FA Ground Grading compliance tracker', 'Whole Game System registration management', 'Sponsor pipeline — up to 20 active deals', 'Match day revenue per fixture', 'Board portal — chairman, treasurer, secretary', 'AI morning briefing with voice commands'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'League', price: '£499', period: '/mo', bestFor: 'National League North/South and ambitious Step 3', features: ['All Club Pro features, plus:', 'Scouting module and opposition analysis', 'Full commercial pipeline with activation', 'Lumio GPS integration', 'Dedicated account manager', 'FA Ground Grading gap analysis'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+      { name: 'League', price: '£499', period: '/mo', bestFor: 'National League North/South and ambitious Step 3', features: ['All Club Pro features, plus:', 'Scouting module and opposition analysis', 'Full commercial pipeline with activation', 'Johan Sports integration', 'Dedicated account manager', 'FA Ground Grading gap analysis'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Demo pre-seeded with Harfield FC data', 'FA compliance for your step level', 'UK data hosting · GDPR compliant', 'No per-player or per-user pricing'],
   },

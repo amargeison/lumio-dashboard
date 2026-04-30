@@ -48,7 +48,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 const INTEGRATIONS = [
   { icon: '💗', name: 'Lumio Health', desc: 'Player welfare and GPS monitoring' },
   { icon: '📡', name: 'The FA', desc: 'Registration and FSR compliance reporting' },
-  { icon: '🏃', name: 'Lumio GPS', desc: 'Player load and injury prevention' },
+  { icon: '🏃', name: 'Johan Sports', desc: 'Player load and injury prevention' },
   { icon: '⚽', name: 'Lumio Data', desc: 'Match data and analytics' },
   { icon: '📹', name: 'Lumio Scout', desc: 'Video and scouting' },
   { icon: '🩺', name: 'PFA', desc: 'Player welfare referral pathway' },
