@@ -32,6 +32,7 @@ import CommercialView from '@/components/football/CommercialView'
 import CommunityView from '@/components/football/CommunityView'
 import ToursAndCampsView from '@/components/football/ToursAndCampsView'
 import DiscoverView from '@/components/football/DiscoverView'
+import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 // ─── Football v2 dashboard imports ────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -750,33 +751,6 @@ function PersonalBanner({ clubName, firstName, onNavigate, isDemo = false, clubL
         </div>
       </div>
     </>
-  )
-}
-
-// ─── Quick Actions Bar ──────────────────────────────────────────────────────
-
-const FOOTBALL_QUICK_ACTIONS = [
-  { label: 'Team Sheet', icon: Clipboard },
-  { label: 'Log Injury', icon: Heart },
-  { label: 'Transfer Hub', icon: ArrowUpDown },
-  { label: 'Book Video Room', icon: Video },
-  { label: 'Press Conf', icon: Newspaper },
-  { label: 'Training Plan', icon: Activity },
-  { label: 'Scout Report', icon: Eye },
-  { label: 'Board Report', icon: Briefcase },
-]
-
-function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto football-quickactions-hide-scroll" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-      <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-      {FOOTBALL_QUICK_ACTIONS.map(a => (
-        <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-          style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
-          <a.icon size={12} />{a.label}
-        </button>
-      ))}
-    </div>
   )
 }
 
@@ -2012,7 +1986,7 @@ function FootballMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEME
   )
 }
 
-function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
+function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo', onModal, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; role?: string; onModal?: (modalId: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
   const [tab, setTab] = useState<OverviewTab>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('football_getting_started_seen') : null; return seen ? 'today' : 'getting-started' } catch { return 'today' }
   })
@@ -2088,24 +2062,15 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = fals
           })}
         </div>
 
-        {/* Quick Actions — rectangular desaturated buttons (matches rugby v2). */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {FOOTBALL_QUICK_ACTIONS.map(a => (
-            <button key={a.label} onClick={() => onAction(a.label)}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-              style={{
-                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', borderRadius: 8,
-                background: 'transparent', border: '1px solid #2d3139',
-                color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
-                transition: 'border-color .12s, color .12s',
-              }}>
-              <a.icon size={13} />
-              <span>{a.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
+        <RoleAwareQuickActionsBar
+          sport="football"
+          role={role}
+          onNavigate={(dept) => { if (onNavigate) onNavigate(dept); else onAction(dept) }}
+          onAction={(modalId) => { if (onModal) onModal(modalId); else onAction(modalId) }}
+          accentHex={accent.hex}
+        />
+
 
         {/* TAB CONTENT — Today renders v2 grid; others fall through to v1 TabContent */}
         {tab === 'today' ? (
@@ -7183,6 +7148,7 @@ const FOOTBALL_ROLES = [
   { id: 'head_medical',       label: 'Head of Medical',           icon: '🏥' },
   { id: 'analyst',            label: 'Analyst / Head of Data',    icon: '📊' },
   { id: 'commercial',         label: 'Commercial Director',       icon: '💼' },
+  { id: 'head_operations',    label: 'Head of Operations',        icon: '🧰' },
   { id: 'head_community',     label: 'Head of Community',         icon: '❤️' },
 ]
 
@@ -7195,6 +7161,7 @@ const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent
   head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
   analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','lumio-vision','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
   commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
   head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
 }
 
@@ -7431,7 +7398,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {isFootballDemo && activeDept === 'squad' && <SquadView />}

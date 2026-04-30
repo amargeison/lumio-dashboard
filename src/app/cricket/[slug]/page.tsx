@@ -7,7 +7,7 @@ import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import SportsSettings from '@/components/sports/SportsSettings'
-import QuickActionModal, { type QuickActionSpec } from '@/components/cricket/QuickActionModal'
+import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { Volume2 } from 'lucide-react'
 import { CANNED } from '@/lib/ai/canned-demo-responses'
 import { GPSHeatmapsView } from './v2/_components/GPSHeatmapsView'
@@ -3639,204 +3639,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
   const [taskChecked, setTaskChecked] = useState<Record<string, boolean>>({ 't-briefing': true })
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'>('today')
-  const [activeQuickAction, setActiveQuickAction] = useState<QuickActionSpec | null>(null)
 
-  // ── 16 Quick Actions — 7 AI-live + 9 form-based ─────────────────────
-  // AI-live buttons fire real LLM calls server-side; context is seeded
-  // from current state (squad, fixtures, pitch) before the modal opens
-  // so the prompt has something specific to chew on.
-  const QUICK_ACTIONS: QuickActionSpec[] = [
-    // ─── AI-LIVE ──────────────────────────────────────────────────────
-    {
-      kind:'ai', id:'team-selection', icon:'👥', color:C.purple,
-      title:'Team Selection AI',
-      description:'Optimal XI for the next fixture',
-      ai: {
-        type:'team-selection',
-        fields: [
-          { kind:'select', id:'format', label:'Format', options:['Championship','T20 Blast','One Day Cup','The Hundred'], defaultValue:'Championship' },
-          { kind:'text',   id:'opposition', label:'Opposition', defaultValue:'Lancashire' },
-          { kind:'textarea', id:'fitSquad', label:'Fit squad notes', defaultValue:'Top order solid, Harrison RTP phase 3, Dawson workload capped', rows:2 },
-        ],
-        context: { venue:'Oakridge Park (home)', date:'Friday', workloadFlags:'Dawson A:C 1.62 — red' },
-      },
-    },
-    {
-      kind:'ai', id:'toss-advisor', icon:'🌤️', color:C.teal,
-      title:'Toss Advisor',
-      description:'Bat or bowl, with a one-data-point justification',
-      ai: {
-        type:'toss-advisor',
-        fields: [
-          { kind:'text',   id:'ground',     label:'Ground',     defaultValue:'Oakridge Park' },
-          { kind:'select', id:'weather',    label:'Weather',    options:['Sunny','Overcast','Rain risk','Hot & dry'], defaultValue:'Overcast' },
-          { kind:'select', id:'pitch',      label:'Pitch look', options:['Green and grassy','Dry and brown','Normal','Damp'], defaultValue:'Green and grassy' },
-          { kind:'select', id:'oppBatting', label:'Opposition batting', options:['Strong top order','Balanced','Tail-heavy'], defaultValue:'Strong top order' },
-        ],
-        context: { format:'County Championship', squadForm:'Top order averaging 42.1 last 5 matches' },
-      },
-    },
-    {
-      kind:'ai', id:'sponsor-post', icon:'📱', color:C.amber,
-      title:'Sponsor Post AI',
-      description:'Match-day social post meeting the sponsor brief',
-      ai: {
-        type:'sponsor-post',
-        fields: [
-          { kind:'text',   id:'sponsor',     label:'Sponsor',         defaultValue:'Crownmark Cricket' },
-          { kind:'text',   id:'sponsorTier', label:'Tier',            defaultValue:'Official kit partner' },
-          { kind:'text',   id:'obligation',  label:'Obligation',      defaultValue:'Matchday bat photo post' },
-          { kind:'text',   id:'player',      label:'Featured player', defaultValue:'Harry Fairweather' },
-          { kind:'select', id:'tone',        label:'Tone',            options:['Confident, match-day energy','Thoughtful, reflective','Fun, community-first'], defaultValue:'Confident, match-day energy' },
-        ],
-        context: { match:'vs Lancashire, Friday, Oakridge Park' },
-      },
-    },
-    {
-      kind:'ai', id:'press-statement', icon:'🗞️', color:C.red,
-      title:'Press Statement AI',
-      description:'Short on-the-record statement from the director',
-      ai: {
-        type:'press-statement',
-        fields: [
-          { kind:'text',     id:'topic', label:'Topic',     defaultValue:'Contract renewal — Harry Fairweather' },
-          { kind:'textarea', id:'facts', label:'Key facts', defaultValue:'3-year extension, central + county combined, through 2029', rows:3 },
-          { kind:'select',   id:'tone',  label:'Tone',      options:['Measured confidence','Celebratory','Neutral factual','Firm / corrective'], defaultValue:'Measured confidence' },
-        ],
-        context: { audience:'national cricket press' },
-      },
-    },
-    {
-      kind:'ai', id:'agent-brief', icon:'🤝', color:C.purple,
-      title:'Agent Brief AI',
-      description:'Concise negotiation-ready brief for an agent',
-      ai: {
-        type:'agent-brief',
-        fields: [
-          { kind:'text',   id:'player',   label:'Player',    defaultValue:'Harry Fairweather' },
-          { kind:'text',   id:'agent',    label:'Agency',    defaultValue:'Oakridge Sports' },
-          { kind:'select', id:'purpose',  label:'Purpose',   options:['Open extension talks','Initial offer','Counter-offer','Declaring interest','Final position'], defaultValue:'Open extension talks' },
-          { kind:'textarea', id:'offer',  label:'Offer',     defaultValue:'£135k/yr, 2 years, county + Hundred release window', rows:2 },
-          { kind:'text',   id:'timeline', label:'Timeline',  defaultValue:'Respond before 30 Apr' },
-        ],
-      },
-    },
-    {
-      kind:'ai', id:'match-prep', icon:'🎯', color:C.teal,
-      title:'Match Prep AI',
-      description:'Tactical brief vs the next opposition — 4-6 bullets',
-      ai: {
-        type:'match-prep',
-        fields: [
-          { kind:'select', id:'format',        label:'Format',        options:['County Championship','T20 Blast','One Day Cup','The Hundred'], defaultValue:'County Championship' },
-          { kind:'text',   id:'opposition',    label:'Opposition',    defaultValue:'Lancashire' },
-          { kind:'textarea', id:'oppTopOrder',  label:'Opp top order', defaultValue:'Sinclair, Kellett, Ravenhill', rows:1 },
-          { kind:'textarea', id:'oppWeaknesses',label:'Their weaknesses', defaultValue:'Sinclair avg 17 vs nip-backer, Kellett struggles vs LAS', rows:2 },
-        ],
-        context: { venue:'Oakridge Park (home)', date:'Friday 10:30', ourAttack:'Ridley, Fenwick (seam), Kent (LAS), Merriman (OS)', pitch:'seam-friendly first two sessions, softens after tea' },
-      },
-    },
-    {
-      kind:'ai', id:'innings-brief', icon:'🧠', color:C.amber,
-      title:'Innings Brief AI',
-      description:'Mid-match tactical brief for the next session',
-      ai: {
-        type:'innings-brief',
-        fields: [
-          { kind:'text',   id:'score',        label:'Current score',         defaultValue:'247/8 after 65 overs' },
-          { kind:'number', id:'day',          label:'Match day',             defaultValue:'1' },
-          { kind:'textarea', id:'partnerships',label:'Recent partnerships',  defaultValue:'Webb-Shaw 83 in 20 overs, Cole-Hill 51 in 12', rows:2 },
-          { kind:'text',   id:'projected',    label:'Projected total',       defaultValue:'342 @ current rate' },
-        ],
-        context: { pitch:'softening, seam movement reducing after tea', leakyBowlers:'Singh (leg-spin) 58 off 12' },
-      },
-    },
-
-    // ─── FORM-BASED (local only) ──────────────────────────────────────
-    {
-      kind:'form', id:'send-message', icon:'💬', color:'#0ea5e9',
-      title:'Send Message',
-      description:'Ping a staff member or channel',
-      submitLabel:'Send',
-      fields: [
-        { kind:'select',   id:'to',      label:'To',      options:['Head Coach','Captain','Medical','Analytics','Operations','Director','Squad group','Senior players'], defaultValue:'Head Coach' },
-        { kind:'select',   id:'channel', label:'Channel', options:['SMS','WhatsApp','Slack','Email'], defaultValue:'WhatsApp' },
-        { kind:'textarea', id:'body',    label:'Message', placeholder:'Type your message…', rows:4 },
-      ],
-    },
-    {
-      kind:'form', id:'book-nets', icon:'🏏', color:C.teal,
-      title:'Book Net Session',
-      description:'Reserve a net + schedule coaches',
-      submitLabel:'Book',
-      fields: [
-        { kind:'select', id:'net',      label:'Net',         options:['Indoor 1','Indoor 2','Indoor 3','Outdoor A','Outdoor B'], defaultValue:'Indoor 1' },
-        { kind:'text',   id:'date',     label:'Date',        defaultValue:'Thu 10 Apr' },
-        { kind:'text',   id:'time',     label:'Time',        defaultValue:'10:30 – 12:00' },
-        { kind:'text',   id:'attendees',label:'Attendees',   defaultValue:'First XI batters + spinners' },
-      ],
-    },
-    {
-      kind:'form', id:'log-injury', icon:'🏥', color:C.red,
-      title:'Log Injury',
-      description:'Medical record + RTP start',
-      submitLabel:'Log',
-      fields: [
-        { kind:'text',     id:'player',    label:'Player',    placeholder:'e.g. Jake Harrison' },
-        { kind:'select',   id:'severity',  label:'Severity',  options:['Monitoring','Grade 1','Grade 2','Grade 3'], defaultValue:'Grade 1' },
-        { kind:'text',     id:'area',      label:'Area',      placeholder:'e.g. L hamstring' },
-        { kind:'text',     id:'eta',       label:'Expected RTP', placeholder:'e.g. 10 days' },
-        { kind:'textarea', id:'notes',     label:'Notes',     rows:3 },
-      ],
-    },
-    {
-      kind:'form', id:'log-workload', icon:'🦾', color:C.amber,
-      title:'Log Workload',
-      description:'Bowling load entry (overs + intensity)',
-      submitLabel:'Log',
-      fields: [
-        { kind:'text',   id:'player',    label:'Bowler',       placeholder:'e.g. Chris Dawson' },
-        { kind:'number', id:'overs',     label:'Overs bowled', defaultValue:'6' },
-        { kind:'number', id:'deliveries',label:'High-intensity deliveries', defaultValue:'36' },
-        { kind:'select', id:'session',   label:'Session',      options:['Match','Nets','Gym','Recovery'], defaultValue:'Nets' },
-      ],
-    },
-    {
-      kind:'form', id:'add-expense', icon:'💰', color:C.green,
-      title:'Add Expense',
-      description:'Team expense line against the budget',
-      submitLabel:'Save',
-      fields: [
-        { kind:'text',   id:'desc',     label:'Description', placeholder:'Team dinner — Manchester' },
-        { kind:'number', id:'amount',   label:'Amount (£)',  placeholder:'420' },
-        { kind:'select', id:'category', label:'Category',    options:['Travel','Accommodation','Meals','Kit','Medical','Analyst','Other'], defaultValue:'Travel' },
-        { kind:'text',   id:'date',     label:'Date',        defaultValue:'Today' },
-      ],
-    },
-    {
-      kind:'form', id:'match-notes', icon:'📋', color:C.purple,
-      title:'Match Notes',
-      description:'Quick notes for the match report',
-      submitLabel:'Save',
-      fields: [
-        { kind:'text',     id:'fixture',label:'Fixture', defaultValue:'vs Lancashire · Fri 11 Apr' },
-        { kind:'textarea', id:'notes',  label:'Notes',   rows:6, placeholder:'Key partnerships, bowling spells, field decisions…' },
-      ],
-    },
-    {
-      kind:'form', id:'pitch-report', icon:'🌱', color:C.green,
-      title:'Pitch Report',
-      description:'Groundsman pitch assessment entry',
-      submitLabel:'Save',
-      fields: [
-        { kind:'text',   id:'strip',      label:'Strip',       defaultValue:'Oakridge Park — Main strip' },
-        { kind:'select', id:'condition',  label:'Condition',   options:['Hard & dry','Firm','Green','Damp','Soft / wet'], defaultValue:'Firm' },
-        { kind:'select', id:'bounce',     label:'Bounce',      options:['Low','Medium','High'], defaultValue:'Medium' },
-        { kind:'select', id:'expectedMovement', label:'Expected movement', options:['Seam-friendly','Balanced','Flat','Turning'], defaultValue:'Seam-friendly' },
-        { kind:'textarea', id:'notes',    label:'Notes',       rows:3 },
-      ],
-    },
-  ]
 
   // Live weather — same source as football pro's banner. Condition → emoji
   // map so we can drop the hardcoded ⛅ and still get a sensible glyph for
@@ -4096,31 +3899,16 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         })}
       </div>
 
-      {/* Quick Actions — rectangular desaturated buttons (matches rugby v2). */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: density.gap }}>
-        {QUICK_ACTIONS.map(a => {
-          const isAI = a.kind === 'ai'
-          return (
-            <button key={a.id} onClick={() => setActiveQuickAction(a)}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-              style={{
-                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', borderRadius: 8,
-                background: 'transparent', border: '1px solid #2d3139',
-                color: '#9CA3AF', fontSize: 12, fontFamily: FONT, cursor: 'pointer',
-                transition: 'border-color .12s, color .12s',
-              }}>
-              <span style={{ fontSize: 13 }}>{a.icon}</span>
-              <span>{a.title}</span>
-              {isAI && (
-                <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>
-              )}
-            </button>
-          )
-        })}
+      {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
+      <div style={{ marginBottom: density.gap }}>
+        <RoleAwareQuickActionsBar
+          sport="cricket"
+          role={currentRole as string}
+          onNavigate={(dept) => setPage(dept)}
+          onAction={(modalId) => showDashToast(`${modalId} — coming soon`)}
+          accentHex={accent.hex}
+        />
       </div>
-      <QuickActionModal spec={activeQuickAction} onClose={() => setActiveQuickAction(null)} />
 
       {/* TODAY — v2 modular grid (hero rendered above tabs) */}
       {dashTab === 'today' && (
