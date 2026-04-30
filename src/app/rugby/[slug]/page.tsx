@@ -7538,7 +7538,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   };
 
   return (
-    <div className="min-h-screen" style={{background:'#07080F',color:'#F9FAFB',zoom:0.9}}>
+    <div className="min-h-screen flex" style={{background:'#07080F',color:'#F9FAFB',zoom:0.9}}>
       {/* Floating/Pinned Sidebar — v2 style */}
       <aside
         onMouseEnter={handleSidebarEnter}
