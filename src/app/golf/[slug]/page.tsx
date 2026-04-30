@@ -1157,61 +1157,6 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 
   return (
     <div className="space-y-6">
-      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #052e16 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(21,128,61,0.2)' }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">Good morning, {firstName} ⛳</h1>
-              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Golf will read your morning headlines, round schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'} className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? 'rgba(21,128,61,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(21,128,61,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#4ade80' : '#9CA3AF' }}>
-                <Volume2 size={15} strokeWidth={1.75} />
-              </button>
-            </div>
-            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs italic" style={{ color: '#facc15' }}>
-              &ldquo;{getDailyQuote(GOLF_QUOTES).text}&rdquo; &mdash; {getDailyQuote(GOLF_QUOTES).author}
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {[
-              { icon:'📊', value: isDemoShellDash ? `#${player.owgr}` : '—', label:'OWGR', color:'#15803D' },
-              { icon:'🏆', value: isDemoShellDash ? `#${player.race_to_dubai_pos}` : '—', label:'Race', color:'#0D9488' },
-              { icon:'💰', value: isDemoShellDash ? '£367k' : '—', label:'Earnings', color:'#F59E0B' },
-              { icon:'🎯', value: isDemoShellDash ? '70.2' : '—', label:'Scoring', color:'#8B5CF6' },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
-                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
-                <span className="text-base">{s.icon}</span>
-                <span className="text-lg font-black text-white">{s.value}</span>
-                <span className="text-xs opacity-70">{s.label}</span>
-              </div>
-            ))}
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
-              <span className="text-base">🌤️</span>
-              <span className="text-lg font-black text-white">22°C</span>
-              <span className="text-xs opacity-70">Munich</span>
-            </div>
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Ashbourne', tz:'America/New_York', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
-                  <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#facc15' : '#e2e8f0' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Tab Bar */}
       <div className="flex items-center gap-0 border-b border-gray-800/50" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
@@ -1236,31 +1181,39 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar (Today only) */}
+      {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
       {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
-            { id:'sendmessage', label:'Send Message', icon:'📨', color:'#15803D', hot:false },
-            { id:'flight', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
-            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
-            { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
-            { id:'loground', label:'Log Round', icon:'📋', color:'#15803D', hot:false },
-            { id:'lumiorange', label:'Lumio Range Session', icon:'📡', color:'#0ea5e9', hot:true },
-            { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', color:'#F59E0B', hot:true },
-            { id:'sponsorpost', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
-            { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#0ea5e9', hot:true },
-            { id:'injury', label:'Log Injury', icon:'💊', color:'#EF4444', hot:false },
-            { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
-            { id:'mentalprep', label:'Mental Prep', icon:'🧠', color:'#8B5CF6', hot:true },
-            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-            { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
+            { id:'sendmessage', label:'Send Message', icon:'📨', hot:false },
+            { id:'flight', label:'Smart Flights', icon:'✈️', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', hot:true },
+            { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', hot:true },
+            { id:'loground', label:'Log Round', icon:'📋', hot:false },
+            { id:'lumiorange', label:'Lumio Range Session', icon:'📡', hot:true },
+            { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', hot:true },
+            { id:'sponsorpost', label:'Sponsor Post', icon:'📱', hot:true },
+            { id:'ranking', label:'Ranking Sim', icon:'📊', hot:true },
+            { id:'injury', label:'Log Injury', icon:'💊', hot:false },
+            { id:'expense', label:'Add Expense', icon:'💰', hot:false },
+            { id:'mentalprep', label:'Mental Prep', icon:'🧠', hot:true },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', hot:true },
+            { id:'visa', label:'Visa Check', icon:'🌍', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#15803D'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+                position: 'relative', whiteSpace: 'nowrap',
+              }}>
               <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)' }}>AI</span>}
+              {a.hot && <span style={{ position: 'absolute', top: -6, right: -6, fontSize: 8, fontWeight: 800, padding: '2px 5px', borderRadius: 999, background: '#1F2937', color: '#9CA3AF', border: '1px solid #374151', lineHeight: 1 }}>AI</span>}
             </button>
           ))}
         </div>
@@ -1538,9 +1491,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               </div>
               <div className="rounded-xl overflow-hidden h-48 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>
                 {dashPhotoSrc
-                  ? <img src={dashPhotoSrc} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                  ? <img src={dashPhotoSrc as string} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                   : session.photoDataUrl
-                    ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                    ? <img src={session.photoDataUrl as string} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                     : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="mt-3">
