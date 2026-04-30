@@ -21,6 +21,10 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
     features:['FSR Compliance Dashboard — real-time 80% salary cap vs Relevant Revenue','Player Welfare Hub — maternity tracker, ACL risk monitor, mental health','Standalone sponsorship pipeline with FSR revenue attribution','Dual registration management — expiry alerts, window tracking','Demerger Readiness Tracker — for clubs going standalone','AI Club Director morning briefing — FSR, welfare, commercial, squad'],
     hook:'The first operating system built specifically for professional women\'s football. FSR compliance, maternity welfare, standalone commercial — none of it existed in any platform before this.',
     url:'lumiosports.com/womens-football',href:'/womens-football'},
+  {emoji:'🏏',name:'Cricket',pill:'County · International · Franchise',accent:'#FBBF24',
+    features:['Squad management with GPS load data — Lumio GPS for fielding & fitness','Contract tracker — county, central, franchise (IPL, Hundred, BBL, SA20)','Player welfare hub — injury log, workload monitoring, mental health','Batting & bowling analytics — Lumio Vision + Lumio Track for ball tracking','Sponsorship & commercial pipeline — live deals, matchday revenue','AI Cricket Briefing — fitness readiness, schedule conflicts, selection in one view'],
+    hook:'The first cricket platform to combine GPS load data, ball tracking and central contract management — built for county professionals through international squads.',
+    url:'lumiosports.com/cricket',href:'/cricket'},
   {emoji:'🏉',name:'Rugby',pill:'Champ Rugby · Premiership · NL1',accent:'#8B5CF6',
     features:['Salary Cap Manager — ceiling AND floor, live to the pound','Franchise Readiness Tracker — all 6 RFU criteria, RAG status','Concussion & HIA Compliance — 21-day protocol, legal audit trail','Club-to-Country interface — MPGP-aligned data handoff','Women\'s rugby integration — PWR compliance tracking','AI Director of Rugby briefing — 4 role variants (DoR, coach, CEO, medical)'],
     hook:'On 27 February 2026, promotion and relegation ended. The franchise readiness race started. Lumio Rugby is the only platform built for the new landscape.',
@@ -41,10 +45,6 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
     features:['🛰️ GPS Ring Heatmap — world\'s first UWB ring positioning. Centre control, ropes time and footwork per round','⚡ AI ring footwork analyst — 3 targeted drills generated from your heatmap data','📊 ACWR load monitor — 28-day rolling camp load chart with safe zone band','Purse Simulator — exact take-home before you sign, every deduction','World Rankings — WBC, WBA, WBO, IBF and Zuffa Boxing in one view','Fight Camp Planner — 8–12 week structure, weight trajectory, readiness','Weight & cut tracker — daily weigh-in log, cut projection to fight night'],
     hook:'World first: GPS ring movement data fused with punch analytics. Track centre control, ropes time and footwork per round — no other platform has built this. Plus the purse simulator that shows your exact take-home before you sign.',
     url:'lumiosports.com/boxing',href:'/boxing'},
-  {emoji:'🏏',name:'Cricket',pill:'County · International · IPL · The Hundred',accent:'#FBBF24',
-    features:['Contract and central contract tracker across all formats','Batting and bowling analytics — trends, career vs recent form','Franchise schedule — IPL, The Hundred, BBL, SA20 in one calendar','Injury and fitness management with return-to-play protocols','Sponsorship and commercial pipeline — appearances, endorsements','AI morning briefing — county, international and franchise format'],
-    hook:'Three formats. Four franchise competitions. Central contracts, county deals, IPL retentions and The Hundred drafts. One career. Lumio Cricket puts it all in a single view for the first time.',
-    url:'lumiosports.com/cricket',href:'/cricket'},
 ]
 
 const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string}> = [

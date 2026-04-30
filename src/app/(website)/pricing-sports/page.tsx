@@ -33,8 +33,8 @@ const SPORTS: SportPricing[] = [
     desc: 'Built for clubs from National League to League Two and beyond.',
     tiers: [
       { name: 'Starter', price: '£299', period: '/mo', bestFor: 'Step 3-4 clubs, part-time professional squads', features: ['Club dashboard and AI morning briefing', 'Squad management — register, availability, form', 'GPS performance (Johan Sports)', 'Fixture calendar and match day centre', 'Basic financial dashboard', 'Up to 3 board user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Pro Club', price: '£799', period: '/mo', bestFor: 'National League, League Two and League One clubs', recommended: true, features: ['All Starter features, plus:', 'Full PSR/FSR compliance — live headroom', 'FIFA-style pitch view with set pieces (90+ routines)', 'Transfer pipeline and agent contacts', 'Full Board Suite — chairman, DoF, commercial views', 'Scouting reports and opposition analysis', 'AI team selection and tactical briefings', 'Unlimited user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Elite', price: '£1,800', period: '/mo', bestFor: 'League One, Championship and full professional clubs', features: ['All Pro Club features, plus:', 'Advanced PSR modelling and multi-season projections', 'Full commercial pipeline and partner activation', 'Custom board reporting and investor narrative', 'Priority account manager and quarterly review', 'White-label option for multi-club groups', 'API access for custom integrations'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+      { name: 'Pro Club', price: '£799', period: '/mo', bestFor: 'National League, League Two and League One clubs', recommended: true, features: ['All Starter features, plus:', 'Full PSR/FSR compliance — live headroom', 'FIFA-style pitch view with set pieces (90+ routines)', 'Transfer pipeline and agent contacts', 'Full Board Suite — chairman, DoF, commercial views', 'Scouting reports and opposition analysis', 'Lumio Vision — match video analysis', 'Lumio Wear — workload monitoring', 'AI team selection and tactical briefings', 'Unlimited user accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'Elite', price: '£1,999', period: '/mo', bestFor: 'League One, Championship and full professional clubs', features: ['All Pro Club features, plus:', 'Advanced PSR modelling and multi-season projections', 'Full commercial pipeline and partner activation', 'Custom board reporting and investor narrative', 'Lumio Trace — full performance & medical suite', 'Lumio Scout — recruitment intelligence', 'Priority account manager and quarterly review', 'White-label option for multi-club groups', 'API access for custom integrations'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Johan Sports integration', 'AI morning briefing — voice and text', 'FA compliance calendar and deadline alerts', 'Demo pre-seeded with Oakridge FC data', '14-day free trial on Starter and Pro Club', 'UK data hosting · GDPR compliant'],
   },
@@ -73,13 +73,23 @@ const SPORTS: SportPricing[] = [
     included: ['FSR compliance tracking', 'Karen Carney Review welfare standards', 'Lumio Health integration', 'Demo pre-seeded with WSL club data', 'UK data hosting · GDPR compliant'],
   },
   {
+    id: 'cricket', icon: '🏏', label: 'Cricket', color: '#FBBF24',
+    subtitle: 'County · International · IPL · The Hundred · BBL',
+    desc: 'Per-player pricing across multiple formats and competitions.',
+    tiers: [
+      { name: 'County/Franchise', price: '£599', period: '/mo', bestFor: 'County professionals, franchise players', recommended: true, features: ['Contract tracker — county, central, franchise', 'Franchise schedule — IPL, Hundred, BBL, SA20', 'Batting and bowling analytics — format splits', 'Lumio GPS — fitness & fielding data', 'Lumio Vision — batting & bowling analysis', 'Lumio Track — ball tracking analytics', 'Injury and fitness management', 'Sponsorship and commercial pipeline', 'AI morning briefing — 3 role views', 'Up to 4 team accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'International', price: '£1,499', period: '/mo', bestFor: 'England-contracted and international players', features: ['All County features, plus:', 'ECB central contract management', 'International scheduling conflict detection', 'Full financial planning — career earnings', 'Lumio Wear — workload management', 'Lumio Health — central medical record', 'Media and content calendar', 'Priority account manager'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+    ],
+    included: ['Covers all major T20 franchise competitions', 'Demo pre-seeded with realistic data', 'UK data hosting · GDPR compliant'],
+  },
+  {
     id: 'rugby', icon: '🏉', label: 'Rugby', color: '#8B5CF6',
     subtitle: 'NL1 · Champ Rugby · Premiership',
     desc: 'Annual contracts aligned to the RFU salary cap year.',
     tiers: [
-      { name: 'National League 1', price: '£800', period: '/mo', bestFor: '16 National League 1 clubs', features: ['Salary cap manager (ceiling + floor)', 'Squad availability tracker', 'Basic commercial pipeline', 'Morning briefing — DoR', 'Franchise readiness dashboard', 'Concussion & HIA tracker'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Champ Rugby', price: '£2,500', period: '/mo', bestFor: '14 Champ Rugby clubs', recommended: true, features: ['All NL1 features, plus:', 'Full salary cap suite — scenario modeller, audit', 'Franchise readiness — all 6 criteria + EOI builder', 'Recruitment pipeline with cap impact modeller', 'Lumio Health integration', 'Club-to-country data interface (MPGP)', "Women's rugby — PWR compliance", 'Commercial OS — sponsorship, matchday, stadium', 'Dedicated account manager'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Premiership', price: '£4,000', period: '/mo', bestFor: 'Gallagher Premiership clubs', features: ['All Champ features, plus:', 'Legal-grade concussion audit trail', 'Full RFU salary cap audit export', 'Premiership-specific franchise modules', 'Advanced club-to-country interface', 'Quarterly strategic review'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+      { name: 'National League 1', price: '£499', period: '/mo', bestFor: '16 National League 1 clubs', features: ['Salary cap manager (ceiling + floor)', 'Squad availability tracker', 'Basic commercial pipeline', 'Morning briefing — DoR', 'Franchise readiness dashboard', 'Concussion & HIA tracker', 'Lumio GPS — match data'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'Champ Rugby', price: '£1,799', period: '/mo', bestFor: '14 Champ Rugby clubs', recommended: true, features: ['All NL1 features, plus:', 'Full salary cap suite — scenario modeller, audit', 'Franchise readiness — all 6 criteria + EOI builder', 'Recruitment pipeline with cap impact modeller', 'Lumio Health integration', 'Lumio GPS Pro · Lumio Wear — workload monitoring', 'Club-to-country data interface (MPGP)', "Women's rugby — PWR compliance", 'Commercial OS — sponsorship, matchday, stadium', 'Dedicated account manager'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
+      { name: 'Premiership', price: '£2,999', period: '/mo', bestFor: 'Gallagher Premiership clubs', features: ['All Champ features, plus:', 'Legal-grade concussion audit trail', 'Full RFU salary cap audit export', 'Premiership-specific franchise modules', 'Advanced club-to-country interface', 'Lumio Trace — full performance suite', 'Lumio Health — concussion & medical audit', 'Quarterly strategic review'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Annual contracts — aligned to RFU cap year', 'Lumio Health data integration', 'Franchise readiness criteria mapping', 'Demo pre-seeded with Hartfield RFC data', 'UK data hosting · GDPR compliant'],
     addon: { name: "Women's PWR Add-On", price: '£600/mo', features: ["Women's squad management", 'PWR compliance tracking', 'Shared facility scheduling', "Women's commercial pipeline"] },
@@ -123,16 +133,6 @@ const SPORTS: SportPricing[] = [
       { name: 'Elite', price: '£399', period: '/mo', bestFor: 'World champions and top 5 contenders', features: ['All Pro features, plus:', 'Full promotional pipeline', 'Mandatory challenger pathway tracking', 'Athlete content and media suite', 'Full commercial pipeline', 'Priority account manager'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Demo pre-seeded with Marcus Cole (heavyweight)', 'All 5 sanctioning body rankings', 'Saudi, UAE and Germany tax modes', 'UK data hosting · GDPR compliant'],
-  },
-  {
-    id: 'cricket', icon: '🏏', label: 'Cricket', color: '#FBBF24',
-    subtitle: 'County · International · IPL · The Hundred · BBL',
-    desc: 'Per-player pricing across multiple formats and competitions.',
-    tiers: [
-      { name: 'County/Franchise', price: '£199', period: '/mo', bestFor: 'County professionals, franchise players', recommended: true, features: ['Contract tracker — county, central, franchise', 'Franchise schedule — IPL, Hundred, BBL, SA20', 'Batting and bowling analytics — format splits', 'Injury and fitness management', 'Sponsorship and commercial pipeline', 'AI morning briefing — 3 role views', 'Up to 4 team accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'International', price: '£399', period: '/mo', bestFor: 'England-contracted and international players', features: ['All County features, plus:', 'ECB central contract management', 'International scheduling conflict detection', 'Full financial planning — career earnings', 'Media and content calendar', 'Priority account manager'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
-    ],
-    included: ['Covers all major T20 franchise competitions', 'Demo pre-seeded with realistic data', 'UK data hosting · GDPR compliant'],
   },
 ]
 
