@@ -193,7 +193,7 @@ export const FOOTBALL_NAV_GROUPS: FbNavGroup[] = [
   { g: 'Recruitment', items: [
     { id: 'transfers',   label: 'Transfers',         icon: 'arrow-up-right' },
     { id: 'scouting',    label: 'Scouting',          icon: 'eye',   badge: 'NEW' },
-    { id: 'wyscout',     label: 'Lumio Scout / Video',icon: 'play' },
+    { id: 'lumio-vision', label: 'Lumio Vision',      icon: 'play' },
     { id: 'scouting-db', label: 'Scouting Database', icon: 'search' },
     { id: 'academy',     label: 'Academy',           icon: 'arrow-up-right' },
   ]},

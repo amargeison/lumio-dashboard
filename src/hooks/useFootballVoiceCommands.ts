@@ -247,7 +247,7 @@ const CMDS: { patterns: RegExp[]; action: string; response: (m: RegExpMatchArray
   { patterns: [/show.*pyramid/i, /football pyramid/i], action: 'NAVIGATE', response: () => 'Opening the football pyramid.', data: () => ({ dept: 'pyramid' }) },
   { patterns: [/find a club/i, /club search/i, /search.*club/i], action: 'NAVIGATE', response: () => 'Opening AI club search.', data: () => ({ dept: 'find-club' }) },
   { patterns: [/show.*statsbomb/i, /statsbomb data/i, /open.*statsbomb/i], action: 'NAVIGATE', response: () => 'Opening Lumio Data.', data: () => ({ dept: 'statsbomb' }) },
-  { patterns: [/show.*wyscout/i, /open.*wyscout/i, /wyscout data/i], action: 'NAVIGATE', response: () => 'Opening Lumio Scout.', data: () => ({ dept: 'wyscout' }) },
+  { patterns: [/show.*lumio vision/i, /open.*lumio vision/i, /video analysis/i], action: 'NAVIGATE', response: () => 'Opening Lumio Vision.', data: () => ({ dept: 'lumio-vision' }) },
   { patterns: [/opta data/i, /show.*opta/i, /open.*opta/i], action: 'NAVIGATE', response: () => 'Opening Lumio Data Pro.', data: () => ({ dept: 'opta' }) },
 
   // ─── HELP ────────────────────────────────────────────────────────────────────

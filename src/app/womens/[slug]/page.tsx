@@ -5349,7 +5349,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
-            : <span className="text-xl">⚽</span>}
+            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
           {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{session.clubName}</span>}
         </div>
         <nav className="flex-1 overflow-y-auto py-2">

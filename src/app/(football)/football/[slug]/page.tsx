@@ -28,6 +28,9 @@ import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import FootballActionModal from '@/components/modals/FootballActionModal'
 import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
+import CommercialView from '@/components/football/CommercialView'
+import GovernanceView from '@/components/football/GovernanceView'
+import CommunityView from '@/components/football/CommunityView'
 // ─── Football v2 dashboard imports ────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -76,15 +79,16 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
   | 'staff' | 'facilities' | 'settings'
-  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
+  | 'lumio-vision' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
   | 'find-club' | 'find-player' | 'pyramid'
   | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
   | 'preseason'
   | 'player-welfare' | 'club-operations'
+  | 'commercial' | 'governance' | 'community'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'WELFARE & OPS' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'LEAGUES' | 'INTEGRATIONS'
+type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'COMMUNITY' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'WELFARE & OPS' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'LEAGUES' | 'INTEGRATIONS'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -121,10 +125,12 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: 'OVERVIEW' },
   { id: 'club-vision', label: 'Club Vision',    icon: Map,            section: 'BOARD' },
   { id: 'board',       label: 'Board Suite',    icon: Crown,          section: 'BOARD' },
+  { id: 'governance',  label: 'Governance',     icon: Shield,         section: 'BOARD' },
   { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'BOARD' },
   { id: 'facilities',  label: 'Stadium & Facilities', icon: MapPin,   section: 'BOARD' },
+  { id: 'community',   label: 'Community',      icon: Heart,          section: 'COMMUNITY' },
   { id: 'matchday',    label: 'Match Centre',   icon: Trophy,         section: 'PERFORMANCE' },
-  { id: 'wyscout',     label: 'Video Analysis', icon: Video,          section: 'PERFORMANCE' },
+  { id: 'lumio-vision', label: 'Lumio Vision', icon: Video,          section: 'PERFORMANCE' },
   { id: 'analytics',   label: 'Performance Stats', icon: BarChart3,   section: 'PERFORMANCE' },
   { id: 'set-pieces',  label: 'Set Piece Analysis', icon: Target,     section: 'PERFORMANCE' },
   { id: 'scouting',    label: 'Opposition Scout', icon: Eye,          section: 'PERFORMANCE' },
@@ -141,8 +147,9 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'gps-hardware', label: 'GPS Hardware',  icon: Activity,       section: 'GPS & LOAD' },
   { id: 'player-welfare', label: 'Player Welfare Hub', icon: Heart,    section: 'WELFARE & OPS' },
   { id: 'club-operations', label: 'Club Operations',   icon: Building, section: 'WELFARE & OPS' },
-  { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'RECRUITMENT' },
+  { id: 'transfers',   label: 'Recruitment Hub', icon: ArrowUpDown,   section: 'RECRUITMENT' },
   { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'RECRUITMENT' },
+  { id: 'commercial',  label: 'Commercial',     icon: Briefcase,      section: 'COMMERCIAL' },
   { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'COMMERCIAL' },
   { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'COMMERCIAL' },
   { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'COMPLIANCE' },
@@ -509,8 +516,12 @@ function WorldClock() {
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
-  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string
+function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, session, onRoleChange, isFootballDemo }: {
+  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string;
+  allowedIds: 'all' | string[];
+  session?: SportsDemoSession;
+  onRoleChange?: (role: string) => void;
+  isFootballDemo?: boolean;
 }) {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
@@ -529,20 +540,24 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const SECONDARY = '#F1C40F'
 
   // group items by section — granular grouping matches Women's FC pattern
+  // Role-gated: when allowedIds !== 'all', filter every section by the whitelist
+  // so the active role only sees the nav items it has access to.
+  const isAllowed = (id: DeptId) => allowedIds === 'all' || (allowedIds as string[]).includes(id)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
-    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW') },
-    { label: 'BOARD', items: SIDEBAR_ITEMS.filter(i => i.section === 'BOARD') },
-    { label: 'PERFORMANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'PERFORMANCE') },
-    { label: 'FIRST TEAM', items: SIDEBAR_ITEMS.filter(i => i.section === 'FIRST TEAM') },
-    { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL') },
-    { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD') },
-    { label: 'WELFARE & OPS', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE & OPS') },
-    { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT') },
-    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL') },
-    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE') },
-    { label: 'LEAGUES', items: SIDEBAR_ITEMS.filter(i => i.section === 'LEAGUES') },
-    { label: 'INTEGRATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'INTEGRATIONS') },
-    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
+    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW' && isAllowed(i.id)) },
+    { label: 'BOARD', items: SIDEBAR_ITEMS.filter(i => i.section === 'BOARD' && isAllowed(i.id)) },
+    { label: 'COMMUNITY', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMUNITY' && isAllowed(i.id)) },
+    { label: 'PERFORMANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'PERFORMANCE' && isAllowed(i.id)) },
+    { label: 'FIRST TEAM', items: SIDEBAR_ITEMS.filter(i => i.section === 'FIRST TEAM' && isAllowed(i.id)) },
+    { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL' && isAllowed(i.id)) },
+    { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD' && isAllowed(i.id)) },
+    { label: 'WELFARE & OPS', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE & OPS' && isAllowed(i.id)) },
+    { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT' && isAllowed(i.id)) },
+    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
+    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
+    { label: 'LEAGUES', items: SIDEBAR_ITEMS.filter(i => i.section === 'LEAGUES' && isAllowed(i.id)) },
+    { label: 'INTEGRATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'INTEGRATIONS' && isAllowed(i.id)) },
+    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null && isAllowed(i.id)) },
   ]
 
   return (
@@ -556,7 +571,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
       >
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
           <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
-            {clubLogo ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
+            {clubLogo
+              ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} />
+              : isFootballDemo
+                ? <img src="/badges/oakridge_fc_crest.svg" alt="Oakridge FC" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} />
+                : 'FC'}
           </div>
           {expanded && (
             <>
@@ -592,7 +611,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     {expanded && <span className="truncate">{item.label}</span>}
-                    {expanded && item.id === 'player-welfare' && (
+                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'governance') && (
                       <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: PRIMARY }}>NEW</span>
                     )}
                   </button>
@@ -601,7 +620,18 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
             </div>
           ))}
         </nav>
-        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+        {session && onRoleChange && (
+          <div style={{ flexShrink: 0 }}>
+            <RoleSwitcher
+              session={session}
+              roles={FOOTBALL_ROLES}
+              accentColor={PRIMARY}
+              onRoleChange={onRoleChange}
+              sidebarCollapsed={!expanded}
+            />
+          </div>
+        )}
+        <div className="shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
           {expanded && (
             <div className="pb-3">
               <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
@@ -2983,6 +3013,7 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
 
 function TransfersView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   const [researchStep, setResearchStep] = useState(1)
+  const [recruitTab, setRecruitTab] = useState<'window' | 'contracts' | 'agents' | 'loans'>('window')
 
   const RESEARCH_TARGETS = [
     { name: 'Aaron Collins', position: 'LW', club: 'Redmill United', age: 26, value: '£700k', fit: 92, summary: 'Direct left winger, strong in 1v1 duels. 4 assists this season. Suited to wide attacking style.' },
@@ -2990,7 +3021,155 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
     { name: 'Harvey Knibbs', position: 'ST', club: 'Oakridge Albion', age: 24, value: '£500k', fit: 78, summary: 'Mobile striker, good movement. 2 goals from set pieces this season.' },
   ]
 
+  const CONTRACTS = [
+    { player: 'Henderson',  pos: 'CB', expires: 'Jun 2026', wage: '£8,400/wk', status: 'Renewal in negotiation', flag: 'amber' as const },
+    { player: 'Walsh',      pos: 'CM', expires: 'Jun 2027', wage: '£6,200/wk', status: 'Active',                   flag: 'green' as const },
+    { player: 'Knibbs',     pos: 'ST', expires: 'Jun 2026', wage: '£5,800/wk', status: 'Renewal pending',         flag: 'amber' as const },
+    { player: 'Diallo',     pos: 'LB', expires: 'Jan 2027', wage: '£4,400/wk', status: 'Active',                   flag: 'green' as const },
+    { player: 'Wilson',     pos: 'CM', expires: 'May 2026', wage: '£3,800/wk', status: 'Released — formal letter', flag: 'red' as const   },
+    { player: 'Osei',       pos: 'CB', expires: 'Jun 2028', wage: '£7,100/wk', status: 'Active',                   flag: 'green' as const },
+  ]
+
+  const AGENTS = [
+    { agent: 'Stellar Group',     player: 'Henderson',  status: 'Negotiating',  meetingDue: 'Fri 02 May', notes: 'Wants 4-yr deal at £10k/wk. Counter at 3+1 / £9k.' },
+    { agent: 'Base Soccer',       player: 'Knibbs',     status: 'Reviewing',    meetingDue: 'Mon 12 May', notes: 'Open to renewal — son just signed Academy.' },
+    { agent: 'Wasserman',         player: 'Diallo',     status: 'Long-term',    meetingDue: '—',           notes: 'Annual catch-up due Q3. No active issues.' },
+    { agent: 'Unique Sports',     player: 'Aaron Collins (target)', status: 'Initial contact', meetingDue: 'Tue 06 May', notes: 'Player open to move. Club willing to listen above £900k.' },
+    { agent: 'CAA Stellar',       player: 'Louie Barry (target)',   status: 'Watching',         meetingDue: '—',          notes: 'Agent flagged interest from Championship clubs.' },
+  ]
+
+  const LOANS = [
+    { player: 'Tanaka',     to: 'Northshore Athletic',  league: 'NL South',     until: 'May 2026', minutes: 1840, rating: 7.4, recallClause: 'Yes' },
+    { player: 'Pollard',    to: 'Heritage Hill Town',   league: 'NL North',     until: 'May 2026', minutes: 2210, rating: 7.1, recallClause: 'Yes' },
+    { player: 'Mason (U21)',to: 'Riverside FC',          league: 'Step 4',       until: 'May 2026', minutes: 1480, rating: 6.9, recallClause: 'Yes' },
+    { player: 'Frost (U21)',to: 'Calderbrook Rovers',   league: 'Step 5',       until: 'Jan 2026', minutes: 920,  rating: 7.0, recallClause: 'No'  },
+  ]
+
+  const flagColor = (f: 'green' | 'amber' | 'red') => f === 'red' ? '#EF4444' : f === 'amber' ? '#F59E0B' : '#22C55E'
+  const TABS: { id: 'window' | 'contracts' | 'agents' | 'loans'; label: string }[] = [
+    { id: 'window',    label: 'Transfer Window Plan' },
+    { id: 'contracts', label: 'Contract Tracker' },
+    { id: 'agents',    label: 'Agent Pipeline' },
+    { id: 'loans',     label: 'Loan Watchlist' },
+  ]
+
+  if (recruitTab !== 'window') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📥 Recruitment Hub</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Window plan · contracts · agents · loans</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid #1F2937', overflowX: 'auto' }}>
+          {TABS.map(t => {
+            const active = recruitTab === t.id
+            return (
+              <button key={t.id} onClick={() => setRecruitTab(t.id)}
+                style={{
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px', fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : '#9CA3AF',
+                  borderBottom: `2px solid ${active ? '#003DA5' : 'transparent'}`,
+                  marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'color .12s, border-color .12s',
+                }}>{t.label}</button>
+            )
+          })}
+        </div>
+
+        {recruitTab === 'contracts' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Player','Position','Expires','Wage','Status','Flag'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {CONTRACTS.map(c => (
+                  <tr key={c.player} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{c.player}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{c.pos}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: flagColor(c.flag) }}>{c.expires}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#D1D5DB' }}>{c.wage}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{c.status}</td>
+                    <td className="px-3 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${flagColor(c.flag)}26`, color: flagColor(c.flag) }}>{c.flag.toUpperCase()}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {recruitTab === 'agents' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Agency','Re: Player','Status','Next meeting','Notes'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {AGENTS.map((a, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{a.agent}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{a.player}</td>
+                    <td className="px-3 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,61,165,0.26)', color: '#7AAEFF' }}>{a.status.toUpperCase()}</span></td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{a.meetingDue}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{a.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {recruitTab === 'loans' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Player','Loaned to','League','Until','Minutes','Rating','Recall'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {LOANS.map(l => (
+                  <tr key={l.player} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{l.player}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{l.to}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{l.league}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{l.until}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#D1D5DB' }}>{l.minutes}</td>
+                    <td className="px-3 py-2.5 font-mono font-bold" style={{ color: l.rating >= 7.2 ? '#22C55E' : '#D1D5DB' }}>{l.rating.toFixed(1)}</td>
+                    <td className="px-3 py-2.5" style={{ color: l.recallClause === 'Yes' ? '#22C55E' : '#9CA3AF' }}>{l.recallClause}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
+    <div className="space-y-4">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid #1F2937', overflowX: 'auto' }}>
+        {TABS.map(t => {
+          const active = recruitTab === t.id
+          return (
+            <button key={t.id} onClick={() => setRecruitTab(t.id)}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px', fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : '#9CA3AF',
+                borderBottom: `2px solid ${active ? '#003DA5' : 'transparent'}`,
+                marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap',
+                transition: 'color .12s, border-color .12s',
+              }}>{t.label}</button>
+          )
+        })}
+      </div>
     <PlaceholderView
       title="Transfer Hub"
       subtitle="Target research, negotiations, and budget tracking."
@@ -3152,6 +3331,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         )}
       </div>
     </PlaceholderView>
+    </div>
   )
 }
 
@@ -7357,13 +7537,28 @@ function PreSeasonCampView() {
 }
 
 const FOOTBALL_ROLES = [
-  { id: 'ceo',        label: 'CEO / Chairman',        icon: '🏛️' },
-  { id: 'dof',        label: 'Director of Football',  icon: '📋' },
-  { id: 'coach',      label: 'Head Coach',             icon: '🎽' },
-  { id: 'medical',    label: 'Head of Medical',        icon: '🏥' },
-  { id: 'commercial', label: 'Commercial Director',    icon: '💼' },
-  { id: 'academy',    label: 'Academy Director',       icon: '🎓' },
+  { id: 'ceo',                label: 'CEO',                       icon: '🏛️' },
+  { id: 'chairman',           label: 'Chairman',                  icon: '👑' },
+  { id: 'manager',            label: 'Manager / Head Coach',      icon: '🎽' },
+  { id: 'director_football',  label: 'Director of Football',      icon: '📋' },
+  { id: 'head_performance',   label: 'Head of Performance',       icon: '🏃' },
+  { id: 'head_medical',       label: 'Head of Medical',           icon: '🏥' },
+  { id: 'analyst',            label: 'Analyst / Head of Data',    icon: '📊' },
+  { id: 'commercial',         label: 'Commercial Director',       icon: '💼' },
+  { id: 'head_community',     label: 'Head of Community',         icon: '❤️' },
 ]
+
+const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
+  ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
+  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','club-vision','board','governance','finance','psr','commercial','community','settings'], message: 'Strategic top-line view.' },
+  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','set-pieces','scouting','analytics','medical','settings'], message: 'Operational first-team view.' },
+  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','academy','club-vision','settings'], message: 'Squad strategy and recruitment view.' },
+  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','medical','preseason','settings'], message: 'S&C, GPS and sport science view.' },
+  head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','dynamics','squad','preseason','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
+  analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','lumio-vision','analytics','scouting','set-pieces','gps-heatmaps','opta','statsbomb','settings'], message: 'Video, opposition and performance data view.' },
+  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr','media','social','community','governance','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
+}
 
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
@@ -7392,7 +7587,10 @@ function defaultClubNameForSlug(slug: string): string {
 }
 
 function FootballDashboardInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
-  void session
+  const [roleOverride, setRoleOverride] = useState<string>(session?.role || 'ceo')
+  const currentRole = (roleOverride || 'ceo') as keyof typeof FOOTBALL_ROLE_CONFIG
+  const roleConfig = FOOTBALL_ROLE_CONFIG[currentRole] ?? FOOTBALL_ROLE_CONFIG.ceo
+  const liveSession = session ? { ...session, role: roleOverride } : session
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
@@ -7556,7 +7754,35 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1" style={{ minHeight: '100vh' }}>
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} />
+        <Sidebar
+          activeDept={activeDept}
+          onSelect={setActiveDept}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          clubName={clubName}
+          allowedIds={roleConfig.sidebar}
+          session={liveSession}
+          isFootballDemo={isFootballDemo}
+          onRoleChange={(role) => {
+            setRoleOverride(role)
+            const newConfig = FOOTBALL_ROLE_CONFIG[role as keyof typeof FOOTBALL_ROLE_CONFIG]
+            if (newConfig) {
+              const allFlat = SIDEBAR_ITEMS.map(s => s.id)
+              const firstAllowed = newConfig.sidebar === 'all'
+                ? allFlat[0]
+                : (newConfig.sidebar as string[])[0]
+              if (firstAllowed) setActiveDept(firstAllowed as DeptId)
+            }
+            try {
+              const key = 'lumio_sports_demo_football'
+              const stored = localStorage.getItem(key)
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+              }
+            } catch { /* ignore */ }
+          }}
+        />
 
         <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
           <main className="flex-1 p-4 sm:p-5">
@@ -7596,7 +7822,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
             {isFootballDemo && activeDept === 'preseason' && <PreSeasonCampView />}
-            {activeDept === 'wyscout' && <FootballScoutIntegrationView />}
+            {activeDept === 'lumio-vision' && <FootballScoutIntegrationView />}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
             {activeDept === 'opta' && <FootballEventDataView />}
@@ -7610,6 +7836,9 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
             {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="travel" title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />}
+            {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
+            {isFootballDemo && activeDept === 'governance' && <GovernanceView />}
+            {isFootballDemo && activeDept === 'community' && <CommunityView />}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
               const DEPT_HIGHLIGHTS: Record<string, string[]> = {
                 squad: ['Top performers this week: Dean Morris (8.2 avg), Sam Porter (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
