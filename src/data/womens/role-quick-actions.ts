@@ -15,8 +15,8 @@ import {
  * modal/handler. Actions are intentionally tuned per role and capped at 6.
  *
  * Sidebar id reference (from src/app/womens/[slug]/page.tsx SIDEBAR_ITEMS):
- *   dashboard · briefing · insights · fsr · salary · revenue · welfare ·
- *   acl · cycle · maternity · mental · player-welfare · club-operations ·
+ *   dashboard · briefing · insights · fsr · salary · revenue · game-standards ·
+ *   welfare · acl · cycle · maternity · mental · player-welfare · club-operations ·
  *   tours-camps · squad · dualreg · tactics · match · transfers · analytics ·
  *   scouting · academy · halftime · sponsorship · standalone · board ·
  *   financial · media · social · fanhub · team · gps-load · gps-heatmaps ·
@@ -46,7 +46,7 @@ export const WOMENS_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'briefing',         label: "Today's Briefing",     icon: Sparkles,    targetDept: 'briefing' },
     { id: 'fsr-position',     label: 'FSR Position',          icon: TrendingUp,  targetDept: 'fsr' },
     { id: 'open-board',       label: 'Open Board Suite',      icon: Crown,       targetDept: 'board' },
-    { id: 'karen-carney',     label: 'Karen Carney Compliance', icon: ShieldAlert, targetDept: 'board' },
+    { id: 'karen-carney',     label: 'Karen Carney Compliance', icon: ShieldAlert, targetDept: 'game-standards' },
     { id: 'approve-decision', label: 'Approve Decision',      icon: ClipboardList, modalId: 'pending-decisions' },
     { id: 'crisis-alerts',    label: 'View Crisis Alerts',    icon: AlertTriangle, targetDept: 'board' },
   ],
@@ -91,7 +91,7 @@ export const WOMENS_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'wellbeing-checks', label: "Today's Wellbeing Check-ins", icon: Heart, targetDept: 'welfare' },
     { id: 'maternity',         label: 'Maternity Tracker',          icon: Baby,         targetDept: 'maternity' },
     { id: 'mental-alerts',     label: 'Mental Health Alerts',       icon: Brain,        targetDept: 'mental' },
-    { id: 'karen-carney',      label: 'Karen Carney Compliance',    icon: ShieldAlert,  targetDept: 'board' },
+    { id: 'karen-carney',      label: 'Karen Carney Compliance',    icon: ShieldAlert,  targetDept: 'game-standards' },
     { id: 'cycle-register',    label: 'Cycle Awareness Register',   icon: Flower2,      targetDept: 'cycle' },
     { id: 'concern-log',       label: 'Player Concern Log',         icon: ClipboardList, targetDept: 'welfare' },
   ],
@@ -117,7 +117,7 @@ export const WOMENS_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
   community: [
     { id: 'foundation',     label: 'Foundation Activity', icon: Heart,        targetDept: 'fanhub' },
     { id: 'schools',        label: 'Schools Calendar',    icon: GraduationCap, targetDept: 'fanhub' },
-    { id: 'karen-carney',   label: 'Karen Carney Compliance', icon: ShieldAlert, targetDept: 'board' },
+    { id: 'karen-carney',   label: 'Karen Carney Compliance', icon: ShieldAlert, targetDept: 'game-standards' },
     { id: 'events',         label: 'Upcoming Events',     icon: Calendar,     targetDept: 'fanhub' },
     { id: 'volunteers',     label: 'Volunteer Hours',     icon: UsersIcon,    targetDept: 'fanhub' },
     { id: 'partnerships',   label: 'Local Partnerships',  icon: MapPin,       targetDept: 'fanhub' },

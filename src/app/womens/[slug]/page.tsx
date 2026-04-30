@@ -26,12 +26,14 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
   medical: Cross, 'tours-camps': Calendar, settings: Settings,
+  'game-standards': Shield,
   'player-welfare': Heart, 'club-operations': Landmark,
 }
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
+import GameStandardsView from '@/components/womens/GameStandardsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -85,6 +87,7 @@ const SIDEBAR_ITEMS = [
   { id: 'fsr',          label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
   { id: 'salary',       label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',      label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
+  { id: 'game-standards', label: 'Game Standards',    icon: '🛡️', group: 'COMPLIANCE' },
   { id: 'welfare',      label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
   { id: 'acl',          label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',        label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
@@ -4475,14 +4478,14 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
   ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
-  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','tactics','match','transfers','analytics','scouting','academy','tours-camps','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
+  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','tactics','match','transfers','analytics','scouting','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
   coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','tactics','match','halftime','analytics','scouting','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
   medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
-  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
-  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
-  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
-  community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
+  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
+  community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
 }
 
 // ─── WOMENS SPONSOR DASHBOARD ────────────────────────────────────────────────
@@ -5276,6 +5279,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'gps-heatmaps': return <WomensGPSHeatmapsView club={club} />
       case 'medical':     return <MedicalRecordsView />
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
+      case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'settings':    return <SettingsViewFull club={club} />
