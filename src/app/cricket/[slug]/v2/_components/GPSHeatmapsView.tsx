@@ -41,10 +41,10 @@ type FielderId = typeof FIELDERS[number]['id']
 
 const MATCHES = [
   { id: 'm5', vs: 'Loxwood',     date: '26 Apr', state: 'live'   },
-  { id: 'm4', vs: 'Hampshire',   date: '21 Apr', state: 'recent' },
-  { id: 'm3', vs: 'Warwickshire',date: '19 Apr', state: 'recent' },
-  { id: 'm2', vs: 'Glamorgan',   date: '16 Apr', state: 'recent' },
-  { id: 'm1', vs: 'Lancashire',  date: '12 Apr', state: 'recent' },
+  { id: 'm4', vs: 'Easthaven CCC',  date: '21 Apr', state: 'recent' },
+  { id: 'm3', vs: 'Aldermount County', date: '19 Apr', state: 'recent' },
+  { id: 'm2', vs: 'Tideford County',date: '16 Apr', state: 'recent' },
+  { id: 'm1', vs: 'Calderbrook CCC', date: '12 Apr', state: 'recent' },
 ] as const
 
 // Standard fielding positions on a right-hand-batter oval. cx/cy in viewBox units.
@@ -491,7 +491,7 @@ function BattingMovement({ T, accent, density }: Common) {
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / -1' }}>
       <SectionHead T={T} title="Batting Movement Heatmap"
-        right={<><Icon name="bars" size={11} /> <span>K. Patel · 136 (88) vs Hampshire</span></>} />
+        right={<><Icon name="bars" size={11} /> <span>K. Patel · 136 (88) vs Easthaven CCC</span></>} />
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 14 }}>
         <div>
           <div style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
@@ -855,7 +855,7 @@ function SquadOverview({ T, accent, density }: Common) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <HomeAwayOval T={T} label="Home · Oakridge Park" data={HOME_AWAY.home} />
-          <HomeAwayOval T={T} label="Away · The Oval" data={HOME_AWAY.away} />
+          <HomeAwayOval T={T} label="Away · Crown Park Cricket Ground" data={HOME_AWAY.away} />
         </div>
       </div>
     </Card>

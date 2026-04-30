@@ -25,12 +25,14 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   sponsorship: Handshake, standalone: Construction, board: Landmark,
   financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
-  medical: Cross, preseason: Calendar, settings: Settings,
+  medical: Cross, 'tours-camps': Calendar, settings: Settings,
   'player-welfare': Heart, 'club-operations': Landmark,
 }
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
+import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
+import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -111,7 +113,7 @@ const SIDEBAR_ITEMS = [
   { id: 'gps-load',     label: 'GPS & Load',          icon: '📡', group: 'GPS & LOAD' },
   { id: 'gps-heatmaps', label: 'Heatmaps',            icon: '🔥', group: 'GPS & LOAD' },
   { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
-  { id: 'preseason',    label: 'Pre-Season',           icon: '⚽', group: 'OPERATIONS' },
+  { id: 'tours-camps',  label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ]
 
@@ -4472,11 +4474,15 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
 
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
-  director: { label: 'Director', icon: '⚽', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
-  head_coach: { label: 'Head Coach', icon: '📋', accent: '#22C55E', sidebar: 'all', hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
-  welfare: { label: 'Welfare Officer', icon: '🛡️', accent: '#EF4444', sidebar: 'all', hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
-  commercial: { label: 'Commercial', icon: '💼', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
-  sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], message: null },
+  ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
+  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','tactics','match','transfers','analytics','scouting','academy','tours-camps','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
+  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','tactics','match','halftime','analytics','scouting','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
+  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
+  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
+  community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
 }
 
 // ─── WOMENS SPONSOR DASHBOARD ────────────────────────────────────────────────
@@ -4588,12 +4594,15 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
 
 // ─── ROLES FOR DEMO GATE ─────────────────────────────────────────────────────
 const WOMENS_ROLES = [
-  { id: 'ceo', label: 'CEO / Chairman', icon: '🏛️' },
-  { id: 'dof', label: 'Director of Football', icon: '📋' },
-  { id: 'coach', label: 'Head Coach', icon: '🎽' },
-  { id: 'welfare', label: 'Welfare Lead', icon: '❤️' },
-  { id: 'medical', label: 'Club Doctor', icon: '🏥' },
-  { id: 'commercial', label: 'Commercial Director', icon: '💼' },
+  { id: 'ceo',         label: 'CEO / Chairman',         icon: '🏛️' },
+  { id: 'dof',         label: 'Director of Football',   icon: '📋' },
+  { id: 'coach',       label: 'Head Coach',             icon: '🎽' },
+  { id: 'performance', label: 'Head of Performance',    icon: '📊' },
+  { id: 'medical',     label: 'Club Doctor',            icon: '🏥' },
+  { id: 'welfare',     label: 'Welfare Lead',           icon: '❤️' },
+  { id: 'operations',  label: 'Head of Operations',     icon: '🛠️' },
+  { id: 'commercial',  label: 'Commercial Director',    icon: '💼' },
+  { id: 'community',   label: 'Head of Community',      icon: '🌍' },
 ]
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
@@ -5112,9 +5121,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   // Role config
   const [roleOverride, setRoleOverride] = useState<string | null>(null)
-  const currentRole = (roleOverride || session.role || 'director') as keyof typeof WOMENS_ROLE_CONFIG
-  const roleConfig = WOMENS_ROLE_CONFIG[currentRole] ?? WOMENS_ROLE_CONFIG.director
-  const isSponsor = currentRole === 'sponsor'
+  const currentRole = (roleOverride || session.role || 'ceo') as keyof typeof WOMENS_ROLE_CONFIG
+  const roleConfig = WOMENS_ROLE_CONFIG[currentRole] ?? WOMENS_ROLE_CONFIG.ceo
+  const isSponsor = false
 
   // Dashboard tabs
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
@@ -5266,7 +5275,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'gps-load':    return <GPSLoadView club={club} />
       case 'gps-heatmaps': return <WomensGPSHeatmapsView club={club} />
       case 'medical':     return <MedicalRecordsView />
-      case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
+      case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'settings':    return <SettingsViewFull club={club} />
@@ -5298,21 +5307,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     'Configure Karen Carney Review compliance',
     'Set fixture schedule',
     'Ready — let\'s make history ⚽',
-  ]
-
-  // ── Quick actions ──
-  const quickActions = [
-    { id:'flights',    label:'Book Flight',      icon:'✈️', hot:true,  color:'#BE185D' },
-    { id:'matchprep',  label:'Match Prep AI',    icon:'🎯', hot:true,  color:'#22C55E' },
-    { id:'fsr',        label:'FSR Check',        icon:'📊', hot:false, color:'#6B7280' },
-    { id:'welfare',    label:'Welfare Alert',    icon:'🛡️', hot:false, color:'#EF4444' },
-    { id:'sponsor',    label:'Sponsor Post AI',  icon:'📱', hot:true,  color:'#F59E0B' },
-    { id:'ranking',    label:'Ranking Sim',      icon:'📈', hot:true,  color:'#BE185D' },
-    { id:'injury',     label:'Log Injury',       icon:'💊', hot:false, color:'#EF4444' },
-    { id:'expense',    label:'Add Expense',      icon:'🧾', hot:false, color:'#6B7280' },
-    { id:'dualreg',    label:'Dual Registration',icon:'🔄', hot:false, color:'#6B7280' },
-    { id:'ofsted',     label:'Ofsted Mode',      icon:'📋', hot:false, color:'#6B7280' },
-    { id:'preseason',  label:'Pre-Season',       icon:'🏕️', hot:false, color:'#6B7280' },
   ]
 
   // ── Quick Wins items ──
@@ -5370,7 +5364,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                   }`}>
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {!sidebarCollapsed && (item.id === 'preseason' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {!sidebarCollapsed && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}
@@ -5496,25 +5490,14 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               })}
             </div>
 
-            {/* Quick Actions — rectangular desaturated (matches rugby v2) */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '12px 24px 0' }}>
-              {quickActions.map(a => (
-                <button key={a.id}
-                  onClick={() => { if (['fsr','welfare','dualreg','preseason'].includes(a.id)) setActiveSection(a.id); else if (a.id === 'matchprep') setActiveSection('match') }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = v2Accent.hex; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-                  style={{
-                    appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 14px', borderRadius: 8,
-                    background: 'transparent', border: '1px solid #2d3139',
-                    color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
-                    transition: 'border-color .12s, color .12s',
-                  }}>
-                  <span style={{ fontSize: 13 }}>{a.icon}</span>
-                  <span>{a.label}</span>
-                  {a.hot && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
-                </button>
-              ))}
+            {/* Quick Actions — role-aware (shared bar) */}
+            <div style={{ padding: '12px 24px 0' }}>
+              <RoleAwareQuickActionsBar
+                sport="womens"
+                role={currentRole as string}
+                onNavigate={(deptId) => setActiveSection(deptId)}
+                accentHex={v2Accent.hex}
+              />
             </div>
 
             {/* Tab content */}

@@ -59,9 +59,9 @@ export type Fixture = {
 
 export const FIXTURES: Fixture[] = [
   { day: 'Sat', date: '26 Apr', opp: 'Loxwood CC', comp: 'County Championship', venue: 'Home · Oakridge Park', time: '11:00', toss: '10:30', forecast: '☁ 11° · light wind', state: 'today',    side: '1st XI' },
-  { day: 'Sun', date: '27 Apr', opp: 'Surrey',     comp: 'T20 Blast',           venue: 'Away · The Oval',      time: '14:30',                                          state: 'tomorrow', side: '1st XI' },
+  { day: 'Sun', date: '27 Apr', opp: 'Highford County', comp: 'T20 Blast',     venue: 'Away · Crown Park Cricket Ground', time: '14:30',                              state: 'tomorrow', side: '1st XI' },
   { day: 'Wed', date: '30 Apr', opp: 'Crewe',      comp: 'One Day Cup',          venue: 'Home · Oakridge Park', time: '11:00',                                          state: 'upcoming', side: '1st XI' },
-  { day: 'Sat', date: '03 May', opp: 'Somerset',   comp: 'County Championship', venue: 'Away · Taunton',       time: '11:00',                                          state: 'upcoming', side: '1st XI' },
+  { day: 'Sat', date: '03 May', opp: 'Westmarsh CC', comp: 'County Championship', venue: 'Away · Westmarsh Park', time: '11:00',                                       state: 'upcoming', side: '1st XI' },
 ]
 
 export type ScheduleItem = { t: string; what: string; where: string; highlight?: boolean }
@@ -105,11 +105,11 @@ export const INJURIES: Injury[] = [
 export type Result = { vs: string; res: 'W' | 'L' | 'D'; score: string; date: string }
 
 export const RECENTS: Result[] = [
-  { vs: 'Hampshire 2nd XI', res: 'W', score: '262/8 (50) · 247 ao (49.2)', date: 'Mon 21 Apr' },
-  { vs: 'Warwickshire CC',  res: 'W', score: '188/5 (T20) · 182/9',         date: 'Sat 19 Apr' },
-  { vs: 'Glamorgan',        res: 'L', score: '198 ao · 199/4',              date: 'Wed 16 Apr' },
-  { vs: 'Lancashire 2s',    res: 'W', score: '331 ao · 290 ao',             date: 'Sat 12 Apr' },
-  { vs: 'Kent CCC',         res: 'D', score: '402/9 dec · 245/6',           date: 'Tue 08 Apr' },
+  { vs: 'Easthaven CCC 2nd XI', res: 'W', score: '262/8 (50) · 247 ao (49.2)', date: 'Mon 21 Apr' },
+  { vs: 'Aldermount County',    res: 'W', score: '188/5 (T20) · 182/9',         date: 'Sat 19 Apr' },
+  { vs: 'Tideford County',      res: 'L', score: '198 ao · 199/4',              date: 'Wed 16 Apr' },
+  { vs: 'Calderbrook 2s',       res: 'W', score: '331 ao · 290 ao',             date: 'Sat 12 Apr' },
+  { vs: 'Halden CCC',           res: 'D', score: '402/9 dec · 245/6',           date: 'Tue 08 Apr' },
 ]
 
 export const SEASON_FORM: ('W' | 'L' | 'D')[] = ['W','W','L','W','D','W','W','L','W','W','L','W']

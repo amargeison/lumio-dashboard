@@ -9,8 +9,12 @@ import {
   CRICKET_ROLE_QUICK_ACTIONS,
   CRICKET_GENERIC_ACTIONS,
 } from '@/data/cricket/role-quick-actions'
+import {
+  WOMENS_ROLE_QUICK_ACTIONS,
+  WOMENS_GENERIC_ACTIONS,
+} from '@/data/womens/role-quick-actions'
 
-type Sport = 'football' | 'cricket'
+type Sport = 'football' | 'cricket' | 'womens'
 
 type Props = {
   sport: Sport
@@ -23,8 +27,12 @@ type Props = {
 const COUNT = 6
 
 function lookup(sport: Sport, role: string): QuickAction[] {
-  const map = sport === 'football' ? FOOTBALL_ROLE_QUICK_ACTIONS : CRICKET_ROLE_QUICK_ACTIONS
-  const generic = sport === 'football' ? FOOTBALL_GENERIC_ACTIONS : CRICKET_GENERIC_ACTIONS
+  const map = sport === 'football' ? FOOTBALL_ROLE_QUICK_ACTIONS
+            : sport === 'cricket'  ? CRICKET_ROLE_QUICK_ACTIONS
+            : WOMENS_ROLE_QUICK_ACTIONS
+  const generic = sport === 'football' ? FOOTBALL_GENERIC_ACTIONS
+                : sport === 'cricket'  ? CRICKET_GENERIC_ACTIONS
+                : WOMENS_GENERIC_ACTIONS
   const roleSet = map[role]
   if (!roleSet || roleSet.length === 0) return generic.slice(0, COUNT)
   if (roleSet.length >= COUNT) return roleSet.slice(0, COUNT)

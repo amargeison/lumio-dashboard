@@ -6,6 +6,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import CricketToursAndCampsView from '@/components/cricket/ToursAndCampsView'
 import SportsSettings from '@/components/sports/SportsSettings'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { Volume2 } from 'lucide-react'
@@ -76,7 +77,7 @@ const SQUAD=[
   {id:7,n:'Alex Merriman',r:'Off Spinner',age:33,ch:true,t2:false,od:true,hu:false,st:'fit',load:58},
   {id:8,n:'Jake Harrison',r:'Fast Bowler',age:24,ch:true,t2:true,od:true,hu:true,st:'injury',load:0,note:'Hamstring — 70% — physio clearance Wed 8 Apr'},
   {id:9,n:'Sam Reed',r:'Fast Bowler',age:27,ch:true,t2:true,od:true,hu:true,st:'fit',load:83},
-  {id:10,n:'Oliver Kent',r:'Left-Arm Spin',age:29,ch:true,t2:true,od:false,hu:false,st:'fit',load:61},
+  {id:10,n:'Oliver Halden CCC',r:'Left-Arm Spin',age:29,ch:true,t2:true,od:false,hu:false,st:'fit',load:61},
   {id:11,n:'Chris Dawson',r:'Fast Bowler',age:22,ch:true,t2:false,od:false,hu:false,st:'monitoring',load:45,note:'A:C ratio 1.62 — cap workload this block'},
   {id:12,n:'Rajan Steenkamp',r:'Fast Bowler',age:30,ch:true,t2:false,od:true,hu:false,st:'fit',load:77,os:true,osNote:'Arrives Thu — SA'},
   {id:13,n:'Brett Mason',r:'Batter',age:28,ch:false,t2:true,od:false,hu:true,st:'tbc',load:0,os:true,osNote:'Visa pending — AUS'},
@@ -188,22 +189,22 @@ const CRICKET_SQUAD:CricketPlayer[]=[
 
 type CricketFixture={id:number;date:string;competition:string;opponent:string;venue:string;homeAway:'H'|'A';format:'4-day'|'T20'|'OD'};
 const CRICKET_FIXTURES:CricketFixture[]=[
-  {id:1,date:'Fri 11 Apr',competition:'County Championship',opponent:'Lancashire',venue:'Oakridge Park',homeAway:'H',format:'4-day'},
-  {id:2,date:'Tue 22 Apr',competition:'County Championship',opponent:'Surrey',venue:'The Oval',homeAway:'A',format:'4-day'},
-  {id:3,date:'Fri 2 May',competition:'County Championship',opponent:'Essex',venue:'Oakridge Park',homeAway:'H',format:'4-day'},
-  {id:4,date:'Sun 18 May',competition:'One Day Cup',opponent:'Durham',venue:'Oakridge Park',homeAway:'H',format:'OD'},
-  {id:5,date:'Wed 28 May',competition:'One Day Cup',opponent:'Notts',venue:'Trent Bridge',homeAway:'A',format:'OD'},
-  {id:6,date:'Fri 6 Jun',competition:'T20 Blast',opponent:'Warwickshire',venue:'Oakridge Park',homeAway:'H',format:'T20'},
-  {id:7,date:'Sun 8 Jun',competition:'T20 Blast',opponent:'Lancashire',venue:'Old Trafford',homeAway:'A',format:'T20'},
-  {id:8,date:'Fri 13 Jun',competition:'T20 Blast',opponent:'Derbyshire',venue:'Oakridge Park',homeAway:'H',format:'T20'},
+  {id:1,date:'Fri 11 Apr',competition:'County Championship',opponent:'Calderbrook CCC',venue:'Oakridge Park',homeAway:'H',format:'4-day'},
+  {id:2,date:'Tue 22 Apr',competition:'County Championship',opponent:'Highford County',venue:'Crown Park Cricket Ground',homeAway:'A',format:'4-day'},
+  {id:3,date:'Fri 2 May',competition:'County Championship',opponent:'Riverbank County',venue:'Oakridge Park',homeAway:'H',format:'4-day'},
+  {id:4,date:'Sun 18 May',competition:'One Day Cup',opponent:'Brackenfell CCC',venue:'Oakridge Park',homeAway:'H',format:'OD'},
+  {id:5,date:'Wed 28 May',competition:'One Day Cup',opponent:'Stannerton County',venue:'Northbridge Cricket Ground',homeAway:'A',format:'OD'},
+  {id:6,date:'Fri 6 Jun',competition:'T20 Blast',opponent:'Aldermount County',venue:'Oakridge Park',homeAway:'H',format:'T20'},
+  {id:7,date:'Sun 8 Jun',competition:'T20 Blast',opponent:'Calderbrook CCC',venue:'Westmoor Cricket Ground',homeAway:'A',format:'T20'},
+  {id:8,date:'Fri 13 Jun',competition:'T20 Blast',opponent:'Castleford CCC',venue:'Oakridge Park',homeAway:'H',format:'T20'},
 ];
 
 type CricketResult={id:number;date:string;competition:string;opponent:string;homeAway:'H'|'A';score:string;oppScore:string;result:'W'|'L'|'D';format:string};
 const CRICKET_RESULTS:CricketResult[]=[
-  {id:1,date:'4 Apr',competition:'Friendly',opponent:'Durham MCCU',homeAway:'H',score:'412/7d',oppScore:'198 & 204',result:'W',format:'4-day'},
+  {id:1,date:'4 Apr',competition:'Friendly',opponent:'Glenhill MCCU',homeAway:'H',score:'412/7d',oppScore:'198 & 204',result:'W',format:'4-day'},
   {id:2,date:'28 Mar',competition:'Pre-season',opponent:'Leeds/Bradford',homeAway:'H',score:'286/6',oppScore:'241',result:'W',format:'OD'},
   {id:3,date:'22 Mar',competition:'Pre-season',opponent:'Oakridge 2nd XI',homeAway:'H',score:'348',oppScore:'352/8',result:'L',format:'OD'},
-  {id:4,date:'15 Sep 2025',competition:'County Championship',opponent:'Warwickshire',homeAway:'A',score:'388 & 221/4d',oppScore:'342 & 198',result:'W',format:'4-day'},
+  {id:4,date:'15 Sep 2025',competition:'County Championship',opponent:'Aldermount County',homeAway:'A',score:'388 & 221/4d',oppScore:'342 & 198',result:'W',format:'4-day'},
   {id:5,date:'5 Sep 2025',competition:'County Championship',opponent:'Somerset',homeAway:'H',score:'312 & 288',oppScore:'412 & 190/3',result:'L',format:'4-day'},
 ];
 
@@ -223,11 +224,11 @@ const CRICKET_STAFF_EXT:CricketStaff[]=[
 
 type TravelTrip={id:number;dest:string;date:string;nights:number;budget:number;transport:string};
 const CRICKET_TRIPS:TravelTrip[]=[
-  {id:1,dest:'The Oval, London',date:'22 Apr',nights:4,budget:18400,transport:'Coach + Hotel'},
-  {id:2,dest:'Trent Bridge, Nottingham',date:'28 May',nights:2,budget:9800,transport:'Coach + Hotel'},
-  {id:3,dest:'Old Trafford, Manchester',date:'8 Jun',nights:1,budget:4200,transport:'Coach'},
+  {id:1,dest:'Crown Park Cricket Ground, London',date:'22 Apr',nights:4,budget:18400,transport:'Coach + Hotel'},
+  {id:2,dest:'Northbridge Cricket Ground, Nottingham',date:'28 May',nights:2,budget:9800,transport:'Coach + Hotel'},
+  {id:3,dest:'Westmoor Cricket Ground, Manchester',date:'8 Jun',nights:1,budget:4200,transport:'Coach'},
   {id:4,dest:'Taunton, Somerset',date:'20 Jun',nights:4,budget:21600,transport:'Coach + Hotel'},
-  {id:5,dest:'Chester-le-Street, Durham',date:'4 Jul',nights:2,budget:8900,transport:'Coach + Hotel'},
+  {id:5,dest:'Brackenfell Cricket Ground, Brackenfell',date:'4 Jul',nights:2,budget:8900,transport:'Coach + Hotel'},
 ];
 
 type Contract={player:string;type:string;expiry:string;wage:number;agent:string};
@@ -256,8 +257,8 @@ const CRICKET_OUTGROUNDS=[
 ];
 
 const CRICKET_VIDEO=[
-  {id:1,title:'Fairweather 198* vs Lancashire — innings',dur:'12:42',type:'Match Footage',tags:['batting','brook']},
-  {id:2,title:'Ridley 5-fer vs Surrey — spell analysis',dur:'8:14',type:'Match Footage',tags:['bowling','coad']},
+  {id:1,title:'Fairweather 198* vs Calderbrook CCC — innings',dur:'12:42',type:'Match Footage',tags:['batting','brook']},
+  {id:2,title:'Ridley 5-fer vs Highford County — spell analysis',dur:'8:14',type:'Match Footage',tags:['bowling','coad']},
   {id:3,title:'Bouncer drill — indoor nets 3 Apr',dur:'24:08',type:'Training',tags:['training','bowling']},
   {id:4,title:'Lancs top-order weakness report',dur:'6:52',type:'Opposition',tags:['scout','lancs']},
   {id:5,title:'March highlights reel',dur:'3:21',type:'Highlights',tags:['media','highlights']},
@@ -267,28 +268,28 @@ const CRICKET_COMMS=[
   {id:1,author:'Ottis Caldwell',role:'Head Coach',time:'08:12',msg:'Team meeting 9:30 in the pavilion — selection for Friday announced.'},
   {id:2,author:'Kunle Oduya',role:'Physio',time:'Yesterday',msg:'Talbot scan results in — 4 week rehab, no return-to-play before 5 May.'},
   {id:3,author:'Darren Ellesmere',role:'DoC',time:'Yesterday',msg:'Fairweather available full season — ECB rest window confirmed.'},
-  {id:4,author:'Comms',role:'Media',time:'2 days ago',msg:'Northbridge Sport will broadcast the Lancashire opener. Media training Thu 2pm.'},
+  {id:4,author:'Comms',role:'Media',time:'2 days ago',msg:'Northbridge Sport will broadcast the Calderbrook CCC opener. Media training Thu 2pm.'},
 ];
 
 const CHAMPIONSHIP_TABLE=[
-  {team:'Surrey',p:3,w:2,d:1,l:0,bonus:12,pts:62},
+  {team:'Highford County',p:3,w:2,d:1,l:0,bonus:12,pts:62},
   {team:'Oakridge',p:3,w:2,d:1,l:0,bonus:11,pts:61},
   {team:'Somerset',p:3,w:2,d:0,l:1,bonus:10,pts:54},
-  {team:'Essex',p:3,w:1,d:2,l:0,bonus:11,pts:49},
-  {team:'Nottinghamshire',p:3,w:1,d:1,l:1,bonus:9,pts:41},
-  {team:'Durham',p:3,w:1,d:1,l:1,bonus:8,pts:40},
-  {team:'Warwickshire',p:3,w:0,d:2,l:1,bonus:7,pts:27},
-  {team:'Hampshire',p:3,w:0,d:1,l:2,bonus:5,pts:17},
+  {team:'Riverbank County',p:3,w:1,d:2,l:0,bonus:11,pts:49},
+  {team:'Stannerton County',p:3,w:1,d:1,l:1,bonus:9,pts:41},
+  {team:'Brackenfell CCC',p:3,w:1,d:1,l:1,bonus:8,pts:40},
+  {team:'Aldermount County',p:3,w:0,d:2,l:1,bonus:7,pts:27},
+  {team:'Easthaven CCC',p:3,w:0,d:1,l:2,bonus:5,pts:17},
 ];
 
 const BLAST_NORTH=[
-  {team:'Lancashire',p:4,w:3,l:1,nrr:1.24,pts:6},
+  {team:'Calderbrook CCC',p:4,w:3,l:1,nrr:1.24,pts:6},
   {team:'Oakridge',p:4,w:3,l:1,nrr:0.88,pts:6},
-  {team:'Durham',p:4,w:2,l:2,nrr:0.41,pts:4},
-  {team:'Notts',p:4,w:2,l:2,nrr:0.18,pts:4},
+  {team:'Brackenfell CCC',p:4,w:2,l:2,nrr:0.41,pts:4},
+  {team:'Stannerton County',p:4,w:2,l:2,nrr:0.18,pts:4},
   {team:'Birmingham',p:4,w:2,l:2,nrr:-0.02,pts:4},
   {team:'Worcestershire',p:4,w:2,l:2,nrr:-0.31,pts:4},
-  {team:'Derbyshire',p:4,w:1,l:3,nrr:-0.64,pts:2},
+  {team:'Castleford CCC',p:4,w:1,l:3,nrr:-0.64,pts:2},
   {team:'Leicestershire',p:4,w:1,l:3,nrr:-0.82,pts:2},
   {team:'Northamptonshire',p:4,w:0,l:4,nrr:-1.12,pts:0},
 ];
@@ -358,7 +359,7 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'kit',label:'Kit & Equipment',icon:'briefcase'},
     {id:'travel',label:'Travel & Logistics',icon:'plane'},
     {id:'team-comms',label:'Team Comms',icon:'mic'},
-    {id:'preseason',label:'Pre-Season',icon:'calendar',badge:'NEW'},
+    {id:'tours-camps',label:'Tours & Camps',icon:'calendar',badge:'NEW'},
   ]},
   {section:'COMMERCIAL',items:[
     {id:'commercial',label:'Commercial',icon:'briefcase'},
@@ -384,11 +385,11 @@ const pct=(a:number,b:number)=>Math.round((a/b)*100);
 const FAN_DATA = {
   membership: { total: 8240, target: 9000, renewalRate: 84, newThisSeason: 620 },
   attendance: [
-    { match: 'vs Durham MCCU', att: 3200, cap: 18350, format: '4-day' },
-    { match: 'vs Essex (CC)', att: 8400, cap: 18350, format: '4-day', projected: true },
-    { match: 'vs Lancashire (CC)', att: 17200, cap: 18350, format: '4-day', projected: true },
+    { match: 'vs Brackenfell CCC MCCU', att: 3200, cap: 18350, format: '4-day' },
+    { match: 'vs Riverbank County (CC)', att: 8400, cap: 18350, format: '4-day', projected: true },
+    { match: 'vs Calderbrook CCC (CC)', att: 17200, cap: 18350, format: '4-day', projected: true },
     { match: 'vs Warwicks (T20)', att: 14800, cap: 18350, format: 'T20' },
-    { match: 'vs Durham (OD)', att: 6200, cap: 18350, format: 'OD' },
+    { match: 'vs Brackenfell CCC (OD)', att: 6200, cap: 18350, format: 'OD' },
   ] as Array<{match:string;att:number;cap:number;format:string;projected?:boolean}>,
   social: { twitter: 48200, instagram: 62400, facebook: 31800, tiktok: 18600, engagementRate: 4.1 },
   nps: { score: 67, promoters: 72, passives: 18, detractors: 10 },
@@ -400,9 +401,9 @@ const SIGNING_PIPELINE = [
   { id:2, name:'Jordan Hayes',   role:'Opening Batter', age:26, county:'Northants',      col:'Approached',  value:'£90k/yr',        agent:'Pinnacle Sports', notes:'Out of contract Sep 2026 — interested in move north', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   { id:3, name:'Arjun Singh',    role:'Leg Spinner',    age:28, county:'Middlesex',      col:'Approached',  value:'£75k/yr',        agent:'—',              notes:'Self-represented. Championship specialist.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   { id:4, name:'Kyle Beukes',  role:'All-Rounder',    age:30, county:'Cape Town',      col:'Negotiating', value:'£95k + OS slot', agent:'Kingsgate Sports',   notes:'SA passport — would use overseas slot. T20 + OD.', flag:'🇿🇦' },
-  { id:5, name:'Tom Hendricks',  role:'WK-Batter',      age:24, county:'Kent',           col:'Negotiating', value:'£72k/yr',        agent:'Oakridge Sports',            notes:'Strong Championship avg 36.4. Long-term Pennington cover.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { id:6, name:'Dev Sharma',     role:'Off Spinner',    age:29, county:'Warwickshire',   col:'Done',        value:'£68k/yr',        agent:'Crown Cricket Mgmt',  notes:'Signed for 2027 — red-ball specialist, 3-year deal.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { id:7, name:'Lee Clifford',   role:'Seam Bowler',    age:22, county:'—',              col:'Failed',      value:'£55k/yr',        agent:'—',              notes:'Released by Durham — signed Nottinghamshire instead.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:5, name:'Tom Hendricks',  role:'WK-Batter',      age:24, county:'Halden CCC',           col:'Negotiating', value:'£72k/yr',        agent:'Oakridge Sports',            notes:'Strong Championship avg 36.4. Long-term Pennington cover.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:6, name:'Dev Sharma',     role:'Off Spinner',    age:29, county:'Aldermount County',   col:'Done',        value:'£68k/yr',        agent:'Crown Cricket Mgmt',  notes:'Signed for 2027 — red-ball specialist, 3-year deal.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id:7, name:'Lee Clifford',   role:'Seam Bowler',    age:22, county:'—',              col:'Failed',      value:'£55k/yr',        agent:'—',              notes:'Released by Brackenfell CCC — signed Stannerton County instead.', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
 ];
 
 // ─── CRICKET PRE-SEASON / TOUR PREP CAMP VIEW ────────────────────────────────
@@ -435,7 +436,7 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
     // call would burn credits on every founder demo.
     if (session?.isDemoShell !== false) {
       setAiSummary(CANNED.cricket.preSeasonSummary ?? null);
-      setAiHighlights('1. Close the last two fitness gaps before the Abu Dhabi block closes out.\n2. One more simulated middle-order innings from Webb and Shaw before the Lancashire opener.\n3. Dawson workload flag (A:C 1.62) — opening four-day XI needs a seam backup plan.\n4. Ridley\'s reverse-seam consistency is the headline — keep the work intact.\n5. Top-order pitch-read drills before the season opener (seam-friendly surfaces expected).');
+      setAiHighlights('1. Close the last two fitness gaps before the Abu Dhabi block closes out.\n2. One more simulated middle-order innings from Webb and Shaw before the Calderbrook CCC opener.\n3. Dawson workload flag (A:C 1.62) — opening four-day XI needs a seam backup plan.\n4. Ridley\'s reverse-seam consistency is the headline — keep the work intact.\n5. Top-order pitch-read drills before the season opener (seam-friendly surfaces expected).');
       return;
     }
     setAiLoading(true);
@@ -518,7 +519,7 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={cardStyle}>
             <h3 className="text-lg font-bold" style={{color:C.text}}>Activate Pre-Season</h3>
             <div><label className="text-xs mb-1 block" style={{color:C.dim}}>Season opener date</label><input type="date" value={form.opener} onChange={e=>setForm(f=>({...f,opener:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{backgroundColor:C.cardAlt,border:`1px solid ${C.border}`,color:C.text}}/></div>
-            <div><label className="text-xs mb-1 block" style={{color:C.dim}}>Opposition</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Lancashire" className="w-full px-3 py-2.5 rounded-xl text-sm" style={{backgroundColor:C.cardAlt,border:`1px solid ${C.border}`,color:C.text}}/></div>
+            <div><label className="text-xs mb-1 block" style={{color:C.dim}}>Opposition</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Calderbrook CCC" className="w-full px-3 py-2.5 rounded-xl text-sm" style={{backgroundColor:C.cardAlt,border:`1px solid ${C.border}`,color:C.text}}/></div>
             <div><label className="text-xs mb-1 block" style={{color:C.dim}}>Squad size</label><input type="number" value={form.squad} onChange={e=>setForm(f=>({...f,squad:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{backgroundColor:C.cardAlt,border:`1px solid ${C.border}`,color:C.text}}/></div>
             <div><label className="text-xs mb-1 block" style={{color:C.dim}}>Format</label><select value={form.format} onChange={e=>setForm(f=>({...f,format:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{backgroundColor:C.cardAlt,border:`1px solid ${C.border}`,color:C.text}}><option value="County Championship">County Championship</option><option value="One-Day">One-Day</option><option value="T20">T20</option></select></div>
             <div className="flex gap-2">{(['Home','Away Tour'] as const).map(t=>(<button key={t} onClick={()=>setForm(f=>({...f,isAway:t==='Away Tour'}))} className="flex-1 py-2.5 rounded-xl text-xs font-bold" style={{backgroundColor:form.isAway===(t==='Away Tour')?C.amberDim:C.cardAlt,border:form.isAway===(t==='Away Tour')?`1px solid ${C.amber}`:`1px solid ${C.border}`,color:form.isAway===(t==='Away Tour')?C.amber:C.muted}}>{t}</button>))}</div>
@@ -683,8 +684,8 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
 
 // Static morning briefing used in demo shells to avoid a live /api/ai/cricket
 // hit on every page load. Persona: Oakridge CC director, Championship opener
-// vs Lancashire context.
-const DEMO_CRICKET_DASHBOARD_SUMMARY = `Championship opener against Lancashire on Friday, Oakridge Park 10:30 — sitting 2nd in Division One on 61 points. Fairweather cleared his fitness check Wednesday, Ridley bowled twelve overs unbroken in the nets the same evening. Main Stand gone from Monday's members sale, 94% overall capacity before walk-up opens. Pitch reading seam-friendly under dry April skies; Sinclair returns to the Lancashire top order against a nip-backing new-ball plan he's historically struggled with (career avg 17 to the ball that holds). One commercial flag: Northbridge Financial's client-day hospitality suite has three boxes still open for Friday — ~£2,400 of unbooked revenue to tidy up before Thursday lunch.`
+// vs Calderbrook CCC context.
+const DEMO_CRICKET_DASHBOARD_SUMMARY = `Championship opener against Calderbrook CCC on Friday, Oakridge Park 10:30 — sitting 2nd in Division One on 61 points. Fairweather cleared his fitness check Wednesday, Ridley bowled twelve overs unbroken in the nets the same evening. Main Stand gone from Monday's members sale, 94% overall capacity before walk-up opens. Pitch reading seam-friendly under dry April skies; Sinclair returns to the Calderbrook CCC top order against a nip-backing new-ball plan he's historically struggled with (career avg 17 to the ball that holds). One commercial flag: Northbridge Financial's client-day hospitality suite has three boxes still open for Friday — ~£2,400 of unbooked revenue to tidy up before Thursday lunch.`
 
 function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; slug: string }){
   const[page,setPage]=useState('dashboard');
@@ -738,7 +739,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const[oppLoading,setOppLoading]=useState(false);
   const[oppDossier,setOppDossier]=useState<OppDossier|null>(null);
   const[oppError,setOppError]=useState<string|null>(null);
-  const[oppTarget,setOppTarget]=useState('Lancashire');
+  const[oppTarget,setOppTarget]=useState('Calderbrook CCC');
   const[oppFormat,setOppFormat]=useState<'Championship'|'T20'|'OD'>('Championship');
 
   type PressConferenceResult = { questions: { q: string; a: string }[] };
@@ -746,8 +747,8 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const[pcResult,setPcResult]=useState<PressConferenceResult|null>(null);
   const[pcError,setPcError]=useState<string|null>(null);
   const[pcOpen,setPcOpen]=useState<number|null>(null);
-  const[pcRecent,setPcRecent]=useState('Won vs Durham MCCU — 412/7d');
-  const[pcUpcoming,setPcUpcoming]=useState('vs Lancashire, Championship Round 1, Fri 11 Apr');
+  const[pcRecent,setPcRecent]=useState('Won vs Brackenfell CCC MCCU — 412/7d');
+  const[pcUpcoming,setPcUpcoming]=useState('vs Calderbrook CCC, Championship Round 1, Fri 11 Apr');
   const[pcNews,setPcNews]=useState('Harrison fitness doubt, Steenkamp arriving Thu, Dawson workload managed');
 
   const[ecbQuestion,setEcbQuestion]=useState('');
@@ -767,7 +768,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          messages: [{ role: 'user', content: `Oakridge CC squad for this week. Available players (fit only): ${JSON.stringify(fit)}. This week: Championship vs Lancashire (4-day, Fri), plus T20 Blast planning. Suggest the optimal XI for each format, considering format eligibility and player roles. Chris Dawson should have capped overs in Championship. Rajan Steenkamp available Championship + OD only. Respond ONLY in JSON (no markdown): { "championship": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" }, "t20": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" } }` }],
+          messages: [{ role: 'user', content: `Oakridge CC squad for this week. Available players (fit only): ${JSON.stringify(fit)}. This week: Championship vs Calderbrook CCC (4-day, Fri), plus T20 Blast planning. Suggest the optimal XI for each format, considering format eligibility and player roles. Chris Dawson should have capped overs in Championship. Rajan Steenkamp available Championship + OD only. Respond ONLY in JSON (no markdown): { "championship": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" }, "t20": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" } }` }],
         }),
       });
       if (!res.ok) throw new Error(`API ${res.status}`);
@@ -856,7 +857,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           { player: 'Ben Ridley',        recommendation: 'Open extension talks immediately, 2-year deal with Hundred release window', reason: 'Leading Championship bowler — reverse-swing work from camp is a rare asset to lose.' },
           { player: 'Adam Kingsley',     recommendation: 'One-year extension with a structured retirement path', reason: 'At 37, succession planning is on the table; the club keeps the dressing-room voice.' },
         ],
-        strategy_note: 'Prioritise Fairweather + Ridley before the Lancashire opener so the announce lands inside commercial-partner sign-off. Kingsley\'s one-year is a morale move — worth it. Shan Abbas\'s Pakistan commitments warrant a separate conversation and are not urgent for this board cycle.',
+        strategy_note: 'Prioritise Fairweather + Ridley before the Calderbrook CCC opener so the announce lands inside commercial-partner sign-off. Kingsley\'s one-year is a morale move — worth it. Shan Abbas\'s Pakistan commitments warrant a separate conversation and are not urgent for this board cycle.',
       });
       setContractAiLoading(false);
       return;
@@ -1231,9 +1232,9 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <Card>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Upcoming Fixtures</div>
           {[
-            {comp:'County Championship',opp:'vs Lancashire (H)',date:'Fri 11 Apr',format:'4-day'},
-            {comp:'County Championship',opp:'vs Essex (H)',date:'Tue 29 Apr',format:'4-day'},
-            {comp:'One Day Cup',opp:'vs Durham (H)',date:'Sun 18 May',format:'50-over'},
+            {comp:'County Championship',opp:'vs Calderbrook CCC (H)',date:'Fri 11 Apr',format:'4-day'},
+            {comp:'County Championship',opp:'vs Riverbank County (H)',date:'Tue 29 Apr',format:'4-day'},
+            {comp:'One Day Cup',opp:'vs Brackenfell CCC (H)',date:'Sun 18 May',format:'50-over'},
             {comp:'T20 Blast',opp:'vs Warwicks (H)',date:'Fri 6 Jun',format:'T20'},
           ].map((f,i)=>(
             <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<3?`1px solid ${C.border}`:'none'}}>
@@ -1320,7 +1321,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <Tile label="Leading Wicket-Taker" value="Ridley"  sub="18 wickets · avg 19.2 · econ 2.4" color={C.teal} />
         </div>
         <Card>
-          <PanelHead>Squad Readiness — Friday vs Lancashire</PanelHead>
+          <PanelHead>Squad Readiness — Friday vs Calderbrook CCC</PanelHead>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {[
               {n:'Fairweather',          pos:'Bat',     status:'Fit',      load:'92%',   note:'Cleared fitness check Wed. Confirmed for No.4.'},
@@ -1364,13 +1365,13 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       <div style={{display:'flex',flexDirection:'column',gap:20}}>
         <SectionHead title="Captain View" sub="Match-day decisions, opposition intel, pitch & toss" />
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-          <Tile label="Next Match"   value="Fri 11 Apr" sub="vs Lancashire (A) · Old Trafford" color={C.purple} />
+          <Tile label="Next Match"   value="Fri 11 Apr" sub="vs Calderbrook CCC (A) · Westmoor Cricket Ground" color={C.purple} />
           <Tile label="H2H Record"   value="6-3"        sub="Last 10 vs Lancs CC · 1 draw" color={C.green} />
           <Tile label="Pitch Report" value="Seam-friendly" sub="Lateral movement Sessions 1–3" color={C.teal} />
           <Tile label="Toss Win Rate" value="58%"       sub="Bat first away · 11/19 last 2 seasons" color={C.amber} />
         </div>
         <Card>
-          <PanelHead>Match-Day Decisions — Lancashire (A)</PanelHead>
+          <PanelHead>Match-Day Decisions — Calderbrook CCC (A)</PanelHead>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
             <div style={{padding:12,borderRadius:8,background:`${C.purple}10`,border:`1px solid ${C.purple}33`}}>
               <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.05em'}}>Bowling Plan</div>
@@ -1387,7 +1388,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           </div>
         </Card>
         <Card>
-          <PanelHead>Opposition Key Players — Lancashire</PanelHead>
+          <PanelHead>Opposition Key Players — Calderbrook CCC</PanelHead>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {[
               {n:'Keaton Sinclair', pos:'Opener', threat:'Avg 17 vs nip-back ball',          plan:'Full + straight. Target stumps from over the wicket. Forcing chest-high LBW shape.'},
@@ -1421,7 +1422,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <PanelHead>Deep Dives In Progress</PanelHead>
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[
-              {title:'Lancashire — Spin Vulnerability Study',     owner:'A. Patel',  due:'Thu 10 Apr', status:'In review',   color:C.green},
+              {title:'Calderbrook CCC — Spin Vulnerability Study',     owner:'A. Patel',  due:'Thu 10 Apr', status:'In review',   color:C.green},
               {title:'Harris (target) — 3-year T20 form analysis', owner:'M. Singh',  due:'Fri 11 Apr', status:'Drafting',    color:C.amber},
               {title:'Fairweather — Off-side Strike Rate Decomposition',  owner:'A. Patel',  due:'Mon 14 Apr', status:'Data pull',   color:C.teal},
               {title:'Oakridge Park — Pitch Bounce Profile (5y trend)',owner:'R. Khan',   due:'Wed 16 Apr', status:'Scoping',     color:'#3B82F6'},
@@ -1439,7 +1440,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <PanelHead>Pipeline — Upcoming Analysis Tasks</PanelHead>
           <div style={{display:'flex',flexDirection:'column',gap:6}}>
             {[
-              'Surrey T20 prep dossier — 3 days post Lancashire result',
+              'Highford County T20 prep dossier — 3 days post Calderbrook CCC result',
               'Ridley workload review — bridging Championship → T20 transition',
               'Academy bowler hat-trick clip set — recommend for first-team trial',
               'ECB top-order spinner exposure rates — quarterly update',
@@ -1507,7 +1508,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <Tile label="Pitch Prep Status" value="Day 3 of 5" sub="Final cut Thu · Roll Fri 06:00" color="#16A34A" />
           <Tile label="48hr Rain Risk"    value="22%"        sub="Showers possible Thu evening" color={C.amber} />
           <Tile label="Ground Condition"  value="Amber"      sub="Surface firming · 1 light water Wed" color={C.amber} />
-          <Tile label="Days to Match"     value="3 days"     sub="vs Lancashire · 10:30 start" color="#16A34A" />
+          <Tile label="Days to Match"     value="3 days"     sub="vs Calderbrook CCC · 10:30 start" color="#16A34A" />
         </div>
         <Card>
           <PanelHead>Pitch Report — Oakridge Park · Friday Strip</PanelHead>
@@ -1655,16 +1656,16 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       <div style={{display:'flex',flexDirection:'column',gap:20}}>
         <SectionHead title="Operations View" sub="Travel, kit, accommodation, and safeguarding" />
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-          <Tile label="Next Away Trip"         value="Lancs (A)"       sub="Fri 11 Apr · Old Trafford"  color="#0EA5E9" />
+          <Tile label="Next Away Trip"         value="Lancs (A)"       sub="Fri 11 Apr · Westmoor Cricket Ground"  color="#0EA5E9" />
           <Tile label="Accommodation Booked"   value="21 of 21"        sub="Hilton Manchester · 2 nights" color={C.green} />
           <Tile label="Kit Ready"              value="Yes"             sub="Match + training · checked Tue" color={C.green} />
           <Tile label="Safeguarding Status"    value="Compliant"       sub="DBS 100% · last audit 2 Apr" color={C.green} />
         </div>
         <Card>
-          <PanelHead>Operations Checklist — Lancashire (Away)</PanelHead>
+          <PanelHead>Operations Checklist — Calderbrook CCC (Away)</PanelHead>
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[
-              {label:'Travel',          text:'Coach booked Thu 14:00 from Oakridge Park. ETA Old Trafford 17:30. Backup train tickets held for 6 staff (return Sun).', color:'#0EA5E9'},
+              {label:'Travel',          text:'Coach booked Thu 14:00 from Oakridge Park. ETA Westmoor Cricket Ground 17:30. Backup train tickets held for 6 staff (return Sun).', color:'#0EA5E9'},
               {label:'Hotel & Meals',    text:'Hilton Manchester 2 nights (21 rooms). Pre-match meal Fri 07:30 (Chef Marco — agreed menu). Recovery shake bar on bus.', color:C.green},
               {label:'Kit & Equipment',  text:'Match kit + 2 sets training kit packed Tue. Match balls (12) signed off by umpires. Stringer attending Friday — 4 spare bats.', color:C.green},
               {label:'Safeguarding',     text:'No youth players on tour. Welfare officer (Dr. Patel) on call. Code-of-conduct briefing Thu 16:00. Anti-doping rep on standby.', color:C.purple},
@@ -1876,8 +1877,8 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Press Conference Schedule</div>
           {[
             {when:'Wed 9 Apr · 14:00', who:'Fairweather + Head Coach', topic:'Championship build-up · pitch + selection', venue:'Oakridge Park press room'},
-            {when:'Fri 11 Apr · 17:00', who:'Captain (post-toss)', topic:'Day 1 close · session-by-session review', venue:'Old Trafford media centre'},
-            {when:'Sat 12 Apr · 18:30', who:'Match-winner (TBC)', topic:'Post-match — full quotes + 1:1 slots', venue:'Old Trafford media centre'},
+            {when:'Fri 11 Apr · 17:00', who:'Captain (post-toss)', topic:'Day 1 close · session-by-session review', venue:'Westmoor Cricket Ground media centre'},
+            {when:'Sat 12 Apr · 18:30', who:'Match-winner (TBC)', topic:'Post-match — full quotes + 1:1 slots', venue:'Westmoor Cricket Ground media centre'},
             {when:'Mon 14 Apr · 11:00', who:'Director + Coach', topic:'Pre T20 Blast season launch', venue:'Oakridge Park pavilion'},
           ].map((p,i,a)=>(
             <div key={i} style={{padding:'10px 0',borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
@@ -1958,19 +1959,19 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
       <SectionHead title="Operations" sub="Travel, kit, accommodation, and safeguarding" />
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Next Away Trip</div><div style={{fontSize:18,fontWeight:800,color:'#0EA5E9'}}>Lancs (A)</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Fri 11 Apr · Old Trafford</div></Card>
+        <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Next Away Trip</div><div style={{fontSize:18,fontWeight:800,color:'#0EA5E9'}}>Lancs (A)</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Fri 11 Apr · Westmoor Cricket Ground</div></Card>
         <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Accommodation</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>21 / 21</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Hilton Manchester · 2 nights</div></Card>
         <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Kit Status</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>Ready</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>Match + 2 training sets · Tue check</div></Card>
         <Card><div style={{fontSize:11,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600,marginBottom:6}}>Safeguarding</div><div style={{fontSize:24,fontWeight:800,color:C.green}}>Compliant</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>DBS 100% · last audit 2 Apr</div></Card>
       </div>
 
       <Card>
-        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Travel Plan — Lancashire Away</div>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>Travel Plan — Calderbrook CCC Away</div>
         <div style={{display:'grid',gridTemplateColumns:'120px 140px 1fr 100px',gap:12,padding:'8px 0',borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.dim,textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600}}>
           <span>When</span><span>Mode</span><span>Detail</span><span>Owner</span>
         </div>
         {[
-          {w:'Thu 14:00', m:'Coach',  d:'Oakridge Park → Old Trafford · ETA 17:30 · 21 seats + kit',           o:'Operations'},
+          {w:'Thu 14:00', m:'Coach',  d:'Oakridge Park → Westmoor Cricket Ground · ETA 17:30 · 21 seats + kit',           o:'Operations'},
           {w:'Thu 17:45', m:'Hilton', d:'Check-in · 21 rooms · briefing room booked 19:00–20:30',           o:'Operations'},
           {w:'Fri 07:30', m:'Hotel',  d:'Pre-match meal · function room A · agreed menu (Chef Marco)',     o:'Operations'},
           {w:'Fri 08:15', m:'Coach',  d:'Hotel → ground · 12 min transfer',                                 o:'Operations'},
@@ -2046,7 +2047,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         </div>
         {optimiserOpen && (
           <Card style={{marginBottom:16,borderColor:C.purpleDim,background:C.cardAlt}}>
-            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>This week: Championship vs Lancashire (Fri) + T20 Blast qualification push</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>This week: Championship vs Calderbrook CCC (Fri) + T20 Blast qualification push</div>
             <button onClick={generateSquadOptimiser} disabled={optLoading} style={{background:C.purple,color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:optLoading?'wait':'pointer',opacity:optLoading?0.6:1}}>{optLoading?'Generating…':'Generate XIs'}</button>
             {optError && <div style={{fontSize:11,color:C.red,marginTop:8}}>⚠ {optError}</div>}
             {optResult && (
@@ -2155,7 +2156,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       {n:'Jake Harrison',acr:1.62,st:'amber',ov:0,del:0,lim:48,wk:[18,28,32,0]},
       {n:'Chris Dawson',acr:1.62,st:'amber',ov:6,del:36,lim:72,wk:[24,30,42,36]},
       {n:'Alex Merriman',acr:1.05,st:'green',ov:9,del:54,lim:72,wk:[36,42,48,54]},
-      {n:'Oliver Kent',acr:0.71,st:'green',ov:4,del:24,lim:72,wk:[18,22,24,24]},
+      {n:'Oliver Halden CCC',acr:0.71,st:'green',ov:4,del:24,lim:72,wk:[18,22,24,24]},
     ];
     const SEASON_BOWLING=[
       {wk:'W1',sam:48,hill:42,jake:32,chris:30,alex:36,oliv:18},
@@ -2191,9 +2192,9 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       {n:'Jake Harrison',v:18.2},
     ];
     const TOP_SPEED=[
-      {n:'James Hill',v:31.4,d:'10 Apr vs Kent'},
+      {n:'James Hill',v:31.4,d:'10 Apr vs Halden CCC'},
       {n:'Daniel Webb',v:30.2,d:'8 Apr training'},
-      {n:'Chris Dawson',v:29.3,d:'5 Apr vs Surrey'},
+      {n:'Chris Dawson',v:29.3,d:'5 Apr vs Highford County'},
       {n:'Sam Reed',v:28.7,d:'12 Apr training'},
       {n:'Jake Harrison',v:24.1,d:'31 Mar — pre-injury'},
     ];
@@ -2630,7 +2631,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             {key:'jake',name:'Jake Harrison',color:C.amber},
             {key:'chris',name:'Chris Dawson',color:C.red},
             {key:'alex',name:'Alex Merriman',color:C.green},
-            {key:'oliv',name:'Oliver Kent',color:C.blue},
+            {key:'oliv',name:'Oliver Halden CCC',color:C.blue},
           ];
           return (
             <>
@@ -3338,10 +3339,10 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <Card>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Venue Calendar — April 2026</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
-            {[{d:'11 Apr',e:'Championship vs Lancashire',t:'cricket',util:100},
+            {[{d:'11 Apr',e:'Championship vs Calderbrook CCC',t:'cricket',util:100},
               {d:'18 Apr',e:'Corporate Golf Day',t:'event',util:85},
               {d:'25 Apr',e:'Easter Conference (Midlands Bank)',t:'venue',util:100},
-              {d:'29 Apr',e:'Championship vs Essex',t:'cricket',util:100},
+              {d:'29 Apr',e:'Championship vs Riverbank County',t:'cricket',util:100},
             ].map((v,i)=>(
               <div key={i} style={{padding:'12px',border:`1px solid ${C.border}`,borderRadius:8,borderLeft:`3px solid ${v.t==='cricket'?C.green:v.t==='event'?C.purple:C.teal}`}}>
                 <div style={{fontSize:11,color:C.dim,marginBottom:4}}>{v.d}</div>
@@ -3389,11 +3390,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
         <Card style={{border:`1px solid ${C.purpleDim}`}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <div style={{fontSize:13,fontWeight:600,color:C.text}}>Round 1 — Lancashire (Home)</div>
+            <div style={{fontSize:13,fontWeight:600,color:C.text}}>Round 1 — Calderbrook CCC (Home)</div>
             <span style={{padding:'3px 10px',borderRadius:20,fontSize:11,background:C.purpleDim,color:C.purple}}>11 Apr · 4-day</span>
           </div>
           <div style={{fontSize:13,color:C.muted,marginBottom:14,fontStyle:'italic',borderLeft:`3px solid ${C.purple}`,paddingLeft:12,lineHeight:1.7}}>
-            "Lancashire have won 3 of their last 5 Championship openers away. Their top-order averages 42.1 in April conditions; pace-friendly pitch with lateral movement in sessions 1–3. Key threat: a world-class No.3 type figure, averaging 58 in away conditions. Recommend seam-heavy attack in first two sessions, target leg stump."
+            "Calderbrook CCC have won 3 of their last 5 Championship openers away. Their top-order averages 42.1 in April conditions; pace-friendly pitch with lateral movement in sessions 1–3. Key threat: a world-class No.3 type figure, averaging 58 in away conditions. Recommend seam-heavy attack in first two sessions, target leg stump."
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
             {[{l:'Their batting avg',v:'38.4'},{l:'Pace taken (this yr)',v:'68%'},{l:'Home win rate',v:'60%'}].map((s,i)=>(
@@ -3409,10 +3410,10 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         </Card>
         <Card>
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Upcoming Opposition</div>
-          {[{opp:'Lancashire',date:'11 Apr',format:'Championship',prepared:true},
-            {opp:'Essex',date:'29 Apr',format:'Championship',prepared:false},
-            {opp:'Durham',date:'18 May',format:'One Day Cup',prepared:false},
-            {opp:'Warwickshire',date:'6 Jun',format:'T20 Blast',prepared:false},
+          {[{opp:'Calderbrook CCC',date:'11 Apr',format:'Championship',prepared:true},
+            {opp:'Riverbank County',date:'29 Apr',format:'Championship',prepared:false},
+            {opp:'Brackenfell CCC',date:'18 May',format:'One Day Cup',prepared:false},
+            {opp:'Aldermount County',date:'6 Jun',format:'T20 Blast',prepared:false},
           ].map((m,i)=>(
             <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:i<3?`1px solid ${C.border}`:'none'}}>
               <div>
@@ -3609,15 +3610,15 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     { id:'hu', label:'The Hundred' },
   ];
   const FORMAT_META: Record<string,{ sub:string; pos:{ label:string; value:string; sub:string }; next:{ label:string; value:string; sub:string } }> = {
-    ch:{ sub:'Wednesday 8 April 2026 · Oakridge Park · Championship opener Friday vs Lancashire',
+    ch:{ sub:'Wednesday 8 April 2026 · Oakridge Park · Championship opener Friday vs Calderbrook CCC',
       pos:{ label:'League Position', value:'2nd',         sub:'Div 1 · 61 pts' },
-      next:{ label:'Next Match',      value:'Fri 11 Apr',  sub:'vs Lancashire (H)' } },
-    t2:{ sub:'Wednesday 8 April 2026 · Oakridge Park · T20 Blast — opener vs Warwickshire',
+      next:{ label:'Next Match',      value:'Fri 11 Apr',  sub:'vs Calderbrook CCC (H)' } },
+    t2:{ sub:'Wednesday 8 April 2026 · Oakridge Park · T20 Blast — opener vs Aldermount County',
       pos:{ label:'North Group Position', value:'2nd',    sub:'6 pts' },
-      next:{ label:'Next Blast',           value:'Fri 6 Jun', sub:'vs Warwickshire (H)' } },
+      next:{ label:'Next Blast',           value:'Fri 6 Jun', sub:'vs Aldermount County (H)' } },
     od:{ sub:'Wednesday 8 April 2026 · Oakridge Park · One Day Cup group stage',
       pos:{ label:'One Day Cup Group', value:'3rd',       sub:'Group B' },
-      next:{ label:'Next OD',          value:'Sun 18 May', sub:'vs Durham (H)' } },
+      next:{ label:'Next OD',          value:'Sun 18 May', sub:'vs Brackenfell CCC (H)' } },
     hu:{ sub:'Wednesday 8 April 2026 · Oakridge Park · Northern Superchargers preparations',
       pos:{ label:'Hundred Status',    value:'Visa pending', sub:'Brett Mason — Home Office' },
       next:{ label:'Next Hundred',     value:'TBC',          sub:'Season opener — awaiting fixture' } },
@@ -3668,7 +3669,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       { id:'sms3', from:'Physio Lawson',       avatar:'NL', time:'06:42', subject:'Harrison RTP — phase 3',            preview:'Phase 3 nets went well yesterday. Recommend 6 overs/innings cap for Friday if selected.' },
     ]},
     { id:'whatsapp', icon:'📱', label:'WhatsApp',           count:4, urgent:false, color:'#22c55e', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.4)', messages:[
-      { id:'wa1', from:'Squad Group',     avatar:'SG', time:'07:05', subject:'Travel call — Old Trafford',    preview:'Coach leaves 14:00 Thu from Oakridge Park. Kit drop 13:30. Reply 👍 to confirm.' },
+      { id:'wa1', from:'Squad Group',     avatar:'SG', time:'07:05', subject:'Travel call — Westmoor Cricket Ground',    preview:'Coach leaves 14:00 Thu from Oakridge Park. Kit drop 13:30. Reply 👍 to confirm.' },
       { id:'wa2', from:'Senior Players',  avatar:'SP', time:'Yesterday', subject:'Team dinner Sun',           preview:'Skipper wants the senior group out Sun evening. Local place at 19:30 — reply if you’re in.' },
       { id:'wa3', from:'Overseas Chat',   avatar:'OS', time:'Yesterday', subject:'Steenkamp landed',          preview:'Wheels down 14:20. Bags into the team hotel. Will come to training tomorrow — not bowling yet.' },
       { id:'wa4', from:'Analysts',        avatar:'AN', time:'06:30', subject:'Lancs LH match-up file',        preview:'Dropped the LH batters pack in the analyst drive. 3 clips per batter, 2 weaknesses each. Ready for selection.' },
@@ -3690,7 +3691,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     { id:'agent',    icon:'🤝', label:'Agent Messages',     count:3, urgent:true,  color:C.purple, bg:`${C.purple}14`, border:`${C.purple}40`, messages:[
       { id:'ag1', from:'Thornton Sports',     avatar:'TS', time:'07:18', subject:'Kingsley — extension ask',        preview:'Client wants to open talks before the Champ opener. Initial ask is £135k/yr for 2 years. Thoughts?', urgent:true },
       { id:'ag2', from:'Meridian Group',      avatar:'MG', time:'Yesterday', subject:'Abbas visa — minor query',     preview:'Home Office came back with one document clarification. Non-blocking, but we’ll need it signed off by Fri.' },
-      { id:'ag3', from:'Lancaster Mgmt',      avatar:'LM', time:'2 days ago', subject:'Ridley — release clause',      preview:'Durham enquiry came in yesterday. £95k release active Oct. Client open to talking — wants reassurance on Champ minutes.', urgent:true },
+      { id:'ag3', from:'Lancaster Mgmt',      avatar:'LM', time:'2 days ago', subject:'Ridley — release clause',      preview:'Brackenfell CCC enquiry came in yesterday. £95k release active Oct. Client open to talking — wants reassurance on Champ minutes.', urgent:true },
     ]},
     { id:'board',    icon:'🏛️', label:'Board Messages',     count:2, urgent:false, color:C.teal,   bg:`${C.teal}14`,   border:`${C.teal}40`, messages:[
       { id:'bd1', from:'Board Chair',       avatar:'BC', time:'Yesterday', subject:'Windfall programme review',     preview:'Need a 15-min read on the Indoor Centre spend before Fri. Currently 32% of budget consumed — on track or slipping?' },
@@ -3703,7 +3704,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       { id:'md4', from:'Northbridge Sport',   avatar:'NS', time:'3 days ago', subject:'Pre-match pitch tour',         preview:'Broadcast crew want a pitch tour with groundsman Wed morning. Reply by 10 Apr so we can lock the crew booking.' },
     ]},
     { id:'transfer', icon:'🔁', label:'Transfer Activity',  count:2, urgent:true,  color:C.red,    bg:`${C.red}14`,    border:`${C.red}40`, messages:[
-      { id:'tr1', from:'Recruitment',       avatar:'RC', time:'07:08', subject:'Hendricks — WK cover',         preview:'Long-term Pennington cover. Kent willing to sell for £72k/yr. Shortlist him before we see Surrey’s offer.', urgent:true },
+      { id:'tr1', from:'Recruitment',       avatar:'RC', time:'07:08', subject:'Hendricks — WK cover',         preview:'Long-term Pennington cover. Halden CCC willing to sell for £72k/yr. Shortlist him before we see Highford County’s offer.', urgent:true },
       { id:'tr2', from:'Scouting',          avatar:'SC', time:'Yesterday', subject:'Beukes — OS slot',          preview:'SA passport, would use overseas slot. T20 + OD only. 30yo, strong red-ball avg. Priority call before he signs elsewhere.', urgent:true },
     ]},
     { id:'staff',    icon:'👔', label:'Staff Updates',      count:2, urgent:false, color:'#0ea5e9', bg:'rgba(14,165,233,0.08)', border:'rgba(14,165,233,0.4)', messages:[
@@ -3727,20 +3728,20 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   // to invent new Hundred entries on the existing master lists.
   const FORMAT_FIXTURES: Record<string, Array<{ date:string; opponent:string; venue:'Home'|'Away'; time:string; competition:string }>> = {
     ch: [
-      { date:'Fri 11 Apr',  opponent:'Lancashire',     venue:'Home', time:'10:30', competition:'Championship' },
-      { date:'Tue 22 Apr',  opponent:'Surrey',         venue:'Away', time:'10:30', competition:'Championship' },
-      { date:'Fri 2 May',   opponent:'Essex',          venue:'Home', time:'10:30', competition:'Championship' },
+      { date:'Fri 11 Apr',  opponent:'Calderbrook CCC',     venue:'Home', time:'10:30', competition:'Championship' },
+      { date:'Tue 22 Apr',  opponent:'Highford County',         venue:'Away', time:'10:30', competition:'Championship' },
+      { date:'Fri 2 May',   opponent:'Riverbank County',          venue:'Home', time:'10:30', competition:'Championship' },
       { date:'Fri 16 May',  opponent:'Somerset',       venue:'Away', time:'10:30', competition:'Championship' },
     ],
     t2: [
-      { date:'Fri 6 Jun',   opponent:'Warwickshire',   venue:'Home', time:'18:30', competition:'T20 Blast' },
-      { date:'Sun 8 Jun',   opponent:'Lancashire',     venue:'Away', time:'14:30', competition:'T20 Blast' },
-      { date:'Fri 13 Jun',  opponent:'Derbyshire',     venue:'Home', time:'18:30', competition:'T20 Blast' },
-      { date:'Sat 21 Jun',  opponent:'Nottinghamshire',venue:'Away', time:'14:30', competition:'T20 Blast' },
+      { date:'Fri 6 Jun',   opponent:'Aldermount County',   venue:'Home', time:'18:30', competition:'T20 Blast' },
+      { date:'Sun 8 Jun',   opponent:'Calderbrook CCC',     venue:'Away', time:'14:30', competition:'T20 Blast' },
+      { date:'Fri 13 Jun',  opponent:'Castleford CCC',     venue:'Home', time:'18:30', competition:'T20 Blast' },
+      { date:'Sat 21 Jun',  opponent:'Stannerton County',venue:'Away', time:'14:30', competition:'T20 Blast' },
     ],
     od: [
-      { date:'Sun 18 May',  opponent:'Durham',         venue:'Home', time:'11:00', competition:'One Day Cup' },
-      { date:'Wed 28 May',  opponent:'Notts',          venue:'Away', time:'11:00', competition:'One Day Cup' },
+      { date:'Sun 18 May',  opponent:'Brackenfell CCC',         venue:'Home', time:'11:00', competition:'One Day Cup' },
+      { date:'Wed 28 May',  opponent:'Stannerton County',          venue:'Away', time:'11:00', competition:'One Day Cup' },
       { date:'Sun 1 Jun',   opponent:'Leicestershire', venue:'Home', time:'11:00', competition:'One Day Cup' },
     ],
     hu: [
@@ -3751,19 +3752,19 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   }
   const FORMAT_RESULTS: Record<string, Array<{ date:string; opponent:string; venue:'Home'|'Away'; result:'W'|'L'|'D'; score:string; oppScore:string; format:string }>> = {
     ch: [
-      { date:'4 Apr',  opponent:'Durham MCCU',        venue:'Home', result:'W', score:'412/7d', oppScore:'198 & 204', format:'Championship' },
-      { date:'15 Sep', opponent:'Warwickshire',       venue:'Away', result:'W', score:'388 & 221/4d', oppScore:'342 & 198', format:'Championship' },
+      { date:'4 Apr',  opponent:'Glenhill MCCU',        venue:'Home', result:'W', score:'412/7d', oppScore:'198 & 204', format:'Championship' },
+      { date:'15 Sep', opponent:'Aldermount County',       venue:'Away', result:'W', score:'388 & 221/4d', oppScore:'342 & 198', format:'Championship' },
       { date:'5 Sep',  opponent:'Somerset',           venue:'Home', result:'L', score:'312 & 288', oppScore:'412 & 190/3', format:'Championship' },
     ],
     t2: [
-      { date:'28 Aug', opponent:'Derbyshire',         venue:'Home', result:'W', score:'184/5', oppScore:'162/9',      format:'T20 Blast' },
-      { date:'22 Aug', opponent:'Lancashire',         venue:'Away', result:'L', score:'149/8', oppScore:'151/4',      format:'T20 Blast' },
-      { date:'15 Aug', opponent:'Warwickshire',       venue:'Home', result:'W', score:'201/6', oppScore:'186/9',      format:'T20 Blast' },
+      { date:'28 Aug', opponent:'Castleford CCC',         venue:'Home', result:'W', score:'184/5', oppScore:'162/9',      format:'T20 Blast' },
+      { date:'22 Aug', opponent:'Calderbrook CCC',         venue:'Away', result:'L', score:'149/8', oppScore:'151/4',      format:'T20 Blast' },
+      { date:'15 Aug', opponent:'Aldermount County',       venue:'Home', result:'W', score:'201/6', oppScore:'186/9',      format:'T20 Blast' },
     ],
     od: [
       { date:'28 Mar', opponent:'Leeds/Bradford',     venue:'Home', result:'W', score:'286/6', oppScore:'241',        format:'One Day Cup' },
       { date:'22 Mar', opponent:'Oakridge 2nd XI',    venue:'Home', result:'L', score:'348',   oppScore:'352/8',      format:'One Day Cup' },
-      { date:'14 Mar', opponent:'Durham',             venue:'Away', result:'W', score:'262/7', oppScore:'248',        format:'One Day Cup' },
+      { date:'14 Mar', opponent:'Brackenfell CCC',             venue:'Away', result:'W', score:'262/7', oppScore:'248',        format:'One Day Cup' },
     ],
     hu: [
       { date:'24 Aug', opponent:'Northern Superchargers', venue:'Home', result:'W', score:'152/6', oppScore:'144/8', format:'The Hundred' },
@@ -3774,7 +3775,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     ch: { topRuns:'Fairweather · 412',  topWickets:'Ridley · 18',   form:'W W L W W' },
     t2: { topRuns:'Pennington · 284',   topWickets:'Sterling · 11',  form:'W L W W L' },
     od: { topRuns:'Kingsley · 198',     topWickets:'Fenwick · 9',   form:'W L W W' },
-    hu: { topRuns:'Hill · 124',         topWickets:'Kent · 8',      form:'W L' },
+    hu: { topRuns:'Hill · 124',         topWickets:'Halden CCC · 8',      form:'W L' },
   }
   const fxForFormat      = FORMAT_FIXTURES[format]      || FORMAT_FIXTURES.ch
   const resultsForFormat = FORMAT_RESULTS[format]       || FORMAT_RESULTS.ch
@@ -3810,7 +3811,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       return
     }
     setAiLoading(true)
-    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Oakridge CC director. Division One position: 2nd. Next fixture: vs Lancashire. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
+    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Oakridge CC director. Division One position: 2nd. Next fixture: vs Calderbrook CCC. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
       .then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setAiLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -4147,7 +4148,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                         <div className="p-4" style={{ backgroundColor: C.card }}>
                           <div className="inline-block px-3 py-1.5 rounded-lg text-lg font-black mb-3" style={{ backgroundColor: C.greenDim, color: C.green, border: `2px solid ${C.green}` }}>BAT FIRST</div>
                           <div className="text-xs leading-relaxed mb-3" style={{ color: C.text }}>
-                            Pitch moisture gone after the overnight cover. Our top order averages 44.2 batting first on this ground since 2022, and Lancashire&apos;s opening attack leaks in the first hour — particularly to left-handers pushing hard at the fourth stump.
+                            Pitch moisture gone after the overnight cover. Our top order averages 44.2 batting first on this ground since 2022, and Calderbrook CCC&apos;s opening attack leaks in the first hour — particularly to left-handers pushing hard at the fourth stump.
                           </div>
                           <div className="rounded-lg p-2 text-[11px]" style={{ backgroundColor: `${C.teal}14`, border: `1px solid ${C.teal}33`, color: C.teal }}>
                             <b>Key factor:</b> Top-order avg 44.2 batting first · home ground · April conditions
@@ -4211,9 +4212,9 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                     {step.preview === 'dontmiss' && (<>
                       <div className="space-y-2">
                         {[{ urgency:'URGENT',  urgencyColor:C.red,   urgencyBg:C.redDim,   item:'T20 Blast squad submission — today 17:00. Pending 2 signatures.' },
-                          { urgency:'THIS WK', urgencyColor:C.amber, urgencyBg:C.amberDim, item:'Team sheet deadline — Wed 17:00 for Lancashire Friday opener.' },
+                          { urgency:'THIS WK', urgencyColor:C.amber, urgencyBg:C.amberDim, item:'Team sheet deadline — Wed 17:00 for Calderbrook CCC Friday opener.' },
                           { urgency:'30 APR',  urgencyColor:C.dim,   urgencyBg:'rgba(75,85,99,0.15)', item:'ECB Compliance quarterly audit · CPA self-assessment outstanding.' },
-                          { urgency:'FRI',     urgencyColor:C.purple,urgencyBg:C.purpleDim, item:'vs Lancashire — Oakridge Park · Championship opener · 10:30.' }].map((d, i) => (
+                          { urgency:'FRI',     urgencyColor:C.purple,urgencyBg:C.purpleDim, item:'vs Calderbrook CCC — Oakridge Park · Championship opener · 10:30.' }].map((d, i) => (
                           <div key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
                             <span className="text-[10px] font-black px-2 py-0.5 rounded flex-shrink-0 mt-0.5" style={{ backgroundColor: d.urgencyBg, color: d.urgencyColor }}>{d.urgency}</span>
                             <span className="text-xs" style={{ color: C.text }}>{d.item}</span>
@@ -4273,11 +4274,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
 
       {dashTab === 'quickwins' && (() => {
         const CRICKET_QUICK_WINS: Array<{ id:string; impact:'high'|'medium'|'low'; effort:string; category:string; title:string; description:string; source:string; action:string; actionSection:string }> = [
-          { id:'qw-1', impact:'high',   effort:'2min',  category:'Travel',     title:'Book Lancashire trip flights — prices rising daily',       description:'Departing 10 Apr. Train £180 vs flight £95 this week. Window closes Wed.',               source:'Operations · travel desk',     action:'Search flights',    actionSection:'travel' },
+          { id:'qw-1', impact:'high',   effort:'2min',  category:'Travel',     title:'Book Calderbrook CCC trip flights — prices rising daily',       description:'Departing 10 Apr. Train £180 vs flight £95 this week. Window closes Wed.',               source:'Operations · travel desk',     action:'Search flights',    actionSection:'travel' },
           { id:'qw-2', impact:'high',   effort:'5min',  category:'Commercial', title:'Reply to Pennine Mutual renewal inquiry',                  description:'Agent Oakridge Sports sent the renewal brief 3 days ago. Decision needed this week.',   source:'Sponsorship pipeline',         action:'Open sponsorship', actionSection:'sponsorship' },
           { id:'qw-3', impact:'high',   effort:'2min',  category:'Sponsor',    title:'Crownmark post overdue today',                             description:'Photographer needs bat shot by 14:00 today to meet the contractual matchday post slot.', source:'Media & Content',              action:'View obligation',   actionSection:'media' },
           { id:'qw-4', impact:'high',   effort:'5min',  category:'Entries',    title:'T20 Blast quarter-final entry — deadline today',           description:'ECB needs squad submitted by 17:00. Pending 2 signatures (Director + Head Coach).',     source:'ECB Compliance Hub',           action:'Manage entries',    actionSection:'vitality-blast' },
-          { id:'qw-5', impact:'medium', effort:'10min', category:'Match Prep', title:'Review Lancashire bowling patterns',                        description:"Friday's match at 10:30. Analysis team uploaded 4 tagged clips for the top 6 batters.",  source:'Analyst — Opposition Scout',   action:'View match prep',   actionSection:'opposition' },
+          { id:'qw-5', impact:'medium', effort:'10min', category:'Match Prep', title:'Review Calderbrook CCC bowling patterns',                        description:"Friday's match at 10:30. Analysis team uploaded 4 tagged clips for the top 6 batters.",  source:'Analyst — Opposition Scout',   action:'View match prep',   actionSection:'opposition' },
           { id:'qw-6', impact:'medium', effort:'5min',  category:'Staff',      title:'DBS check expiring — Assistant Coach Winterbourne',        description:'Renewal required by 20 Apr. ECB compliance flag — signed DBS-3 form outstanding.',     source:'Compliance / Safeguarding',    action:'Open compliance',   actionSection:'compliance' },
           { id:'qw-7', impact:'medium', effort:'15min', category:'Medical',    title:'Ridley workload review',                                   description:'142 high-intensity efforts in 7 days vs 130 ceiling. Adjust Thu session before Friday.', source:'Medical / S&C',                action:'Review plan',       actionSection:'bowling-workload' },
           { id:'qw-8', impact:'low',    effort:'20min', category:'Academy',    title:'Second XI hat-trick bowler — first-team shortlist',        description:'Academy Director flagged Clarke for Monday selection meeting. Profile ready to review.', source:'Academy — Pathway',           action:'View report',       actionSection:'academy' },
@@ -4354,7 +4355,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           { id:'t-teamsheet', priority:'critical', category:'Selection',title:'Team sheet submitted — deadline 17:00',           due:'Today 17:00',       description:'Friday XI + travel group. Pending final sign-off from Head Coach.',     action:'Submit team sheet', actionSection:'squad' },
           { id:'t-injury',    priority:'high',     category:'Medical',  title:'Injury status updated',                            due:'Today 12:00',       description:'Rafiq + Cooper latest readings. Harrison RTP phase 3 assessment.',       action:'Open medical',      actionSection:'medical' },
           { id:'t-dbs',       priority:'high',     category:'Compliance',title:'DBS compliance review (4 outstanding)',            due:'By 20 Apr',         description:'Winterbourne, Tremayne, Cavendish, Rao. Renewals required by month end.', action:'Open compliance',   actionSection:'compliance' },
-          { id:'t-oppo',      priority:'high',     category:'Match Prep',title:'Opposition scout review',                          due:'Today 15:00',       description:'Lancashire batters + bowling patterns. Analyst deck ready to approve.',  action:'Open scout',        actionSection:'opposition' },
+          { id:'t-oppo',      priority:'high',     category:'Match Prep',title:'Opposition scout review',                          due:'Today 15:00',       description:'Calderbrook CCC batters + bowling patterns. Analyst deck ready to approve.',  action:'Open scout',        actionSection:'opposition' },
           { id:'t-workload',  priority:'medium',   category:'Medical',  title:'Workload dashboard checked (2 amber flags)',        due:'Today',             description:'Dawson A:C 1.62 · Harrison RTP phase 3. Review cap for Friday selection.',action:'Open workload',     actionSection:'bowling-workload' },
           { id:'t-mental',    priority:'medium',   category:'Welfare',  title:'Mental Performance check-ins reviewed',             due:'Today',             description:'18/18 complete · 2 amber flags (Cole, Harrison). Confidentiality preserved.', action:'Open mental perf', actionSection:'mental-performance' },
           { id:'t-media',     priority:'medium',   category:'Media',    title:'Media request reviewed (2 pending)',                due:'Today',             description:'Willow Quarterly long-form + Cricket Digest podcast. Reply by Fri.',     action:'Open media hub',    actionSection:'media-hub' },
@@ -4490,7 +4491,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                   'Bowling unit cohesion: Ridley + Fenwick partnership has 42 wickets at 18.6 across last 5 games.',
                   'Fielding alerts: 6 drops flagged in the review — 4 at slip. Recommend extra catching block Fri AM.',
                   'Fitness scores: 15/18 above threshold, 2 monitoring, 1 injured. Harrison RTP phase 3.',
-                  'Opposition weakness: Lancs LH batters avg 18 vs left-arm spin last 12 months — Kent and Talbot to exploit.',
+                  'Opposition weakness: Lancs LH batters avg 18 vs left-arm spin last 12 months — Halden CCC and Talbot to exploit.',
                 ].map((line, i) => (
                   <div key={i} className="flex gap-3">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${C.teal}33`, color: C.teal }}>{i + 1}</span>
@@ -4509,14 +4510,14 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           { id:'dm-1',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Entries',     deadline:'Today 17:00',  title:'T20 Blast squad submission',             desc:'ECB needs squad submitted by 17:00. Pending 2 signatures.',                                  consequence:'Forfeit of quarter-final entry.',                       action:'Manage entries →',  section:'vitality-blast' },
           { id:'dm-2',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Sponsor',     deadline:'Today 14:00',  title:'Sponsor content: Crownmark bat photo',   desc:'Photographer needs bat shot by 14:00 for contractual matchday post.',                        consequence:'Breach of sponsor obligation — penalty clause.',        action:'Open brief →',      section:'media' },
           { id:'dm-3',  urgency:'URGENT', group:'Today',      urgencyColor:C.red,    urgencyBg:C.redDim,    category:'Compliance',  deadline:'Today',        title:'DBS renewal: Winterbourne signature needed',desc:'Assistant Coach DBS-3 form outstanding. ECB compliance flag — blocks Thu academy session.', consequence:'Academy activity paused until renewed.',                action:'Open compliance →', section:'compliance' },
-          { id:'dm-4',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Selection',   deadline:'Wed 17:00',    title:'Team sheet deadline for Lancashire',      desc:'Friday XI + travel group. Head Coach sign-off pending.',                                    consequence:'Auto-submission of Wednesday draft XI.',                action:'Submit team sheet →',section:'squad' },
+          { id:'dm-4',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Selection',   deadline:'Wed 17:00',    title:'Team sheet deadline for Calderbrook CCC',      desc:'Friday XI + travel group. Head Coach sign-off pending.',                                    consequence:'Auto-submission of Wednesday draft XI.',                action:'Submit team sheet →',section:'squad' },
           { id:'dm-5',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Media',       deadline:'Wed 14:00',    title:'Media availability: 14:00 press conference',desc:'Fairweather + Caldwell confirmed. Q-list approved, Northbridge + 4 nationals attending.',   consequence:'Loss of pre-match media window.',                        action:'Open media hub →',   section:'media-hub' },
           { id:'dm-6',  urgency:'THIS WK',group:'This week',  urgencyColor:C.amber,  urgencyBg:C.amberDim,  category:'Medical',     deadline:'Thu 10:00',    title:'Workload review meeting',                 desc:'Medical + Head Coach sign-off. Dawson + Harrison on the agenda.',                           consequence:'Workload caps default to conservative — loss of selection flexibility.', action:'Open workload →', section:'bowling-workload' },
           { id:'dm-7',  urgency:'30 APR', group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Compliance',deadline:'30 Apr',      title:'ECB Compliance quarterly audit',          desc:'CPA self-assessment submission + 3 outstanding welfare log entries.',                        consequence:'Audit flag on club profile for the following quarter.',  action:'Open compliance →', section:'compliance' },
           { id:'dm-8',  urgency:'5 MAY',  group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Commercial',deadline:'5 May',      title:'Sponsorship renewal decision',            desc:'Pennine Mutual £340k/yr or retain current £280k. Board decision required.',                  consequence:'Auto-renewal at current terms.',                         action:'View pipeline →',   section:'sponsorship' },
           { id:'dm-9',  urgency:'15 MAY', group:'Coming up',  urgencyColor:C.dim,    urgencyBg:'rgba(75,85,99,0.15)', category:'Overseas',  deadline:'15 May',     title:'Overseas player review',                  desc:'Steenkamp + Mason mid-season review. Visa renewals + performance window decisions.',         consequence:'Late slot changes cost 2–3 weeks of match availability.',action:'Open overseas →',   section:'overseas' },
-          { id:'dm-10', urgency:'FRI',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Fri 10:30',    title:'vs Lancashire — Oakridge Park',           desc:'Championship opener. Pitch verdict + selection announce 09:30.',                             consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
-          { id:'dm-11', urgency:'SAT',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Sat',          title:'vs Surrey — Away (T20 Blast)',            desc:'Travel Thursday PM. Overseas player rotation — Mason visa cleared.',                         consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
+          { id:'dm-10', urgency:'FRI',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Fri 10:30',    title:'vs Calderbrook CCC — Oakridge Park',           desc:'Championship opener. Pitch verdict + selection announce 09:30.',                             consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
+          { id:'dm-11', urgency:'SAT',    group:'Fixtures',   urgencyColor:C.purple, urgencyBg:C.purpleDim, category:'Match',       deadline:'Sat',          title:'vs Highford County — Away (T20 Blast)',            desc:'Travel Thursday PM. Overseas player rotation — Mason visa cleared.',                         consequence:'—',                                                     action:'Open match centre →',section:'match-centre' },
         ]
         const visible = DONT_MISS.filter(d => !dismissedAlerts.has(d.id))
         const groups = ['Today','This week','Coming up','Fixtures'] as const
@@ -4909,7 +4910,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       </Card>
       <Card style={{marginBottom:12}}>
         <div style={{fontSize:12,color:C.dim,marginBottom:8}}>COUNTY CHAMPIONSHIP · DAY 2 OF 4</div>
-        <div style={{fontSize:16,fontWeight:600,color:C.text,marginBottom:10}}>Oakridge v Lancashire · Oakridge Park</div>
+        <div style={{fontSize:16,fontWeight:600,color:C.text,marginBottom:10}}>Oakridge v Calderbrook CCC · Oakridge Park</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:16}}>
           <div>
             <div style={{fontSize:11,color:C.dim}}>OAKRIDGE — 1ST INNINGS</div>
@@ -5090,7 +5091,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>Promotion / Relegation</div>
           <div style={{fontSize:13,color:C.text,marginBottom:6}}>Gap to top: <span style={{color:C.teal}}>1 pt</span></div>
           <div style={{fontSize:13,color:C.text,marginBottom:6}}>Gap to safety: <span style={{color:C.green}}>+44 pts</span></div>
-          <div style={{fontSize:12,color:C.muted,marginTop:8}}>2 up · 2 down format continues · Surrey & Oakridge currently on promotion-form pace.</div>
+          <div style={{fontSize:12,color:C.muted,marginTop:8}}>2 up · 2 down format continues · Highford County & Oakridge currently on promotion-form pace.</div>
         </Card>
       </div>
     </div>
@@ -5115,7 +5116,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       </Card>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:12}}>
         <Stat label="Team NRR" value="+0.88" color={C.green}/>
-        <Stat label="Highest Score" value="214/4" color={C.purple} sub="vs Derbyshire"/>
+        <Stat label="Highest Score" value="214/4" color={C.purple} sub="vs Castleford CCC"/>
         <Stat label="Best Bowling" value="4/18" color={C.amber} sub="Sterling"/>
       </div>
       <Card>
@@ -5134,7 +5135,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <table style={{width:'100%',borderCollapse:'collapse'}}>
           <thead><tr style={{borderBottom:`1px solid ${C.border}`}}><Th>Team</Th><Th>P</Th><Th>W</Th><Th>L</Th><Th>NRR</Th><Th>Pts</Th></tr></thead>
           <tbody>
-            {[{t:'Oakridge',p:4,w:3,l:1,nrr:0.96,pts:6},{t:'Durham',p:4,w:3,l:1,nrr:0.42,pts:6},{t:'Notts',p:4,w:2,l:2,nrr:0.1,pts:4},{t:'Derbyshire',p:4,w:1,l:3,nrr:-0.6,pts:2},{t:'Leicestershire',p:4,w:1,l:3,nrr:-0.88,pts:2}].map((r,i,a)=>(
+            {[{t:'Oakridge',p:4,w:3,l:1,nrr:0.96,pts:6},{t:'Brackenfell CCC',p:4,w:3,l:1,nrr:0.42,pts:6},{t:'Stannerton County',p:4,w:2,l:2,nrr:0.1,pts:4},{t:'Castleford CCC',p:4,w:1,l:3,nrr:-0.6,pts:2},{t:'Leicestershire',p:4,w:1,l:3,nrr:-0.88,pts:2}].map((r,i,a)=>(
               <tr key={r.t} style={{borderBottom:i<a.length-1?`1px solid ${C.border}`:'none',background:r.t==='Oakridge'?C.tealDim:'transparent'}}>
                 <Td color={r.t==='Oakridge'?C.teal:C.text}>{i+1}. {r.t}</Td><Td>{r.p}</Td><Td>{r.w}</Td><Td>{r.l}</Td><Td>{r.nrr.toFixed(2)}</Td><Td color={C.teal}>{r.pts}</Td>
               </tr>
@@ -5368,12 +5369,12 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <thead><tr style={{borderBottom:`1px solid ${C.border}`}}><Th>Player</Th><Th>Current Club</Th><Th>Role</Th><Th>Agent</Th><Th>Status</Th><Th>Interest</Th></tr></thead>
           <tbody>
             {[
-              {n:'Liam Hughson',c:'Hampshire',r:'Allrounder',a:'Pinnacle Sports',s:'In talks',int:'High'},
-              {n:'Tom Lawes',c:'Surrey',r:'Bowler',a:'SFX',s:'Initial contact',int:'Medium'},
+              {n:'Liam Hughson',c:'Easthaven CCC',r:'Allrounder',a:'Pinnacle Sports',s:'In talks',int:'High'},
+              {n:'Tom Lawes',c:'Highford County',r:'Bowler',a:'SFX',s:'Initial contact',int:'Medium'},
               {n:'Ollie Pennfield',c:'Sussex',r:'Bowler',a:'Oakridge Sports',s:'Research',int:'High'},
               {n:'Jake Libby',c:'Worcs',r:'Batter',a:'AGI',s:'Dormant',int:'Low'},
               {n:'Sam Pennant',c:'Warwicks',r:'Batter',a:'Oakridge Sports',s:'In talks',int:'High'},
-              {n:'Luke Tindale',c:'Lancashire',r:'Bowler',a:'Pinnacle',s:'Research',int:'Medium'},
+              {n:'Luke Tindale',c:'Calderbrook CCC',r:'Bowler',a:'Pinnacle',s:'Research',int:'Medium'},
             ].map((t,i,a)=>(
               <tr key={t.n} style={{borderBottom:i<a.length-1?`1px solid ${C.border}`:'none'}}>
                 <Td color={C.text}>{t.n}</Td><Td>{t.c}</Td><Td>{t.r}</Td><Td>{t.a}</Td><Td>{t.s}</Td>
@@ -5701,7 +5702,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <div style={{fontSize:11,color:C.green,marginTop:6}}>83% of cap · +8% YoY</div>
         </Card>
         <Card>
-          <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Friday vs Lancashire</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.05em'}}>Friday vs Calderbrook CCC</div>
           <div style={{fontSize:16,color:C.text}}>Projected attendance: <span style={{color:C.teal,fontWeight:600}}>17,280</span></div>
           <div style={{fontSize:12,color:C.muted,marginTop:4}}>94% of capacity · Main Stand full</div>
           <div style={{fontSize:12,color:C.muted,marginTop:8}}>Gate revenue forecast: <span style={{color:C.green,fontWeight:600}}>{fmt(268000)}</span></div>
@@ -6355,7 +6356,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
             max_tokens: 400,
-            messages: [{ role: 'user', content: 'Oakridge CC net session review. Bowlers: Reed (72 del planned, limit 96, ACWR 0.94), Dawson (48 del planned, limit 36, ACWR 1.62), Harrison (12 del, return-to-play). Championship vs Lancashire in 2 days. Is this week\u2019s load appropriate? Give 2-3 sentence recommendation.' }],
+            messages: [{ role: 'user', content: 'Oakridge CC net session review. Bowlers: Reed (72 del planned, limit 96, ACWR 0.94), Dawson (48 del planned, limit 36, ACWR 1.62), Harrison (12 del, return-to-play). Championship vs Calderbrook CCC in 2 days. Is this week\u2019s load appropriate? Give 2-3 sentence recommendation.' }],
           }),
         });
         if (!res.ok) throw new Error(`API ${res.status}`);
@@ -6511,8 +6512,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
       setTimeout(() => { try { w.print(); } catch {} }, 300);
     }
     const previousReports = [
-      { date:'18 Mar 2026', opp:'Durham MCCU', result:'W', text:'Oakridge opened their pre-season with an emphatic performance at Oakridge Park, thanks largely to Harry Fairweather\u2019s patient 124. Ridley led the bowling with 4-62 in a disciplined red-ball display.' },
-      { date:'03 Mar 2026', opp:'Lancashire XI', result:'D', text:'A rain-affected draw at Old Trafford saw Oakridge declare on 380/6 before weather intervened. Pennington contributed 87 from number five.' },
+      { date:'18 Mar 2026', opp:'Brackenfell CCC MCCU', result:'W', text:'Oakridge opened their pre-season with an emphatic performance at Oakridge Park, thanks largely to Harry Fairweather\u2019s patient 124. Ridley led the bowling with 4-62 in a disciplined red-ball display.' },
+      { date:'03 Mar 2026', opp:'Calderbrook CCC XI', result:'D', text:'A rain-affected draw at Westmoor Cricket Ground saw Oakridge declare on 380/6 before weather intervened. Pennington contributed 87 from number five.' },
       { date:'22 Feb 2026', opp:'MCC', result:'W', text:'Caldwell\u2019s five-wicket haul was the standout of a commanding 6-wicket win at Lord\u2019s. Oakridge chased down 210 in 42 overs with Kingsley anchoring the innings.' },
     ];
     return (
@@ -6614,7 +6615,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
         {sTab==='overview'&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{l:'Partnership Value',v:'£180k/yr',c:C.amber},{l:'Contract Ends',v:'Dec 2027',c:C.teal},{l:'Obligations Met',v:'8/12',c:C.green},{l:'ROI Score',v:'4.2x',c:C.purple}].map((s,i)=>(<div key={i} className="rounded-xl p-4" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-xs" style={{color:C.dim}}>{s.l}</div><div className="text-xl font-black" style={{color:s.c}}>{s.v}</div></div>))}</div>}
         {sTab==='obligations'&&<div className="space-y-2">{[{t:'Boundary board branding',s:'✅ Done'},{t:'Matchday hospitality x6',s:'4/6 used'},{t:'Player appearance (1)',s:'⏳ Pending'},{t:'Social media posts x12',s:'8/12 done'}].map((o,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><span className="text-sm" style={{color:C.text}}>{o.t}</span><span className="text-xs" style={{color:C.amber}}>{o.s}</span></div>))}</div>}
         {sTab==='content'&&<div className="rounded-xl p-5" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-sm font-bold mb-3" style={{color:C.text}}>Content Calendar</div><div className="text-xs" style={{color:C.muted}}>Scheduled posts, co-branded content, and player feature opportunities managed through the media team.</div></div>}
-        {sTab==='events'&&<div className="space-y-2">{[{e:'T20 Blast Finals Day',d:'Sep 2026',t:'Hospitality'},{e:'County Championship vs Lancashire',d:'11 Apr 2026',t:'Boundary boards'},{e:'Annual Awards Dinner',d:'Oct 2026',t:'Title sponsor'}].map((ev,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div><div className="text-sm" style={{color:C.text}}>{ev.e}</div><div className="text-xs" style={{color:C.dim}}>{ev.d}</div></div><span className="text-[10px] px-2 py-0.5 rounded-full" style={{backgroundColor:C.amberDim,color:C.amber}}>{ev.t}</span></div>))}</div>}
+        {sTab==='events'&&<div className="space-y-2">{[{e:'T20 Blast Finals Day',d:'Sep 2026',t:'Hospitality'},{e:'County Championship vs Calderbrook CCC',d:'11 Apr 2026',t:'Boundary boards'},{e:'Annual Awards Dinner',d:'Oct 2026',t:'Title sponsor'}].map((ev,i)=>(<div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div><div className="text-sm" style={{color:C.text}}>{ev.e}</div><div className="text-xs" style={{color:C.dim}}>{ev.d}</div></div><span className="text-[10px] px-2 py-0.5 rounded-full" style={{backgroundColor:C.amberDim,color:C.amber}}>{ev.t}</span></div>))}</div>}
         {sTab==='roi'&&<div className="grid grid-cols-2 gap-3">{[{l:'Brand impressions',v:'2.4M',c:C.teal},{l:'Social reach',v:'480k',c:C.blue},{l:'Matchday footfall',v:'12,400',c:C.green},{l:'Media mentions',v:'34',c:C.purple}].map((s,i)=>(<div key={i} className="rounded-xl p-4 text-center" style={{backgroundColor:C.card,border:`1px solid ${C.border}`}}><div className="text-xs" style={{color:C.dim}}>{s.l}</div><div className="text-xl font-black" style={{color:s.c}}>{s.v}</div></div>))}</div>}
       </div>
     )
@@ -6634,7 +6635,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
      note:'Under-workloaded — available as extra seamer'},
     {name:'Alex Merriman',   type:'Spin',  ov7:54, ov28:212, recovery:1, nextLimit:'No restriction', st:'green',
      note:'Spin workload not weight-bearing — no cap'},
-    {name:'Oliver Kent',   type:'Spin',  ov7:41, ov28:178, recovery:2, nextLimit:'No restriction', st:'green',
+    {name:'Oliver Halden CCC',   type:'Spin',  ov7:41, ov28:178, recovery:2, nextLimit:'No restriction', st:'green',
      note:'Normal workload'},
     {name:'Tariq Shah',    type:'Spin',  ov7:28, ov28:104, recovery:2, nextLimit:'No restriction', st:'amber',
      note:'Monitor shoulder load — precautionary only'},
@@ -6730,7 +6731,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     {name:'Alex Merriman',    last:'19 Apr',  score:7, flag:null, note:'—'},
     {name:'Jake Harrison',  last:'22 Apr',  score:6, flag:'amber', note:'Return from injury — low mood markers.'},
     {name:'Sam Reed',       last:'21 Apr',  score:8, flag:null, note:'—'},
-    {name:'Oliver Kent',    last:'20 Apr',  score:7, flag:null, note:'—'},
+    {name:'Oliver Halden CCC',    last:'20 Apr',  score:7, flag:null, note:'—'},
     {name:'Chris Dawson',   last:'22 Apr',  score:7, flag:null, note:'Academy transition — well supported.'},
     {name:'Rajan Steenkamp',   last:'19 Apr',  score:7, flag:null, note:'Overseas adjustment.'},
   ];
@@ -6842,7 +6843,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     {name:'TechForge Ltd',              stage:'Negotiating',   val:'£180k/yr', lik:'65%', note:'Shirt-sleeve — drafting heads of terms this week'},
     {name:'Oakridge Park United',            stage:'Negotiating',   val:'£90k',     lik:'50%', note:'Cross-city partnership trial · 1-year'},
     {name:'FreshGrain Bakery',          stage:'Closed Won',    val:'£45k/yr',  lik:'100%',note:'Signed Fri — matchday food partner'},
-    {name:'Velocity Wearables',         stage:'Closed Lost',   val:'£80k/yr',  lik:'0%',  note:'Chose Surrey · feedback: wanted London audience'},
+    {name:'Velocity Wearables',         stage:'Closed Lost',   val:'£80k/yr',  lik:'0%',  note:'Chose Highford County · feedback: wanted London audience'},
   ];
   const SPONSORSHIP_RENEWAL_ALERTS = [
     {n:'Acme Insurance',      days:92,  status:'Renewal meeting not yet booked', sev:'red'},
@@ -6935,13 +6936,13 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
       'Opposition leg-spinner Singh conceded 58 off 12 — target with LH batters at 4–6. Promote Hill to 5 if Shaw falls before lunch.',
       'Pitch is softening — moisture almost gone. Expect seam movement to drop sharply after tea. Bat deep: session-by-session.',
       'Projected total 342 @ current run-rate 3.8/over. Declaration window opens around over 110 if RR holds (see planner).',
-      'Bowling plan for opp innings: open Reed + Harrison · switch to Merriman at over 20 when ball softens · Kent from the Kirkstall end.',
+      'Bowling plan for opp innings: open Reed + Harrison · switch to Merriman at over 20 when ball softens · Halden CCC from the Kirkstall end.',
       'Weather: cloud cover 60% forecast after 16:00 — swing conditions may return for the final session. Adjust seamer rotation.',
     ];
     const oppWeaknesses = [
       {name:'Nathan Taylor',    weak:'LBW-prone on front pad to in-swing (4/last-6 dismissals)', matchup:'Reed full at middle stump'},
       {name:'Simon Pritchard',  weak:'Averages 18 vs off-spin; driven into short cover trap',    matchup:'Merriman with short cover + silly mid off'},
-      {name:'James Holloway',   weak:'Struggles vs left-arm spin; 11% strike vs LAS last 12m',    matchup:'Kent over the wicket · stock line on stumps'},
+      {name:'James Holloway',   weak:'Struggles vs left-arm spin; 11% strike vs LAS last 12m',    matchup:'Halden CCC over the wicket · stock line on stumps'},
     ];
     return (
       <div>
@@ -6955,7 +6956,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
 
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
           <Stat label="Current Score" value="247/8" color={C.teal} sub="after 65 overs"/>
-          <Stat label="Match Situation" value="Batting 1st · Day 1" color={C.purple} sub="vs Lancashire (H)"/>
+          <Stat label="Match Situation" value="Batting 1st · Day 1" color={C.purple} sub="vs Calderbrook CCC (H)"/>
           <Stat label="Partnership Alerts" value="2 flagged" color={C.amber} sub="Webb–Shaw · Cole–Hill"/>
           <Stat label="Wicket Clusters" value="3rd spell" color={C.red} sub="weakness identified overs 28–34"/>
         </div>
@@ -7039,7 +7040,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     staff:<Staff/>,facilities:<FacilitiesGrounds/>,kit:<KitEquipment/>,travel:<TravelLogistics/>,'team-comms':<TeamComms/>,
     commercial:<Commercial/>,sponsorship:<SponsorshipPipelineV2/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} isDemoShell={session?.isDemoShell !== false} />,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
-    preseason:<CricketPreSeasonView session={session}/>,
+    'tours-camps':<CricketToursAndCampsView preSeasonContent={<CricketPreSeasonView session={session}/>} />,
   };
 
   return(

@@ -59,10 +59,10 @@ export type RugbyFixture = {
 
 export const RUGBY_FIXTURES: RugbyFixture[] = [
   { day: 'Sat', date: '11 Apr', opp: 'Jersey Reds',  comp: 'Champ Rugby',  venue: 'Home · The Grange',     time: '15:00', kickoff: '15:00', forecast: '☔ 11° · light rain', state: 'today',    side: '1st XV' },
-  { day: 'Sat', date: '18 Apr', opp: 'Bath RFC',     comp: 'Champ Rugby',  venue: 'Away · The Rec',        time: '14:30', state: 'upcoming', side: '1st XV' },
+  { day: 'Sat', date: '18 Apr', opp: 'Westmoor Lions', comp: 'Champ Rugby', venue: 'Away · The Lions Den',  time: '14:30', state: 'upcoming', side: '1st XV' },
   { day: 'Sat', date: '25 Apr', opp: 'Coventry',     comp: 'Champ Rugby',  venue: 'Home · The Grange',     time: '15:00', state: 'upcoming', side: '1st XV' },
   { day: 'Sat', date: '02 May', opp: 'Doncaster',    comp: 'Champ Rugby',  venue: 'Away · Castle Park',    time: '15:00', state: 'upcoming', side: '1st XV' },
-  { day: 'Sat', date: '09 May', opp: 'Saracens',     comp: 'Premiership Cup', venue: 'Home · The Grange',  time: '14:00', state: 'upcoming', side: '1st XV' },
+  { day: 'Sat', date: '09 May', opp: 'Northbridge Saxons', comp: 'Premiership Cup', venue: 'Home · The Grange', time: '14:00', state: 'upcoming', side: '1st XV' },
 ]
 
 // ─── Today schedule ──────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
     { id: 'insights',      label: 'Insights',        icon: 'bars' },
     { id: 'matchday',      label: 'Match Day Centre',icon: 'flag' },
     { id: 'calendar',      label: 'Club Calendar',   icon: 'calendar' },
-    { id: 'preseason',     label: 'Pre-Season',      icon: 'calendar', badge: 'NEW' },
+    { id: 'tours-camps',   label: 'Tours & Camps',   icon: 'calendar', badge: 'NEW' },
   ]},
   { g: 'Performance', items: [
     { id: 'video-analysis',  label: 'Video Analysis',     icon: 'play' },
