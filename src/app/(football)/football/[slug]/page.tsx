@@ -1862,7 +1862,7 @@ function InteractiveFootballInbox({ T, accent, density }: { T: typeof THEMES.dar
           return (
             <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
               <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 4px', cursor: 'pointer' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
@@ -2095,15 +2095,20 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
                 Wrapper divs with explicit gridColumn override each Card's
                 internal placement (FbAIBrief '1 / span 5',
                 InteractiveFootballInbox '6 / span 4', FbTodaySchedule
-                '9 / span 4'). Result: three equal 4-col cards. */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-              <div style={{ gridColumn: '1 / span 4' }}>
+                '9 / span 4'). Result: three equal 4-col cards.
+                ROW HEIGHT PARITY — wrappers use display:grid so the
+                inner Card stretches to fill the grid-row height. AI and
+                Inbox have density reductions (FootballDashboardModules
+                AIBrief, this file's InteractiveFootballInbox) so all
+                three converge on Today's compact natural height. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'stretch' }}>
+              <div style={{ gridColumn: '1 / span 4', display: 'grid' }}>
                 <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
               </div>
-              <div style={{ gridColumn: '5 / span 4' }}>
+              <div style={{ gridColumn: '5 / span 4', display: 'grid' }}>
                 <InteractiveFootballInbox T={T} accent={accent} density={density} />
               </div>
-              <div style={{ gridColumn: '9 / span 4' }}>
+              <div style={{ gridColumn: '9 / span 4', display: 'grid' }}>
                 <FbTodaySchedule T={T} accent={accent} density={density} />
               </div>
             </div>

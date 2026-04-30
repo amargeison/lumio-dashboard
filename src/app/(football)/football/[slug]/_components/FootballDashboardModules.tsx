@@ -6,7 +6,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   FOOTBALL_ORG, FOOTBALL_FIXTURES, FOOTBALL_TODAY, FOOTBALL_AI_BRIEF, FOOTBALL_INBOX,
-  FOOTBALL_INJURIES, FOOTBALL_RECENTS, FOOTBALL_PERF_INTEL, FOOTBALL_SEASON_FORM,
+  FOOTBALL_RECENTS, FOOTBALL_PERF_INTEL, FOOTBALL_SEASON_FORM,
   FOOTBALL_TOP_STATS, FOOTBALL_SQUAD,
   type FbAIBriefItem, type FbInboxChannel, type FbFixture, type FbPlayerSlot,
 } from '../_lib/football-dashboard-data'
@@ -95,14 +95,19 @@ export function HeroToday({
         </defs>
         <rect width="100%" height="100%" fill="url(#fb-hero-ptn)" />
       </svg>
+      {/* GHOST BADGE — repositioned to CENTRE of the now-full-width banner.
+          Originally right-anchored when banner was 8-of-12; full-width
+          banner moved the right anchor into territory hidden by the
+          right-side radial blob. Centre keeps the crest visible behind
+          the hero content at the same opacity / rotation / size. */}
       <img
         src="/badges/oakridge_fc_crest.svg"
         alt=""
         aria-hidden="true"
         style={{
-          position: 'absolute', right: '-12%', top: '50%',
+          position: 'absolute', left: '50%', top: '50%',
           height: '140%', width: 'auto',
-          transform: 'translateY(-50%) rotate(15deg)',
+          transform: 'translate(-50%, -50%) rotate(15deg)',
           opacity: 0.05, pointerEvents: 'none', zIndex: 0,
           objectFit: 'contain',
         }}
@@ -230,15 +235,19 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
           )}
         </>}
       />
+      {/* ROW HEIGHT PARITY — AI Summary, Inbox, and Today are sized
+          to match. Today is the canonical reference for compact card
+          height in this row. Do not adjust per-card padding without
+          matching the others. */}
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {visible.map((it, i) => (
-          <div key={it.txt} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+          <div key={it.txt} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '5px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
             <div style={{
               fontSize: 9.5, fontFamily: FONT_MONO, padding: '2px 6px', borderRadius: 4,
               background: it.pri === 'high' ? 'rgba(199,90,90,0.10)' : T.hover,
               color: it.pri === 'high' ? T.bad : T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 1,
             }}>{it.tag}</div>
-            <div style={{ flex: 1, fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{it.txt}</div>
+            <div style={{ flex: 1, fontSize: 12, color: T.text, lineHeight: 1.35 }}>{it.txt}</div>
             <button
               onClick={() => setItems(arr => arr.map(x => x.txt === it.txt ? { ...x, dismissed: true } : x))}
               style={{ background: 'transparent', border: 0, color: T.text3, cursor: 'pointer', padding: 2, borderRadius: 3 }}
@@ -302,6 +311,13 @@ export function Inbox({ T, density }: Common) {
 
 // ─── Squad availability — football GK / DEF / MID / FWD ───────────────
 
+// SQUAD AVAILABILITY — full-width strip layout. Cells use fixed pixel
+// size (32×32) instead of aspectRatio:1 so cards don't grow with
+// container width. Position groups are laid out horizontally in a
+// single row to keep total card height ~110px (comparable in vertical
+// weight to Recent Results / Season Standing). Injuries list has been
+// moved out of this card; if needed in future, render it below the
+// groups inside this Card.
 function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; slot: FbPlayerSlot }) {
   const status = slot.status
   const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : T.bad
@@ -309,12 +325,13 @@ function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; 
     <div title={`${slot.num}. ${slot.name} · ${slot.pos} · ${status}`}
       style={{
         position: 'relative',
-        aspectRatio: '1', borderRadius: 4, display: 'grid', placeItems: 'center',
-        fontSize: 8.5, fontWeight: 600, fontFamily: FONT_MONO,
+        width: 32, height: 32, borderRadius: 4, display: 'grid', placeItems: 'center',
+        fontSize: 9, fontWeight: 600, fontFamily: FONT_MONO,
         color: status === 'ok' ? T.text : '#0E1014',
         background: status === 'ok' ? `${c}22` : c,
         border: `1px solid ${status === 'ok' ? `${c}55` : 'transparent'}`,
         cursor: 'pointer',
+        flexShrink: 0,
       }}>
       <span style={{ position: 'absolute', top: 1, left: 2, fontSize: 7, color: status === 'ok' ? T.text3 : '#0E1014', opacity: 0.7 }}>{slot.num}</span>
       {slot.initials}
@@ -331,35 +348,28 @@ export function Squad({ T, accent, density }: Common) {
   const mid = FOOTBALL_SQUAD.filter(s => s.group === 'mid')
   const fwd = FOOTBALL_SQUAD.filter(s => s.group === 'fwd')
 
-  const Group = ({ label, players, cols }: { label: string; players: FbPlayerSlot[]; cols: number }) => (
-    <>
-      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},1fr)`, gap: 3, marginBottom: 8 }}>
+  const Group = ({ label, players }: { label: string; players: FbPlayerSlot[] }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ display: 'flex', gap: 3 }}>
         {players.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
       </div>
-    </>
+    </div>
   )
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '10 / span 3' }}>
-      <SectionHead T={T} title="Squad availability" />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <span className="tnum" style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', color: T.text }}>{fit}</span>
-        <span style={{ fontSize: 11, color: T.text2 }}>/ {FOOTBALL_SQUAD.length} fit</span>
+    <Card T={T} density={density} style={{ gridColumn: '10 / span 3', padding: density.pad - 2 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Squad availability</div>
+        <span className="tnum" style={{ fontSize: 13, fontWeight: 600, color: T.text, marginLeft: 4 }}>{fit}<span style={{ color: T.text3, fontWeight: 400 }}> / {FOOTBALL_SQUAD.length}</span></span>
+        <span style={{ fontSize: 10.5, color: T.text3 }}>fit</span>
         <span style={{ marginLeft: 'auto', fontSize: 10.5, color: out + doubt > 0 ? T.bad : T.text3 }}>{out} out · {doubt} doubt</span>
       </div>
-      <Group label="GK"  players={gk}  cols={6} />
-      <Group label="DEF" players={def} cols={8} />
-      <Group label="MID" players={mid} cols={8} />
-      <Group label="FWD" players={fwd} cols={6} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {FOOTBALL_INJURIES.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <div style={{ fontSize: 11.5, color: T.text, fontWeight: 500 }}>{p.name}</div>
-            <div style={{ fontSize: 10.5, color: T.text3, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.issue}</div>
-            <div className="tnum" style={{ fontSize: 10.5, color: p.status === 'cleared' ? T.good : T.warn, fontFamily: FONT_MONO }}>{p.back}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
+        <Group label="GK"  players={gk}  />
+        <Group label="DEF" players={def} />
+        <Group label="MID" players={mid} />
+        <Group label="FWD" players={fwd} />
       </div>
     </Card>
   )
