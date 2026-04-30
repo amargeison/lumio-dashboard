@@ -2033,20 +2033,21 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
       <div style={{ background: T.bg, color: T.text, fontFamily: V2_FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
         {/* Hero — match-day banner FIRST, persistent across tabs */}
-        {/* align-items: start prevents sibling cards from stretching the
-            hero. Without this, FOOTBALL_TODAY / TODAY differing in row
-            count drags the hero card to match the taller sibling, leaving
-            empty space below the buttons. Six prior banner-alignment
-            attempts failed because they targeted hero content instead of
-            grid alignment. */}
+        {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+            row alongside AI Morning Summary and Inbox; Squad Availability
+            moved to bottom of page as full-width strip. Layout reflow per
+            user spec — do not re-add Today as banner sibling without
+            product approval. The wrapper div with explicit gridColumn
+            overrides the FbHeroToday Card's internal '1 / span 8'. */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
-          <FbHeroToday
-            T={T} accent={accent} density={density} greeting={greeting}
-            onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
-            onAsk={() => setAskOpen(true)}
-            onMatchBrief={() => setBriefOpen(true)}
-          />
-          <FbTodaySchedule T={T} accent={accent} density={density} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <FbHeroToday
+              T={T} accent={accent} density={density} greeting={greeting}
+              onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
+              onAsk={() => setAskOpen(true)}
+              onMatchBrief={() => setBriefOpen(true)}
+            />
+          </div>
         </div>
 
         {/* Tab bar — Lucide icons + accent underline (matches rugby v2). */}
@@ -2090,10 +2091,21 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
           <>
             <FbStatTiles T={T} accent={accent} density={density} />
 
+            {/* Three-column row — AI Morning Summary | Inbox | Today.
+                Wrapper divs with explicit gridColumn override each Card's
+                internal placement (FbAIBrief '1 / span 5',
+                InteractiveFootballInbox '6 / span 4', FbTodaySchedule
+                '9 / span 4'). Result: three equal 4-col cards. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
-              <InteractiveFootballInbox T={T} accent={accent} density={density} />
-              <FbSquadModule T={T} accent={accent} density={density} />
+              <div style={{ gridColumn: '1 / span 4' }}>
+                <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              </div>
+              <div style={{ gridColumn: '5 / span 4' }}>
+                <InteractiveFootballInbox T={T} accent={accent} density={density} />
+              </div>
+              <div style={{ gridColumn: '9 / span 4' }}>
+                <FbTodaySchedule T={T} accent={accent} density={density} />
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
@@ -2104,6 +2116,14 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <FbRecents T={T} accent={accent} density={density} />
               <FbSeason  T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Squad Availability — full-width strip at bottom of page.
+                Wrapper div overrides FbSquadModule's internal '10 / span 3'. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <FbSquadModule T={T} accent={accent} density={density} />
+              </div>
             </div>
 
             <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
