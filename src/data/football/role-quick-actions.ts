@@ -4,7 +4,7 @@ import {
   Target, Users as UsersIcon, MapPin, Activity, Heart, Eye, Newspaper, Video,
   Inbox, Search as SearchIcon, FileText, ArrowUpDown, Phone, Briefcase,
   Calendar, HelpCircle, Settings, Plane, Truck, Building,
-  TrendingUp, GraduationCap, AlertTriangle,
+  TrendingUp, GraduationCap, AlertTriangle, Brain, Calculator,
 } from 'lucide-react'
 
 /**
@@ -37,7 +37,7 @@ export const FOOTBALL_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'approve-decision',   label: 'Approve Decision',     icon: ClipboardList, modalId: 'pending-decisions' },
     { id: 'open-board',         label: 'Open Board Suite',     icon: Crown,        targetDept: 'board' },
     { id: 'quick-pnl',          label: 'Quick P&L',            icon: DollarSign,   targetDept: 'finance' },
-    { id: 'send-memo',          label: 'Send Internal Memo',   icon: Mail,         modalId: 'compose-memo' },
+    { id: 'psr-position',       label: 'PSR / SCR Position',   icon: Calculator,   targetDept: 'psr-scr-modeller' },
     { id: 'crisis-alerts',      label: 'View Crisis Alerts',   icon: ShieldAlert,  targetDept: 'board' },
   ],
 
@@ -65,7 +65,7 @@ export const FOOTBALL_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'loan-recall',        label: 'Loan Recall Window',   icon: Phone,        targetDept: 'transfers' },
     { id: 'contract-expiries',  label: 'Contract Expiries 60d', icon: FileText,    targetDept: 'transfers' },
     { id: 'add-watchlist',      label: 'Add Watchlist Player', icon: Eye,          modalId: 'add-watchlist-player' },
-    { id: 'bid-tracker',        label: 'Bid Tracker',          icon: Briefcase,    targetDept: 'transfers' },
+    { id: 'scenario-modeller',  label: 'Scenario Modeller',    icon: Calculator,   targetDept: 'psr-scr-modeller' },
   ],
 
   head_performance: [
@@ -91,7 +91,7 @@ export const FOOTBALL_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'log-injury',         label: 'Log Injury',           icon: Heart,        modalId: 'log-injury' },
     { id: 'rtp-reviews',        label: 'Return-to-Play Reviews', icon: Activity,    targetDept: 'medical' },
     { id: 'open-medical',       label: 'Open Medical Hub',     icon: Heart,        targetDept: 'medical' },
-    { id: 'concussion',         label: 'Concussion Protocol',  icon: AlertTriangle, targetDept: 'medical' },
+    { id: 'concussion-cases',   label: 'Active Concussions',   icon: Brain,        targetDept: 'concussion-tracker' },
     { id: 'wellness-alerts',    label: 'Wellness Alerts',      icon: Heart,        targetDept: 'medical' },
   ],
 

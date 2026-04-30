@@ -22,7 +22,7 @@ import {
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2, Flame,
-  Building, Plane,
+  Building, Plane, Brain, Calculator,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -32,6 +32,8 @@ import CommercialView from '@/components/football/CommercialView'
 import CommunityView from '@/components/football/CommunityView'
 import ToursAndCampsView from '@/components/football/ToursAndCampsView'
 import DiscoverView from '@/components/football/DiscoverView'
+import ConcussionTrackerView from '@/components/football/ConcussionTrackerView'
+import PSRScenarioModellerView from '@/components/football/PSRScenarioModellerView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 // ─── Football v2 dashboard imports ────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -76,7 +78,7 @@ type DeptId =
   | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
-  | 'dynamics' | 'psr' | 'squad-planner'
+  | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
   | 'staff' | 'facilities' | 'settings'
   | 'lumio-vision' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
   | 'discover' | 'lumio-data-pro'
@@ -136,6 +138,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'tours-camps',    label: 'Tours & Camps',        icon: Plane,          section: 'FIRST TEAM' },
   { id: 'staff',          label: 'Staff',                icon: Users,          section: 'FIRST TEAM' },
   { id: 'medical',        label: 'Medical Hub',          icon: Heart,          section: 'MEDICAL' },
+  { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,         section: 'MEDICAL' },
   { id: 'dynamics',       label: 'Mental Performance',   icon: Heart,          section: 'MEDICAL' },
   { id: 'player-welfare', label: 'Player Welfare Hub',   icon: Heart,          section: 'MEDICAL' },
   { id: 'performance',    label: 'GPS Tracking',         icon: Activity,       section: 'GPS & LOAD' },
@@ -148,7 +151,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'media',          label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
   { id: 'social',         label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
   { id: 'finance',        label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
-  { id: 'psr',            label: 'PSR',                  icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller', icon: Calculator,     section: 'COMPLIANCE' },
   { id: 'discover',       label: 'Discover',             icon: Search,         section: 'DISCOVER' },
   { id: 'scouting-db',    label: 'Scouting Database',    icon: Search,         section: 'INTEGRATIONS' },
   { id: 'opta',           label: 'Lumio Data',           icon: BarChart3,      section: 'INTEGRATIONS' },
@@ -6316,57 +6319,6 @@ function DynamicsView() {
   )
 }
 
-function PSRView() {
-  const [purchaseSlider, setPurchaseSlider] = useState(0)
-  const [saleSlider, setSaleSlider] = useState(0)
-  const baseLoss = 20.7
-  const projected = baseLoss + purchaseSlider - saleSlider
-  const [psrToast, setPsrToast] = useState<string | null>(null)
-  function psrAction(l: string) { setPsrToast(`${l} — generating...`); setTimeout(() => setPsrToast(null), 2500) }
-
-  return (
-    <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance & Profit & Sustainability Rules</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Championship PSR limit: £39m loss over 3 rolling years</p></div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }].map(a => (
-          <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
-        ))}
-      </div>
-
-      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '2px solid #F59E0B' }}>
-        <p className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>PSR STATUS: ⚠️ MONITOR</p>
-        <div className="flex items-center gap-6"><div><p className="text-3xl font-black" style={{ color: '#F9FAFB' }}>£{projected.toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>3-year rolling loss</p></div><div><p className="text-3xl font-black" style={{ color: '#22C55E' }}>£{(39 - projected).toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>Headroom remaining</p></div><div className="flex-1"><div className="h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${(projected / 39) * 100}%`, backgroundColor: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }} /></div><p className="text-[10px] text-right mt-0.5" style={{ color: '#6B7280' }}>£39m limit</p></div></div>
-      </div>
-
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
-        <table className="w-full text-sm"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['Year','Revenue','Expenditure','Net P&L','Deductions','PSR Figure'].map(h => <th key={h} className="text-left px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
-        <tbody>{[['2023/24','£42.1m','£54.3m','-£12.2m','-£4.1m','-£8.1m'],['2024/25','£46.8m','£57.2m','-£10.4m','-£3.8m','-£6.6m'],['2025/26*','£51.2m','£61.1m','-£9.9m','-£3.9m','-£6.0m']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : c.startsWith('-') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}<tr style={{ backgroundColor: '#0A0B10' }}><td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>TOTAL</td><td colSpan={3} /><td /><td className="px-4 py-3 font-bold" style={{ color: '#22C55E' }}>-£20.7m ✅</td></tr></tbody></table>
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        {[{ l: 'Match Day', v: '£8.2m', b: '£8.5m' },{ l: 'Broadcasting', v: '£22.4m', b: '£22.0m' },{ l: 'Commercial', v: '£12.1m', b: '£14.0m' },{ l: 'Weekly Wages', v: '£187k', b: '£200k limit' }].map(r => (
-          <div key={r.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{r.l}</p><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{r.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>Budget: {r.b}</p></div>
-        ))}
-      </div>
-
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>What-If PSR Calculator</p>
-        <div className="grid grid-cols-2 gap-6">
-          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#003DA5' }} /></div>
-          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Sale: £{saleSlider}m</p><input type="range" min={0} max={20} step={0.5} value={saleSlider} onChange={e => setSaleSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#22C55E' }} /></div>
-        </div>
-        <div className="mt-4 rounded-lg p-3 text-center" style={{ backgroundColor: projected > 30 ? 'rgba(239,68,68,0.08)' : projected > 20 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${projected > 30 ? 'rgba(239,68,68,0.3)' : projected > 20 ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}` }}>
-          <p className="text-sm font-bold" style={{ color: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }}>Projected PSR: -£{projected.toFixed(1)}m of £39m limit — {projected > 39 ? '❌ BREACH' : projected > 30 ? '⚠️ AT RISK' : '✅ SAFE'}</p>
-        </div>
-      </div>
-
-      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{psrToast}</div>}
-    </div>
-  )
-}
-
 function SquadPlannerView() {
   const [season, setSeason] = useState<'current' | 'next' | 'after'>('current')
   const [spToast, setSpToast] = useState<string | null>(null)
@@ -7154,14 +7106,14 @@ const FOOTBALL_ROLES = [
 
 const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
   ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
-  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr','commercial','community','discover','settings'], message: 'Strategic top-line view.' },
-  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','scouting','analytics','medical','discover','settings'], message: 'Operational first-team view.' },
-  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','academy','board','discover','settings'], message: 'Squad strategy and recruitment view.' },
-  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','medical','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
-  head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
+  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr-scr-modeller','commercial','community','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
+  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
+  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
+  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
+  head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','concussion-tracker','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
   analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','lumio-vision','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
-  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
-  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr-scr-modeller','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
   head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
 }
 
@@ -7420,7 +7372,8 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
             {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
-            {isFootballDemo && activeDept === 'psr' && <PSRView />}
+            {isFootballDemo && activeDept === 'concussion-tracker' && <ConcussionTrackerView />}
+            {isFootballDemo && activeDept === 'psr-scr-modeller' && <PSRScenarioModellerView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'tours-camps' && <ToursAndCampsView />}
             {activeDept === 'lumio-vision' && <FootballScoutIntegrationView />}
