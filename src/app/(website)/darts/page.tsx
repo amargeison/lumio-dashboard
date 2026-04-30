@@ -14,7 +14,7 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['51 features', 'PDC & WDF', 'AI powered', 'ElevenLabs voice', 'DartConnect ready']
+const STAT_PILLS = ['51 features', 'PDC & WDF', 'AI powered', 'ElevenLabs voice', 'Live scoring ready']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📊', title: 'Order of Merit & Race', desc: 'Live PDC ranking, rolling 2-year OoM tracker, weekly drop-off table, Merit Forecaster by round. Know exactly where you stand.' },
@@ -32,7 +32,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '🎯', name: 'DartConnect', desc: 'Live scoring and session data' },
+  { icon: '🎯', name: 'Lumio Live Scoring', desc: 'Live scoring and session data' },
   { icon: '📡', name: 'PDC Live Data', desc: 'Rankings and match feed' },
   { icon: '📸', name: 'Scolia', desc: 'Automatic scoring camera' },
   { icon: '🎵', name: 'ElevenLabs', desc: 'Voice briefing delivery' },

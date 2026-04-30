@@ -23,11 +23,11 @@ const SPORT_CONFIG: Record<string, {
   emailSectionLabel: string
 }> = {
   darts: {
-    step2Title: 'PDC & DartConnect',
+    step2Title: 'PDC & Live Scoring',
     step2Sub: 'Links your official ranking and match history to your portal.',
     step2Fields: [
       { id: 'field1', label: 'PDC Membership ID', placeholder: 'e.g. PDC-004719', hint: 'Found on your PDC membership card or login portal' },
-      { id: 'field2', label: 'DartConnect Username', placeholder: 'Your DartConnect handle', hint: 'Powers match history sync — being activated for founding members' },
+      { id: 'field2', label: 'Live Scoring Handle', placeholder: 'Your tablet-scoring handle', hint: 'Powers match history sync — being activated for founding members' },
     ],
     step3Title: 'Home airport',
     step3Sub: 'Powers Smart Flights AI for every PDC Tour venue worldwide.',
@@ -85,11 +85,11 @@ const SPORT_CONFIG: Record<string, {
     step3Type: 'airport',
     step4Title: 'Practice technology',
     step4Sub: 'Syncs your match data and training sessions automatically.',
-    step4Options: ['Lumio Vision', 'PlaySight', 'Hawkeye', 'None / Manual'],
+    step4Options: ['Lumio Vision', 'PlaySight', 'Lumio Ball Tracking', 'None / Manual'],
     step4Hints: {
       'Lumio Vision': '✓ Lumio-built video analysis — rolling out through 2026, sync activated automatically at launch',
       'PlaySight': 'PlaySight API available — we handle the connection for you',
-      'Hawkeye': 'Hawkeye Insight access varies by venue — we will confirm during setup',
+      'Lumio Ball Tracking': 'Venue-installed ball-tracking access varies by tournament — we will confirm during setup',
       'None / Manual': '',
     },
     step5Title: 'Walk-on music',
@@ -110,7 +110,7 @@ const SPORT_CONFIG: Record<string, {
     step3Sub: 'Used for training camp planning, venue finder AI and travel logistics.',
     step3Type: 'gym',
     step4Title: 'Weight class & sanctioning bodies',
-    step4Sub: 'We track mandatory challengers, rankings and title shot timelines.',
+    step4Sub: 'We monitor mandatory challengers, rankings and title shot timelines.',
     step4Options: ['WBC', 'WBA', 'IBF', 'WBO', 'IBO', 'None / Independent'],
     step4Hints: {
       'WBC': '✓ WBC rankings tracked — we pull updates during setup',
@@ -326,7 +326,7 @@ export default function OnboardingWizard({ sport, accentColor, profile, onComple
     const labelStyle = { color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }
     const stillNeed = sport === 'darts' ? [
       'Contact phone number',
-      'PDC membership ID + DartConnect username',
+      'PDC membership ID + tablet-scoring handle',
       'Practice tracker preference (DartCounter / Lidarts / DartsForData)',
       'Walk-on music track + BPM',
       'Team contacts (manager / coach / physio)',

@@ -53,7 +53,7 @@ export type GolfInboxChannel = {
 }
 
 export const GOLF_INBOX: GolfInboxChannel[] = [
-  { ch: 'Coach Messages',     count: 2, urgent: false, last: 'Work on 7-iron carry today — TrackMan attached',     time: '06:42' },
+  { ch: 'Coach Messages',     count: 2, urgent: false, last: 'Work on 7-iron carry today — Lumio Range attached',     time: '06:42' },
   { ch: 'Agent Messages',     count: 2, urgent: true,  last: 'Meridian Watches renewal — reply by Friday',         time: '07:14' },
   { ch: 'Media & Sponsor',    count: 4, urgent: true,  last: 'Vanta Sports post due before 12:00',                 time: '07:28' },
   { ch: 'Tournament Office',  count: 1, urgent: false, last: 'R2 tee time confirmed 09:24',                        time: '06:55' },
@@ -66,7 +66,7 @@ export const GOLF_INBOX: GolfInboxChannel[] = [
 export const GOLF_INBOX_BODIES: Record<string, { sender: string; body: string }> = {
   'Coach Messages': {
     sender: 'Marco Bianchi · Swing Coach',
-    body: 'Work on 7-iron carry distance today — TrackMan data attached. Yesterday averaged 168y vs target 172y. Strike pattern shows you\'re catching it half a groove low on out-to-in approach. Pre-round drill: 10 balls 7-iron at 90% to a single target. Want to see 170y+ before the tee.',
+    body: 'Work on 7-iron carry distance today — Lumio Range data attached. Yesterday averaged 168y vs target 172y. Strike pattern shows you\'re catching it half a groove low on out-to-in approach. Pre-round drill: 10 balls 7-iron at 90% to a single target. Want to see 170y+ before the tee.',
   },
   'Agent Messages': {
     sender: 'Sarah Chen · Agent',
@@ -90,7 +90,7 @@ export const GOLF_INBOX_BODIES: Record<string, { sender: string; body: string }>
   },
   'Equipment': {
     sender: 'James Wright · Equipment',
-    body: 'New Vanta Sports 3-wood (10.5° head, X-stiff) ready for fitting Thursday next week. Will need ~45 minutes on TrackMan to dial in launch + spin. Suggesting 10:00 at the workshop. Old 3-wood still in the bag for this week.',
+    body: 'New Vanta Sports 3-wood (10.5° head, X-stiff) ready for fitting Thursday next week. Will need ~45 minutes on Lumio Range to dial in launch + spin. Suggesting 10:00 at the workshop. Old 3-wood still in the bag for this week.',
   },
   'Physio': {
     sender: 'Dr Patel · Physio',
@@ -164,48 +164,41 @@ export type GolfNavGroup = { g: string; items: GolfNavItem[] }
 
 export const GOLF_NAV_GROUPS: GolfNavGroup[] = [
   { g: 'Overview', items: [
-    { id: 'dashboard', label: 'Dashboard',          icon: 'home' },
-    { id: 'briefing',  label: 'Morning Briefing',   icon: 'sun' },
-    { id: 'insights',  label: 'Insights',           icon: 'bars' },
-  ]},
-  { g: 'Round Day', items: [
-    { id: 'coursestrategy', label: 'Course Strategy', icon: 'crosshair' },
-    { id: 'teetimes',       label: 'Tee Times',       icon: 'calendar' },
-    { id: 'livescoring',    label: 'Live Scoring',    icon: 'dot' },
+    { id: 'dashboard',  label: 'Dashboard',             icon: 'home' },
+    { id: 'morning',    label: 'Morning Briefing',      icon: 'sun' },
   ]},
   { g: 'Performance', items: [
-    { id: 'owgr',           label: 'OWGR Tracker',     icon: 'bars',     badge: 'NEW' },
-    { id: 'sganalysis',     label: 'Strokes Gained',    icon: 'bars',     badge: 'NEW' },
-    { id: 'coursefit',      label: 'Course Fit',        icon: 'crosshair', badge: 'NEW' },
-    { id: 'practice',       label: 'Practice Log',      icon: 'note' },
-    { id: 'shotanalysis',   label: 'Shot Analysis',     icon: 'play' },
-    { id: 'video',          label: 'Video Review',      icon: 'play' },
+    { id: 'owgr',       label: 'OWGR & Race to Dubai',  icon: 'bars' },
+    { id: 'schedule',   label: 'Tournament Schedule',   icon: 'calendar' },
+    { id: 'strokes',    label: 'Strokes Gained',        icon: 'bars' },
+    { id: 'coursefit',  label: 'Course Fit & Strategy', icon: 'crosshair' },
+    { id: 'matchprep',  label: 'Round Prep',            icon: 'crosshair' },
+    { id: 'practicelog',label: 'Practice Log',          icon: 'note' },
   ]},
-  { g: 'Mental', items: [
-    { id: 'mental',         label: 'Mental Performance', icon: 'sparkles', badge: 'NEW' },
-    { id: 'preroundroutine', label: 'Pre-Round Routine', icon: 'check' },
+  { g: 'Team', items: [
+    { id: 'team',       label: 'Team Hub',              icon: 'people' },
+    { id: 'caddie',     label: 'Caddie Workflow',       icon: 'flag' },
+    { id: 'physio',     label: 'Physio & Recovery',     icon: 'medical' },
+    { id: 'equipment',  label: 'Equipment & Bag',       icon: 'wrench' },
+    { id: 'mental',     label: 'Mental Performance',    icon: 'sparkles' },
   ]},
   { g: 'Commercial', items: [
-    { id: 'sponsorship',    label: 'Sponsorship',        icon: 'briefcase' },
-    { id: 'financial',      label: 'Financial',          icon: 'pound' },
-    { id: 'media',          label: 'Media & Content',    icon: 'newspaper' },
-    { id: 'agentpipeline',  label: 'Agent Pipeline',     icon: 'briefcase' },
+    { id: 'sponsorship',label: 'Sponsorship',           icon: 'briefcase' },
+    { id: 'media',      label: 'Media & Content',       icon: 'newspaper' },
+    { id: 'financial',  label: 'Financial Dashboard',   icon: 'pound' },
+    { id: 'proam',      label: 'Pro-Am & Appearances',  icon: 'trophy' },
+    { id: 'agent',      label: 'Agent Pipeline',        icon: 'briefcase' },
   ]},
-  { g: 'Tour', items: [
-    { id: 'travel',         label: 'Travel & Logistics', icon: 'plane' },
-    { id: 'tournamentcalendar', label: 'Tournament Calendar', icon: 'calendar' },
-    { id: 'hotelfinder',    label: 'Hotel Finder',       icon: 'pin' },
-    { id: 'entrymanager',   label: 'Entry Manager',      icon: 'note' },
-    { id: 'prizeforecaster', label: 'Prize Forecaster',  icon: 'pound' },
-    { id: 'courtbooking',   label: 'Court Booking',      icon: 'calendar' },
+  { g: 'Operations', items: [
+    { id: 'travel',     label: 'Travel & Logistics',    icon: 'plane' },
+    { id: 'exemptions', label: 'Exemptions & Status',   icon: 'shield' },
+    { id: 'qualifying', label: 'Q-School & Qualifying', icon: 'trophy' },
+    { id: 'career',     label: 'Career Planning',       icon: 'arrow-up-right' },
+    { id: 'video',      label: 'Video Library',         icon: 'play' },
+    { id: 'findpro',    label: 'Find a Pro',            icon: 'search' },
   ]},
-  { g: 'Career', items: [
-    { id: 'racetodubai',    label: 'Race to Dubai',      icon: 'trophy' },
-    { id: 'careerplanning', label: 'Career Planning',    icon: 'arrow-up-right' },
-    { id: 'datahub',        label: 'Data Hub',           icon: 'bars' },
-  ]},
-  { g: 'Tools', items: [
-    { id: 'equipment',      label: 'Equipment Manager',  icon: 'wrench' },
-    { id: 'caddienotes',    label: 'Caddie Notes',       icon: 'note' },
+  { g: 'Settings', items: [
+    { id: 'integrations', label: 'Integrations',        icon: 'grid' },
+    { id: 'settings',     label: 'Settings',            icon: 'settings' },
   ]},
 ]

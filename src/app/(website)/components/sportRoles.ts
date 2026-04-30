@@ -179,7 +179,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'Net Session Planner', detail: '7-day session builder with bowling load limits and overuse flagging.' },
       { name: 'Match Report Generator', detail: 'Input scorecard → Claude generates 150-word match report for club comms.' },
     ],
-    integrations: ['CricViz', 'Hawk-Eye', 'Play-Cricket'],
+    integrations: ['CricViz', 'Lumio Ball Tracking', 'Play-Cricket'],
     whatYouGet: [
       'AI opposition dossier — batting threats, weaknesses, game plan',
       'Declaration planner with run rate risk model',
@@ -199,7 +199,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'Batting Analytics', detail: 'Format-split averages, wagon wheel, run rate trends.' },
       { name: 'D/L Calculator', detail: 'Duckworth-Lewis-Stern par score tool for weather-interrupted matches.' },
     ],
-    integrations: ['Lumio GPS', 'CricViz', 'Hawk-Eye'],
+    integrations: ['Lumio GPS', 'CricViz', 'Lumio Ball Tracking'],
     whatYouGet: [
       'Cricket GPS heatmap — fielding zones and bowling runs',
       'ACWR bowling load with 7-day delivery planner',
@@ -264,7 +264,7 @@ export const TENNIS_ROLES: SportRole[] = [
       { name: 'Match Report PDF', detail: 'Fillable A4 match report with GPS summary, set notes, and tactical assessment.' },
       { name: 'String Tension Advisor', detail: 'Humidity slider → automated tension recommendation based on historical string log.' },
     ],
-    integrations: ['Lumio Vision', 'Lumio GPS Vest', 'Hawk-Eye'],
+    integrations: ['Lumio Vision', 'Lumio GPS Vest', 'Lumio Ball Tracking'],
     whatYouGet: [
       'AI practice session analysis after every session',
       'AI post-match debrief with GPS fatigue story',
@@ -411,7 +411,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'Corner Sheet PDF', detail: 'A4 with GPS zone targets, game plan, round notes grid, cutman notes.' },
       { name: 'Multi-Session Overlay', detail: 'Compare camp week 1 vs week 8 ring heatmaps — visual proof of footwork improvement.' },
     ],
-    integrations: ['Lumio Fight GPS Vest', 'UWB Ring Beacons', 'CompuBox'],
+    integrations: ['Lumio Fight GPS Vest', 'UWB Ring Beacons', 'Lumio Punch Analytics'],
     whatYouGet: [
       'Ring heatmap per sparring session — centre/ropes/corners',
       'AI footwork analyst — 3 drills from zone data',
@@ -432,7 +432,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'Fight Earnings', detail: 'Earnings ledger, purse history, viewership growth, platform breakdown.' },
       { name: 'BBBofC Compliance', detail: 'Licence status, medical records, suspension log, pre-fight requirements checklist.' },
     ],
-    integrations: ['BBBofC Portal', 'CompuBox', 'DAZN API'],
+    integrations: ['BBBofC Portal', 'Lumio Punch Analytics', 'DAZN API'],
     whatYouGet: [
       'Purse bid floor calculated instantly from any total',
       'Mandatory proceedings tracker with deadline alerts',
@@ -475,7 +475,7 @@ export const DARTS_ROLES: SportRole[] = [
       { name: 'Match Prep', detail: 'Opponent stats, H2H record, recent form, and venue context.' },
       { name: 'Pressure Analysis', detail: 'Checkout percentage under pressure, decider legs, final-set performance.' },
     ],
-    integrations: ['PDC API', 'DartConnect', 'ElevenLabs'],
+    integrations: ['PDC API', 'Lumio Live Scoring', 'ElevenLabs'],
     whatYouGet: [
       'Live Order of Merit with prize money breakdown',
       'AI morning briefing before every session',
@@ -514,7 +514,7 @@ export const DARTS_ROLES: SportRole[] = [
       { name: 'Practice Log', detail: 'Session logging with drill targets — checkout practice, scoring practice, match simulation.' },
       { name: 'Opponent Analysis', detail: 'Head-to-head records, opponent checkout %, and tactical notes.' },
     ],
-    integrations: ['DartConnect', 'PDC API'],
+    integrations: ['Lumio Live Scoring', 'PDC API'],
     whatYouGet: [
       'Three-dart average trend over rolling 12 months',
       'Checkout percentage by score range',

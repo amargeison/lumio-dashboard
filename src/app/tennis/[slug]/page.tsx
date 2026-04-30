@@ -12542,7 +12542,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
   const entries: HubEntry[] = [
     { id: 'atp-api',     icon: '🏆', label: 'ATP Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['atp-api'] },
     { id: 'wta-api',     icon: '🎾', label: 'WTA Tour API',       category: 'Data Feeds',       kind: 'generic', config: TENNIS_INTEGRATIONS['wta-api'] },
-    { id: 'hawkeye',     icon: '👁️', label: 'Hawk-Eye',           category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.hawkeye },
+    { id: 'lumioballtracking', icon: '👁️', label: 'Lumio Ball Tracking', category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.lumioballtracking },
     { id: 'lumio-vision', icon: '📹', label: 'Lumio Vision',        category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.lumioVision },
     { id: 'playsight',   icon: '🎥', label: 'PlaySight',          category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.playsight },
     { id: 'johansports', icon: '🛰️', label: 'Johan Sports',        category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.johansports },
@@ -12701,7 +12701,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
               title: 'DATA PROVIDERS',
               items: [
                 { name: 'ATP/WTA Profile', desc: 'Rankings, results & draw data' },
-                { name: 'Hawk-Eye', desc: 'Ball tracking & court analytics' },
+                { name: 'Lumio Ball Tracking', desc: 'Ball tracking & court analytics' },
                 { name: 'Lumio Range Tennis', desc: 'Serve speed, spin & shot data' },
                 { name: 'Tennis Abstract', desc: 'Historical stats & match records' },
                 { name: 'IBM SlamTracker', desc: 'Grand Slam live analytics' },

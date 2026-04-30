@@ -1246,7 +1246,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
             { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
             { id:'loground', label:'Log Round', icon:'📋', color:'#15803D', hot:false },
-            { id:'trackman', label:'Lumio Range Session', icon:'📡', color:'#0ea5e9', hot:true },
+            { id:'lumiorange', label:'Lumio Range Session', icon:'📡', color:'#0ea5e9', hot:true },
             { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', color:'#F59E0B', hot:true },
             { id:'sponsorpost', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
             { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#0ea5e9', hot:true },
@@ -1335,8 +1335,19 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         )
       })()}
 
-      {/* Tab Content */}
+      {/* Tab Content — Today renders v2 modular dashboard */}
       {dashTab === 'today' && (
+        <GolfDashboardView
+          onAskLumio={() => onOpenModal('caddiebriefai')}
+          onCourseStrategy={() => onOpenModal('coursestrategy')}
+          photoDataUrl={session.photoDataUrl ?? null}
+        />
+      )}
+
+      {/* Legacy v1 today grid — retained as dead code under `false &&` so the
+          state setters defined above (expandedChannel, roundupOrder, etc.)
+          stay referenced and the v1 layout is recoverable if needed. */}
+      {false && dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Col 1: Morning Roundup — expandable channels */}
           {session.isDemoShell === false
@@ -1642,7 +1653,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high', category:'Training', action:'Log session', modal:'loground' },
           { id:'dt2', time:'09:24', title:'Tee time R2 — with Hartwell, Donovan', priority:'critical', category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
           { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high', category:'Medical', action:'Log medical', modal:'injury' },
-          { id:'dt4', time:'15:00', title:'Lumio Range session analysis — review numbers', priority:'medium', category:'Performance', action:'Open Lumio Range', modal:'trackman' },
+          { id:'dt4', time:'15:00', title:'Lumio Range session analysis — review numbers', priority:'medium', category:'Performance', action:'Open Lumio Range', modal:'lumiorange' },
           { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical', category:'Entries', action:'Enter now', modal:'' },
           { id:'dt6', time:'18:00', title:'Vanta Sports sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
           { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium', category:'Finance', action:'Log expense', modal:'expense' },
@@ -4443,7 +4454,7 @@ function GolfFindProView({ player, session }: { player: GolfPlayer; session: Spo
                 </div>
                 <p className="text-[11px] text-gray-400 mb-2">{r.description}</p>
                 <div className="space-y-1 text-[11px] text-gray-400 mb-3">
-                  <div><span className="text-gray-500">Trackman bays:</span> {r.trackmanBays}</div>
+                  <div><span className="text-gray-500">Range bays:</span> {r.rangeBays}</div>
                   <div><span className="text-gray-500">Hourly rate:</span> {r.hourlyRate}</div>
                   <div><span className="text-gray-500">Access:</span> {r.access}</div>
                   <div className="text-gray-500">Facilities: <span className="text-gray-300">{r.facilities.join(' · ')}</span></div>
@@ -5238,7 +5249,7 @@ function GolfShotTrackingLegacyView({ player, session }: { player: GolfPlayer; s
   );
 }
 
-// ─── DATAGOLF INTEGRATION VIEW ────────────────────────────────────────────────
+// ─── LUMIO DATA INTEGRATION VIEW ──────────────────────────────────────────────
 function GolfDataFeedLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const coverage = [
@@ -5340,7 +5351,7 @@ function GolfDataFeedLegacyView({ player, session }: { player: GolfPlayer; sessi
   );
 }
 
-// ─── TRACKMAN INTEGRATION VIEW ────────────────────────────────────────────────
+// ─── LUMIO RANGE INTEGRATION VIEW ─────────────────────────────────────────────
 function GolfLaunchMonitorLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sessions = [
@@ -5785,11 +5796,11 @@ const PIPELINE: PipelineColumn[] = [
 // ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
 function GolfIntegrationsHub({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const entries: HubEntry[] = [
-    { id: 'datagolf',  icon: '🌐', label: 'Lumio Data',             category: 'Data Feeds',       kind: 'custom',  render: () => <GolfDataFeedLegacyView player={player} session={session} /> },
+    { id: 'lumiodata', icon: '🌐', label: 'Lumio Data',             category: 'Data Feeds',       kind: 'custom',  render: () => <GolfDataFeedLegacyView player={player} session={session} /> },
     { id: 'lpga',      icon: '🏆', label: 'LPGA / LET Mode',      category: 'Data Feeds',       kind: 'custom',  render: () => <LPGAView player={player} session={session} /> },
     { id: 'shotlink',  icon: '🔗', label: 'ShotLink',             category: 'Data Feeds',       kind: 'custom',  render: () => <ShotLinkView player={player} session={session} /> },
     { id: 'arccos',    icon: '📡', label: 'Lumio Range',               category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfShotTrackingLegacyView player={player} session={session} /> },
-    { id: 'trackman',  icon: '🎯', label: 'Lumio Range',             category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
+    { id: 'lumiorange', icon: '🎯', label: 'Lumio Range',            category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
     { id: 'v1golf',    icon: '🎥', label: 'V1 Golf Video',        category: 'Hardware Sensors', kind: 'generic', config: GOLF_INTEGRATIONS.v1golf },
     { id: 'whoop',     icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
     { id: 'johansports', icon: '🛰️', label: 'Johan Sports',        category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.johansports },
@@ -7355,10 +7366,11 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
     const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
       isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
-      case 'dashboard':   return <GolfDashboardView
-                                    onAskLumio={() => setActiveModal('caddiebriefai')}
-                                    onCourseStrategy={() => setActiveModal('coursestrategy')}
-                                    photoDataUrl={session.photoDataUrl ?? null}
+      case 'dashboard':   return <DashboardView
+                                    player={player}
+                                    session={session}
+                                    setActiveSection={setActiveSection}
+                                    onOpenModal={setActiveModal}
                                   />;
       case 'morning':     return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
       case 'owgr':        return gate('📊', 'No OWGR data', 'Connect your tour feed to unlock this', <OWGRView player={player} session={session} />);
@@ -7525,7 +7537,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             {activeModal === 'hotel' && <GolfHotelFinder onClose={closeModal} session={session} />}
             {activeModal === 'coursestrategy' && <GolfCourseStrategyAI onClose={closeModal} session={session} />}
             {activeModal === 'loground' && <GolfRoundLogger onClose={closeModal} />}
-            {activeModal === 'trackman' && <GolfLaunchMonitorAnalysis onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'lumiorange' && <GolfLaunchMonitorAnalysis onClose={closeModal} session={session} player={player} />}
             {activeModal === 'caddiebriefai' && <GolfCaddieBriefAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'matchprep' && <GolfMatchPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'sponsorpost' && <GolfSponsorPost onClose={closeModal} session={session} player={player} />}

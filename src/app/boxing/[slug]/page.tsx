@@ -3263,7 +3263,7 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Track mandatory obligations, eliminators, and sanctioning body deadlines." />
+      <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Monitor mandatory obligations, eliminators, and sanctioning body deadlines." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="WBC Status" value={`#${fighter.rankings.wbc}`} sub="2 wins from mandatory" color="green" />
@@ -4552,7 +4552,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           model:'claude-sonnet-4-20250514', max_tokens:600,
-          messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. CompuBox: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
+          messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. Punch stats: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
         })
       });
       const data = await response.json();
@@ -4608,7 +4608,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
             <input defaultValue="W TKO9 — stopped in corner" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white" placeholder="Result and method"/>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-1">CompuBox — Landed / Thrown</div>
+            <div className="text-xs text-gray-500 mb-1">Punch stats — Landed / Thrown</div>
             <input defaultValue="224/498 (45%) jabs 82/188, power 142/310" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white"/>
           </div>
           <div>
@@ -5589,7 +5589,7 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
   );
 }
 
-const COMPUBOX_DATA = [
+const PUNCH_DATA = [
   { round: 1, jabsLanded: 12, jabsThrown: 28, powerLanded: 8, powerThrown: 18, received: 9, ringZone: { centre: 60, ropes: 25, corners: 15 } },
   { round: 2, jabsLanded: 14, jabsThrown: 30, powerLanded: 11, powerThrown: 22, received: 7, ringZone: { centre: 55, ropes: 30, corners: 15 } },
   { round: 3, jabsLanded: 10, jabsThrown: 26, powerLanded: 9, powerThrown: 20, received: 12, ringZone: { centre: 45, ropes: 38, corners: 17 } },
@@ -5738,16 +5738,16 @@ function FindProView({ fighter, session }: { fighter: BoxingFighter; session: Sp
 
 // ─── PUNCH ANALYTICS VIEW ─────────────────────────────────────────────────────
 function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
-  const totalJabsLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsLanded,0);
-  const totalJabsThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsThrown,0);
-  const totalPowerLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.powerLanded,0);
-  const totalPowerThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.powerThrown,0);
+  const totalJabsLanded = PUNCH_DATA.reduce((a,r)=>a+r.jabsLanded,0);
+  const totalJabsThrown = PUNCH_DATA.reduce((a,r)=>a+r.jabsThrown,0);
+  const totalPowerLanded = PUNCH_DATA.reduce((a,r)=>a+r.powerLanded,0);
+  const totalPowerThrown = PUNCH_DATA.reduce((a,r)=>a+r.powerThrown,0);
   const totalLanded = totalJabsLanded + totalPowerLanded;
   const totalThrown = totalJabsThrown + totalPowerThrown;
-  const avgCentre = Math.round(COMPUBOX_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/COMPUBOX_DATA.length);
+  const avgCentre = Math.round(PUNCH_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/PUNCH_DATA.length);
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
+      <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined Lumio Punch Analytics + Lumio ring movement data — sparring session analysis" />
       <div className="flex items-center gap-2.5 rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444430' }}>
         <span>🛰️</span>
         <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gps-heatmaps' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
@@ -5765,7 +5765,7 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
             {['Round','Jabs L/T','Power L/T','Received','Connect %','Centre%','Ropes%','Corners%'].map(h=><th key={h} className="px-4 py-2 text-left font-medium">{h}</th>)}
           </tr></thead>
           <tbody>
-            {COMPUBOX_DATA.map((r, i) => {
+            {PUNCH_DATA.map((r, i) => {
               const conn = Math.round(((r.jabsLanded+r.powerLanded)/(r.jabsThrown+r.powerThrown))*100);
               return (
                 <tr key={i} className="border-b border-gray-800/50">
@@ -9021,7 +9021,7 @@ function BoxingGpsConnectTab({ fighter }: { fighter: BoxingFighter }) {
     { name: 'CSV Upload',         sub:'Generic GPS export · any vendor · drag and drop' },
     { name: 'Polar Team Pro',     sub:'HR + GPS · Bluetooth sync' },
     { name: 'Whoop 4.0',          sub:'Strain + recovery score · personal device' },
-    { name: 'CompuBox punch feed',sub:'Live punch tagging · sparring + fights' },
+    { name: 'Lumio Punch Analytics',sub:'Live punch tagging · sparring + fights' },
   ]
   return (
     <div className="space-y-5">
@@ -9337,7 +9337,7 @@ function BoxingGpsHeatmapsView({ fighter, session }: { fighter: BoxingFighter; s
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🔥" title="GPS Heatmaps" subtitle="Ring movement, punch zones, footwork, camp load and opponent comparison — all from Lumio GPS + CompuBox feeds." />
+      <SectionHeader icon="🔥" title="GPS Heatmaps" subtitle="Ring movement, punch zones, footwork, camp load and opponent comparison — all from Lumio GPS + Lumio Punch Analytics feeds." />
 
       {/* ─── 1. RING MOVEMENT HEATMAP (HERO) ─────────────────────────── */}
       <div className="rounded-xl p-6" style={{ background: 'linear-gradient(180deg,#0d1117 0%,#0a0d13 100%)', border: '1px solid #1F2937' }}>
@@ -9557,7 +9557,7 @@ function BoxingGpsHeatmapsView({ fighter, session }: { fighter: BoxingFighter; s
 
       {/* ─── 2. PUNCH ZONE HEATMAP ────────────────────────────────────── */}
       <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
-        <SectionTitle k="Section 02" t="Punch Zone Heatmap" sub="Where punches landed (or were absorbed). CompuBox-fused per round." />
+        <SectionTitle k="Section 02" t="Punch Zone Heatmap" sub="Where punches landed (or were absorbed). Punch-analytics-fused per round." />
 
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <div className="flex gap-1 rounded-lg p-1" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
@@ -10180,7 +10180,7 @@ function BoxingMobileAppView({ fighter, session }: { fighter: BoxingFighter; ses
 function BoxingIntegrationsHub({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const entries: HubEntry[] = [
     { id: 'boxrec',      icon: '📊', label: 'BoxRec Database',      category: 'Data Feeds',       kind: 'generic', config: BOXING_INTEGRATIONS.boxrec },
-    { id: 'compubox',    icon: '🥊', label: 'CompuBox Stats',       category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.compubox },
+    { id: 'lumiopunchanalytics', icon: '🥊', label: 'Lumio Punch Analytics', category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.lumiopunchanalytics },
     { id: 'striketec',   icon: '📡', label: 'Punch Sensors',        category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.striketec },
     { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS.whoop },
     { id: 'gps-vest',    icon: '🛰️', label: 'Lumio GPS Vest',       category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS['gps-vest'] },
@@ -10427,7 +10427,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
                 { name: 'IBF Rankings', desc: 'International Boxing Federation ratings' },
                 { name: 'Lumio GPS', desc: 'Movement & load tracking' },
                 { name: 'Lumio Vision', desc: 'Sparring video capture & analysis' },
-                { name: 'Compubox', desc: 'Live punch stats', connected: !isFoundingMember },
+                { name: 'Lumio Punch Analytics', desc: 'Live punch stats', connected: !isFoundingMember },
               ],
             },
             {

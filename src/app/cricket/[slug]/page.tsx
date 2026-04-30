@@ -1412,7 +1412,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       <div style={{display:'flex',flexDirection:'column',gap:20}}>
         <SectionHead title="Analyst View" sub="Data pipelines, deep dives, and scout reports" />
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-          <Tile label="Data Streams Live"  value="8/8"  sub="Hawk-Eye · CricViz · GPS · Wear · 4 ECB feeds" color={C.green} />
+          <Tile label="Data Streams Live"  value="8/8"  sub="Lumio Ball Tracking · CricViz · GPS · Wear · 4 ECB feeds" color={C.green} />
           <Tile label="Reports Delivered"  value="12"   sub="This week · 3 to coaches · 9 to scouts" color={C.purple} />
           <Tile label="Videos Tagged"      value="284"  sub="Last 7 days · 47 player highlights" color={C.teal} />
           <Tile label="Scout Reports Open" value="6"    sub="3 high-priority · 2 contract decisions pending" color={C.amber} />
@@ -3404,7 +3404,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             ))}
           </div>
           <div style={{marginTop:12,padding:'8px',background:C.border,borderRadius:6,fontSize:11,color:C.dim}}>
-            ⚡ CricViz Centurion integration active — head-to-head matchups and Hawk-Eye data available
+            ⚡ CricViz Centurion integration active — head-to-head matchups and ball-tracking data available
           </div>
         </Card>
         <Card>
@@ -5116,7 +5116,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       <Card style={{marginBottom:12,background:'linear-gradient(90deg,#0f1629,#1a0f29)',borderColor:C.purple}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{fontSize:11,padding:'4px 10px',background:C.red,color:'white',borderRadius:20,fontWeight:600}}>LIVE</div>
-          <div style={{fontSize:13,color:C.muted}}>Powered by CricViz · Hawkeye data feed</div>
+          <div style={{fontSize:13,color:C.muted}}>Powered by CricViz · Lumio Ball Tracking data feed</div>
         </div>
       </Card>
       <Card style={{marginBottom:12}}>
@@ -6142,7 +6142,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           title: 'CRICKET DATA PROVIDERS',
           items: [
             { name: 'CricViz',       desc: 'Ball-by-ball metrics, PV and expected runs', connected: true  },
-            { name: 'Hawk-Eye',      desc: 'Ball tracking, LBW and bounce profile',      connected: false },
+            { name: 'Lumio Ball Tracking', desc: 'Ball tracking, LBW and bounce profile', connected: false },
             { name: 'Play-Cricket',  desc: 'Fixtures, scorecards and umpire reports',     connected: true  },
             { name: 'ECB Compliance Hub', desc: 'CPA self-assessment + safeguarding',     connected: true  },
           ],

@@ -110,7 +110,7 @@ const SPORTS: SportPricing[] = [
     desc: 'Per-player pricing for PDC tour card holders. 51 portal features.',
     tiers: [
       { name: 'Tour', price: '£149', period: '/mo', bestFor: 'PDC tour card holders and Challenge Tour', recommended: true, features: ['Order of Merit + Tour Card Monitor', 'Merit Forecaster (round-by-round simulator)', 'Performance Rating + dartboard heatmap', 'Pressure Analysis (deciding-leg gap)', 'Equipment Setup tracker (Supabase backed)', 'Match Prep + AI tactical briefing', 'Practice Games (8 tracked games)', 'Player Onboarding wizard', 'Up to 3 team accounts'], ctaLabel: 'Book a demo', ctaHref: '/contact' },
-      { name: 'Elite', price: '£299', period: '/mo', bestFor: 'Top 16 PDC players', features: ['All Tour features, plus:', 'DartConnect, PDC Live Data and Scolia integrations', 'Premier League + World Series trackers', 'Fan Engagement hub across 4 social platforms', 'Threaded Team Comms with full team', 'Sponsorship pipeline + Exhibition Manager', 'Priority account manager'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
+      { name: 'Elite', price: '£299', period: '/mo', bestFor: 'Top 16 PDC players', features: ['All Tour features, plus:', 'Lumio Live Scoring, PDC Live Data and Scolia integrations', 'Premier League + World Series trackers', 'Fan Engagement hub across 4 social platforms', 'Threaded Team Comms with full team', 'Sponsorship pipeline + Exhibition Manager', 'Priority account manager'], ctaLabel: 'Talk to us', ctaHref: '/contact' },
     ],
     included: ['Demo pre-seeded with PDC #19 Jake Morrison', '5-step onboarding wizard at /darts/onboarding', 'UK data hosting · GDPR compliant'],
   },

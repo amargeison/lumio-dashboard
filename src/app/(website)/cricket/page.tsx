@@ -33,7 +33,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 
 const INTEGRATIONS = [
   { icon: '📊', name: 'CricViz', desc: 'Ball-by-ball analytics' },
-  { icon: '🎥', name: 'Hawk-Eye', desc: 'Video and tracking data' },
+  { icon: '🎥', name: 'Lumio Ball Tracking', desc: 'Video and tracking data' },
   { icon: '📡', name: 'Lumio GPS', desc: 'Vest load and distance data' },
   { icon: '🤖', name: 'Claude AI', desc: 'Briefings and match reports' },
   { icon: '🎵', name: 'ElevenLabs', desc: 'Voice briefing delivery' },

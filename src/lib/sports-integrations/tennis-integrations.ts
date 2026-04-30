@@ -111,21 +111,21 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'Included with Lumio Tour Pro and Pro+ at launch. No third-party subscription required.',
   },
 
-  hawkeye: {
+  lumioballtracking: {
     icon: '👁️',
-    title: 'Hawk-Eye',
+    title: 'Lumio Ball Tracking',
     subtitle: 'Ball-tracking data from Grand Slams and Masters 1000 venues.',
-    partnerBadge: 'Hawk-Eye Innovations · per-tournament rights · enterprise tier',
-    connectLabel: 'Connect Hawk-Eye',
-    summaryText: 'Ball-tracking, serve speed, spin, and placement data from venues where Hawk-Eye is installed. The gold standard for competitive-match analytics — feeds the rally deconstruction view.',
+    partnerBadge: 'Per-tournament rights · enterprise tier · venue-installed cameras',
+    connectLabel: 'Connect Lumio Ball Tracking',
+    summaryText: 'Ball-tracking, serve speed, spin, and placement data from venues with installed multi-camera ball-tracking. The gold standard for competitive-match analytics — feeds the rally deconstruction view.',
     connectedStats: [
       { label: 'Matches Indexed', value: '62' },
       { label: 'Tournaments', value: '14' },
       { label: 'Rallies', value: '8,400+' },
       { label: 'Access', value: 'Player tier' },
     ],
-    whyHeading: 'Why Hawk-Eye is a tier-one integration for competitive analysis',
-    whyBody: 'Hawk-Eye is the only system producing millimetre-accurate ball-tracking in the pro game — which means every serve bounce location, every baseline depth, and every cross-court spin rate comes from it. Piping Hawk-Eye into Lumio closes the loop between live broadcast stats and the player\'s own post-match review. If your Sunday second-serve placement was 40cm shorter than your tournament average, Hawk-Eye is the only source that can tell you with that precision.',
+    whyHeading: 'Why ball-tracking is a tier-one integration for competitive analysis',
+    whyBody: 'Multi-camera ball-tracking systems are the only source producing millimetre-accurate placement data in the pro game — which means every serve bounce location, every baseline depth, and every cross-court spin rate comes from it. Piping that data into Lumio closes the loop between live broadcast stats and the player\'s own post-match review. If your Sunday second-serve placement was 40cm shorter than your tournament average, ball-tracking is the only source that can tell you with that precision.',
     endpointsTitle: 'Data Flows Used by Lumio Tennis',
     endpoints: [
       { endpoint: 'Serve Placement Heatmap', desc: 'Exact bounce coordinates for every serve — singles + doubles.', status: 'Live' },
@@ -137,7 +137,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Point-Level Replays', desc: '3D replay data for any point — Planned integration for scout prep.', status: 'Planned' },
     ],
     coverage: {
-      title: 'Venue Coverage — Hawk-Eye',
+      title: 'Venue Coverage — Ball Tracking',
       columns: ['Tier', 'Installed', 'Depth', 'Heatmaps', 'Historical'],
       rows: [
         ['Grand Slams', '✓ All 4', '✓ Full', '✓', '✓ 2015+'],
@@ -148,7 +148,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
         ['Challenger / ITF', 'N/A', 'N/A', 'N/A', 'N/A'],
       ],
     },
-    pricing: 'Hawk-Eye match data is licensed per-tournament — access is typically negotiated through the player\'s federation or management company as part of the rights package. Lumio absorbs the aggregation / hosting cost; the player sees their own historical Hawk-Eye data in one place.',
+    pricing: 'Ball-tracking match data is licensed per-tournament — access is typically negotiated through the player\'s federation or management company as part of the rights package. Lumio absorbs the aggregation / hosting cost; the player sees their own historical ball-tracking data in one place.',
   },
 
   playsight: {

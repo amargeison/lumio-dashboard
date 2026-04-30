@@ -231,7 +231,7 @@ interface DartsPlayer {
 // Pro plan unlocks advanced views. Essentials users see a locked CTA.
 const PRO_FEATURES = [
   'tour-card-monitor', 'pressure-analysis', 'dartboard-heatmap',
-  'merit-forecaster', 'walk-on-music', 'dartconnect', 'pdclive',
+  'merit-forecaster', 'walk-on-music', 'lumiolivescoring', 'pdclive',
   'performance-rating', 'prize-forecaster', 'nine-dart-tracker',
 ];
 const isPro = (plan: string) =>
@@ -4193,11 +4193,11 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
           <button onClick={() => window.open('https://www.dartsdatabase.co.uk', '_blank')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 transition-colors">Browse Darts Database →</button>
         </div>
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-2"><div className="text-sm text-white font-semibold">DartConnect</div></div>
+          <div className="flex items-center gap-2 mb-2"><div className="text-sm text-white font-semibold">Lumio Live Scoring</div></div>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not connected</span>
-          <div className="text-xs text-gray-400 mt-3 mb-3">Official PDC scoring platform. Connect to sync your live match scores and career statistics automatically.</div>
-          <div className="flex flex-wrap gap-1 mb-3">{['Live match sync', 'Career stats', 'PDC event scoring'].map(t => <span key={t} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{t}</span>)}</div>
-          {showDCConfirm ? <div className="text-xs text-teal-400 font-medium">Connection request sent to DartConnect ✓</div> : <button onClick={() => setShowDCConfirm(true)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 transition-colors">Connect DartConnect ↗</button>}
+          <div className="text-xs text-gray-400 mt-3 mb-3">Lumio-built tablet scoring for venue, league and home use. Connect to auto-sync live match scores and career statistics.</div>
+          <div className="flex flex-wrap gap-1 mb-3">{['Live match sync', 'Career stats', 'Tablet scoring'].map(t => <span key={t} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">{t}</span>)}</div>
+          {showDCConfirm ? <div className="text-xs text-teal-400 font-medium">Lumio Live Scoring connection request sent ✓</div> : <button onClick={() => setShowDCConfirm(true)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 transition-colors">Connect Lumio Live Scoring ↗</button>}
         </div>
         <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2"><div className="text-sm text-white font-semibold">iDarts Stats</div></div>
@@ -4237,8 +4237,8 @@ function DataHubView({ onNavigate, player, session }: { onNavigate: (id: string)
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
 
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
-// ─── DartConnect Integration ──────────────────────────────────────────────────
-function DartConnectView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
+// ─── Lumio Live Scoring Integration ──────────────────────────────────────────
+function LumioLiveScoringView({ onNavigate, player, session }: { onNavigate: (id: string) => void; player: DartsPlayer; session: SportsDemoSession }) {
   const [apiKey, setApiKey] = useState('');
   const [connected, setConnected] = useState(false);
   const sessions = [
@@ -4252,7 +4252,7 @@ function DartConnectView({ onNavigate, player, session }: { onNavigate: (id: str
     <div className="space-y-6">
 
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">🔌 DartConnect</h1>
+        <h1 className="text-2xl font-bold text-white mb-1">🔌 Lumio Live Scoring</h1>
         <p className="text-xs text-gray-500">Sync match averages, checkout data and practice sessions automatically.</p>
       </div>
 
@@ -4261,12 +4261,12 @@ function DartConnectView({ onNavigate, player, session }: { onNavigate: (id: str
           <div className="flex items-start gap-3 mb-4">
             <div className="text-2xl">🔌</div>
             <div>
-              <div className="text-sm font-bold text-white mb-1">Connect your DartConnect account</div>
-              <div className="text-xs text-gray-400">Sync match averages, checkout data and practice sessions automatically. Pulls every session from your DartConnect history into Lumio overnight.</div>
+              <div className="text-sm font-bold text-white mb-1">Connect your Lumio Live Scoring account</div>
+              <div className="text-xs text-gray-400">Sync match averages, checkout data and practice sessions automatically. Pulls every session from your Lumio Live Scoring history overnight.</div>
             </div>
           </div>
           <div className="flex gap-2">
-            <input value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Paste your DartConnect API key" className="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-red-600/60" />
+            <input value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Paste your Lumio Live Scoring API key" className="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-red-600/60" />
             <button onClick={() => apiKey && setConnected(true)} disabled={!apiKey} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${apiKey ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-800 text-gray-600 cursor-not-allowed'}`}>Connect</button>
           </div>
         </div>
@@ -6358,7 +6358,7 @@ function LiveScoresView({ player, session }: { player: DartsPlayer; session: Spo
         <span>Highest finish: <span className="text-white">161 (Redgate)</span></span>
         <span>Highest avg: <span className="text-white">108.2 (Moxon)</span></span>
         <span>Total 180s: <span className="text-white">31</span></span>
-        <span className="ml-auto text-gray-600">* Demo data · Live would update from DartConnect every 3s</span>
+        <span className="ml-auto text-gray-600">* Demo data · Live scoring updates every 3s</span>
       </div>
       <DartsAISection context="default" player={player} session={session} />
     </div>
@@ -9097,7 +9097,7 @@ function DartsIntegrationsHub({ player, session }: { player: DartsPlayer; sessio
   const entries: HubEntry[] = [
     { id: 'pdc-api',     icon: '🏆', label: 'PDC Tour API',       category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['pdc-api'] },
     { id: 'wdf-api',     icon: '🌍', label: 'WDF Data Feed',      category: 'Data Feeds',       kind: 'generic', config: DARTS_INTEGRATIONS['wdf-api'] },
-    { id: 'dartconnect', icon: '🎯', label: 'DartConnect',        category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartconnect },
+    { id: 'lumiolivescoring', icon: '🎯', label: 'Lumio Live Scoring', category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.lumiolivescoring },
     { id: 'dartfish',    icon: '📹', label: 'Lumio Vision Video',     category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartfish },
     { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',       category: 'Wearables',        kind: 'generic', config: DARTS_INTEGRATIONS.whoop },
     { id: 'johansports', icon: '🛰️', label: 'Johan Sports',          category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.johansports },
@@ -9968,7 +9968,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
                 { name: 'Lumio GPS', desc: 'Movement & load tracking' },
                 { name: 'Softronic', desc: 'Tournament scoring software' },
                 { name: 'Lumio Vision', desc: 'Video analysis' },
-                { name: 'DartConnect', desc: 'Digital scorekeeping', connected: isDemoOuter },
+                { name: 'Lumio Live Scoring', desc: 'Digital scorekeeping', connected: isDemoOuter },
               ],
             },
             {

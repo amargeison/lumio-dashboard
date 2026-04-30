@@ -100,7 +100,7 @@ const PORTALS: Portal[] = [
   },
   {
     id: 'darts', icon: '🎯', label: 'Darts', color: '#EF4444',
-    desc: '51 portal features for the professional darts player. Order of Merit + Tour Card Monitor, Performance Rating, dartboard heatmap, equipment setup tracker, AI match prep briefings, threaded team comms, fan engagement hub and live data from DartConnect, PDC Live and Scolia.',
+    desc: '51 portal features for the professional darts player. Order of Merit + Tour Card Monitor, Performance Rating, dartboard heatmap, equipment setup tracker, AI match prep briefings, threaded team comms, fan engagement hub and Lumio Live Scoring built in.',
     modules: [
       { name: 'Order of Merit + Tour Card Monitor', detail: 'Rolling 2-year tracker, weekly drop-off table, buffer above the #64 cut and a Merit Forecaster that simulates outcomes by round.' },
       { name: 'Performance Suite', detail: 'Composite Performance Rating out of 100, dartboard heatmap by segment, pressure analysis, opponent intel and Nine-Dart Tracker.' },
@@ -108,7 +108,7 @@ const PORTALS: Portal[] = [
       { name: 'Match Prep + AI Briefings', detail: 'Tactical AI briefing for tonight\u2019s opponent, Premier League pathway tracker and World Series invitation status.' },
       { name: 'Team & Brand', detail: 'Team Hub, threaded Team Comms, Walk-on Music tracker, Fan Engagement across 4 platforms, Sponsorship pipeline and Exhibition Manager.' },
     ],
-    integrations: ['DartConnect', 'PDC Live Data', 'Scolia', 'Supabase'],
+    integrations: ['Lumio Live Scoring', 'PDC Live Data', 'Scolia', 'Supabase'],
     checks: ['Order of Merit updated automatically — rolling 2-year window', 'Live PDC scores and OoM movement (3-second refresh)', 'Camera-tracked dartboard heatmaps from Scolia', '5-step player onboarding wizard at /darts/onboarding', '51 features built specifically for the professional darts player'],
     cta: 'See Darts Tour live in a demo', href: '/darts/demo',
   },
