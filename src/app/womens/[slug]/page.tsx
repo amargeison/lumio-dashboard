@@ -101,6 +101,7 @@ const SIDEBAR_ITEMS = [
   { id: 'halftime',    label: 'AI Halftime Brief',   icon: '🤖', group: 'FOOTBALL' },
   { id: 'sponsorship',  label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
   { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
+  { id: 'club-vision',  label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
   { id: 'board',        label: 'Board Suite',         icon: '🏛️', group: 'COMMERCIAL' },
   { id: 'financial',    label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
   { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
@@ -4375,7 +4376,7 @@ const BoardSuiteView = ({ club }: { club: WomensClub }) => (
 )
 
 // ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
-const FinancialPlanningView = ({ club }: { club: WomensClub }) => {
+const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
   const [planTab, setPlanTab] = useState<'1yr'|'3yr'|'5yr'|'10yr'>('1yr')
   const fmtC = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
   const permitted = club.relevantRevenue * 0.8
@@ -5256,7 +5257,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
-      case 'financial':   return <FinancialPlanningView club={club} />
+      case 'club-vision': return <WomensClubVisionView club={club} />
+      case 'financial':   return <WomensClubVisionView club={club} />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
       case 'social':      return <SocialMediaView club={club} />
       case 'fanhub':      return <FanHubView club={club} />

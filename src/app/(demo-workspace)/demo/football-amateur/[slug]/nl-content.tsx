@@ -60,7 +60,7 @@ const TEXT_SEC = '#94A3B8'
 
 export type NLDeptId =
   | 'nl-getting-started'
-  | 'nl-overview' | 'nl-club-profile' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
+  | 'nl-overview' | 'nl-club-profile' | 'nl-club-vision' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
   | 'nl-set-pieces' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
   | 'nl-gps' | 'nl-gps-heatmaps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
@@ -75,6 +75,7 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
   { id: 'nl-morningroundup',  label: 'Morning Roundup',         icon: Bell,           section: null },
   { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: null },
+  { id: 'nl-club-vision',     label: 'Club Vision',             icon: Rocket,         section: null },
   { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: null },
   { id: 'nl-aihalftime',      label: 'AI Halftime Brief',       icon: Target,         section: 'Football' },
   { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
@@ -2094,6 +2095,244 @@ function NLCommitteeView() {
   )
 }
 
+// ─── Club Vision (1/3/5/10-year strategic planner) ──────────────────────────
+
+type NLPlanHorizon = '1yr' | '3yr' | '5yr' | '10yr'
+
+function NonLeagueClubVisionView() {
+  const [plan, setPlan] = useState<NLPlanHorizon>('1yr')
+
+  const seasonObjectives = [
+    { label: 'Top-half finish in current step', progress: 72, status: 'On Track', color: '#22C55E' },
+    { label: 'FA Trophy run to Round 3', progress: 55, status: 'In Progress', color: GOLD },
+    { label: 'Achieve ground grading at current level', progress: 88, status: 'On Track', color: '#22C55E' },
+    { label: 'Grow average attendance by 15%', progress: 64, status: 'On Track', color: '#22C55E' },
+  ]
+
+  const recruitmentPlan = [
+    { role: 'Striker',  profile: '20+ goal Step 4 striker',                budget: '£8K signing-on, £400/wk', priority: 'High', status: 'Shortlist of 4' },
+    { role: 'CB',       profile: 'Experienced, leadership',                 budget: '£6K signing-on, £350/wk', priority: 'High', status: 'Negotiating' },
+    { role: 'Winger',   profile: 'U23 with EFL release',                    budget: 'Free + £200/wk',           priority: 'Med',  status: 'Scouting' },
+    { role: 'GK',       profile: 'Backup, dual-reg academy partnership',    budget: 'Free',                     priority: 'Low',  status: 'Monitoring' },
+  ]
+
+  const keyMilestones = [
+    { date: '12 Aug 2025', title: 'FA Ground Grading inspection — current step',         status: '🔄' },
+    { date: '06 Sep 2025', title: 'FA Trophy Extra Preliminary Round',                   status: '🎯' },
+    { date: '30 Nov 2025', title: 'Main shirt sponsor renewal deadline',                 status: '⚠️' },
+    { date: '15 Dec 2025', title: 'AGM — committee + community trust update',            status: '📋' },
+    { date: '08 Feb 2026', title: 'FA Trophy Round 3 — target round',                    status: '🏆' },
+    { date: '04 Apr 2026', title: 'Step play-off eligibility cut-off',                   status: '🎯' },
+    { date: '24 May 2026', title: 'Season-end review + 2026/27 budget sign-off',         status: '📊' },
+  ]
+
+  const threeYearPlan = [
+    { t: 'Promotion ambition', items: ['Step 4 → Step 3 progression with promotion challenge in years 2–3', 'Maintain top-half finishes; play-off contention by year 2', 'FA Trophy: regular Round 3 / 4 appearances'] },
+    { t: 'Squad evolution',    items: ['Transition from semi-pro to part-time professional model by end of year 2', 'Establish academy / youth pathway (U18, U16 teams)', 'Average squad age target: 24–26'] },
+    { t: 'Infrastructure',     items: ['Full ground grading compliance for one step above current', 'Floodlight upgrade to LED, 250 lux minimum', 'Clubhouse modernisation: family room, accessible viewing', 'Pitch surface evaluation (3G / hybrid / drainage)'] },
+    { t: 'Commercial',         items: ['Average attendance target: +50% over 3 years', 'Main shirt sponsor: 5-figure annual deal by year 3', 'Match-day revenue per fixture: doubled from baseline', 'Community trust / foundation launch'] },
+  ]
+
+  const fiveYearPlan = [
+    { t: 'National League ambition', items: ['Target: National League North / South by year 5', 'Full-time professional squad transition complete', 'Manager and coaching staff full-time'] },
+    { t: 'Stadium development',      items: ['Capacity to 3,500 (covered standing + family stand)', '4G or hybrid pitch installed', 'Training ground purchased or long-term leased', 'Disabled access compliant with EFL standards'] },
+    { t: 'Squad and operations',     items: ['Full academy with EFL feeder relationships', 'Sports science: GPS, video analysis, S&C coach', "Women's first team established (or merged with existing)"] },
+    { t: 'Financial sustainability', items: ['Match-day, commercial, and academy revenue split target: 40/40/20', 'Owner subsidy reduced to <20% of operating budget', 'EFL grant / Premier League solidarity routes scoped'] },
+  ]
+
+  const tenYearPlan = [
+    { t: 'EFL ambition',           items: ['Target: EFL League Two by year 10', 'National League promotion sustained, top-half finishes', 'FA Cup Round 3 regular appearances'] },
+    { t: 'Stadium and facilities', items: ['Stadium capacity 5,000–7,500 with all-seater conversion plan', 'Owned training ground complex with 3+ pitches', 'Indoor 3G dome / community sports facility'] },
+    { t: 'Community and brand',    items: ['Charitable foundation operating across 3+ programmes', 'Schools and grassroots partnerships in 50+ local schools', 'International tour / pre-season fixtures', 'Local heritage and identity preserved through fan-led ownership trust'] },
+    { t: 'Financial',              items: ['EFL parachute readiness: cost base controllable in event of relegation', 'Owner exit / community share scheme available'] },
+  ]
+
+  const horizons: { id: NLPlanHorizon; label: string }[] = [
+    { id: '1yr',  label: '1 Year' },
+    { id: '3yr',  label: '3 Year' },
+    { id: '5yr',  label: '5 Year' },
+    { id: '10yr', label: '10 Year' },
+  ]
+
+  return (
+    <div className="space-y-5">
+      {/* Header + horizon switcher */}
+      <div>
+        <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: TEXT }}>
+          <Rocket size={18} style={{ color: PRIMARY }} /> Club Vision — Harfield FC
+        </h2>
+        <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>
+          Multi-horizon strategic planning · this season through to a decade ahead.
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        {horizons.map(h => (
+          <button key={h.id} onClick={() => setPlan(h.id)}
+            className="px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors"
+            style={{
+              backgroundColor: plan === h.id ? PRIMARY : '#111318',
+              color: plan === h.id ? '#fff' : TEXT_SEC,
+              border: plan === h.id ? 'none' : `1px solid ${BORDER}`,
+            }}>
+            {h.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 1 Year */}
+      {plan === '1yr' && (
+        <div className="space-y-5">
+          <div className="rounded-xl p-5" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <div className="text-sm font-semibold mb-4" style={{ color: TEXT }}>Season Objectives (2025/26)</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {seasonObjectives.map((o, i) => (
+                <div key={i} className="rounded-lg p-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium" style={{ color: TEXT }}>{o.label}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: `${o.color}22`, color: o.color, border: `1px solid ${o.color}55` }}>
+                      {o.status}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#0a0c14' }}>
+                    <div className="h-full rounded-full" style={{ width: `${o.progress}%`, backgroundColor: o.color }} />
+                  </div>
+                  <div className="text-[10px] mt-1" style={{ color: TEXT_SEC }}>{o.progress}% to target</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <div className="px-5 py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
+              <div className="text-sm font-semibold" style={{ color: TEXT }}>This Season&apos;s Recruitment Plan</div>
+            </div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BORDER}`, color: TEXT_SEC }}>
+                  <th className="text-left px-5 py-2 font-semibold uppercase tracking-wider text-[10px]">Role</th>
+                  <th className="text-left px-3 py-2 font-semibold uppercase tracking-wider text-[10px]">Target Profile</th>
+                  <th className="text-left px-3 py-2 font-semibold uppercase tracking-wider text-[10px]">Budget</th>
+                  <th className="text-left px-3 py-2 font-semibold uppercase tracking-wider text-[10px]">Priority</th>
+                  <th className="text-left px-5 py-2 font-semibold uppercase tracking-wider text-[10px]">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recruitmentPlan.map((r, i) => {
+                  const pri = r.priority === 'High' ? '#EF4444' : r.priority === 'Med' ? GOLD : TEXT_SEC
+                  return (
+                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <td className="px-5 py-2.5 font-semibold" style={{ color: TEXT }}>{r.role}</td>
+                      <td className="px-3 py-2.5" style={{ color: TEXT_SEC }}>{r.profile}</td>
+                      <td className="px-3 py-2.5" style={{ color: TEXT_SEC }}>{r.budget}</td>
+                      <td className="px-3 py-2.5"><span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: `${pri}22`, color: pri, border: `1px solid ${pri}55` }}>{r.priority}</span></td>
+                      <td className="px-5 py-2.5" style={{ color: TEXT_SEC }}>{r.status}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="rounded-xl p-5" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <div className="text-sm font-semibold mb-3" style={{ color: TEXT }}>Key Milestones Timeline</div>
+            <div className="space-y-2">
+              {keyMilestones.map((m, i) => (
+                <div key={i} className="flex items-center gap-3 py-2" style={{ borderBottom: i < keyMilestones.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+                  <span className="text-base">{m.status}</span>
+                  <span className="text-[11px] font-mono w-24 shrink-0" style={{ color: PRIMARY }}>{m.date}</span>
+                  <span className="text-xs" style={{ color: TEXT }}>{m.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3 Year */}
+      {plan === '3yr' && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-sm font-bold" style={{ color: TEXT }}>Three-Year Strategic Plan (2025–2028)</h3>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>Step progression, squad model transition and infrastructure foundation.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {threeYearPlan.map((g, gi) => (
+              <div key={gi} className="rounded-xl p-5" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                <div className="text-sm font-semibold mb-3" style={{ color: PRIMARY }}>{g.t}</div>
+                <ul className="space-y-2">
+                  {g.items.map((it, ii) => (
+                    <li key={ii} className="text-xs flex gap-2" style={{ color: TEXT_SEC }}>
+                      <span style={{ color: PRIMARY }}>→</span>
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5 Year */}
+      {plan === '5yr' && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-sm font-bold" style={{ color: TEXT }}>Five-Year Vision (2025–2030)</h3>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>National League ambition, full-time transition and self-sustaining commercial mix.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fiveYearPlan.map((g, gi) => (
+              <div key={gi} className="rounded-xl p-5" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                <div className="text-sm font-semibold mb-3" style={{ color: PRIMARY }}>{g.t}</div>
+                <ul className="space-y-2">
+                  {g.items.map((it, ii) => (
+                    <li key={ii} className="text-xs flex gap-2" style={{ color: TEXT_SEC }}>
+                      <span style={{ color: PRIMARY }}>→</span>
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 10 Year */}
+      {plan === '10yr' && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-sm font-bold" style={{ color: TEXT }}>Ten-Year Vision (2025–2035)</h3>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>EFL ambition, owned facilities, and a fan-led identity that outlasts any one owner.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tenYearPlan.map((g, gi) => (
+              <div key={gi} className="rounded-xl p-5" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+                <div className="text-sm font-semibold mb-3" style={{ color: PRIMARY }}>{g.t}</div>
+                <ul className="space-y-2">
+                  {g.items.map((it, ii) => (
+                    <li key={ii} className="text-xs flex gap-2" style={{ color: TEXT_SEC }}>
+                      <span style={{ color: PRIMARY }}>→</span>
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl p-5 text-center" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
+            <p className="text-sm italic leading-relaxed" style={{ color: TEXT_SEC }}>&ldquo;Steps don&apos;t lift you — habits do. Decade-out planning is the habit that turns a Step 4 club into an EFL one.&rdquo;</p>
+            <p className="text-xs mt-2" style={{ color: PRIMARY }}>— Steve Whitlock, Manager</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Club Profile View ──────────────────────────────────────────────────────
 
 type ClubProfileTab = 'info' | 'history' | 'ground' | 'honours' | 'committee' | 'kit' | 'sponsors' | 'media'
@@ -3780,6 +4019,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-morningroundup' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-club-profile' && <NLClubProfileView />}
+      {activeDept === 'nl-club-vision' && <NonLeagueClubVisionView />}
       {activeDept === 'nl-squad' && <NLSquadView />}
       {activeDept === 'nl-fixtures' && <NLFixturesView />}
       {activeDept === 'nl-training' && <NLTrainingView />}
