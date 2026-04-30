@@ -5337,7 +5337,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   return (
     <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12' }}>
+      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
@@ -5385,7 +5385,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main className="flex-1 flex flex-col" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
           <span>This is a demo · sample data</span>

@@ -10107,9 +10107,9 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'width 250ms ease',
-          position: 'fixed',
-          top: 0, left: 0, height: '100vh',
-          zIndex: 40,
+          position: 'sticky',
+          top: 0, height: '100vh',
+          flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -10211,7 +10211,7 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner — hidden when rendered inside /darts/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>

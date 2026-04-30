@@ -48,9 +48,8 @@ export function BoxingSidebar({
         background: T.bg,
         overflow: 'hidden',
         height: '100vh',
-        position: 'fixed',
+        position: 'sticky',
         top: 0,
-        left: 0,
         zIndex: 40,
         transition: 'width 250ms ease',
       }}>

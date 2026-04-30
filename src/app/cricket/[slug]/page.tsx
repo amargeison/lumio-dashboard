@@ -7264,7 +7264,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
           backgroundColor: C.sidebar,
           borderRight: `1px solid ${C.border}`,
           transition: 'width 250ms ease',
-          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -7355,7 +7355,7 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
       </aside>
 
       {/* Content */}
-      <div style={{flex:1,overflowY:'auto',marginLeft: sidebarPinned ? 220 : 72, transition:'margin-left 250ms ease'}}>
+      <div style={{flex:1, minHeight:'100vh', minWidth:0}}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#FBBF24', color: '#000000' }}>
           <span>This is a demo · sample data</span>

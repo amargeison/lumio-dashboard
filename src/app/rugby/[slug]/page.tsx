@@ -7548,7 +7548,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           backgroundColor: THEMES.dark.bg,
           borderRight: `1px solid ${THEMES.dark.border}`,
           transition: 'width 250ms ease',
-          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           fontFamily: FONT,
         }}>
@@ -7641,7 +7641,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
           style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>

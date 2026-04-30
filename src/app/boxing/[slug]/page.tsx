@@ -1250,28 +1250,38 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#f87171' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#dc26260d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
-        </button>
+      {/* Tab bar — matches cricket v2 styling exactly */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto', marginBottom: v2Density.gap }}>
         {([
-          { id:'today' as const,      label:'Today',       icon:'🏠' },
-          { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
-          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
-          { id:'insights' as const,   label:'Insights',    icon:'📊' },
-          { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
-          { id:'team' as const,       label:'Team',        icon:'👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === t.id ? '#dc2626' : 'transparent', color: dashTab === t.id ? '#f87171' : '#6B7280', backgroundColor: dashTab === t.id ? '#dc26260d' : 'transparent' }}>
-            <span className="text-base">{t.icon}</span>{t.label}
-          </button>
-        ))}
+          { id:'gettingstarted' as const, label:'Getting Started', icon:'sparkles' },
+          { id:'today' as const,          label:'Today',           icon:'home' },
+          { id:'quickwins' as const,      label:'Quick Wins',      icon:'lightning' },
+          { id:'dailytasks' as const,     label:'Daily Tasks',     icon:'check' },
+          { id:'insights' as const,       label:'Insights',        icon:'bars' },
+          { id:'dontmiss' as const,       label:"Don't Miss",      icon:'flag' },
+          { id:'team' as const,           label:'Team',            icon:'people' },
+        ]).map(t => {
+          const active = dashTab === t.id
+          return (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'rgba(232,234,238,0.64)' }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'rgba(232,234,238,0.42)' }}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px',
+                fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : 'rgba(232,234,238,0.42)',
+                borderBottom: `2px solid ${active ? v2Accent.hex : 'transparent'}`,
+                marginBottom: -1,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                transition: 'color .12s, border-color .12s',
+              }}>
+              <V2Icon name={t.icon} size={12} stroke={1.6} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
@@ -10612,7 +10622,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       })()}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner — hidden when rendered inside /boxing/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"

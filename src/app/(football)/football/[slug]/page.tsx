@@ -542,7 +542,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
       {/* Desktop sidebar */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease', position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -7516,7 +7516,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   if (!fbMounted) return null
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden', zoom: 0.9 }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', minHeight: '100vh', zoom: 0.9 }}>
       <Toast message={toast} />
 
       {/* Demo banner */}
@@ -7544,10 +7544,10 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
       </div>
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
         <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
+        <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
           <main className="flex-1 p-4 sm:p-5">
             {activeDept !== 'overview' && (
               <div className="flex items-center justify-between mb-4">

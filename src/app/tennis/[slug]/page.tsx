@@ -1318,31 +1318,89 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   return (
     <div className="space-y-0">
 
-      {/* ── TAB BAR ── */}
-      <div className="mt-4 border-b border-gray-800 overflow-x-auto scrollbar-none">
-        <div className="flex items-center gap-0 min-w-max px-2">
-          {/* Getting Started tab with badge */}
-          <button onClick={() => setDashTab('gettingstarted')}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#7C3AED' : 'transparent', color: dashTab === 'gettingstarted' ? '#7C3AED' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
-            <span className="text-base">🚀</span>Getting Started
-            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#EF4444', color: '#fff' }}>11</span>
-          </button>
-          {([
-            { id:'today' as const,      label:'Today',       icon:'🏠' },
-            { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
-            { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
-            { id:'insights' as const,   label:'Insights',    icon:'📊' },
-            { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
-            { id:'team' as const,       label:'Team',        icon:'👥' },
-          ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => (
-            <button key={t.id} onClick={() => setDashTab(t.id)}
-              className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
-              style={{ borderBottomColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#7C3AED' : '#6B7280', backgroundColor: dashTab === t.id ? 'rgba(124,58,237,0.05)' : 'transparent' }}>
-              <span className="text-base">{t.icon}</span>{t.label}
-            </button>
-          ))}
+      {/* Hero — match-day context, persistent across all tabs (matches cricket v2) */}
+      <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, marginBottom: v2Density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+          <TnHeroToday
+            T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
+            quote={v2DailyQuote}
+            onMatchPrep={() => setV2BriefOpen(true)}
+            onAsk={() => setV2AskOpen(true)}
+          />
+          <TnTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
         </div>
+      </div>
+
+      {/* Tab bar — matches cricket v2 styling exactly */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${v2T.border}`, overflowX: 'auto', marginBottom: v2Density.gap }}>
+        {([
+          { id:'gettingstarted' as const, label:'Getting Started', icon:'sparkles' },
+          { id:'today' as const,          label:'Today',           icon:'home' },
+          { id:'quickwins' as const,      label:'Quick Wins',      icon:'lightning' },
+          { id:'dailytasks' as const,     label:'Daily Tasks',     icon:'check' },
+          { id:'insights' as const,       label:'Insights',        icon:'bars' },
+          { id:'dontmiss' as const,       label:"Don't Miss",      icon:'flag' },
+          { id:'team' as const,           label:'Team',            icon:'people' },
+        ]).filter(t => !roleConfig.hiddenTabs.includes(t.id)).map(t => {
+          const active = dashTab === t.id
+          return (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = v2T.text2 }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = v2T.text3 }}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px',
+                fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : v2T.text3,
+                borderBottom: `2px solid ${active ? v2Accent.hex : 'transparent'}`,
+                marginBottom: -1,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                transition: 'color .12s, border-color .12s',
+              }}>
+              <V2Icon name={t.icon} size={12} stroke={1.6} />
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Quick Actions — desaturated rectangular (matches rugby v2), persistent across tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: v2Density.gap }}>
+        {[
+          { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
+          { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
+          { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
+          { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
+          { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
+          { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
+          { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
+          { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
+          { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
+          { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
+          { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
+          { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
+          { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
+          { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
+          { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
+          { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
+          { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
+        ].map(a => (
+          <button key={a.id} onClick={() => onOpenModal(a.id)}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = v2Accent.hex; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+            style={{
+              appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 8,
+              background: 'transparent', border: '1px solid #2d3139',
+              color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
+              transition: 'border-color .12s, color .12s',
+            }}>
+            <span style={{ fontSize: 13 }}>{a.icon}</span>
+            <span>{a.label}</span>
+            {a.hot && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
+          </button>
+        ))}
       </div>
 
       {/* ── GETTING STARTED TAB — Interactive 10-step tour ── */}
@@ -1477,56 +1535,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
 
       {/* ── TODAY TAB — v2 modular grid ── */}
       {dashTab === 'today' && (
-        <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, marginTop: 14, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
-
-          {/* Hero (motivational quote preserved) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
-            <TnHeroToday
-              T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
-              quote={v2DailyQuote}
-              onMatchPrep={() => setV2BriefOpen(true)}
-              onAsk={() => setV2AskOpen(true)}
-            />
-            <TnTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
-          </div>
-
-          {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[
-              { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
-              { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
-              { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
-              { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
-              { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
-              { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
-              { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
-              { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
-              { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
-              { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
-              { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
-              { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
-              { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
-              { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
-              { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
-              { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
-              { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
-            ].map(a => (
-              <button key={a.id} onClick={() => onOpenModal(a.id)}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = v2Accent.hex; e.currentTarget.style.color = '#fff' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-                style={{
-                  appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 14px', borderRadius: 8,
-                  background: 'transparent', border: '1px solid #2d3139',
-                  color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
-                  transition: 'border-color .12s, color .12s',
-                }}>
-                <span style={{ fontSize: 13 }}>{a.icon}</span>
-                <span>{a.label}</span>
-                {a.hot && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
-              </button>
-            ))}
-          </div>
+        <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
 
           {/* Stat tiles */}
           <TnStatTiles T={v2T} accent={v2Accent} density={v2Density} />
@@ -12825,10 +12834,10 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'min-width 250ms ease, width 250ms ease',
-          position: 'fixed',
+          position: 'sticky',
           top: 0,
-          left: 0,
           height: '100vh',
+          flexShrink: 0,
           zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
@@ -12957,7 +12966,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? sidebarWidth : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner — hidden when rendered inside /tennis/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"

@@ -33,8 +33,9 @@ import { useParams } from 'next/navigation'
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
-import { GolfDashboardView, GOLF_THEME, GOLF_ACCENT } from './_components/GolfDashboardModules'
+import { GolfDashboardView, GolfHeroBlock, GolfGridBlock, GOLF_THEME, GOLF_ACCENT } from './_components/GolfDashboardModules'
 import { GolfSidebarNav } from './_components/GolfShell'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { createBrowserClient } from '@supabase/ssr'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
@@ -1157,32 +1158,45 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 
   return (
     <div className="space-y-6">
-      {/* Tab Bar */}
-      <div className="flex items-center gap-0 border-b border-gray-800/50" style={{ overflowX: 'hidden' }}>
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#15803D' : 'transparent', color: dashTab === 'gettingstarted' ? '#4ade80' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#15803D0d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>10</span>
-        </button>
+      {/* Hero — match-day context, persistent across all tabs (matches cricket v2) */}
+      <GolfHeroBlock onAskLumio={() => onOpenModal('caddiebriefai')} onCourseStrategy={() => onOpenModal('coursestrategy')} />
+
+      {/* Tab Bar — matches cricket v2 styling exactly */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${GOLF_THEME.border}`, overflowX: 'auto' }}>
         {([
-          { id: 'today' as const, label: 'Today', icon: '🏠' },
-          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
-          { id: 'tasks' as const, label: 'Daily Tasks', icon: '✅' },
-          { id: 'insights' as const, label: 'Insights', icon: '📊' },
-          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
-          { id: 'team' as const, label: 'Team', icon: '👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
-            style={{ borderBottomColor: dashTab === t.id ? '#15803D' : 'transparent', color: dashTab === t.id ? '#4ade80' : '#6B7280', backgroundColor: dashTab === t.id ? '#15803D0d' : 'transparent' }}>
-            <span className="text-base">{t.icon}</span>{t.label}
-          </button>
-        ))}
+          { id: 'gettingstarted' as const, label: 'Getting Started', icon: 'sparkles' },
+          { id: 'today' as const,          label: 'Today',           icon: 'home' },
+          { id: 'quickwins' as const,      label: 'Quick Wins',      icon: 'lightning' },
+          { id: 'tasks' as const,          label: 'Daily Tasks',     icon: 'check' },
+          { id: 'insights' as const,       label: 'Insights',        icon: 'bars' },
+          { id: 'dontmiss' as const,       label: "Don't Miss",      icon: 'flag' },
+          { id: 'team' as const,           label: 'Team',            icon: 'people' },
+        ]).map(t => {
+          const active = dashTab === t.id
+          return (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = GOLF_THEME.text2 }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = GOLF_THEME.text3 }}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px',
+                fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : GOLF_THEME.text3,
+                borderBottom: `2px solid ${active ? GOLF_ACCENT.hex : 'transparent'}`,
+                marginBottom: -1,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                transition: 'color .12s, border-color .12s',
+              }}>
+              <V2Icon name={t.icon} size={12} stroke={1.6} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
-      {dashTab === 'today' && <div className="mb-5 mt-4">
+      {/* Quick Actions — desaturated rectangular (matches rugby v2), persistent across tabs */}
+      <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -1217,7 +1231,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
             </button>
           ))}
         </div>
-      </div>}
+      </div>
 
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
@@ -1288,11 +1302,10 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         )
       })()}
 
-      {/* Tab Content — Today renders v2 modular dashboard */}
+      {/* Tab Content — Today renders v2 modular grid (hero is hoisted above tab bar) */}
       {dashTab === 'today' && (
-        <GolfDashboardView
+        <GolfGridBlock
           onAskLumio={() => onOpenModal('caddiebriefai')}
-          onCourseStrategy={() => onOpenModal('coursestrategy')}
           photoDataUrl={session.photoDataUrl ?? null}
         />
       )}
@@ -7557,7 +7570,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'width 250ms ease',
-          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+          position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -7628,7 +7641,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
         {/* Demo workspace banner — hidden when rendered inside /golf/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"

@@ -415,7 +415,7 @@ function Sidebar({ activeDept, onSelect, open, onClose }: { activeDept: string; 
 
   return (
     <>
-      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 200 : 52, backgroundColor: BG, borderRight: `1px solid ${BORDER}` }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 200 : 52, backgroundColor: BG, borderRight: `1px solid ${BORDER}`, position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: `1px solid ${BORDER}`, minHeight: 52 }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: tierColor, color: '#fff' }}>SR</div>
           {expanded && (<><div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: TEXT }}>Sunday Rovers FC</p><p className="text-[10px] truncate" style={{ color: TEXT_SEC }}>Grassroots Portal</p></div>
@@ -2403,7 +2403,7 @@ export default function GrassrootsPortal({ params }: { params: Promise<{ slug: s
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: TEXT, height: '100vh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: TEXT, minHeight: '100vh' }}>
       <Toast message={toast} />
 
       {/* Scrollbar styles */}
@@ -2430,10 +2430,10 @@ export default function GrassrootsPortal({ params }: { params: Promise<{ slug: s
       </div>
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
         <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d as DeptId)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
+        <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
           <main className="flex-1 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
