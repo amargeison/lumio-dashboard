@@ -2096,19 +2096,24 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
                 internal placement (FbAIBrief '1 / span 5',
                 InteractiveFootballInbox '6 / span 4', FbTodaySchedule
                 '9 / span 4'). Result: three equal 4-col cards.
-                ROW HEIGHT PARITY — wrappers use display:grid so the
-                inner Card stretches to fill the grid-row height. AI and
-                Inbox have density reductions (FootballDashboardModules
-                AIBrief, this file's InteractiveFootballInbox) so all
-                three converge on Today's compact natural height. */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'stretch' }}>
-              <div style={{ gridColumn: '1 / span 4', display: 'grid' }}>
+                ROW HEIGHT PARITY — wrappers use grid-template 1fr/1fr so
+                the inner Card stretches to fill BOTH the grid-cell
+                width (preventing visual gap inflation) and the row
+                height. AI and Inbox have density reductions
+                (FootballDashboardModules AIBrief, this file's
+                InteractiveFootballInbox) so all three converge on
+                Today's compact natural height.
+                CARD ROW GAP — three-card row spacing matches cricket
+                reference. Tight spacing creates a unified row visual
+                rather than three disconnected cards. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+              <div style={{ gridColumn: '1 / span 4', display: 'grid', gridTemplate: '1fr / 1fr' }}>
                 <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
               </div>
-              <div style={{ gridColumn: '5 / span 4', display: 'grid' }}>
+              <div style={{ gridColumn: '5 / span 4', display: 'grid', gridTemplate: '1fr / 1fr' }}>
                 <InteractiveFootballInbox T={T} accent={accent} density={density} />
               </div>
-              <div style={{ gridColumn: '9 / span 4', display: 'grid' }}>
+              <div style={{ gridColumn: '9 / span 4', display: 'grid', gridTemplate: '1fr / 1fr' }}>
                 <FbTodaySchedule T={T} accent={accent} density={density} />
               </div>
             </div>

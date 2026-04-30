@@ -318,6 +318,8 @@ export function Inbox({ T, density }: Common) {
 // weight to Recent Results / Season Standing). Injuries list has been
 // moved out of this card; if needed in future, render it below the
 // groups inside this Card.
+// SQUAD TILES sized to fill the bottom strip without overflow.
+// Box height stays the same; tiles fill the available space.
 function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; slot: FbPlayerSlot }) {
   const status = slot.status
   const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : T.bad
@@ -325,15 +327,15 @@ function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; 
     <div title={`${slot.num}. ${slot.name} · ${slot.pos} · ${status}`}
       style={{
         position: 'relative',
-        width: 32, height: 32, borderRadius: 4, display: 'grid', placeItems: 'center',
-        fontSize: 9, fontWeight: 600, fontFamily: FONT_MONO,
+        width: 48, height: 48, borderRadius: 6, display: 'grid', placeItems: 'center',
+        fontSize: 12, fontWeight: 600, fontFamily: FONT_MONO,
         color: status === 'ok' ? T.text : '#0E1014',
         background: status === 'ok' ? `${c}22` : c,
         border: `1px solid ${status === 'ok' ? `${c}55` : 'transparent'}`,
         cursor: 'pointer',
         flexShrink: 0,
       }}>
-      <span style={{ position: 'absolute', top: 1, left: 2, fontSize: 7, color: status === 'ok' ? T.text3 : '#0E1014', opacity: 0.7 }}>{slot.num}</span>
+      <span style={{ position: 'absolute', top: 2, left: 3, fontSize: 8, color: status === 'ok' ? T.text3 : '#0E1014', opacity: 0.7 }}>{slot.num}</span>
       {slot.initials}
     </div>
   )
@@ -351,7 +353,7 @@ export function Squad({ T, accent, density }: Common) {
   const Group = ({ label, players }: { label: string; players: FbPlayerSlot[] }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
       <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ display: 'flex', gap: 3 }}>
+      <div style={{ display: 'flex', gap: 4 }}>
         {players.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
       </div>
     </div>
