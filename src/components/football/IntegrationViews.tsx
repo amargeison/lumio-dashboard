@@ -173,9 +173,9 @@ export function ScoutingDBView() {
 
 // ─── GPS HARDWARE VIEW ───────────────────────────────────────────────────────
 export function GPSHardwareView() {
-  const [provider, setProvider] = useState<'catapult' | 'statsports'>('catapult')
-  const [catConnected, setCatConnected] = useState(false)
-  const [statConnected, setStatConnected] = useState(false)
+  const [provider, setProvider] = useState<'johansports' | 'csv'>('johansports')
+  const [johanConnected, setJohanConnected] = useState(false)
+  const [csvConnected, setCsvConnected] = useState(false)
   const squadLoad = [
     { name: 'M. Browne', pos: 'LW', totalDist: 52.8, hsr: 11.4, accel: 162, acwr: 1.08, readiness: 82, flag: '🟡' },
     { name: 'D. McCoy-Splatt', pos: 'CM', totalDist: 56.1, hsr: 9.8, accel: 148, acwr: 0.94, readiness: 92, flag: '🟢' },
@@ -185,18 +185,18 @@ export function GPSHardwareView() {
     { name: 'N. Asiimwe', pos: 'RB', totalDist: 31.2, hsr: 6.1, accel: 88, acwr: 0.71, readiness: 74, flag: '🟡' },
   ]
   const providerData = {
-    catapult: { name: 'Lumio GPS (Vector T7)', desc: 'Market leader in elite performance tracking.', cost: '£40,000–£120,000/yr', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
-    statsports: { name: 'Lumio GPS Pro (APEX Pro)', desc: 'Challenger to Lumio GPS — better value at League One level.', cost: '£20,000–£60,000/yr', metrics: ['Total distance', 'High metabolic load', 'Sprint speed (peak)', 'Repeated sprint ability', 'Mechanical load', 'Dynamic stress load', 'Live tablet monitoring', 'OLED display'] },
+    johansports: { name: 'Johan Sports', desc: 'Live OAuth feed — 10Hz GPS + IMU streamed per session.', cost: 'Quote on request', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
+    csv: { name: 'CSV Upload', desc: 'Generic GPS export — drop a CSV from any vendor and the parser auto-maps columns.', cost: 'Included', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Session RPE', 'Training load', 'Date / type tagging', 'Per-player rows'] },
   }
   const current = providerData[provider]
-  const connected = provider === 'catapult' ? catConnected : statConnected
-  const setConnected = provider === 'catapult' ? setCatConnected : setStatConnected
+  const connected = provider === 'johansports' ? johanConnected : csvConnected
+  const setConnected = provider === 'johansports' ? setJohanConnected : setCsvConnected
 
   return (
     <div className="space-y-6">
-      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Lumio GPS and Lumio GPS Pro wearable data flows into Lumio&apos;s performance and medical modules.</p></div>
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Connect Johan Sports for live session sync, or drop a CSV from any other vendor — the dashboards backfill the same way.</p></div>
       <div className="grid grid-cols-2 gap-3">
-        {(['catapult', 'statsports'] as const).map(p => (
+        {(['johansports', 'csv'] as const).map(p => (
           <button key={p} onClick={() => setProvider(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: provider === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${provider === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>
             <div className="font-semibold mb-1" style={{ color: C.text }}>{providerData[p].name}</div>
             <div className="text-xs" style={{ color: C.muted }}>{providerData[p].desc}</div>

@@ -4781,26 +4781,24 @@ function GolfTravelView({ player, session }: { player: GolfPlayer; session: Spor
   )
 }
 
-// Generic placeholder for remaining views
-
 // ─── Q-SCHOOL & QUALIFYING VIEW ───────────────────────────────────────────────
 function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const QSCHOOL_FINAL_START = '11 Nov 2026';
   const daysToFinal = 206;
   const mondayQualifiers = [
-    { date: '21 Apr', event: 'Spanish Open MQ',  course: 'Valderrama',       entries: 112, spots: 4, status: 'Entered',      statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
-    { date: '12 May', event: 'Dutch Open MQ',     course: 'Bernardus',        entries: 98,  spots: 4, status: 'Eligible',     statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
-    { date: '2 Jun',  event: 'Italian Open MQ',   course: 'Marco Simone',     entries: 128, spots: 4, status: 'Entered',      statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
-    { date: '30 Jun', event: 'BMW Int. Open MQ',  course: 'Golfclub München', entries: 108, spots: 4, status: 'Waitlist',     statusColour: 'bg-amber-600/20 text-amber-300 border-amber-600/40' },
-    { date: '4 Aug',  event: 'Danish Open MQ',    course: 'Great Northern',   entries: 94,  spots: 4, status: 'Eligible',     statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
-    { date: '1 Sep',  event: 'Irish Open MQ',     course: 'Mount Juliet',     entries: 118, spots: 4, status: 'Too far down', statusColour: 'bg-gray-700 text-gray-400 border-gray-700' },
+    { date: '21 Apr', event: 'Spanish Open MQ',  course: 'Valderrama',       entries: 112, spots: 4, status: 'Entered',        statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
+    { date: '12 May', event: 'Dutch Open MQ',     course: 'Bernardus',        entries: 98,  spots: 4, status: 'Eligible',       statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
+    { date: '2 Jun',  event: 'Italian Open MQ',   course: 'Marco Simone',     entries: 128, spots: 4, status: 'Entered',        statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
+    { date: '30 Jun', event: 'BMW Int. Open MQ',  course: 'Golfclub München', entries: 108, spots: 4, status: 'Waitlist',       statusColour: 'bg-amber-600/20 text-amber-300 border-amber-600/40' },
+    { date: '4 Aug',  event: 'Danish Open MQ',    course: 'Great Northern',   entries: 94,  spots: 4, status: 'Eligible',       statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
+    { date: '1 Sep',  event: 'Irish Open MQ',     course: 'Mount Juliet',     entries: 118, spots: 4, status: 'Too far down',   statusColour: 'bg-gray-700 text-gray-400 border-gray-700' },
   ];
   const sectionalEntries = [
-    { event: 'The Open Regional Qualifier', date: '23 Jun',            location: 'West Lancashire GC',     deadline: '5 May',  status: 'Entered (via OWGR exemption)' },
-    { event: 'US Open International Q',     date: '11 May',            location: 'Walton Heath',            deadline: '22 Apr', status: 'Not entered — outside OWGR window' },
-    { event: 'European Q-School Stage 2',   date: '8 Oct',             location: 'El Saler, Spain',         deadline: '1 Sep',  status: 'Conditional — only if DP World card lost' },
-    { event: 'Korn Ferry Q-School Stage 1', date: '3 Sep',             location: "TPC Sawgrass Dye's",      deadline: '15 Aug', status: 'Backup route — under review' },
-    { event: 'European Q-School Final',     date: QSCHOOL_FINAL_START,  location: 'Lumine Golf Club, Spain', deadline: '20 Oct', status: 'Only required if cards lost' },
+    { event: 'The Open Regional Qualifier', date: '23 Jun',              location: 'West Lancashire GC',  deadline: '5 May',  status: 'Entered (via OWGR exemption)' },
+    { event: 'US Open International Q',     date: '11 May',              location: 'Walton Heath',         deadline: '22 Apr', status: 'Not entered — outside OWGR window' },
+    { event: 'European Q-School Stage 2',   date: '8 Oct',               location: 'El Saler, Spain',      deadline: '1 Sep',  status: 'Conditional — only if DP World card lost' },
+    { event: 'Korn Ferry Q-School Stage 1', date: '3 Sep',               location: "TPC Sawgrass Dye's",   deadline: '15 Aug', status: 'Backup route — under review' },
+    { event: 'European Q-School Final',     date: QSCHOOL_FINAL_START,    location: 'Lumine Golf Club, Spain', deadline: '20 Oct', status: 'Only required if cards lost' },
   ];
   const history = [
     { year: 2022, stage: 'Final Stage', result: 'Tied 18th — earned DP World Tour card' },
@@ -4863,7 +4861,13 @@ function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: Spo
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-800"><div className="text-sm font-bold text-white">Sectional Qualifying Entries</div></div>
         <table className="w-full text-sm">
-          <thead><tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Event</th><th className="text-left p-3">Date</th><th className="text-left p-3">Location</th><th className="text-left p-3">Entry Deadline</th><th className="text-left p-3">Status</th></tr></thead>
+          <thead><tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Event</th>
+            <th className="text-left p-3">Date</th>
+            <th className="text-left p-3">Location</th>
+            <th className="text-left p-3">Entry Deadline</th>
+            <th className="text-left p-3">Status</th>
+          </tr></thead>
           <tbody>
             {sectionalEntries.map((s, i) => (
               <tr key={i} className="border-b border-gray-800/50">
@@ -4900,7 +4904,10 @@ function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: Spo
           ].map((d, i) => (
             <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/60 last:border-0">
               <span className="text-white font-medium">{d.label}</span>
-              <div className="flex items-center gap-3"><span className="text-gray-400">{d.date}</span><span className="text-[10px] text-green-400 font-semibold">{d.countdown}</span></div>
+              <div className="flex items-center gap-3">
+                <span className="text-gray-400">{d.date}</span>
+                <span className="text-[10px] text-green-400 font-semibold">{d.countdown}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -5785,7 +5792,7 @@ function GolfIntegrationsHub({ player, session }: { player: GolfPlayer; session:
     { id: 'trackman',  icon: '🎯', label: 'Lumio Range',             category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
     { id: 'v1golf',    icon: '🎥', label: 'V1 Golf Video',        category: 'Hardware Sensors', kind: 'generic', config: GOLF_INTEGRATIONS.v1golf },
     { id: 'whoop',     icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
-    { id: 'catapult',  icon: '🛰️', label: 'Lumio GPS / Lumio GPS', category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.catapult },
+    { id: 'johansports', icon: '🛰️', label: 'Johan Sports',        category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.johansports },
     { id: 'workspace', icon: '📧', label: 'Gmail + Calendar',     category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.workspace },
     { id: 'slack',     icon: '💬', label: 'Slack',                category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.slack },
     { id: 'broadcast', icon: '📺', label: 'Meridian Sports',      category: 'Distribution',     kind: 'generic', config: GOLF_INTEGRATIONS.broadcast },

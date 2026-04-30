@@ -4728,8 +4728,8 @@ function GPSLoadView() {
     const integrations = [
       { name: 'Lumio GPS Pro',     status: 'connected' as const, sub: 'Last session: Tue 8 Apr · 29 vests active' },
       { name: 'Lumio Health',      status: 'connected' as const, sub: 'Player readiness · 20/38 logged today 07:24' },
-      { name: 'StatSports Apex',   status: 'available' as const, sub: 'Import via CSV · 10Hz GPS + IMU' },
-      { name: 'Catapult Vector',   status: 'available' as const, sub: 'Import via API · enterprise tier' },
+      { name: 'Johan Sports',      status: 'available' as const, sub: 'OAuth · 10Hz GPS + IMU · live session sync' },
+      { name: 'CSV Upload',        status: 'available' as const, sub: 'Generic GPS export · any vendor · drag and drop' },
       { name: 'Polar Team Pro',    status: 'available' as const, sub: 'Heart rate + GPS combined · Bluetooth sync' },
       { name: 'FrameSports tags',  status: 'connected' as const, sub: 'Auto-tag tackles, rucks, set-pieces · 2h post-match' },
     ]

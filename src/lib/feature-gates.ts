@@ -35,8 +35,7 @@ export const FEATURE_MAP: Record<string, ClubTier> = {
   pdf_export: 'professional',
   white_label: 'professional',
   // ELITE
-  gps_hardware_catapult: 'elite',
-  gps_hardware_statsports: 'elite',
+  gps_hardware_johansports: 'elite',
   opta_integration: 'elite',
   statsbomb_integration: 'elite',
   wyscout_integration: 'elite',

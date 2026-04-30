@@ -355,7 +355,7 @@ const TAB_CONTENT: Record<Exclude<DashTab, 'today'>, { title: string; subtitle: 
     title: 'Getting Started',
     subtitle: 'Set up the demo · 3 left',
     items: [
-      { title: 'Connect your GPS provider',     body: 'Catapult or STATSports — link your fleet to start streaming session data into the dashboard.' },
+      { title: 'Connect your GPS provider',     body: 'Johan Sports — link your fleet to start streaming session data, or upload a CSV from any provider to backfill the dashboard.' },
       { title: 'Upload your fixture list',      body: 'Pull the season fixtures from the County Cricket feed — one click.' },
       { title: 'Invite your coaching staff',    body: 'Add coach, physio, analyst, manager — each gets the right slice of the dashboard.' },
     ],

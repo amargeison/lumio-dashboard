@@ -12,11 +12,36 @@ import {
   ChevronDown, ChevronUp, Loader2,
   AlertTriangle, CloudRain, Sun,
   CircleDot, Hash, Printer,
-  Handshake, Search, Copy, Zap, BarChart3, Radio,
+  Handshake, Search, Copy, Zap, BarChart3, Radio, Flame,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
+// ─── NL v2 dashboard imports ─────────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import {
+  HeroToday as NlHeroToday,
+  TodaySchedule as NlTodaySchedule,
+  StatTiles as NlStatTiles,
+  AIBrief as NlAIBriefMod,
+  Inbox as NlInboxMod,
+  Squad as NlSquadModule,
+  Fixtures as NlFixturesMod,
+  Perf as NlPerfMod,
+  Recents as NlRecentsMod,
+  Season as NlSeasonMod,
+} from './_components/NLDashboardModules'
+import { NL_INBOX, NL_ACCENT } from './_lib/nl-dashboard-data'
+import type { NlFixture } from './_lib/nl-dashboard-data'
 
 // ─── Colors (Amber theme for Non-League) ────────────────────────────────────
 
@@ -36,12 +61,12 @@ export type NLDeptId =
   | 'nl-overview' | 'nl-club-profile' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
   | 'nl-set-pieces' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
-  | 'nl-gps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
+  | 'nl-gps' | 'nl-gps-heatmaps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
   | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
   | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance' | 'nl-media'
   | 'nl-morningroundup' | 'nl-aihalftime'
 
-type NLSection = null | 'Football' | 'Operations' | 'Club'
+type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Club'
 
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
   { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
@@ -55,7 +80,8 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
   { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
   { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
-  { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'Football' },
+  { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'GPS & Load' },
+  { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'GPS & Load' },
   { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },
   { id: 'nl-transfers',       label: 'Transfers & Recruitment', icon: UserPlus,       section: 'Football' },
   { id: 'nl-registration',    label: 'Player Registration',     icon: Shield,         section: 'Operations' },
@@ -517,599 +543,179 @@ function NLPitchFormation({ players }: { players: { name: string; x: number; y: 
   )
 }
 
-// ─── NL Overview View ───────────────────────────────────────────────────────
+// ─── NL Overview View (v2 modular grid) ─────────────────────────────────────
 
-function NLOverviewView({ onToast, userName }: { onToast: (m: string) => void; userName?: string }) {
-  const { speak, stop, isPlaying } = useSpeech()
-  const [briefingExpanded, setBriefingExpanded] = useState(false)
-  const [overviewTab, setOverviewTab] = useState<'getting-started' | 'dashboard' | 'quick-wins' | 'daily-tasks' | 'dont-miss' | 'team' | 'insights'>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('lumio_nonleague_onboarding')
-      if (stored) { const parsed = JSON.parse(stored); if (parsed.every((v: boolean) => v)) return 'dashboard' }
-    }
-    return 'getting-started'
-  })
-  const [onboardingChecks, setOnboardingChecks] = useState<boolean[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('lumio_nonleague_onboarding')
-      if (stored) return JSON.parse(stored)
-    }
-    return Array(10).fill(false)
-  })
-  const [expandedRoundup, setExpandedRoundup] = useState<string | null>(null)
-  const [activeModal, setActiveModal] = useState<string | null>(null)
-  const [teamSubTab, setTeamSubTab] = useState<'today' | 'org' | 'info' | 'club'>('today')
-  const nextMatch = NL_FIXTURES.find(f => !f.result)
-  const played = NL_FIXTURES.filter(f => f.result)
-  const squadFit = NL_SQUAD.filter(p => !p.injured && !p.suspended).length
-  const displayName = userName?.split(' ')[0] || 'Steve'
+function NLMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof NL_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Harfield FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Thornvale United</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>National League South · MD-28</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sat 03 May 2026 · Harfield Community Stadium · Kick-off 15:00</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
 
-  const onboardingItems = [
-    'Register with the FA',
-    'Add your first team squad',
-    'Set your league fixtures',
-    'Upload ground grading docs',
-    'Add sponsorship deals',
-    'Configure match day operations',
-    'Set up player contracts',
-    'Add your committee/board',
-    'Connect your social media',
-    "You're ready — kick off!",
-  ]
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 11°C, heavy rain overnight, 15 mph SW wind. Light drizzle expected through KO.</div>
+          <div><strong style={{ color: T.text }}>Pitch:</strong> Heavy after rain — pitch inspection 09:00. Likely playable but boggy in the goalmouths.</div>
+          <div><strong style={{ color: T.text }}>3G backup:</strong> Ridgefield Stadium 3G confirmed available if waterlogged. Switch decision by 11:30.</div>
+          <div><strong style={{ color: T.text }}>Referee:</strong> M. Carter — strict on dissent, cards out for backchat. Brief Brennan + Dunne.</div>
+        </Section>
 
-  function toggleOnboarding(idx: number) {
-    const next = [...onboardingChecks]
-    next[idx] = !next[idx]
-    setOnboardingChecks(next)
-    if (typeof window !== 'undefined') localStorage.setItem('lumio_nonleague_onboarding', JSON.stringify(next))
-  }
+        <Section title="02 · Opposition · Thornvale United">
+          <div><strong style={{ color: T.text }}>Form:</strong> W L D W L — inconsistent, 8th in NLS. <strong style={{ color: T.text }}>Formation:</strong> 5-3-2 deep block.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Key players:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Striker <strong>R. Pollard</strong> — 12 league goals, dangerous on the counter, weak in the air.</li>
+            <li>Midfielder <strong>L. Banks</strong> — sets the tempo, takes set-pieces left-foot.</li>
+            <li>RB <strong>C. Doyle</strong> — overlapping runner, susceptible to pace down his side.</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Set piece threat:</strong> Tall back five — they target near post on corners. Aerial discipline non-negotiable.</div>
+        </Section>
 
-  const roundupCategories = [
-    { id: 'player', emoji: '\uD83D\uDCAC', label: 'Player Messages', count: 2, items: [
-      { text: 'Ryan Fletcher: "Knee feels better, think I can make Saturday"', time: '07:45' },
-      { text: 'Declan Nash: "When does my suspension end? Need to know for work"', time: '08:10' },
-    ]},
-    { id: 'match', emoji: '\uD83D\uDCCB', label: 'Match Admin', count: 2, items: [
-      { text: 'Referee confirmed for Saturday: Mr. D. Hargreaves', time: '09:00' },
-      { text: 'Redbourne Town: away kit is white — no clash', time: '08:30' },
-    ]},
-    { id: 'finance', emoji: '\uD83D\uDCB0', label: 'Finance Alerts', count: 1, urgent: true, items: [
-      { text: '6 players owe match fees from last Saturday (total: £240)', time: '08:00' },
-    ]},
-    { id: 'fa', emoji: '\uD83C\uDFDB\uFE0F', label: 'FA Alerts', count: 1, urgent: true, items: [
-      { text: 'Ground grading inspection in 14 days — floodlight lux test OUTSTANDING', time: '07:00' },
-    ]},
+        <Section title="03 · Our Team News">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>3 unavailable:</strong> Platt (calf), Mellor (knee), Nash (suspended) — call-ups: Jenkins + Osei from reserves.</li>
+            <li><strong style={{ color: T.text }}>Fletcher:</strong> doubt — illness mid-week, fitness test 10:30. Walsh ready to start if needed.</li>
+            <li><strong style={{ color: T.text }}>Trialists:</strong> Hughes available for bench — first competitive match-day involvement.</li>
+            <li><strong style={{ color: T.text }}>Captain:</strong> Brennan to start, Cartwright vice.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Plan">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Patient build-up vs their deep block — switch the play, don't commit too many forward.</li>
+            <li>Set pieces — 31% of our goals come from these. Three rehearsed routines, target back post.</li>
+            <li>Defend their counter — track Pollard, Brennan to drop deep when we lose ball.</li>
+            <li>Aerial discipline at corners — Dunne and Prescott on near + far post zones.</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Matchday Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Kit prep: Steve to load home strip into changing rooms by 12:00. Sponsor banner Crown Wagers up by 12:30.</li>
+            <li>Referee confirmed: M. Carter + assistants. Pre-match meet 14:15.</li>
+            <li>Programme printed: 200 copies, sold by Brian on the gate from 13:30. Pricing £2.</li>
+            <li>Bar stock confirmed: 4 kegs, light snacks. Committee on bar rotation.</li>
+            <li>Local press: Northbridge Sentinel pre-match quote needed by 12:00 for Sunday paper.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string) => void; userName?: string }) {
+  const T       = THEMES.dark
+  const accent  = NL_ACCENT
+  const density = DENSITY.regular
+  const greeting = v2GetGreeting('matchday')
+
+  const [openFixture, setOpenFixture] = useState<NlFixture | null>(null)
+  const [cmdOpen,     setCmdOpen]     = useState(false)
+  const [askOpen,     setAskOpen]     = useState(false)
+  const [briefOpen,   setBriefOpen]   = useState(false)
+  const [dashToast,   showDashToast]  = useV2Toast()
+  useV2Key('cmdk', () => setCmdOpen(o => !o))
+
+  const QUICK_ACTIONS = [
+    { id: 'teamsheet',  label: 'Confirm team sheet',   icon: '📋', ai: false, onClick: () => showDashToast('Team sheet sent to league') },
+    { id: 'matchprep',  label: 'Match brief',          icon: '🎯', ai: true,  onClick: () => setBriefOpen(true) },
+    { id: 'asklumio',   label: 'Ask Lumio',            icon: '✨', ai: true,  onClick: () => setAskOpen(true) },
+    { id: 'pitchcheck', label: 'Pitch inspection',     icon: '🌧️', ai: false, onClick: () => onToast('Pitch inspection logged') },
+    { id: 'log-injury', label: 'Log Injury',           icon: '⚕️',  ai: false, onClick: () => onToast('Injury logger ready') },
+    { id: 'matchfees',  label: 'Match Fees',           icon: '🧾', ai: false, onClick: () => onToast('Match fees · 16 outstanding') },
+    { id: 'sponsor',    label: 'Sponsor Post',         icon: '📱', ai: true,  onClick: () => onToast('Sponsor post drafted') },
+    { id: 'press',      label: 'Press Quote',          icon: '📣', ai: true,  onClick: () => onToast('Press quote drafted') },
+    { id: 'budget',     label: 'Budget Review',        icon: '💷', ai: false, onClick: () => onToast('Budget review opened') },
+    { id: 'minibus',    label: 'Minibus rota',         icon: '🚐', ai: false, onClick: () => onToast('Minibus rota — 2 drivers signed up') },
+    { id: 'volunteers', label: 'Volunteer Rota',       icon: '👥', ai: false, onClick: () => onToast('Volunteer rota · 6/8 confirmed') },
   ]
 
   return (
-    <div className="space-y-4">
-      {/* Good morning panel with inline KPIs */}
-      <div className="rounded-xl p-4" style={{ background: `linear-gradient(135deg, ${BG} 0%, #78350F 100%)`, border: `1px solid ${PRIMARY}33` }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="text-sm font-semibold" style={{ color: ACCENT }}>Good morning, {displayName}.</div>
-            <span className="text-xs" style={{ color: TEXT_SEC }}>Wednesday 2 April 2026</span>
-          </div>
-          <div className="flex gap-0.5">
-            {NL_FORM_LAST5.map((r, i) => (
-              <span key={i} className="w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center"
-                style={{ backgroundColor: r === 'W' ? '#22C55E' : r === 'D' ? GOLD : '#EF4444', color: '#fff' }}>{r}</span>
-            ))}
-          </div>
+    <>
+      <style jsx global>{`
+        .tnum { font-variant-numeric: tabular-nums; }
+        @keyframes cricketV2PulseDim   { 0%,100% { opacity: .5 } 50% { opacity: .95 } }
+        @keyframes cricketV2FadeUp     { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideLeft  { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+      `}</style>
+      <div style={{ background: T.bg, color: T.text, fontFamily: V2_FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <NlHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onConfirm={() => showDashToast('Team sheet confirmed · league notified')}
+            onAsk={() => setAskOpen(true)}
+            onMatchBrief={() => setBriefOpen(true)}
+          />
+          <NlTodaySchedule T={T} accent={accent} density={density} />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: `${PRIMARY}22`, border: `1px solid ${PRIMARY}33` }}>
-            <div className="text-lg font-black" style={{ color: ACCENT }}>4th</div>
-            <div className="text-[10px]" style={{ color: TEXT_SEC }}>League Position</div>
-          </div>
-          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#3B82F622', border: '1px solid #3B82F633' }}>
-            <div className="text-lg font-black" style={{ color: '#93C5FD' }}>Sat 15:00</div>
-            <div className="text-[10px]" style={{ color: TEXT_SEC }}>vs Redbourne Town (H)</div>
-          </div>
-          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#22C55E22', border: '1px solid #22C55E33' }}>
-            <div className="text-lg font-black" style={{ color: '#86EFAC' }}>{squadFit}/23</div>
-            <div className="text-[10px]" style={{ color: TEXT_SEC }}>Squad Fit</div>
-          </div>
-          <div className="rounded-lg px-3 py-2" style={{ backgroundColor: '#EF444422', border: '1px solid #EF444433' }}>
-            <div className="text-lg font-black" style={{ color: '#FCA5A5' }}>1</div>
-            <div className="text-[10px]" style={{ color: TEXT_SEC }}>Suspended (Nash)</div>
-          </div>
-        </div>
-      </div>
 
-      {/* Expandable Morning Roundup */}
-      <SectionCard title="Morning Roundup" action={<Badge color={GOLD}>{roundupCategories.reduce((s, c) => s + c.count, 0)} items</Badge>}>
-        <div className="space-y-1">
-          {roundupCategories.map(cat => (
-            <div key={cat.id}>
-              <button onClick={() => setExpandedRoundup(expandedRoundup === cat.id ? null : cat.id)} className="flex items-center justify-between w-full py-2 px-2 rounded-lg text-left transition-all" style={{ backgroundColor: expandedRoundup === cat.id ? `${PRIMARY}12` : 'transparent' }}>
-                <div className="flex items-center gap-2">
-                  <span>{cat.emoji}</span>
-                  <span className="text-sm font-medium" style={{ color: TEXT }}>{cat.label}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: ('urgent' in cat && cat.urgent) ? '#EF44441a' : `${PRIMARY}1a`, color: ('urgent' in cat && cat.urgent) ? '#EF4444' : PRIMARY }}>{cat.count}</span>
-                </div>
-                {expandedRoundup === cat.id ? <ChevronUp size={14} style={{ color: TEXT_SEC }} /> : <ChevronDown size={14} style={{ color: TEXT_SEC }} />}
-              </button>
-              {expandedRoundup === cat.id && (
-                <div className="pl-8 pb-2 space-y-2">
-                  {cat.items.map((item, j) => (
-                    <div key={j} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: BG }}>
-                      <div>
-                        <p className="text-xs" style={{ color: TEXT }}>{item.text}</p>
-                        <p className="text-[10px]" style={{ color: TEXT_SEC }}>{item.time}</p>
-                      </div>
-                      <div className="flex gap-1.5 shrink-0 ml-2">
-                        <button onClick={() => onToast('Reply sent')} className="px-2 py-1 rounded text-[10px] font-semibold" style={{ backgroundColor: `${PRIMARY}1a`, color: PRIMARY }}>Reply</button>
-                        <button onClick={() => onToast('Dismissed')} className="px-2 py-1 rounded text-[10px] font-semibold" style={{ backgroundColor: `${BORDER}`, color: TEXT_SEC }}>Dismiss</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {QUICK_ACTIONS.map((a, i) => (
+            <button key={i} onClick={a.onClick}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+              }}>
+              <span style={{ fontSize: 13 }}>{a.icon}</span>
+              <span>{a.label}</span>
+              {a.ai && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
+            </button>
           ))}
         </div>
-      </SectionCard>
 
-      {/* Quick Actions — 12 pill buttons */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { id:'availability',  label:'WhatsApp Availability', icon: MessageSquare, hot:false },
-          { id:'matchfees',     label:'Match Fee Tracker',     icon: DollarSign,    hot:false },
-          { id:'aihalftime',    label:'AI Halftime Brief',     icon: Target,        hot:true },
-          { id:'teamselection', label:'Team Selection AI',     icon: Clipboard,     hot:true },
-          { id:'matchreport',   label:'Match Report AI',       icon: FileText,      hot:true },
-          { id:'groundgrading', label:'FA Ground Grading',     icon: Shield,        hot:false },
-          { id:'opposition',    label:'Opposition Scout AI',   icon: Search,        hot:true },
-          { id:'sponsor',       label:'Sponsor Post AI',       icon: Handshake,     hot:true },
-          { id:'cupmanager',    label:'Cup Manager',           icon: Trophy,        hot:false },
-          { id:'registration',  label:'Player Registration',   icon: Users,         hot:false },
-          { id:'finance',       label:'Finance Logger',        icon: DollarSign,    hot:false },
-          { id:'discipline',    label:'Discipline Log',        icon: AlertTriangle, hot:false },
-        ].map(a => (
-          <button key={a.id} onClick={() => setActiveModal(a.id)}
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
-            style={{ background: a.hot ? '#F59E0B18' : '#111318', border: a.hot ? '1px solid #F59E0B50' : '1px solid #1F2937', color: a.hot ? '#F59E0B' : '#9CA3AF' }}>
-            <a.icon size={12} />{a.label}
-            {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: '#F59E0B', color: '#fff' }}>AI</span>}
-          </button>
-        ))}
-      </div>
+        <NlStatTiles T={T} accent={accent} density={density} />
 
-      {/* Overview Tabs */}
-      <div className="flex gap-2 border-b" style={{ borderColor: BORDER }}>
-        {(['getting-started', 'dashboard', 'quick-wins', 'daily-tasks', 'dont-miss', 'team', 'insights'] as const).map(t => (
-          <button key={t} onClick={() => setOverviewTab(t)} className="px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap"
-            style={{ borderBottomColor: overviewTab === t ? '#F59E0B' : 'transparent', color: overviewTab === t ? TEXT : TEXT_SEC, backgroundColor: overviewTab === t ? '#F59E0B0d' : 'transparent' }}>
-            {t === 'getting-started' ? '🚀 Getting Started' : t === 'dashboard' ? '🏠 Dashboard' : t === 'quick-wins' ? '⚡ Quick Wins' : t === 'daily-tasks' ? '✅ Daily Tasks' : t === 'dont-miss' ? "🔴 Don't Miss" : t === 'team' ? '👥 Team' : '📊 Insights'}
-          </button>
-        ))}
-      </div>
-
-      {overviewTab === 'getting-started' && (
-        <SectionCard title={`Getting Started — ${onboardingChecks.filter(Boolean).length}/10`}>
-          <div className="space-y-1">
-            {onboardingItems.map((item, i) => (
-              <button key={i} onClick={() => toggleOnboarding(i)} className="flex items-center gap-3 w-full text-left py-2 px-2 rounded-lg transition-all" style={{ backgroundColor: onboardingChecks[i] ? `${PRIMARY}12` : 'transparent' }}>
-                <div className="flex items-center justify-center w-5 h-5 rounded-full shrink-0 text-[10px] font-bold" style={{ backgroundColor: onboardingChecks[i] ? '#22C55E' : BORDER, color: onboardingChecks[i] ? '#fff' : TEXT_SEC }}>
-                  {onboardingChecks[i] ? <Check size={12} /> : i + 1}
-                </div>
-                <span className="text-sm" style={{ color: onboardingChecks[i] ? TEXT_SEC : TEXT, textDecoration: onboardingChecks[i] ? 'line-through' : 'none' }}>{item}</span>
-              </button>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
-      {/* Quick Wins tab */}
-      {overviewTab === 'quick-wins' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: TEXT }}>⚡ Quick Wins</h2>
-              <p className="text-sm mt-0.5" style={{ color: TEXT_SEC }}>High impact, low effort — sorted by priority.</p>
-            </div>
-          </div>
-          {[
-            { task: 'Chase 6 outstanding match fees via WhatsApp', priority: 'High', action: 'Send Reminders', color: '#EF4444', effort: '2min', source: 'Finance' },
-            { task: 'Confirm Fletcher fitness for Saturday', priority: 'High', action: 'Text Fletcher', color: '#EF4444', effort: '2min', source: 'Squad' },
-            { task: 'Post matchday announcement on social media', priority: 'Medium', action: 'Use Template', color: GOLD, effort: '5min', source: 'Social' },
-            { task: 'Book floodlight lux test before inspection', priority: 'High', action: 'Call Northern Electricals', color: '#EF4444', effort: '5min', source: 'Ground' },
-            { task: 'Update squad availability for Redbourne game', priority: 'Medium', action: 'Send Poll', color: GOLD, effort: '2min', source: 'Squad' },
-          ].map((qw, i) => (
-            <div key={i} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${qw.color}1e`, color: qw.color }}>{qw.priority.toUpperCase()} IMPACT</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#F59E0B1e', color: '#F59E0B' }}>⏱ {qw.effort}</span>
-                  </div>
-                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{qw.task}</h3>
-                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: {qw.source}</p>
-                </div>
-                <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button onClick={() => onToast(`${qw.action} triggered`)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#F59E0B' }}>{qw.action} →</button>
-                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <NlAIBriefMod T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+          <NlInboxMod   T={T} accent={accent} density={density} />
+          <NlSquadModule T={T} accent={accent} density={density} />
         </div>
-      )}
 
-      {/* Daily Tasks tab */}
-      {overviewTab === 'daily-tasks' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h2 className="text-xl font-black flex items-center gap-2" style={{ color: TEXT }}>✅ Daily Tasks</h2>
-              <p className="text-sm mt-0.5" style={{ color: TEXT_SEC }}>Your operational checklist for today.</p>
-            </div>
-          </div>
-          {[
-            { task: 'Review training attendance from Thursday', priority: 'Medium', category: 'Football', action: 'Open Training', color: GOLD },
-            { task: 'Approve programme notes for Saturday', priority: 'Low', category: 'Operations', action: 'Edit Notes', color: TEXT_SEC },
-            { task: 'Reply to Harfield Brewery sponsorship email', priority: 'High', category: 'Commercial', action: 'Draft Reply', color: '#EF4444' },
-            { task: 'Check pitch condition after overnight rain', priority: 'Medium', category: 'Ground', action: 'Log Inspection', color: GOLD },
-            { task: 'Update FA Vase team sheet if Fletcher is fit', priority: 'Low', category: 'Football', action: 'Update Sheet', color: TEXT_SEC },
-          ].map((dt, i) => (
-            <div key={i} className="rounded-xl p-4 transition-all" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer" style={{ borderColor: '#374151' }}>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{dt.task}</h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${dt.color}1e`, color: dt.color }}>{dt.priority}</span>
-                      <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{dt.category}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F59E0B1e', color: '#F59E0B' }}>Lumio</span>
-                      <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>Today</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button onClick={() => onToast(dt.action)} className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#F59E0B' }}>{dt.action} →</button>
-                  <button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <NlFixturesMod T={T} accent={accent} density={density} onPick={f => setOpenFixture(f)} />
+          <NlPerfMod     T={T} accent={accent} density={density} />
         </div>
-      )}
 
-      {/* Don't Miss tab */}
-      {overviewTab === 'dont-miss' && (
-        <SectionCard title="Don't Miss">
-          <div className="space-y-2">
-            {[
-              { item: 'Ground grading inspection', urgency: 'Critical', days: '14 days', consequence: 'Fail = possible ground closure or demotion' },
-              { item: 'Harfield Brewery sponsorship renewal', urgency: 'High', days: 'End of April', consequence: 'Lose £3,000 shirt sponsor if no decision' },
-              { item: 'FA registration deadline', urgency: 'High', days: '15 Apr', consequence: 'New signings ineligible after this date' },
-              { item: 'County Cup semi-final date', urgency: 'Medium', days: 'TBC April', consequence: 'Need to confirm availability with league' },
-              { item: 'DBS renewal — Pete Hargreaves', urgency: 'High', days: 'Overdue', consequence: 'Treasurer DBS expired — compliance issue' },
-            ].map((dm, i) => (
-              <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold" style={{ color: TEXT }}>{dm.item}</span>
-                  <Badge color={dm.urgency === 'Critical' ? '#EF4444' : dm.urgency === 'High' ? GOLD : '#3B82F6'}>{dm.urgency} — {dm.days}</Badge>
-                </div>
-                <p className="text-[10px]" style={{ color: '#EF4444' }}>{dm.consequence}</p>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
-      {/* Team tab */}
-      {overviewTab === 'team' && (
-        <div className="space-y-4">
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
-            {(['today', 'org', 'info', 'club'] as const).map(t => (
-              <button key={t} onClick={() => setTeamSubTab(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-                style={{ backgroundColor: teamSubTab === t ? PRIMARY : 'transparent', color: teamSubTab === t ? '#fff' : TEXT_SEC }}>
-                {t === 'today' ? 'Team Today' : t === 'org' ? 'Org Chart' : t === 'info' ? 'Team Info' : 'Club Info'}
-              </button>
-            ))}
-          </div>
-          {teamSubTab === 'today' && (
-            <SectionCard title="Team Today">
-              <div className="space-y-2">
-                {[
-                  { name: 'Mark Houghton', role: 'Manager', status: 'At training ground', since: '07:30' },
-                  { name: 'Gary Fielding', role: 'Assistant Manager', status: 'Scouting Redbourne tonight', since: 'Away' },
-                  { name: 'Sandra Whitmore', role: 'Club Secretary', status: 'Office — processing registrations', since: '09:00' },
-                  { name: 'Keith Mellor', role: 'Groundsman', status: 'Pitch inspection after rain', since: '06:30' },
-                  { name: 'Jess Brennan', role: 'Welfare Officer', status: 'Available on call', since: '' },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: BG }}>
-                    <div>
-                      <p className="text-xs font-medium" style={{ color: TEXT }}>{s.name}</p>
-                      <p className="text-[10px]" style={{ color: PRIMARY }}>{s.role}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{s.status}</p>
-                      {s.since && <p className="text-[10px]" style={{ color: TEXT_SEC }}>Since {s.since}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-          {teamSubTab === 'org' && (
-            <SectionCard title="Organisation Chart">
-              <div className="text-center space-y-4">
-                <div className="inline-block p-3 rounded-lg" style={{ backgroundColor: `${PRIMARY}1a`, border: `1px solid ${PRIMARY}33` }}>
-                  <p className="text-xs font-bold" style={{ color: PRIMARY }}>Brian Crossley</p>
-                  <p className="text-[10px]" style={{ color: TEXT_SEC }}>Chairman</p>
-                </div>
-                <div className="flex justify-center gap-4 flex-wrap">
-                  {[{ name: 'Mark Houghton', role: 'Manager' }, { name: 'Sandra Whitmore', role: 'Secretary' }, { name: 'Pete Hargreaves', role: 'Treasurer' }].map((p, i) => (
-                    <div key={i} className="p-2 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-                      <p className="text-[10px] font-semibold" style={{ color: TEXT }}>{p.name}</p>
-                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{p.role}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-center gap-3 flex-wrap">
-                  {[{ name: 'Gary Fielding', role: 'Asst Manager' }, { name: 'Keith Mellor', role: 'Groundsman' }, { name: 'Jess Brennan', role: 'Welfare' }, { name: 'Mike Thornton', role: 'Commercial' }].map((p, i) => (
-                    <div key={i} className="p-2 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-                      <p className="text-[10px] font-semibold" style={{ color: TEXT }}>{p.name}</p>
-                      <p className="text-[10px]" style={{ color: TEXT_SEC }}>{p.role}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </SectionCard>
-          )}
-          {teamSubTab === 'info' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { name: 'Mark Houghton', role: 'Manager', badges: 'UEFA B Licence', exp: '4 seasons', style: 'Direct, set-piece focused' },
-                { name: 'Gary Fielding', role: 'Assistant', badges: 'FA Level 2', exp: '3 seasons', style: 'Defensive organisation' },
-                { name: 'Sandra Whitmore', role: 'Secretary', badges: 'FA Admin Certified', exp: '6 years', style: 'Registrations, compliance' },
-              ].map((card, i) => (
-                <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }}>
-                  <div className="p-1" style={{ backgroundColor: PRIMARY }} />
-                  <div className="p-3 space-y-2">
-                    <p className="text-sm font-bold" style={{ color: TEXT }}>{card.name}</p>
-                    <Badge color={PRIMARY}>{card.role}</Badge>
-                    <div className="text-[10px] space-y-1" style={{ color: TEXT_SEC }}>
-                      <p>Qualifications: {card.badges}</p>
-                      <p>Experience: {card.exp}</p>
-                      <p>Focus: {card.style}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {teamSubTab === 'club' && (
-            <SectionCard title="Club Info">
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                {[
-                  ['Founded', '1887'], ['Ground', 'Harfield Community Stadium'], ['Capacity', '1,200'], ['League', 'NPL West (Step 4)'],
-                  ['Nickname', 'The Amber Army'], ['Colours', 'Amber & Black'], ['Chairman', 'Brian Crossley'], ['Manager', 'Mark Houghton'],
-                ].map(([l, v], i) => (
-                  <div key={i} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                    <span style={{ color: TEXT_SEC }}>{l}</span>
-                    <span className="font-medium" style={{ color: TEXT }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <NlRecentsMod T={T} accent={accent} density={density} />
+          <NlSeasonMod  T={T} accent={accent} density={density} />
         </div>
-      )}
 
-      {/* Insights tab */}
-      {overviewTab === 'insights' && (
-        <div className="space-y-4">
-          <SectionCard title="Role-Based Insights">
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-2 mb-2"><span>&#9917;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Manager View</span></div>
-                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
-                  <p>Form: WDLWW — 3rd best in division over last 5</p>
-                  <p>Squad depth concern at LB if Okonkwo injured — only Rafferty as cover</p>
-                  <p>Grady on 14 goals — needs 4 more in 5 games for 18-goal target</p>
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-2 mb-2"><span>&#127963;&#65039;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Chairman View</span></div>
-                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
-                  <p>Season P&L: +£810 surplus — on track</p>
-                  <p>Attendance trending up: 280 record vs Hyde, avg 213</p>
-                  <p>Sponsorship renewals due: 3 sponsors pending decision</p>
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-2 mb-2"><span>&#128176;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Treasurer View</span></div>
-                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
-                  <p>Outstanding match fees: £240 (6 players)</p>
-                  <p>Ground works needed: £1,400 (floodlights + ramp)</p>
-                  <p>Bar income tracking +£520 vs budget</p>
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-                <div className="flex items-center gap-2 mb-2"><span>&#128203;</span><span className="text-xs font-bold" style={{ color: PRIMARY }}>Secretary View</span></div>
-                <div className="space-y-1 text-xs" style={{ color: TEXT_SEC }}>
-                  <p>FA registration deadline: 15 Apr — all current players registered</p>
-                  <p>DBS expired: Pete Hargreaves — renewal needed immediately</p>
-                  <p>Ground grading inspection: 15 Apr — 2 items outstanding</p>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-      )}
-
-      {overviewTab === 'dashboard' && <>
-      {/* AI Briefing */}
-      <div className="rounded-xl overflow-hidden" style={{ background: `linear-gradient(135deg, ${BG} 0%, #78350F 100%)`, border: `1px solid ${BORDER}` }}>
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} style={{ color: ACCENT }} />
-              <span className="text-xs font-semibold" style={{ color: ACCENT }}>AI Morning Briefing</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => isPlaying ? stop() : speak(NL_MORNING_BRIEFING)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: isPlaying ? '#EF4444' : PRIMARY, color: '#fff' }}>
-                {isPlaying ? <X size={12} /> : <Sparkles size={12} />}{isPlaying ? 'Stop' : 'Listen'}
-              </button>
-              <button onClick={() => setBriefingExpanded(!briefingExpanded)} className="p-1 rounded" style={{ color: TEXT_SEC }}>
-                {briefingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-            </div>
-          </div>
-          {briefingExpanded ? (
-            <p className="text-sm leading-relaxed" style={{ color: TEXT }}>{NL_MORNING_BRIEFING}</p>
-          ) : (
-            <p className="text-sm truncate" style={{ color: TEXT_SEC }}>Brennan passed fit. Fletcher doubtful. Ground grading in 14 days...</p>
-          )}
+        <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
+          <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
-        <StatCard label="Squad" value="23" icon={Users} color={PRIMARY} />
-        <StatCard label="Fit" value={String(squadFit)} icon={CheckCircle2} color="#22C55E" />
-        <StatCard label="Injured" value="2" icon={Heart} color="#EF4444" />
-        <StatCard label="Suspended" value="1" icon={AlertCircle} color="#EF4444" sub="Nash (1 match)" />
-        <StatCard label="League Position" value="4th" icon={Trophy} color={PRIMARY} sub="NPL West" />
-        <StatCard label="Next Match" value="Sat" icon={Calendar} color="#3B82F6" sub="vs Redbourne (H)" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <SectionCard title="This Week">
-            <div className="space-y-2">
-              {NL_TRAINING.map((s, i) => (
-                <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: TEXT }}>{s.day} — {s.time}</p>
-                    <p className="text-xs" style={{ color: TEXT_SEC }}>{s.venue} · {s.topic}</p>
-                  </div>
-                  <Badge color={s.status === 'confirmed' ? '#22C55E' : GOLD}>{s.status}</Badge>
-                </div>
-              ))}
-              {nextMatch && (
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: TEXT }}>Saturday — {nextMatch.time} KO</p>
-                    <p className="text-xs" style={{ color: TEXT_SEC }}>vs {nextMatch.opponent} ({nextMatch.ha}) · {nextMatch.venue}</p>
-                  </div>
-                  <Badge color="#3B82F6">Match Day</Badge>
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Activity Feed" action={<span className="text-xs" style={{ color: PRIMARY }}>Live</span>}>
-            <div className="space-y-0">
-              {NL_ACTIVITY_FEED.map((run, i) => (
-                <div key={i} className="flex items-center gap-3 py-2" style={{ borderBottom: i < NL_ACTIVITY_FEED.length - 1 ? `1px solid ${BORDER}` : undefined }}>
-                  <div className="flex-1 min-w-0"><p className="truncate text-sm" style={{ color: TEXT }}>{run.name}</p></div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <WFStatusBadge status={run.status} />
-                    <p className="text-[10px]" style={{ color: TEXT_SEC }}>{run.ts}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="space-y-4">
-          <SectionCard title="Weather — Match Week">
-            <div className="space-y-2">
-              {NL_WEATHER.map((w, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2">
-                    <w.icon size={14} style={{ color: w.rain !== '5%' && w.rain !== '10%' && w.rain !== '15%' ? '#60A5FA' : GOLD }} />
-                    <span className="text-xs" style={{ color: TEXT }}>{w.day}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs" style={{ color: TEXT_SEC }}>{w.temp}</span>
-                    <span className="text-xs" style={{ color: parseInt(w.rain) > 50 ? '#EF4444' : TEXT_SEC }}>{w.rain}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="League Position">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead><tr style={{ color: TEXT_SEC, borderBottom: `1px solid ${BORDER}` }}>
-                  <th className="text-left py-1 w-4">#</th><th className="text-left py-1">Team</th><th className="text-center py-1">P</th><th className="text-center py-1 font-bold">Pts</th>
-                </tr></thead>
-                <tbody>
-                  {NL_LEAGUE_TABLE.filter(r => r.pos >= 1 && r.pos <= 7).map(r => (
-                    <tr key={r.pos} style={{ borderBottom: `1px solid ${BORDER}`, backgroundColor: r.team === 'Harfield FC' ? `${PRIMARY}1a` : 'transparent' }}>
-                      <td className="py-1" style={{ color: TEXT_SEC }}>{r.pos}</td>
-                      <td className="py-1 font-medium" style={{ color: r.team === 'Harfield FC' ? PRIMARY : TEXT }}>{r.team}</td>
-                      <td className="py-1 text-center" style={{ color: TEXT_SEC }}>{r.p}</td>
-                      <td className="py-1 text-center font-bold" style={{ color: TEXT }}>{r.pts}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Alerts">
-            <div className="space-y-2">
-              <div className="p-2 rounded-lg text-xs" style={{ backgroundColor: '#EF44441a', color: '#EF4444' }}>
-                <AlertTriangle size={12} className="inline mr-1" />Ground grading inspection in 14 days — floodlight check outstanding
-              </div>
-              <div className="p-2 rounded-lg text-xs" style={{ backgroundColor: `${GOLD}1a`, color: GOLD }}>
-                <AlertCircle size={12} className="inline mr-1" />Harfield Brewery sponsorship renewal — decision needed by end of month
-              </div>
-              <div className="p-2 rounded-lg text-xs" style={{ backgroundColor: `${GOLD}1a`, color: GOLD }}>
-                <DollarSign size={12} className="inline mr-1" />Match fees due to 6 players from last week
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-      </div>
-      </>}
-
-      {/* ─── Modals ─── */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setActiveModal(null)}>
-          <div className="rounded-xl w-full max-w-lg max-h-[80vh] overflow-y-auto" style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER}` }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
-              <p className="text-sm font-bold" style={{ color: TEXT }}>
-                {activeModal === 'availability' ? 'WhatsApp Availability' :
-                 activeModal === 'matchfees' ? 'Match Fee Tracker' :
-                 activeModal === 'aihalftime' ? 'AI Halftime Brief' :
-                 activeModal === 'matchreport' ? 'Match Report AI' :
-                 activeModal === 'groundgrading' ? 'FA Ground Grading' :
-                 activeModal === 'opposition' ? 'Opposition Scout AI' :
-                 activeModal === 'sponsor' ? 'Sponsor Post AI' : 'Quick Action'}
-              </p>
-              <button onClick={() => setActiveModal(null)} style={{ color: TEXT_SEC }}><X size={16} /></button>
-            </div>
-            <div className="p-4">
-              {activeModal === 'availability' && <NLAvailabilityModal onToast={onToast} />}
-              {activeModal === 'matchfees' && <NLMatchFeeModal onToast={onToast} />}
-              {activeModal === 'aihalftime' && <NLHalftimeModal onToast={onToast} />}
-              {activeModal === 'matchreport' && <NLMatchReportModal onToast={onToast} />}
-              {activeModal === 'groundgrading' && <NLGroundGradingModal onToast={onToast} />}
-              {activeModal === 'opposition' && <NLOppositionScoutModal onToast={onToast} />}
-              {activeModal === 'sponsor' && <NLSponsorPostModal onToast={onToast} />}
-              {!['availability','matchfees','aihalftime','matchreport','groundgrading','opposition','sponsor'].includes(activeModal) && (
-                <div className="text-center py-8">
-                  <p className="text-sm" style={{ color: TEXT_SEC }}>This action opens the full view. Use the sidebar to navigate there.</p>
-                  <button onClick={() => setActiveModal(null)} className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: PRIMARY, color: '#fff' }}>Close</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
+      <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
+      <V2Toast          T={T} accent={accent} msg={dashToast} />
+      <NLMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+    </>
   )
 }
 
@@ -3229,57 +2835,498 @@ function NLSponsorPostModal({ onToast }: { onToast: (m: string) => void }) {
 
 // ─── New View Components ────────────────────────────────────────────────────
 
+// ─── Non-League GPS view (rebuilt: 6 KPIs + 4 tabs) ──────────────────────────
+
+type NLGpsStatus = 'optimal' | 'manage' | 'overload' | 'underload'
+interface NLGpsRow {
+  name: string
+  pos: string
+  distance: number     // km
+  hsr: number          // m (>5.5 m/s)
+  sprints: number
+  topSpeed: number     // km/h
+  load: number         // AU
+  acute: number
+  chronic: number
+  status: NLGpsStatus
+  zones: { stand:number; walk:number; jog:number; run:number; sprint:number } // metres
+}
+
+const NL_GPS_ROWS: NLGpsRow[] = [
+  { name:'Ryan Calloway',    pos:'GK',  distance: 5.6, hsr: 120, sprints: 4,  topSpeed:28.4, load:240, acute:1180, chronic:1240, status:'optimal',   zones:{stand:1820,walk:2240,jog:1180,run:280, sprint: 80} },
+  { name:'Jake Morley',      pos:'RB',  distance:10.4, hsr: 720, sprints:38, topSpeed:31.6, load:380, acute:1640, chronic:1480, status:'optimal',   zones:{stand:1240,walk:2380,jog:2840,run:2240,sprint:1700} },
+  { name:'Danny Prescott',   pos:'CB',  distance: 9.8, hsr: 480, sprints:22, topSpeed:29.8, load:340, acute:1480, chronic:1380, status:'optimal',   zones:{stand:1380,walk:2620,jog:2780,run:1860,sprint:1140} },
+  { name:'Lewis Cartwright', pos:'CB',  distance: 9.6, hsr: 460, sprints:21, topSpeed:29.4, load:330, acute:1420, chronic:1340, status:'optimal',   zones:{stand:1420,walk:2640,jog:2740,run:1740,sprint:1060} },
+  { name:'Sam Okonkwo',      pos:'LB',  distance:10.6, hsr: 780, sprints:42, topSpeed:32.0, load:400, acute:1820, chronic:1480, status:'manage',    zones:{stand:1180,walk:2240,jog:2820,run:2380,sprint:1980} },
+  { name:'Tom Brennan',      pos:'CDM', distance:11.4, hsr: 880, sprints:46, topSpeed:30.8, load:440, acute:2080, chronic:1620, status:'overload',  zones:{stand:1080,walk:2280,jog:3160,run:2680,sprint:2200} },
+  { name:'Josh Whitmore',    pos:'CM',  distance:11.0, hsr: 820, sprints:44, topSpeed:31.2, load:420, acute:1880, chronic:1560, status:'manage',    zones:{stand:1140,walk:2320,jog:3080,run:2440,sprint:2020} },
+  { name:'Callum Deakin',    pos:'CM',  distance: 9.4, hsr: 540, sprints:28, topSpeed:30.2, load:330, acute:1260, chronic:1340, status:'underload', zones:{stand:1320,walk:2660,jog:2680,run:1740,sprint:1000} },
+  { name:'Ryan Fletcher',    pos:'RW',  distance:10.8, hsr:1020, sprints:52, topSpeed:32.8, load:410, acute:1740, chronic:1520, status:'optimal',   zones:{stand:1080,walk:2120,jog:2620,run:2440,sprint:2540} },
+  { name:'Marcus Webb',      pos:'LW',  distance:10.6, hsr: 980, sprints:48, topSpeed:32.4, load:400, acute:1660, chronic:1500, status:'optimal',   zones:{stand:1100,walk:2160,jog:2640,run:2360,sprint:2340} },
+  { name:'Liam Grady',       pos:'ST',  distance:10.2, hsr: 940, sprints:46, topSpeed:32.6, load:390, acute:1620, chronic:1460, status:'optimal',   zones:{stand:1140,walk:2220,jog:2580,run:2200,sprint:2060} },
+  { name:'Harry Simcox',     pos:'ST',  distance: 9.8, hsr: 760, sprints:36, topSpeed:30.6, load:340, acute:1300, chronic:1380, status:'underload', zones:{stand:1280,walk:2480,jog:2640,run:1840,sprint:1560} },
+  { name:'Tyler Rooney',     pos:'AM',  distance:10.0, hsr: 720, sprints:32, topSpeed:30.0, load:360, acute:1480, chronic:1380, status:'optimal',   zones:{stand:1240,walk:2360,jog:2840,run:1980,sprint:1580} },
+  { name:'Adam Walsh',       pos:'RW',  distance: 9.2, hsr: 580, sprints:26, topSpeed:29.2, load:310, acute:1180, chronic:1280, status:'underload', zones:{stand:1380,walk:2620,jog:2480,run:1620,sprint:1100} },
+  { name:'Ben Ashworth',     pos:'RB',  distance: 9.6, hsr: 620, sprints:30, topSpeed:30.4, load:320, acute:1340, chronic:1280, status:'optimal',   zones:{stand:1320,walk:2480,jog:2640,run:1820,sprint:1340} },
+  { name:'Kai Pearson',      pos:'CDM', distance:10.2, hsr: 700, sprints:34, topSpeed:30.4, load:360, acute:1440, chronic:1360, status:'optimal',   zones:{stand:1240,walk:2320,jog:2860,run:2080,sprint:1700} },
+]
+
 function NLGPSView() {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Avg Distance/Game" value="9.2km" icon={Activity} color={PRIMARY} />
-        <StatCard label="Top Distance" value="11.4km" icon={TrendingUp} color="#22C55E" sub="Tom Brennan" />
-        <StatCard label="Sprint Count Avg" value="42" icon={Zap} color="#3B82F6" />
-        <StatCard label="Return to Play" value="2" icon={Heart} color="#EF4444" sub="Platt, Mellor" />
-      </div>
+  type GpsTab = 'session' | 'trends' | 'matchVtraining' | 'connect'
+  const [tab, setTab] = useState<GpsTab>('session')
+  const [filter, setFilter] = useState<'all' | NLGpsStatus>('all')
 
-      <SectionCard title="Squad Fitness — Last Match Distance (km)">
-        <div className="space-y-1.5">
-          {NL_SQUAD.filter(p => !p.injured && !p.suspended).slice(0, 11).map((p, i) => {
-            const dist = [11.4, 10.8, 10.2, 9.8, 9.6, 9.4, 9.2, 9.0, 8.8, 8.5, 8.2][i] || 8.0
+  const acwr = (r: NLGpsRow) => r.chronic === 0 ? 0 : (r.acute / (r.chronic / 4))
+  const filtered = filter === 'all' ? NL_GPS_ROWS : NL_GPS_ROWS.filter(r => r.status === filter)
+
+  // KPI rollups
+  const avgLoad   = Math.round(NL_GPS_ROWS.reduce((s, r) => s + r.load, 0) / NL_GPS_ROWS.length)
+  const avgDist   = (NL_GPS_ROWS.reduce((s, r) => s + r.distance, 0) / NL_GPS_ROWS.length)
+  const avgHsr    = Math.round(NL_GPS_ROWS.reduce((s, r) => s + r.hsr, 0) / NL_GPS_ROWS.length)
+  const maxSpeed  = Math.max(...NL_GPS_ROWS.map(r => r.topSpeed))
+  const maxSpeedP = NL_GPS_ROWS.find(r => r.topSpeed === maxSpeed)
+  const totalSprints  = NL_GPS_ROWS.reduce((s, r) => s + r.sprints, 0)
+  const highLoad  = NL_GPS_ROWS.filter(r => r.status === 'overload' || r.status === 'manage').length
+
+  const sColor = (s: NLGpsStatus) => s === 'optimal' ? '#22C55E' : s === 'manage' ? '#F59E0B' : s === 'overload' ? '#EF4444' : '#3B82F6'
+  const sLabel = (s: NLGpsStatus) => s === 'optimal' ? 'Ready' : s === 'manage' ? 'Manage' : s === 'overload' ? 'Rest' : 'Build'
+
+  // ── Session Overview content ──
+  const renderSession = () => {
+    const zoneCol = { stand:'#475569', walk:'#3B82F6', jog:'#22C55E', run:'#F59E0B', sprint:'#EF4444' } as const
+    const zoneTotalMax = Math.max(...NL_GPS_ROWS.map(r => r.zones.stand + r.zones.walk + r.zones.jog + r.zones.run + r.zones.sprint))
+    return (
+      <div className="space-y-4">
+        {/* AI summary + highlights */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${PRIMARY}55` }}>
+            <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: PRIMARY }}>🤖 AI Session Summary</div>
+            <p className="text-xs leading-relaxed" style={{ color: TEXT_SEC }}>
+              Saturday vs Bamber Bridge (H) · NPL West win 2–1. Squad averaged <span className="font-semibold" style={{ color: TEXT }}>{avgDist.toFixed(1)} km</span> with strong wide play — Fletcher and Webb combined for 100 sprints. Brennan flagged for overload (ACWR {acwr(NL_GPS_ROWS[5]).toFixed(2)}) — ease back Tuesday. Two players underloaded after subs early — Deakin and Walsh. FA Cup R2 next Saturday will need top-up sessions.
+            </p>
+          </div>
+          <SectionCard title="Highlights">
+            <div className="space-y-1 text-[11px]">
+              <div><span className="font-bold" style={{ color: PRIMARY }}>Top distance</span> · Brennan {NL_GPS_ROWS[5].distance.toFixed(1)} km</div>
+              <div><span className="font-bold" style={{ color: '#3B82F6' }}>Top speed</span> · {maxSpeedP?.name} {maxSpeed} km/h</div>
+              <div><span className="font-bold" style={{ color: '#22C55E' }}>Most sprints</span> · Fletcher 52</div>
+              <div><span className="font-bold" style={{ color: '#EF4444' }}>Rest today</span> · {NL_GPS_ROWS.filter(r => r.status === 'overload').length} player</div>
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Player breakdown table */}
+        <SectionCard title="Player Breakdown · Saturday vs Bamber Bridge (H)">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC, borderBottom: `1px solid ${BORDER}` }}>
+                  <th className="text-left py-2 px-2">Player</th>
+                  <th className="text-left py-2">Role</th>
+                  <th className="text-right py-2">Distance</th>
+                  <th className="text-right py-2">HSR</th>
+                  <th className="text-right py-2">Sprints</th>
+                  <th className="text-right py-2">Top Speed</th>
+                  <th className="text-right py-2">Load</th>
+                  <th className="text-right py-2">ACWR</th>
+                  <th className="text-center py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {NL_GPS_ROWS.map((r, i) => {
+                  const ratio = acwr(r)
+                  return (
+                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}55` }}>
+                      <td className="py-2 px-2 font-medium" style={{ color: TEXT }}>{r.name}</td>
+                      <td className="py-2" style={{ color: TEXT_SEC }}>{r.pos}</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.distance.toFixed(1)} km</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.hsr} m</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.sprints}</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.topSpeed.toFixed(1)} km/h</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.load} AU</td>
+                      <td className="py-2 text-right font-bold tabular-nums" style={{ color: sColor(r.status) }}>{ratio.toFixed(2)}</td>
+                      <td className="py-2 text-center">
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                          style={{ backgroundColor: `${sColor(r.status)}26`, color: sColor(r.status), border: `1px solid ${sColor(r.status)}55` }}>
+                          {sLabel(r.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        {/* Distance by intensity zone — horizontal stacked bars */}
+        <SectionCard title="Distance by Intensity Zone">
+          <div className="flex items-center gap-3 mb-3 text-[10px]">
+            {(['stand','walk','jog','run','sprint'] as const).map(k => (
+              <span key={k} className="flex items-center gap-1.5 capitalize" style={{ color: TEXT_SEC }}>
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ background: zoneCol[k] }} />
+                {k}
+              </span>
+            ))}
+          </div>
+          <svg viewBox={`0 0 600 ${NL_GPS_ROWS.length * 22 + 16}`} width="100%">
+            {NL_GPS_ROWS.map((p, i) => {
+              const total = p.zones.stand + p.zones.walk + p.zones.jog + p.zones.run + p.zones.sprint
+              const w = (total / zoneTotalMax) * 460
+              let off = 130
+              const segs: Array<[keyof typeof zoneCol, number]> = [
+                ['stand',  p.zones.stand],
+                ['walk',   p.zones.walk],
+                ['jog',    p.zones.jog],
+                ['run',    p.zones.run],
+                ['sprint', p.zones.sprint],
+              ]
+              const y = 12 + i * 22
+              return (
+                <g key={i}>
+                  <text x={4} y={y + 11} fontSize="10" fill={TEXT}>{p.name.split(' ').pop()}</text>
+                  <text x={120} y={y + 11} fontSize="9" fill="#475569" textAnchor="end">{p.pos}</text>
+                  {segs.map(([k, v], si) => {
+                    const ww = total > 0 ? (v / total) * w : 0
+                    const r = <rect key={si} x={off} y={y} width={ww} height={14} fill={zoneCol[k]} opacity="0.85" />
+                    off += ww
+                    return r
+                  })}
+                  <text x={off + 4} y={y + 11} fontSize="9" fill={TEXT_SEC} className="tabular-nums">{(total / 1000).toFixed(2)} km</text>
+                </g>
+              )
+            })}
+          </svg>
+        </SectionCard>
+
+        {/* Sprint frequency line chart */}
+        <SectionCard title="Sprint Frequency · last 8 fixtures (squad avg)">
+          {(() => {
+            const sprintTrend = [28, 32, 30, 38, 34, 36, 41, 42]
+            const fixtures = ['Mossley','FC Utd','Glossop','Hyde','Stalybridge','Bamber','Workington','Bamber']
+            const max = Math.max(...sprintTrend)
             return (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xs w-24 truncate" style={{ color: TEXT }}>{p.name.split(' ').pop()}</span>
-                <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: `${PRIMARY}1a` }}>
-                  <div className="h-full rounded-full" style={{ backgroundColor: dist > 10 ? '#22C55E' : dist > 9 ? PRIMARY : '#EF4444', width: `${(dist / 12) * 100}%` }} />
-                </div>
-                <span className="text-xs font-mono w-12 text-right" style={{ color: TEXT_SEC }}>{dist}km</span>
-              </div>
+              <svg viewBox="0 0 600 180" width="100%">
+                {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={580} y1={20 + (1 - t) * 130} y2={20 + (1 - t) * 130} stroke={`${BORDER}66`} />)}
+                <path d={sprintTrend.map((v, i) => `${i === 0 ? 'M' : 'L'} ${36 + (i / (sprintTrend.length - 1)) * 540} ${20 + (1 - v / max) * 130}`).join(' ')}
+                  fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round" />
+                {sprintTrend.map((v, i) => {
+                  const x = 36 + (i / (sprintTrend.length - 1)) * 540
+                  const y = 20 + (1 - v / max) * 130
+                  return (
+                    <g key={i}>
+                      <circle cx={x} cy={y} r="4" fill={PRIMARY} stroke="#fff" strokeWidth="0.5" />
+                      <text x={x} y={y - 8} fontSize="9" fill={PRIMARY} textAnchor="middle" fontWeight="700">{v}</text>
+                      <text x={x} y={170} fontSize="8.5" fill={TEXT_SEC} textAnchor="middle">{fixtures[i]}</text>
+                    </g>
+                  )
+                })}
+              </svg>
             )
-          })}
-        </div>
-      </SectionCard>
+          })()}
+        </SectionCard>
+      </div>
+    )
+  }
 
-      <SectionCard title="Pitch Heatmap">
-        <div className="rounded-lg p-8 text-center" style={{ backgroundColor: '#15803D22', border: `1px solid ${BORDER}` }}>
-          <Activity size={32} style={{ color: TEXT_SEC, margin: '0 auto' }} />
-          <p className="text-xs mt-2" style={{ color: TEXT_SEC }}>GPS heatmap visualisation — connect Lumio Vision or GPS tracker to populate</p>
-          <p className="text-[10px] mt-1" style={{ color: PRIMARY }}>Lumio Vision integration coming soon</p>
-        </div>
-      </SectionCard>
+  // ── Load Trends & ACWR ──
+  const renderTrends = () => {
+    // 30-day team load
+    const TEAM_30D = Array.from({ length: 30 }).map((_, i) => {
+      const base = 240 + Math.sin(i / 4) * 60 + (i / 30) * 20
+      const matchSpike = (i % 7 === 5) ? 80 : 0
+      return Math.round(base + matchSpike + ((i * 11) % 5) * 6)
+    })
+    const max30 = Math.max(...TEAM_30D)
+    const path30 = TEAM_30D.map((v, i) => `${i === 0 ? 'M' : 'L'} ${36 + (i / (TEAM_30D.length - 1)) * 540} ${20 + (1 - v / max30) * 130}`).join(' ')
 
-      <SectionCard title="Return-to-Play Tracker">
-        <div className="space-y-2">
-          {NL_INJURIES.map((inj, i) => (
-            <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: BG }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium" style={{ color: TEXT }}>{inj.name}</span>
-                <Badge color={inj.severity === 'Significant' ? '#EF4444' : GOLD}>{inj.severity}</Badge>
-              </div>
-              <p className="text-[10px]" style={{ color: TEXT_SEC }}>{inj.injury} — expected return: {inj.expectedReturn}</p>
-              <div className="h-2 rounded-full overflow-hidden mt-2" style={{ backgroundColor: `${PRIMARY}1a` }}>
-                <div className="h-full rounded-full" style={{ backgroundColor: '#22C55E', width: i === 0 ? '75%' : '40%' }} />
+    return (
+      <div className="space-y-4">
+        <SectionCard title="30-day Team Load (AU/day)">
+          <svg viewBox="0 0 600 180" width="100%">
+            {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={580} y1={20 + (1 - t) * 130} y2={20 + (1 - t) * 130} stroke={`${BORDER}66`} />)}
+            <defs>
+              <linearGradient id="nl-load-area" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%"  stopColor={PRIMARY} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={PRIMARY} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={`${path30} L 576 150 L 36 150 Z`} fill="url(#nl-load-area)" />
+            <path d={path30} fill="none" stroke={PRIMARY} strokeWidth="2" />
+            {TEAM_30D.filter((_, i) => i % 5 === 0).map((_, j) => {
+              const i = j * 5
+              return <text key={i} x={36 + (i / (TEAM_30D.length - 1)) * 540} y={172} fontSize="9" fill={TEXT_SEC} textAnchor="middle">D{i + 1}</text>
+            })}
+          </svg>
+        </SectionCard>
+
+        {/* Squad ACWR table with trend arrows */}
+        <SectionCard title={`Full Squad ACWR — ${filtered.length} players${filter !== 'all' ? ` (${filter})` : ''}`}>
+          <div className="flex gap-1 mb-3 flex-wrap">
+            {(['all','optimal','manage','overload','underload'] as const).map(s => (
+              <button key={s} onClick={() => setFilter(s)} className="px-2 py-1 rounded text-[10px] font-medium capitalize"
+                style={{ backgroundColor: filter === s ? PRIMARY : `${BORDER}55`, color: filter === s ? '#fff' : TEXT_SEC }}>
+                {s}
+              </button>
+            ))}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC, borderBottom: `1px solid ${BORDER}` }}>
+                  <th className="text-left py-2 px-2">Player</th>
+                  <th className="text-left py-2">Pos</th>
+                  <th className="text-right py-2">Acute (7d)</th>
+                  <th className="text-right py-2">Chronic (28d)</th>
+                  <th className="text-right py-2">Ratio</th>
+                  <th className="text-center py-2">Trend</th>
+                  <th className="text-center py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, i) => {
+                  const ratio = acwr(r)
+                  const trend = r.acute > r.chronic / 4 ? '↑' : '↓'
+                  const trendCol = trend === '↑' && (r.status === 'overload' || r.status === 'manage') ? '#EF4444' : trend === '↓' && r.status === 'underload' ? '#3B82F6' : '#22C55E'
+                  return (
+                    <tr key={i} style={{ borderBottom: `1px solid ${BORDER}55` }}>
+                      <td className="py-2 px-2 font-medium" style={{ color: TEXT }}>{r.name}</td>
+                      <td className="py-2" style={{ color: TEXT_SEC }}>{r.pos}</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.acute.toLocaleString()}</td>
+                      <td className="py-2 text-right tabular-nums" style={{ color: TEXT }}>{r.chronic.toLocaleString()}</td>
+                      <td className="py-2 text-right font-bold tabular-nums" style={{ color: sColor(r.status) }}>{ratio.toFixed(2)}</td>
+                      <td className="py-2 text-center font-bold" style={{ color: trendCol }}>{trend}</td>
+                      <td className="py-2 text-center">
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                          style={{ backgroundColor: `${sColor(r.status)}26`, color: sColor(r.status), border: `1px solid ${sColor(r.status)}55` }}>
+                          {sLabel(r.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        {/* 4-week ACWR for flagged players */}
+        <SectionCard title="4-week ACWR · flagged players">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {NL_GPS_ROWS.filter(r => r.status === 'overload' || r.status === 'manage').map(r => {
+              // Synthetic 4-week ACWR data leading to current
+              const seed = r.name.charCodeAt(0)
+              const data = Array.from({ length: 4 }).map((_, i) => {
+                const base = 0.95 + Math.sin((i + seed) / 2) * 0.18 + (i / 6)
+                return +(base + (i === 3 ? (r.status === 'overload' ? 0.35 : 0.18) : 0)).toFixed(2)
+              })
+              const max = Math.max(...data, 1.6)
+              return (
+                <div key={r.name} className="rounded-lg p-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-xs font-semibold" style={{ color: TEXT }}>{r.name}</span>
+                      <span className="text-[10px] ml-2" style={{ color: TEXT_SEC }}>{r.pos}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: `${sColor(r.status)}26`, color: sColor(r.status), border: `1px solid ${sColor(r.status)}55` }}>
+                      {sLabel(r.status)}
+                    </span>
+                  </div>
+                  <svg viewBox="0 0 280 100" width="100%">
+                    {[0.8, 1.3, 1.5].map((t, i) => {
+                      const y = 14 + (1 - t / max) * 70
+                      const c = t === 1.5 ? '#EF4444' : t === 1.3 ? '#F59E0B' : '#22C55E'
+                      return <line key={i} x1={20} x2={270} y1={y} y2={y} stroke={c} strokeOpacity="0.3" strokeDasharray="3 3" />
+                    })}
+                    <path d={data.map((v, i) => `${i === 0 ? 'M' : 'L'} ${20 + (i / (data.length - 1)) * 250} ${14 + (1 - v / max) * 70}`).join(' ')}
+                      fill="none" stroke={sColor(r.status)} strokeWidth="2.5" />
+                    {data.map((v, i) => {
+                      const x = 20 + (i / (data.length - 1)) * 250
+                      const y = 14 + (1 - v / max) * 70
+                      return (
+                        <g key={i}>
+                          <circle cx={x} cy={y} r="3.5" fill={sColor(r.status)} />
+                          <text x={x} y={y - 6} fontSize="9" fill={sColor(r.status)} textAnchor="middle" fontWeight="700">{v.toFixed(2)}</text>
+                          <text x={x} y={94} fontSize="9" fill={TEXT_SEC} textAnchor="middle">W-{4 - i}</text>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                </div>
+              )
+            })}
+          </div>
+        </SectionCard>
+      </div>
+    )
+  }
+
+  // ── Match vs Training ──
+  const renderMatchVsTraining = () => {
+    const ROWS = NL_GPS_ROWS.slice(0, 11).map(r => ({
+      name: r.name.split(' ').pop() ?? r.name,
+      matchDist: +(r.distance * 1.02).toFixed(1),
+      trainDist: +(r.distance * 0.58 + 1.0).toFixed(1),
+      matchHsr:  Math.round(r.hsr * 1.05),
+      trainHsr:  Math.round(r.hsr * 0.4 + 60),
+      matchSpr:  r.sprints,
+      trainSpr:  Math.max(0, Math.round(r.sprints * 0.32)),
+    }))
+    const grouped = (rows: typeof ROWS, getM: (r:typeof ROWS[0]) => number, getT: (r:typeof ROWS[0]) => number, label: string, color: string) => {
+      const max = Math.max(...rows.flatMap(r => [getM(r), getT(r)])) * 1.05
+      return (
+        <SectionCard title={label}>
+          <svg viewBox={`0 0 600 ${24 * rows.length + 30}`} width="100%">
+            {rows.map((r, i) => {
+              const y = 14 + i * 24
+              const wM = (getM(r) / max) * 440
+              const wT = (getT(r) / max) * 440
+              return (
+                <g key={i}>
+                  <text x={4} y={y + 7} fontSize="10" fill={TEXT}>{r.name}</text>
+                  <rect x={130} y={y - 5} width={wM} height={9} fill={color} opacity="0.9" rx="1.5" />
+                  <text x={130 + wM + 4} y={y + 3} fontSize="8" fill={color} className="tabular-nums">{getM(r)}</text>
+                  <rect x={130} y={y + 5} width={wT} height={9} fill="#3B82F6" opacity="0.85" rx="1.5" />
+                  <text x={130 + wT + 4} y={y + 13} fontSize="8" fill="#3B82F6" className="tabular-nums">{getT(r)}</text>
+                </g>
+              )
+            })}
+          </svg>
+          <div className="flex gap-4 mt-2 text-[10px]" style={{ color: TEXT_SEC }}>
+            <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5" style={{ background: color }} /> Match day</span>
+            <span><span className="inline-block w-3 h-3 bg-blue-500 rounded-sm align-middle mr-1.5" /> Training</span>
+          </div>
+        </SectionCard>
+      )
+    }
+    return (
+      <div className="space-y-4">
+        {grouped(ROWS, r => r.matchDist, r => r.trainDist, 'Match vs Training · Distance (km)', PRIMARY)}
+        {grouped(ROWS, r => r.matchHsr,  r => r.trainHsr,  'Match vs Training · High Speed Running (m)', '#22C55E')}
+        {grouped(ROWS, r => r.matchSpr,  r => r.trainSpr,  'Match vs Training · Sprint Count', '#F59E0B')}
+      </div>
+    )
+  }
+
+  // ── Connect GPS ──
+  const renderConnect = () => {
+    const OTHER = [
+      { name:'Johan Sports',     sub:'10Hz GPS · OAuth or CSV import' },
+      { name:'CSV Upload',       sub:'Generic GPS export · any vendor · drag and drop' },
+      { name:'Polar Team Pro',   sub:'HR + GPS · Bluetooth dock' },
+      { name:'Lumio Vision',     sub:'Camera-based positional tracking' },
+    ]
+    return (
+      <div className="space-y-4">
+        {/* JOHAN featured partner */}
+        <div className="rounded-2xl p-6" style={{ background: `linear-gradient(135deg, ${PRIMARY}33 0%, ${PRIMARY}11 70%, transparent 100%)`, border: `1px solid ${PRIMARY}55` }}>
+          <div className="flex items-start gap-4 flex-wrap">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0" style={{ backgroundColor: PRIMARY, color: '#fff', boxShadow: `0 0 24px ${PRIMARY}66` }}>
+              ⚽
+            </div>
+            <div className="flex-1 min-w-[260px]">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: ACCENT }}>Featured Partner</div>
+              <h2 className="text-2xl font-black mt-1" style={{ color: TEXT }}>JOHAN Sports</h2>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: TEXT_SEC }}>
+                Affordable GPS vests built for non-league budgets. Plug-and-play 10Hz tracking, automatic upload to Lumio, no contracts. Designed for clubs running on volunteer kit managers.
+              </p>
+              <div className="mt-4 flex gap-2 flex-wrap">
+                <button className="px-5 py-2 rounded-lg text-sm font-bold" style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', boxShadow: `0 0 16px ${PRIMARY}44`, cursor: 'pointer' }}>Connect JOHAN GPS →</button>
+                <button className="px-5 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: 'transparent', color: ACCENT, border: `1px solid ${PRIMARY}66`, cursor: 'pointer' }}>Read setup guide</button>
               </div>
             </div>
-          ))}
+          </div>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { icon:'📡', k:'Match-day tracking',  v:'Distance, HSR, sprints, top speed — every player every game.' },
+              { icon:'🏃', k:'Training auto-sync',  v:'Drop vests in dock after session — Lumio populates automatically.' },
+              { icon:'🛡️', k:'Injury risk flags',   v:'ACWR + load curve — early warning when a player is heading into overload.' },
+            ].map(c => (
+              <div key={c.k} className="rounded-xl p-3" style={{ backgroundColor: `${BG}aa`, border: `1px solid ${BORDER}` }}>
+                <div className="text-xl mb-1.5">{c.icon}</div>
+                <div className="text-sm font-bold" style={{ color: TEXT }}>{c.k}</div>
+                <div className="text-[11px] mt-0.5 leading-relaxed" style={{ color: TEXT_SEC }}>{c.v}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </SectionCard>
+
+        {/* Integration status */}
+        <SectionCard title="Integration Status">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Active devices</div>
+              <div className="text-xl font-black" style={{ color: '#22C55E' }}>16 / 22</div>
+              <div style={{ color: TEXT_SEC }}>JOHAN vests · 6 charging</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Last sync</div>
+              <div className="text-xl font-black" style={{ color: PRIMARY }}>Sat 15:42</div>
+              <div style={{ color: TEXT_SEC }}>Post-match · Bamber Bridge (H)</div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Backlog</div>
+              <div className="text-xl font-black" style={{ color: '#22C55E' }}>0 MB</div>
+              <div style={{ color: TEXT_SEC }}>All sessions ingested</div>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Other devices */}
+        <SectionCard title="Other Compatible Devices">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {OTHER.map(d => (
+              <div key={d.name} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: TEXT }}>{d.name}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: TEXT_SEC }}>{d.sub}</div>
+                </div>
+                <button className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md"
+                  style={{ backgroundColor: `${BORDER}66`, color: TEXT_SEC, border: `1px solid ${BORDER}`, cursor: 'pointer' }}>Connect</button>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 6-KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="Avg Player Load"    value={`${avgLoad} AU`}            icon={Activity}    color={PRIMARY} sub="Match day" />
+        <StatCard label="Avg Distance"       value={`${avgDist.toFixed(1)} km`} icon={TrendingUp}  color="#22C55E" />
+        <StatCard label="Avg HSR"            value={`${avgHsr} m`}              icon={Zap}         color="#3B82F6" sub=">5.5 m/s" />
+        <StatCard label="Max Speed"          value={`${maxSpeed} km/h`}         icon={TrendingUp}  color="#F59E0B" sub={maxSpeedP?.name.split(' ').pop()} />
+        <StatCard label="Sprint Count"       value={`${totalSprints}`}          icon={Zap}         color="#A855F7" sub="Squad cumulative" />
+        <StatCard label="High Load Players"  value={`${highLoad}`}              icon={AlertCircle} color="#EF4444" sub="Manage or rest" />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 overflow-x-auto" style={{ borderBottom: `1px solid ${BORDER}` }}>
+        {([
+          { id:'session' as const,        icon:'📋', label:'Session Overview' },
+          { id:'trends' as const,         icon:'📈', label:'Load Trends & ACWR' },
+          { id:'matchVtraining' as const, icon:'🏟️', label:'Match vs Training' },
+          { id:'connect' as const,        icon:'🔌', label:'Connect GPS' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 -mb-px whitespace-nowrap"
+            style={{
+              borderBottom: `2px solid ${tab === t.id ? PRIMARY : 'transparent'}`,
+              color: tab === t.id ? PRIMARY : TEXT_SEC,
+            }}>
+            <span>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'session'        && renderSession()}
+      {tab === 'trends'         && renderTrends()}
+      {tab === 'matchVtraining' && renderMatchVsTraining()}
+      {tab === 'connect'        && renderConnect()}
     </div>
   )
 }
@@ -3608,6 +3655,56 @@ function NLPlaceholderView({ label }: { label: string }) {
   )
 }
 
+// ─── GPS Heatmaps View (wraps shared component with non-league config) ──────
+// Squad limited to the starting 11 + 4 first subs to mirror typical
+// Northern Premier League West matchday squads. FA Cup + league fixtures
+// shown in the match dropdown.
+
+const NL_HEATMAP_PLAYERS: HMPlayer[] = [
+  { name: 'Ryan Calloway',    position: 'GK',  group: 'Goalkeeper'  },
+  { name: 'Jake Morley',      position: 'RB',  group: 'Defenders'   },
+  { name: 'Danny Prescott',   position: 'CB',  group: 'Defenders'   },
+  { name: 'Lewis Cartwright', position: 'CB',  group: 'Defenders'   },
+  { name: 'Sam Okonkwo',      position: 'LB',  group: 'Defenders'   },
+  { name: 'Tom Brennan',      position: 'CDM', group: 'Midfielders' },
+  { name: 'Josh Whitmore',    position: 'CM',  group: 'Midfielders' },
+  { name: 'Callum Deakin',    position: 'CM',  group: 'Midfielders' },
+  { name: 'Ryan Fletcher',    position: 'RW',  group: 'Forwards'    },
+  { name: 'Marcus Webb',      position: 'LW',  group: 'Forwards'    },
+  { name: 'Liam Grady',       position: 'ST',  group: 'Forwards'    },
+]
+
+const NL_HEATMAP_MATCHES = [
+  'Bamber Bridge (H) — NPL West, 2-1 W',
+  'Mossley (A) — NPL West, 1-1 D',
+  'FC United (H) — FA Cup R1, 0-2 L',
+  'Glossop NE (A) — NPL West, 3-2 W',
+  'Hyde United (H) — FA Trophy R2, 1-0 W',
+]
+
+const NL_HEATMAP_TRAINING = [
+  'Tue — Tactical (75min)',
+  'Thu — Match Prep (60min)',
+  'Sat AM — Light Activation (30min)',
+]
+
+function NLGPSHeatmapsView() {
+  return (
+    <GPSHeatmapsView
+      sportLabel="Non-League · Harfield FC"
+      brandPrimaryKey="lumio_nonleague_brand_primary"
+      brandSecondaryKey="lumio_nonleague_brand_secondary"
+      defaultPrimary="#D97706"
+      defaultSecondary="#FDE68A"
+      players={NL_HEATMAP_PLAYERS}
+      matches={NL_HEATMAP_MATCHES}
+      trainingSessions={NL_HEATMAP_TRAINING}
+      matchDayLabel="MATCH"
+      comparisonMode="eleven"
+    />
+  )
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function NonLeagueContent({ activeDept, onToast, userName }: { activeDept: NLDeptId; onToast: (m: string) => void; userName?: string }) {
@@ -3640,6 +3737,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-media' && <MediaContentModule sport="nonleague" accentColor="#D97706" />}
       {activeDept === 'nl-committee' && <NLCommitteeView />}
       {activeDept === 'nl-gps' && <NLGPSView />}
+      {activeDept === 'nl-gps-heatmaps' && <NLGPSHeatmapsView />}
       {activeDept === 'nl-matchfees' && <NLMatchFeesView />}
       {activeDept === 'nl-cupmanager' && <NLCupManagerView />}
       {activeDept === 'nl-registration' && <NLRegistrationView />}

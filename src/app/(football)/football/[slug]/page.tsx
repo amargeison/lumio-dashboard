@@ -4154,7 +4154,7 @@ function PerformanceGPSView() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [connectToken, setConnectToken] = useState('')
-  const [connectProvider, setConnectProvider] = useState<'catapult' | 'statsports'>('catapult')
+  const [connectProvider, setConnectProvider] = useState<'johansports' | 'csv'>('johansports')
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionAnalysis, setSessionAnalysis] = useState<{
     session_rating: string;
@@ -4682,8 +4682,8 @@ Respond ONLY in JSON (no markdown):
               <input type="text" placeholder="Enter your Lumio GPS API key"
                 className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
                 style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
-                value={connectProvider === 'catapult' ? connectToken : ''}
-                onChange={e => { setConnectProvider('catapult'); setConnectToken(e.target.value) }} />
+                value={connectProvider === 'johansports' ? connectToken : ''}
+                onChange={e => { setConnectProvider('johansports'); setConnectToken(e.target.value) }} />
               <button onClick={() => { setToast('Lumio GPS connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
                 className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#3B82F6', color: '#FFF' }}>
@@ -4705,8 +4705,8 @@ Respond ONLY in JSON (no markdown):
               <input type="text" placeholder="Paste legacy provider API key..."
                 className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
                 style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
-                value={connectProvider === 'statsports' ? connectToken : ''}
-                onChange={e => { setConnectProvider('statsports'); setConnectToken(e.target.value) }} />
+                value={connectProvider === 'csv' ? connectToken : ''}
+                onChange={e => { setConnectProvider('csv'); setConnectToken(e.target.value) }} />
               <button onClick={() => { setToast('Legacy provider connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
                 className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#22C55E', color: '#FFF' }}>
@@ -5527,7 +5527,7 @@ function GPSHeatmapsView() {
       </Section>
 
       <div className="text-[10px] text-gray-700 text-center pt-2">
-        GPS data sourced from Lumio GPS · 10Hz sampling · Demo data shown — connect Catapult / STATSports for live feed
+        GPS data sourced from Lumio GPS · 10Hz sampling · Demo data shown — connect Johan Sports or import via CSV for live feed
       </div>
     </div>
   )
@@ -6423,7 +6423,7 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
           <div className="flex items-center justify-between px-5 py-3">
             <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
             <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-              <option>None</option><option>Lumio GPS (recommended)</option><option>Lumio GPS Pro (with live data)</option><option>CSV Upload (manual)</option>
+              <option>None</option><option>Johan Sports (recommended)</option><option>CSV Upload (manual)</option>
             </select>
           </div>
           <div className="flex items-center justify-between px-5 py-3">

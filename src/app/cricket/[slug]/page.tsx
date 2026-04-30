@@ -2147,7 +2147,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       {k:'bowling',label:'Bowling Load',sub:'ACWR · over caps · injury risk'},
       {k:'mvt',label:'Match vs Training',sub:'Compare loads side-by-side'},
       {k:'season',label:'Season Overview',sub:'Trends · leaders · consistency'},
-      {k:'connect',label:'Connect GPS',sub:'JOHAN · Catapult · STATSports'},
+      {k:'connect',label:'Connect GPS',sub:'Johan Sports · CSV upload'},
     ];
     const BOWLERS_TODAY=[
       {n:'Sam Reed',acr:0.94,st:'green',ov:12,del:72,lim:96,wk:[42,48,56,72]},
@@ -2218,12 +2218,9 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
                  'Between-wickets running profile — turn speed, sprint duration, recovery',
                  'Camp-load automation — auto-build reports for England Cricket Board submissions'],
         price:'£99/player/month + 12 month commitment',cta:'Connect JOHAN'},
-      {n:'Catapult',tag:'Pro-grade',featured:false,
-        bullets:['Industry standard at England, Australia, India','Vector S7 vest — 10Hz GPS + 100Hz IMU','Heavy bowler analysis suite'],
-        price:'£149/player/month',cta:'Request quote'},
-      {n:'STATSports',tag:'Established',featured:false,
-        bullets:['APEX Pro Series — 18Hz GPS','Used by ECB, ICC associate nations','Heart-rate strap integration'],
-        price:'£119/player/month',cta:'Request quote'},
+      {n:'CSV Upload',tag:'Any vendor',featured:false,
+        bullets:['Generic GPS export — drag and drop','Auto-detects column formats','One-time backfill or per-session import'],
+        price:'Included',cta:'Upload CSV'},
       {n:'Polar',tag:'Entry-level',featured:false,
         bullets:['Polar Team Pro — 10Hz GPS + HR','Strong HR analytics','Lower price point — academy/2nd XI']
         ,price:'£59/player/month',cta:'Request quote'},

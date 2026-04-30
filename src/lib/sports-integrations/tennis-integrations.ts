@@ -178,20 +178,20 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'PlaySight SmartCourt installations are paid-for by the academy or club (typically $15k+ install + annual fee). For players, access is free through the academy account — OAuth connection brings the historical session archive into Lumio.',
   },
 
-  catapult: {
+  johansports: {
     icon: '🛰️',
-    title: 'Lumio GPS GPS',
+    title: 'Johan Sports',
     subtitle: 'Court-coverage, movement load, and distance per match.',
-    partnerBadge: 'Lumio GPS One / Vector · GPS vest · used by ATP + WTA physios',
-    connectLabel: 'Connect Lumio GPS',
+    partnerBadge: 'OAuth · 10Hz GPS + IMU · CSV import for any other vendor',
+    connectLabel: 'Connect Johan Sports',
     summaryText: 'GPS vest data from practice and match sessions. Tracks total distance, high-speed running, court coverage, and accumulated movement load week-over-week.',
     connectedStats: [
       { label: 'Last Session', value: 'Today 09:40' },
       { label: 'Distance (match)', value: '4.2 km' },
       { label: 'Load 7-day', value: '1,640 AU' },
-      { label: 'Device', value: 'Lumio GPS Vector' },
+      { label: 'Device', value: 'Johan Sports' },
     ],
-    whyHeading: 'Why Lumio GPS GPS is a performance-critical integration',
+    whyHeading: 'Why GPS load tracking is performance-critical',
     whyBody: 'Best-of-five Grand Slam tennis is one of the highest-load match formats in pro sport. Accumulated load across a 14-day Slam — plus practice before each match — is a proven predictor of late-tournament injury. Feeding the GPS-vest data into Lumio means the physio sees the cumulative strain metric every morning and can throttle practice before the load enters red-flag territory.',
     endpointsTitle: 'Data Flows Used by Lumio Tennis',
     endpoints: [
@@ -203,7 +203,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Heat / Environmental', desc: 'Ambient temp, humidity, estimated core temp during match.', status: 'Beta' },
       { endpoint: 'Gym Load Sync', desc: 'Indoor strength sessions tagged separately from on-court work.', status: 'Planned' },
     ],
-    pricing: 'Lumio GPS One consumer-tier subscriptions start at approximately £20/month. Lumio GPS Vector (pro tier) is approximately £800–£1,400/year per unit. Lumio is hardware-agnostic — Lumio GPS Pro and PlayerTek use the same data contract via the parallel integration.',
+    pricing: 'Johan Sports licences are quoted per unit on a per-team basis — speak to the Johan Sports sales team for current pricing. Lumio is hardware-agnostic — drop a CSV from any other vendor and the same dashboards backfill.',
   },
 
   whoop: {

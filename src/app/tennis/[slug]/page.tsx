@@ -75,6 +75,31 @@ import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { clearDemoSession } from '@/lib/demo-session/clear'
+// ─── Tennis v2 dashboard imports ──────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import {
+  HeroToday as TnHeroToday,
+  TodaySchedule as TnTodaySchedule,
+  StatTiles as TnStatTiles,
+  AIBrief as TnAIBriefMod,
+  Inbox as TnInboxMod,
+  MyTeam as TnMyTeamMod,
+  Fixtures as TnFixturesMod,
+  Perf as TnPerfMod,
+  Recents as TnRecentsMod,
+  Season as TnSeasonMod,
+} from './_components/TennisDashboardModules'
+import { TENNIS_ACCENT } from './_lib/tennis-dashboard-data'
+import type { TnFixture } from './_lib/tennis-dashboard-data'
 import { useLiveBrandColours } from '@/lib/hooks/useLiveBrandColours'
 import { ATP_RANKINGS, WTA_RANKINGS, type RankingEntry } from '@/lib/demo-content/atp-wta-rankings'
 import { TENNIS_COACHES, type TennisCoach } from '@/lib/demo-content/tennis-coaches'
@@ -289,6 +314,7 @@ const SIDEBAR_ITEMS = [
   { id: 'morning',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW'     },
   { id: 'performance', label: 'Performance',         icon: '📊', group: 'PERFORMANCE'  },
   { id: 'gpsvideo',    label: 'GPS & Video',         icon: '🛰️', group: 'PERFORMANCE'  },
+  { id: 'gps-heatmaps', label: 'Heatmaps',           icon: '🔥', group: 'PERFORMANCE'  },
   { id: 'schedule',    label: 'Tournament Schedule', icon: '🗓️', group: 'MATCH'        },
   { id: 'livescores',  label: 'Live Scores',         icon: '🔴', group: 'MATCH'        },
   { id: 'matchprep',   label: 'Match Prep',          icon: '🎯', group: 'MATCH'        },
@@ -1041,6 +1067,18 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  // ── v2 dashboard state ─────────────────────────────────────────────
+  const v2T       = THEMES.dark
+  const v2Accent  = TENNIS_ACCENT
+  const v2Density = DENSITY.regular
+  const v2Greeting = v2GetGreeting('matchday')
+  const [v2OpenFixture, setV2OpenFixture] = useState<TnFixture | null>(null)
+  const [v2CmdOpen, setV2CmdOpen]         = useState(false)
+  const [v2AskOpen, setV2AskOpen]         = useState(false)
+  const [v2BriefOpen, setV2BriefOpen]     = useState(false)
+  const [v2DashToast, showV2DashToast]    = useV2Toast()
+  useV2Key('cmdk', () => setV2CmdOpen(o => !o))
+  const v2DailyQuote = getDailyQuote(TENNIS_QUOTES)
   const [brandPrimary, setBrandPrimary] = useState(() => {
     try { return localStorage.getItem('lumio_tennis_brand_primary') || '#7C3AED' } catch { return '#7C3AED' }
   })
@@ -1280,65 +1318,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   return (
     <div className="space-y-0">
 
-      {/* ── PERSONAL BANNER ── */}
-      <div className={`relative bg-gradient-to-r from-indigo-900/80 via-slate-900 to-cyan-900/40 overflow-hidden rounded-2xl border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] mx-1`}>
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.25)', pointerEvents: 'none', borderRadius: 'inherit' }} />
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-cyan-400 rounded-full opacity-10 blur-3xl" />
-        <div className="relative z-10 px-6 py-5">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl font-black text-white tracking-tight">{greeting}, {firstName} 🎾</h1>
-                <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Tennis will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'} className="flex items-center justify-center rounded-lg transition-all"
-                  style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(14,165,233,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#0ea5e9' : '#9CA3AF' }}>
-                  <Volume2 size={15} strokeWidth={1.75} />
-                </button>
-              </div>
-              <p className="text-sm mb-2" style={{ color: '#0ea5e9' }}>{new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
-              <p style={{ color: '#F59E0B' }} className="text-sm italic">&ldquo;{getDailyQuote(TENNIS_QUOTES).text}&rdquo; &mdash; {getDailyQuote(TENNIS_QUOTES).author}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap mt-1">
-              {[
-                { label:'ATP Rank', value: isDemoShellDash ? `#${player.ranking ?? 67}` : '—', color:'bg-purple-500/20 text-purple-300 border-purple-500/30', icon:'📊' },
-                { label:'Race', value: isDemoShellDash ? `#${player.race_ranking ?? 54}` : '—', color:'bg-green-500/20 text-green-300 border-green-500/30', icon:'✅' },
-                { label:'Points', value: isDemoShellDash ? (player.ranking_points ?? 1847).toLocaleString() : '—', color:'bg-red-500/20 text-red-300 border-red-500/30', icon:'🔴' },
-                { label:'Career High', value: isDemoShellDash ? `#${player.career_high ?? 44}` : '—', color:'bg-blue-500/20 text-blue-300 border-blue-500/30', icon:'📧' },
-              ].map(item => (
-                <div key={item.label} className={`flex flex-col items-center px-3 py-2 rounded-xl border ${item.color} min-w-[70px]`}>
-                  <span className="text-base">{item.icon}</span>
-                  <span className="text-lg font-black text-white">{item.value}</span>
-                  <span className="text-xs opacity-70">{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-start gap-3 flex-shrink-0">
-              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-                <span className="text-3xl">{weather ? weather.icon : '🌤️'}</span>
-                <div>
-                  <div className="text-xl font-black text-white">{weather ? `${weather.temp}°C` : '--°C'}</div>
-                  <div className="text-xs" style={{ color: '#0ea5e9' }}>{weather ? weather.condition : 'Loading...'}</div>
-                </div>
-              </div>
-              <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl bg-white/5 border border-white/10" style={{ minWidth: '120px' }}>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                  {clockCities.map(({ city, tz, isUser }) => {
-                    const time = new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
-                    return (
-                      <div key={city} className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F59E0B' : '#FFFFFF' }}>{time}</span>
-                        <span className="text-[10px]" style={{ color: isUser ? '#F59E0B' : '#6B7280' }}>{city}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ── TAB BAR ── */}
       <div className="mt-4 border-b border-gray-800 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-0 min-w-max px-2">
@@ -1372,7 +1351,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
           { n:1, label:'Your tennis OS, fully connected', icon:'🎾', title:'Your tennis OS, fully connected', description:'One portal that replaces the 6 tools you probably use right now. Rankings, GPS, sponsors, travel, match prep, and your team — all here, all connected, all talking to each other.', preview:'dashboard_overview' },
           { n:2, label:'Start every day knowing everything', icon:'🌅', title:'Start every day knowing everything', description:'Your AI morning briefing reads your headlines aloud — messages, schedule, match prep, sponsor deadlines, ranking updates. Ready in 60 seconds. Press play.', preview:'morning_briefing' },
           { n:3, label:'Every action, one click away', icon:'⚡', title:'Every action, one click away', description:'16 quick actions on your dashboard — book a flight, order strings, file an injury, generate a press statement, send your agent a weekly brief. All in under 60 seconds.', preview:'quick_actions' },
-          { n:4, label:'GPS, rankings, and performance', icon:'📊', title:'Data that actually makes sense', description:'Your ATP ranking, Race to Turin, serve percentages, break point conversion, clay win rate — all in one place. Connect Lumio GPS or Lumio GPS for live GPS load data.', preview:'performance' },
+          { n:4, label:'GPS, rankings, and performance', icon:'📊', title:'Data that actually makes sense', description:'Your ATP ranking, Race to Turin, serve percentages, break point conversion, clay win rate — all in one place. Connect Johan Sports for live GPS load data.', preview:'performance' },
           { n:5, label:'Your team, front and centre', icon:'👥', title:'Your team. Everyone sees their own view.', description:"Your whole team connected — but each role gets their own tailored view. Your coach, physio, sponsor and agent see only what's relevant to them. You control what each role can see.", preview:'team' },
           { n:6, label:'AI that actually helps you win', icon:'🤖', title:'AI that actually helps you win', description:"Match Prep AI searches the web for your opponent's recent stats, tendencies and weaknesses — then generates a tactical brief in 30 seconds. Real data, real insights.", preview:'match_prep' },
           { n:7, label:'Travel sorted in 60 seconds', icon:'✈️', title:'Travel sorted in 60 seconds', description:'Smart Flight Finder searches BA, easyJet, Ryanair, Air France and more simultaneously — scores each flight and sends a booking email to your agent in one tap.', preview:'travel' },
@@ -1496,375 +1475,137 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
         )
       })()}
 
-      {/* ── TODAY TAB ── */}
+      {/* ── TODAY TAB — v2 modular grid ── */}
       {dashTab === 'today' && (
-        <div className="pt-4 space-y-6">
-          {/* Quick Actions — matches darts reference: label + pills, no container */}
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
-                { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
-                { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
-                { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
-                { id:'matchprep',     label:'Match Prep AI',      icon:'🎾', hot:true  },
-                { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
-                { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
-                { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
-                { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
-                { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
-                { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
-                { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
-                { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
-                { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
-                { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
-                { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
-                { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
-                { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
-              ].map((a) => (
-                <button key={a.id}
-                  onClick={() => onOpenModal(a.id)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-                  style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
-                  <span>{a.icon}</span>
-                  {a.label}
-                  {a.hot && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'var(--brand-secondary)' }}>AI</span>}
-                </button>
-              ))}
-            </div>
+        <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, marginTop: 14, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
+
+          {/* Hero (motivational quote preserved) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <TnHeroToday
+              T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
+              quote={v2DailyQuote}
+              onMatchPrep={() => setV2BriefOpen(true)}
+              onAsk={() => setV2AskOpen(true)}
+            />
+            <TnTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
           </div>
 
-          {/* 3-column grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { id:'sendmessage',   label:'Send Message',       icon:'📨', hot:false },
+              { id:'socialmedia',   label:'Social Media',       icon:'📱', hot:true  },
+              { id:'flights',       label:'Smart Flights',      icon:'✈️', hot:true  },
+              { id:'hotel',         label:'Find Hotel',         icon:'🏨', hot:false },
+              { id:'practicecourt', label:'Book Practice Court',icon:'🏟️', hot:false },
+              { id:'warmup',        label:'Warm-up Timer',      icon:'⏱️', hot:false },
+              { id:'sponsor',       label:'Sponsor Post',       icon:'📱', hot:false },
+              { id:'press',         label:'Press Statement',    icon:'📣', hot:false },
+              { id:'ranking',       label:'Ranking Simulator',  icon:'📊', hot:false },
+              { id:'wildcard',      label:'Wildcard Request',   icon:'🎯', hot:false },
+              { id:'agentbrief',    label:'Agent Brief',        icon:'💼', hot:true  },
+              { id:'entries',       label:'Entry Manager',      icon:'🏆', hot:false },
+              { id:'injury',        label:'Log Injury',         icon:'💊', hot:false },
+              { id:'expense',       label:'Log Expense',        icon:'🧾', hot:false },
+              { id:'strings',       label:'String Order',       icon:'🎵', hot:false },
+              { id:'visa',          label:'Visa Check',         icon:'🌍', hot:false },
+              { id:'notes',         label:'Match Notes',        icon:'📝', hot:false },
+            ].map(a => (
+              <button key={a.id} onClick={() => onOpenModal(a.id)}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = v2Accent.hex; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+                style={{
+                  appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 14px', borderRadius: 8,
+                  background: 'transparent', border: '1px solid #2d3139',
+                  color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
+                  transition: 'border-color .12s, color .12s',
+                }}>
+                <span style={{ fontSize: 13 }}>{a.icon}</span>
+                <span>{a.label}</span>
+                {a.hot && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
+              </button>
+            ))}
+          </div>
 
-            {/* LEFT: Morning Roundup — expandable like football */}
-            {session.isDemoShell === false
-              ? <EmptyState icon="📬" title="No messages yet" sub="Connect your agent, coach and tour accounts to unlock" />
-              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span>🌅</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => { setRoundupOrder([]); localStorage.removeItem('lumio_tennis_roundup_order_v2') }} className="text-[10px] hover:underline" style={{ color: '#4B5563' }}>Reset order</button>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
-                </div>
-              </div>
-              <div>
-                {(() => {
-                  const filtered = roleConfig.roundupChannels === 'all' ? ROUNDUP_ITEMS : ROUNDUP_ITEMS.filter(ch => (roleConfig.roundupChannels as string[]).includes(ch.id))
-                  const sorted = roundupOrder.length > 0 ? [...filtered].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : filtered
-                  return sorted.map((ch, idx) => {
-                  const isOpen = expandedChannel === ch.id
-                  return (
-                    <div key={ch.id}
-                      draggable
-                      onDragStart={() => setDragIdx(idx)}
-                      onDragEnter={() => setDragOverIdx(idx)}
-                      onDragOver={e => e.preventDefault()}
-                      onDragEnd={() => {
-                        if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
-                          const reordered = [...sorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                          const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_tennis_roundup_order_v2', JSON.stringify(newOrder))
-                        }
-                        setDragIdx(null); setDragOverIdx(null)
-                      }}
-                      style={{ borderBottom: '1px solid #1F2937', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
-                      <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
-                        className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-all hover:bg-white/[0.02]">
-                        <div className="flex items-center gap-3">
-                          <span className="text-gray-600 text-sm cursor-grab opacity-0 group-hover:opacity-40 hover:opacity-100 transition-opacity" style={{ opacity: 0.3 }}>⠿</span>
-                          <span className="text-base" style={{ filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
-                          <span className="text-sm" style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
-                          {ch.urgent && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm" style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
-                          <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
-                        </div>
-                      </button>
-                      {isOpen && (
-                        <div className="px-5 pb-3 space-y-2">
-                          {ch.messages.map(msg => (
-                            <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: ch.color + '22', color: ch.color }}>
-                                    {msg.from.split(' ').map(w => w[0]).join('').slice(0,2)}
-                                  </div>
-                                  <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
-                                </div>
-                                <span className="text-[10px] flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
-                              </div>
-                              <p className="text-xs leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{msg.text}</p>
-                              {repliedTo.includes(msg.id) ? (
-                                <span className="text-[10px]" style={{ color: '#0ea5e9' }}>Replied ✓</span>
-                              ) : replyingTo === msg.id ? (
-                                <div className="mt-2">
-                                  <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={2}
-                                    className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
-                                  <div className="flex gap-2 mt-1.5">
-                                    <button onClick={() => { setRepliedTo(prev => [...prev, msg.id]); setReplyingTo(null); setReplyText(''); setReplyToast(true); setTimeout(() => setReplyToast(false), 2000) }}
-                                      className="text-[10px] px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>Send</button>
-                                    <button onClick={() => { setReplyingTo(null); setReplyText('') }}
-                                      className="text-[10px] px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => setReplyingTo(msg.id)} className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.3)' }}>Reply</button>
-                                  <button className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })})()}
-              </div>
-              {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
-            </div>}
+          {/* Stat tiles */}
+          <TnStatTiles T={v2T} accent={v2Accent} density={v2Density} />
 
-            {/* MIDDLE: Today's match + schedule */}
-            <div className="space-y-3">
-              {session.isDemoShell === false ? (<>
-                <EmptyState icon="🎾" title="No match today" sub="Match data will appear here once your ATP feed is connected" />
-                <EmptyState icon="📅" title="No schedule loaded" sub="Your tournament schedule will appear here once connected" />
-              </>) : (<>
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid rgba(14,165,233,0.3)' }}>
-                <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0ea5e9' }}>TODAY&apos;S MATCH &mdash; ATP MONTE-CARLO MASTERS</span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-center">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 mx-auto mb-1 flex items-center justify-center font-bold text-sm"
-                        style={{ borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>
-                        {(() => {
-                          const p = profilePhotoLive || session.photoDataUrl || (isDemoShellDash ? '/alex_rivera.jpg' : '');
-                          return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
-                        })()}
-                      </div>
-                      <div className="text-xs font-bold text-white">{profileNameLive || session.userName || player.name}</div>
-                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>#{player.ranking ?? 67} ATP</div>
-                    </div>
-                    <div className="text-center px-3">
-                      <div className="text-xl font-black" style={{ color: '#374151' }}>VS</div>
-                      <div className="text-[10px] mt-1" style={{ color: '#6B7280' }}>13:00 · Court 4</div>
-                      <div className="text-[10px]" style={{ color: '#0ea5e9' }}>Clay · H2H: 3–1</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 flex items-center justify-center text-sm font-bold" style={{ background: '#1F2937', color: '#9CA3AF' }}>
-                        {isDemoShellDash ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src="/opponents/c-vega.jpg" alt="C. Vega" className="w-full h-full object-cover" />
-                        ) : 'CV'}
-                      </div>
-                      <div className="text-xs font-bold text-white">C. Vega</div>
-                      <div className="text-[10px]" style={{ color: '#6B7280' }}>#34 ATP</div>
-                    </div>
-                  </div>
-                  <div className="rounded-lg px-3 py-2 text-[10px]" style={{ background: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>
-                    Clay serve avg: 61% (4% below season avg) — focus on kick serve to backhand
-                  </div>
-                </div>
-              </div>
+          {/* AI summary + Inbox + MyTeam */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <TnAIBriefMod T={v2T} accent={v2Accent} density={v2Density} onAsk={() => setV2AskOpen(true)} />
+            <TnInboxMod   T={v2T} accent={v2Accent} density={v2Density} />
+            <TnMyTeamMod  T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
 
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today&apos;s Schedule</p>
-                </div>
-                <div className="px-5 py-3 space-y-1">
-                  {[
-                    { id:'s1', time:'07:30', label:'AI Morning Briefing',        highlight:false },
-                    { id:'s2', time:'08:30', label:'Physio — right shoulder',    highlight:false },
-                    { id:'s3', time:'10:00', label:'Practice — serve patterns',  highlight:false },
-                    { id:'s4', time:'11:45', label:'Stringing with Carlos',      highlight:false },
-                    { id:'s5', time:'13:00', label:'Match vs C. Vega',       highlight:true  },
-                    { id:'s6', time:'15:30', label:'Post-match physio',          highlight:false },
-                    { id:'s7', time:'17:00', label:'Coach debrief',              highlight:false },
-                  ].map((s) => {
-                    const done = completedItems.has(s.id)
-                    const cancelled = cancelledItems.has(s.id)
-                    return (
-                    <div key={s.id} className="group flex items-center gap-3 py-1.5 rounded-lg px-1 -mx-1 transition-colors hover:bg-white/[0.02]">
-                      <button onClick={() => !cancelled && toggleScheduleItem(s.id)} className="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-all"
-                        style={{
-                          borderColor: cancelled ? '#EF4444' : done ? '#22C55E' : s.highlight ? '#0ea5e9' : '#374151',
-                          background: cancelled ? 'rgba(239,68,68,0.15)' : done ? 'rgba(34,197,94,0.15)' : s.highlight ? 'rgba(14,165,233,0.1)' : 'transparent',
-                        }}>
-                        {cancelled ? <span className="text-[8px]" style={{ color: '#EF4444' }}>✕</span> : done ? <span className="text-[8px]" style={{ color: '#22C55E' }}>✓</span> : null}
-                      </button>
-                      <span className="text-[10px] w-9 flex-shrink-0" style={{ color: '#6B7280' }}>{s.time}</span>
-                      <span className="text-xs flex-1" style={{
-                        color: cancelled ? '#EF4444' : done ? '#4B5563' : s.highlight ? '#0ea5e9' : '#D1D5DB',
-                        textDecoration: cancelled || done ? 'line-through' : 'none',
-                        fontWeight: s.highlight ? 600 : 400,
-                      }}>{s.label}</span>
-                      {!s.highlight && !done && !cancelled && cancelConfirm !== s.id && (
-                        <button onClick={() => setCancelConfirm(s.id)} className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#6B7280' }}>Cancel →</button>
-                      )}
-                      {cancelConfirm === s.id && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px]" style={{ color: '#6B7280' }}>Cancel?</span>
-                          <button onClick={() => cancelScheduleItem(s.id, s.label)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Send</button>
-                          <button onClick={() => setCancelConfirm(null)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>Dismiss</button>
-                        </div>
-                      )}
-                    </div>
-                    )
-                  })}
-                </div>
-              </div>
+          {/* Fixtures + Performance signals */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <TnFixturesMod T={v2T} accent={v2Accent} density={v2Density} onPick={f => setV2OpenFixture(f)} />
+            <TnPerfMod     T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
 
-              {/* Today's Venue */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>TODAY&apos;S VENUE</span>
-                </div>
-                <div className="px-5 py-4 space-y-3">
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Monte-Carlo Country Club</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>18&deg;C &middot; Sunny &middot; Court 4 open 10:00</p>
-                  </div>
-                  <div className="space-y-1.5 pt-1" style={{ borderTop: '1px solid #1F2937' }}>
-                    <div className="flex items-center justify-between text-[11px] pt-2">
-                      <span style={{ color: '#6B7280' }}>Match time</span>
-                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>13:00</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span style={{ color: '#6B7280' }}>Court</span>
-                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Court 4 &middot; Clay</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span style={{ color: '#6B7280' }}>Prize (W)</span>
-                      <span className="font-semibold" style={{ color: '#22C55E' }}>&pound;342,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span style={{ color: '#6B7280' }}>Prize (L)</span>
-                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>&pound;57,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span style={{ color: '#6B7280' }}>TV</span>
-                      <span className="font-semibold" style={{ color: '#D1D5DB' }}>Apex Tennis Network / Amazon Prime</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </>)}
+          {/* Recents + Season */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <TnRecentsMod T={v2T} accent={v2Accent} density={v2Density} />
+            <TnSeasonMod  T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
+
+          {/* Personal Photo Frame — preserved from v1 */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: v2T.panel, border: `1px solid ${v2T.border}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold" style={{ color: v2T.text }}>Personal Photo Frame</p>
+              <span className="text-[10px]" style={{ color: v2T.text3 }}>Add a photo — family, holidays, inspiration</span>
             </div>
-
-            {/* RIGHT: Photo frame + AI Morning Summary + AI Key Highlights */}
-            <div className="space-y-3">
-              {/* Photo frame — live localStorage slideshow */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <div className="flex items-center gap-2">
-                    <span>📸</span>
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Personal Photo Frame</p>
+            {photos.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {photos.map((src, i) => (
+                  <div key={i} className="relative group rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: v2T.panel2 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 11 }}>×</button>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {photos.length > 1 && <button onClick={() => setIsPaused(!isPaused)} className="text-[10px]" style={{ color: '#6B7280' }}>{isPaused ? '▶ Play' : '⏸ Pause'}</button>}
-                    {photos.length > 0 && <button onClick={() => { setPhotos(prev => prev.filter((_, i) => i !== photoIndex)); setPhotoIndex(0) }} className="text-[10px]" style={{ color: '#6B7280' }}>✕ Remove</button>}
-                    {photos.length > 0 && <button onClick={() => { const v = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(v); localStorage.setItem('lumio_tennis_photo_fit', v) }} style={{ background: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', border: 'none' }}>⤢ Fit</button>}
-                    <button onClick={() => photoInputRef.current?.click()} disabled={photos.length >= 3} className="text-[10px] font-semibold" style={{ color: photos.length >= 3 ? '#374151' : '#0ea5e9' }} title={photos.length >= 3 ? '3 max' : 'Add photo'}>+ Add</button>
-                    <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={addPhoto} />
-                  </div>
-                </div>
-                <div className="relative h-40 overflow-hidden" style={{ background: '#0a0c14' }}>
-                  {photos.length > 0 ? (
-                    <>
-                      <img src={photos[photoIndex]} alt="Photo frame" draggable={false} style={{ width: '100%', height: '100%', objectFit: photoFit, objectPosition: 'center' }} />
-                      {photos.length > 1 && (
-                        <>
-                          <button onClick={() => setPhotoIndex(i => (i - 1 + photos.length) % photos.length)}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center">‹</button>
-                          <button onClick={() => setPhotoIndex(i => (i + 1) % photos.length)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center">›</button>
-                        </>
-                      )}
-                      <div className="absolute bottom-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-black/50 text-white">{photoIndex + 1}/{photos.length}</div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center flex-col gap-1">
-                      <div className="text-2xl">🎾</div>
-                      <div className="text-[10px]" style={{ color: '#4B5563' }}>Add a photo — family, holidays, inspiration</div>
-                    </div>
-                  )}
-                </div>
+                ))}
+                <label className="flex items-center justify-center rounded-lg cursor-pointer" style={{ aspectRatio: '1', background: v2T.panel2, border: `1px dashed ${v2T.borderHi}`, color: v2T.text3, fontSize: 11 }}>
+                  + Add
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0]; if (!f) return
+                    const reader = new FileReader()
+                    reader.onload = ev => { const src = ev.target?.result as string; if (src) setPhotos(prev => [...prev, src]) }
+                    reader.readAsDataURL(f)
+                  }} />
+                </label>
               </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center rounded-xl cursor-pointer py-8" style={{ background: v2T.panel2, border: `1px dashed ${v2T.borderHi}` }}>
+                <span style={{ fontSize: 28 }}>📷</span>
+                <span className="text-xs mt-2" style={{ color: v2T.text2 }}>Drop a photo, or click to upload</span>
+                <span className="text-[10px] mt-1" style={{ color: v2T.text3 }}>Family · holidays · inspiration · life-on-tour</span>
+                <input type="file" accept="image/*" className="hidden" onChange={e => {
+                  const f = e.target.files?.[0]; if (!f) return
+                  const reader = new FileReader()
+                  reader.onload = ev => { const src = ev.target?.result as string; if (src) setPhotos(prev => [...prev, src]) }
+                  reader.readAsDataURL(f)
+                }} />
+              </label>
+            )}
+          </div>
 
-              {/* AI Morning Summary */}
-              {session.isDemoShell === false
-                ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your tennis data to unlock your morning briefing" />
-                : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <div className="flex items-center gap-2">
-                    <Sparkles size={14} style={{ color: '#8B5CF6' }} />
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>
-                      {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-                    </span>
-                    <ChevronUp size={14} style={{ color: '#6B7280' }} />
-                  </div>
-                </div>
-                <div className="px-5 py-4 space-y-3">
-                  {[
-                    { type: 'match',    icon: '🎾', text: 'Match today vs C. Vega — 13:00 Court 4. Clay. H2H 3–1 in your favour. Kick serve to his backhand on deuce court.' },
-                    { type: 'messages', icon: '📬', text: '2 urgent messages: Tournament Desk moved your court time 30 min (confirm receipt) + Physio flagged shoulder inflammation — see Dr Lee at 12:30.' },
-                    { type: 'schedule', icon: '📅', text: 'Today: Practice 10:00 (serve patterns) → Stringing 11:45 → Match 13:00 → Physio 15:30 → Coach debrief 17:00.' },
-                    { type: 'sponsor',  icon: '🤝', text: 'Apex Performance post due today — Carlos needs kit photo before 12:00. Reply to agent about Meridian Watches renewal this week.' },
-                    { type: 'travel',   icon: '✈️', text: 'Madrid hotel confirmed (NH Eurobuilding, 26 Apr). Roland-Garros apartment deposit due 1 May — travel desk waiting.' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-3 text-xs">
-                      <span className="text-base flex-shrink-0">{item.icon}</span>
-                      <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>}
-
-              {/* AI Key Highlights */}
-              {session.isDemoShell === false
-                ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your match data to see trends" />
-                : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <div className="flex items-center gap-2">
-                    <span>⚡</span>
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
-                  </div>
-                  <span className="text-[10px] font-medium cursor-pointer hover:underline" style={{ color: '#0ea5e9' }}>Performance</span>
-                </div>
-                <div className="px-5 py-4 space-y-2.5">
-                  {[
-                    { n:1, trend:'↑', color:'#22C55E', text:'Serve % up to 64% in last 5 matches — above season avg (58%). Clay kick serve working.' },
-                    { n:2, trend:'⚠', color:'#EF4444', text:'312 ranking points drop off after Monte-Carlo. Win tonight = hold #67. Loss = risk dropping to #71.' },
-                    { n:3, trend:'↑', color:'#22C55E', text:'Clay win rate 68% this season — above ATP tour avg (61%). Best surface by 7%.' },
-                    { n:4, trend:'→', color:'#0ea5e9', text:'Race to Turin: #54 — top 8 qualifies. Madrid and Roland-Garros are the key points events.' },
-                    { n:5, trend:'↓', color:'#F59E0B', text:'Break point conversion 38% — below top-50 avg (44%). Converting break chances is the difference maker.' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-3 text-xs">
-                      <div className="flex items-center gap-1 flex-shrink-0 w-8">
-                        <span className="font-bold" style={{ color: '#0ea5e9' }}>{item.n}</span>
-                        <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
-                      </div>
-                      <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>}
-            </div>
+          <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: v2T.text3, justifyContent: 'center' }}>
+            <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
           </div>
         </div>
       )}
+
+      {/* v2 overlays — command palette, ask Lumio, fixture drawer, toast, match brief */}
+      {dashTab === 'today' && <>
+        <V2CommandPalette T={v2T} accent={v2Accent} open={v2CmdOpen} onClose={() => setV2CmdOpen(false)} onAskLumio={() => { setV2CmdOpen(false); setV2AskOpen(true) }} />
+        <V2AskLumio       T={v2T} accent={v2Accent} open={v2AskOpen} onClose={() => setV2AskOpen(false)} />
+        <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
+        <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
+        <TennisMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
+      </>}
 
       {/* QUICK WINS TAB */}
       {dashTab === 'quickwins' && (session.isDemoShell === false
@@ -6865,6 +6606,83 @@ function CourtBookingView({ player, session }: { player: TennisPlayer; session: 
 }
 
 // ─── PLAYER PROFILE CARD (ENHANCED) ──────────────────────────────────────────
+function TennisMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof TENNIS_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Alex Rivera <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> C. Vega</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>Monte-Carlo Masters · QF · Clay</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Tue 22 Apr 2026 · Court 4 · 13:00 · EUR 47,500</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
+
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 19°C partly sunny, 8 mph SW. Court likely to play medium-fast as sun dries out the surface.</div>
+          <div><strong style={{ color: T.text }}>Surface:</strong> Red clay (Court 4 — outer court, slightly slower than centre).</div>
+          <div><strong style={{ color: T.text }}>Court:</strong> West-facing, sun on baseline 14:00–15:00 — toss to receive end if you win.</div>
+          <div><strong style={{ color: T.text }}>Umpire:</strong> M. Lahyani — strict on time violations, fair on let calls.</div>
+        </Section>
+
+        <Section title="02 · Opposition · C. Vega (ATP #58)">
+          <div><strong style={{ color: T.text }}>Surface record (clay):</strong> 14W-9L this season. <strong style={{ color: T.text }}>H2H vs Alex:</strong> 3-1 in your favour.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Tactical patterns:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Returns 73% crosscourt on second serve — wide deuce kick exploits backhand.</li>
+            <li>Strong forehand inside-out, weaker backhand under pressure (esp. on the run).</li>
+            <li>Net stats average for clay (44% won) — drag him in with short slice and pass.</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Weakness:</strong> First-serve % drops below 55% in third sets — extend rallies, force long points late.</div>
+        </Section>
+
+        <Section title="03 · Our Prep">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Serve targets:</strong> Wide kick to deuce backhand · body jam on big points · slider out wide on ad court.</li>
+            <li><strong style={{ color: T.text }}>Return strategy:</strong> Step in on second serve to backhand, take it on the rise.</li>
+            <li><strong style={{ color: T.text }}>Key stat to exploit:</strong> Vega break-point save rate 51% (below tour avg) — convert one early.</li>
+            <li><strong style={{ color: T.text }}>Shoulder note:</strong> Light warm-up serves, save high-velocity for match. Dr Lee 12:30.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Plan">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Open with kick wide on deuce — establish backhand target early.</li>
+            <li>Inside-out forehand to deuce side on break points.</li>
+            <li>If down a break, switch to slice approach + net pressure (drag him in).</li>
+            <li>Manage rally length — clay rewards patience, but late-set fitness is your edge.</li>
+            <li>Take serve clock to 22-25 seconds when serving big points (within rules, kills his rhythm).</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Match-Day Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Practice 10:00 (Court 7) · serve patterns + Tom hitting partner.</li>
+            <li>Stringing 11:45 with Carlos · 55lbs mains, 52 crosses · two backups.</li>
+            <li>Physio 12:30 · Dr Lee · shoulder check + tape.</li>
+            <li>Warm-up 12:30 on practice court · 30 min light hit, then court 4 walk-on 12:55.</li>
+            <li>Media: Northbridge Sport pre-match window 11:30–11:45. Apex Performance kit photo before warm-up.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PlayerCard({ player, session }: { player: TennisPlayer; session?: SportsDemoSession }) {
   const _profileNameLiveRaw = useTennisProfileName()
   const _profilePhotoLiveRaw = useTennisProfilePhoto()
@@ -8129,36 +7947,11 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
 
   const aiBrief = "Your session load of 74 sits in the optimal training zone. Court coverage at 4.2km is above your 12-session average — you've been moving more aggressively to the deuce side baseline, where 60% of your rally exposure came today. Top speed of 28.4km/h was logged on a set-2 sprint to recover a drop shot — faster than 74% of your tracked sessions on clay.\n\nLumio Vision logged 14 winners against 8 unforced errors, a clean +6 on the margin. First-serve percentage at 68% gives you a platform; the target for your next session is to push that to 72% without losing the 12% ace rate.\n\nNet points won at 71% suggests you were rewarded when you advanced — consider scripting 2-3 forced net approaches per service game in your next match."
 
-  const movementPoints = [
-    { x: 150, y: 510, r: 50, grad: 'movHot' }, { x: 90, y: 505, r: 45, grad: 'movHot' },
-    { x: 210, y: 500, r: 42, grad: 'movHot' }, { x: 50, y: 495, r: 35, grad: 'movWarm' },
-    { x: 250, y: 490, r: 35, grad: 'movWarm' }, { x: 170, y: 480, r: 38, grad: 'movHot' },
-    { x: 130, y: 470, r: 36, grad: 'movWarm' }, { x: 200, y: 470, r: 32, grad: 'movWarm' },
-    { x: 110, y: 480, r: 34, grad: 'movWarm' }, { x: 160, y: 440, r: 30, grad: 'movWarm' },
-    { x: 90, y: 435, r: 28, grad: 'movCool' }, { x: 220, y: 430, r: 28, grad: 'movCool' },
-    { x: 140, y: 380, r: 25, grad: 'movCool' }, { x: 180, y: 360, r: 24, grad: 'movCool' },
-    { x: 100, y: 320, r: 22, grad: 'movCool' }, { x: 200, y: 310, r: 22, grad: 'movCool' },
-    { x: 155, y: 295, r: 22, grad: 'movCool' }, { x: 145, y: 250, r: 20, grad: 'movCool' },
-  ]
-
-  const shotPlacementPoints = [
-    { x: 60, y: 50, r: 30, grad: 'shotHot' }, { x: 240, y: 45, r: 32, grad: 'shotHot' },
-    { x: 150, y: 30, r: 28, grad: 'shotWarm' }, { x: 90, y: 80, r: 28, grad: 'shotWarm' },
-    { x: 210, y: 75, r: 26, grad: 'shotHot' }, { x: 160, y: 110, r: 24, grad: 'shotWarm' },
-    { x: 110, y: 130, r: 22, grad: 'shotCool' }, { x: 195, y: 135, r: 22, grad: 'shotCool' },
-    { x: 70, y: 200, r: 20, grad: 'shotCool' }, { x: 230, y: 210, r: 22, grad: 'shotCool' },
-    { x: 150, y: 230, r: 20, grad: 'shotCool' }, { x: 130, y: 60, r: 26, grad: 'shotWarm' },
-  ]
-
-  const firstServePoints = [
-    { x: 65, y: 240, r: 18 }, { x: 60, y: 200, r: 16 }, { x: 145, y: 210, r: 18 },
-    { x: 145, y: 165, r: 14 }, { x: 235, y: 195, r: 16 }, { x: 230, y: 240, r: 18 },
-    { x: 100, y: 220, r: 14 }, { x: 200, y: 220, r: 14 },
-  ]
-  const secondServePoints = [
-    { x: 100, y: 195, r: 14 }, { x: 200, y: 195, r: 14 }, { x: 120, y: 230, r: 12 },
-    { x: 180, y: 230, r: 12 }, { x: 140, y: 195, r: 12 }, { x: 160, y: 195, r: 12 },
-  ]
+  // movementPoints / shotPlacementPoints / firstServePoints / secondServePoints
+  // were the seed data for the heatmaps tab — that tab is gone, but the same
+  // visualisation logic now lives (richer, parameterised) inside
+  // TennisGPSHeatmapsView. Keeping the data here would be dead code, so it has
+  // been removed alongside the tab.
 
   const hrZones = [
     { zone: 'Z1 Recovery', pct: 18, color: '#dc2626' },
@@ -8201,8 +7994,13 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
     { date:'01 Apr', surface:'Hard', coverage:'3.2km', load:61, speed:'26.4km/h', outcome:'Practice', win:null as boolean | null },
   ]
 
+  // 'heatmaps' tab removed — consolidated into the new top-level sidebar
+  // 'gps-heatmaps' (Heatmaps) section. Court Movement / Shot Placement /
+  // Serve Placement visuals now live in TennisGPSHeatmapsView, expanded
+  // into a 6-section page (court movement, serve placement, return & rally,
+  // movement & fitness, match-by-match comparison, training).
   const tabs: ReadonlyArray<readonly ['overview'|'heatmaps'|'gps'|'videos'|'brief', string]> = [
-    ['overview', 'Overview'], ['heatmaps', 'Heatmaps'], ['gps', 'GPS Stats'], ['videos', 'Videos'], ['brief', 'AI Brief'],
+    ['overview', 'Overview'], ['gps', 'GPS Stats'], ['videos', 'Videos'], ['brief', 'AI Brief'],
   ]
 
   const EmptyConnect = ({ feature }: { feature: string }) => (
@@ -8231,52 +8029,534 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
     </>
   )
 
-  const HeatLegend = () => (
-    <div className="flex items-center justify-center gap-1.5 mt-3">
-      <span className="text-[10px] text-gray-500 mr-1">Low</span>
-      {['#22c55e', '#0ea5e9', '#eab308', '#f97316', '#dc2626'].map(c => (
-        <span key={c} className="w-4 h-2 rounded-sm" style={{ backgroundColor: c }} />
-      ))}
-      <span className="text-[10px] text-gray-500 ml-1">High</span>
+  // HeatLegend lived alongside the removed heatmaps tab — gone with it.
+  // The new TennisGPSHeatmapsView ships its own scale legend in each section.
+
+
+  // Shared GPS Stats panel — showpiece of the tennis portal. 7 sections:
+  //  1. Top KPI strip (6 cards)
+  //  2. Distance & Movement
+  //  3. Speed & Sprint
+  //  4. Heart Rate & Intensity
+  //  5. Fatigue & Recovery
+  //  6. Match Comparison (last 5 / last 10 / surfaces / W vs L)
+  //  7. Training Session GPS
+  // All charts inline SVG, dark theme, brand cyan accent.
+  const ACCENT = '#06b6d4'
+  const ACCENT_2 = '#0ea5e9'
+
+  // Section 2 data
+  const distanceBySet = [
+    { set: 'Set 1', km: 2.1, load: 38 },
+    { set: 'Set 2', km: 1.4, load: 26 },
+    { set: 'Set 3', km: 0.7, load: 10 },
+  ]
+  const totalDistance = distanceBySet.reduce((a, b) => a + b.km, 0)
+  const avgPerSet = totalDistance / distanceBySet.length
+  const last3Avg = 4.0 // km — used for the trend delta vs last 3 matches
+  const distanceByPhase = [
+    { phase: 'Baseline rallies', km: 2.6, c: ACCENT },
+    { phase: 'Net approaches',   km: 0.5, c: '#22C55E' },
+    { phase: 'Serving',          km: 0.7, c: '#F59E0B' },
+    { phase: 'Returning',        km: 0.4, c: '#A855F7' },
+  ]
+  // 6-zone court coverage: 3 columns (deuce/centre/ad) × 2 rows (baseline/net)
+  const courtZones = [
+    { x: 0.10, y: 0.78, w: 0.27, h: 0.18, label: 'Deuce baseline',  pct: 28 },
+    { x: 0.37, y: 0.78, w: 0.26, h: 0.18, label: 'Centre baseline', pct: 32 },
+    { x: 0.63, y: 0.78, w: 0.27, h: 0.18, label: 'Ad baseline',     pct: 21 },
+    { x: 0.10, y: 0.52, w: 0.27, h: 0.16, label: 'Deuce net',       pct: 6  },
+    { x: 0.37, y: 0.52, w: 0.26, h: 0.16, label: 'Centre net',      pct: 9  },
+    { x: 0.63, y: 0.52, w: 0.27, h: 0.16, label: 'Ad net',          pct: 4  },
+  ]
+
+  // Section 3 — Speed & Sprint
+  const speedZones = [
+    { zone: 'Standing 0-2 km/h', pct: 12, time: '13:12', c: '#0E7C3A' },
+    { zone: 'Walking 2-7 km/h',  pct: 33, time: '36:18', c: '#22C55E' },
+    { zone: 'Jogging 7-14 km/h', pct: 28, time: '30:48', c: '#FACC15' },
+    { zone: 'Running 14-20 km/h',pct: 19, time: '20:54', c: '#F59E0B' },
+    { zone: 'Sprinting 20+ km/h',pct: 8,  time: '8:48',  c: '#EF4444' },
+  ]
+  const sprintsPerSet = [
+    { set: 'Set 1', n: 22 },
+    { set: 'Set 2', n: 17 },
+    { set: 'Set 3', n: 11 },
+  ]
+  const topSpeedPerSet = [
+    { set: 'Set 1', kmh: 28.4 },
+    { set: 'Set 2', kmh: 27.1 },
+    { set: 'Set 3', kmh: 25.6 },
+  ]
+  const sprintDistanceBands = [
+    { band: '<5m',     n: 24, c: '#22C55E' },
+    { band: '5-10m',   n: 18, c: '#FACC15' },
+    { band: '10-15m',  n: 6,  c: '#F59E0B' },
+    { band: '15m+',    n: 2,  c: '#EF4444' },
+  ]
+  const movementSplit = { lateral: 64, fwdBack: 36 }
+
+  // Section 4 — HR & Intensity
+  const hrBySet = [
+    { set: 'Set 1', avg: 152, peak: 184 },
+    { set: 'Set 2', avg: 158, peak: 188 },
+    { set: 'Set 3', avg: 165, peak: 192 },
+  ]
+
+  // Section 6 — Match Comparison
+  const last5Matches = [
+    { date: '12 Apr', opp: 'C. Vega',     surface: 'Clay', dist: 4.2, top: 28.4, sprints: 50, coverage: 81, win: true  },
+    { date: '09 Apr', opp: 'Lindqvist',   surface: 'Clay', dist: 3.8, top: 27.1, sprints: 44, coverage: 78, win: true  },
+    { date: '07 Apr', opp: 'Kellner',     surface: 'Clay', dist: 4.1, top: 29.2, sprints: 48, coverage: 80, win: true  },
+    { date: '03 Apr', opp: 'Brenner',     surface: 'Hard', dist: 4.4, top: 30.1, sprints: 52, coverage: 84, win: false },
+    { date: '30 Mar', opp: 'Holm',        surface: 'Hard', dist: 3.6, top: 28.8, sprints: 41, coverage: 75, win: false },
+  ]
+  const last10Distance = [3.4, 3.8, 4.0, 3.6, 4.2, 4.4, 4.1, 3.8, 3.9, 4.2]
+  const surfaceComparison = [
+    { surface: 'Hard',  dist: 3.9, top: 29.4, sprints: 46, c: '#3B82F6' },
+    { surface: 'Clay',  dist: 4.0, top: 28.0, sprints: 47, c: '#D97706' },
+    { surface: 'Grass', dist: 3.4, top: 30.8, sprints: 39, c: '#16A34A' },
+  ]
+  const winLossSplit = {
+    win:  { dist: 4.0, sprints: 47, top: 28.2 },
+    loss: { dist: 4.0, sprints: 47, top: 29.4 },
+  }
+
+  // Section 7 — Training Session GPS
+  const drillZones = [
+    { x: 0.32, y: 0.85, r: 50, intensity: 0.95 },
+    { x: 0.68, y: 0.85, r: 50, intensity: 0.95 },
+    { x: 0.5,  y: 0.78, r: 38, intensity: 0.6  },
+    { x: 0.18, y: 0.55, r: 30, intensity: 0.5  },
+    { x: 0.82, y: 0.55, r: 30, intensity: 0.5  },
+  ]
+  const weeklyLoad = [
+    { day: 'Mon', label: 'Recovery',   intensity: 0.18 },
+    { day: 'Tue', label: 'Footwork',   intensity: 0.62 },
+    { day: 'Wed', label: 'Match Sim',  intensity: 0.92 },
+    { day: 'Thu', label: 'S&C',        intensity: 0.45 },
+    { day: 'Fri', label: 'Light Hit',  intensity: 0.30 },
+    { day: 'Sat', label: 'MATCH',      intensity: 1.00 },
+    { day: 'Sun', label: 'Off',        intensity: 0.05 },
+  ]
+  const serveCounts = [
+    { day: 'Mon', n: 0   },
+    { day: 'Tue', n: 84  },
+    { day: 'Wed', n: 142 },
+    { day: 'Thu', n: 32  },
+    { day: 'Fri', n: 60  },
+    { day: 'Sat', n: 188 },
+    { day: 'Sun', n: 0   },
+  ]
+
+  // Helper colour ramps (green → red)
+  const heatStops = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444']
+  const heatColor = (t: number) => {
+    const c = Math.max(0, Math.min(1, t))
+    return heatStops[Math.min(heatStops.length - 1, Math.floor(c * (heatStops.length - 1)))]
+  }
+
+  const Card = ({ title, sub, children, className = '' }: { title?: string; sub?: string; children: React.ReactNode; className?: string }) => (
+    <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      {(title || sub) && (
+        <div className="mb-3">
+          {title && <div className="text-sm font-bold text-white">{title}</div>}
+          {sub && <div className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{sub}</div>}
+        </div>
+      )}
+      {children}
     </div>
   )
 
-  // Shared panels — rendered both inline on Overview and on their dedicated
-  // tabs. Closes over isDemoShell, hrZones, fatigueData, fatigueEvents,
-  // splitTimes, aiBrief, EmptyConnect.
+  const Kpi = ({ label, value, sub, color = ACCENT }: { label: string; value: string | number; sub?: string; color?: string }) => (
+    <div className="rounded-xl p-3.5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>{label}</p>
+      <p className="text-2xl font-black mt-0.5" style={{ color }}>{value}</p>
+      {sub && <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
+    </div>
+  )
+
+  const SectionHeading = ({ n, title, sub }: { n: number; title: string; sub?: string }) => (
+    <div className="flex items-end justify-between gap-3 pt-2">
+      <div>
+        <h2 className="text-base font-bold" style={{ color: ACCENT_2 }}>{n} · {title}</h2>
+        {sub && <p className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{sub}</p>}
+      </div>
+    </div>
+  )
+
+  // Reusable line chart for HR-by-set, top-speed-by-set, last-10 distance trend.
+  const LineChartSvg = ({
+    values, max, min = 0, labels, valueFormat, colour = ACCENT, area = true,
+    height = 140, width = 600, target,
+  }: {
+    values: number[]; max: number; min?: number; labels?: string[]
+    valueFormat?: (v: number) => string; colour?: string; area?: boolean
+    height?: number; width?: number; target?: number
+  }) => {
+    const padX = 32, padY = 22
+    const innerW = width - padX * 2, innerH = height - padY * 2
+    const xy = (i: number, v: number) => {
+      const x = padX + (i / (values.length - 1 || 1)) * innerW
+      const y = padY + (1 - (v - min) / (max - min)) * innerH
+      return [x, y] as [number, number]
+    }
+    const pts = values.map((v, i) => xy(i, v).join(',')).join(' ')
+    const baseY = padY + innerH
+    const areaPts = `${padX},${baseY} ${pts} ${padX + innerW},${baseY}`
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ maxHeight: height + 4 }}>
+        <defs>
+          <linearGradient id={`ln-${colour.replace('#', '')}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={colour} stopOpacity="0.45" />
+            <stop offset="100%" stopColor={colour} stopOpacity="0.04" />
+          </linearGradient>
+        </defs>
+        {[0, 0.5, 1].map(p => {
+          const y = padY + p * innerH
+          return <line key={p} x1={padX} y1={y} x2={padX + innerW} y2={y} stroke="rgba(255,255,255,0.05)" />
+        })}
+        {target !== undefined && (() => {
+          const ty = padY + (1 - (target - min) / (max - min)) * innerH
+          return <line x1={padX} y1={ty} x2={padX + innerW} y2={ty} stroke="#F59E0B" strokeWidth="1" strokeDasharray="6 4" />
+        })()}
+        {area && <polygon points={areaPts} fill={`url(#ln-${colour.replace('#', '')})`} />}
+        <polyline fill="none" stroke={colour} strokeWidth="2.4" strokeLinecap="round" points={pts} />
+        {values.map((v, i) => {
+          const [x, y] = xy(i, v)
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r={3.2} fill={colour} stroke="#0a0c12" strokeWidth={1.2} />
+              <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#F9FAFB">
+                {valueFormat ? valueFormat(v) : v}
+              </text>
+            </g>
+          )
+        })}
+        {labels && labels.map((l, i) => {
+          const [x] = xy(i, values[i])
+          return <text key={l + i} x={x} y={height - 4} textAnchor="middle" fontSize="9" fill="#6B7280">{l}</text>
+        })}
+      </svg>
+    )
+  }
+
   const GpsStatsPanel = () => (
     isDemoShell ? (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="text-sm font-bold text-white mb-3">Distance by Set</div>
-            <div className="flex items-end gap-4 h-24">{[{ set:'Set 1', km:2.1, load:38 },{ set:'Set 2', km:1.4, load:26 },{ set:'Set 3', km:0.7, load:10 }].map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.km}km</div><div className="w-full rounded-t" style={{ height: `${(s.km/2.1)*100}%`, backgroundColor: '#06b6d4', minHeight: 8 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div></div>))}</div>
-          </div>
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="text-sm font-bold text-white mb-3">Speed Zones</div>
-            <div className="space-y-2">{[{ zone:'Walking', pct:45 },{ zone:'Jogging', pct:28 },{ zone:'Running', pct:19 },{ zone:'Sprinting', pct:8 }].map(z => (<div key={z.zone} className="flex items-center gap-3"><span className="text-xs w-16" style={{ color: '#9CA3AF' }}>{z.zone}</span><div className="flex-1 bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${z.pct}%`, backgroundColor: '#06b6d4' }} /></div><span className="text-xs w-8 text-right font-bold" style={{ color: '#06b6d4' }}>{z.pct}%</span></div>))}</div>
-          </div>
+        {/* ─── 1 · TOP KPI STRIP ─────────────────────────────────── */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Kpi label="Total distance" value={`${totalDistance.toFixed(1)} km`} sub={`${last3Avg > totalDistance ? '↓' : '↑'} ${Math.abs(((totalDistance - last3Avg) / last3Avg) * 100).toFixed(0)}% vs last 3`} color={ACCENT} />
+          <Kpi label="Max speed" value={`${Math.max(...topSpeedPerSet.map(s => s.kmh)).toFixed(1)}`} sub="km/h · Set 1" color="#EF4444" />
+          <Kpi label="Sprint count" value={sprintsPerSet.reduce((a, b) => a + b.n, 0)} sub="across the match" color="#F59E0B" />
+          <Kpi label="High-intensity dist." value={`${(speedZones[3].pct + speedZones[4].pct)}%`} sub={`${((totalDistance * (speedZones[3].pct + speedZones[4].pct) / 100)).toFixed(2)} km`} color="#A855F7" />
+          <Kpi label="Avg recovery" value="18.3s" sub="between points · optimal" color="#22C55E" />
+          <Kpi label="Court coverage" value="83%" sub="of own half · clay match" color={ACCENT_2} />
         </div>
 
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="text-sm font-bold text-white mb-3">Heart Rate Zones</div>
-          <div className="flex h-6 rounded-md overflow-hidden">
+        {/* ─── 2 · DISTANCE & MOVEMENT ───────────────────────────── */}
+        <SectionHeading n={2} title="Distance & Movement" sub="Per-set, by phase, and where you spent your time on court." />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Distance by Set" sub={`Total ${totalDistance.toFixed(1)} km · avg ${avgPerSet.toFixed(1)} km/set · ${(totalDistance - last3Avg).toFixed(1)} km vs last-3 avg (${last3Avg.toFixed(1)} km)`}>
+            <div className="flex items-end gap-4 h-28 mb-2">
+              {distanceBySet.map(s => (
+                <div key={s.set} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs font-bold" style={{ color: ACCENT }}>{s.km} km</div>
+                  <div className="w-full rounded-t" style={{
+                    height: `${(s.km / 2.2) * 100}%`,
+                    background: `linear-gradient(180deg, ${ACCENT}, ${ACCENT}40)`,
+                    minHeight: 8,
+                  }} />
+                  <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div>
+                  <div className="text-[10px]" style={{ color: '#4B5563' }}>Load: {s.load}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-gray-800/60">
+              <span className="text-[10px]" style={{ color: '#6B7280' }}>Total</span>
+              <span className="text-[11px] font-bold" style={{ color: '#F9FAFB' }}>{totalDistance.toFixed(1)} km</span>
+              <span className="text-[10px]" style={{ color: '#6B7280' }}>Avg/set</span>
+              <span className="text-[11px] font-bold" style={{ color: '#F9FAFB' }}>{avgPerSet.toFixed(1)} km</span>
+              <span className="text-[10px]" style={{ color: '#6B7280' }}>Vs last 3</span>
+              <span className="text-[11px] font-bold" style={{ color: totalDistance > last3Avg ? '#22C55E' : '#EF4444' }}>
+                {totalDistance > last3Avg ? '+' : ''}{((totalDistance - last3Avg)).toFixed(1)} km
+              </span>
+            </div>
+          </Card>
+
+          <Card title="Distance by Phase" sub="What you were doing on court when you covered ground.">
+            <div className="flex h-6 rounded overflow-hidden mb-3">
+              {distanceByPhase.map(p => {
+                const pct = (p.km / totalDistance) * 100
+                return <div key={p.phase} title={`${p.phase} ${pct.toFixed(0)}%`} style={{ width: `${pct}%`, background: p.c }} />
+              })}
+            </div>
+            <div className="space-y-1.5">
+              {distanceByPhase.map(p => (
+                <div key={p.phase} className="flex items-center gap-2 text-[11px]">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.c }} />
+                  <span className="flex-1" style={{ color: '#D1D5DB' }}>{p.phase}</span>
+                  <span className="font-bold" style={{ color: '#F9FAFB' }}>{p.km.toFixed(1)} km</span>
+                  <span style={{ color: '#6B7280' }}>{((p.km / totalDistance) * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card title="Court Coverage — 6 Zones" sub="% of total time spent in each zone of your half · darker = more time">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="flex justify-center">
+              <svg viewBox="0 0 300 540" className="w-full max-w-[280px]" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+                <CourtBase />
+                {courtZones.map((z, i) => {
+                  const t = z.pct / Math.max(...courtZones.map(c => c.pct))
+                  return (
+                    <g key={i}>
+                      <rect x={z.x * 300} y={z.y * 540} width={z.w * 300} height={z.h * 540}
+                        fill={heatColor(t)} opacity={0.35 + t * 0.5} />
+                      <text x={(z.x + z.w / 2) * 300} y={(z.y + z.h / 2) * 540}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fontSize="22" fontWeight="900" fill="white">
+                        {z.pct}%
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+            <div className="space-y-1.5">
+              {courtZones.map(z => (
+                <div key={z.label} className="flex items-center gap-3 rounded-lg px-3 py-2"
+                  style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                  <div className="w-3 h-3 rounded" style={{ background: heatColor(z.pct / Math.max(...courtZones.map(c => c.pct))) }} />
+                  <span className="flex-1 text-xs" style={{ color: '#D1D5DB' }}>{z.label}</span>
+                  <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{z.pct}%</span>
+                </div>
+              ))}
+              <p className="text-[10px] mt-2" style={{ color: '#6B7280' }}>
+                64% of court time spent at the baseline, 19% at net — typical clay-court rally profile.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* ─── 3 · SPEED & SPRINT ────────────────────────────────── */}
+        <SectionHeading n={3} title="Speed & Sprint" sub="Time-in-zone, sprint patterns, and movement direction." />
+        <Card title="Speed Zone Breakdown" sub="Time and distance spent in each speed band">
+          <div className="space-y-2.5">
+            {speedZones.map(z => (
+              <div key={z.zone} className="grid grid-cols-[170px_1fr_auto_auto] items-center gap-3">
+                <span className="text-xs" style={{ color: '#D1D5DB' }}>{z.zone}</span>
+                <div className="h-3.5 rounded relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div className="h-3.5 rounded" style={{ width: `${z.pct * 2.4}%`, background: z.c, opacity: 0.85 }} />
+                </div>
+                <span className="text-xs font-bold w-10 text-right" style={{ color: z.c }}>{z.pct}%</span>
+                <span className="text-[10px] font-mono w-14 text-right" style={{ color: '#6B7280' }}>{z.time}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Sprints by Set" sub="Sprint count per set — pacing across the match">
+            <div className="flex items-end gap-4 h-28">
+              {sprintsPerSet.map(s => (
+                <div key={s.set} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs font-bold" style={{ color: '#F59E0B' }}>{s.n}</div>
+                  <div className="w-full rounded-t" style={{
+                    height: `${(s.n / 24) * 100}%`,
+                    background: `linear-gradient(180deg, #F59E0B, #F59E0B30)`,
+                    minHeight: 8,
+                  }} />
+                  <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Top Speed by Set" sub="Did you stay fast — or did your peak speed drop late?">
+            <LineChartSvg
+              values={topSpeedPerSet.map(s => s.kmh)}
+              labels={topSpeedPerSet.map(s => s.set)}
+              max={32} min={24}
+              valueFormat={v => `${v.toFixed(1)}`}
+              colour="#EF4444" height={150} width={400}
+            />
+            <div className="text-[10px] mt-1 text-center" style={{ color: '#6B7280' }}>
+              Peak speed dropped 2.8 km/h from Set 1 to Set 3 — fatigue indicator
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Sprint Distance Distribution" sub="How long were your sprints? Most rallies stay short.">
+            <div className="flex items-end gap-3 h-32">
+              {sprintDistanceBands.map(b => {
+                const max = Math.max(...sprintDistanceBands.map(s => s.n))
+                return (
+                  <div key={b.band} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="text-xs font-bold" style={{ color: b.c }}>{b.n}</div>
+                    <div className="w-full rounded-t" style={{
+                      height: `${(b.n / max) * 100}%`,
+                      background: b.c,
+                      minHeight: 8, opacity: 0.85,
+                    }} />
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{b.band}</div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>
+              48% of sprints under 5m — clay-court pattern, frequent short recoveries.
+            </p>
+          </Card>
+
+          <Card title="Movement Direction" sub="Lateral vs forward/back movement split">
+            <div className="flex items-center gap-6">
+              <svg viewBox="0 0 120 120" className="w-32 h-32 shrink-0">
+                {(() => {
+                  const cx = 60, cy = 60, r = 48, sw = 18
+                  const c = 2 * Math.PI * r
+                  const lat = movementSplit.lateral / 100
+                  return (
+                    <>
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#A855F7" strokeWidth={sw} opacity={0.35} />
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={ACCENT} strokeWidth={sw}
+                        strokeDasharray={`${c * lat} ${c}`}
+                        strokeDashoffset={c / 4}
+                        transform={`rotate(-90 ${cx} ${cy})`} />
+                      <text x={cx} y={cy - 2} textAnchor="middle" fontSize="14" fontWeight="900" fill="#F9FAFB">{movementSplit.lateral}%</text>
+                      <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9" fill="#9CA3AF">Lateral</text>
+                    </>
+                  )
+                })()}
+              </svg>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded" style={{ background: ACCENT }} />
+                  <span className="flex-1" style={{ color: '#D1D5DB' }}>Lateral movement</span>
+                  <span className="font-bold" style={{ color: '#F9FAFB' }}>{movementSplit.lateral}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded" style={{ background: '#A855F7' }} />
+                  <span className="flex-1" style={{ color: '#D1D5DB' }}>Forward / back</span>
+                  <span className="font-bold" style={{ color: '#F9FAFB' }}>{movementSplit.fwdBack}%</span>
+                </div>
+                <p className="text-[10px] pt-2" style={{ color: '#6B7280' }}>
+                  Heavy lateral profile — typical of baseliners on clay.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* ─── 4 · HEART RATE & INTENSITY ────────────────────────── */}
+        <SectionHeading n={4} title="Heart Rate & Intensity" sub="Where you spent your effort and how hard you worked." />
+        <Card title="Heart Rate Zones" sub="Time-in-zone breakdown across the full match">
+          <div className="flex h-6 rounded-md overflow-hidden mb-3">
             {hrZones.map(z => (
               <div key={z.zone} title={`${z.zone} ${z.pct}%`} style={{ width: `${z.pct}%`, backgroundColor: z.color }} />
             ))}
           </div>
-          <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-gray-400">
-            {hrZones.map(z => (
-              <span key={z.zone} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: z.color }} />{z.zone} <span className="text-gray-500">{z.pct}%</span></span>
-            ))}
-          </div>
+          <table className="w-full text-xs">
+            <thead><tr style={{ borderBottom: '1px solid #1F2937', color: '#6B7280' }}>
+              <th className="text-left py-1.5 font-semibold">Zone</th>
+              <th className="text-right py-1.5 font-semibold">% time</th>
+              <th className="text-right py-1.5 font-semibold">Time in zone</th>
+              <th className="text-right py-1.5 font-semibold">BPM range</th>
+            </tr></thead>
+            <tbody>
+              {hrZones.map((z, i) => {
+                const totalMin = 110
+                const min = Math.round((z.pct / 100) * totalMin)
+                const ranges = ['<60%', '60-70%', '70-80%', '80-90%', '90-100%']
+                const bpm = ['<110', '110-128', '128-146', '146-164', '164-184']
+                return (
+                  <tr key={z.zone} style={{ borderBottom: '1px solid #1F2937' }}>
+                    <td className="py-1.5">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-sm" style={{ background: z.color }} />
+                        <span style={{ color: '#F9FAFB' }}>{z.zone}</span>
+                        <span className="text-[10px]" style={{ color: '#6B7280' }}>{ranges[i]}</span>
+                      </span>
+                    </td>
+                    <td className="py-1.5 text-right font-bold" style={{ color: z.color }}>{z.pct}%</td>
+                    <td className="py-1.5 text-right" style={{ color: '#D1D5DB' }}>{min}m</td>
+                    <td className="py-1.5 text-right" style={{ color: '#9CA3AF' }}>{bpm[i]}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="HR by Set" sub="Average HR per set — did intensity build, hold, or drop?">
+            <LineChartSvg
+              values={hrBySet.map(s => s.avg)}
+              labels={hrBySet.map(s => s.set)}
+              max={180} min={140}
+              valueFormat={v => `${v}`}
+              colour="#EC4899" height={150} width={400}
+            />
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {hrBySet.map(s => (
+                <div key={s.set} className="rounded-lg p-2 text-center" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                  <p className="text-[9px]" style={{ color: '#6B7280' }}>{s.set}</p>
+                  <p className="text-sm font-black" style={{ color: '#EC4899' }}>{s.avg}</p>
+                  <p className="text-[9px]" style={{ color: '#9CA3AF' }}>peak {s.peak}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Point Intensity Score" sub="Avg HR during points vs between points (recovery quality)">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 rounded-lg p-3" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>During points</p>
+                <p className="text-3xl font-black mt-1" style={{ color: '#EF4444' }}>164</p>
+                <p className="text-[10px]" style={{ color: '#9CA3AF' }}>BPM avg</p>
+              </div>
+              <div className="flex-1 rounded-lg p-3" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Between points</p>
+                <p className="text-3xl font-black mt-1" style={{ color: '#22C55E' }}>118</p>
+                <p className="text-[10px]" style={{ color: '#9CA3AF' }}>BPM avg</p>
+              </div>
+              <div className="flex-1 rounded-lg p-3" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>Drop-off</p>
+                <p className="text-3xl font-black mt-1" style={{ color: ACCENT }}>−46</p>
+                <p className="text-[10px]" style={{ color: '#22C55E' }}>Strong recovery</p>
+              </div>
+            </div>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>
+              Recovery score 8.4/10 — your HR drops cleanly between points. Maintain this conditioning base into clay swing.
+            </p>
+          </Card>
         </div>
 
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="text-sm font-bold text-white mb-1">Fatigue Curve</div>
-          <div className="text-[11px] text-gray-500 mb-3">Cumulative load across the match timeline.</div>
+        <Card title="Energy Expenditure" sub="Estimated calories burned across the match">
+          <div className="flex items-center gap-4">
+            <div className="text-center px-6 py-4 rounded-xl" style={{
+              background: `linear-gradient(135deg, ${ACCENT}25, ${ACCENT}05)`,
+              border: `1px solid ${ACCENT}50`,
+            }}>
+              <p className="text-4xl font-black" style={{ color: ACCENT }}>1,428</p>
+              <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>kcal · 110 min</p>
+            </div>
+            <div className="flex-1 grid grid-cols-3 gap-2 text-xs">
+              <div><p className="text-[10px]" style={{ color: '#6B7280' }}>Per minute</p><p className="font-bold" style={{ color: '#F9FAFB' }}>13 kcal</p></div>
+              <div><p className="text-[10px]" style={{ color: '#6B7280' }}>Per set avg</p><p className="font-bold" style={{ color: '#F9FAFB' }}>476 kcal</p></div>
+              <div><p className="text-[10px]" style={{ color: '#6B7280' }}>vs avg match</p><p className="font-bold" style={{ color: '#22C55E' }}>+8%</p></div>
+            </div>
+          </div>
+        </Card>
+
+        {/* ─── 5 · FATIGUE & RECOVERY ────────────────────────────── */}
+        <SectionHeading n={5} title="Fatigue & Recovery" sub="Cumulative load, between-point recovery, and late-match drop-off." />
+        <Card title="Fatigue Curve" sub="Cumulative load across the match · vertical lines = set boundaries">
           {(() => {
-            const w = 600, h = 160, padX = 24, padY = 18
+            const w = 760, h = 200, padX = 32, padY = 22
             const innerW = w - padX * 2, innerH = h - padY * 2
             const maxT = fatigueData[fatigueData.length - 1].t
             const maxLoad = 80
@@ -8288,44 +8568,350 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
             const baseY = padY + innerH
             const areaPts = `${padX},${baseY} ${pts.join(' ')} ${padX + innerW},${baseY}`
             return (
-              <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
+              <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 220 }}>
                 <defs>
                   <linearGradient id="fatigueArea" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
+                    <stop offset="0%" stopColor={ACCENT} stopOpacity="0.55" />
+                    <stop offset="100%" stopColor={ACCENT} stopOpacity="0.04" />
                   </linearGradient>
                 </defs>
+                {[0, 0.25, 0.5, 0.75, 1].map(p => {
+                  const y = padY + p * innerH
+                  return (
+                    <g key={p}>
+                      <line x1={padX} y1={y} x2={padX + innerW} y2={y} stroke="rgba(255,255,255,0.04)" />
+                      <text x={padX - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#6B7280">{Math.round((1 - p) * maxLoad)}</text>
+                    </g>
+                  )
+                })}
                 <polygon points={areaPts} fill="url(#fatigueArea)" />
-                <polyline fill="none" stroke="#06b6d4" strokeWidth="2" points={pts.join(' ')} />
+                <polyline fill="none" stroke={ACCENT} strokeWidth="2.4" points={pts.join(' ')} strokeLinecap="round" />
                 {fatigueData.map((d, i) => {
                   const x = padX + (d.t / maxT) * innerW
                   const y = padY + (1 - d.load / maxLoad) * innerH
-                  return <circle key={i} cx={x} cy={y} r="2.5" fill="#06b6d4" />
+                  return <circle key={i} cx={x} cy={y} r="2.6" fill={ACCENT} />
                 })}
                 {fatigueEvents.map(e => {
                   const x = padX + (e.t / maxT) * innerW
                   return (
                     <g key={e.t}>
-                      <line x1={x} x2={x} y1={padY} y2={baseY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-                      <text x={x} y={h - 4} textAnchor="middle" fontSize="9" fill="#f59e0b">{e.label}</text>
+                      <line x1={x} x2={x} y1={padY} y2={baseY} stroke="#F59E0B" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.7" />
+                      <rect x={x - 26} y={padY - 12} width={52} height={12} rx={3} fill="#F59E0B" opacity={0.85} />
+                      <text x={x} y={padY - 3} textAnchor="middle" fontSize="9" fontWeight="700" fill="#1a1a1a">{e.label}</text>
                     </g>
                   )
+                })}
+                {[15, 30, 45, 60, 75, 90, 105].map(t => {
+                  const x = padX + (t / maxT) * innerW
+                  return <text key={t} x={x} y={h - 4} textAnchor="middle" fontSize="9" fill="#6B7280">{t}m</text>
                 })}
               </svg>
             )
           })()}
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Recovery Time Between Points" sub="Per set · benchmark: 15-25s optimal range">
+            <div className="flex items-end gap-4 h-32 mb-3">
+              {splitTimes.map(s => {
+                const optimal = s.sec >= 15 && s.sec <= 25
+                return (
+                  <div key={s.set} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="text-xs font-bold" style={{ color: optimal ? '#22C55E' : '#F59E0B' }}>{s.sec}s</div>
+                    <div className="w-full rounded-t" style={{
+                      height: `${(s.sec / 25) * 100}%`,
+                      background: optimal ? '#22C55E' : '#F59E0B',
+                      opacity: 0.85, minHeight: 8,
+                    }} />
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div>
+                    <div className="text-[10px]" style={{ color: '#4B5563' }}>{s.points} pts</div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="rounded-lg p-2 text-center" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+              <p className="text-[11px]" style={{ color: '#86EFAC' }}>
+                Within optimal 15-25s range across all 3 sets — strong recovery profile.
+              </p>
+            </div>
+          </Card>
+
+          <Card title="Serve Speed Drop" sub="1st-game vs last-game serve speed per set (fatigue proxy)">
+            <table className="w-full text-xs">
+              <thead><tr style={{ borderBottom: '1px solid #1F2937', color: '#6B7280' }}>
+                <th className="text-left py-1.5">Set</th>
+                <th className="text-right py-1.5">Game 1</th>
+                <th className="text-right py-1.5">Final game</th>
+                <th className="text-right py-1.5">Δ</th>
+              </tr></thead>
+              <tbody>
+                {[
+                  { set: 'Set 1', start: 184, end: 178 },
+                  { set: 'Set 2', start: 181, end: 172 },
+                  { set: 'Set 3', start: 175, end: 162 },
+                ].map(r => {
+                  const drop = r.start - r.end
+                  const pct = (drop / r.start) * 100
+                  return (
+                    <tr key={r.set} style={{ borderBottom: '1px solid #1F2937' }}>
+                      <td className="py-1.5" style={{ color: '#F9FAFB' }}>{r.set}</td>
+                      <td className="py-1.5 text-right" style={{ color: '#D1D5DB' }}>{r.start} km/h</td>
+                      <td className="py-1.5 text-right" style={{ color: '#D1D5DB' }}>{r.end} km/h</td>
+                      <td className="py-1.5 text-right font-bold" style={{ color: pct > 6 ? '#EF4444' : pct > 4 ? '#F59E0B' : '#22C55E' }}>
+                        −{drop} ({pct.toFixed(1)}%)
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>
+              Set 3 1st serve dropped 7.4% — flag for stamina session emphasis next training block.
+            </p>
+          </Card>
+        </div>
+
+        <Card title="Set 1 → Set 3 Drop-Off" sub="% change across the match — ideal: minimal drop">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { metric: 'Distance',     s1: 2.1, s3: 0.7, unit: 'km' },
+              { metric: 'Sprints',      s1: 22,  s3: 11,  unit: '' },
+              { metric: 'Top speed',    s1: 28.4, s3: 25.6, unit: 'km/h' },
+              { metric: 'HR avg',       s1: 152, s3: 165, unit: 'bpm', invert: true },
+            ].map(m => {
+              const delta = ((m.s3 - m.s1) / m.s1) * 100
+              const goodDir = m.invert ? delta < 5 : delta > -25
+              return (
+                <div key={m.metric} className="rounded-lg p-3" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7280' }}>{m.metric}</p>
+                  <div className="flex items-end justify-between mt-1">
+                    <div>
+                      <p className="text-base font-bold" style={{ color: '#F9FAFB' }}>{m.s1}{m.unit && ` ${m.unit}`}</p>
+                      <p className="text-[10px]" style={{ color: '#6B7280' }}>→ {m.s3}{m.unit && ` ${m.unit}`}</p>
+                    </div>
+                    <span className="text-sm font-black" style={{ color: goodDir ? '#22C55E' : '#EF4444' }}>
+                      {delta > 0 ? '+' : ''}{delta.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+
+        {/* ─── 6 · MATCH COMPARISON ──────────────────────────────── */}
+        <SectionHeading n={6} title="Match Comparison" sub="How this match compares to the last 5, the last 10, surfaces, and W vs L." />
+        <Card title="Last 5 Matches — GPS Summary">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead><tr style={{ borderBottom: '1px solid #1F2937', color: '#6B7280' }}>
+                {['Date', 'Opponent', 'Surface', 'Distance', 'Top speed', 'Sprints', 'Coverage', 'Result'].map(h => (
+                  <th key={h} className="text-left py-2 font-semibold">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>{last5Matches.map((m, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #1F2937', background: m.win ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)' }}>
+                  <td className="py-2" style={{ color: '#9CA3AF' }}>{m.date}</td>
+                  <td className="py-2 font-medium" style={{ color: '#F9FAFB' }}>{m.opp}</td>
+                  <td className="py-2">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                      style={{ background: m.surface === 'Clay' ? 'rgba(217,119,6,0.2)' : 'rgba(59,130,246,0.2)', color: m.surface === 'Clay' ? '#FBBF24' : '#60A5FA' }}>
+                      {m.surface}
+                    </span>
+                  </td>
+                  <td className="py-2" style={{ color: '#D1D5DB' }}>{m.dist} km</td>
+                  <td className="py-2" style={{ color: '#D1D5DB' }}>{m.top.toFixed(1)} km/h</td>
+                  <td className="py-2" style={{ color: '#D1D5DB' }}>{m.sprints}</td>
+                  <td className="py-2" style={{ color: '#D1D5DB' }}>{m.coverage}%</td>
+                  <td className="py-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      style={{ background: m.win ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)', color: m.win ? '#86EFAC' : '#FCA5A5' }}>
+                      {m.win ? 'W' : 'L'}
+                    </span>
+                  </td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Distance Trend — Last 10 Matches" sub="Per-match total distance covered">
+            <LineChartSvg
+              values={last10Distance}
+              labels={['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10']}
+              max={5} min={3}
+              valueFormat={v => `${v.toFixed(1)}`}
+              colour={ACCENT_2} height={170} width={420} target={4.0}
+            />
+            <p className="text-[10px] mt-1 text-center" style={{ color: '#6B7280' }}>Yellow dashed = season avg (4.0 km)</p>
+          </Card>
+
+          <Card title="Surface Comparison" sub="Average per surface — across the season">
+            <div className="space-y-3">
+              {surfaceComparison.map(s => (
+                <div key={s.surface}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold" style={{ color: s.c }}>{s.surface}</span>
+                    <span className="text-[10px]" style={{ color: '#6B7280' }}>
+                      {s.dist} km · {s.top.toFixed(1)} km/h · {s.sprints} sprints
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <div className="h-1.5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="h-1.5 rounded" style={{ width: `${(s.dist / 5) * 100}%`, background: s.c }} />
+                    </div>
+                    <div className="h-1.5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="h-1.5 rounded" style={{ width: `${(s.top / 32) * 100}%`, background: s.c }} />
+                    </div>
+                    <div className="h-1.5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="h-1.5 rounded" style={{ width: `${(s.sprints / 50) * 100}%`, background: s.c }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 pt-2 text-[10px]" style={{ color: '#6B7280' }}>
+                <span>Distance</span><span>·</span><span>Top speed</span><span>·</span><span>Sprints</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <Card title="Win vs Loss GPS Comparison" sub="Average output when winning vs losing">
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { l: 'Distance',  w: winLossSplit.win.dist,    lo: winLossSplit.loss.dist,    u: 'km' },
+              { l: 'Sprints',   w: winLossSplit.win.sprints, lo: winLossSplit.loss.sprints, u: '' },
+              { l: 'Top speed', w: winLossSplit.win.top,     lo: winLossSplit.loss.top,     u: 'km/h' },
+            ].map(m => (
+              <div key={m.l} className="rounded-lg p-3" style={{ background: '#0a0c12', border: '1px solid #1F2937' }}>
+                <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>{m.l}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] w-10" style={{ color: '#22C55E' }}>Win</span>
+                    <div className="flex-1 h-2 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="h-2 rounded" style={{ width: `${(m.w / Math.max(m.w, m.lo)) * 100}%`, background: '#22C55E' }} />
+                    </div>
+                    <span className="text-[11px] font-bold w-14 text-right" style={{ color: '#F9FAFB' }}>{m.w}{m.u && ` ${m.u}`}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] w-10" style={{ color: '#EF4444' }}>Loss</span>
+                    <div className="flex-1 h-2 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="h-2 rounded" style={{ width: `${(m.lo / Math.max(m.w, m.lo)) * 100}%`, background: '#EF4444' }} />
+                    </div>
+                    <span className="text-[11px] font-bold w-14 text-right" style={{ color: '#F9FAFB' }}>{m.lo}{m.u && ` ${m.u}`}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: '#9CA3AF' }}>
+            Distance and sprint volume are similar across W/L — peak speed averages slightly higher in losses,
+            consistent with playing more reactive tennis when behind.
+          </p>
+        </Card>
+
+        {/* ─── 7 · TRAINING SESSION GPS ──────────────────────────── */}
+        <SectionHeading n={7} title="Training Session GPS" sub="Drill placement, weekly load, serve volume, and footwork load." />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Training Drill Heatmap" sub="Density of drill positions on court · today's session">
+            <div className="flex justify-center">
+              <svg viewBox="0 0 300 540" className="w-full max-w-[260px]" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
+                <defs>
+                  <filter id="drillBlur" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="14" />
+                  </filter>
+                </defs>
+                <CourtBase />
+                <g filter="url(#drillBlur)" opacity={0.85}>
+                  {drillZones.map((z, i) => (
+                    <circle key={i} cx={z.x * 300} cy={z.y * 540} r={z.r}
+                      fill={heatColor(z.intensity)} opacity={0.55} />
+                  ))}
+                </g>
+              </svg>
+            </div>
+          </Card>
+
+          <Card title="Weekly Load Calendar" sub="7-day microcycle · session intensity">
+            <div className="grid grid-cols-7 gap-1.5">
+              {weeklyLoad.map(d => (
+                <div key={d.day} className="rounded-lg p-2 text-center"
+                  style={{
+                    background: heatColor(d.intensity),
+                    opacity: 0.25 + d.intensity * 0.6,
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'white', opacity: 0.85 }}>{d.day}</p>
+                  <p className="text-[10px] font-semibold mt-1" style={{ color: 'white' }}>{d.label}</p>
+                  <p className="text-[10px] mt-1" style={{ color: 'white', opacity: 0.85 }}>{Math.round(d.intensity * 100)}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>
+              Wed peak (Match Sim) → Fri taper → Sat match. Classic match-week microcycle.
+            </p>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="text-sm font-bold text-white mb-1">Split Times</div>
-            <div className="text-[11px] text-gray-500 mb-3">Average recovery between points, per set.</div>
-            <div className="flex items-end gap-4 h-28">{splitTimes.map(s => (<div key={s.set} className="flex-1 flex flex-col items-center gap-1"><div className="text-xs font-bold" style={{ color: '#06b6d4' }}>{s.sec}s</div><div className="w-full rounded-t" style={{ height: `${(s.sec / 25) * 100}%`, backgroundColor: '#06b6d4', minHeight: 8, opacity: 0.85 }} /><div className="text-[10px]" style={{ color: '#6B7280' }}>{s.set}</div><div className="text-[10px]" style={{ color: '#4B5563' }}>{s.points} pts</div></div>))}</div>
-          </div>
-          <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between"><span className="text-xs" style={{ color: '#9CA3AF' }}>Avg recovery between points</span><span className="text-sm font-bold" style={{ color: '#06b6d4' }}>18.3 sec</span></div>
-            <div className="text-[10px] mt-1" style={{ color: '#22C55E' }}>Optimal zone (target: 15-25 sec)</div>
-          </div>
+          <Card title="Serve Count — Weekly" sub="Practice serve volume · shoulder load proxy">
+            <div className="flex items-end gap-2 h-28">
+              {serveCounts.map(s => {
+                const max = Math.max(...serveCounts.map(c => c.n))
+                const flag = s.n > 150
+                return (
+                  <div key={s.day} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="text-[10px] font-bold" style={{ color: flag ? '#F59E0B' : ACCENT }}>{s.n || '—'}</div>
+                    <div className="w-full rounded-t" style={{
+                      height: `${max > 0 ? (s.n / max) * 100 : 0}%`,
+                      background: flag ? '#F59E0B' : ACCENT,
+                      minHeight: s.n > 0 ? 4 : 0, opacity: 0.85,
+                    }} />
+                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.day}</div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] mt-3" style={{ color: '#6B7280' }}>
+              Total: {serveCounts.reduce((a, b) => a + b.n, 0)} serves this week. Wed (142) and Sat (188) flagged for shoulder recovery monitoring.
+            </p>
+          </Card>
+
+          <Card title="Footwork — Lateral Movement" sub="Lateral distance covered · training vs match">
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs" style={{ color: '#D1D5DB' }}>Match avg (last 5)</span>
+                  <span className="text-sm font-bold" style={{ color: ACCENT }}>2.7 km</span>
+                </div>
+                <div className="h-3 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div className="h-3 rounded" style={{ width: '90%', background: ACCENT }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs" style={{ color: '#D1D5DB' }}>Training avg (last 5)</span>
+                  <span className="text-sm font-bold" style={{ color: '#A855F7' }}>1.9 km</span>
+                </div>
+                <div className="h-3 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div className="h-3 rounded" style={{ width: '63%', background: '#A855F7' }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs" style={{ color: '#D1D5DB' }}>Footwork drill block today</span>
+                  <span className="text-sm font-bold" style={{ color: '#22C55E' }}>2.4 km</span>
+                </div>
+                <div className="h-3 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div className="h-3 rounded" style={{ width: '80%', background: '#22C55E' }} />
+                </div>
+              </div>
+              <p className="text-[10px] pt-2" style={{ color: '#6B7280' }}>
+                Today&apos;s drill block hit 89% of match-day lateral load — closing the training-vs-match gap nicely.
+              </p>
+            </div>
+          </Card>
         </div>
       </div>
     ) : (
@@ -8412,100 +8998,10 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
         </div>
       )}
 
-      {/* HEATMAPS */}
-      {gpsTab === 'heatmaps' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Court Movement — large */}
-            <div className="lg:col-span-2 rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="text-sm font-bold text-white mb-1">Court Movement Heatmap</div>
-              <div className="text-[11px] text-gray-500 mb-3">Density of where you held position throughout the session.</div>
-              {isDemoShell ? (
-                <>
-                  <svg viewBox="0 0 300 540" className="w-full max-w-[320px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-                    <defs>
-                      <filter id="movHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12" /></filter>
-                      <radialGradient id="movHot"><stop offset="0%" stopColor="#dc2626" stopOpacity="0.9" /><stop offset="50%" stopColor="#f97316" stopOpacity="0.55" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
-                      <radialGradient id="movWarm"><stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" /><stop offset="60%" stopColor="#eab308" stopOpacity="0.4" /><stop offset="100%" stopColor="#22c55e" stopOpacity="0" /></radialGradient>
-                      <radialGradient id="movCool"><stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" /><stop offset="70%" stopColor="#0ea5e9" stopOpacity="0.3" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
-                    </defs>
-                    <CourtBase />
-                    <g filter="url(#movHeatBlur)">
-                      {movementPoints.map((p, i) => (
-                        <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={`url(#${p.grad})`} />
-                      ))}
-                    </g>
-                  </svg>
-                  <HeatLegend />
-                </>
-              ) : (
-                <EmptyConnect feature="Connect your Lumio GPS Tracker to see your court coverage heatmap." />
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {/* Shot Placement */}
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-1">Shot Placement — Opponent Court</div>
-                <div className="text-[11px] text-gray-500 mb-3">Where your shots landed.</div>
-                {isDemoShell ? (
-                  <>
-                    <svg viewBox="0 0 300 540" className="w-full max-w-[220px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-                      <defs>
-                        <filter id="shotHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10" /></filter>
-                        <radialGradient id="shotHot"><stop offset="0%" stopColor="#dc2626" stopOpacity="0.9" /><stop offset="50%" stopColor="#f97316" stopOpacity="0.55" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
-                        <radialGradient id="shotWarm"><stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" /><stop offset="60%" stopColor="#eab308" stopOpacity="0.4" /><stop offset="100%" stopColor="#22c55e" stopOpacity="0" /></radialGradient>
-                        <radialGradient id="shotCool"><stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" /><stop offset="70%" stopColor="#0ea5e9" stopOpacity="0.3" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
-                      </defs>
-                      <CourtBase />
-                      <g filter="url(#shotHeatBlur)">
-                        {shotPlacementPoints.map((p, i) => (
-                          <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={`url(#${p.grad})`} />
-                        ))}
-                      </g>
-                    </svg>
-                    <HeatLegend />
-                  </>
-                ) : (
-                  <EmptyConnect feature="Connect Lumio Vision to log shot placement." />
-                )}
-              </div>
-
-              {/* Serve Placement */}
-              <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="text-sm font-bold text-white mb-1">Serve Placement</div>
-                <div className="text-[11px] text-gray-500 mb-3">1st serves cyan · 2nd serves orange.</div>
-                {isDemoShell ? (
-                  <>
-                    <svg viewBox="0 0 300 540" className="w-full max-w-[220px] mx-auto" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-                      <defs>
-                        <filter id="serveHeatBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8" /></filter>
-                        <radialGradient id="serveCyan"><stop offset="0%" stopColor="#06b6d4" stopOpacity="0.9" /><stop offset="60%" stopColor="#0ea5e9" stopOpacity="0.45" /><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" /></radialGradient>
-                        <radialGradient id="serveOrange"><stop offset="0%" stopColor="#f97316" stopOpacity="0.85" /><stop offset="60%" stopColor="#fb923c" stopOpacity="0.4" /><stop offset="100%" stopColor="#f59e0b" stopOpacity="0" /></radialGradient>
-                      </defs>
-                      <CourtBase />
-                      <g filter="url(#serveHeatBlur)">
-                        {firstServePoints.map((p, i) => (
-                          <circle key={`f${i}`} cx={p.x} cy={p.y} r={p.r} fill="url(#serveCyan)" />
-                        ))}
-                        {secondServePoints.map((p, i) => (
-                          <circle key={`s${i}`} cx={p.x} cy={p.y} r={p.r} fill="url(#serveOrange)" />
-                        ))}
-                      </g>
-                    </svg>
-                    <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-gray-400">
-                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#06b6d4' }} />1st serve</span>
-                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />2nd serve</span>
-                    </div>
-                  </>
-                ) : (
-                  <EmptyConnect feature="Connect Lumio Vision to log serve placement." />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* HEATMAPS — moved to top-level sidebar item 'Heatmaps' (gps-heatmaps).
+          See TennisGPSHeatmapsView for the consolidated 6-section page that
+          incorporates court movement, shot placement, serve placement plus
+          return/rally, movement & fitness, match-comparison and training. */}
 
       {/* GPS STATS */}
       {gpsTab === 'gps' && <GpsStatsPanel />}
@@ -8548,6 +9044,950 @@ function GPSVideoView({ player, session }: { player: TennisPlayer; session: Spor
       {gpsTab === 'brief' && <AiBriefPanel />}
 
       <TennisAISection context="default" player={player} session={session} />
+    </div>
+  )
+}
+
+// ─── TENNIS GPS HEATMAPS VIEW ────────────────────────────────────────────────
+// Consolidates the previously-separate court-movement / shot-placement /
+// serve-placement visualisations from GPSVideoView into a single 6-section
+// page (court movement, serve placement, return & rally, movement & fitness,
+// match-by-match comparison, training). Pure inline SVG, deterministic seed
+// hashing, green→red heat scale.
+
+const TENNIS_HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
+const tennisHeatColor = (t: number) => {
+  const c = Math.max(0, Math.min(1, t))
+  const idx = Math.min(TENNIS_HEAT_STOPS.length - 1, Math.floor(c * (TENNIS_HEAT_STOPS.length - 1)))
+  return TENNIS_HEAT_STOPS[idx]
+}
+
+function tennisHash(str: string, salt: number): number {
+  let h = 2166136261 ^ salt
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 16777619)
+  }
+  return ((h >>> 0) % 10000) / 10000
+}
+
+const TENNIS_HEATMAP_MATCHES = [
+  'Monte-Carlo Masters QF · vs Vega · Clay · W 6-4 7-5',
+  'Madrid Open R32 · vs Brenner · Hard · L 4-6 6-7',
+  'Stuttgart 250 SF · vs Lindqvist · Clay · W 7-6 6-3',
+  'Munich 250 R16 · vs Kellner · Clay · W 6-3 6-2',
+  'Indian Wells R64 · vs Holm · Hard · L 3-6 4-6',
+]
+
+const TENNIS_HEATMAP_TRAINING = [
+  'Tue — Service Box Footwork (90min)',
+  'Wed — Cross-Court Rally Patterns (75min)',
+  'Thu — Match Simulation (60min)',
+  'Fri — Recovery + Light Hit (45min)',
+]
+
+const TENNIS_HEATMAP_SURFACES = [
+  { name: 'Hard', color: '#3B82F6', emoji: '🔵' },
+  { name: 'Clay', color: '#D97706', emoji: '🟠' },
+  { name: 'Grass', color: '#16A34A', emoji: '🟢' },
+] as const
+
+// ─── Court SVG ────────────────────────────────────────────────────────────
+// 600 (W) × 1100 (H) reference frame — accurate proportions for ITF singles
+// court (8.23m × 23.77m), with optional doubles tramlines (10.97m wide).
+//
+// Coordinate space (looking at the court from baseline):
+//   x ∈ [0, 600]   — left → right across the court
+//   y ∈ [0, 1100]  — far baseline (your end at 0) → near baseline (1100)
+// Net runs horizontally at y = 550. Service line at y = 550 ± 215.
+function TennisCourt({ width, height, doubles = false, lineCol = 'rgba(255,255,255,0.85)' }: {
+  width: number; height: number; doubles?: boolean; lineCol?: string
+}) {
+  const W = width, H = height
+  // Singles court is 8.23m wide of total 10.97m (doubles) — singles is
+  // 75% of doubles width. Margin from edge = 12.5%.
+  const singlesL = doubles ? W * 0.125 : 0
+  const singlesR = doubles ? W - W * 0.125 : W
+  const serveTop = H * 0.31
+  const serveBot = H * 0.69
+  const net = H * 0.5
+  return (
+    <g>
+      {/* Court surface */}
+      <rect x={0} y={0} width={W} height={H} rx={6} fill="#0a3d1a" />
+      {/* Outer (doubles) rectangle */}
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={lineCol} strokeWidth={2} />
+      {/* Singles sidelines (drawn even on doubles toggle for context) */}
+      <line x1={singlesL} y1={0} x2={singlesL} y2={H} stroke={lineCol} strokeWidth={doubles ? 1.2 : 2} />
+      <line x1={singlesR} y1={0} x2={singlesR} y2={H} stroke={lineCol} strokeWidth={doubles ? 1.2 : 2} />
+      {/* Net — thicker, with tape highlight */}
+      <line x1={0} y1={net} x2={W} y2={net} stroke="white" strokeWidth={4} />
+      <rect x={0} y={net - 1.5} width={W} height={3} fill="rgba(255,255,255,0.5)" />
+      {/* Service lines */}
+      <line x1={singlesL} y1={serveTop} x2={singlesR} y2={serveTop} stroke={lineCol} strokeWidth={1.5} />
+      <line x1={singlesL} y1={serveBot} x2={singlesR} y2={serveBot} stroke={lineCol} strokeWidth={1.5} />
+      {/* Centre service line */}
+      <line x1={W / 2} y1={serveTop} x2={W / 2} y2={serveBot} stroke={lineCol} strokeWidth={1.5} />
+      {/* Centre marks at baselines */}
+      <line x1={W / 2} y1={0} x2={W / 2} y2={14} stroke={lineCol} strokeWidth={1.5} />
+      <line x1={W / 2} y1={H - 14} x2={W / 2} y2={H} stroke={lineCol} strokeWidth={1.5} />
+    </g>
+  )
+}
+
+function TennisHeatLegend() {
+  return (
+    <div className="flex h-2 rounded overflow-hidden border border-gray-800" style={{ width: 220 }}>
+      {TENNIS_HEAT_STOPS.map(c => <div key={c} style={{ flex: 1, background: c }} />)}
+    </div>
+  )
+}
+
+// Court positional heatmap — used for movement, recovery, drill-zone, etc.
+function CourtPositionalHeatmap({
+  width, height, seed, doubles = false, anchors, intensity = 1,
+}: {
+  width: number; height: number; seed: string; doubles?: boolean
+  anchors: { x: number; y: number; weight: number }[]
+  intensity?: number
+}) {
+  const cols = 14, rows = 22
+  const cellW = width / cols, cellH = height / rows
+  const cells: { x: number; y: number; t: number }[] = []
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = (c + 0.5) / cols
+      const cy = (r + 0.5) / rows
+      let combined = 0
+      for (const a of anchors) {
+        const dx = cx - a.x
+        const dy = cy - a.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        combined = Math.max(combined, Math.max(0, 1 - dist * 2.6) * a.weight)
+      }
+      const noise = tennisHash(`${seed}-${r}-${c}`, 7) * 0.4
+      const t = Math.min(1, (combined + noise * 0.5) * intensity)
+      if (t > 0.1) cells.push({ x: c * cellW, y: r * cellH, t })
+    }
+  }
+  const filterId = `tennis-blur-${seed.replace(/[^a-z0-9]/gi, '')}`
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 420 }}>
+      <defs>
+        <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="9" />
+        </filter>
+      </defs>
+      <TennisCourt width={width} height={height} doubles={doubles} />
+      <g filter={`url(#${filterId})`} opacity={0.85}>
+        {cells.map((cell, i) => (
+          <rect key={i} x={cell.x} y={cell.y} width={cellW + 2} height={cellH + 2}
+            fill={tennisHeatColor(cell.t)} opacity={0.4 + cell.t * 0.55} />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function ServePlacementMap({
+  width, height, seed, side, serveType, brandPrimary,
+}: {
+  width: number; height: number; seed: string; side: 'deuce' | 'ad'; serveType: 'first' | 'second'; brandPrimary: string
+}) {
+  // Show only the receiver's service box (top half).
+  // Deuce side = right service box (when looking at receiver), Ad = left.
+  // x-range for deuce: 0.5–1.0; for ad: 0.0–0.5 (singles court).
+  const xLo = side === 'deuce' ? 0.5 : 0.0
+  const xHi = side === 'deuce' ? 1.0 : 0.5
+  const yLo = 0.0
+  const yHi = 0.31
+  const count = serveType === 'first' ? 22 : 14
+  const dots = Array.from({ length: count }, (_, i) => {
+    const fx = xLo + tennisHash(`${seed}-${side}-${serveType}-${i}-x`, 11) * (xHi - xLo)
+    const fy = yLo + tennisHash(`${seed}-${side}-${serveType}-${i}-y`, 13) * (yHi - yLo)
+    const tier = tennisHash(`${seed}-${side}-${serveType}-${i}-t`, 17)
+    // Bias 1st serves towards corners (T or wide), 2nd towards body
+    let x = fx, y = fy
+    if (serveType === 'first') {
+      if (tier < 0.4) {
+        x = side === 'deuce' ? xHi - 0.06 - tier * 0.06 : xLo + 0.06 + tier * 0.06 // wide
+      } else if (tier > 0.65) {
+        x = (xLo + xHi) / 2 + (tier - 0.65) * 0.05 // T
+      }
+    } else {
+      // 2nd serves cluster centrally
+      x = (xLo + xHi) / 2 + (tier - 0.5) * 0.18
+    }
+    return {
+      x: x * width,
+      y: y * height,
+      r: serveType === 'first' ? 5 + tennisHash(`${seed}-r-${i}`, 19) * 2.5 : 4 + tennisHash(`${seed}-r-${i}`, 19) * 1.5,
+    }
+  })
+  // Zone boxes (wide / body / T) and per-zone win%
+  const zoneW = (xHi - xLo) / 3
+  const zones = [
+    { key: side === 'deuce' ? 'T' : 'Wide', xMin: xLo, label: side === 'deuce' ? 'T' : 'Wide', winPct: side === 'deuce' ? 78 : 71 },
+    { key: 'Body', xMin: xLo + zoneW, label: 'Body', winPct: 62 },
+    { key: side === 'deuce' ? 'Wide' : 'T', xMin: xLo + zoneW * 2, label: side === 'deuce' ? 'Wide' : 'T', winPct: side === 'deuce' ? 73 : 76 },
+  ]
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <TennisCourt width={width} height={height} />
+      {/* Zone overlays */}
+      {zones.map(z => (
+        <g key={z.key + z.label}>
+          <rect x={z.xMin * width} y={yLo * height} width={zoneW * width} height={(yHi - yLo) * height}
+            fill={tennisHeatColor(z.winPct / 100)} opacity={0.15} stroke="rgba(255,255,255,0.35)" strokeDasharray="4 3" />
+          <text x={(z.xMin + zoneW / 2) * width} y={(yHi / 2 + 0.05) * height}
+            fontSize={11} fontWeight={700} fill="white" textAnchor="middle" opacity={0.7}>{z.label}</text>
+          <text x={(z.xMin + zoneW / 2) * width} y={(yHi / 2 + 0.13) * height}
+            fontSize={14} fontWeight={800} fill={tennisHeatColor(z.winPct / 100)} textAnchor="middle">
+            {z.winPct}%
+          </text>
+        </g>
+      ))}
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={d.r}
+          fill={serveType === 'first' ? brandPrimary : '#F59E0B'}
+          stroke="white" strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
+      ))}
+    </svg>
+  )
+}
+
+function ReturnMap({ width, height, seed, brandPrimary }: { width: number; height: number; seed: string; brandPrimary: string }) {
+  // Return positions cluster behind near baseline (bottom of court).
+  const dots = Array.from({ length: 30 }, (_, i) => ({
+    x: (0.15 + tennisHash(`${seed}-rtn-${i}-x`, 23) * 0.7) * width,
+    y: (0.78 + tennisHash(`${seed}-rtn-${i}-y`, 29) * 0.18) * height,
+    aggression: tennisHash(`${seed}-rtn-${i}-a`, 31),
+  }))
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <TennisCourt width={width} height={height} />
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={4 + d.aggression * 4}
+          fill={tennisHeatColor(d.aggression)} stroke={brandPrimary} strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
+      ))}
+    </svg>
+  )
+}
+
+function WinnerErrorMap({ width, height, seed, mode }: {
+  width: number; height: number; seed: string; mode: 'winners' | 'errors'
+}) {
+  // Winners cluster at corners + sidelines on opponent side; errors cluster
+  // outside lines (here drawn just inside for visualisation).
+  const count = mode === 'winners' ? 18 : 22
+  const dots = Array.from({ length: count }, (_, i) => {
+    if (mode === 'winners') {
+      const cluster = tennisHash(`${seed}-w-${i}-c`, 37)
+      const x = cluster < 0.5
+        ? 0.1 + tennisHash(`${seed}-w-${i}-x`, 41) * 0.15
+        : 0.75 + tennisHash(`${seed}-w-${i}-x`, 41) * 0.15
+      const y = 0.05 + tennisHash(`${seed}-w-${i}-y`, 43) * 0.4
+      return { x: x * width, y: y * height, ok: true }
+    }
+    return {
+      x: (0.05 + tennisHash(`${seed}-e-${i}-x`, 47) * 0.9) * width,
+      y: (0.0 + tennisHash(`${seed}-e-${i}-y`, 53) * 0.5) * height,
+      ok: false,
+    }
+  })
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <TennisCourt width={width} height={height} />
+      {dots.map((d, i) => (
+        <g key={i}>
+          {d.ok ? (
+            <circle cx={d.x} cy={d.y} r={6} fill="#22C55E" stroke="white" strokeOpacity={0.5} strokeWidth={0.8} opacity={0.9} />
+          ) : (
+            <g transform={`translate(${d.x},${d.y})`}>
+              <line x1={-5} y1={-5} x2={5} y2={5} stroke="#EF4444" strokeWidth={2.2} strokeLinecap="round" />
+              <line x1={5} y1={-5} x2={-5} y2={5} stroke="#EF4444" strokeWidth={2.2} strokeLinecap="round" />
+            </g>
+          )}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function CourtCoverageGrid({ width, height, seed }: { width: number; height: number; seed: string }) {
+  // 4 cols × 3 rows = 12 zones, each labelled with % time spent.
+  const COLS = 4, ROWS = 3
+  // Distribution biased to baseline edges + centre.
+  const baseDist: number[] = [
+    8,  6,  6,  8,
+    14, 18, 16, 14,
+    1,  4,  4,  1,
+  ]
+  const total = baseDist.reduce((a, b) => a + b, 0)
+  const cells = baseDist.map((v, i) => {
+    const noise = (tennisHash(`${seed}-cc-${i}`, 59) - 0.5) * 4
+    return Math.max(0.5, v + noise)
+  })
+  const cellTotal = cells.reduce((a, b) => a + b, 0)
+  const pct = cells.map(v => Math.round((v / cellTotal) * 100))
+  const cellW = width / COLS, cellH = height / ROWS
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 420 }}>
+      <TennisCourt width={width} height={height} />
+      {pct.map((p, i) => {
+        const r = Math.floor(i / COLS)
+        const c = i % COLS
+        const x = c * cellW
+        const y = r * cellH + height * 0.5 // bottom half (player's side)
+        return (
+          <g key={i}>
+            <rect x={x + 2} y={y * 0 + (r * cellH * 0.5 + height * 0.5)} width={cellW - 4} height={cellH * 0.5 - 4}
+              fill={tennisHeatColor(p / Math.max(...pct))} opacity={0.35 + (p / Math.max(...pct)) * 0.45}
+              stroke="rgba(255,255,255,0.25)" strokeWidth={1} rx={3} />
+            <text x={x + cellW / 2} y={r * cellH * 0.5 + height * 0.5 + cellH * 0.25 + 4}
+              fontSize={14} fontWeight={800} fill="white" textAnchor="middle" opacity={0.9}>{p}%</text>
+          </g>
+        )
+      })}
+      <text x={width / 2} y={height * 0.5 - 8} fontSize={9} fill="white" opacity={0.5} textAnchor="middle">YOUR HALF</text>
+      <text x={width / 2} y={height * 0.96} fontSize={9} fill="white" opacity={0.5} textAnchor="middle">100% sums to coverage of your side · {total}u baseline</text>
+    </svg>
+  )
+}
+
+function SprintInitiationMap({ width, height, seed }: { width: number; height: number; seed: string }) {
+  const sprints = Array.from({ length: 12 }, (_, i) => {
+    const sx = (0.15 + tennisHash(`${seed}-sp-${i}-x`, 61) * 0.7)
+    const sy = (0.55 + tennisHash(`${seed}-sp-${i}-y`, 67) * 0.42)
+    const dx = (tennisHash(`${seed}-sp-${i}-dx`, 71) - 0.5) * 0.5
+    const dy = (tennisHash(`${seed}-sp-${i}-dy`, 73) - 0.55) * 0.38
+    const speed = 0.5 + tennisHash(`${seed}-sp-${i}-s`, 79) * 0.5
+    return {
+      x1: sx * width, y1: sy * height,
+      x2: Math.max(8, Math.min(width - 8, (sx + dx) * width)),
+      y2: Math.max(8, Math.min(height - 8, (sy + dy) * height)),
+      speed,
+    }
+  })
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <TennisCourt width={width} height={height} />
+      {sprints.map((s, i) => (
+        <g key={i}>
+          <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={tennisHeatColor(s.speed)} strokeWidth={2.4} strokeLinecap="round" opacity={0.85} />
+          <circle cx={s.x1} cy={s.y1} r={3.5} fill="white" opacity={0.85} />
+          <circle cx={s.x2} cy={s.y2} r={3} fill={tennisHeatColor(s.speed)} stroke="white" strokeWidth={1} />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function DistanceBySetBars({ seed, brandPrimary }: { seed: string; brandPrimary: string }) {
+  void brandPrimary
+  const sets = ['Set 1', 'Set 2', 'Set 3'].map((label, i) => {
+    const dist = 0.9 + tennisHash(`${seed}-set-${i}`, 83) * 0.6
+    const intensity = 0.55 + tennisHash(`${seed}-set-i-${i}`, 89) * 0.4
+    return { label, dist, intensity, sprints: 24 + Math.floor(tennisHash(`${seed}-set-s-${i}`, 97) * 18) }
+  })
+  return (
+    <svg viewBox="0 0 700 260" width="100%" style={{ maxHeight: 280 }}>
+      <rect width={700} height={260} fill="#0d1117" rx={6} />
+      {sets.map((s, i) => {
+        const x = 30 + i * 230
+        const barW = 200
+        const barH = (s.dist / 1.5) * 180
+        return (
+          <g key={s.label}>
+            <text x={x + barW / 2} y={20} textAnchor="middle" fontSize={12} fontWeight={700} fill="white">{s.label}</text>
+            <rect x={x} y={220 - barH} width={barW} height={barH} rx={6}
+              fill={tennisHeatColor(s.intensity)} opacity={0.35 + s.intensity * 0.55} />
+            <rect x={x} y={220 - barH} width={barW} height={barH} rx={6}
+              fill="none" stroke={tennisHeatColor(s.intensity)} strokeOpacity={0.7} strokeWidth={1} />
+            <text x={x + barW / 2} y={220 - barH - 8} textAnchor="middle" fontSize={20} fontWeight={800} fill="white">{s.dist.toFixed(1)} km</text>
+            <text x={x + barW / 2} y={240} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.6)">{s.sprints} sprints · intensity {(s.intensity * 100).toFixed(0)}%</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function SpeedZoneTennis({ seed }: { seed: string }) {
+  const base = [22, 28, 26, 16, 8]
+  const noise = (i: number) => Math.round((tennisHash(`${seed}-szt-${i}`, 101) - 0.5) * 4)
+  const dist = base.map((v, i) => Math.max(2, v + noise(i)))
+  const total = dist.reduce((a, b) => a + b, 0)
+  const pct = dist.map(v => (v / total) * 100)
+  const labels = ['Stand 0–2 km/h', 'Walk 2–7', 'Jog 7–14', 'Run 14–20', 'Sprint 20+']
+  const W = 700, BAR_H = 28, GAP = 12
+  const totalH = labels.length * (BAR_H + GAP) + 16
+  return (
+    <svg viewBox={`0 0 ${W} ${totalH}`} width="100%" style={{ maxHeight: totalH + 8 }}>
+      {labels.map((label, i) => {
+        const y = 8 + i * (BAR_H + GAP)
+        const barW = (pct[i] / 100) * (W - 220)
+        return (
+          <g key={label}>
+            <text x={4} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={600} fill="rgba(255,255,255,0.85)">{label}</text>
+            <rect x={150} y={y} width={W - 220} height={BAR_H} rx={4} fill="rgba(255,255,255,0.04)" />
+            <rect x={150} y={y} width={barW} height={BAR_H} rx={4} fill={TENNIS_HEAT_STOPS[i]} opacity={0.85} />
+            <text x={150 + barW + 8} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={700} fill="white">
+              {pct[i].toFixed(1)}%
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function WeeklyLoadCalendarTennis() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const labels = ['Recovery', 'Footwork', 'Match Sim', 'S&C', 'Light Hit', 'MATCH', 'Off']
+  const intensities = [0.18, 0.62, 0.92, 0.45, 0.3, 1.0, 0.05]
+  const distances = [2.8, 5.4, 6.8, 4.1, 3.0, 8.2, 0]
+  return (
+    <svg viewBox="0 0 700 200" width="100%" style={{ maxHeight: 220 }}>
+      <rect width={700} height={200} fill="#0d1117" rx={8} />
+      {days.map((d, i) => {
+        const x = i * (700 / 7)
+        const w = 700 / 7 - 6
+        return (
+          <g key={d}>
+            <rect x={x + 3} y={28} width={w} height={150} rx={6}
+              fill={tennisHeatColor(intensities[i])} opacity={0.18 + intensities[i] * 0.55} />
+            <text x={x + (700 / 7) / 2} y={20} textAnchor="middle" fontSize={11} fontWeight={700} fill="rgba(255,255,255,0.7)">{d}</text>
+            <text x={x + (700 / 7) / 2} y={62} textAnchor="middle" fontSize={10} fill="white" opacity={0.85}>{labels[i]}</text>
+            <text x={x + (700 / 7) / 2} y={110} textAnchor="middle" fontSize={26} fontWeight={800} fill="white">
+              {distances[i] > 0 ? distances[i].toFixed(1) : '—'}
+            </text>
+            <text x={x + (700 / 7) / 2} y={128} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.6)">km</text>
+            <text x={x + (700 / 7) / 2} y={158} textAnchor="middle" fontSize={11} fontWeight={600} fill="white" opacity={0.9}>
+              {Math.round(intensities[i] * 100)} AU
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+// Player position anchors for movement / recovery / drill density.
+// Tennis-specific: player lives just behind near baseline (y ~ 0.8) and
+// works the centre of the baseline (x ~ 0.5).
+const TENNIS_RALLY_ANCHORS = [
+  { x: 0.5, y: 0.86, weight: 0.95 },
+  { x: 0.32, y: 0.84, weight: 0.85 },
+  { x: 0.68, y: 0.84, weight: 0.85 },
+  { x: 0.5, y: 0.78, weight: 0.6 },
+]
+const TENNIS_NET_APPROACH_ANCHORS = [
+  { x: 0.5, y: 0.62, weight: 0.95 },
+  { x: 0.42, y: 0.58, weight: 0.7 },
+  { x: 0.58, y: 0.58, weight: 0.7 },
+]
+const TENNIS_RECOVERY_ANCHORS = [
+  { x: 0.5, y: 0.88, weight: 1.0 },
+  { x: 0.5, y: 0.92, weight: 0.65 },
+]
+
+function TennisGPSHeatmapsView({ player, session }: { player: TennisPlayer; session: SportsDemoSession }) {
+  void player
+  void session
+  const [brandPrimary, setBrandPrimary] = useState('#0ea5e9')
+  const [brandSecondary, setBrandSecondary] = useState('#7C3AED')
+  const [matchIdx, setMatchIdx] = useState(0)
+  const [setSel, setSetSel] = useState<'full' | 'set1' | 'set2' | 'set3'>('full')
+  const [doublesView, setDoublesView] = useState(false)
+  const [movementMode, setMovementMode] = useState<'serve' | 'return' | 'rally' | 'net'>('rally')
+  const [serveSide, setServeSide] = useState<'deuce' | 'ad'>('deuce')
+  const [serveType, setServeType] = useState<'first' | 'second'>('first')
+  const [trainingIdx, setTrainingIdx] = useState(0)
+  const [compareMatchA, setCompareMatchA] = useState(0)
+  const [compareMatchB, setCompareMatchB] = useState(1)
+
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem('lumio_tennis_brand_primary')
+      const s = localStorage.getItem('lumio_tennis_brand_secondary')
+      if (p) setBrandPrimary(p)
+      if (s) setBrandSecondary(s)
+    } catch { /* localStorage unavailable */ }
+  }, [])
+
+  const CW = 600, CH = 1100
+  const seed = `m${matchIdx}-${setSel}-${movementMode}`
+  const movementAnchors = movementMode === 'rally'
+    ? TENNIS_RALLY_ANCHORS
+    : movementMode === 'net'
+    ? TENNIS_NET_APPROACH_ANCHORS
+    : movementMode === 'serve'
+    ? [{ x: 0.5, y: 0.92, weight: 1 }, { x: 0.32, y: 0.92, weight: 0.7 }, { x: 0.68, y: 0.92, weight: 0.7 }]
+    : TENNIS_RECOVERY_ANCHORS
+
+  const Section = ({ title, subtitle, children, accentColor }: { title: string; subtitle?: string; children: React.ReactNode; accentColor?: string }) => (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold" style={{ color: accentColor || brandPrimary }}>{title}</h2>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+        <div className="hidden md:flex items-center gap-3 text-[10px] text-gray-500">
+          <span className="uppercase tracking-wider">Heat scale</span>
+          <TennisHeatLegend />
+          <span className="text-gray-500">low → high</span>
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+
+  const HCard = ({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) => (
+    <div className="rounded-xl p-4 border" style={{ background: '#0d1117', borderColor: '#1F2937' }}>
+      {(title || subtitle) && (
+        <div className="mb-3">
+          {title && <div className="text-sm font-semibold text-white">{title}</div>}
+          {subtitle && <div className="text-[11px] text-gray-500 mt-0.5">{subtitle}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+
+  const matchSeed = `${TENNIS_HEATMAP_MATCHES[matchIdx]}-${setSel}`
+
+  return (
+    <div className="space-y-10">
+      {/* Page header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
+            style={{ background: `linear-gradient(135deg, ${brandPrimary}, ${brandSecondary})` }}>
+            🔥
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white">GPS Heatmaps</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Court coverage, serve placement, return & rally — match, training, and season trend.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[10px]">
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: `${brandPrimary}20`, color: brandPrimary, border: `1px solid ${brandPrimary}50` }}>
+            10Hz GPS · Lumio Vision
+          </span>
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.4)' }}>
+            Live · synced 8 min ago
+          </span>
+        </div>
+      </div>
+
+      {/* Match / set / doubles toggle */}
+      <HCard>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Match</label>
+            <select value={matchIdx} onChange={e => setMatchIdx(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {TENNIS_HEATMAP_MATCHES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Set</label>
+            <div className="flex gap-1">
+              {(['full', 'set1', 'set2', 'set3'] as const).map(s => (
+                <button key={s} onClick={() => setSetSel(s)}
+                  className="flex-1 px-2 py-2 rounded-lg text-[11px] font-medium border"
+                  style={setSel === s
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0a0c12', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {s === 'full' ? 'Full match' : s.replace('set', 'Set ')}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Court</label>
+            <div className="flex gap-1">
+              {([['singles', false], ['doubles', true]] as const).map(([label, val]) => (
+                <button key={label} onClick={() => setDoublesView(val)}
+                  className="flex-1 px-2 py-2 rounded-lg text-[11px] font-medium border capitalize"
+                  style={doublesView === val
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0a0c12', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </HCard>
+
+      {/* ─── 1. COURT MOVEMENT HEATMAP (hero) ───────────────────────── */}
+      <Section title="1 · Court Movement Heatmap" subtitle="Where you held position, broken down by phase. Toggle between serve, return, rally, and net approach.">
+        <HCard>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="flex flex-wrap gap-1">
+              {(['rally', 'serve', 'return', 'net'] as const).map(m => (
+                <button key={m} onClick={() => setMovementMode(m)}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold border capitalize"
+                  style={movementMode === m
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0a0c12', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {m === 'serve' ? 'Serve positions'
+                    : m === 'return' ? 'Return positions'
+                    : m === 'rally' ? 'Rally movement'
+                    : 'Net approach'}
+                </button>
+              ))}
+            </div>
+            <div className="text-[10px] text-gray-500">Match: {TENNIS_HEATMAP_MATCHES[matchIdx].split(' · ')[0]} · {setSel === 'full' ? 'Full match' : setSel.replace('set', 'Set ')}</div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 380, width: '100%' }}>
+                <CourtPositionalHeatmap width={CW} height={CH} seed={seed} doubles={doublesView} anchors={movementAnchors} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Distance covered</div>
+                <div className="text-3xl font-black text-white">4.2 km</div>
+                <div className="text-[11px] text-gray-400">+18% vs your 12-session clay average</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Time on baseline</div>
+                <div className="text-3xl font-black text-white">71%</div>
+                <div className="text-[11px] text-gray-400">Behind near baseline · classic clay grinding profile</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Net approaches</div>
+                <div className="text-3xl font-black text-white">9</div>
+                <div className="text-[11px] text-gray-400">71% won at net — keep scripting these</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Lateral coverage</div>
+                <div className="text-3xl font-black text-white">±3.8 m</div>
+                <div className="text-[11px] text-gray-400">From centre — comfortable rally width</div>
+              </div>
+            </div>
+          </div>
+        </HCard>
+      </Section>
+
+      {/* ─── 2. SERVE PLACEMENT HEATMAP ─────────────────────────────── */}
+      <Section title="2 · Serve Placement Heatmap" subtitle="Service-box landing zones with win % per zone. Toggle deuce/ad and 1st/2nd serve.">
+        <HCard>
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <div className="flex gap-1">
+              {(['deuce', 'ad'] as const).map(s => (
+                <button key={s} onClick={() => setServeSide(s)}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold border capitalize"
+                  style={serveSide === s
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0a0c12', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {s} side
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              {(['first', 'second'] as const).map(s => (
+                <button key={s} onClick={() => setServeType(s)}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold border capitalize"
+                  style={serveType === s
+                    ? { background: '#F59E0B', color: 'white', borderColor: '#F59E0B' }
+                    : { background: '#0a0c12', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {s} serve
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 380, width: '100%' }}>
+                <ServePlacementMap width={CW} height={CH} seed={`${matchSeed}-${serveSide}-${serveType}`}
+                  side={serveSide} serveType={serveType} brandPrimary={brandPrimary} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">{serveSide === 'deuce' ? 'Deuce' : 'Ad'} · {serveType === 'first' ? '1st' : '2nd'} serve</div>
+                <div className="text-3xl font-black text-white">{serveType === 'first' ? '68%' : '92%'}</div>
+                <div className="text-[11px] text-gray-400">{serveType === 'first' ? 'In-court rate' : '2nd serve in-court rate'} — target {serveType === 'first' ? '72%' : '95%'}</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Wide vs T split</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 h-3 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="h-3 rounded-full" style={{ width: '54%', background: brandPrimary }} />
+                  </div>
+                  <span className="text-[10px] text-white font-bold">54 / 46</span>
+                </div>
+                <div className="text-[11px] text-gray-400 mt-1">Slight bias to {serveSide === 'deuce' ? 'wide' : 'T'} on this side</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Avg speed (km/h)</div>
+                <div className="text-3xl font-black text-white">{serveType === 'first' ? '184' : '142'}</div>
+                <div className="text-[11px] text-gray-400">{serveType === 'first' ? 'Top: 198 km/h' : 'Kick avg, top 156 km/h'}</div>
+              </div>
+              <div className="rounded-lg p-3 border" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Aces · Double faults</div>
+                <div className="text-3xl font-black text-white">7 · 2</div>
+                <div className="text-[11px] text-gray-400">Both DFs landed in body zone — pattern to watch</div>
+              </div>
+            </div>
+          </div>
+        </HCard>
+      </Section>
+
+      {/* ─── 3. RETURN & RALLY HEATMAP ──────────────────────────────── */}
+      <Section title="3 · Return & Rally Heatmap" subtitle="Where returns were hit from, where winners landed, and where unforced errors went." accentColor={brandSecondary}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <HCard title="Return Positions" subtitle="Bigger / hotter dots = more aggressive return">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 320, width: '100%' }}>
+                <ReturnMap width={CW} height={CH} seed={`${matchSeed}-rtn`} brandPrimary={brandPrimary} />
+              </div>
+            </div>
+          </HCard>
+          <HCard title="Rally Length Heatmap" subtitle="Where points were won/lost on court — short rallies (<4 shots) vs long (8+)">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 320, width: '100%' }}>
+                <CourtPositionalHeatmap width={CW} height={CH} seed={`${matchSeed}-rallylen`}
+                  anchors={[
+                    { x: 0.4, y: 0.84, weight: 0.95 },
+                    { x: 0.62, y: 0.84, weight: 0.85 },
+                    { x: 0.5, y: 0.7, weight: 0.55 },
+                    { x: 0.5, y: 0.5, weight: 0.35 },
+                  ]} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-3 text-[11px]">
+              <div className="rounded-lg p-2 border text-center" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[9px] text-gray-500">Short (≤3)</div>
+                <div className="text-lg font-bold text-white">42%</div>
+                <div className="text-[10px] text-green-400">won 64%</div>
+              </div>
+              <div className="rounded-lg p-2 border text-center" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[9px] text-gray-500">Mid (4–7)</div>
+                <div className="text-lg font-bold text-white">38%</div>
+                <div className="text-[10px] text-amber-400">won 51%</div>
+              </div>
+              <div className="rounded-lg p-2 border text-center" style={{ background: '#0a0c12', borderColor: '#1F2937' }}>
+                <div className="text-[9px] text-gray-500">Long (8+)</div>
+                <div className="text-lg font-bold text-white">20%</div>
+                <div className="text-[10px] text-rose-400">won 44%</div>
+              </div>
+            </div>
+          </HCard>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <HCard title="Winner Placement" subtitle="Where your 14 winners landed on the opponent's side">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 320, width: '100%' }}>
+                <WinnerErrorMap width={CW} height={CH} seed={`${matchSeed}-w`} mode="winners" />
+              </div>
+            </div>
+          </HCard>
+          <HCard title="Error Zones" subtitle="Where 8 unforced errors were hit (X = error landing zone)">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 320, width: '100%' }}>
+                <WinnerErrorMap width={CW} height={CH} seed={`${matchSeed}-e`} mode="errors" />
+              </div>
+            </div>
+          </HCard>
+        </div>
+      </Section>
+
+      {/* ─── 4. MOVEMENT & FITNESS HEATMAP ──────────────────────────── */}
+      <Section title="4 · Movement & Fitness Heatmap" subtitle="Distance, court coverage, sprint pattern, recovery position, and speed-zone breakdown.">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <HCard title="Distance Covered per Set" subtitle="Bar height = km · colour = average intensity">
+            <DistanceBySetBars seed={matchSeed} brandPrimary={brandPrimary} />
+          </HCard>
+          <HCard title="Distance by Speed Zone" subtitle="Time-share across speed bands">
+            <SpeedZoneTennis seed={matchSeed} />
+          </HCard>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <HCard title="Court Coverage (12 zones)" subtitle="% time spent in each of 12 zones on your half — sums to 100%">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 380, width: '100%' }}>
+                <CourtCoverageGrid width={CW} height={CH} seed={`${matchSeed}-cov`} />
+              </div>
+            </div>
+          </HCard>
+          <HCard title="Sprint Initiation Map" subtitle="Where on court sprints started · colour = peak speed reached">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 320, width: '100%' }}>
+                <SprintInitiationMap width={CW} height={CH} seed={`${matchSeed}-sp`} />
+              </div>
+            </div>
+          </HCard>
+        </div>
+        <HCard title="Recovery Position Heatmap" subtitle="Where you returned to between points — ideal centre is just behind baseline">
+          <div className="flex justify-center">
+            <div style={{ maxWidth: 380, width: '100%' }}>
+              <CourtPositionalHeatmap width={CW} height={CH} seed={`${matchSeed}-recovery`}
+                anchors={TENNIS_RECOVERY_ANCHORS} intensity={0.95} />
+            </div>
+          </div>
+        </HCard>
+      </Section>
+
+      {/* ─── 5. MATCH-BY-MATCH COMPARISON ───────────────────────────── */}
+      <Section title="5 · Match-by-Match Comparison" subtitle="Compare two matches, season trend, and how movement shifts across surfaces.">
+        <HCard title="Side-by-Side Court Heatmaps">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <select value={compareMatchA} onChange={e => setCompareMatchA(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {TENNIS_HEATMAP_MATCHES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+            <select value={compareMatchB} onChange={e => setCompareMatchB(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {TENNIS_HEATMAP_MATCHES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[compareMatchA, compareMatchB].map((mIdx, slot) => (
+              <div key={slot}>
+                <div className="text-[11px] text-gray-500 mb-1">{TENNIS_HEATMAP_MATCHES[mIdx].split(' · ')[0]}</div>
+                <CourtPositionalHeatmap width={CW} height={CH}
+                  seed={`compare-${mIdx}-${slot}`}
+                  anchors={mIdx % 2 === 0 ? TENNIS_RALLY_ANCHORS : [
+                    { x: 0.5, y: 0.86, weight: 0.95 }, { x: 0.4, y: 0.78, weight: 0.65 }, { x: 0.6, y: 0.78, weight: 0.65 },
+                  ]} />
+              </div>
+            ))}
+          </div>
+        </HCard>
+
+        <HCard title="Rolling Season Court Coverage Trend"
+          subtitle="Last 12 matches · colour = relative coverage (km) · X = match · Y = surface">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="text-left p-1.5 text-gray-500 font-semibold">Surface</th>
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <th key={i} className="p-1.5 text-gray-500 font-semibold">M{i + 1}</th>
+                  ))}
+                  <th className="p-1.5 text-gray-400 font-semibold">Avg</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TENNIS_HEATMAP_SURFACES.map(s => {
+                  const cells = Array.from({ length: 12 }, (_, i) => {
+                    const baseline = s.name === 'Clay' ? 0.7 : s.name === 'Grass' ? 0.4 : 0.55
+                    const val = baseline + tennisHash(`${s.name}-rolling-${i}`, 109) * 0.3
+                    return val
+                  })
+                  const avg = cells.reduce((a, b) => a + b, 0) / cells.length
+                  return (
+                    <tr key={s.name} className="border-t border-gray-900">
+                      <td className="p-1.5 text-white whitespace-nowrap">{s.emoji} {s.name}</td>
+                      {cells.map((t, i) => (
+                        <td key={i} className="p-0.5">
+                          <div className="rounded text-center font-bold text-white"
+                            style={{ background: tennisHeatColor(t), opacity: 0.45 + t * 0.5, padding: '6px 0', minWidth: 28, fontSize: 10 }}>
+                            {(t * 5).toFixed(1)}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="p-0.5">
+                        <div className="rounded text-center font-bold text-white"
+                          style={{ background: tennisHeatColor(avg), opacity: 0.6 + avg * 0.4, padding: '6px 0', minWidth: 36, fontSize: 10, border: '1px solid rgba(255,255,255,0.2)' }}>
+                          {(avg * 5).toFixed(1)}km
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </HCard>
+
+        <HCard title="Surface Comparison Heatmap" subtitle="How your movement footprint changes by surface">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {TENNIS_HEATMAP_SURFACES.map(s => {
+              const anchors = s.name === 'Clay' ? TENNIS_RALLY_ANCHORS
+                : s.name === 'Grass' ? [
+                  { x: 0.5, y: 0.7, weight: 0.95 },
+                  { x: 0.42, y: 0.62, weight: 0.7 },
+                  { x: 0.58, y: 0.62, weight: 0.7 },
+                ]
+                : [
+                  { x: 0.5, y: 0.82, weight: 0.95 },
+                  { x: 0.36, y: 0.78, weight: 0.7 },
+                  { x: 0.64, y: 0.78, weight: 0.7 },
+                  { x: 0.5, y: 0.62, weight: 0.4 },
+                ]
+              return (
+                <div key={s.name}>
+                  <div className="text-[11px] font-bold mb-1" style={{ color: s.color }}>{s.emoji} {s.name}</div>
+                  <CourtPositionalHeatmap width={CW} height={CH} seed={`surface-${s.name}`} anchors={anchors} intensity={0.9} />
+                  <div className="text-[10px] text-gray-500 mt-1 text-center">
+                    {s.name === 'Clay' && 'Deepest baseline position · longest rallies'}
+                    {s.name === 'Grass' && 'Forward platform · 33% net approach'}
+                    {s.name === 'Hard' && 'Balanced — moves wider than clay'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </HCard>
+      </Section>
+
+      {/* ─── 6. TRAINING SESSION HEATMAP ────────────────────────────── */}
+      <Section title="6 · Training Session Heatmap" subtitle="Drill placement, footwork intensity, and weekly load microcycle.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Session</label>
+            <select value={trainingIdx} onChange={e => setTrainingIdx(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {TENNIS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <HCard title="Drill Zone Heatmap" subtitle={`${TENNIS_HEATMAP_TRAINING[trainingIdx]} — drill density on court`}>
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 380, width: '100%' }}>
+                <CourtPositionalHeatmap width={CW} height={CH} seed={`drill-${trainingIdx}`}
+                  anchors={trainingIdx === 0
+                    ? [{ x: 0.5, y: 0.78, weight: 0.95 }, { x: 0.32, y: 0.78, weight: 0.85 }, { x: 0.68, y: 0.78, weight: 0.85 }]
+                    : trainingIdx === 1
+                    ? [{ x: 0.18, y: 0.82, weight: 0.9 }, { x: 0.82, y: 0.82, weight: 0.9 }, { x: 0.5, y: 0.82, weight: 0.4 }]
+                    : trainingIdx === 2
+                    ? TENNIS_RALLY_ANCHORS
+                    : [{ x: 0.5, y: 0.84, weight: 0.6 }, { x: 0.5, y: 0.62, weight: 0.4 }]
+                  } />
+              </div>
+            </div>
+          </HCard>
+          <HCard title="Footwork Intensity Overlay" subtitle="High-intensity footwork density — accelerations + cuts">
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 380, width: '100%' }}>
+                <CourtPositionalHeatmap width={CW} height={CH} seed={`footwork-${trainingIdx}`}
+                  anchors={[
+                    { x: 0.32, y: 0.84, weight: 0.95 },
+                    { x: 0.68, y: 0.84, weight: 0.95 },
+                    { x: 0.18, y: 0.78, weight: 0.65 },
+                    { x: 0.82, y: 0.78, weight: 0.65 },
+                  ]} intensity={0.92} />
+              </div>
+            </div>
+          </HCard>
+        </div>
+        <HCard title="Weekly Load Calendar" subtitle="7-day microcycle · match-day Saturday">
+          <WeeklyLoadCalendarTennis />
+        </HCard>
+      </Section>
+
+      <div className="text-[10px] text-gray-700 text-center pt-2">
+        GPS data sourced from Lumio GPS Vest · 10Hz sampling · Lumio Vision shot-tracking · Demo data shown
+      </div>
     </div>
   )
 }
@@ -11105,7 +12545,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
     { id: 'hawkeye',     icon: '👁️', label: 'Hawk-Eye',           category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.hawkeye },
     { id: 'lumio-vision', icon: '📹', label: 'Lumio Vision',        category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.lumioVision },
     { id: 'playsight',   icon: '🎥', label: 'PlaySight',          category: 'Hardware Sensors', kind: 'generic', config: TENNIS_INTEGRATIONS.playsight },
-    { id: 'catapult',    icon: '🛰️', label: 'Lumio GPS GPS',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.catapult },
+    { id: 'johansports', icon: '🛰️', label: 'Johan Sports',        category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.johansports },
     { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',       category: 'Wearables',        kind: 'generic', config: TENNIS_INTEGRATIONS.whoop },
     { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.workspace },
     { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: TENNIS_INTEGRATIONS.slack },
@@ -11271,9 +12711,8 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
               title: 'VIDEO & TRACKING',
               items: [
                 { name: 'Lumio Vision', desc: 'Shot tracking, video clips & AI coaching' },
-                { name: 'Lumio GPS GPS', desc: 'Movement load & court coverage data' },
-                { name: 'Lumio GPS', desc: 'Elite GPS & athlete monitoring' },
-                { name: 'PlayerTek', desc: 'GPS vest tracking for training sessions' },
+                { name: 'Johan Sports', desc: 'GPS vest · movement load & court coverage data' },
+                { name: 'CSV Upload', desc: 'Generic GPS export · drop a file from any vendor' },
               ],
             },
             {
@@ -11330,6 +12769,7 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
       case 'surface':     return gate('🎾', 'No surface data', 'Connect your match history to unlock this', <SurfaceAnalysisView player={player} session={session} />);
       case 'gps':         return gate('🛰️', 'No GPS data', 'Connect your Lumio GPS to unlock this', <GPSCourtView player={player} session={session} />);
       case 'gpsvideo':    return gate('🎬', 'No GPS or video data', 'Connect your Lumio GPS + Lumio Vision to unlock this', <GPSVideoView player={player} session={session} />);
+      case 'gps-heatmaps': return gate('🔥', 'No heatmap data', 'Connect your Lumio GPS + Lumio Vision to unlock this', <TennisGPSHeatmapsView player={player} session={session} />);
       case 'draw':        return gate('🏆', 'No draw data', 'Connect your tour feed to unlock this', <DrawBracketView player={player} session={session} />);
       case 'playerdirectory': return gate('📇', 'No player directory', 'Connect your data to unlock this', <PlayerDirectoryView player={player} session={session} />);
       case 'coachfinder': return gate('🎯', 'No coaches found', 'Connect your location to unlock this', <CoachFinderView player={player} session={session} />);

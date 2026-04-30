@@ -104,7 +104,7 @@ function RiskBadge({ level }: { level: ACWRResult['riskLevel'] }) {
 export default function GPSUploadView({ clubId, isDemo = false }: { clubId?: string | null; isDemo?: boolean }) {
   const [stage, setStage] = useState<Stage>('upload')
   const [file, setFile] = useState<File | null>(null)
-  const [detected, setDetected] = useState<'Catapult' | 'STATSports' | 'Unknown' | null>(null)
+  const [detected, setDetected] = useState<'Lumio' | 'Generic' | 'Unknown' | null>(null)
   const [sessionDate, setSessionDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [sessionType, setSessionType] = useState<SessionType>('Training')
   const [processingStep, setProcessingStep] = useState(0)

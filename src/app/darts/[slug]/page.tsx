@@ -73,6 +73,30 @@ import { createBrowserClient } from '@supabase/ssr'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
 import SportsSettings from '@/components/sports/SportsSettings'
 import { getDailyQuote, DARTS_QUOTES } from '@/lib/sports-quotes'
+// ─── Darts v2 dashboard imports ──────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import {
+  HeroToday as DtHeroToday,
+  TodaySchedule as DtTodaySchedule,
+  StatTiles as DtStatTiles,
+  AIBrief as DtAIBriefMod,
+  Inbox as DtInboxMod,
+  MyTeam as DtMyTeamMod,
+  Fixtures as DtFixturesMod,
+  Perf as DtPerfMod,
+  Recents as DtRecentsMod,
+  Season as DtSeasonMod,
+} from './_components/DartsDashboardModules'
+import { DARTS_ACCENT } from './_lib/darts-dashboard-data'
+import type { DtFixture } from './_lib/darts-dashboard-data'
 import { getDemoAISummary } from '@/lib/demo-content/ai-summaries'
 import { CANNED } from '@/lib/ai/canned-demo-responses'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
@@ -577,11 +601,102 @@ function DartsSendMessage({ onClose, player, session }: { onClose: () => void; p
   )
 }
 
+// ─── Darts v2 dashboard helpers ───────────────────────────────────────────
+
+function DartsMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof DARTS_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Jake &ldquo;The Hammer&rdquo; Morrison <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> D. Merrick</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>European Championship · R1 · Best of 11</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Thu 23 Apr 2026 · Westfalenhallen, Dortmund · Walk-on 18:30 · £110,000</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
+
+        <Section title="01 · Match Details">
+          <div><strong style={{ color: T.text }}>Tournament:</strong> European Championship — PDC ranking event.</div>
+          <div><strong style={{ color: T.text }}>Round:</strong> First round · best of 11 legs · sets ignored at this stage.</div>
+          <div><strong style={{ color: T.text }}>Prize:</strong> £110,000 progression / £15,000 R1 fee. Ranking: 5,000 pts on win.</div>
+          <div><strong style={{ color: T.text }}>Stage:</strong> Centre stage, two-board format, alternating throw, average crowd 8,500.</div>
+        </Section>
+
+        <Section title="02 · Opponent · D. Merrick (PDC #7)">
+          <div><strong style={{ color: T.text }}>3-dart avg:</strong> 99.4 (TV avg 101.1). <strong style={{ color: T.text }}>Checkout:</strong> 39.8% — slightly below your 42.3%.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Tactical patterns:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Strong on D20 + D16 — preferred two-dart finish 84% of time on 32+.</li>
+            <li>Slow starter — first-set avg drops to 96.8 over last 6 matches. Pressure early.</li>
+            <li>Pressed at 4-4: only 28% leg-win rate when level late. He cracks under tempo.</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>H2H:</strong> 2-1 in your favour. Last meeting: L 4-6 at PC 11 — close, your D16 cost you.</div>
+        </Section>
+
+        <Section title="03 · Our Game Plan">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Target avg:</strong> 100+. You're at 97.8 season but 99.1 on TV — stage suits you.</li>
+            <li><strong style={{ color: T.text }}>Focus double:</strong> D16 — drilled this morning. Backup line via D8 + D4 trusted.</li>
+            <li><strong style={{ color: T.text }}>180 pressure:</strong> 4.2/match avg, above tour. Use them to break early in tight legs.</li>
+            <li><strong style={{ color: T.text }}>Crowd energy:</strong> Walk-on energy + first-set tempo. He's slow — drag him into your rhythm.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Practice Notes">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>D16 drill (50 attempts): 18/50 (36%) — up from 32% last week.</li>
+            <li>Last 3 sessions: 97.8, 99.4, 101.1 averages — trending up.</li>
+            <li>180 rate in practice: 5 / 50 visits = 10% — tournament-level form.</li>
+            <li>First-9 last session: 102.4 across 12 legs — strong starts.</li>
+          </ul>
+        </Section>
+
+        <Section title="05 · Match Day Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Venue arrival 12:00 · check-in players' lounge.</li>
+            <li>Board allocation 13:00 · practice on boards 4–6, 60 min throw-in.</li>
+            <li>Vanta Sports barrel review video 14:00 · backup set ready.</li>
+            <li>Pre-match routine 16:00 · Dr Marshall · breath + visualisation.</li>
+            <li>Walk-on 18:30 · "Hammer Time" entrance · centre stage.</li>
+            <li>Media: post-match mixed zone if through · Northbridge Sport priority.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
 function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; session: SportsDemoSession; onOpenModal: (id: string) => void }) {
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+  // ── v2 dashboard state ─────────────────────────────────────────────
+  const v2T       = THEMES.dark
+  const v2Accent  = DARTS_ACCENT
+  const v2Density = DENSITY.regular
+  const v2Greeting = v2GetGreeting('matchday')
+  const [v2OpenFixture, setV2OpenFixture] = useState<DtFixture | null>(null)
+  const [v2CmdOpen, setV2CmdOpen]         = useState(false)
+  const [v2AskOpen, setV2AskOpen]         = useState(false)
+  const [v2BriefOpen, setV2BriefOpen]     = useState(false)
+  const [v2DashToast, showV2DashToast]    = useV2Toast()
+  useV2Key('cmdk', () => setV2CmdOpen(o => !o))
+  const v2DailyQuote = getDailyQuote(DARTS_QUOTES)
   const [brandPrimary, setBrandPrimary] = useState(() => {
     try { return typeof window !== 'undefined' ? (localStorage.getItem('lumio_darts_brand_primary') || '#dc2626') : '#dc2626' } catch { return '#dc2626' }
   })
@@ -810,62 +925,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
 
   return (
     <div className="space-y-6">
-      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #450a0a 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(220,38,38,0.2)' }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🎯</h1>
-              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Darts will read your morning headlines, match schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-                style={{ background: isSpeaking ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(249,115,22,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#F97316' : '#9CA3AF' }}>
-                <Volume2 size={14} />
-              </button>
-            </div>
-            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs italic" style={{ color: '#F59E0B' }}>
-              &ldquo;{getDailyQuote(DARTS_QUOTES).text}&rdquo; &mdash; {getDailyQuote(DARTS_QUOTES).author}
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {[
-              { icon:'📊', value: session.isDemoShell === false ? '—' : `#${player.pdcRank}`, label:'PDC Rank', color:'#dc2626' },
-              { icon:'🎯', value: session.isDemoShell === false ? '—' : String(player.threeDartAverage), label:'3-Dart Avg', color:'#F97316' },
-              { icon:'✅', value: session.isDemoShell === false ? '—' : `${player.checkoutPercent}%`, label:'Checkout', color:'#22C55E' },
-              { icon:'🏆', value: session.isDemoShell === false ? '—' : '#12', label:'Career High', color:'#8B5CF6' },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
-                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
-                <span className="text-base">{s.icon}</span>
-                <span className="text-lg font-black text-white">{s.value}</span>
-                <span className="text-xs opacity-70">{s.label}</span>
-              </div>
-            ))}
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
-              <div className="text-xl">🌧️</div>
-              <div className="text-sm font-bold text-white">14°C</div>
-              <div className="text-[9px]" style={{ color: '#6B7280' }}>London</div>
-            </div>
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Dortmund', tz:'Europe/Berlin', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
-                  <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#F59E0B' : '#FFFFFF' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#F59E0B' : '#6B7280' }}>{city}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
         <button onClick={() => setDashTab('gettingstarted')}
@@ -890,40 +949,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         ))}
       </div>
 
-      {/* Quick Actions — below tab bar (Today only) */}
-      {dashTab === 'today' && <div className="mb-5 mt-4">
-        <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
-        <div className="flex flex-wrap gap-2">
-          {(session.isDemoShell === false ? [
-            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#dc2626', hot:true },
-            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#dc2626', hot:true },
-            { id:'mental', label:'Mental Prep AI', icon:'🧠', color:'#8B5CF6', hot:true },
-            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-          ] : [
-            { id:'sendmessage', label:'Send Message', icon:'📨', color:'#dc2626', hot:false },
-            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#dc2626', hot:true },
-            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#dc2626', hot:true },
-            { id:'practice', label:'Practice Log', icon:'🎯', color:'#10B981', hot:false },
-            { id:'matchreport', label:'Match Report AI', icon:'📋', color:'#22C55E', hot:true },
-            { id:'equipment', label:'Equipment', icon:'🏹', color:'#6B7280', hot:false },
-            { id:'prizes', label:'Prize Tracker', icon:'💰', color:'#F59E0B', hot:false },
-            { id:'sponsor', label:'Sponsor Post AI', icon:'📱', color:'#F59E0B', hot:true },
-            { id:'media', label:'Media Manager', icon:'📣', color:'#6B7280', hot:false },
-            { id:'mental', label:'Mental Prep AI', icon:'🧠', color:'#8B5CF6', hot:true },
-            { id:'physio', label:'Physio Log', icon:'💊', color:'#EF4444', hot:false },
-            { id:'expense', label:'Log Expense', icon:'🧾', color:'#6B7280', hot:false },
-            { id:'exhibition', label:'Exhibitions', icon:'🎪', color:'#D97706', hot:false },
-            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-          ]).map(a => (
-            <button key={a.id} onClick={() => onOpenModal(a.id)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
-              <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)' }}>AI</span>}
-            </button>
-          ))}
-        </div>
-      </div>}
 
       {/* GETTING STARTED */}
       {dashTab === 'gettingstarted' && (() => {
@@ -1278,262 +1303,106 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
         )
       })()}
 
-      {/* TODAY */}
+      {/* TODAY — v2 modular grid */}
       {dashTab === 'today' && (
-        <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: Morning Roundup */}
-          <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><span>🌅</span><span className="text-sm font-bold text-white">Morning Roundup</span></div>
-              <span className="text-[10px] text-gray-600">Since you were last here</span>
-            </div>
-            {session.isDemoShell === false ? <EmptyState icon="📬" title="No messages yet" sub="Connect your agent, manager and tour accounts to unlock" /> : <div className="space-y-2">
-              {(roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_CHANNELS).map((ch, idx) => (
-                <div key={ch.label} draggable
-                  onDragStart={() => setDragIdx(idx)}
-                  onDragEnter={() => setDragOverIdx(idx)}
-                  onDragOver={e => e.preventDefault()}
-                  onDragEnd={() => {
-                    if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
-                      const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_CHANNELS].sort((a, b) => { const ai = roundupOrder.indexOf(a.label); const bi = roundupOrder.indexOf(b.label); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_CHANNELS]
-                      const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                      const newOrder = reordered.map(c => c.label); setRoundupOrder(newOrder); localStorage.setItem('darts_roundup_order_v2', JSON.stringify(newOrder))
-                    }
-                    setDragIdx(null); setDragOverIdx(null)
-                  }}
-                  style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }} className="hover:border-gray-700 transition-all">
-                  <button onClick={() => setExpandedChannel(expandedChannel === ch.label ? null : ch.label)} className="w-full flex items-center justify-between py-2 px-3 cursor-pointer">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-base" style={{ color: ch.color, filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
-                      <span style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
-                      {ch.urgent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold">Urgent</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
-                      <span className={`text-gray-700 text-xs transition-transform ${expandedChannel === ch.label ? 'rotate-180' : ''}`}>▾</span>
-                    </div>
-                  </button>
-                  {expandedChannel === ch.label && (
-                    <div className="px-3 pb-2 space-y-1.5 border-t border-gray-800/40 pt-2">
-                      {ch.messages.map((msg, j) => {
-                        const msgKey = `${ch.label}-${j}`
-                        if (dismissedMessages.has(msgKey)) return null
-                        return (
-                        <div key={j}>
-                          <div className="flex items-start gap-2 py-1.5 px-2 rounded-lg bg-[#070810]">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold text-gray-300">{msg.from}</span>
-                                <span className="text-[9px] text-gray-600">{msg.time}</span>
-                                {repliedTo.has(msgKey) && <span className="text-[9px] text-green-400 font-bold">✓ Replied</span>}
-                              </div>
-                              <p className="text-[11px] text-gray-400 mt-0.5">{msg.text}</p>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0 mt-1">
-                              {!repliedTo.has(msgKey) && <button onClick={() => { setReplyingTo(replyingTo === msgKey ? null : msgKey); setReplyText('') }} className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/15 text-red-400 hover:bg-red-600/25 transition-all">Reply</button>}
-                              <button onClick={() => setDismissedMessages(prev => new Set([...prev, msgKey]))} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 hover:text-gray-300 transition-all">Dismiss</button>
-                            </div>
-                          </div>
-                          {replyingTo === msgKey && (
-                            <div className="mt-1 ml-2 mr-2 mb-1 rounded-lg p-2 bg-[#0a0c14] border border-gray-800">
-                              <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Type your reply..." rows={2} className="w-full bg-transparent text-xs text-gray-300 placeholder-gray-600 resize-none outline-none" />
-                              <div className="flex items-center justify-end gap-2 mt-1">
-                                <button onClick={() => { setReplyingTo(null); setReplyText('') }} className="text-[9px] px-2 py-1 rounded text-gray-500 hover:text-gray-300">Cancel</button>
-                                <button onClick={() => { setRepliedTo(prev => new Set([...prev, msgKey])); setReplyingTo(null); setReplyText('') }} className="text-[9px] px-2.5 py-1 rounded bg-red-600/20 text-red-400 font-semibold hover:bg-red-600/30 transition-all">Send</button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>}
+        <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, marginTop: 14, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
+
+          {/* Hero (motivational quote preserved) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <DtHeroToday
+              T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
+              quote={v2DailyQuote}
+              onMatchPrep={() => setV2BriefOpen(true)}
+              onAsk={() => setV2AskOpen(true)}
+            />
+            <DtTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
           </div>
 
-          {/* MIDDLE: Tonight's match + schedule */}
-          <div className="space-y-4">
-            {session.isDemoShell === false ? (<>
-              <EmptyState icon="🎯" title="No match tonight" sub="Match data will appear here once your tour feed is connected" />
-              <EmptyState icon="📅" title="No schedule loaded" sub="Your tournament schedule will appear here once connected" />
-            </>) : <><div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
-              <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">TONIGHT — PDC EUROPEAN CHAMPIONSHIP R1</div>
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
-                    {displayPlayerPhoto ? <img src={displayPlayerPhoto} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase()}
-                  </div>
-                  <div className="text-xs font-bold text-white">{displayPlayerName}</div>
-                  <div className="text-[10px] text-red-400">#{player.pdcRank} PDC</div>
-                </div>
-                <div className="text-center px-4">
-                  <div className="text-2xl font-black text-gray-600">VS</div>
-                  <div className="text-[10px] text-gray-500 mt-1">20:00 · Dortmund</div>
-                  <div className="text-[10px] text-green-400 mt-0.5">Win = £110,000</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">GP</div>
-                  <div className="text-xs font-bold text-white">D. Merrick</div>
-                  <div className="text-[10px] text-gray-500">#7 PDC</div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-amber-400">
-                H2H: 3–4 Merrick. His checkout 39.8% vs yours {player.checkoutPercent}% — close match. Start strong.
-              </div>
-            </div>
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-              <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
-              <div className="space-y-2">
-                {[
-                  { id:'s1', time:'09:00', label:'AI Morning Briefing',        highlight:false },
-                  { id:'s2', time:'10:00', label:'Practice — D16 checkout',    highlight:false },
-                  { id:'s3', time:'12:00', label:'Vanta Sports content shoot',   highlight:false },
-                  { id:'s4', time:'14:00', label:'Physio — shoulder & elbow',  highlight:false },
-                  { id:'s5', time:'16:30', label:'Pre-match warm-up routine',  highlight:false },
-                  { id:'s6', time:'20:00', label:'Match vs D. Merrick — R1',     highlight:true },
-                  { id:'s7', time:'22:30', label:'Post-match media',           highlight:false },
-                ].map((s) => {
-                  const done = scheduleChecked[s.id]
-                  const cancelled = scheduleCancelled[s.id]
-                  return (
-                  <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${done || cancelled ? 'opacity-50' : ''} ${s.highlight && !done && !cancelled ? 'text-red-400' : ''}`}>
-                    <button onClick={() => !cancelled && toggleScheduleItem(s.id)} className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: done ? '#22C55E' : cancelled ? '#374151' : 'transparent', borderColor: done ? '#22C55E' : cancelled ? '#374151' : s.highlight ? '#EF4444' : '#4B5563' }}>
-                      {done && <span className="text-white text-[8px]">✓</span>}
-                      {cancelled && <span className="text-gray-500 text-[8px]">✕</span>}
-                    </button>
-                    <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                    <span className={`text-xs flex-1 ${done || cancelled ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
-                    {!s.highlight && !done && !cancelled && cancelConfirm !== s.id && (
-                      <button onClick={() => setCancelConfirm(s.id)} className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#6B7280' }}>Cancel →</button>
-                    )}
-                    {cancelConfirm === s.id && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px]" style={{ color: '#6B7280' }}>Cancel?</span>
-                        <button onClick={() => cancelScheduleItem(s.id, s.label)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Send</button>
-                        <button onClick={() => setCancelConfirm(null)} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>Dismiss</button>
-                      </div>
-                    )}
-                  </div>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tonight&apos;s Venue</div>
-              <div className="text-sm font-bold text-white">Westfalenhallen, Dortmund</div>
-              <div className="text-xs text-gray-500 mt-1">14°C · Overcast · Doors open 18:00</div>
-              <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">20:00</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£110,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£30,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">Northbridge Sport Darts</span></div>
-              </div>
-            </div>
-          </>}
+          {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { id:'sendmessage', label:'Send Message',     icon:'📨', hot:false },
+              { id:'flights',     label:'Smart Flights',    icon:'✈️', hot:true  },
+              { id:'hotel',       label:'Find Hotel',       icon:'🏨', hot:true  },
+              { id:'practice',    label:'Practice Log',     icon:'🎯', hot:false },
+              { id:'matchreport', label:'Match Report AI',  icon:'📋', hot:true  },
+              { id:'equipment',   label:'Equipment',        icon:'🏹', hot:false },
+              { id:'prizes',      label:'Prize Tracker',    icon:'💰', hot:false },
+              { id:'sponsor',     label:'Sponsor Post AI',  icon:'📱', hot:true  },
+              { id:'media',       label:'Media Manager',    icon:'📣', hot:false },
+              { id:'mental',      label:'Mental Prep AI',   icon:'🧠', hot:true  },
+              { id:'physio',      label:'Physio Log',       icon:'💊', hot:false },
+              { id:'expense',     label:'Log Expense',      icon:'🧾', hot:false },
+              { id:'exhibition',  label:'Exhibitions',      icon:'🎪', hot:false },
+              { id:'socialmedia', label:'Social Media AI',  icon:'📲', hot:true  },
+            ].map(a => (
+              <button key={a.id} onClick={() => onOpenModal(a.id)}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = v2Accent.hex; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+                style={{
+                  appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 14px', borderRadius: 8,
+                  background: 'transparent', border: '1px solid #2d3139',
+                  color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
+                  transition: 'border-color .12s, color .12s',
+                }}>
+                <span style={{ fontSize: 13 }}>{a.icon}</span>
+                <span>{a.label}</span>
+                {a.hot && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
+              </button>
+            ))}
           </div>
 
-          {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
-          <div className="space-y-4">
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">📸 Personal Photo Frame</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_darts_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
-                  <button className="text-[10px] text-gray-600 hover:text-gray-400">⏸ Pause</button>
-                  {photoSrc && <button onClick={() => { setPhotoSrc(null); try { localStorage.removeItem('lumio_darts_photo_frame') } catch {} }} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
-                  <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
-                  <input type="file" accept="image/*" style={{display:'none'}} ref={photoInputRef} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { const img = new window.Image(); img.onload = () => { const c = document.createElement('canvas'); const M = 400; let w = img.width, h = img.height; if (w > h) { if (w > M) { h = Math.round(h*M/w); w = M } } else { if (h > M) { w = Math.round(w*M/h); h = M } } c.width = w; c.height = h; const ctx = c.getContext('2d'); if (!ctx) return; ctx.drawImage(img, 0, 0, w, h); const compressed = c.toDataURL('image/jpeg', 0.7); setPhotoSrc(compressed); try { localStorage.setItem('lumio_darts_photo_frame', compressed) } catch {} }; img.src = ev.target?.result as string }; r.readAsDataURL(f); e.target.value = '' }} />
-                </div>
-              </div>
-              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
-                {photoSrc
-                  ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {['3s','5s','10s','30s'].map(s => (
-                  <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-red-600/20 text-red-400':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
-                ))}
-              </div>
-            </div>
+          {/* Stat tiles */}
+          <DtStatTiles T={v2T} accent={v2Accent} density={v2Density} />
 
-            {/* AI Morning Summary — matches tennis. Empty state for founders
-                until data integrations are connected; demo mode keeps the
-                static second-person briefing from ai-summaries.ts. */}
-            {session.isDemoShell === false
-              ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your darts data to unlock your AI evening briefing" />
-              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span style={{ color: '#8B5CF6' }}>✨</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {dartsSummary && <button onClick={() => {
-                    if (isDemoShellDash) {
-                      // Demo mode: re-apply the static second-person summary; no live fetch.
-                      setDartsSummary(getDemoAISummary('darts', 'dashboard')?.summary || null)
-                    } else {
-                      setDartsSummary(null); setDartsSummaryLoading(false)
-                    }
-                  }} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6B7280', border: '1px solid #374151' }}>↻</button>}
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
-                    {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-                  </span>
-                </div>
-              </div>
-              <div className="px-5 py-4">
-                {dartsSummaryLoading && <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-3 bg-gray-800 rounded animate-pulse" style={{ width: `${60 + i * 12}%` }} />)}</div>}
-                {dartsSummary && !dartsSummaryLoading && <div className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{dartsSummary}</div>}
-                {!dartsSummary && !dartsSummaryLoading && <div className="space-y-3">{[
-                  { icon:'🎯', text:'Tonight vs D. Merrick (PDC #7) — 20:00 Westfalenhallen. H2H 3-4 Merrick. His checkout 39.8% vs yours 44%. Start strong on opening leg.' },
-                  { icon:'📬', text:'2 urgent messages: Crown Wagers ambassador offer via agent (£85k/yr) + Vanta Sports flagging content deadline for 12:00 shoot.' },
-                  { icon:'📅', text:'Today: Practice 10:00 (D16 checkout) → Vanta Sports shoot 12:00 → Physio 14:00 → Warm-up 16:30 → Match 20:00 → Post-match media 22:30.' },
-                  { icon:'🤝', text:'Vanta Sports content shoot at 12:00 — contract obligation with penalty clause. Kit and backdrop prepped last night.' },
-                  { icon:'✈️', text:'Prague Open flights selling fast — save £80+ booking now. Return flight to Gatwick confirmed 23:30 via Düsseldorf.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3 text-xs"><span className="text-base flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>
-                ))}</div>}
-              </div>
-            </div>}
-
-            {/* Performance Intelligence — matches tennis */}
-            {session.isDemoShell === false
-              ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your stats to unlock AI performance intelligence" />
-              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span>⚡</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
-                </div>
-                <span className="text-[10px] font-medium" style={{ color: '#dc2626' }}>Performance</span>
-              </div>
-              <div className="px-5 py-4 space-y-2.5">
-                {[
-                  { n:1, trend:'↑', color:'#22C55E', text:`3-dart average up to ${player.threeDartAverage} — above season avg (98.4). Sharp on the doubles in warm-up.` },
-                  { n:2, trend:'⚠', color:'#EF4444', text:'£12,400 points drop off after Players Championship 8. Win tonight = hold #9 Order of Merit. Loss = risk slipping to #12.' },
-                  { n:3, trend:'↑', color:'#22C55E', text:`Checkout % now ${player.checkoutPercent}% — above tour avg (35%). D16 still the weakest — 10min practice before warm-up.` },
-                  { n:4, trend:'→', color:'#dc2626', text:'Race to Alexandra Palace: top 16 qualifies. Euro Ch. and Players Ch. are the key points events before year-end.' },
-                  { n:5, trend:'↓', color:'#F59E0B', text:'First 9 darts leg rate dipped 4% — below tour avg. Reset routine and opening throw focus in practice today.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3 text-xs">
-                    <div className="flex items-center gap-1 flex-shrink-0 w-8">
-                      <span className="font-bold" style={{ color: '#dc2626' }}>{item.n}</span>
-                      <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
-                    </div>
-                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>}
+          {/* AI summary + Inbox + MyTeam */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <DtAIBriefMod T={v2T} accent={v2Accent} density={v2Density} onAsk={() => setV2AskOpen(true)} />
+            <DtInboxMod   T={v2T} accent={v2Accent} density={v2Density} />
+            <DtMyTeamMod  T={v2T} accent={v2Accent} density={v2Density} />
           </div>
-        </div>
+
+          {/* Fixtures + Performance signals */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <DtFixturesMod T={v2T} accent={v2Accent} density={v2Density} onPick={f => setV2OpenFixture(f)} />
+            <DtPerfMod     T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
+
+          {/* Recents + Season */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <DtRecentsMod T={v2T} accent={v2Accent} density={v2Density} />
+            <DtSeasonMod  T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
+
+          {/* Personal Photo Frame — preserved from v1 */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: v2T.panel, border: `1px solid ${v2T.border}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold" style={{ color: v2T.text }}>📸 Personal Photo Frame</p>
+              <span className="text-[10px]" style={{ color: v2T.text3 }}>Family · holidays · inspiration</span>
+            </div>
+            <label className="flex flex-col items-center justify-center rounded-xl cursor-pointer py-8" style={{ background: v2T.panel2, border: `1px dashed ${v2T.borderHi}` }}>
+              <span style={{ fontSize: 28 }}>📷</span>
+              <span className="text-xs mt-2" style={{ color: v2T.text2 }}>Drop a photo, or click to upload</span>
+              <span className="text-[10px] mt-1" style={{ color: v2T.text3 }}>Family · life-on-tour · inspiration</span>
+              <input type="file" accept="image/*" className="hidden" onChange={() => showV2DashToast('Photo uploaded · session only')} />
+            </label>
+          </div>
+
+          <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: v2T.text3, justifyContent: 'center' }}>
+            <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
+          </div>
         </div>
       )}
+
+      {/* v2 overlays — command palette, ask Lumio, fixture drawer, toast, match brief */}
+      {dashTab === 'today' && <>
+        <V2CommandPalette T={v2T} accent={v2Accent} open={v2CmdOpen} onClose={() => setV2CmdOpen(false)} onAskLumio={() => { setV2CmdOpen(false); setV2AskOpen(true) }} />
+        <V2AskLumio       T={v2T} accent={v2Accent} open={v2AskOpen} onClose={() => setV2AskOpen(false)} />
+        <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
+        <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
+        <DartsMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
+      </>}
 
       {/* QUICK WINS */}
       {dashTab === 'quickwins' && (session.isDemoShell === false ? <EmptyState icon="⚡" title="No quick wins yet" sub="Connect your data to unlock personalised quick wins" /> : (() => {
@@ -9231,7 +9100,7 @@ function DartsIntegrationsHub({ player, session }: { player: DartsPlayer; sessio
     { id: 'dartconnect', icon: '🎯', label: 'DartConnect',        category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartconnect },
     { id: 'dartfish',    icon: '📹', label: 'Lumio Vision Video',     category: 'Hardware Sensors', kind: 'generic', config: DARTS_INTEGRATIONS.dartfish },
     { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',       category: 'Wearables',        kind: 'generic', config: DARTS_INTEGRATIONS.whoop },
-    { id: 'statsports',  icon: '🛰️', label: 'Lumio GPS / Lumio GPS', category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.statsports },
+    { id: 'johansports', icon: '🛰️', label: 'Johan Sports',          category: 'Wearables',    kind: 'generic', config: DARTS_INTEGRATIONS.johansports },
     { id: 'workspace',   icon: '📧', label: 'Gmail + Calendar',   category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.workspace },
     { id: 'slack',       icon: '💬', label: 'Slack',              category: 'Team Tools',       kind: 'generic', config: DARTS_INTEGRATIONS.slack },
     { id: 'broadcast',   icon: '📺', label: 'Meridian Sports',    category: 'Distribution',     kind: 'generic', config: DARTS_INTEGRATIONS.broadcast },
