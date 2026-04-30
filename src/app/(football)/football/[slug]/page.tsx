@@ -56,8 +56,6 @@ import {
 } from './_components/FootballDashboardModules'
 import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
 import type { FbFixture } from './_lib/football-dashboard-data'
-import DeptAISummary from '@/components/DeptAISummary'
-import AIInsightsReport from '@/components/AIInsightsReport'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
@@ -775,7 +773,6 @@ const FOOTBALL_QUICK_ACTIONS = [
   { label: 'Training Plan', icon: Activity },
   { label: 'Scout Report', icon: Eye },
   { label: 'Board Report', icon: Briefcase },
-  { label: 'Dept Insights', icon: BarChart3 },
 ]
 
 function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
@@ -784,7 +781,7 @@ function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
       <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
       {FOOTBALL_QUICK_ACTIONS.map(a => (
         <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+          style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
           <a.icon size={12} />{a.label}
         </button>
       ))}
@@ -2188,7 +2185,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         <div className="flex items-center gap-2 flex-wrap">
           {actionButtons.map((a, i) => (
             <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+              style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}
@@ -2689,9 +2686,9 @@ function SquadView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }].map(a => (
           <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -2978,7 +2975,6 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
         { label: 'Opposition Report', icon: Eye },
         { label: 'Set Piece Planner', icon: Target },
         { label: 'Video Analysis', icon: Video },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -3191,7 +3187,6 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         { label: 'New Target', icon: Plus },
         { label: 'Scout Network', icon: Eye },
         { label: 'Board Approval', icon: Briefcase },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -3349,9 +3344,9 @@ function MedicalView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }].map(a => (
           <button key={a.l} onClick={() => medAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -3525,10 +3520,9 @@ function MedicalView() {
           { label: 'Log Injury', icon: Heart },
           { label: 'Rehab Plan', icon: Activity },
           { label: 'Fitness Report', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3552,10 +3546,9 @@ function ScoutingView() {
           { label: 'New Report', icon: FileText },
           { label: 'Watchlist', icon: Star },
           { label: 'Trip Planner', icon: MapPin },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3696,7 +3689,6 @@ function AcademyView({ onActionClick }: { onActionClick?: (label: string) => voi
         { label: 'Promote to First Team', icon: ArrowRight },
         { label: 'Development Plan', icon: FileText },
         { label: 'Scholarship Offers', icon: GraduationCap },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -3764,9 +3756,9 @@ function AnalyticsView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -3916,10 +3908,9 @@ function AnalyticsView() {
           { label: 'Player Comparison', icon: Users },
           { label: 'Heat Maps', icon: BarChart3 },
           { label: 'Video Clips', icon: Video },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3941,10 +3932,9 @@ function MediaView() {
           { label: 'Press Brief', icon: FileText },
           { label: 'Social Post', icon: MessageSquare },
           { label: 'Media Schedule', icon: Calendar },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4236,10 +4226,9 @@ Respond ONLY in JSON (no markdown):
           { label: 'Team Sheet', icon: Clipboard },
           { label: 'Operations Checklist', icon: CheckCircle2 },
           { label: 'Ticketing', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4497,11 +4486,10 @@ Respond ONLY in JSON (no markdown):
           { label: 'Load Report', icon: BarChart3 },
           { label: 'Readiness Check', icon: CheckCircle2 },
           { label: 'Upload CSV', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} onClick={() => { setToast(`${a.label} — opening workflow...`); setTimeout(() => setToast(null), 2500) }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -5798,10 +5786,9 @@ function TrainingView() {
           { label: 'Session Plan', icon: Clipboard },
           { label: 'Load Report', icon: BarChart3 },
           { label: 'Recovery Schedule', icon: Heart },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -5906,10 +5893,9 @@ function FinanceView() {
           { label: 'Budget Overview', icon: DollarSign },
           { label: 'Wage Report', icon: FileText },
           { label: 'Revenue Dashboard', icon: BarChart3 },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -6004,10 +5990,9 @@ function _OriginalStaffView() {
           { label: 'Staff Directory', icon: Users },
           { label: 'Leave Calendar', icon: Calendar },
           { label: 'Recruitment', icon: UserPlus },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -6101,10 +6086,9 @@ function FacilitiesView() {
           { label: 'Pitch Report', icon: FileText },
           { label: 'Maintenance Log', icon: Clipboard },
           { label: 'Booking Schedule', icon: Calendar },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -6234,9 +6218,9 @@ function SocialMediaView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Lumio Sports FC</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }].map(a => (
           <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -6333,9 +6317,9 @@ function DynamicsView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Dressing Room Intelligence</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Squad harmony, morale and player wellbeing</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -6389,9 +6373,9 @@ function PSRView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance & Profit & Sustainability Rules</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Championship PSR limit: £39m loss over 3 rolling years</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }].map(a => (
           <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -6437,9 +6421,9 @@ function SquadPlannerView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Planner</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Plan your squad for this season, next season and beyond</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }].map(a => (
           <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -7610,7 +7594,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   const [fbNotifOpen, setFbNotifOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
-  const [showAIInsights, setShowAIInsights] = useState(false)
   const [isFootballDemo, setIsFootballDemo] = useState(false)
   const [fbMounted, setFbMounted] = useState(false)
   const [clubLogo, setClubLogo] = useState<string | null>(() =>
@@ -7706,7 +7689,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   }
 
   function handleActionClick(label: string) {
-    if (label === 'Dept Insights') { setShowAIInsights(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
@@ -7839,59 +7821,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
             {isFootballDemo && activeDept === 'governance' && <GovernanceView />}
             {isFootballDemo && activeDept === 'community' && <CommunityView />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
-              const DEPT_HIGHLIGHTS: Record<string, string[]> = {
-                squad: ['Top performers this week: Dean Morris (8.2 avg), Sam Porter (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
-                tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
-                transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for James Dutton — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
-                medical: ['2 players currently in rehab — Nwosu (calf), Chen (hamstring)', 'Nwosu expected return: 10 days, Chen: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Morris high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
-                scouting: ['3 new targets added to watchlist this month', '2 scouting reports due by end of week', 'Trial session scheduled Saturday AM — 2 youth prospects', 'Recommended signing: LB target rated 8/10 by chief scout', 'Watchlist updated: 14 active targets across 3 positions'],
-                academy: ['2 graduates ready for first-team consideration', 'Academy win rate this season: 71% across all age groups', '3 scholarship renewals due for review by April', 'Talent pathway review meeting scheduled next Tuesday', 'Parent liaison meetings: 4 outstanding this term'],
-                analytics: ['xG vs actual goals: +2.3 over-performance this month', 'Pressing intensity 12% above league average', 'Defensive line height 34m — 2m higher than last month', 'Set piece efficiency: 22% from corners (league avg 16%)', 'Possession vs win rate: 58% possession correlates with 68% win rate'],
-                dynamics: ['Team morale indicators: 8.2/10 — highest since October', 'Training intensity scores up 6% week-on-week', 'Leadership group action: captain meeting scheduled Friday', 'No conflict flags this week', 'Team bonding session planned for Wednesday afternoon'],
-                media: ['Press conference scheduled Friday 2pm — pre-match', 'Social media reach this week: 124k (+18% vs last week)', 'Sponsor content deadline: Thursday for matchday programme', '2 interview requests pending — local press + podcast', 'No crisis comms flags currently active'],
-                social: ['Best performing post: matchday highlight reel (42k views)', 'Follower growth: +820 this week across all platforms', 'Content schedule: 2 gaps identified in next week plan', 'Fan engagement rate: 4.8% — above 3.5% benchmark', 'Viral opportunity: behind-the-scenes training video trending'],
-                matchday: ['Pre-match prep checklist: 85% complete', 'Travel arrangements confirmed for Saturday away fixture', 'Kit and equipment check completed — all clear', 'Referee briefing notes shared with coaching staff', 'Starting XI finalised — announced Friday 3pm'],
-                training: ['Session attendance this week: 94%', 'Fitness benchmark results: 3 players improved their times', 'Tactical drill completion rate: 88%', 'Load management flag: Adeyemi recommended light session Thursday', 'Next session plan uploaded — Friday AM recovery session'],
-                performance: ['Highest load player this week: Dele Adeyemi (2,840 AU)', 'Recovery scores: squad average 7.8/10', 'Sprint distance leaders: Adeyemi 1.2km, Cole 1.1km', 'Fatigue risk players: Torres (amber), Adeyemi (amber)', 'GPS anomaly flagged: Fletcher — reduced output in last session'],
-                finance: ['PSR headroom: £85k remaining for this reporting period', 'Wage bill at 72% of revenue — target under 75%', 'Player sale target: £150k needed to balance books by June', 'Commercial revenue 8% above target year-to-date', 'Cost overrun flagged: medical department 12% over budget'],
-                staff: ['All coaching staff DBS checks current', 'Physio vacancy — interviews scheduled next week', 'CPD compliance: 2 staff outstanding', 'Staff wellbeing survey results: 7.6/10', 'Annual reviews: 3 due this month'],
-                facilities: ['Pitch maintenance scheduled Monday', 'Floodlight inspection due — annual certificate expiring', 'Changing room refurb quote received — £12k', 'Car park resurfacing flagged', 'Groundsman leave cover arranged'],
-                'squad-planner': ['Left-back position still requires cover signing', 'Squad depth: thin at centre-back if Dutton injured', '1 loan return due end of April — decision needed', '2 trialists awaiting final decision by Friday', 'Summer window priority: left-back, central midfielder, backup striker'],
-                'club-profile': ['Club rating 7.2 — above league average 6.8', 'Stadium capacity utilisation: 78% average this season', 'Academy output rank: 3rd in division', 'Fanbase growth: +4.2% year-on-year', 'Commercial partnerships: 8 active, 2 in negotiation'],
-                psr: ['PSR submission deadline: 45 days away', 'Current projected position: within limits', 'Wage-to-revenue ratio: 72% (limit 75%)', 'Amortisation schedule on track', 'No transfer embargo risk flagged'],
-              }
-              const highlights = DEPT_HIGHLIGHTS[activeDept] || ['No highlights available for this department']
-              const deptName = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || activeDept
-              return (
-                <div className="mt-8 pt-6 border-t border-gray-800 space-y-4">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">{'\u{1F916}'} AI Department Intelligence</div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-                    <DeptAISummary dept={activeDept} portal="football" />
-                    <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(0,61,165,0.4)' }}>
-                      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: '1px solid rgba(0,61,165,0.2)' }}>
-                        <Sparkles size={14} style={{ color: '#003DA5' }} />
-                        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-                        <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{deptName}</span>
-                      </div>
-                      <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
-                        {highlights.map((item, i) => (
-                          <div key={i} className="flex gap-3">
-                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{i + 1}</span>
-                            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-                      {'\u{1F4CA}'} Insights
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
           </main>
         </div>
       </div>
@@ -7903,7 +7832,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
           onToast={fireToast}
         />
       )}
-      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }
