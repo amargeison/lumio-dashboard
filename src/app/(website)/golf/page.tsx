@@ -270,7 +270,7 @@ export default function GolfPage() {
   return (
     <div style={{ backgroundColor: BG, color: '#E5E7EB' }}>
       {/* Hero */}
-      <section style={{ minHeight: '100vh', padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '96px 24px 64px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${ACCENT}33, transparent 50%), radial-gradient(circle at 80% 60%, ${ACCENT_DEEP}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: ACCENT, textTransform: 'uppercase', marginBottom: 24 }}>
