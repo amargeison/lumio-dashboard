@@ -8,7 +8,7 @@ function getSupabase() {
   )
 }
 
-// Vercel Cron — runs daily at 3am UTC
+// Triggered by VPS system cron (Hetzner) — runs daily at 3am UTC. See ops docs for crontab entry.
 // Also accepts POST with bearer token for manual/n8n triggers
 export async function GET(req: NextRequest) {
   return handleCleanup(req)
@@ -23,7 +23,7 @@ async function handleCleanup(req: NextRequest) {
 
   const authHeader = req.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET || process.env.CLEANUP_SECRET
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
