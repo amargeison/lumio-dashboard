@@ -3852,12 +3852,12 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         `}</style>
 
       {/* Hero banner — match-day context, persistent across tabs */}
-      {/* align-items: start prevents sibling cards from stretching the
-          hero. Without this, FOOTBALL_TODAY / TODAY differing in row
-          count drags the hero card to match the taller sibling, leaving
-          empty space below the buttons. Six prior banner-alignment
-          attempts failed because they targeted hero content instead of
-          grid alignment. */}
+      {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+          row alongside AI Morning Summary and Inbox; Squad Availability
+          moved to bottom of page as full-width strip. Layout reflow per
+          user spec — do not re-add Today as banner sibling without
+          product approval. align-items: start retained defensively in
+          case future siblings get added to this row. */}
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <HeroToday
@@ -3865,7 +3865,6 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
             onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
             onAsk={() => setAskOpen(true)}
           />
-          <TodaySchedule T={T} accent={accent} density={density} />
         </div>
       </div>
 
@@ -3907,7 +3906,11 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       </div>
 
       {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
-      <div style={{ marginBottom: density.gap }}>
+      {/* QUICK ACTIONS row centered horizontally for breathing space
+          between the left-aligned Tabs row above and the KPI cards
+          below. Visual hierarchy: navigation flush-left, actions
+          centered. */}
+      <div style={{ marginBottom: density.gap, display: 'flex', justifyContent: 'center' }}>
         <RoleAwareQuickActionsBar
           sport="cricket"
           role={currentRole as string}
@@ -3922,10 +3925,18 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <StatTiles T={T} accent={accent} density={density} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          {/* Three-column row — AI Morning Summary | Inbox | Today.
+              Cards rendered as DIRECT grid children (no per-card wrapper
+              divs). Each card sets its own gridColumn internally
+              (AIBrief default '1/span 4', Inbox '5/span 4',
+              TodaySchedule '9/span 4' — totalling 12).
+              CARD ROW GAP — gap: 8 (tighter than density.gap=14) so
+              the three cards read as one unified row visual rather than
+              three disconnected cards. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
             <AIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
             <Inbox   T={T} accent={accent} density={density} />
-            <DashboardSquad T={T} accent={accent} density={density} />
+            <TodaySchedule T={T} accent={accent} density={density} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
@@ -3936,6 +3947,12 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
             <Recents T={T} accent={accent} density={density} />
             <Season  T={T} accent={accent} density={density} />
+          </div>
+
+          {/* Squad Availability — full-width strip at bottom of page,
+              direct grid child spanning '1 / -1'. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+            <DashboardSquad T={T} accent={accent} density={density} />
           </div>
 
           <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>

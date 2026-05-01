@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '../_lib/theme'
 import { FONT, FONT_MONO } from '../_lib/theme'
 import {
-  ORG, FIXTURES, TODAY, AI_BRIEF, INBOX, INJURIES, RECENTS, PERF_INTEL,
+  ORG, FIXTURES, TODAY, AI_BRIEF, INBOX, RECENTS, PERF_INTEL,
   SEASON_FORM, SQUAD_INITIALS,
   type Fixture, type AIBriefItem, type InboxChannel,
 } from '../_lib/data'
@@ -72,14 +72,21 @@ export function HeroToday({
     return () => clearInterval(id)
   }, [])
 
+  // BANNER FULL WIDTH — Today schedule moved into the three-column
+  // row alongside AI Morning Summary and Inbox; Squad Availability
+  // moved to bottom of page as full-width strip. Layout reflow per
+  // user spec — do not re-add Today as banner sibling without
+  // product approval.
+  //
   // GHOST BADGE — sport-specific crest rendered behind hero content.
   // Asset: /badges/oakridge_cc_crest.svg
-  // Specs: opacity 0.05, rotation 15deg, right-anchored with partial
-  // bleed. Maintain consistent specs if extending to other portals.
-  // This hero is the canonical reference for football's HeroToday — keep
-  // the content shape (eyebrow row, 4 detail items) aligned across both.
+  // Specs: opacity 0.05, rotation 15deg, CENTRED with partial bleed
+  // (height 140% so it bleeds beyond the banner top/bottom). Originally
+  // right-anchored when banner was 8-of-12; full-width banner moved
+  // the right anchor into territory hidden by the right-side radial
+  // blob, so it now sits centred behind the hero content.
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="ptn-hero" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -93,9 +100,9 @@ export function HeroToday({
         alt=""
         aria-hidden="true"
         style={{
-          position: 'absolute', right: '-12%', top: '50%',
+          position: 'absolute', left: '50%', top: '50%',
           height: '140%', width: 'auto',
-          transform: 'translateY(-50%) rotate(15deg)',
+          transform: 'translate(-50%, -50%) rotate(15deg)',
           opacity: 0.05, pointerEvents: 'none', zIndex: 0,
           objectFit: 'contain',
         }}
@@ -226,7 +233,7 @@ export function AIBrief({ T, accent, density, onAsk, gridColumn }: Common & { on
   const label = timeAwareSummaryLabel()
   const dateBadge = ORG.date.replace(/^[A-Za-z]{3},\s*/, '') // strip "Sat, " prefix → "26 Apr 2026"
   return (
-    <Card T={T} density={density} style={{ gridColumn: gridColumn ?? '1 / span 5' }}>
+    <Card T={T} density={density} style={{ gridColumn: gridColumn ?? '1 / span 4' }}>
       <SectionHead
         T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
@@ -542,7 +549,7 @@ export function Inbox({ T, accent, density }: Common) {
   })
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '6 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
       <SectionHead T={T} title="Inbox" right={
         <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 7 }}>
           {tabs.map(([id, lbl, n]) => (
@@ -579,16 +586,26 @@ export function Inbox({ T, accent, density }: Common) {
 
 // ─── Squad availability ───────────────────────────────────────────────
 
+// SQUAD AVAILABILITY — full-width strip layout. Cells use fixed pixel
+// size (48×48) instead of aspectRatio:1 so cards don't grow with
+// container width. Cricket has no positional groups (flat 22-player
+// list), so the 22 tiles render as a single horizontal flex row,
+// centred. Total card height ~110px (comparable in vertical weight
+// to Recent Results / Season Standing). Injuries list moved out of
+// this card to keep the strip compact.
+//
+// SQUAD TILES sized to fill the bottom strip without overflow.
+// Box height stays the same; tiles fill the available space.
 export function Squad({ T, accent, density }: Common) {
   return (
-    <Card T={T} density={density} style={{ gridColumn: '10 / span 3' }}>
-      <SectionHead T={T} title="Squad availability" />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <span className="tnum" style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', color: T.text }}>16</span>
-        <span style={{ fontSize: 11, color: T.text2 }}>/ 22 fit</span>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', padding: density.pad - 2 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Squad availability</div>
+        <span className="tnum" style={{ fontSize: 13, fontWeight: 600, color: T.text, marginLeft: 4 }}>16<span style={{ color: T.text3, fontWeight: 400 }}> / 22</span></span>
+        <span style={{ fontSize: 10.5, color: T.text3 }}>fit</span>
         <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.bad }}>2 out · 1 doubt</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11,1fr)', gap: 4, marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>
         {Array.from({ length: 22 }).map((_, i) => {
           const status = i < 16 ? 'ok' : i < 19 ? 'doubt' : i < 20 ? 'cleared' : 'out'
           const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : T.bad
@@ -596,26 +613,18 @@ export function Squad({ T, accent, density }: Common) {
           return (
             <div key={i} title={`${initials} · ${status}`}
               style={{
-                aspectRatio: '1', borderRadius: 4, display: 'grid', placeItems: 'center',
-                fontSize: 8.5, fontWeight: 600, fontFamily: FONT_MONO,
+                width: 48, height: 48, borderRadius: 6, display: 'grid', placeItems: 'center',
+                fontSize: 12, fontWeight: 600, fontFamily: FONT_MONO,
                 color: status === 'ok' ? T.text : '#0E1014',
                 background: status === 'ok' ? `${c}22` : c,
                 border: `1px solid ${status === 'ok' ? `${c}55` : 'transparent'}`,
                 cursor: 'pointer',
+                flexShrink: 0,
               }}>
               {initials}
             </div>
           )
         })}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {INJURIES.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <div style={{ fontSize: 11.5, color: T.text, fontWeight: 500 }}>{p.name}</div>
-            <div style={{ fontSize: 10.5, color: T.text3, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.issue}</div>
-            <div className="tnum" style={{ fontSize: 10.5, color: p.status === 'cleared' ? T.good : T.warn, fontFamily: FONT_MONO }}>{p.back}</div>
-          </div>
-        ))}
       </div>
     </Card>
   )
