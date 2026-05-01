@@ -50,8 +50,7 @@ export function DashboardEmptyState({
 
   useEffect(() => {
     setShowDevButton(
-      process.env.NODE_ENV === 'development' ||
-      window.location.hostname.includes('vercel.app')
+      process.env.NODE_ENV === 'development'
     )
     setShowClearDemo(localStorage.getItem('lumio_demo_active') === 'true')
   }, [])
@@ -327,7 +326,7 @@ export function DashboardEmptyState({
           <div className="flex-1 h-px" style={{ backgroundColor: '#1F2937' }} />
         </div>
 
-        {/* Dev shortcut — only shown in development or on Vercel preview */}
+        {/* Dev shortcut — only shown in development */}
         {showDevButton && (
           <button
             onClick={() => loadDemoData(pageKey)}

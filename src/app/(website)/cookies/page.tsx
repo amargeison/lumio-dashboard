@@ -13,7 +13,7 @@ export default function CookiesPage() {
         <div className="mb-10">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Legal</p>
           <h1 className="text-4xl font-black mb-4">Cookie Policy</h1>
-          <p className="text-gray-400">Last updated: January 2025 · Lumio Ltd</p>
+          <p className="text-gray-400">Last updated: 1 May 2026 · Lumio Ltd</p>
         </div>
 
         <div className="space-y-8 text-gray-300 text-sm leading-relaxed">
@@ -100,8 +100,7 @@ export default function CookiesPage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-3">Third-party cookies</h2>
             <p>
-              Lumio does not use third-party advertising cookies or tracking pixels. Our sub-processors
-              (Supabase, Vercel) may set technical cookies required for their services. See our{' '}
+              Lumio does not use third-party advertising cookies or tracking pixels. Our authentication and session management is provided by Supabase, which sets technical cookies required for sign-in and session continuity. Hetzner (our hosting provider) does not set cookies. See our{' '}
               <Link href="/privacy#sub-processors" className="text-purple-400 hover:text-purple-300 underline">Privacy Policy</Link>{' '}
               for the full list of sub-processors.
             </p>

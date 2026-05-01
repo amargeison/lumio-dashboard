@@ -6,7 +6,7 @@
 **Context:** This module replaces the "Coming in Full Build" placeholder and existing partial Media & Content sections across all 10 sports demo portals with a unified, fully interactive tabbed interface.
 **Repo:** `github.com/amargeison/lumio-dashboard` — branch `dev`
 **Working dir:** `C:\Users\ArronMargeison\lumio-dashboard`
-**Deploy:** `git checkout main && git merge dev && git push origin main && git checkout dev` — Vercel auto-deploys. Never run `deploy.sh` alone.
+**Deploy:** Deploy via `npm run golive` from the dev branch. This runs deploy.sh which handles the VPS deployment via SSH. Never use Vercel — the project is on a Hetzner VPS.
 **Demo PIN:** `071711`
 
 ---

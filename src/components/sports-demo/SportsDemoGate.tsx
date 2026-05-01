@@ -462,9 +462,8 @@ export default function SportsDemoGate({
           //   - Prod: require OTP verify to resume. Mount leaves `restored`
           //     null so the gate renders the 'email' step, then verifyOtp
           //     picks the survivors back up on successful code entry.
-          //   - Dev (localhost / *.vercel.app / dev.*): auto-rebuild straight
-          //     to 'done' so local iteration doesn't demand a fresh OTP each
-          //     reload.
+          //   - Dev (localhost / dev.*): auto-rebuild straight to 'done' so
+          //     local iteration doesn't demand a fresh OTP each reload.
           //
           // After DEMO_SESSION_TTL_MS of inactivity (no survivor write), the
           // survivors are wiped on mount and the wizard fires fresh.
@@ -483,8 +482,7 @@ export default function SportsDemoGate({
               wipeDemoSurvivors(sport)
             } else {
               const isDevHostMount = typeof window !== 'undefined' && (
-                window.location.hostname.includes('vercel.app')
-                || window.location.hostname.includes('dev.')
+                window.location.hostname.includes('dev.')
                 || window.location.hostname === 'localhost'
               )
               if (isDevHostMount) {
@@ -526,8 +524,7 @@ export default function SportsDemoGate({
       return
     }
 
-    const isDevHost = window.location.hostname.includes('vercel.app')
-      || window.location.hostname.includes('dev.')
+    const isDevHost = window.location.hostname.includes('dev.')
       || window.location.hostname === 'localhost'
     if (isDevHost) setStep('club')
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -913,8 +910,7 @@ export default function SportsDemoGate({
   const resetSession = () => {
     clearDemoSession(sport)
     const isDevHost = typeof window !== 'undefined' && (
-      window.location.hostname.includes('vercel.app')
-      || window.location.hostname.includes('dev.')
+      window.location.hostname.includes('dev.')
       || window.location.hostname === 'localhost'
     )
     setSession(null)

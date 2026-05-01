@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <div className="mb-10">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Legal</p>
           <h1 className="text-4xl font-black mb-4">Privacy Policy</h1>
-          <p className="text-gray-400">Last updated: January 2025 · Lumio Ltd</p>
+          <p className="text-gray-400">Last updated: 1 May 2026 · Lumio Ltd</p>
         </div>
 
         <div className="prose prose-invert max-w-none space-y-8 text-gray-300 text-sm leading-relaxed">
@@ -76,7 +76,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-3">5. Data storage and retention</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-400">
-              <li>All primary data is stored in the UK (AWS eu-west-2, London)</li>
+              <li>Database, file storage, and authentication data are stored in the UK (Supabase, eu-west-2, London)</li>
+              <li>Application servers and request logs are hosted in Germany (Hetzner, Nuremberg)</li>
               <li>Demo workspace data is deleted automatically after 14 days</li>
               <li>Account data is retained for the duration of your subscription plus 30 days</li>
               <li>Anonymised analytics data may be retained for up to 2 years</li>
@@ -96,11 +97,14 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="text-gray-400">
                   {[
-                    ['Supabase / AWS', 'Database and authentication', 'UK (eu-west-2)'],
-                    ['Vercel', 'Application hosting', 'EU'],
+                    ['Supabase', 'Database, authentication, file storage', 'UK (London, eu-west-2)'],
+                    ['Hetzner Online GmbH', 'Application hosting and compute', 'Germany (Nuremberg)'],
                     ['Anthropic', 'AI processing (Claude API)', 'USA (SCCs applied)'],
-                    ['Resend', 'Transactional email', 'USA (SCCs applied)'],
-                    ['Stripe', 'Payment processing', 'USA (SCCs applied)'],
+                    ['Resend', 'Transactional email delivery', 'USA (SCCs applied)'],
+                    ['Stripe', 'Payment processing', 'UK'],
+                    ['ElevenLabs', 'Voice synthesis (text-to-speech)', 'USA (SCCs applied)'],
+                    ['Google (Workspace SSO)', 'Authentication (sign-in with Google)', 'USA (SCCs applied)'],
+                    ['Microsoft (Azure AD SSO)', 'Authentication (sign-in with Microsoft)', 'USA (SCCs applied)'],
                   ].map(([processor, purpose, location]) => (
                     <tr key={processor} className="border-b border-white/5">
                       <td className="py-2 pr-4 font-medium text-gray-300">{processor}</td>

@@ -83,7 +83,6 @@ export async function POST(req: NextRequest) {
 
     // Dev bypass
     const isDev = process.env.NODE_ENV !== 'production' ||
-      process.env.VERCEL_ENV === 'preview' ||
       code === process.env.DEV_ACCESS_PIN ||
       code === '071711'
 
