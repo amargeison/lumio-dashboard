@@ -5341,7 +5341,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   ]
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
+    <div className="flex flex-col" style={{ background: '#07080F', color: '#F9FAFB', minHeight: '100vh', zoom: 0.9 }}>
+      {/* Body: sidebar + main content. */}
+      {/* SIDEBAR STICKY — matches football/cricket/rugby pattern.
+          position: sticky with top: 0 and full viewport height (zoom-
+          adjusted). Nav inside scrolls if content exceeds viewport.
+          The body-row wrapper here is what gives sticky its
+          scrolling context — without it, a flat row-flex outer
+          doesn't reliably extend the containing block beyond the
+          aside's height under zoom: 0.9. */}
+      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
@@ -5405,7 +5414,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               ? <img src={session.logoDataUrl} alt="" className="w-5 h-5 rounded object-cover" />
               : <span className="text-lg">⚽</span>}
             <div>
-              <h1 className="text-sm font-bold text-white">{session.clubName}</h1>
+              {/* Team name removed — already shown in sidebar header.
+                  Keep the substantive Sprint 3.5 compliance indicator. */}
               <p className="text-[10px] text-gray-500">
                 {club.tier === 'grassroots' ? `${club.league} Women's Football` : `${club.league} · FSR Compliant · Karen Carney Review Standards`}
               </p>
@@ -5432,16 +5442,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           </div>
         </div>
 
-        {/* Role banner */}
-        {currentRole !== 'director' && !isSponsor && roleConfig.message && (
-          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
-            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
-            <div className="flex items-center gap-2">
-              <span>{roleConfig.icon}</span>
-              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong> — {roleConfig.message}</span>
-            </div>
-          </div>
-        )}
+        {/* Role indicator strip removed — role context is shown via the
+            role selector dropdown in sidebar bottom (canonical pattern
+            across all portals). Removed here for portal consistency. */}
 
         {/* Sponsor dashboard override */}
         {isSponsor && activeSection === 'dashboard' ? (
@@ -5739,6 +5742,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           </div>
         )}
       </main>
+      </div>
 
       {/* v2 overlays — command palette, ask Lumio, fixture drawer, toast, match brief */}
       <V2CommandPalette T={v2T} accent={v2Accent} open={v2CmdOpen} onClose={() => setV2CmdOpen(false)} onAskLumio={() => { setV2CmdOpen(false); setV2AskOpen(true) }} />
