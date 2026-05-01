@@ -596,18 +596,23 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                 return (
                   <button key={item.id}
                     onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
-                    className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
+                    className="flex items-center gap-2.5 py-2 rounded-lg text-left w-full transition-all"
                     style={{
                       backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
                       color: active ? PRIMARY : '#9CA3AF',
                       borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
-                      // FONT — sidebar nav labels use the canonical Lumio sans-serif
-                      // matching cricket, women's, non-league, grassroots, rugby.
-                      // Do not introduce serif or display fonts here without a
-                      // brand-wide decision.
+                      // FONT — sidebar nav matches cricket/rugby reference (12.5px,
+                      // weight 400 inactive / 600 active). The fontFamily resolves to
+                      // Geist via inheritance from body. Critical: do NOT use Tailwind
+                      // text-sm or font-medium here — those override the inline values
+                      // and break parity with sister portals. Prior commit 6780cbce
+                      // changed fontFamily but missed this; the real cause was the
+                      // Tailwind size/weight classes.
                       fontFamily: V2_FONT,
+                      fontSize: 12.5,
+                      fontWeight: active ? 600 : 400,
                     }}
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
@@ -650,8 +655,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                 const active = activeDept === item.id
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full"
-                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF', fontFamily: V2_FONT }}>
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left w-full"
+                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF', fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 400 }}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     <span className="truncate">{item.label}</span>
                   </button>
