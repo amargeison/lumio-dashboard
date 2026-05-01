@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import { use } from 'react'
 import {
   Users, TrendingUp, AlertCircle, CheckCircle2, Clock, ArrowRight,
@@ -430,7 +429,7 @@ function Sidebar({ activeDept, onSelect, open, onClose }: { activeDept: string; 
               </button>
             )})}</div>))}
         </nav>
-        <div className="mt-auto shrink-0" style={{ borderTop: `1px solid ${BORDER}` }}>{expanded && <div className="pb-3"><a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}><Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} /></a></div>}</div>
+        {/* Sidebar footer logo removed — redundant brand mark inside Lumio's own product. Bottom of sidebar ends at role selector. */}
       </aside>
       {open && (<div className="md:hidden fixed inset-0 z-40 flex"><div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
         <aside className="relative z-50 w-56 flex flex-col" style={{ backgroundColor: BG, borderRight: `1px solid ${BORDER}` }}>

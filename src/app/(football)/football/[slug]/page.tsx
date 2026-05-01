@@ -4,7 +4,6 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -604,6 +603,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                       borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
+                      // FONT — sidebar nav labels use the canonical Lumio sans-serif
+                      // matching cricket, women's, non-league, grassroots, rugby.
+                      // Do not introduce serif or display fonts here without a
+                      // brand-wide decision.
+                      fontFamily: V2_FONT,
                     }}
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
@@ -628,15 +632,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
             />
           </div>
         )}
-        <div className="shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          {expanded && (
-            <div className="pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
-              </a>
-            </div>
-          )}
-        </div>
+        {/* Sidebar footer logo removed — redundant brand mark inside
+            Lumio's own product. Bottom of sidebar ends at role selector. */}
       </aside>
 
       {/* Mobile overlay */}
@@ -654,18 +651,15 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full"
-                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF' }}>
+                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF', fontFamily: V2_FONT }}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     <span className="truncate">{item.label}</span>
                   </button>
                 )
               })}
             </nav>
-            <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
-              </a>
-            </div>
+            {/* Sidebar footer logo removed — redundant brand mark inside
+                Lumio's own product. Bottom of sidebar ends at the nav. */}
           </aside>
         </div>
       )}

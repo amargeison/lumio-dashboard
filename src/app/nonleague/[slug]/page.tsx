@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import Image from 'next/image'
 import { use } from 'react'
 import {
   Users, Home, Calendar, Target, Bell, Shield, Shirt, Clipboard, Trophy,
@@ -110,17 +109,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: 
           />
         )}
 
-        {/* Footer logo */}
-        <div className="mt-auto shrink-0" style={{ borderTop: `1px solid ${BORDER}` }}>
-          {expanded && (
-            <div className="pb-3 pt-2 flex flex-col items-center gap-2">
-              <Image src="/football_logo.png" alt="Football" width={80} height={80} style={{ width: 60, height: 'auto', objectFit: 'contain', opacity: 0.7 }} />
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 100, height: 'auto', objectFit: 'contain' }} />
-              </a>
-            </div>
-          )}
-        </div>
+        {/* Sidebar footer logo removed — redundant brand mark inside
+            Lumio's own product. Bottom of sidebar ends at role selector. */}
       </aside>
 
       {/* Mobile sidebar overlay */}

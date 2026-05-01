@@ -7161,11 +7161,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
           </div>
         )}
 
-        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: C.border, flexShrink: 0 }}>
-          {sidebarExpanded
-            ? <img src="/cricket_logo.png" alt="Lumio Cricket" style={{ maxHeight: 32, objectFit: 'contain' }} className="opacity-70 hover:opacity-100 transition-opacity" />
-            : <span className="text-lg">🏏</span>}
-        </div>
+        {/* Sidebar footer logo removed — redundant brand mark inside
+            Lumio's own product. Bottom of sidebar ends at role selector. */}
       </aside>
 
       {/* Content */}
