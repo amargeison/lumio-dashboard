@@ -8,6 +8,7 @@ import {
   SEASON_FORM, SQUAD_INITIALS,
   type Fixture, type AIBriefItem, type InboxChannel,
 } from '../_lib/data'
+import { CRICKET_QUOTES, getDailyQuote } from '@/lib/sports-quotes'
 import { Icon } from './Icon'
 
 // ─── Shared ────────────────────────────────────────────────────────────
@@ -85,6 +86,16 @@ export function HeroToday({
   // right-anchored when banner was 8-of-12; full-width banner moved
   // the right anchor into territory hidden by the right-side radial
   // blob, so it now sits centred behind the hero content.
+  //
+  // INSPIRATIONAL QUOTE — sport-specific pool sourced from existing
+  // quote data file (src/lib/sports-quotes.ts). Rotates daily via
+  // getDailyQuote() so user sees a different quote each match day
+  // but stable through the day.
+  //
+  // RIGHT COLUMN HIERARCHY — countdown is the largest visual
+  // element (it's the match-day stat that matters); date and
+  // weather are scaled appropriately as supporting context.
+  const quote = getDailyQuote(CRICKET_QUOTES)
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
@@ -125,13 +136,21 @@ export function HeroToday({
             <div><span style={{ color: T.text3 }}>Squad</span> <span style={{ color: T.good, marginLeft: 6, fontWeight: 600 }}>Locked</span></div>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
-          <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{ORG.date}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 9° · cloud</div>
-          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn }}>
-            <Icon name="cloud" size={13} stroke={1.5} /> 34% rain ↓16:00
+        <div style={{ flex: '0 1 280px', minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingInline: 8 }}>
+          <div style={{ fontSize: 14, fontStyle: 'italic', color: T.text2, lineHeight: 1.45, fontFamily: FONT }}>
+            &ldquo;{quote.text}&rdquo;
           </div>
-          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 18, color: accent.hex, marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: T.text3, marginTop: 6, fontFamily: FONT }}>
+            — {quote.author}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 14 }}>
+          <div className="tnum" style={{ color: T.text, fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em' }}>{ORG.date}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}><Icon name="cloud" size={15} stroke={1.5} /> 9° · cloud</div>
+          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn, fontSize: 14 }}>
+            <Icon name="cloud" size={15} stroke={1.5} /> 34% rain ↓16:00
+          </div>
+          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 34, color: accent.hex, marginTop: 6, lineHeight: 1, letterSpacing: '-0.02em' }}>
             {pad2(counter.h)}:{pad2(counter.m)}:{pad2(counter.s)}
           </div>
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO FIRST BALL</div>

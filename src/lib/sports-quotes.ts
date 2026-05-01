@@ -696,3 +696,24 @@ export const GOLF_QUOTES = [
   { text: "Golf teaches us that the next shot is the most important.", author: "Unknown" },
   { text: "Trust your swing. Trust your preparation. Trust yourself.", author: "Unknown" },
 ]
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── CRICKET QUOTES (15) ──────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export const CRICKET_QUOTES = [
+  { text: "Cricket is a most precarious profession.", author: "Geoffrey Boycott" },
+  { text: "You don't play for the crowd, you play for the team.", author: "Sachin Tendulkar" },
+  { text: "Test cricket isn't supposed to be easy. It's supposed to be hard.", author: "Steve Waugh" },
+  { text: "Cricket is a game played by 11 fools and watched by 11,000 fools.", author: "George Bernard Shaw" },
+  { text: "I never aim at the stumps. I aim at the man.", author: "Dennis Lillee" },
+  { text: "When you take wickets, the captain is satisfied.", author: "Wasim Akram" },
+  { text: "Cricket teaches you the truth of life.", author: "Rahul Dravid" },
+  { text: "Captain leads from the front.", author: "MS Dhoni" },
+  { text: "It's tough being a number 11. The bowlers always think you can't bat.", author: "Glenn McGrath" },
+  { text: "I will be there until the end and never give up.", author: "Brian Lara" },
+  { text: "If you can keep your head when all about you are losing theirs — and blaming it on you, you'll make a fine cricketer.", author: "After Rudyard Kipling" },
+  { text: "The first essential of a cricketer is patience.", author: "Don Bradman" },
+  { text: "Cricket is full of glorious chances.", author: "Neville Cardus" },
+  { text: "There are two types of batsmen — those who get out, and those who haven't yet.", author: "Cricket adage" },
+  { text: "Form is temporary, class is permanent.", author: "Cricket adage" },
+]

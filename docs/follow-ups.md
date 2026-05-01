@@ -50,3 +50,52 @@ When all 4 assets exist:
   pattern in `FootballDashboardModules.tsx` HeroToday and
   `cricket/[slug]/v2/_components/Modules.tsx` HeroToday.
 - Each portal's hero file gets the same defensive comment.
+
+## Banner enhancements — pending other portals
+
+Quote feature + larger right-column (date 21, weather 14,
+countdown 34, caption 10) shipped for football + cricket.
+Pending port to women's, non-league, grassroots, rugby — and
+tennis, golf, darts, boxing if those banners adopt the same
+layout.
+
+## Demo users — pre-loaded named profiles per role
+
+Currently the role selector dropdown shows generic "User"
+placeholders when onboarding fields are empty. Sister sport
+portals (Tennis/Boxing/Golf/Darts) have pre-loaded named demo
+users (Big Al, Marcus Cole, James Harrington, Jake Morrison)
+which make the dashboard feel "lived-in" during demos.
+
+Pending work:
+- Audit demo flow — identify which roles are actually clicked
+  during JOHAN, Snowball/ECB, AFC Wimbledon, and other
+  partnership demos
+- Pre-load named demo users for those critical roles only
+  (likely 2-3 per portal × 6 team portals = ~15 demo users
+  total)
+- Generate professional headshot photos (AI-generated faces
+  from thispersondoesnotexist or generated.photos to avoid
+  licensing issues)
+- Write plausible role context (e.g., "Marcus Webb · Head
+  Coach · 7 years at Oakridge")
+- Wire into role selector / sidebar avatar
+- Keep "blank if user skips onboarding" path working for real
+  signups
+
+Priority: do this before next round of partnership demos.
+Bigger demo-realism upgrade than most people would assume.
+
+## Football quotes location
+
+`FOOTBALL_QUOTES` is now duplicated across THREE locations:
+- `src/app/(football)/football/[slug]/page.tsx` (line 94) —
+  consumed by `PersonalBanner`
+- `src/app/demo/football/[slug]/page.tsx` (line 44)
+- `src/app/(football)/football/[slug]/_components/FootballDashboardModules.tsx`
+  — added with the banner-quote feature; consumed by `HeroToday`
+
+Should eventually be migrated to `src/lib/sports-quotes.ts`
+alongside cricket, tennis, boxing, golf, darts. Defer until
+next quote-related work to avoid bundling refactor in feature
+commits.

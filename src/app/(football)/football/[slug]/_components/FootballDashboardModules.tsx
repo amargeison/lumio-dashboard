@@ -53,6 +53,29 @@ export function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactN
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
+// INSPIRATIONAL QUOTE — local copy used by HeroToday so the dashboard
+// hero doesn't pull from page.tsx (which would be a circular import).
+// Kept in sync with FOOTBALL_QUOTES in page.tsx and demo/football/page.tsx.
+// Follow-up: consolidate all three into src/lib/sports-quotes.ts —
+// see docs/follow-ups.md "Football quotes location".
+const FOOTBALL_QUOTES = [
+  { text: "Football is a simple game. Twenty-two men chase a ball for 90 minutes and at the end, the Germans always win.", author: "Gary Lineker" },
+  { text: "I wouldn't say I was the best manager in the business. But I was in the top one.", author: "Brian Clough" },
+  { text: "Some people believe football is a matter of life and death. I assure you it is much, much more important than that.", author: "Bill Shankly" },
+  { text: "In football, the worst blindness is only seeing the ball.", author: "Bright Falcao" },
+  { text: "I am a firm believer that if you score one more than the opposition then you win.", author: "Sir Alex Ferguson" },
+  { text: "The greatest barrier to success is the fear of failure.", author: "Sven-Goran Eriksson" },
+  { text: "I don't have any weaknesses. I don't believe in them.", author: "Pep Guardiola" },
+  { text: "A manager needs three years to build a team, but can lose it in three months.", author: "Arsene Wenger" },
+  { text: "If a player is not interfering with play or seeking to gain an advantage, then he should be.", author: "Bill Shankly" },
+  { text: "We must have had 99% of the game. It was the other 1% that cost us.", author: "Ruud Gullit" },
+  { text: "The best teams in the world don't just play football. They create it.", author: "Pep Guardiola" },
+  { text: "Football is a game about feelings and intelligence.", author: "Arsene Wenger" },
+  { text: "The ball is round. The game lasts 90 minutes. Everything else is just theory.", author: "Sepp Herberger" },
+  { text: "Players lose you games, not tactics. There's so much crap talked about tactics.", author: "Brian Clough" },
+  { text: "Fail, and fail again. Because failure leads to success.", author: "Sir Alex Ferguson" },
+]
+
 // ─── HeroToday ─────────────────────────────────────────────────────────
 
 export function HeroToday({
@@ -85,6 +108,16 @@ export function HeroToday({
   // Asset: /badges/oakridge_fc_crest.svg
   // Specs: opacity 0.05, rotation 15deg, right-anchored with partial
   // bleed. Maintain consistent specs if extending to other portals.
+  //
+  // INSPIRATIONAL QUOTE — sport-specific pool sourced from existing
+  // quote data file. Rotates daily (deterministic by date.getDate())
+  // so user sees a different quote each match day but stable through
+  // the day.
+  //
+  // RIGHT COLUMN HIERARCHY — countdown is the largest visual
+  // element (it's the match-day stat that matters); date and
+  // weather are scaled appropriately as supporting context.
+  const quote = FOOTBALL_QUOTES[new Date().getDate() % FOOTBALL_QUOTES.length]
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
@@ -130,13 +163,21 @@ export function HeroToday({
             <div><span style={{ color: T.text3 }}>Form</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>W L D W W</span></div>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
-          <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{FOOTBALL_ORG.date}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 12° · light cloud</div>
-          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn }}>
-            <Icon name="cloud" size={13} stroke={1.5} /> 11 mph SW
+        <div style={{ flex: '0 1 280px', minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingInline: 8 }}>
+          <div style={{ fontSize: 14, fontStyle: 'italic', color: T.text2, lineHeight: 1.45, fontFamily: FONT }}>
+            &ldquo;{quote.text}&rdquo;
           </div>
-          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 18, color: accent.hex, marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: T.text3, marginTop: 6, fontFamily: FONT }}>
+            — {quote.author}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 14 }}>
+          <div className="tnum" style={{ color: T.text, fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em' }}>{FOOTBALL_ORG.date}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}><Icon name="cloud" size={15} stroke={1.5} /> 12° · light cloud</div>
+          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn, fontSize: 14 }}>
+            <Icon name="cloud" size={15} stroke={1.5} /> 11 mph SW
+          </div>
+          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 34, color: accent.hex, marginTop: 6, lineHeight: 1, letterSpacing: '-0.02em' }}>
             {pad2(counter.h)}:{pad2(counter.m)}:{pad2(counter.s)}
           </div>
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO KICK-OFF</div>
