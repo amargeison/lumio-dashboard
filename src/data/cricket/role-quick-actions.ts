@@ -28,31 +28,39 @@ export const CRICKET_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'open-board',       label: 'Open Board View',      icon: TrendingUp,   targetDept: 'board' },
   ],
 
+  // Pitch-side tactical actions removed — Hudl/Sportscode territory.
+  // Head-coach quick actions now focus on workload, welfare and squad ops.
   head_coach: [
-    { id: 'practice-plan',    label: "Today's Practice Plan", icon: ClipboardList, targetDept: 'practice-log' },
-    { id: 'toss-strategy',    label: 'Toss Strategy',        icon: Cloud,        targetDept: 'match-centre' },
-    { id: 'innings-brief',    label: 'Innings Brief',        icon: Sparkles,     targetDept: 'ai-innings-brief' },
     { id: 'squad-selection',  label: 'Squad Selection',      icon: UsersIcon,    targetDept: 'squad' },
-    { id: 'net-builder',      label: 'Net Session Builder',  icon: Calendar,     targetDept: 'net-planner' },
-    { id: 'opposition',       label: 'Opposition Review',    icon: Eye,          targetDept: 'opposition' },
+    { id: 'workload-alerts',  label: 'Bowling Workload',     icon: Activity,     targetDept: 'bowling-workload' },
+    { id: 'gps-readiness',    label: 'GPS Readiness',        icon: Activity,     targetDept: 'gps' },
+    { id: 'medical-review',   label: 'Medical Review',       icon: Heart,        targetDept: 'medical' },
+    { id: 'pathway',          label: 'Player Pathway',       icon: TrendingUp,   targetDept: 'pathway' },
+    { id: 'mental-performance', label: 'Mental Performance', icon: Sparkles,     targetDept: 'mental-performance' },
   ],
 
+  // Captain role retained for compatibility but pitch-side tactical actions
+  // (match brief, field settings, bowling plan, batting order, D/L) removed.
+  // Captain quick actions now centre on squad readiness and director comms.
   captain: [
-    { id: 'match-brief',      label: "Today's Match Brief",  icon: Target,       targetDept: 'match-centre' },
-    { id: 'field-settings',   label: 'Field Setting Library', icon: Crosshair,   targetDept: 'match-centre' },
-    { id: 'dl-calculator',    label: 'D/L Calculator',       icon: Cloud,        targetDept: 'dls' },
-    { id: 'bowling-plan',     label: 'Bowling Plan Tonight', icon: Crosshair,    targetDept: 'match-centre' },
-    { id: 'batting-order',    label: 'Batting Order Tool',   icon: ClipboardList, targetDept: 'match-centre' },
+    { id: 'squad-status',     label: 'Squad Status',         icon: UsersIcon,    targetDept: 'squad' },
+    { id: 'medical-review',   label: 'Medical Review',       icon: Heart,        targetDept: 'medical' },
+    { id: 'team-comms',       label: 'Team Comms',           icon: MessageSquare, targetDept: 'team-comms' },
+    { id: 'gps-readiness',    label: 'GPS Readiness',        icon: Activity,     targetDept: 'gps' },
+    { id: 'workload-alerts',  label: 'Bowling Workload',     icon: AlertTriangle, targetDept: 'bowling-workload' },
     { id: 'talk-director',    label: 'Talk to Director',     icon: MessageSquare, modalId: 'message-director' },
   ],
 
+  // Analyst quick actions previously fed match-coding workflows. Match-coding
+  // is Hudl/Sportscode territory — analyst now focuses on operational data
+  // (insights, GPS, workload, contracts) that supports the club business.
   analyst: [
-    { id: 'match-notes',      label: 'Match Notes Tonight',  icon: FileText,     targetDept: 'match-centre' },
-    { id: 'batting-l5',       label: 'Batting Analytics L5', icon: TrendingUp,   targetDept: 'batting-analytics' },
-    { id: 'bowling',          label: 'Bowling Analytics',    icon: Crosshair,    targetDept: 'bowling-analytics' },
-    { id: 'ball-tracking',    label: 'Ball Tracking Review', icon: Video,        targetDept: 'video-analysis' },
-    { id: 'video-today',      label: 'Video Review Today',   icon: Video,        targetDept: 'video-analysis' },
-    { id: 'opposition',       label: 'Opposition Analytics', icon: Eye,          targetDept: 'opposition' },
+    { id: 'dept-insights',    label: 'Department Insights',  icon: TrendingUp,   targetDept: 'insights' },
+    { id: 'gps-readiness',    label: 'GPS Readiness',        icon: Activity,     targetDept: 'gps' },
+    { id: 'gps-heatmaps',     label: 'GPS Heatmaps',         icon: Crosshair,    targetDept: 'gps-heatmaps' },
+    { id: 'workload-alerts',  label: 'Bowling Workload',     icon: AlertTriangle, targetDept: 'bowling-workload' },
+    { id: 'contracts',        label: 'Contract Hub',         icon: FileText,     targetDept: 'contract-hub' },
+    { id: 'export-data',      label: 'Export Data',          icon: FileText,     modalId: 'export-match-data' },
   ],
 
   groundsman: [

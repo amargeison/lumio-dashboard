@@ -53,10 +53,10 @@ export const FOOTBALL_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
   manager: [
     { id: 'training-plan',      label: "Today's Training Plan", icon: ClipboardList, targetDept: 'training' },
     { id: 'log-injury',         label: 'Log Injury',           icon: Heart,        modalId: 'log-injury' },
-    { id: 'team-selection',     label: 'Open Team Selection',  icon: UsersIcon,    targetDept: 'squad-planner' },
+    // REMOVED: Team Selection / Match Day Squad (squad-planner) — pitch-side tactical, Hudl territory
     { id: 'gps-readiness',      label: 'Review GPS Readiness', icon: Activity,     targetDept: 'performance' },
-    { id: 'matchday-squad',     label: 'Set Match Day Squad',  icon: Target,       targetDept: 'squad-planner' },
     { id: 'press-prep',         label: 'Press Conference Prep', icon: Newspaper,   targetDept: 'media' },
+    { id: 'medical-review',     label: 'Medical Review',       icon: Heart,        targetDept: 'medical' },
   ],
 
   director_football: [
@@ -77,13 +77,17 @@ export const FOOTBALL_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'yesterday-session',  label: "Yesterday's Session",  icon: Activity,     targetDept: 'performance' },
   ],
 
+  // ANALYST role retained for compatibility but pitch-side tactical actions
+  // (match prep, opposition report, performance stats, set piece library,
+  // tag clip) were removed — those features are Hudl/Sportscode territory.
+  // Remaining actions focus on operational / club-management data work.
   analyst: [
-    { id: 'match-prep',         label: "Today's Match Prep",   icon: Video,        targetDept: 'lumio-vision' },
-    { id: 'opposition-report',  label: 'Opposition Report',    icon: Eye,          targetDept: 'scouting' },
-    { id: 'performance-stats',  label: 'Performance Stats',    icon: TrendingUp,   targetDept: 'analytics' },
-    { id: 'set-piece-library',  label: 'Set Piece Library',    icon: Target,       targetDept: 'set-pieces' },
-    { id: 'export-match-data',  label: 'Export Match Data',    icon: FileText,     modalId: 'export-match-data' },
-    { id: 'tag-clip',           label: 'Tag New Clip',         icon: Video,        targetDept: 'lumio-vision' },
+    { id: 'dept-insights',      label: 'Department Insights',  icon: TrendingUp,   targetDept: 'insights' },
+    { id: 'gps-readiness',      label: 'GPS Readiness',        icon: Activity,     targetDept: 'performance' },
+    { id: 'lumio-data',         label: 'Lumio Data',           icon: TrendingUp,   targetDept: 'opta' },
+    { id: 'lumio-data-pro',     label: 'Lumio Data Pro',       icon: Activity,     targetDept: 'lumio-data-pro' },
+    { id: 'scouting-db',        label: 'Scouting Database',    icon: SearchIcon,   targetDept: 'scouting-db' },
+    { id: 'export-data',        label: 'Export Data',          icon: FileText,     modalId: 'export-match-data' },
   ],
 
   head_medical: [

@@ -50,17 +50,17 @@ const DASH_TABS: { id: DashTab; label: string; icon: string; badge?: number }[] 
 
 // Quick Actions — desaturated. Each opens a corresponding section or shows
 // a toast in this prototype. AI badge is a small grey pill, not a power-up
-// indicator.
+// indicator. Pitch-side tactical actions (Team Selection, Toss Advisor,
+// Match Prep, Innings Brief) removed — Hudl/Sportscode territory.
 type QA = { id: string; label: string; icon: string; ai?: boolean; section?: string; toast?: string }
 const QUICK_ACTIONS: QA[] = [
-  { id: 'team-selection', label: 'Team Selection',   icon: 'people',     ai: true, toast: 'Team Selection AI · drafting XI…' },
-  { id: 'toss-advisor',   label: 'Toss Advisor',     icon: 'cloud',      ai: true, toast: 'Toss Advisor · running model…' },
-  { id: 'match-prep',     label: 'Match Prep',       icon: 'crosshair',  ai: true, toast: 'Match Prep AI · building tactical brief…' },
-  { id: 'innings-brief',  label: 'Innings Brief',    icon: 'sparkles',   ai: true, toast: 'Innings Brief · session in progress' },
+  { id: 'sponsor-post',   label: 'Sponsor Post',     icon: 'newspaper',  ai: true, toast: 'Sponsor Post AI · drafting…' },
   { id: 'send-message',   label: 'Send Message',     icon: 'mic',        toast: 'Send message · who to?' },
   { id: 'book-nets',      label: 'Book Nets',        icon: 'calendar',   toast: 'Book nets · pick a slot' },
   { id: 'log-injury',     label: 'Log Injury',       icon: 'medical',    toast: 'Injury logger opened' },
   { id: 'agent-brief',    label: 'Agent Brief',      icon: 'briefcase',  ai: true, toast: 'Agent Brief AI · drafting…' },
+  { id: 'expense',        label: 'Expense',          icon: 'pound',      toast: 'Expense logger opened' },
+  { id: 'board-report',   label: 'Board Report',     icon: 'bars',       ai: true, toast: 'Board Report AI · drafting…' },
 ]
 
 function CricketV2Inner() {
@@ -121,9 +121,9 @@ function CricketV2Inner() {
               {dashTab === 'today' ? (
                 <DashboardGrid
                   T={T} accent={accent} density={density} greeting={greeting}
-                  onConfirm={() => showToast('Starting XI confirmed · squad notified')}
+                  onTodaysBriefing={() => { showToast("Today's briefing — see AI Morning Summary") }}
                   onAsk={() => setAskOpen(true)}
-                  onMatchBrief={() => setBriefOpen(true)}
+                  onMatchdayOps={() => showToast('Matchday ops — coming soon')}
                   onPickFixture={setOpenFixture}
                 />
               ) : (
@@ -262,11 +262,11 @@ function QABtn({
 // ─── Dashboard grid (Today tab) ─────────────────────────────────────────
 
 function DashboardGrid({
-  T, accent, density, greeting, onConfirm, onAsk, onMatchBrief, onPickFixture,
+  T, accent, density, greeting, onTodaysBriefing, onAsk, onMatchdayOps, onPickFixture,
 }: {
   T: typeof THEMES['dark']; accent: typeof ACCENTS['oxford']; density: typeof DENSITY['regular']
   greeting: string
-  onConfirm: () => void; onAsk: () => void; onMatchBrief: () => void
+  onTodaysBriefing: () => void; onAsk: () => void; onMatchdayOps: () => void
   onPickFixture: (f: Fixture) => void
 }) {
   return (
@@ -275,9 +275,9 @@ function DashboardGrid({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
         <HeroToday
           T={T} accent={accent} density={density} greeting={greeting}
-          onConfirm={onConfirm}
+          onTodaysBriefing={onTodaysBriefing}
           onAsk={onAsk}
-          onMatchBrief={onMatchBrief}
+          onMatchdayOps={onMatchdayOps}
         />
         <TodaySchedule T={T} accent={accent} density={density} />
       </div>

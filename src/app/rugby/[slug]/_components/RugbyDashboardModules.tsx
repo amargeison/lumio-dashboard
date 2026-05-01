@@ -57,10 +57,9 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
 // ─── HeroToday ─────────────────────────────────────────────────────────
 
 export function HeroToday({
-  T, accent, density, greeting, onConfirm, onAsk, onMatchBrief,
-}: Common & { greeting: string; onConfirm?: () => void; onAsk?: () => void; onMatchBrief?: () => void }) {
+  T, accent, density, greeting, onTodaysBriefing, onMatchdayOps, onAsk,
+}: Common & { greeting: string; onTodaysBriefing?: () => void; onMatchdayOps?: () => void; onAsk?: () => void }) {
   const f = RUGBY_FIXTURES[0]
-  const [confirmed, setConfirmed] = useState(false)
   const [counter, setCounter]     = useState({ h: 6, m: 14, s: 27 })
 
   useEffect(() => {
@@ -144,22 +143,22 @@ export function HeroToday({
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <button
-          onClick={() => { setConfirmed(true); onConfirm?.() }}
+          onClick={onTodaysBriefing}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
-            background: confirmed ? T.good : accent.hex, color: T.btnText,
+            background: accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
             transition: 'background .15s, transform .1s',
           }}>
-          <Icon name="check" size={14} stroke={2} /> {confirmed ? 'Starting XV confirmed' : 'Confirm starting XV'}
+          <Icon name="sun" size={14} stroke={2} /> Today&apos;s briefing
         </button>
         <button
-          onClick={onMatchBrief}
+          onClick={onMatchdayOps}
           style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
         >
-          <Icon name="note" size={14} stroke={1.6} /> Match brief
+          <Icon name="check" size={14} stroke={1.6} /> Matchday ops
         </button>
         <button
           onClick={onAsk}
