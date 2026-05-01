@@ -119,6 +119,19 @@ export function HeroToday({
         }}
       />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
+      {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
+          without conflicting with any portal's brand accent (football blue,
+          cricket palette, women's pink). Italic, single line, bottom-center
+          of banner. Truncates visually if too long. */}
+      <div style={{
+        position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+        maxWidth: '65%', zIndex: 1, pointerEvents: 'none',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        fontFamily: FONT, fontSize: 14, fontStyle: 'italic',
+        color: '#D4A056', textAlign: 'center',
+      }}>
+        &ldquo;{quote.text}&rdquo; <span style={{ opacity: 0.7, fontStyle: 'normal' }}>— {quote.author}</span>
+      </div>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -134,14 +147,6 @@ export function HeroToday({
             <div><span style={{ color: T.text3 }}>Toss</span> <span className="tnum" style={{ color: T.text, fontFamily: FONT_MONO, marginLeft: 6 }}>10:30</span></div>
             <div><span style={{ color: T.text3 }}>Venue</span> <span style={{ color: T.text, marginLeft: 6 }}>Oakridge Park</span></div>
             <div><span style={{ color: T.text3 }}>Squad</span> <span style={{ color: T.good, marginLeft: 6, fontWeight: 600 }}>Locked</span></div>
-          </div>
-        </div>
-        <div style={{ flex: '0 1 280px', minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingInline: 8 }}>
-          <div style={{ fontSize: 14, fontStyle: 'italic', color: T.text2, lineHeight: 1.45, fontFamily: FONT }}>
-            &ldquo;{quote.text}&rdquo;
-          </div>
-          <div style={{ fontSize: 11, color: T.text3, marginTop: 6, fontFamily: FONT }}>
-            — {quote.author}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 14 }}>
