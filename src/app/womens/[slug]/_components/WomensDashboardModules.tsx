@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import { WOMENS_QUOTES, getDailyQuote } from '@/lib/sports-quotes'
 import {
   WOMENS_ORG, WOMENS_FIXTURES, WOMENS_TODAY, WOMENS_AI_BRIEF, WOMENS_INBOX,
   WOMENS_RECENTS, WOMENS_PERF_INTEL, WOMENS_SEASON_FORM,
@@ -66,6 +67,17 @@ export function HeroToday({
   // moved to bottom of page as full-width strip. Layout reflow per
   // user spec — do not re-add Today as banner sibling without
   // product approval.
+  //
+  // INSPIRATIONAL QUOTE — sport-specific pool sourced from
+  // src/lib/sports-quotes.ts. Rotates daily via getDailyQuote() so
+  // user sees a different quote each match day but stable through
+  // the day. Rendered as bottom-center absolute single-line element
+  // in warm gold #D4A056 (sport-neutral premium colour).
+  //
+  // RIGHT COLUMN HIERARCHY — countdown is the largest visual
+  // element (it's the match-day stat that matters); date and
+  // weather are scaled appropriately as supporting context.
+  const quote = getDailyQuote(WOMENS_QUOTES)
   return (
     <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
@@ -77,13 +89,27 @@ export function HeroToday({
         <rect width="100%" height="100%" fill="url(#wf-hero-ptn)" />
       </svg>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
+      {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
+          without conflicting with women's pink brand accent. Italic, single
+          line, bottom-center of banner. Truncates visually if too long. */}
+      <div style={{
+        position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+        maxWidth: '65%', zIndex: 1, pointerEvents: 'none',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        fontFamily: FONT, fontSize: 14, fontStyle: 'italic',
+        color: '#D4A056', textAlign: 'center',
+      }}>
+        &ldquo;{quote.text}&rdquo; <span style={{ opacity: 0.7, fontStyle: 'normal' }}>— {quote.author}</span>
+      </div>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          {/* Eyebrow row — formation tag removed for consistency with
+              football's banner trim (commit 158a5a11). flexWrap dropped
+              alongside since the row is now single-line. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, whiteSpace: 'nowrap', overflow: 'hidden' }}>
             <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}</span>
-            <span style={{ width: 1, height: 10, background: T.borderHi }} />
-            <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{f.comp} · MD-{WOMENS_ORG.season.played + 1}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 10, color: accent.hex, fontFamily: FONT_MONO, padding: '2px 8px', borderRadius: 4, background: accent.dim, border: `1px solid ${accent.border}`, fontWeight: 700, letterSpacing: '0.1em' }}>{WOMENS_ORG.formation}</span>
+            <span style={{ width: 1, height: 10, background: T.borderHi, flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO, overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.comp} · MD-{WOMENS_ORG.season.played + 1}</span>
           </div>
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: density.h1 + 4, fontWeight: 600, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             {WOMENS_ORG.clubShort} <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> {f.opp}
@@ -96,13 +122,13 @@ export function HeroToday({
             <div><span style={{ color: T.text3 }}>Form</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>W W D W L</span></div>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
-          <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{WOMENS_ORG.date}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 13° · light cloud</div>
-          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn }}>
-            <Icon name="cloud" size={13} stroke={1.5} /> 9 mph SW
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 14 }}>
+          <div className="tnum" style={{ color: T.text, fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em' }}>{WOMENS_ORG.date}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}><Icon name="cloud" size={15} stroke={1.5} /> 13° · light cloud</div>
+          <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn, fontSize: 14 }}>
+            <Icon name="cloud" size={15} stroke={1.5} /> 9 mph SW
           </div>
-          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 18, color: accent.hex, marginTop: 6 }}>
+          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 34, color: accent.hex, marginTop: 6, lineHeight: 1, letterSpacing: '-0.02em' }}>
             {pad2(counter.h)}:{pad2(counter.m)}:{pad2(counter.s)}
           </div>
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO KICK-OFF</div>

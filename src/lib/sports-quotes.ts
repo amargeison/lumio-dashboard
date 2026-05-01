@@ -717,3 +717,45 @@ export const CRICKET_QUOTES = [
   { text: "There are two types of batsmen — those who get out, and those who haven't yet.", author: "Cricket adage" },
   { text: "Form is temporary, class is permanent.", author: "Cricket adage" },
 ]
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── RUGBY QUOTES (15) ────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export const RUGBY_QUOTES = [
+  { text: "Rugby is a hooligan's game played by gentlemen.", author: "Oscar Wilde" },
+  { text: "It's the great game.", author: "William Webb Ellis" },
+  { text: "I love rugby. I think it's the greatest sport in the world.", author: "Jonny Wilkinson" },
+  { text: "We don't grow when things are easy. We grow when we face challenges.", author: "Anonymous" },
+  { text: "The harder the conflict, the more glorious the triumph.", author: "Thomas Paine" },
+  { text: "There is no 'I' in team but there is in win.", author: "Michael Jordan (rugby-applicable)" },
+  { text: "Rugby is more than a sport. It's a brotherhood.", author: "Anonymous" },
+  { text: "Champions keep playing until they get it right.", author: "Billie Jean King" },
+  { text: "It's not whether you get knocked down; it's whether you get up.", author: "Vince Lombardi" },
+  { text: "Pressure is what you feel when you don't know what you're doing.", author: "Chuck Noll" },
+  { text: "The best teams are those that play for each other.", author: "Anonymous" },
+  { text: "Rugby is a wonderful school for gentlemen.", author: "Anonymous" },
+  { text: "Forwards win games; backs decide by how much.", author: "Rugby adage" },
+  { text: "If you can't take a hit, take up cricket.", author: "Rugby adage" },
+  { text: "Glory belongs to those who dare to act.", author: "Anonymous" },
+]
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── WOMEN'S FOOTBALL QUOTES (15) ─────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export const WOMENS_QUOTES = [
+  { text: "I am the strongest woman in the world.", author: "Marta" },
+  { text: "Football is football, and women's football is just football too.", author: "Anonymous" },
+  { text: "If you don't believe in yourself, no one else will.", author: "Mia Hamm" },
+  { text: "I want every little girl who's told she's bossy to be told she has leadership skills.", author: "Sheryl Sandberg" },
+  { text: "Pressure is a privilege.", author: "Billie Jean King" },
+  { text: "I never let anyone tell me I couldn't do something.", author: "Megan Rapinoe" },
+  { text: "Champions are made from something they have deep inside them — a desire, a dream, a vision.", author: "Muhammad Ali" },
+  { text: "She believed she could, so she did.", author: "R.S. Grey" },
+  { text: "We need women at all levels, including the top, to change the dynamic.", author: "Sheryl Sandberg" },
+  { text: "Football is the most beautiful game in the world.", author: "Pelé" },
+  { text: "The future is female, and the future is now.", author: "Anonymous" },
+  { text: "There is no limit to what we, as women, can accomplish.", author: "Michelle Obama" },
+  { text: "Strong women lift each other up.", author: "Anonymous" },
+  { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+  { text: "Don't let anyone tell you that you can't.", author: "Carli Lloyd" },
+]

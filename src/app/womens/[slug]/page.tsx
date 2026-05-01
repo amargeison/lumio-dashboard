@@ -5346,11 +5346,15 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       {/* SIDEBAR STICKY — matches football/cricket/rugby pattern.
           position: sticky with top: 0 and full viewport height (zoom-
           adjusted). Nav inside scrolls if content exceeds viewport.
-          The body-row wrapper here is what gives sticky its
-          scrolling context — without it, a flat row-flex outer
-          doesn't reliably extend the containing block beyond the
-          aside's height under zoom: 0.9. */}
-      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
+          minHeight on the body row MUST be calc(100vh / 0.9) (matching
+          the aside's zoom-adjusted height) — at the simpler '100vh'
+          setting, sticky breaks when main content is shorter than
+          ~11vh because the containing block ends up shorter than the
+          aside, and sticky stops applying when its containing block
+          can't fit the element. Football works at minHeight: '100vh'
+          only because its content is naturally tall enough to push
+          the row well past 100vh; women's needs the explicit floor. */}
+      <div className="flex flex-1" style={{ minHeight: 'calc(100vh / 0.9)' }}>
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
@@ -5394,9 +5398,12 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             sidebarCollapsed={sidebarCollapsed}
           />
         </div>
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 text-gray-600 hover:text-gray-400 border-t border-gray-800 text-xs">
-          {sidebarCollapsed ? '→' : '← Collapse'}
-        </button>
+        {/* Collapse button removed — feature not present in other portals
+            (football, cricket, rugby, etc.). Sidebar is fixed-width sticky
+            matching canonical pattern across all portals. The
+            sidebarCollapsed state is retained because it is still
+            referenced by the sidebar's width / label / RoleSwitcher
+            conditionals; in this build it stays at its default (false). */}
       </aside>
 
       {/* Main content */}
