@@ -11,19 +11,19 @@ import { createBrowserClient } from '@supabase/ssr'
 type SportId = 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens'
 
 const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
-  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', color: '#7C3AED' },
-  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', color: '#15803D' },
-  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
-  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', color: '#dc2626' },
+  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
+  { id: 'womens', label: "Women's FC", logo: '/womens_fc_logo.png', color: '#ec4899' },
   { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', color: '#10b981' },
   { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', color: '#f97316' },
-  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
   { id: 'nonleague', label: 'Non-League', logo: '/football_logo.png', color: '#f59e0b' },
   { id: 'grassroots', label: 'Grassroots', logo: '/football_logo.png', color: '#22c55e' },
-  { id: 'womens', label: "Women's FC", logo: '/womens_fc_logo.png', color: '#ec4899' },
+  { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', color: '#7C3AED' },
+  { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', color: '#dc2626' },
+  { id: 'golf', label: 'Golf', logo: '/golf_logo.png', color: '#15803D' },
+  { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
 ]
 
-const LIVE_SPORTS = new Set<SportId>(['tennis', 'golf', 'darts', 'boxing'])
+const LIVE_SPORTS = new Set<SportId>(['tennis', 'golf', 'darts', 'boxing', 'cricket', 'rugby', 'football', 'nonleague', 'grassroots', 'womens'])
 
 export default function SportsSignupPage() {
   const router = useRouter()
