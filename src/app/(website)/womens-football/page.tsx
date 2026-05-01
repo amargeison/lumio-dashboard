@@ -19,7 +19,6 @@ const STAT_PILLS = [
   'Karen Carney standards',
   'AI powered',
   'Lumio Health ready',
-  'WSL approved',
   '30 sections',
 ]
 
@@ -37,7 +36,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🤖', title: 'AI Halftime Brief (Claude API)', desc: 'GPS + Lumio Data xG + ACL detection + cycle phase welfare flags → structured coaching brief in seconds. Physical, tactical, AND welfare in one document.' },
   { icon: '📊', title: 'Insights — 8 Role Dashboards', desc: 'CEO, DoF, Head Coach, Physio, Commercial, Academy, Welfare, Board — each role gets a tailored AI-generated insights report every morning.' },
   { icon: '🔁', title: 'Transfers + AI Researcher', desc: 'Transfer tracker, shortlist management, and AI-powered transfer researcher that scouts WSL, NWSL, D1 Arkema and Liga F databases.' },
-  { icon: '📉', title: 'Analytics (Lumio Data xG)', desc: 'xG timeline, pressing intensity (PPDA), progressive passes, shot map — all from the Lumio Data feed with WSL benchmarks.' },
+  { icon: '📉', title: 'Analytics & Performance Data', desc: 'AI-powered match analytics and player insights, ready to integrate with StatsBomb, Opta, and club-supplied data feeds.' },
   { icon: '🔭', title: 'Scouting (WSL · NWSL · D1 Arkema)', desc: 'Database of 2,000+ players across 4 leagues. Filter by position, age, contract status, salary. AI scouting reports on any player.' },
   { icon: '🎓', title: 'Academy / Player Pathway', desc: 'U18 and U21 squads, CoE compliance, GPS profiling, development ratings, dual registration management, and first-team bridge tracking.' },
   { icon: '📣', title: 'Media & PR', desc: 'Press release generator, media obligations tracker, journalist database, and matchday media accreditation management.' },
@@ -60,8 +59,8 @@ const INTEGRATIONS = [
 ]
 
 const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'WSL Pro', price: '£499/mo', desc: 'Full 30-section portal. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite — the complete Club OS.' },
-  { name: "Women's Championship", price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: 'For WSL2 clubs meeting professionalisation standards' },
+  { name: 'Pro', price: '£499/mo', desc: 'Full 30-section portal. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite — the complete Club OS.' },
+  { name: "Women's Championship", price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For Championship-level women's clubs meeting professionalisation standards" },
   { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
 ]
 
@@ -420,7 +419,7 @@ function BoardSuiteMockup() {
           ))}
         </div>
       </div>
-      <div style={{ fontSize: 9, color: '#10B981', fontWeight: 800 }}>✓ WSL Compliance · FSR salary cap</div>
+      <div style={{ fontSize: 9, color: '#10B981', fontWeight: 800 }}>✓ Competition Compliance · FSR salary cap</div>
     </MockupFrame>
   )
 }

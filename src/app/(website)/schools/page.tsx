@@ -1189,7 +1189,6 @@ function SSOSyncSection() {
             {[
               'Staff login with existing Google or Microsoft accounts',
               'Pupil rolls, class lists and staff sync from your MIS daily',
-              'OneRoster certified — industry standard data exchange',
               'Replaces MIS middleware costing £3,000–£8,000/year',
             ].map(text => (
               <div key={text} className="flex items-start gap-3">

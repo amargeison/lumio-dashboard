@@ -3,12 +3,11 @@
 import Link from 'next/link'
 import { Check, X, ArrowRight, Shield, Users, RefreshCw, Globe, Building2, Lock } from 'lucide-react'
 
-const INTEGRATIONS = ['G Google Workspace', '⊞ Microsoft 365', 'Arbor', 'SIMS', 'Bromcom', 'OneRoster ✓']
+const INTEGRATIONS = ['G Google Workspace', '⊞ Microsoft 365', 'Arbor', 'SIMS', 'Bromcom']
 
 const FEATURES = [
   { emoji: '🔐', title: 'Single Sign-On', desc: 'Staff sign in with Google or Microsoft. Works with personal and Workspace for Education accounts.' },
   { emoji: '🔄', title: 'Live MIS Sync', desc: 'Arbor, SIMS and Bromcom. Pupil data, class lists, year groups and staff roles sync daily — or on demand.' },
-  { emoji: '📋', title: 'OneRoster Certified', desc: 'Industry-standard data exchange. Compatible with any OneRoster-compliant platform.' },
   { emoji: '🇬🇧', title: 'GDPR First', desc: 'All data stays in UK data centres. No US data transfers. Full audit trail.' },
   { emoji: '👥', title: 'Auto-Provisioning', desc: 'New staff get access automatically. Leavers are deprovisioned. No manual user management.' },
   { emoji: '🏫', title: 'MAT Ready', desc: 'Manage SSO and rostering across your entire trust from one dashboard.' },
@@ -43,7 +42,7 @@ export default function SSOPage() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, #6C3FC5 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0D9488 0%, transparent 50%)' }} />
         <div className="relative mx-auto max-w-5xl px-6 py-28 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-8" style={{ backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.3)' }}>
-            🇬🇧 UK-First · OneRoster Certified
+            🇬🇧 UK-First · Built for British schools
           </div>
           <h1 className="text-4xl md:text-6xl font-black mb-6" style={{ color: '#F9FAFB', lineHeight: 1.1 }}>
             Your School. Your Tools.<br />
@@ -101,7 +100,7 @@ export default function SSOPage() {
               <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: '#0D9488' }}>Lumio SSO & Rostering</p>
               <p className="text-4xl font-black mb-6" style={{ color: '#0D9488' }}>£0<span className="text-lg"> extra</span></p>
               <div className="space-y-3 mb-6">
-                {['Google Workspace SSO included', 'Microsoft 365 SSO included', 'Arbor/SIMS/Bromcom sync included', 'OneRoster certified included'].map(item => (
+                {['Google Workspace SSO included', 'Microsoft 365 SSO included', 'Arbor/SIMS/Bromcom sync included'].map(item => (
                   <div key={item} className="flex items-center gap-2 text-sm">
                     <Check size={14} style={{ color: '#0D9488', flexShrink: 0 }} />
                     <span style={{ color: '#D1D5DB' }}>{item}</span>
