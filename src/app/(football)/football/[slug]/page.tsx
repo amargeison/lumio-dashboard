@@ -2077,13 +2077,19 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
         </div>
 
         {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
-        <RoleAwareQuickActionsBar
-          sport="football"
-          role={role}
-          onNavigate={(dept) => { if (onNavigate) onNavigate(dept); else onAction(dept) }}
-          onAction={(modalId) => { if (onModal) onModal(modalId); else onAction(modalId) }}
-          accentHex={accent.hex}
-        />
+        {/* QUICK ACTIONS row centered horizontally for breathing space
+            between the left-aligned Tabs row above and the KPI cards
+            below. Visual hierarchy: navigation flush-left, actions
+            centered. */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <RoleAwareQuickActionsBar
+            sport="football"
+            role={role}
+            onNavigate={(dept) => { if (onNavigate) onNavigate(dept); else onAction(dept) }}
+            onAction={(modalId) => { if (onModal) onModal(modalId); else onAction(modalId) }}
+            accentHex={accent.hex}
+          />
+        </div>
 
 
         {/* TAB CONTENT — Today renders v2 grid; others fall through to v1 TabContent */}
@@ -2139,7 +2145,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
       </div>
 
       <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
-      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} sport="football" />
       <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
       <V2Toast          T={T} accent={accent} msg={dashToast} />
       <FootballMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />

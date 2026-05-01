@@ -110,8 +110,15 @@ export function CommandPalette({
 // ─── Ask Lumio side sheet ─────────────────────────────────────────────
 
 type ChatMsg = { role: 'user' | 'lumio'; text: string; refs?: string[] }
+type Sport = 'cricket' | 'football'
 
-function generateReply(q: string): { text: string; refs: string[] } {
+// Static demo replies. The Ask Lumio modal is presentation-only — replies
+// are hardcoded keyword matches with a 1.1s "thinking" delay. When this
+// is wired to a real AI route, the sport branch picks the API endpoint;
+// for now the sport branch picks the prompt set + reply content so each
+// portal renders its own context-relevant suggestions.
+
+function generateReplyCricket(q: string): { text: string; refs: string[] } {
   const Q = q.toLowerCase()
   if (Q.includes('xi') || Q.includes('lineup') || Q.includes('hartley') || Q.includes('loxwood')) {
     return {
@@ -149,11 +156,70 @@ function generateReply(q: string): { text: string; refs: string[] } {
   }
 }
 
+function generateReplyFootball(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('xi') || Q.includes('lineup') || Q.includes('henderson') || Q.includes('hartwell')) {
+    return {
+      text: 'Recommended XI vs Hartwell: Hayes (gk); Reid, Chen, Ashton (cb); Rowe, Cole, Morris, Porter (mid); Walsh, Wilson, Harris (fwd).\n\nReasoning: Walsh returns from his 3-match ban — start him over Wilson on form. Henderson held back to bench: hamstring 6/10, scan results 14:00. Hartwell press high from goal kicks — work short build-up; their LB pushes high, space behind to exploit.',
+      refs: ['Medical Hub · Henderson', 'Opposition Scout · Hartwell', 'GPS · last 7 days'],
+    }
+  }
+  if (Q.includes('workload') || Q.includes('training') || Q.includes('load')) {
+    return {
+      text: 'Training load risks this week:\n• Walsh — back from suspension; 80% intensity Tuesday only, full from Wed.\n• Henderson — hamstring 6/10, light only until scan results.\n• Reid — accumulated 320 mins last 7 days; rest Wed.\n• Cole — green; cleared for full session load.',
+      refs: ['Performance · GPS Load', 'Medical Hub'],
+    }
+  }
+  if (Q.includes('northgate') || Q.includes('lose') || Q.includes('lost')) {
+    return {
+      text: 'Northgate City loss attribution (1–2, 26 Apr):\n1. Set pieces — 2 conceded from corners; 22% above league avg conceded from set play.\n2. Final-third turnovers — 18 in attacking third (season avg 11).\n3. Sub timing — pressure window 70–85 not exploited; first change at 78\'.\n\nDrill scheduled Wed: defensive corner shape + counter-press triggers.',
+      refs: ['Match Report 26 Apr', 'Set Piece Library', 'Substitution log'],
+    }
+  }
+  if (Q.includes('contract') || Q.includes('expir')) {
+    return {
+      text: '4 contracts expire by 30 Jun:\n• T. Walsh · 30 Jun · KEY — agent talks open at £8k/wk.\n• B. Chen · 30 Jun · monitor (recent doubt).\n• D. Morris · 30 Jun · likely renew, +10%.\n• Okafor · 30 Jun · within budget if Henderson restructured.',
+      refs: ['Contract Hub'],
+    }
+  }
+  if (Q.includes('weather') || Q.includes('forecast') || Q.includes('rain') || Q.includes('saturday')) {
+    return {
+      text: 'Saturday vs Hartwell forecast: 12°C at kick-off, 11 mph SW wind, light cloud. Pitch firm, soft underfoot — 4G studs recommended.\n\nStrategy implication: slight cross-wind, attacking the south end first half preferred for set-piece delivery. Backup venue Glenmoor Park (3G) confirmed if pitch inspection fails 08:00.',
+      refs: ['Weather · Met', 'Pitch inspection log'],
+    }
+  }
+  return {
+    text: 'I can pull from the squad, opposition, performance, medical, set pieces, and contracts data. Try one of the suggestions on the left, or ask something more specific — e.g. "show me set-piece patterns Hartwell concede most from".',
+    refs: [],
+  }
+}
+
+function generateReply(q: string, sport: Sport): { text: string; refs: string[] } {
+  return sport === 'football' ? generateReplyFootball(q) : generateReplyCricket(q)
+}
+
+const SUGGESTED_BY_SPORT: Record<Sport, string[]> = {
+  cricket: [
+    'Best XI vs Loxwood given Hartley’s fitness?',
+    'Bowling workload risks this week',
+    'Why did we lose to Glamorgan?',
+    'Players nearing contract expiry',
+    'Forecast effect on day 1 strategy',
+  ],
+  football: [
+    'Best XI vs Hartwell given Henderson’s fitness?',
+    'Training load risks this week',
+    'Why did we lose to Northgate City?',
+    'Players nearing contract expiry',
+    'Forecast effect on Saturday match',
+  ],
+}
+
 function Dot({ delay }: { delay: number }) {
   return <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', animation: `cricketV2PulseDim 1.1s ${delay}ms infinite` }} />
 }
 
-export function AskLumio({ T, accent, open, onClose }: { T: ThemeTokens; accent: AccentTokens; open: boolean; onClose: () => void }) {
+export function AskLumio({ T, accent, open, onClose, sport = 'cricket' }: { T: ThemeTokens; accent: AccentTokens; open: boolean; onClose: () => void; sport?: Sport }) {
   const [q, setQ]               = useState('')
   const [thread, setThread]     = useState<ChatMsg[]>([])
   const [thinking, setThinking] = useState(false)
@@ -161,13 +227,7 @@ export function AskLumio({ T, accent, open, onClose }: { T: ThemeTokens; accent:
 
   useKey('esc', () => { if (open) onClose() })
 
-  const SUGGESTED = [
-    'Best XI vs Loxwood given Hartley’s fitness?',
-    'Bowling workload risks this week',
-    'Why did we lose to Glamorgan?',
-    'Players nearing contract expiry',
-    'Forecast effect on day 1 strategy',
-  ]
+  const SUGGESTED = SUGGESTED_BY_SPORT[sport]
 
   const ask = (text?: string) => {
     const Q = (text ?? q).trim()
@@ -176,7 +236,7 @@ export function AskLumio({ T, accent, open, onClose }: { T: ThemeTokens; accent:
     setQ('')
     setThinking(true)
     setTimeout(() => {
-      const reply = generateReply(Q)
+      const reply = generateReply(Q, sport)
       setThread(t => [...t, { role: 'lumio', text: reply.text, refs: reply.refs }])
       setThinking(false)
     }, 1100)
