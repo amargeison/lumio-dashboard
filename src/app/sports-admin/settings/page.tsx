@@ -37,7 +37,6 @@ export default function SportsAdminSettings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
               ['Supabase Dashboard', 'https://supabase.com/dashboard'],
-              ['Vercel Dashboard', 'https://vercel.com/dashboard'],
               ['Anthropic Console', 'https://console.anthropic.com'],
             ].map(([label, href]) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer"
