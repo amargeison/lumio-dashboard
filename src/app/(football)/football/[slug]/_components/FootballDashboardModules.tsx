@@ -367,7 +367,7 @@ export function Squad({ T, accent, density }: Common) {
         <span style={{ fontSize: 10.5, color: T.text3 }}>fit</span>
         <span style={{ marginLeft: 'auto', fontSize: 10.5, color: out + doubt > 0 ? T.bad : T.text3 }}>{out} out · {doubt} doubt</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 18, flexWrap: 'wrap' }}>
         <Group label="GK"  players={gk}  />
         <Group label="DEF" players={def} />
         <Group label="MID" players={mid} />
