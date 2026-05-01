@@ -86,6 +86,37 @@ Pending work:
 Priority: do this before next round of partnership demos.
 Bigger demo-realism upgrade than most people would assume.
 
+## PlayerWelfareHub brand audit — pending
+
+`src/components/football/PlayerWelfareHub.tsx` (committed in the build-fix
+commit that resolved the production build failure) currently uses real
+insurer / utility / professional service brand names in its demo data:
+
+- Howden Sports, Aviva, AIG, Zurich, Vitality, Bupa (insurers)
+- EE, AA, Barclays (utilities/banking)
+- ESOL Pathway, Surrey College (education)
+- Riverside Practice, Stowe & Hart LLP (services)
+- Sportshelm, Pinkertons (other)
+
+Per CLAUDE.md brand rules, real third-party brand names should be
+swapped for fictional Meridian/Apex/Vanta/Northbridge universe
+equivalents before shipping in product context.
+
+When picked up:
+- Audit each name; classify Pattern 1 (replace) vs Pattern 2 (keep
+  factual reference)
+- Most fit Pattern 1 — these are demo placeholders, not factual
+  references to public information
+- Add new fictional brand names to `docs/brand-universe.md`
+  (welfare/insurance space wasn't covered in Sprint 2.5 brand
+  universe — needs an extension)
+- Replace in `PlayerWelfareHub.tsx`
+- One Pattern 2 reference is fine: "Karen Carney Review compliance"
+  — that's a factual public document reference
+
+Priority: should be done before the next significant football demo
+to JOHAN, Snowball, or other partnership prospects.
+
 ## Football quotes location
 
 `FOOTBALL_QUOTES` is now duplicated across THREE locations:

@@ -100,7 +100,7 @@ export function HeroToday({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
           <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{BOXING_ORG.date}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 18° · {BOXING_NEXT_FIGHT.city}</div>
-          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 28, color: accent.hex, marginTop: 6, lineHeight: 1, fontWeight: 600, letterSpacing: '-0.02em' }}>
+          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 18, color: accent.hex, marginTop: 6, lineHeight: 1, fontWeight: 600, letterSpacing: '-0.02em' }}>
             {BOXING_NEXT_FIGHT.daysAway}d
           </div>
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO FIGHT NIGHT</div>

@@ -29,6 +29,7 @@ critical workflow rules.
 - Never reference Vercel — this project deploys to VPS
 - Never run `deploy.sh`
 - Always wait for explicit "deploy" instruction; pushing to dev ≠ deploying to live
+- **Pre-deploy build check:** before `npm run golive`, always run `npm run build` locally. Verify it completes without errors. Type-check (`npx tsc --noEmit`) is necessary but not sufficient.
 
 ### Brand rules (critical for product credibility)
 - **Product-internal tech** = Lumio-prefixed (Lumio GPS, Lumio Vision, Lumio Scout, Lumio Data, Lumio Range, Lumio Trace, Lumio Line, Lumio Track, Lumio Health, Lumio Wear, Lumio Data Pro)
@@ -91,15 +92,22 @@ critical workflow rules.
 
 ## Common pitfalls (learned the hard way)
 
-1. **Never assume the role model is the same across portals.** Football Pro = club departments (CEO/Chairman/Manager/etc.). Rugby = individual stakeholders (player/agent/coach/physio/sponsor) — known wrong, deferred restructure in `docs/follow-ups.md`. Always grep `{SPORT}_ROLES` before assuming.
+1. **Type-check is not enough — always `npm run build` before deploy.** `npx tsc --noEmit` catches type errors but does NOT catch:
+   - Module not found (missing files imported via @/ aliases)
+   - Missing exports (importing named exports that don't exist or were renamed)
+   - Bundler-time errors (Turbopack/webpack resolution issues)
 
-2. **Never assume action target IDs exist.** When defining role-aware quick actions, verify each `targetDept` matches an actual `SIDEBAR_ITEMS` id in that portal — they differ between sports.
+   Production build (`npm run build`) catches these. Type-check alone has caused at least one production deploy failure where the VPS build broke after type-check passed locally. **Run `npm run build` locally before any `npm run golive`.** If `npm run build` fails locally, `npm run golive` will fail on the VPS too — but you'll find out faster locally without touching production.
 
-3. **Demo-workspace vs live portal confusion.** `/demo/lumio-dev` and `/lumio-dev` route to different files. Always confirm which URL the user wants before editing.
+2. **Never assume the role model is the same across portals.** Football Pro = club departments (CEO/Chairman/Manager/etc.). Rugby = individual stakeholders (player/agent/coach/physio/sponsor) — known wrong, deferred restructure in `docs/follow-ups.md`. Always grep `{SPORT}_ROLES` before assuming.
 
-4. **Banner sizing.** Football banner has been "fixed to match cricket" 6+ times. The canonical reference is the cricket hero block. Any future banner changes need defensive comments referencing cricket as the source of truth — see `src/app/(football)/football/[slug]/_components/FootballDashboardModules.tsx`.
+3. **Never assume action target IDs exist.** When defining role-aware quick actions, verify each `targetDept` matches an actual `SIDEBAR_ITEMS` id in that portal — they differ between sports.
 
-5. **Brand audit drift.** When making changes that touch real-world entity references, always classify Pattern 1 (replace) vs Pattern 2 (keep factual). When in doubt, check `docs/brand-universe.md`.
+4. **Demo-workspace vs live portal confusion.** `/demo/lumio-dev` and `/lumio-dev` route to different files. Always confirm which URL the user wants before editing.
+
+5. **Banner sizing.** Football banner has been "fixed to match cricket" 6+ times. The canonical reference is the cricket hero block. Any future banner changes need defensive comments referencing cricket as the source of truth — see `src/app/(football)/football/[slug]/_components/FootballDashboardModules.tsx`.
+
+6. **Brand audit drift.** When making changes that touch real-world entity references, always classify Pattern 1 (replace) vs Pattern 2 (keep factual). When in doubt, check `docs/brand-universe.md`.
 
 ## Tone and approach when working with Arron
 

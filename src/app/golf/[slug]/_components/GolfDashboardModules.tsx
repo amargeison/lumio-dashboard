@@ -116,7 +116,7 @@ function HeroToday({
         <button onClick={onCourseStrategy}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
-            background: accent.hex, color: '#fff',
+            background: accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
           }}>
           <Icon name="crosshair" size={14} stroke={2} /> Course strategy
@@ -506,12 +506,11 @@ function PhotoFrame({ T, density, gridColumn, photoDataUrl }: Common & { gridCol
 // AI summary + inbox + my-team, then fixtures + perf, then recents +
 // photo frame. The right-hand player profile card stays in page.tsx
 // untouched (Phase 2 will pull it into a shared shell).
-export function GolfDashboardView({
-  onAskLumio, onCourseStrategy, photoDataUrl,
+export function GolfHeroBlock({
+  onAskLumio, onCourseStrategy,
 }: {
   onAskLumio?: () => void
   onCourseStrategy?: () => void
-  photoDataUrl?: string | null
 }) {
   const T = GOLF_THEME
   const accent = GOLF_ACCENT
@@ -532,26 +531,55 @@ export function GolfDashboardView({
           <TodaySchedule T={T} accent={accent} density={density} />
         </div>
       </div>
+    </>
+  )
+}
 
-      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
-        <StatTiles T={T} accent={accent} density={density} />
+export function GolfGridBlock({
+  onAskLumio, photoDataUrl,
+}: {
+  onAskLumio?: () => void
+  photoDataUrl?: string | null
+}) {
+  const T = GOLF_THEME
+  const accent = GOLF_ACCENT
+  const density = GOLF_DENSITY
+  return (
+    <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
+      <StatTiles T={T} accent={accent} density={density} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-          <AIBrief T={T} accent={accent} density={density} onAsk={onAskLumio} />
-          <Inbox T={T} accent={accent} density={density} />
-          <MyTeam T={T} accent={accent} density={density} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-          <Fixtures T={T} accent={accent} density={density} />
-          <Perf T={T} accent={accent} density={density} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-          <Recents T={T} accent={accent} density={density} />
-          <PhotoFrame T={T} accent={accent} density={density} photoDataUrl={photoDataUrl ?? null} />
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        <AIBrief T={T} accent={accent} density={density} onAsk={onAskLumio} />
+        <Inbox T={T} accent={accent} density={density} />
+        <MyTeam T={T} accent={accent} density={density} />
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        <Fixtures T={T} accent={accent} density={density} />
+        <Perf T={T} accent={accent} density={density} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        <Recents T={T} accent={accent} density={density} />
+        <PhotoFrame T={T} accent={accent} density={density} photoDataUrl={photoDataUrl ?? null} />
+      </div>
+    </div>
+  )
+}
+
+// Backwards-compatible monolithic view (hero + grid). Prefer GolfHeroBlock +
+// GolfGridBlock when tabs are inserted between hero and grid.
+export function GolfDashboardView({
+  onAskLumio, onCourseStrategy, photoDataUrl,
+}: {
+  onAskLumio?: () => void
+  onCourseStrategy?: () => void
+  photoDataUrl?: string | null
+}) {
+  return (
+    <>
+      <GolfHeroBlock onAskLumio={onAskLumio} onCourseStrategy={onCourseStrategy} />
+      <GolfGridBlock onAskLumio={onAskLumio} photoDataUrl={photoDataUrl} />
     </>
   )
 }

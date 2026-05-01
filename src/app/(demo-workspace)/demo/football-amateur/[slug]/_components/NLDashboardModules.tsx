@@ -60,7 +60,7 @@ export function HeroToday({
   }, [])
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad - 4}px ${density.pad - 2}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="nl-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -72,50 +72,50 @@ export function HeroToday({
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}</span>
             <span style={{ width: 1, height: 10, background: T.borderHi }} />
             <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{f.comp} · MD-{NL_ORG.season.played + 1}</span>
             <span style={{ marginLeft: 'auto', fontSize: 10, color: accent.hex, fontFamily: FONT_MONO, padding: '2px 8px', borderRadius: 4, background: accent.dim, border: `1px solid ${accent.border}`, fontWeight: 700, letterSpacing: '0.1em' }}>{NL_ORG.formation}</span>
           </div>
-          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: density.h1, fontWeight: 600, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: density.h1 + 4, fontWeight: 600, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             {NL_ORG.clubShort} <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> {f.opp}
           </h1>
-          <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 12, color: T.text2, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 18, marginTop: 12, fontSize: 12, color: T.text2, flexWrap: 'wrap' }}>
             <div><span style={{ color: T.text3 }}>Kick-off</span> <span className="tnum" style={{ color: T.text, fontFamily: FONT_MONO, marginLeft: 6 }}>{f.time}</span></div>
             <div><span style={{ color: T.text3 }}>Ground</span> <span style={{ color: T.text, marginLeft: 6 }}>{NL_ORG.ground}</span></div>
             <div><span style={{ color: T.text3 }}>League</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>5th · 49 pts</span></div>
             <div><span style={{ color: T.text3 }}>Form</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>W L W D W</span></div>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, color: T.text2, fontSize: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
           <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{NL_ORG.date}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 11° · heavy rain</div>
           <div className="tnum" style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.warn }}>
             <Icon name="cloud" size={13} stroke={1.5} /> Pitch inspect 09:00
           </div>
-          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 17, color: accent.hex, marginTop: 4 }}>
+          <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 18, color: accent.hex, marginTop: 6 }}>
             {pad2(counter.h)}:{pad2(counter.m)}:{pad2(counter.s)}
           </div>
           <div style={{ fontSize: 10, color: T.text3, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>TO KICK-OFF</div>
         </div>
       </div>
-      <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+      <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <button onClick={() => { setConfirmed(true); onConfirm?.() }}
-          style={{ appearance: 'none', border: 0, padding: '6px 12px', borderRadius: 8, background: confirmed ? T.good : accent.hex, color: '#fff', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-          <Icon name="check" size={13} stroke={2} /> {confirmed ? 'Team sheet confirmed' : 'Confirm team sheet'}
+          style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: confirmed ? T.good : accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <Icon name="check" size={14} stroke={2} /> {confirmed ? 'Team sheet confirmed' : 'Confirm team sheet'}
         </button>
         <button onClick={onMatchBrief}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
-          style={{ appearance: 'none', padding: '6px 12px', borderRadius: 8, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
-          <Icon name="note" size={13} stroke={1.6} /> Match brief
+          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
+          <Icon name="note" size={14} stroke={1.6} /> Match brief
         </button>
         <button onClick={onAsk}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text2 }}
-          style={{ appearance: 'none', padding: '6px 12px', borderRadius: 8, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
-          <Icon name="sparkles" size={13} stroke={1.6} /> Ask Lumio
+          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
+          <Icon name="sparkles" size={14} stroke={1.6} /> Ask Lumio
         </button>
       </div>
     </Card>
