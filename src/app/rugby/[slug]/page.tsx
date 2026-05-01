@@ -288,7 +288,7 @@ function InteractiveRugbyInbox({ T, accent, density }: { T: typeof THEMES.dark; 
 
   const items = RUGBY_INBOX.filter(c => !state[c.ch]?.dismissed)
   return (
-    <div style={{ gridColumn: '6 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
       <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
         <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
@@ -487,15 +487,20 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
           Previously the hero was inside a single flex-column wrapper which
           stacked outer padding (14) + flex gap (14) + inner Card padding
           (16) creating extra vertical space the cricket layout doesn't have. */}
+      {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+          row alongside AI Morning Summary and Inbox; Squad Availability
+          moved to bottom of page as full-width strip. Layout reflow per
+          user spec — do not re-add Today as banner sibling without
+          product approval. align-items: start retained defensively in
+          case future siblings get added to this row. */}
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <RugbyHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
             onConfirm={() => showDashToast('Starting XV confirmed · squad notified')}
             onAsk={() => setAskOpen(true)}
             onMatchBrief={() => setBriefOpen(true)}
           />
-          <RugbyTodaySchedule T={T} accent={accent} density={density} />
         </div>
       </div>
 
@@ -549,7 +554,9 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
         </div>
 
         {/* Quick Actions — desaturated row */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* QUICK ACTIONS row centered horizontally for breathing space
+            between left-aligned Tabs row above and KPI cards below. */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {QUICK_ACTIONS.map((qa, i) => (
             <button key={i} onClick={qa.onClick}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
@@ -577,11 +584,17 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
             {/* Row 2 — Stat tiles */}
             <RugbyStatTiles T={T} accent={accent} density={density} />
 
-            {/* Row 3 — Morning brief + Inbox + Squad */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+            {/* Row 3 — Morning brief + Inbox + Today (three-column).
+                Cards rendered as DIRECT grid children, matching cricket
+                reference. RugbyAIBrief '1/span 4',
+                InteractiveRugbyInbox '5/span 4', RugbyTodaySchedule
+                '9/span 4' — totalling 12.
+                CARD ROW GAP — gap: 8 (tighter than density.gap=14)
+                so the three cards read as one unified row visual. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
               <RugbyAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
               <InteractiveRugbyInbox T={T} accent={accent} density={density} />
-              <RugbySquadModule T={T} accent={accent} density={density} />
+              <RugbyTodaySchedule T={T} accent={accent} density={density} />
             </div>
 
             {/* Row 4 — Fixtures + Performance signals */}
@@ -594,6 +607,11 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
               <RugbyRecents T={T} accent={accent} density={density} />
               <RugbySeason  T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Row 6 — Squad availability full-width strip */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <RugbySquadModule T={T} accent={accent} density={density} />
             </div>
           </>
         )}

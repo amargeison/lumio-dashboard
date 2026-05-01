@@ -5456,15 +5456,22 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           <div className="flex-1 flex flex-col">
 
             {/* Hero — match-day banner FIRST, persistent across tabs */}
+            {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+                row alongside AI Morning Summary and Inbox; Squad Availability
+                moved to bottom of page as full-width strip. Layout reflow per
+                user spec.
+                align-items: start prevents sibling cards from stretching the
+                hero. Without this, sibling card row counts can drag the hero
+                card to match a taller sibling, leaving empty space below the
+                buttons. */}
             <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
                   onConfirm={() => showV2DashToast('Starting XI confirmed · squad notified')}
                   onAsk={() => setV2AskOpen(true)}
                   onMatchBrief={() => setV2BriefOpen(true)}
                 />
-                <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
               </div>
             </div>
 
@@ -5495,7 +5502,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             </div>
 
             {/* Quick Actions — role-aware (shared bar) */}
-            <div style={{ padding: '12px 24px 0' }}>
+            {/* QUICK ACTIONS row centered horizontally for breathing space
+                between left-aligned Tabs row above and KPI cards below. */}
+            <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
               <RoleAwareQuickActionsBar
                 sport="womens"
                 role={currentRole as string}
@@ -5535,10 +5544,17 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
                   <WfStatTiles T={v2T} accent={v2Accent} density={v2Density} />
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+                  {/* Three-column row — AI Morning Summary | Inbox | Today.
+                      Cards rendered as DIRECT grid children, matching cricket
+                      reference. WfAIBrief gridColumn '1/span 4',
+                      InteractiveWomensInbox '5/span 4', WfTodaySchedule
+                      '9/span 4' — totalling 12.
+                      CARD ROW GAP — gap: 8 (tighter than density.gap=14)
+                      so the three cards read as one unified row visual. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
                     <WfAIBrief T={v2T} accent={v2Accent} density={v2Density} onAsk={() => setV2AskOpen(true)} />
                     <InteractiveWomensInbox T={v2T} accent={v2Accent} density={v2Density} />
-                    <WfSquadModule T={v2T} accent={v2Accent} density={v2Density} />
+                    <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
@@ -5549,6 +5565,11 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
                     <WfRecents T={v2T} accent={v2Accent} density={v2Density} />
                     <WfSeason  T={v2T} accent={v2Accent} density={v2Density} />
+                  </div>
+
+                  {/* Squad Availability — full-width strip at bottom of page. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+                    <WfSquadModule T={v2T} accent={v2Accent} density={v2Density} />
                   </div>
                 </div>
               )}
@@ -5757,7 +5778,7 @@ function InteractiveWomensInbox({ T, accent, density }: { T: typeof THEMES.dark;
   const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
   const items = WOMENS_INBOX.filter(c => !state[c.ch]?.dismissed)
   return (
-    <div style={{ gridColumn: '6 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
       <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
         <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>

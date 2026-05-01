@@ -6,7 +6,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   RUGBY_ORG, RUGBY_FIXTURES, RUGBY_TODAY, RUGBY_AI_BRIEF, RUGBY_INBOX,
-  RUGBY_INJURIES, RUGBY_RECENTS, RUGBY_PERF_INTEL, RUGBY_SEASON_FORM,
+  RUGBY_RECENTS, RUGBY_PERF_INTEL, RUGBY_SEASON_FORM,
   RUGBY_TOP_STATS, RUGBY_STARTERS, RUGBY_BENCH,
   type RugbyAIBriefItem, type RugbyInboxChannel, type RugbyFixture,
 } from '../_lib/rugby-dashboard-data'
@@ -73,8 +73,13 @@ export function HeroToday({
     return () => clearInterval(id)
   }, [])
 
+  // BANNER FULL WIDTH — Today schedule moved into the three-column
+  // row alongside AI Morning Summary and Inbox; Squad Availability
+  // moved to bottom of page as full-width strip. Layout reflow per
+  // user spec — do not re-add Today as banner sibling without
+  // product approval.
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="rugby-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -196,7 +201,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const [items, setItems] = useState<(RugbyAIBriefItem & { dismissed?: boolean })[]>(RUGBY_AI_BRIEF.map(x => ({ ...x })))
   const visible = items.filter(x => !x.dismissed)
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 5' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
       <SectionHead
         T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />Morning brief</>}
@@ -258,7 +263,7 @@ export function Inbox({ T, density }: Common) {
   const items = filter === 'urgent' ? RUGBY_INBOX.filter(c => c.urgent) : RUGBY_INBOX
   const tabs: [typeof filter, string, number][] = [['all', 'All', RUGBY_INBOX.length], ['urgent', 'Urgent', RUGBY_INBOX.filter(c => c.urgent).length]]
   return (
-    <Card T={T} density={density} style={{ gridColumn: '6 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
       <SectionHead T={T} title="Inbox" right={
         <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 7 }}>
           {tabs.map(([id, lbl, n]) => (
@@ -279,6 +284,16 @@ export function Inbox({ T, density }: Common) {
 
 // ─── Squad availability — rugby 15+8 ──────────────────────────────────
 
+// SQUAD AVAILABILITY — full-width strip layout. Cells use fixed pixel
+// size (48×48) instead of aspectRatio:1 so cards don't grow with
+// container width. Position groups (Forwards 1-8, Backs 9-15,
+// Bench 16-23) laid out horizontally in a single flex row with
+// justifyContent: center. Total card height ~110px (comparable in
+// vertical weight to Recent Results / Season Standing). Injuries
+// list moved out of this card to keep the strip compact.
+//
+// SQUAD TILES sized 48×48 to fill the bottom strip without overflow.
+// Tiles centered horizontally (justify-content: center on flex container).
 function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; slot: typeof RUGBY_STARTERS[number] }) {
   const status = slot.status
   const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : T.bad
@@ -286,14 +301,15 @@ function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; 
     <div title={`${slot.num}. ${slot.name} · ${slot.pos} · ${status}`}
       style={{
         position: 'relative',
-        aspectRatio: '1', borderRadius: 4, display: 'grid', placeItems: 'center',
-        fontSize: 8.5, fontWeight: 600, fontFamily: FONT_MONO,
+        width: 48, height: 48, borderRadius: 6, display: 'grid', placeItems: 'center',
+        fontSize: 12, fontWeight: 600, fontFamily: FONT_MONO,
         color: status === 'ok' ? T.text : '#0E1014',
         background: status === 'ok' ? `${c}22` : c,
         border: `1px solid ${status === 'ok' ? `${c}55` : 'transparent'}`,
         cursor: 'pointer',
+        flexShrink: 0,
       }}>
-      <span style={{ position: 'absolute', top: 1, left: 2, fontSize: 7, color: status === 'ok' ? T.text3 : '#0E1014', opacity: 0.7 }}>{slot.num}</span>
+      <span style={{ position: 'absolute', top: 2, left: 3, fontSize: 8, color: status === 'ok' ? T.text3 : '#0E1014', opacity: 0.7 }}>{slot.num}</span>
       {slot.initials}
     </div>
   )
@@ -307,41 +323,27 @@ export function Squad({ T, accent, density }: Common) {
   const forwards = RUGBY_STARTERS.filter(s => s.group === 'forwards')
   const backs    = RUGBY_STARTERS.filter(s => s.group === 'backs')
 
+  const Group = ({ label, players }: { label: string; players: typeof RUGBY_STARTERS }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {players.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
+      </div>
+    </div>
+  )
+
   return (
-    <Card T={T} density={density} style={{ gridColumn: '10 / span 3' }}>
-      <SectionHead T={T} title="Squad availability" />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <span className="tnum" style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', color: T.text }}>{fit}</span>
-        <span style={{ fontSize: 11, color: T.text2 }}>/ 23 fit</span>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', padding: density.pad - 2 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Squad availability</div>
+        <span className="tnum" style={{ fontSize: 13, fontWeight: 600, color: T.text, marginLeft: 4 }}>{fit}<span style={{ color: T.text3, fontWeight: 400 }}> / 23</span></span>
+        <span style={{ fontSize: 10.5, color: T.text3 }}>fit</span>
         <span style={{ marginLeft: 'auto', fontSize: 10.5, color: out + doubt > 0 ? T.bad : T.text3 }}>{out} out · {doubt} doubt</span>
       </div>
-
-      {/* Forwards 1–8 */}
-      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Forwards 1–8</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 3, marginBottom: 8 }}>
-        {forwards.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
-      </div>
-
-      {/* Backs 9–15 */}
-      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Backs 9–15</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, marginBottom: 8 }}>
-        {backs.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
-      </div>
-
-      {/* Bench 16–23 */}
-      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Bench 16–23</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 3, marginBottom: 12 }}>
-        {RUGBY_BENCH.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {RUGBY_INJURIES.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <div style={{ fontSize: 11.5, color: T.text, fontWeight: 500 }}>{p.name}</div>
-            <div style={{ fontSize: 10.5, color: T.text3, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.issue}</div>
-            <div className="tnum" style={{ fontSize: 10.5, color: p.status === 'cleared' ? T.good : T.warn, fontFamily: FONT_MONO }}>{p.back}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <Group label="Forwards 1–8" players={forwards} />
+        <Group label="Backs 9–15"   players={backs} />
+        <Group label="Bench 16–23"  players={RUGBY_BENCH} />
       </div>
     </Card>
   )

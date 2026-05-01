@@ -6,7 +6,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   WOMENS_ORG, WOMENS_FIXTURES, WOMENS_TODAY, WOMENS_AI_BRIEF, WOMENS_INBOX,
-  WOMENS_INJURIES, WOMENS_RECENTS, WOMENS_PERF_INTEL, WOMENS_SEASON_FORM,
+  WOMENS_RECENTS, WOMENS_PERF_INTEL, WOMENS_SEASON_FORM,
   WOMENS_TOP_STATS, WOMENS_SQUAD,
   type WfAIBriefItem, type WfInboxChannel, type WfFixture, type WfPlayerSlot,
 } from '../_lib/womens-dashboard-data'
@@ -61,8 +61,13 @@ export function HeroToday({
     return () => clearInterval(id)
   }, [])
 
+  // BANNER FULL WIDTH — Today schedule moved into the three-column
+  // row alongside AI Morning Summary and Inbox; Squad Availability
+  // moved to bottom of page as full-width strip. Layout reflow per
+  // user spec — do not re-add Today as banner sibling without
+  // product approval.
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="wf-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -179,7 +184,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const hour = new Date().getHours()
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 5' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
       <SectionHead T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
         right={<>
@@ -252,6 +257,16 @@ export function Inbox({ T, density }: Common) {
 
 // ─── Squad availability — GK / DEF / MID / FWD with pink accent on cleared
 
+// SQUAD AVAILABILITY — full-width strip layout. Cells use fixed pixel
+// size (48×48) instead of aspectRatio:1 so cards don't grow with
+// container width. Position groups laid out horizontally in a single
+// flex row with justifyContent: center to keep total card height
+// ~110px (comparable in vertical weight to Recent Results / Season
+// Standing). Injuries list moved out of this card to keep the strip
+// compact. Pink accent (#BE185D) preserved on out/cleared statuses.
+//
+// SQUAD TILES sized 48×48 to fill the bottom strip without overflow.
+// Tiles centered horizontally (justify-content: center on flex container).
 function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; slot: WfPlayerSlot }) {
   const status = slot.status
   const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : accent.hex
@@ -260,14 +275,15 @@ function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; 
   return (
     <div title={`${slot.num}. ${slot.name} · ${slot.pos} · ${status}`}
       style={{
-        position: 'relative', aspectRatio: '1', borderRadius: 4, display: 'grid', placeItems: 'center',
-        fontSize: 8.5, fontWeight: 600, fontFamily: FONT_MONO,
+        position: 'relative', width: 48, height: 48, borderRadius: 6, display: 'grid', placeItems: 'center',
+        fontSize: 12, fontWeight: 600, fontFamily: FONT_MONO,
         color: status === 'ok' ? T.text : '#fff',
         background: status === 'ok' ? `${c}22` : c,
         border: `1px solid ${status === 'ok' ? `${c}55` : 'transparent'}`,
         cursor: 'pointer',
+        flexShrink: 0,
       }}>
-      <span style={{ position: 'absolute', top: 1, left: 2, fontSize: 7, color: status === 'ok' ? T.text3 : 'rgba(255,255,255,0.7)' }}>{slot.num}</span>
+      <span style={{ position: 'absolute', top: 2, left: 3, fontSize: 8, color: status === 'ok' ? T.text3 : 'rgba(255,255,255,0.7)' }}>{slot.num}</span>
       {slot.initials}
     </div>
   )
@@ -282,35 +298,28 @@ export function Squad({ T, accent, density }: Common) {
   const mid = WOMENS_SQUAD.filter(s => s.group === 'mid')
   const fwd = WOMENS_SQUAD.filter(s => s.group === 'fwd')
 
-  const Group = ({ label, players, cols }: { label: string; players: WfPlayerSlot[]; cols: number }) => (
-    <>
-      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols},1fr)`, gap: 3, marginBottom: 8 }}>
+  const Group = ({ label, players }: { label: string; players: WfPlayerSlot[] }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+      <div style={{ fontSize: 9, color: T.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ display: 'flex', gap: 4 }}>
         {players.map(s => <SquadCell key={s.num} T={T} accent={accent} slot={s} />)}
       </div>
-    </>
+    </div>
   )
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '10 / span 3' }}>
-      <SectionHead T={T} title="Squad availability" />
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <span className="tnum" style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', color: T.text }}>{fit}</span>
-        <span style={{ fontSize: 11, color: T.text2 }}>/ {WOMENS_SQUAD.length} fit</span>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', padding: density.pad - 2 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Squad availability</div>
+        <span className="tnum" style={{ fontSize: 13, fontWeight: 600, color: T.text, marginLeft: 4 }}>{fit}<span style={{ color: T.text3, fontWeight: 400 }}> / {WOMENS_SQUAD.length}</span></span>
+        <span style={{ fontSize: 10.5, color: T.text3 }}>fit</span>
         <span style={{ marginLeft: 'auto', fontSize: 10.5, color: out + doubt > 0 ? accent.hex : T.text3 }}>{out} out · {doubt} doubt</span>
       </div>
-      <Group label="GK"  players={gk}  cols={6} />
-      <Group label="DEF" players={def} cols={7} />
-      <Group label="MID" players={mid} cols={7} />
-      <Group label="FWD" players={fwd} cols={6} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {WOMENS_INJURIES.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <div style={{ fontSize: 11.5, color: T.text, fontWeight: 500 }}>{p.name}</div>
-            <div style={{ fontSize: 10.5, color: T.text3, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.issue}</div>
-            <div className="tnum" style={{ fontSize: 10.5, color: (p.status as string) === 'cleared' ? T.good : T.warn, fontFamily: FONT_MONO }}>{p.back}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <Group label="GK"  players={gk}  />
+        <Group label="DEF" players={def} />
+        <Group label="MID" players={mid} />
+        <Group label="FWD" players={fwd} />
       </div>
     </Card>
   )
