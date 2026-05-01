@@ -14,7 +14,7 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['40+ features', 'GPS vest ready', 'AI powered', 'ElevenLabs voice', 'CompuBox ready']
+const STAT_PILLS = ['40+ features', 'GPS vest ready', 'AI powered', 'ElevenLabs voice', 'Punch analytics ready']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🏕️', title: 'Fight Camp Management', desc: "Camp dashboard with phase timeline, daily sessions, sparring schedule, and GPS ring heatmap as the centrepiece. Everything Jim Bevan needs before the first session." },

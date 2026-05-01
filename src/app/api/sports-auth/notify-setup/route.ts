@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const SPORT_CREDENTIALS: Record<string, { name: string; why: string; powers: string }[]> = {
   darts: [
-    { name: 'DartConnect username', why: 'Links your match history and live scoring', powers: 'Match results, career stats, live scores' },
+    { name: 'Live scoring handle', why: 'Links your match history and live scoring', powers: 'Match results, career stats, live scores' },
     { name: 'PDC membership ID', why: 'Pulls your official Order of Merit ranking', powers: 'PDC ranking tracker, Race to Ally Pally, points breakdown' },
     { name: 'Practice tracker preference (DartCounter / Lidarts / DartsForData)', why: 'Syncs your practice sessions automatically', powers: 'Practice log, doubles %, checkout trends' },
     { name: 'Home airport (e.g. MAN, LHR)', why: 'Pre-fills Smart Flights for every PDC venue', powers: 'Smart Flights AI, hotel finder, travel planner' },

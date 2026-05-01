@@ -31,7 +31,7 @@
 // Sports Box Office, Showtime) have been replaced with the invented
 // "Meridian Sports" broadcast brand.
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
@@ -54,6 +54,25 @@ import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
 import { MobileSportHome } from '@/components/mobile/MobileSportHome'
 import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
 import { boxingMobileConfig } from '@/lib/mobile/configs/boxing'
+// ─── Boxing v2 dashboard imports ──────────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import {
+  HeroToday as BoxingHeroToday,
+  FightCampStatus as BoxingFightCampStatus,
+  TodaySchedule as BoxingTodaySchedule,
+  StatTiles as BoxingStatTiles,
+  AIBrief as BoxingAIBrief,
+  MyTeam as BoxingMyTeam,
+  Perf as BoxingPerf,
+  Recents as BoxingRecents,
+  PhotoFrame as BoxingPhotoFrame,
+  FightBriefPanel as BoxingFightBriefPanel,
+} from './_components/BoxingDashboardModules'
+import { BoxingSidebar } from './_components/BoxingShell'
+import {
+  BOXING_NAV_GROUPS, BOXING_ACCENT, BOXING_INBOX,
+} from './_lib/boxing-dashboard-data'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useBoxingProfileName(): string | null {
@@ -192,6 +211,7 @@ const SIDEBAR_ITEMS = [
   { id: 'sparring',        label: 'Sparring Planner',    icon: '🤼', group: 'OVERVIEW' },
   { id: 'punchanalytics',  label: 'Punch Analytics',     icon: '🥊', group: 'OVERVIEW' },
   { id: 'gps',             label: 'GPS',                 icon: '🛰️', group: 'OVERVIEW' },
+  { id: 'gps-heatmaps',    label: 'Heatmaps',            icon: '🔥', group: 'OVERVIEW' },
   { id: 'fightcamp',       label: 'Fight Camp',          icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'fight-night',     label: 'Fight Night Ops',     icon: '🥊', group: 'FIGHT CAMP' },
   { id: 'campcosts',       label: 'Camp Costs',          icon: '🧾', group: 'FIGHT CAMP' },
@@ -391,7 +411,7 @@ const FighterCard = ({ fighter, session }: { fighter: BoxingFighter; session: Sp
   const livePhoto = isPlayerRole
     ? (isFoundingMember
         ? (session.photoDataUrl || null)
-        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl || '/marcus_reid.jpg'))
+        : ((typeof window !== 'undefined' ? localStorage.getItem('lumio_boxing_profile_photo') : null) || session.photoDataUrl || '/marcus_cole.jpg'))
     : null
   return (
   <div className="w-full bg-[#0d0f1a] border border-gray-800 rounded-xl p-4">
@@ -875,6 +895,106 @@ function BoxingSendMessage({ onClose, fighter, session }: { onClose: () => void;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── INTERACTIVE BOXING INBOX (v2 dashboard) ─────────────────────────────────
+// Inline interactive inbox for the v2 today tab — expand a channel to read
+// the full message, then reply / forward / dismiss. Mirrors rugby's
+// InteractiveRugbyInbox so the dashboard inbox feels consistent across sports.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const BOXING_INBOX_BODIES: Record<string, { body: string }> = {
+  'Manager · Danny Walsh':  { body: 'DAZN PPV deal confirmed — paperwork in your email. Purse: 65/35 Marcus, plus PPV upside trigger at 250k buys. Need a yes by 16:00 for Petrov undercard slot.' },
+  'Promoter Desk':          { body: 'Crown Park venue locked. Hotel block: 4 nights Marriott Canary Wharf, 12 corner-team rooms reserved. Press conf. Thursday 14:00 — Petrov camp confirmed attendance.' },
+  'Physio & Medical':       { body: 'Jim flagged the right hand rewrap last night — knuckle swelling on heavy bag. Booked Dr Mitchell 09:00 for x-ray + soft-tissue check. Likely tape adjustment, not a layoff.' },
+  'Media & Sponsor':        { body: 'Apex Performance camp video — 2 posts still outstanding from March deliverable. Crew can shoot Mon morning before sparring. DAZN talking-points doc for the interview is in your inbox.' },
+  'Weight Check':            { body: 'Daily weigh-in: 97.8kg. Target 92.7kg by weigh-in day (D-1). Cut velocity 0.11kg/day = bang on plan. Log before 09:00 today, full glycogen reset Sunday.' },
+  'Travel & Camp':          { body: 'Corner team flights: BA LHR→LCY confirmed for Jim, Tony, Ricky · Mon 9 dep 14:25 arr 15:05. Equipment van booked for fight-week move-in. Nothing further actioned by you.' },
+  'Agent · James Wright':   { body: 'Apex Performance ambassador deal — £85k for camp coverage + 4 fight-week posts. Auto-renewing. Counter-offer from Crown Wagers at £92k landed last night for comparison.' },
+  'Fan Mail':               { body: '4 new messages including 2 signed-glove requests for terminally-ill kids (charity team has details). Mum sent a fight-week pic — kept that one.' },
+}
+
+function InteractiveBoxingInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof BOXING_ACCENT; density: typeof DENSITY.regular }) {
+  type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
+  const init = (): Record<string, RowState> => Object.fromEntries(BOXING_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Trainer', sentLabel: null, dismissed: false }]))
+  const [state, setState] = useState<Record<string, RowState>>(init)
+  const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
+
+  const items = BOXING_INBOX.filter(c => !state[c.ch]?.dismissed)
+  const btnGhost: React.CSSProperties   = { fontSize: 11, padding: '5px 10px', background: 'transparent', color: '#9CA3AF', border: '1px solid #2d3139', borderRadius: 6, cursor: 'pointer', transition: 'border-color .12s, color .12s' }
+  const btnPrimary: React.CSSProperties = { fontSize: 11.5, padding: '5px 12px', background: accent.hex, color: T.btnText, border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
+
+  return (
+    <div style={{ gridColumn: '6 / span 7', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
+        <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'var(--font-geist-mono, monospace)' }}>{items.length} channels · click to expand</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 360, overflow: 'auto' }}>
+        {items.map((c, i) => {
+          const s = state[c.ch] ?? { expanded: false, mode: 'idle', reply: '', forwardTo: 'Trainer', sentLabel: null, dismissed: false }
+          const body = BOXING_INBOX_BODIES[c.ch]?.body ?? c.last
+          return (
+            <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
+                  <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'var(--font-geist-mono, monospace)' }}>{c.time}</div>
+                <div className="tnum" style={{ minWidth: 22, height: 18, padding: '0 6px', borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 600, background: c.urgent ? 'rgba(239,68,68,0.12)' : T.hover, color: c.urgent ? T.bad : T.text2 }}>{c.count}</div>
+              </div>
+              {s.expanded && (
+                <div style={{ padding: '6px 6px 12px 22px' }}>
+                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, padding: 10, background: T.panel2, borderRadius: 6, border: `1px solid ${T.border}` }}>
+                    {body}
+                  </div>
+                  {s.sentLabel && <div style={{ marginTop: 6, fontSize: 11, color: T.good, fontFamily: 'var(--font-geist-mono, monospace)' }}>{s.sentLabel}</div>}
+                  {s.mode === 'idle' && !s.sentLabel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => update(c.ch, { mode: 'replying' })}   style={btnGhost}>Reply</button>
+                      <button onClick={() => update(c.ch, { mode: 'forwarding' })} style={btnGhost}>Forward</button>
+                      <button onClick={() => update(c.ch, { dismissed: true })}    style={btnGhost}>Dismiss</button>
+                    </div>
+                  )}
+                  {s.mode === 'replying' && (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={s.reply} onChange={e => update(c.ch, { reply: e.target.value })}
+                        placeholder="Type your reply…" rows={3}
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: 8, fontSize: 12, fontFamily: V2_FONT, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '', sentLabel: 'Sent ✓' })} style={btnPrimary}>Send</button>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '' })}                       style={btnGhost}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {s.mode === 'forwarding' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: T.text3 }}>Forward to:</span>
+                      <select value={s.forwardTo} onChange={e => update(c.ch, { forwardTo: e.target.value })}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontFamily: V2_FONT }}>
+                        <option>Trainer</option>
+                        <option>Manager</option>
+                        <option>Physio</option>
+                        <option>Agent</option>
+                        <option>S&C Coach</option>
+                        <option>Promoter</option>
+                      </select>
+                      <button onClick={() => update(c.ch, { mode: 'idle', sentLabel: `Forwarded to ${s.forwardTo} ✓` })} style={btnPrimary}>Forward</button>
+                      <button onClick={() => update(c.ch, { mode: 'idle' })} style={btnGhost}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {items.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+      </div>
+    </div>
+  )
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingFighter; session: SportsDemoSession; onOpenModal?: (id: string) => void }) {
@@ -912,7 +1032,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
     : `"${fighter.nickname}"`
   const displayPlayerPhoto = isPlayerRole
     ? (isDemoShellDash
-        ? (liveProfilePhoto || session.photoDataUrl || '/marcus_reid.jpg')
+        ? (liveProfilePhoto || session.photoDataUrl || '/marcus_cole.jpg')
         : (session.photoDataUrl?.trim() || null))
     : null
   const firstName = displayPlayerName.split(' ')[0] || 'Marcus'
@@ -969,6 +1089,13 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
     window.speechSynthesis.speak(u)
   }
   useEffect(() => { return () => { if (typeof window !== 'undefined') window.speechSynthesis.cancel() } }, [])
+
+  // V2 dashboard state
+  const [fightBriefOpen, setFightBriefOpen] = useState(false)
+  // V2 theme tokens — shared with cricket/rugby v2 so all sport portals look the same.
+  const v2T       = THEMES.dark
+  const v2Accent  = BOXING_ACCENT
+  const v2Density = DENSITY.regular
 
   const [photoFit, setPhotoFit] = useState<'cover'|'contain'>(() => {
     try { return (typeof window !== 'undefined' && localStorage.getItem('lumio_boxing_photo_fit') as 'cover'|'contain') || 'cover' } catch { return 'cover' }
@@ -1106,117 +1233,95 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
   return (
     <div className="space-y-6">
 
-      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #450a0a 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(220,38,38,0.2)' }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">{greeting}, {firstName} 🥊</h1>
-              <button onClick={() => speakBriefing()} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech'}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-                style={{ background: isSpeaking ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(249,115,22,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#F97316' : '#9CA3AF' }}>
-                <span className="text-sm">{isSpeaking ? '⏸' : '🔊'}</span>
-              </button>
-            </div>
-            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs italic" style={{ color: '#facc15' }}>
-              &ldquo;{getDailyQuote(BOXING_QUOTES).text}&rdquo; &mdash; {getDailyQuote(BOXING_QUOTES).author}
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {[
-              { icon:'🥊', value: isDemoShellDash ? `#${fighter.rankings.wbc}` : '—', label:'WBC', color:'#dc2626' },
-              { icon:'🏆', value: isDemoShellDash ? `#${fighter.rankings.ibf}` : '—', label:'IBF', color:'#F97316' },
-              { icon:'⚖️', value: isDemoShellDash ? `${fighter.current_weight}kg` : '—', label:'Weight', color:'#0ea5e9' },
-              { icon:'📅', value: isDemoShellDash ? `${fighter.next_fight.days_away}d` : '—', label:'Fight', color:'#EF4444' },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
-                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
-                <span className="text-base">{s.icon}</span>
-                <span className="text-lg font-black text-white">{s.value}</span>
-                <span className="text-xs opacity-70">{s.label}</span>
-              </div>
-            ))}
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
-              <span className="text-base">🌤️</span>
-              <span className="text-lg font-black text-white">18°C</span>
-              <span className="text-xs opacity-70">London</span>
-            </div>
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Las Vegas', tz:'America/Los_Angeles', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
-                  <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#facc15' : '#e2e8f0' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-            </div>
-          </div>
+      {/* ── V2 HERO — fight camp focus, matches cricket/rugby v2 sizing ── */}
+      <style jsx global>{`
+        .tnum { font-variant-numeric: tabular-nums; }
+      `}</style>
+      <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, marginBottom: v2Density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+          <BoxingHeroToday
+            T={v2T} accent={v2Accent} density={v2Density}
+            greeting={`${greeting}, ${firstName}`}
+            quote={getDailyQuote(BOXING_QUOTES)}
+            onFightPrep={() => setFightBriefOpen(true)}
+            onAsk={() => onOpenModal?.('sendmessage')}
+          />
+          <BoxingTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#f87171' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#dc26260d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
-        </button>
+      {/* Tab bar — matches cricket v2 styling exactly */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto', marginBottom: v2Density.gap }}>
         {([
-          { id:'today' as const,      label:'Today',       icon:'🏠' },
-          { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },
-          { id:'dailytasks' as const, label:'Daily Tasks', icon:'✅' },
-          { id:'insights' as const,   label:'Insights',    icon:'📊' },
-          { id:'dontmiss' as const,   label:"Don't Miss",  icon:'🔴' },
-          { id:'team' as const,       label:'Team',        icon:'👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === t.id ? '#dc2626' : 'transparent', color: dashTab === t.id ? '#f87171' : '#6B7280', backgroundColor: dashTab === t.id ? '#dc26260d' : 'transparent' }}>
-            <span className="text-base">{t.icon}</span>{t.label}
-          </button>
-        ))}
+          { id:'gettingstarted' as const, label:'Getting Started', icon:'sparkles' },
+          { id:'today' as const,          label:'Today',           icon:'home' },
+          { id:'quickwins' as const,      label:'Quick Wins',      icon:'lightning' },
+          { id:'dailytasks' as const,     label:'Daily Tasks',     icon:'check' },
+          { id:'insights' as const,       label:'Insights',        icon:'bars' },
+          { id:'dontmiss' as const,       label:"Don't Miss",      icon:'flag' },
+          { id:'team' as const,           label:'Team',            icon:'people' },
+        ]).map(t => {
+          const active = dashTab === t.id
+          return (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'rgba(232,234,238,0.64)' }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'rgba(232,234,238,0.42)' }}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px',
+                fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : 'rgba(232,234,238,0.42)',
+                borderBottom: `2px solid ${active ? v2Accent.hex : 'transparent'}`,
+                marginBottom: -1,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                transition: 'color .12s, border-color .12s',
+              }}>
+              <V2Icon name={t.icon} size={12} stroke={1.6} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Quick Actions — below tab bar (Today only) */}
+      {/* Quick Actions — desaturated rectangular (matches rugby v2) */}
       {dashTab === 'today' && <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
             { id:'sendmessage', label:'Send Message', icon:'📨', hot:false },
-            { id:'flights', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
-            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
-            { id:'matchprep', label:'Fight Prep AI', icon:'🧠', color:'#22C55E', hot:true },
-            { id:'weight', label:'Weight Tracker', icon:'⚖️', color:'#F59E0B', hot:false },
-            { id:'sparring', label:'Sparring Log', icon:'🥊', color:'#dc2626', hot:false },
-            { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#dc2626', hot:true },
-            { id:'sponsor', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
-            { id:'opponent', label:'Opponent Study', icon:'🔍', color:'#8B5CF6', hot:true },
-            { id:'injury', label:'Medical Log', icon:'🏥', color:'#EF4444', hot:false },
-            { id:'mental', label:'Mental Prep', icon:'🧘', color:'#8B5CF6', hot:true },
-            { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
-            { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
-            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-            { id:'weightcut', label:'Weight Cut AI', icon:'⚖️', color:'#F59E0B', hot:true },
-            { id:'opponentscout', label:'Opponent Scout', icon:'🥊', color:'#8B5CF6', hot:true },
-            { id:'vadacheck', label:'VADA/UKAD Check', icon:'💊', color:'#EF4444', hot:true },
-            { id:'pursebreakdown', label:'Purse Breakdown', icon:'📋', color:'#22C55E', hot:false },
-            { id:'rankingstracker', label:'Rankings Tracker', icon:'🏆', color:'#F59E0B', hot:true },
-            { id:'campcontent', label:'Camp Content AI', icon:'🎬', color:'#8B5CF6', hot:true },
+            { id:'flights', label:'Smart Flights', icon:'✈️', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', hot:true },
+            { id:'weight', label:'Weight Tracker', icon:'⚖️', hot:false },
+            { id:'sparring', label:'Sparring Log', icon:'🥊', hot:false },
+            { id:'ranking', label:'Ranking Sim', icon:'📊', hot:true },
+            { id:'sponsor', label:'Sponsor Post', icon:'📱', hot:true },
+            { id:'opponent', label:'Opponent Study', icon:'🔍', hot:true },
+            { id:'injury', label:'Medical Log', icon:'🏥', hot:false },
+            { id:'mental', label:'Mental Prep', icon:'🧘', hot:true },
+            { id:'expense', label:'Add Expense', icon:'💰', hot:false },
+            { id:'visa', label:'Visa Check', icon:'🌍', hot:true },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', hot:true },
+            { id:'weightcut', label:'Weight Cut AI', icon:'⚖️', hot:true },
+            { id:'opponentscout', label:'Opponent Scout', icon:'🥊', hot:true },
+            { id:'vadacheck', label:'VADA/UKAD Check', icon:'💊', hot:true },
+            { id:'pursebreakdown', label:'Purse Breakdown', icon:'📋', hot:false },
+            { id:'rankingstracker', label:'Rankings Tracker', icon:'🏆', hot:true },
+            { id:'campcontent', label:'Camp Content AI', icon:'🎬', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal?.(a.id)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+                position: 'relative', whiteSpace: 'nowrap',
+              }}>
               <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)' }}>AI</span>}
+              {a.hot && <span style={{ position: 'absolute', top: -6, right: -6, fontSize: 8, fontWeight: 800, padding: '2px 5px', borderRadius: 999, background: '#1F2937', color: '#9CA3AF', border: '1px solid #374151', lineHeight: 1 }}>AI</span>}
             </button>
           ))}
         </div>
@@ -1266,7 +1371,7 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
                     <div className="text-4xl mb-3">{step.icon}</div>
                     {step.preview === 'dashboard' && (<><h2 className="text-xl font-black text-white mb-2">Your boxing OS, fully connected.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>One portal replaces the 6 tools you probably use right now. Rankings, fight camp, weight tracking, sponsors, travel, your team — all connected.</p><div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><div className="text-xs text-gray-400 mb-3">Your dashboard — live right now</div><div className="grid grid-cols-4 gap-2">{[{ icon:'🥊', v:`#${fighter.rankings.wbc}`, label:'WBC', c:'#dc2626' },{ icon:'🏆', v:`${fighter.record.wins}-${fighter.record.losses}`, label:'Record', c:'#F97316' },{ icon:'⚖️', v:`${fighter.current_weight}kg`, label:'Weight', c:'#F59E0B' },{ icon:'📅', v:`${fighter.next_fight.days_away}d`, label:'Fight', c:'#22C55E' }].map((s, i) => (<div key={i} className="rounded-lg p-2 text-center" style={{ backgroundColor: '#0a0c14' }}><div className="text-lg">{s.icon}</div><div className="text-xs font-black mt-0.5" style={{ color: s.c }}>{s.v}</div><div className="text-[9px] mt-0.5" style={{ color: '#4B5563' }}>{s.label}</div></div>))}</div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Next fight:</span> <span className="text-white font-semibold">vs {fighter.next_fight.opponent} — {fighter.next_fight.venue}</span></div><div className="rounded-lg p-2" style={{ backgroundColor: '#0a0c14' }}><span className="text-gray-500">Camp day:</span> <span className="text-white font-semibold">Day {fighter.camp_day}/70 — On track</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span style={{ color: '#dc2626' }}>🥊</span> <span style={{ color: '#9CA3AF' }}>Used by professional fighters to manage everything from training camp to fight night.</span></div>{/* Brand Colours — only in step 1 detail */}<div className="mt-4 space-y-3"><div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6B7280' }}>Brand Colours</div><p className="text-xs" style={{ color: '#6B7280' }}>Use your club or personal brand colours. Primary fills buttons and accents, secondary is your text colour.</p><div className="flex items-center gap-4"><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Primary</label><input type="color" value={brandPrimary} onChange={e => { setBrandPrimary(e.target.value); localStorage.setItem('lumio_boxing_brand_primary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Secondary</label><input type="color" value={brandSecondary} onChange={e => { setBrandSecondary(e.target.value); localStorage.setItem('lumio_boxing_brand_secondary', e.target.value); window.dispatchEvent(new Event('lumio-profile-updated')) }} className="w-12 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} /></div><div className="flex-1"><label className="text-xs block mb-1" style={{ color: '#9CA3AF' }}>Preview</label><div className="flex items-center gap-2"><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: brandPrimary, color: brandSecondary }}>Button preview</div><div className="rounded-lg px-4 py-1.5 text-xs font-semibold" style={{ backgroundColor: `${brandPrimary}26`, color: brandPrimary, border: `1px solid ${brandPrimary}4d` }}>Outline preview</div></div></div></div></div></>)}
                     {step.preview === 'briefing' && (<><h2 className="text-xl font-black text-white mb-2">Start every fight week knowing everything.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your AI morning briefing covers weight status, camp progress, opponent intel, sponsor deadlines and travel — all in 60 seconds.</p><div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(220,38,38,0.2)' }}><div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', background: 'rgba(220,38,38,0.06)' }}><span>✨</span><span className="text-sm font-semibold text-white">{aiSummaryLabel}</span><span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Today</span></div><div className="p-4 space-y-2.5" style={{ backgroundColor: '#0a0c14' }}>{[{ icon:'⚖️', text:`Weight on track — ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Cut projection: 3 days before weigh-in.` },{ icon:'🥊', text:'Stoyan scouting report ready — body shot breakdown and late-round fade analysis.' },{ icon:'🤝', text:'Apex Performance camp shoot tomorrow 10:00 — penalty clause. Kit prepped.' },{ icon:'📬', text:'Meridian Sports promotion confirmed. Danny Walsh purse split: 70/30 Titan offer.' }].map((item, i) => (<div key={i} className="flex gap-2.5 text-[11px]"><span className="flex-shrink-0">{item.icon}</span><span style={{ color: '#D1D5DB' }}>{item.text}</span></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>🔊</span> <span style={{ color: '#9CA3AF' }}>Press the speaker button every morning. Sarah reads it while you warm up.</span></div></>)}
-                    {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — log a sparring session, track weight, file a physio report, generate a sponsor post, check your visa. All in under 60 seconds.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Fight Prep AI', icon:'🥊', hot:true },{ label:'Weight Tracker', icon:'⚖️', hot:false },{ label:'Sparring Log', icon:'📋', hot:false },{ label:'Opponent Study', icon:'🔍', hot:true }].map((a, i) => (<span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold relative" style={{ backgroundColor: a.hot ? '#dc2626' : '#1F2937', color: a.hot ? '#fff' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[7px] px-1 py-0.5 rounded-full font-black" style={{ backgroundColor: '#fff', color: '#dc2626' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🥊</span> <span style={{ color: '#0ea5e9' }}>Fight Prep AI generates a full opponent breakdown — punch stats, weaknesses, game plan — in 8 seconds.</span></div></>)}
+                    {step.preview === 'actions' && (<><h2 className="text-xl font-black text-white mb-2">Every action, one click away.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>14 quick actions — log a sparring session, track weight, file a physio report, generate a sponsor post, check your visa. All in under 60 seconds.</p><div className="flex flex-wrap gap-2 mb-4">{[{ label:'Smart Flights', icon:'✈️', hot:true },{ label:'Find Hotel', icon:'🏨', hot:true },{ label:'Fight Prep AI', icon:'🥊', hot:true },{ label:'Weight Tracker', icon:'⚖️', hot:false },{ label:'Sparring Log', icon:'📋', hot:false },{ label:'Opponent Study', icon:'🔍', hot:true }].map((a, i) => (<span key={i} className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold" style={{ backgroundColor: a.hot ? 'rgba(220,38,38,0.12)' : 'transparent', border: a.hot ? '1px solid rgba(220,38,38,0.32)' : '1px solid #1F2937', color: a.hot ? '#dc2626' : '#9CA3AF' }}><span>{a.icon}</span>{a.label}{a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: '#1F2937', color: '#9CA3AF', border: '1px solid #374151' }}>AI</span>}</span>))}</div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}><span>🥊</span> <span style={{ color: '#0ea5e9' }}>Fight Prep AI generates a full opponent breakdown — punch stats, weaknesses, game plan — in 8 seconds.</span></div></>)}
                     {step.preview === 'travel' && (<><h2 className="text-xl font-black text-white mb-2">Fight travel sorted in 60 seconds.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Smart Flights finds the cheapest flights to every fight venue. Smart Hotel finds gyms and hotels near the arena. Pre-filled with your home airport and weight class preferences.</p><div className="space-y-2 mb-4"><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(14,165,233,0.3)' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">Virgin Atlantic · VS 3</span><span className="text-xs font-black" style={{ color: '#22C55E' }}>£387 return</span></div><div className="text-[10px] text-gray-400">London LHR → New York JFK · 7h 20m · Direct</div><div className="mt-1"><span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9' }}>BEST VALUE</span></div></div><div className="rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="flex items-center justify-between mb-1"><span className="text-xs font-bold text-white">🏨 Manhattan Marriott</span><span className="text-xs font-bold" style={{ color: '#F59E0B' }}>£142/night</span></div><div className="text-[10px] text-gray-400">0.8km from Madison Square Garden · Gym ✅ · 8.6 rating</div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}><span style={{ color: '#F59E0B' }}>💰</span> <span style={{ color: '#F59E0B' }}>Fighters using Smart Flights save an average of £520 per fight on travel vs booking through a promoter.</span></div></>)}
                     {step.preview === 'weight' && (<><h2 className="text-xl font-black text-white mb-2">Weight camp managed to the gram.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Daily weight logs, cut timeline, ACWR load monitoring, rehydration plan — all tracked automatically. Get alerted if you&apos;re behind schedule before it becomes a crisis.</p><div className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#0a0c14', border: '1px solid rgba(220,38,38,0.3)' }}><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-white">Weight Camp Tracker</span><span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>ON TRACK ✅</span></div><div className="grid grid-cols-3 gap-2 text-center mb-3">{[{ label:'Camp Day', v:`${fighter.camp_day}/70`, c:'#dc2626' },{ label:'Current', v:`${fighter.current_weight}kg`, c:'#F97316' },{ label:'Target', v:`${fighter.target_weight}kg`, c:'#22C55E' }].map((s,i) => (<div key={i} className="rounded-lg p-2" style={{ backgroundColor: '#111318' }}><div className="text-[10px] text-gray-500">{s.label}</div><div className="text-sm font-black" style={{ color: s.c }}>{s.v}</div></div>))}</div><div className="space-y-1 text-[10px]"><div className="flex justify-between text-gray-400"><span>Cut prediction:</span><span className="text-white font-semibold">3 days before weigh-in</span></div><div className="flex justify-between text-gray-400"><span>ACWR:</span><span className="text-green-400 font-semibold">1.12 (optimal zone)</span></div></div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}><span style={{ color: '#dc2626' }}>⚖️</span> <span style={{ color: '#dc2626' }}>Missing weight costs purse deductions and can cancel fights. Lumio flags weight risk 14 days out.</span></div></>)}
                     {step.preview === 'team' && (<><h2 className="text-xl font-black text-white mb-2">Your team. Everyone sees their own view.</h2><p className="text-sm leading-relaxed mb-5" style={{ color: '#9CA3AF' }}>Your whole team connected — but each role gets their own tailored view. Your trainer, physio, sponsor and manager see only what&apos;s relevant to them. You control what each role can see.</p><div className="space-y-2 mb-4">{[{ name:fighter.trainer || 'Jim Bevan', role:'Trainer', status:'Sparring review at 16:00', color:'#dc2626' },{ name:fighter.manager || 'Danny Walsh', role:'Manager', status:'Meridian Sports contract confirmed', color:'#F97316' },{ name:fighter.physio || 'Dr Amir Patel', role:'Physio', status:'Shoulder check tomorrow', color:'#F59E0B' },{ name:'James Wright', role:'Agent', status:'Apex Performance deal — £85k', color:'#0ea5e9' }].map((m, i) => (<div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${m.color}20`, color: m.color }}>{m.name.split(' ').map(w => w[0]).join('')}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{m.name}</span><span className="text-[9px]" style={{ color: m.color }}>{m.role}</span></div><div className="text-[10px] text-gray-500">{m.status}</div></div><div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /></div>))}</div><div className="mt-4 mb-3"><div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>Everyone gets their own view</div><p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>Your trainer sees training & tactical data. Your physio sees medical & recovery only. Your sponsor sees brand activation & ROI. Your manager sees contracts & commercials. You stay in control — switch role any time from the bottom of the sidebar.</p><div className="grid grid-cols-2 gap-2">{[{ icon:'🥊', role:'Fighter view', desc:'Full access — everything', color:'#dc2626' },{ icon:'📋', role:'Trainer view', desc:'Training, tactics, performance', color:'#22C55E' },{ icon:'⚕️', role:'Medical / Physio', desc:'Injury log, load, recovery only', color:'#EF4444' },{ icon:'🤝', role:'Sponsor / Partner', desc:'Brand visibility, obligations, ROI', color:'#F59E0B' },{ icon:'💼', role:'Manager / Promoter', desc:'Contracts, commercials, schedule', color:'#0ea5e9' }].map((v, i) => (<div key={i} className="flex items-center gap-2 rounded-lg p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base flex-shrink-0">{v.icon}</span><div className="min-w-0"><div className="text-xs font-bold text-white truncate">{v.role}</div><div className="text-[10px] truncate" style={{ color: v.color }}>{v.desc}</div></div></div>))}</div></div><div className="rounded-lg p-3 text-[11px]" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}><span>📨</span> <span style={{ color: '#9CA3AF' }}>Your manager gets auto-briefed every Monday. Promoter updates go out after each camp milestone.</span></div></>)}
@@ -1291,260 +1396,41 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         )
       })()}
 
-      {/* TODAY */}
-      {dashTab === 'today' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: Morning Roundup — expandable like tennis */}
-          {session.isDemoShell === false
-            ? <EmptyState icon="📬" title="No messages yet" sub="Connect your manager, promoter and camp to unlock" />
-            : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-              <div className="flex items-center gap-2"><span>🌅</span><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Morning Roundup</p></div>
-              <span className="text-xs" style={{ color: '#6B7280' }}>Since you were last here</span>
-            </div>
-            <div>
-              {(roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : ROUNDUP_ITEMS).map((ch, idx) => {
-                const isOpen = expandedChannel === ch.id
-                return (
-                  <div key={ch.id} draggable
-                    onDragStart={() => setDragIdx(idx)}
-                    onDragEnter={() => setDragOverIdx(idx)}
-                    onDragOver={e => e.preventDefault()}
-                    onDragEnd={() => {
-                      if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
-                        const currentSorted = roundupOrder.length > 0 ? [...ROUNDUP_ITEMS].sort((a, b) => { const ai = roundupOrder.indexOf(a.id); const bi = roundupOrder.indexOf(b.id); return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) }) : [...ROUNDUP_ITEMS]
-                        const reordered = [...currentSorted]; const [moved] = reordered.splice(dragIdx, 1); reordered.splice(dragOverIdx, 0, moved)
-                        const newOrder = reordered.map(c => c.id); setRoundupOrder(newOrder); localStorage.setItem('lumio_boxing_roundup_order_v2', JSON.stringify(newOrder))
-                      }
-                      setDragIdx(null); setDragOverIdx(null)
-                    }}
-                    style={{ borderLeft: `4px solid ${ch.color}`, backgroundColor: `${ch.color}22`, borderRadius: '8px', marginBottom: '6px', borderTop: dragOverIdx === idx ? '2px solid #0ea5e9' : 'none', opacity: dragIdx === idx ? 0.5 : 1, cursor: 'grab' }}>
-                    <button onClick={() => setExpandedChannel(isOpen ? null : ch.id)}
-                      className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:bg-white/[0.02]">
-                      <div className="flex items-center gap-3">
-                        <span className="text-base" style={{ filter: `drop-shadow(0 0 4px ${ch.color})` }}>{ch.icon}</span>
-                        <span style={{ color: ch.color, fontWeight: 600, fontSize: '15px' }}>{ch.label}</span>
-                        {ch.urgent && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>Urgent</span>}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ color: ch.color, fontWeight: 700 }}>{ch.count}</span>
-                        <span className="text-xs" style={{ color: '#6B7280' }}>{isOpen ? '▲' : '▼'}</span>
-                      </div>
-                    </button>
-                    {isOpen && (
-                      <div className="px-5 pb-3 space-y-2">
-                        {ch.messages.map(msg => (
-                          <div key={msg.id} className="rounded-lg p-3" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: ch.color + '22', color: ch.color }}>{msg.from.split(' ').map(w => w[0]).join('').slice(0,2)}</div>
-                                <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{msg.from}</span>
-                              </div>
-                              <span className="text-[10px] flex-shrink-0" style={{ color: '#6B7280' }}>{msg.time}</span>
-                            </div>
-                            <p className="text-xs leading-relaxed mb-2" style={{ color: '#9CA3AF' }}>{msg.text}</p>
-                            {repliedTo.includes(msg.id) ? (
-                              <span className="text-[10px]" style={{ color: '#dc2626' }}>Replied ✓</span>
-                            ) : replyingTo === msg.id ? (
-                              <div className="mt-2">
-                                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={2}
-                                  className="w-full text-xs rounded-lg p-2 resize-none" style={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#F9FAFB', outline: 'none' }} />
-                                <div className="flex gap-2 mt-1.5">
-                                  <button onClick={() => { setRepliedTo(prev => [...prev, msg.id]); setReplyingTo(null); setReplyText(''); setReplyToast(true); setTimeout(() => setReplyToast(false), 2000) }}
-                                    className="text-[10px] px-3 py-1 rounded-lg font-semibold" style={{ backgroundColor: '#dc2626', color: '#fff' }}>Send</button>
-                                  <button onClick={() => { setReplyingTo(null); setReplyText('') }}
-                                    className="text-[10px] px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Cancel</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => setReplyingTo(msg.id)} className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(220,38,38,0.15)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.3)' }}>Reply</button>
-                                <button className="text-[10px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.1)' }}>Forward</button>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            {replyToast && <div className="px-5 py-2 text-[10px] font-medium" style={{ color: '#22C55E' }}>Reply sent ✓</div>}
-          </div>}
-
-          {/* MIDDLE: Fight Camp Status + schedule */}
-          <div className="space-y-4">
-            {session.isDemoShell === false ? (<>
-              <EmptyState icon="🥊" title="No fight scheduled" sub="Fight data will appear here once your camp calendar is connected" />
-              <EmptyState icon="📅" title="No schedule loaded" sub="Your fight camp schedule will appear here once connected" />
-            </>) : (<>
-            <div className="bg-[#0d1117] border border-red-600/30 rounded-2xl p-5">
-              <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-3">FIGHT CAMP STATUS</div>
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1 overflow-hidden">
-                    {(() => {
-                      const p = session.photoDataUrl || (isDemoShellDash ? '/marcus_reid.jpg' : '');
-                      return p ? <img src={p} alt="" className="w-full h-full object-cover" /> : firstName.slice(0,2).toUpperCase();
-                    })()}
-                  </div>
-                  <div className="text-xs font-bold text-white">{session.userName || fighter.name}</div>
-                  <div className="text-[10px] text-red-400">WBC #{fighter.rankings.wbc}</div>
-                </div>
-                <div className="text-center px-4">
-                  <div className="text-2xl font-black text-gray-600">VS</div>
-                  <div className="text-[10px] text-gray-500 mt-1">{fighter.next_fight.days_away} days · {fighter.next_fight.venue.split(',')[1]?.trim() || fighter.next_fight.venue}</div>
-                  <div className="text-[10px] text-green-400 mt-0.5">ACWR: 1.12 (optimal)</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-white mx-auto mb-1">{fighter.next_fight.opponent_flag}</div>
-                  <div className="text-xs font-bold text-white">{fighter.next_fight.opponent}</div>
-                  <div className="text-[10px] text-gray-500">{fighter.next_fight.opponent_ranking}</div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-2 text-[10px]">
-                <div className="text-gray-400">Weight: <span className="text-white font-bold">{fighter.current_weight}kg</span> → <span className="text-teal-400">{fighter.target_weight}kg</span></div>
-                <div className="text-gray-400 text-right">Camp: <span className="text-white font-bold">Day {fighter.camp_day}/{fighter.camp_total}</span> ({campProgress}%)</div>
-              </div>
-            </div>
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-5">
-              <div className="text-sm font-bold text-white mb-3">Today&apos;s Schedule</div>
-              <div className="space-y-2">
-                {[
-                  { id:'bs1', time:'06:00', label:'Roadwork — 8km + hill sprints',         highlight:false },
-                  { id:'bs2', time:'11:00', label:'Sparring 8rds — Darnell Hughes',        highlight:true  },
-                  { id:'bs3', time:'15:00', label:'Strength — upper body power',           highlight:false },
-                  { id:'bs4', time:'16:30', label:'Film study — Stoyan last 3 fights',     highlight:false },
-                  { id:'bs5', time:'18:00', label:'Physio — shoulder mobility + ice bath', highlight:false },
-                ].filter(s => !scheduleCancelled[s.id]).map((s) => {
-                  const done = !!scheduleChecked[s.id]
-                  return (
-                    <div key={s.id} className={`group flex items-center gap-3 py-1.5 border-b border-gray-800/40 last:border-0 ${done ? 'opacity-50' : ''}`}>
-                      <button onClick={() => toggleScheduleItem(s.id)}
-                        className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all"
-                        style={{ backgroundColor: done ? '#22C55E' : 'transparent', borderColor: done ? '#22C55E' : s.highlight ? '#EF4444' : '#4B5563' }}>
-                        {done && <span className="text-white text-[8px]">✓</span>}
-                      </button>
-                      <span className="text-[10px] text-gray-500 w-10 flex-shrink-0">{s.time}</span>
-                      <span className={`text-xs flex-1 ${done ? 'line-through text-gray-600' : s.highlight ? 'text-red-400 font-semibold' : 'text-gray-300'}`}>{s.label}</span>
-                      {!done && (
-                        <button onClick={() => cancelScheduleItem(s.id)}
-                          className="text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 flex-shrink-0">
-                          Cancel →
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            {/* Fight Night Venue */}
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Fight Night Venue — {fighter.next_fight.days_away} days</div>
-              <div className="text-sm font-bold text-white">{fighter.next_fight.venue}</div>
-              <div className="text-xs text-gray-500 mt-1">{fighter.next_fight.date} · Doors open 18:00 on fight night</div>
-              <div className="mt-3 space-y-1 text-xs">
-                <div className="flex justify-between text-gray-400"><span>Walk-on:</span><span className="text-white">22:00 fight night</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (W):</span><span className="text-green-400 font-bold">£1.2M</span></div>
-                <div className="flex justify-between text-gray-400"><span>Prize (L):</span><span className="text-gray-300">£360,000</span></div>
-                <div className="flex justify-between text-gray-400"><span>TV:</span><span className="text-white">{fighter.next_fight.broadcast}</span></div>
-              </div>
-            </div>
-            </>)}
+      {/* TODAY — v2 dashboard grid (FightCampStatus, StatTiles, AIBrief +
+          interactive Inbox, Recents + PhotoFrame, MyTeam, Perf signals) */}
+      {dashTab === 'today' && (session.isDemoShell === false
+        ? <div className="space-y-3"><EmptyState icon="📬" title="No messages yet" sub="Connect your manager, promoter and camp to unlock" /></div>
+        : (
+        <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
+          {/* Row 1 — Fight Camp Status (VS card) + corner team list */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <BoxingFightCampStatus T={v2T} accent={v2Accent} density={v2Density} column="1 / span 8" />
+            <BoxingMyTeam          T={v2T} accent={v2Accent} density={v2Density} column="9 / span 4" />
           </div>
-
-          {/* RIGHT: Photo frame + AI Morning Summary + Performance Intelligence */}
-          <div className="space-y-4">
-            <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-white">🖼️ Personal Photo Frame</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { const next = photoFit === 'cover' ? 'contain' : 'cover'; setPhotoFit(next); localStorage.setItem('lumio_boxing_photo_fit', next) }} className="text-[10px] text-gray-600 hover:text-gray-400">{photoFit === 'cover' ? '⊡ Fit' : '⊞ Fill'}</button>
-                  {photoSrc && <button onClick={() => setPhotoSrc(null)} className="text-[10px] text-gray-600 hover:text-gray-400">✕ Remove</button>}
-                  <button onClick={() => photoInputRef.current?.click()} className="text-[10px] text-red-400 hover:text-red-300">+ Add</button>
-                  <input ref={photoInputRef} key={photoSrc ? 'has' : 'no'} type="file" accept="image/*" className="hidden" onChange={e => {
-                    const file = e.target.files?.[0]; if (!file) return
-                    const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400
-                    const ctx = canvas.getContext('2d')!; const img = new Image()
-                    img.onload = () => { const size = Math.min(img.width, img.height); ctx.drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, 400, 400); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); setPhotoSrc(dataUrl) }
-                    img.src = URL.createObjectURL(file)
-                  }} />
-                </div>
-              </div>
-              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-red-900/20 to-gray-900 h-48 flex items-center justify-center">
-                {photoSrc
-                  ? <img src={photoSrc} alt="" className={`w-full h-full object-${photoFit}`} />
-                  : <div className="text-center"><div className="text-4xl mb-2">🖼️</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {['3s','5s','10s','30s'].map(s => (
-                  <button key={s} className={`text-[10px] px-2 py-0.5 rounded ${s==='5s'?'bg-red-600/20 text-red-400':'text-gray-600 hover:text-gray-400'}`}>{s}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* AI Morning Summary — matches tennis */}
-            {session.isDemoShell === false
-              ? <EmptyState icon="✨" title="No AI briefing yet" sub="Connect your boxing data to unlock your morning briefing" />
-              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span style={{ color: '#8B5CF6' }}>✨</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{aiSummaryLabel}</p>
-                </div>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-                </span>
-              </div>
-              <div className="px-5 py-4 space-y-3">
-                {[
-                  { type:'fight',    icon:'🥊', text:`Fight ${fighter.next_fight.days_away} days away — ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_ranking}) at ${fighter.next_fight.venue}. Camp day ${fighter.camp_day}/${fighter.camp_total}. On track for power peak.` },
-                  { type:'weight',   icon:'⚖️', text:`Weight ${fighter.current_weight}kg → ${fighter.target_weight}kg target. Daily cut: ${((fighter.current_weight - fighter.target_weight) / fighter.next_fight.days_away).toFixed(2)}kg/day. Log today before 09:00.` },
-                  { type:'camp',     icon:'🏕️', text:'Sparring 8 rds vs Darnell Hughes at 11:00 — southpaw rounds to prep for Stoyan. Jim Bevan flagged right hand rewrap — book Dr Mitchell 09:00.' },
-                  { type:'sponsor',  icon:'🤝', text:'Meridian Sports interview prep today — talking points needed by 14:00. Apex Performance camp video content outstanding from March obligation.' },
-                  { type:'travel',   icon:'✈️', text:'Millennium Dome fight week hotel confirmed — Canary Wharf Marriott, 4 nights. Corner team flights (Jim, Tony, Ricky) booked BA LHR→LCY.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3 text-xs">
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>}
-
-            {/* Performance Intelligence — matches tennis */}
-            {session.isDemoShell === false
-              ? <EmptyState icon="📊" title="No performance data yet" sub="Connect your fight data to see trends" />
-              : <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-                <div className="flex items-center gap-2">
-                  <span>⚡</span>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Performance Intelligence</p>
-                </div>
-                <span className="text-[10px] font-medium" style={{ color: '#dc2626' }}>Performance</span>
-              </div>
-              <div className="px-5 py-4 space-y-2.5">
-                {[
-                  { n:1, trend:'↑', color:'#22C55E', text:'Sparring power output up 8% — last 5 sessions vs season avg. Right hand velocity and body shot compression both trending up. Keep the current pad routine.' },
-                  { n:2, trend:'⚠', color:'#EF4444', text:`${(fighter.current_weight - fighter.target_weight).toFixed(1)}kg left to cut in ${fighter.next_fight.days_away} days — on track but one missed daily log risks a rapid fight week cut.` },
-                  { n:3, trend:'↑', color:'#22C55E', text:'ACWR 1.12 — optimal zone. Load ramping correctly. Jim flagged sharpness on pads this week as "best camp yet".' },
-                  { n:4, trend:'→', color:'#dc2626', text:`WBC #${fighter.rankings.wbc} / IBF #${fighter.rankings.ibf} — win tonight and the mandatory shot opens up next quarter. First top-10 WBC fight — media interest is high.` },
-                  { n:5, trend:'↓', color:'#F59E0B', text:'Round 9-12 work rate dipped 4% vs earlier camps — conditioning focus this week. Ricky Dunn adding 2nd interval block on Thursday.' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3 text-xs">
-                    <div className="flex items-center gap-1 flex-shrink-0 w-8">
-                      <span className="font-bold" style={{ color: '#dc2626' }}>{item.n}</span>
-                      <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.trend}</span>
-                    </div>
-                    <span style={{ color: '#D1D5DB' }}>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>}
+          {/* Row 2 — Stat tiles */}
+          <BoxingStatTiles T={v2T} accent={v2Accent} density={v2Density} />
+          {/* Row 3 — AI brief + interactive inbox */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <BoxingAIBrief
+              T={v2T} accent={v2Accent} density={v2Density}
+              label={aiSummaryLabel}
+              onAsk={() => onOpenModal?.('sendmessage')}
+              column="1 / span 5"
+            />
+            <InteractiveBoxingInbox T={v2T} accent={v2Accent} density={v2Density} />
+          </div>
+          {/* Row 4 — Recent fights + Personal photo frame */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <BoxingRecents    T={v2T} accent={v2Accent} density={v2Density} column="1 / span 7" />
+            <BoxingPhotoFrame T={v2T} accent={v2Accent} density={v2Density} column="8 / span 5" />
+          </div>
+          {/* Row 5 — Performance signals (full width) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+            <BoxingPerf T={v2T} accent={v2Accent} density={v2Density} column="1 / span 12" />
           </div>
         </div>
-      )}
+      ))}
+
 
       {/* QUICK WINS */}
       {dashTab === 'quickwins' && (session.isDemoShell === false
@@ -1834,6 +1720,9 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
         </div>
         )
       })())}
+
+      {/* V2 fight brief slide-over — opened from the hero "Fight prep" button */}
+      <BoxingFightBriefPanel T={v2T} accent={v2Accent} open={fightBriefOpen} onClose={() => setFightBriefOpen(false)} />
     </div>
   );
 }
@@ -3384,7 +3273,7 @@ function MandatoryTrackerView({ fighter, session }: { fighter: BoxingFighter; se
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Track mandatory obligations, eliminators, and sanctioning body deadlines." />
+      <SectionHeader icon="📋" title="Mandatory Tracker" subtitle="Monitor mandatory obligations, eliminators, and sanctioning body deadlines." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="WBC Status" value={`#${fighter.rankings.wbc}`} sub="2 wins from mandatory" color="green" />
@@ -4673,7 +4562,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           model:'claude-sonnet-4-20250514', max_tokens:600,
-          messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. CompuBox: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
+          messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. Punch stats: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
         })
       });
       const data = await response.json();
@@ -4729,7 +4618,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
             <input defaultValue="W TKO9 — stopped in corner" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white" placeholder="Result and method"/>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-1">CompuBox — Landed / Thrown</div>
+            <div className="text-xs text-gray-500 mb-1">Punch stats — Landed / Thrown</div>
             <input defaultValue="224/498 (45%) jabs 82/188, power 142/310" className="w-full bg-[#0a0c14] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white"/>
           </div>
           <div>
@@ -5710,7 +5599,7 @@ function GPSVestDashboardView({ fighter, session }: { fighter: BoxingFighter; se
   );
 }
 
-const COMPUBOX_DATA = [
+const PUNCH_DATA = [
   { round: 1, jabsLanded: 12, jabsThrown: 28, powerLanded: 8, powerThrown: 18, received: 9, ringZone: { centre: 60, ropes: 25, corners: 15 } },
   { round: 2, jabsLanded: 14, jabsThrown: 30, powerLanded: 11, powerThrown: 22, received: 7, ringZone: { centre: 55, ropes: 30, corners: 15 } },
   { round: 3, jabsLanded: 10, jabsThrown: 26, powerLanded: 9, powerThrown: 20, received: 12, ringZone: { centre: 45, ropes: 38, corners: 17 } },
@@ -5859,19 +5748,19 @@ function FindProView({ fighter, session }: { fighter: BoxingFighter; session: Sp
 
 // ─── PUNCH ANALYTICS VIEW ─────────────────────────────────────────────────────
 function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
-  const totalJabsLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsLanded,0);
-  const totalJabsThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.jabsThrown,0);
-  const totalPowerLanded = COMPUBOX_DATA.reduce((a,r)=>a+r.powerLanded,0);
-  const totalPowerThrown = COMPUBOX_DATA.reduce((a,r)=>a+r.powerThrown,0);
+  const totalJabsLanded = PUNCH_DATA.reduce((a,r)=>a+r.jabsLanded,0);
+  const totalJabsThrown = PUNCH_DATA.reduce((a,r)=>a+r.jabsThrown,0);
+  const totalPowerLanded = PUNCH_DATA.reduce((a,r)=>a+r.powerLanded,0);
+  const totalPowerThrown = PUNCH_DATA.reduce((a,r)=>a+r.powerThrown,0);
   const totalLanded = totalJabsLanded + totalPowerLanded;
   const totalThrown = totalJabsThrown + totalPowerThrown;
-  const avgCentre = Math.round(COMPUBOX_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/COMPUBOX_DATA.length);
+  const avgCentre = Math.round(PUNCH_DATA.reduce((a,r)=>a+r.ringZone.centre,0)/PUNCH_DATA.length);
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined CompuBox punch stats + Lumio ring movement data — sparring session analysis" />
+      <SectionHeader icon="🥊" title="Punch Analytics + GPS Fusion" subtitle="World's first combined Lumio Punch Analytics + Lumio ring movement data — sparring session analysis" />
       <div className="flex items-center gap-2.5 rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444430' }}>
         <span>🛰️</span>
-        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gps' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
+        <span className="text-xs" style={{ color: '#94a3b8' }}>GPS ring movement data fused with punch metrics. <button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('lumio-navigate', { detail: 'gps-heatmaps' })) }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>View Ring Heatmap →</button></span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Connect %" value={`${Math.round((totalLanded/totalThrown)*100)}%`} sub={`${totalLanded} of ${totalThrown} thrown`} color="red" />
@@ -5886,7 +5775,7 @@ function PunchAnalyticsView({ fighter: _fighter, session }: { fighter: BoxingFig
             {['Round','Jabs L/T','Power L/T','Received','Connect %','Centre%','Ropes%','Corners%'].map(h=><th key={h} className="px-4 py-2 text-left font-medium">{h}</th>)}
           </tr></thead>
           <tbody>
-            {COMPUBOX_DATA.map((r, i) => {
+            {PUNCH_DATA.map((r, i) => {
               const conn = Math.round(((r.jabsLanded+r.powerLanded)/(r.jabsThrown+r.powerThrown))*100);
               return (
                 <tr key={i} className="border-b border-gray-800/50">
@@ -6188,7 +6077,7 @@ function FightNightOpsView({ fighter, session }: { fighter: BoxingFighter; sessi
 // ─── ROLE CONFIG ─────────────────────────────────────────────────────────────
 const BOXING_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
   fighter: { label: 'Fighter', icon: '🥊', accent: '#dc2626', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
-  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
+  trainer: { label: 'Trainer', icon: '🎽', accent: '#22C55E', sidebar: ['camp','training','sparring','opposition','gps','gps-heatmaps','weight','recovery','medical','teamoverview','trainernotes','briefing'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['trainer','medical'], message: 'Training and preparation view.' },
   manager: { label: 'Manager', icon: '💼', accent: '#F59E0B', sidebar: ['camp','rankings','mandatory','pathtotitle','pursebid','pursesim','earnings','campcosts','tax','contracts','sponsorships','media','appearances','managerdash','agentintel','promoterpipeline'], hiddenTabs: ['dailytasks'], roundupChannels: ['manager','promoter','sponsor'], message: 'Fights, contracts and commercial view.' },
   promoter: { label: 'Promoter', icon: '🏟️', accent: '#8B5CF6', sidebar: ['camp','rankings','pursebid','pursesim','earnings','broadcasttracker','news','promoterpipeline','fight-night'], hiddenTabs: ['dailytasks','team'], roundupChannels: ['promoter','broadcast'], message: 'Events and purse bids view.' },
   sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['camp','sponsorships','media'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
@@ -8060,41 +7949,1196 @@ Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, 
 // Dashboard. Each tab defers to the existing standalone view component so
 // the underlying data + JSX stays colocated with the original implementation.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── BOXING GPS — EXPANDED (6 tabs + 6-KPI strip) ─────────────────────────────
+// Tabs: Ring Heatmap · Load Monitor · Fight Camp Load (hero) · Roadwork &
+// Conditioning · Vest Dashboard · Connect GPS. Same red-accent boxing theme.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+type BoxingGpsTab = 'ring' | 'load' | 'camp' | 'roadwork' | 'vest' | 'connect'
+
 function BoxingGpsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
-  const [gpsTab, setGpsTab] = useState<'heatmap'|'load'|'vest'>('heatmap');
-  const tabs: ReadonlyArray<readonly ['heatmap'|'load'|'vest', string]> = [
-    ['heatmap', 'Ring Heatmap'],
-    ['load',    'Load Monitor'],
-    ['vest',    'Vest Dashboard'],
-  ];
+  const [gpsTab, setGpsTab] = useState<BoxingGpsTab>('camp')
+  const tabs: ReadonlyArray<readonly [BoxingGpsTab, string, string]> = [
+    ['ring',     'Ring Heatmap',           '🥊'],
+    ['load',     'Load Monitor',           '📊'],
+    ['camp',     'Fight Camp Load',        '🏕️'],
+    ['roadwork', 'Roadwork & Conditioning','🏃'],
+    ['vest',     'Vest Dashboard',         '🛰️'],
+    ['connect',  'Connect GPS',            '🔌'],
+  ]
   return (
     <div className="space-y-6">
-      <SectionHeader icon="🛰️" title="GPS" subtitle="Ring heatmap, sparring load, and vest telemetry in one view." />
-      <div className="flex gap-1 bg-[#0d0f1a] border border-gray-800 rounded-lg p-1 w-fit">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setGpsTab(id)}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${gpsTab === id ? 'bg-red-600/20 text-red-300 border border-red-600/30' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            {label}
+      <SectionHeader icon="🛰️" title="GPS" subtitle="Ring heatmap, load, fight camp, roadwork, vest telemetry and integrations." />
+
+      {/* 6-KPI top strip — present on every tab */}
+      <BoxingGpsKpiStrip />
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-800 overflow-x-auto">
+        {tabs.map(([id, label, icon]) => (
+          <button key={id} onClick={() => setGpsTab(id)}
+            className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 -mb-px whitespace-nowrap transition-all ${gpsTab === id ? 'border-red-500 text-red-300' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+            <span>{icon}</span>{label}
           </button>
         ))}
       </div>
-      {gpsTab === 'heatmap' && <GpsRingHeatmapView />}
-      {gpsTab === 'load'    && <GPSLoadMonitorView fighter={fighter} session={session} />}
-      {gpsTab === 'vest'    && <GPSVestDashboardView fighter={fighter} session={session} />}
+
+      {gpsTab === 'ring'     && <BoxingGpsRingTab     fighter={fighter} />}
+      {gpsTab === 'load'     && <BoxingGpsLoadTab     fighter={fighter} />}
+      {gpsTab === 'camp'     && <BoxingGpsCampTab     fighter={fighter} />}
+      {gpsTab === 'roadwork' && <BoxingGpsRoadworkTab fighter={fighter} />}
+      {gpsTab === 'vest'     && <GPSVestDashboardView fighter={fighter} session={session} />}
+      {gpsTab === 'connect'  && <BoxingGpsConnectTab  fighter={fighter} />}
     </div>
-  );
+  )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ─── GPS & RING HEATMAP VIEW ──────────────────────────────────────────────────
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function GpsRingHeatmapView() {
-  const [activeRound, setActiveRound] = useState(1)
-  const [activeTab, setActiveTab] = useState<'heatmap'|'load'|'roadwork'>('heatmap')
+// ─── 6-KPI top strip ─────────────────────────────────────────────────────────
 
+function BoxingGpsKpiStrip() {
+  const KPIS: Array<{ label:string; value:string; sub:string; accent:string }> = [
+    { label:'Session Distance', value:'8.4 km',    sub:'Roadwork · today',   accent:'#22c55e' },
+    { label:'Top Speed',        value:'6.8 m/s',   sub:'24.5 km/h · vs PB 7.1', accent:'#0ea5e9' },
+    { label:'Sprint Count',     value:'12',        sub:'Target 8–15',        accent:'#a855f7' },
+    { label:'Heart Rate Peak',  value:'182 bpm',   sub:'93% of max',         accent:'#ef4444' },
+    { label:'Session Load',     value:'312 AU',    sub:'Green · under 350',  accent:'#22c55e' },
+    { label:'ACWR Ratio',       value:'1.18',      sub:'Optimal · 0.8–1.3',  accent:'#22c55e' },
+  ]
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {KPIS.map(k => (
+        <div key={k.label} className="rounded-xl p-3" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <div className="text-[10px] uppercase tracking-wider text-gray-500">{k.label}</div>
+          <div className="text-xl font-black mt-1 tabular-nums" style={{ color: k.accent }}>{k.value}</div>
+          <div className="text-[10px] text-gray-500 mt-0.5">{k.sub}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── 1. Ring Heatmap tab ─────────────────────────────────────────────────────
+
+function BoxingGpsRingTab({ fighter }: { fighter: BoxingFighter }) {
+  const [round, setRound] = useState<number | 'full'>('full')
+  const ROUND_DATA = [
+    { round:1, distance:124, punches:42, headMov:38, ringControl:61, advance:38, retreat:18, lateral:24, stationary:20, ropes:18, corners:4, centre:78, note:'Strong start — controls centre well' },
+    { round:2, distance:138, punches:48, headMov:42, ringControl:54, advance:34, retreat:22, lateral:28, stationary:16, ropes:24, corners:6, centre:70, note:'Stoyan pressure beginning — gives ground' },
+    { round:3, distance:142, punches:44, headMov:36, ringControl:48, advance:28, retreat:32, lateral:24, stationary:16, ropes:31, corners:8, centre:61, note:'Ropes % rising — fatigue or tactical?' },
+    { round:4, distance:131, punches:46, headMov:40, ringControl:52, advance:32, retreat:24, lateral:28, stationary:16, ropes:22, corners:5, centre:73, note:'Recovery round — Jim adjusts between' },
+    { round:5, distance:126, punches:52, headMov:46, ringControl:58, advance:36, retreat:18, lateral:32, stationary:14, ropes:17, corners:3, centre:80, note:'Best round — game plan working' },
+    { round:6, distance:147, punches:50, headMov:38, ringControl:49, advance:28, retreat:30, lateral:26, stationary:16, ropes:27, corners:9, centre:64, note:'Tired — corner time spikes — flag physio' },
+    { round:7, distance:135, punches:44, headMov:36, ringControl:46, advance:26, retreat:32, lateral:26, stationary:16, ropes:30, corners:8, centre:62, note:'Mid-fight pressure phase' },
+    { round:8, distance:130, punches:48, headMov:42, ringControl:52, advance:32, retreat:24, lateral:28, stationary:16, ropes:25, corners:6, centre:69, note:'Corner adjustments help' },
+    { round:9, distance:128, punches:50, headMov:44, ringControl:55, advance:36, retreat:20, lateral:28, stationary:16, ropes:22, corners:5, centre:73, note:'Re-asserting centre' },
+    { round:10,distance:133, punches:46, headMov:40, ringControl:50, advance:30, retreat:26, lateral:28, stationary:16, ropes:26, corners:7, centre:67, note:'Trading on the move' },
+    { round:11,distance:139, punches:42, headMov:36, ringControl:47, advance:26, retreat:30, lateral:28, stationary:16, ropes:29, corners:8, centre:63, note:'Late fatigue — still landing' },
+    { round:12,distance:131, punches:54, headMov:48, ringControl:53, advance:34, retreat:22, lateral:28, stationary:16, ropes:23, corners:6, centre:71, note:'Closing strong — title round' },
+  ]
+  const fightAvg = {
+    distance:    Math.round(ROUND_DATA.reduce((s,r) => s + r.distance, 0)),
+    punches:     Math.round(ROUND_DATA.reduce((s,r) => s + r.punches, 0)),
+    headMov:     Math.round(ROUND_DATA.reduce((s,r) => s + r.headMov, 0) / ROUND_DATA.length),
+    ringControl: Math.round(ROUND_DATA.reduce((s,r) => s + r.ringControl, 0) / ROUND_DATA.length),
+    advance:     Math.round(ROUND_DATA.reduce((s,r) => s + r.advance, 0) / ROUND_DATA.length),
+    retreat:     Math.round(ROUND_DATA.reduce((s,r) => s + r.retreat, 0) / ROUND_DATA.length),
+    lateral:     Math.round(ROUND_DATA.reduce((s,r) => s + r.lateral, 0) / ROUND_DATA.length),
+    stationary:  Math.round(ROUND_DATA.reduce((s,r) => s + r.stationary, 0) / ROUND_DATA.length),
+    ropes:       Math.round(ROUND_DATA.reduce((s,r) => s + r.ropes, 0) / ROUND_DATA.length),
+    corners:     Math.round(ROUND_DATA.reduce((s,r) => s + r.corners, 0) / ROUND_DATA.length),
+    centre:      Math.round(ROUND_DATA.reduce((s,r) => s + r.centre, 0) / ROUND_DATA.length),
+  }
+  const v = round === 'full' ? fightAvg : ROUND_DATA[round - 1]
+  const efficiency = v.distance / Math.max(1, v.punches + v.headMov)
+
+  // Donut helper.
+  const donut = (data: Array<{ k:string; v:number; c:string }>) => {
+    const total = data.reduce((s, d) => s + d.v, 0)
+    let acc = 0
+    return data.map(d => {
+      const frac = total === 0 ? 0 : d.v / total
+      const a0 = (acc * 360 - 90) * Math.PI / 180
+      const a1 = ((acc + frac) * 360 - 90) * Math.PI / 180
+      acc += frac
+      const x0 = 80 + 60 * Math.cos(a0), y0 = 80 + 60 * Math.sin(a0)
+      const x1 = 80 + 60 * Math.cos(a1), y1 = 80 + 60 * Math.sin(a1)
+      const large = frac > 0.5 ? 1 : 0
+      return { ...d, path: `M 80 80 L ${x0} ${y0} A 60 60 0 ${large} 1 ${x1} ${y1} Z`, pct: Math.round(frac * 100) }
+    })
+  }
+  const moveDonut = donut([
+    { k:'Advance',    v:v.advance,    c:'#22c55e' },
+    { k:'Retreat',    v:v.retreat,    c:'#ef4444' },
+    { k:'Lateral',    v:v.lateral,    c:'#0ea5e9' },
+    { k:'Stationary', v:v.stationary, c:'#475569' },
+  ])
+  const positionPie = donut([
+    { k:'Centre',  v:v.centre,  c:'#facc15' },
+    { k:'Ropes',   v:v.ropes,   c:'#ef4444' },
+    { k:'Corners', v:v.corners, c:'#f59e0b' },
+  ])
+
+  return (
+    <div className="space-y-5">
+      {/* Round selector */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Round</span>
+        {ROUND_DATA.map((_, i) => (
+          <button key={i} onClick={() => setRound(i + 1)}
+            className="rounded-md text-[11px] font-bold transition-colors"
+            style={{
+              width: 30, height: 30,
+              background: round === i + 1 ? '#ef4444' : '#1F2937',
+              color: round === i + 1 ? '#fff' : '#94a3b8',
+              border:'none', cursor:'pointer',
+            }}>R{i + 1}</button>
+        ))}
+        <button onClick={() => setRound('full')}
+          className="text-[11px] font-semibold px-3 py-1.5 rounded-md ml-2"
+          style={{
+            background: round === 'full' ? '#ef4444' : 'transparent',
+            color: round === 'full' ? '#fff' : '#fca5a5',
+            border: `1px solid ${round === 'full' ? '#ef4444' : '#ef444466'}`,
+            cursor:'pointer',
+          }}>{round === 'full' ? '✓ Full fight' : 'Full fight'}</button>
+      </div>
+
+      {/* KPI strip per round */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label:'Distance',         value:`${v.distance}${round === 'full' ? ' m total' : ' m'}`, accent:'#22c55e' },
+          { label:'Punches Thrown',   value:`${v.punches}`,        accent:'#ef4444' },
+          { label:'Head Movement',    value:`${v.headMov}`,        accent:'#a855f7' },
+          { label:'Ring Control',     value:`${v.ringControl}%`,   accent:'#facc15' },
+        ].map(k => (
+          <div key={k.label} className="rounded-xl p-3" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">{k.label}</div>
+            <div className="text-2xl font-black mt-1 tabular-nums" style={{ color: k.accent }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Hero Ring SVG + breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Ring Position Map · {round === 'full' ? 'Full fight' : `Round ${round}`}</h3>
+          <svg viewBox="0 0 360 360" className="w-full block">
+            <defs>
+              <radialGradient id="bx-ring2-canvas" cx="50%" cy="50%" r="65%">
+                <stop offset="0%" stopColor="#1f1a14" />
+                <stop offset="100%" stopColor="#0a0805" />
+              </radialGradient>
+              <filter id="bx-ring2-blur" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="14" />
+              </filter>
+            </defs>
+            <rect x="36" y="36" width="288" height="288" rx="6" fill="url(#bx-ring2-canvas)" />
+            <rect x="30" y="30" width="300" height="300" rx="8" fill="none" stroke="#3a2a14" strokeWidth="3" />
+            <rect x="36" y="36" width="288" height="288" rx="6" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
+            {/* Ropes */}
+            {[0,1,2,3].map(i => {
+              const off = 8 + i * 7
+              const colors = ['#dc2626','#fafafa','#1d4ed8','#facc15']
+              return (
+                <g key={i} stroke={colors[i]} strokeWidth="1.6" opacity="0.8" fill="none">
+                  <line x1={36 - off} y1="36" x2={36 - off} y2="324" />
+                  <line x1={324 + off} y1="36" x2={324 + off} y2="324" />
+                  <line x1="36" y1={36 - off} x2="324" y2={36 - off} />
+                  <line x1="36" y1={324 + off} x2="324" y2={324 + off} />
+                </g>
+              )
+            })}
+            {/* Corner posts */}
+            {[
+              { x:16,  y:16,  c:'#dc2626' },
+              { x:324, y:16,  c:'#1d4ed8' },
+              { x:16,  y:324, c:'#fafafa' },
+              { x:324, y:324, c:'#fafafa' },
+            ].map((p, i) => (
+              <rect key={i} x={p.x} y={p.y} width="20" height="20" rx="3" fill={p.c} stroke="rgba(0,0,0,0.5)" strokeWidth="1" />
+            ))}
+            {/* Heat blobs based on centre/ropes/corners */}
+            <g filter="url(#bx-ring2-blur)">
+              {/* Centre */}
+              <circle cx="180" cy="180" r={50 + (v.centre / 100) * 40}
+                fill={`hsl(${130 - (v.centre / 100) * 130}, 70%, 50%)`}
+                fillOpacity={0.18 + (v.centre / 100) * 0.4} />
+              {/* Ropes */}
+              <rect x="36" y="36"   width="288" height="40" fill="#ef4444" fillOpacity={(v.ropes / 100) * 0.6} />
+              <rect x="36" y="284"  width="288" height="40" fill="#ef4444" fillOpacity={(v.ropes / 100) * 0.5} />
+              <rect x="36" y="36"   width="40" height="288"  fill="#ef4444" fillOpacity={(v.ropes / 100) * 0.5} />
+              <rect x="284" y="36"  width="40" height="288"  fill="#ef4444" fillOpacity={(v.ropes / 100) * 0.5} />
+              {/* Corners */}
+              {[[36,36],[284,36],[36,284],[284,284]].map(([x,y], i) => (
+                <rect key={i} x={x} y={y} width="40" height="40" fill="#f59e0b" fillOpacity={(v.corners / 100) * 1.4} />
+              ))}
+            </g>
+            {/* Centre line */}
+            <line x1="36" y1="180" x2="324" y2="180" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 4" />
+            <line x1="180" y1="36" x2="180" y2="324" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 4" />
+            <text x="180" y="184" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="bold">{v.centre}%</text>
+            <text x="180" y="200" textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="9">CENTRE</text>
+          </svg>
+          <div className="flex gap-3 justify-center mt-3 flex-wrap">
+            {[['#facc15','Centre'],['#ef4444','Ropes'],['#f59e0b','Corners']].map(([c,l]) => (
+              <div key={l} className="flex items-center gap-1.5 text-[10px]" style={{ color:'#94a3b8' }}>
+                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: c }} />{l}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Movement donut + corner pie + footwork efficiency */}
+        <div className="space-y-3">
+          <div className="rounded-xl p-4" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Movement Pattern</div>
+            <div className="flex gap-3 items-center">
+              <svg viewBox="0 0 160 160" width="160" height="160">
+                {moveDonut.map((s, i) => <path key={i} d={s.path} fill={s.c} opacity="0.9" stroke="#0a0c14" strokeWidth="0.8" />)}
+                <circle cx="80" cy="80" r="32" fill="#0d1117" stroke="rgba(255,255,255,0.08)" />
+                <text x="80" y="78" fontSize="9" fill="#94a3b8" textAnchor="middle">Pattern</text>
+                <text x="80" y="92" fontSize="11" fill="#fff" textAnchor="middle" fontWeight="700">{v.advance + v.lateral}% active</text>
+              </svg>
+              <div className="flex-1 text-[11px] space-y-1.5">
+                {moveDonut.map(s => (
+                  <div key={s.k} className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-sm" style={{ background: s.c }} />
+                    <span className="text-gray-300">{s.k}</span>
+                    <span className="ml-auto text-white font-semibold tabular-nums">{s.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Corner Time</div>
+            <div className="flex gap-3 items-center">
+              <svg viewBox="0 0 160 160" width="140" height="140">
+                {positionPie.map((s, i) => <path key={i} d={s.path} fill={s.c} opacity="0.9" stroke="#0a0c14" strokeWidth="0.8" />)}
+              </svg>
+              <div className="flex-1 text-[11px] space-y-1.5">
+                {positionPie.map(s => (
+                  <div key={s.k} className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-sm" style={{ background: s.c }} />
+                    <span className="text-gray-300">{s.k}</span>
+                    <span className="ml-auto text-white font-semibold tabular-nums">{s.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background:'#0d1117', border:'1px solid #ef444430' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Footwork Efficiency</div>
+            <div className="text-3xl font-black" style={{ color:'#ef4444' }}>{efficiency.toFixed(2)}</div>
+            <div className="text-[11px] text-gray-400">m of distance per meaningful action (punch + head movement)</div>
+            <div className="text-[10px] text-gray-600 mt-1">Lower = tighter, more efficient ring craft.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Round-by-round distance bar chart */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Round-by-Round Distance · Activity Curve</h3>
+        <svg viewBox="0 0 600 180" width="100%">
+          {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={580} y1={20 + (1 - t) * 130} y2={20 + (1 - t) * 130} stroke="rgba(255,255,255,0.05)" />)}
+          {ROUND_DATA.map((r, i) => {
+            const max = Math.max(...ROUND_DATA.map(x => x.distance))
+            const x = 50 + i * 44
+            const h = (r.distance / max) * 130
+            const c = i >= 9 ? '#facc15' : i >= 5 ? '#ef4444' : '#22c55e'
+            return (
+              <g key={i}>
+                <rect x={x} y={150 - h} width="32" height={h} fill={c} opacity="0.85" rx="2" />
+                <text x={x + 16} y={150 - h - 4} fontSize="9" fill={c} textAnchor="middle" fontWeight="700">{r.distance}</text>
+                <text x={x + 16} y={166} fontSize="9" fill="#94a3b8" textAnchor="middle">R{r.round}</text>
+              </g>
+            )
+          })}
+        </svg>
+        <div className="flex gap-4 mt-2 text-[10px] text-gray-500">
+          <span><span className="inline-block w-3 h-3 bg-green-500 rounded-sm align-middle mr-1.5" />Early rounds (1–5)</span>
+          <span><span className="inline-block w-3 h-3 bg-red-500 rounded-sm align-middle mr-1.5" />Mid rounds (6–9)</span>
+          <span><span className="inline-block w-3 h-3 bg-yellow-500 rounded-sm align-middle mr-1.5" />Championship rounds (10–12)</span>
+        </div>
+        <p className="text-[11px] mt-3 text-gray-400 italic">Round 6 spike (147 m) before championship rounds compress — fatigue signature.</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── 2. Load Monitor tab ─────────────────────────────────────────────────────
+
+function BoxingGpsLoadTab({ fighter }: { fighter: BoxingFighter }) {
+  const SESSION_TYPES = ['Sparring', 'Pads', 'Bag', 'S&C', 'Roadwork'] as const
+  const SESSION_COLOR: Record<typeof SESSION_TYPES[number], string> = {
+    'Sparring':'#ef4444', 'Pads':'#f59e0b', 'Bag':'#facc15', 'S&C':'#a855f7', 'Roadwork':'#22c55e',
+  }
+  const SESSION: { type: typeof SESSION_TYPES[number]; date: string; duration: string; load: number } = { type:'Sparring', date:'Tue 8 Apr 2026', duration:'72 min', load:312 }
+
+  // Last 4 weeks of load by session type — stacked bar.
+  const WEEKS = ['W-3', 'W-2', 'W-1', 'Now'] as const
+  const LOAD_BY_TYPE: Record<typeof SESSION_TYPES[number], number[]> = {
+    'Sparring':[280, 360, 420, 320],
+    'Pads':    [180, 220, 240, 200],
+    'Bag':     [140, 160, 180, 160],
+    'S&C':     [320, 340, 360, 320],
+    'Roadwork':[260, 280, 320, 280],
+  }
+  const totals = WEEKS.map((_, i) => SESSION_TYPES.reduce((s, t) => s + LOAD_BY_TYPE[t][i], 0))
+  const maxTotal = Math.max(...totals)
+
+  // 28-day calendar — colour by load.
+  const DAILY_LOAD = Array.from({ length: 28 }).map((_, i) => {
+    const base = 180 + Math.sin(i / 3) * 80 + (i / 28) * 40
+    const matchSpike = (i % 7 === 5) ? 120 : 0
+    const wobble = ((i * 13) % 7) * 12
+    return Math.round(base + matchSpike + wobble + ((i === 21 || i === 24) ? 80 : 0))
+  })
+  const maxDaily = Math.max(...DAILY_LOAD)
+
+  // ACWR table
+  const ACWR_ROWS = [
+    { type:'Total Load',  acute:1820, chronic:1640, ratio:1.11, status:'optimal',   next:'Sparring (planned)' },
+    { type:'Sparring',    acute: 760, chronic: 640, ratio:1.19, status:'optimal',   next:'Sparring · 8 rounds' },
+    { type:'Roadwork',    acute: 320, chronic: 360, ratio:0.89, status:'optimal',   next:'Tempo run · 8 km' },
+    { type:'S&C',         acute: 480, chronic: 360, ratio:1.33, status:'manage',    next:'Light circuits' },
+    { type:'Head contact',acute:  72, chronic:  48, ratio:1.50, status:'overload',  next:'No contact 48h' },
+  ] as const
+  const sBg    = (s: string) => s === 'optimal' ? 'bg-green-600/15 text-green-400 border-green-600/30'
+                          : s === 'manage'  ? 'bg-amber-600/15 text-amber-400 border-amber-600/30'
+                          : s === 'overload'? 'bg-red-600/15 text-red-400 border-red-600/30'
+                                            : 'bg-blue-600/15 text-blue-400 border-blue-600/30'
+
+  // Recovery score — 0-10 with factors
+  const RECOVERY = { score: 7.6, sleep: 8.2, soreness: 7.4, hrv: 6.8 }
+
+  // Sparring rolling 4-week
+  const SPARRING_ROUNDS = [42, 48, 56, 36] // last 4 weeks
+  const ceiling = 60
+
+  return (
+    <div className="space-y-5">
+      {/* Session overview */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Today's session</div>
+            <div className="text-base font-bold text-white">{SESSION.date} · {SESSION.type}</div>
+            <div className="text-[11px] text-gray-500 mt-0.5">{SESSION.duration} · 8 rounds + 4 pads · last week of build phase</div>
+          </div>
+          <div className="flex gap-3">
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Session load</div>
+              <div className="text-2xl font-black tabular-nums" style={{ color: SESSION.load > 350 ? '#ef4444' : '#22c55e' }}>{SESSION.load} AU</div>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md self-center" style={{ background:`${SESSION_COLOR[SESSION.type]}26`, color: SESSION_COLOR[SESSION.type], border:`1px solid ${SESSION_COLOR[SESSION.type]}55` }}>{SESSION.type}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Load by session type — stacked bars */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Load by Session Type · Last 4 weeks</h3>
+        <svg viewBox="0 0 600 200" width="100%">
+          {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={580} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+          {WEEKS.map((wk, wi) => {
+            const x = 80 + wi * 130
+            let yOff = 160
+            const blocks = SESSION_TYPES.map(t => {
+              const v = LOAD_BY_TYPE[t][wi]
+              const h = (v / maxTotal) * 140
+              yOff -= h
+              return { y: yOff + h, h, c: SESSION_COLOR[t], v, t }
+            })
+            return (
+              <g key={wk}>
+                {blocks.map((b, bi) => (
+                  <rect key={bi} x={x} y={b.y - b.h} width="80" height={b.h} fill={b.c} opacity="0.85" />
+                ))}
+                <text x={x + 40} y={178} fontSize="10" fill="#94a3b8" textAnchor="middle">{wk}</text>
+                <text x={x + 40} y={blocks[blocks.length - 1].y - blocks[blocks.length - 1].h - 6} fontSize="11" fill="#fff" textAnchor="middle" fontWeight="700">{totals[wi]}</text>
+              </g>
+            )
+          })}
+        </svg>
+        <div className="flex gap-3 flex-wrap mt-3 text-[10px]">
+          {SESSION_TYPES.map(t => (
+            <div key={t} className="flex items-center gap-1.5 text-gray-400">
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ background: SESSION_COLOR[t] }} />{t}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily load calendar */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Daily Load · 28-day Calendar</h3>
+        <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-2">
+          <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+        </div>
+        <div className="grid gap-1.5" style={{ gridTemplateColumns:'repeat(7, 1fr)' }}>
+          {DAILY_LOAD.map((au, i) => {
+            const c = au / maxDaily
+            const hue = 130 - c * 130
+            return (
+              <div key={i} title={`Day ${i + 1} · ${au} AU`} className="aspect-square rounded-md p-1.5 flex flex-col justify-between"
+                style={{ background:`hsl(${hue}, 65%, ${48 - c * 4}%)`, opacity: 0.18 + c * 0.82, boxShadow: c > 0.85 ? `0 0 8px hsla(${hue}, 80%, 55%, 0.6)` : 'none' }}>
+                <span className="text-[9px]" style={{ color:'rgba(255,255,255,0.55)' }}>{i + 1}</span>
+                <span className="text-[10px] tabular-nums font-black text-white" style={{ textShadow:'0 1px 2px rgba(0,0,0,0.6)' }}>{au}</span>
+              </div>
+            )
+          })}
+        </div>
+        <p className="text-[11px] mt-3 text-gray-500">Two big spikes day 22 and day 25 — peak sparring weekend.</p>
+      </div>
+
+      {/* ACWR table */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">ACWR · Acute (7d) vs Chronic (28d)</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                <th className="text-left py-2 px-2">Type</th>
+                <th className="text-right py-2">Acute (7d)</th>
+                <th className="text-right py-2">Chronic (28d)</th>
+                <th className="text-right py-2">Ratio</th>
+                <th className="text-center py-2">Status</th>
+                <th className="text-left py-2 px-2">Recommended next</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACWR_ROWS.map(r => (
+                <tr key={r.type} className="border-b border-gray-800/40">
+                  <td className="py-2 px-2 text-white font-medium">{r.type}</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.acute}</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.chronic}</td>
+                  <td className="py-2 text-right tabular-nums font-bold" style={{ color: r.status === 'optimal' ? '#22c55e' : r.status === 'manage' ? '#f59e0b' : '#ef4444' }}>{r.ratio.toFixed(2)}</td>
+                  <td className="py-2 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${sBg(r.status)}`}>{r.status}</span>
+                  </td>
+                  <td className="py-2 px-2 text-gray-300">{r.next}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recovery score */}
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Recovery Score</h3>
+          <div className="flex items-center gap-4">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1F2937" strokeWidth="10" />
+              <circle cx="60" cy="60" r="50" fill="none" stroke={RECOVERY.score >= 7 ? '#22c55e' : RECOVERY.score >= 5 ? '#f59e0b' : '#ef4444'}
+                strokeWidth="10" strokeLinecap="round"
+                strokeDasharray={`${(RECOVERY.score / 10) * 314} 314`}
+                transform="rotate(-90 60 60)" />
+              <text x="60" y="58" fontSize="22" fill="#fff" textAnchor="middle" fontWeight="900">{RECOVERY.score}</text>
+              <text x="60" y="76" fontSize="9" fill="#94a3b8" textAnchor="middle">/ 10</text>
+            </svg>
+            <div className="flex-1 space-y-2">
+              {[
+                { k:'Sleep',    v:RECOVERY.sleep,    c:'#0ea5e9' },
+                { k:'Soreness', v:RECOVERY.soreness, c:'#a855f7' },
+                { k:'HRV proxy',v:RECOVERY.hrv,      c:'#22c55e' },
+              ].map(f => (
+                <div key={f.k}>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-gray-300">{f.k}</span>
+                    <span className="font-bold tabular-nums" style={{ color: f.c }}>{f.v.toFixed(1)} / 10</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-gray-800">
+                    <div className="h-full" style={{ width:`${f.v * 10}%`, background: f.c }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sparring rounds rolling 4 weeks */}
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Sparring Rounds · 4-week rolling</h3>
+          <p className="text-[11px] text-gray-500 mb-3">Head contact load proxy. Ceiling: {ceiling} rounds / 4-week block.</p>
+          <svg viewBox="0 0 320 160" width="100%">
+            {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={32} x2={310} y1={16 + (1 - t) * 110} y2={16 + (1 - t) * 110} stroke="rgba(255,255,255,0.05)" />)}
+            <line x1={32} x2={310} y1={16 + (1 - ceiling / 80) * 110} y2={16 + (1 - ceiling / 80) * 110} stroke="#ef4444" strokeWidth="1.2" strokeDasharray="4 3" />
+            <text x={310} y={16 + (1 - ceiling / 80) * 110 - 2} fontSize="9" fill="#ef4444" textAnchor="end">Ceiling {ceiling}</text>
+            {SPARRING_ROUNDS.map((v, i) => {
+              const x = 60 + i * 70
+              const h = (v / 80) * 110
+              const c = v > ceiling ? '#ef4444' : v > ceiling * 0.85 ? '#f59e0b' : '#22c55e'
+              return (
+                <g key={i}>
+                  <rect x={x} y={126 - h} width="44" height={h} fill={c} opacity="0.85" rx="2" />
+                  <text x={x + 22} y={126 - h - 4} fontSize="11" fill={c} textAnchor="middle" fontWeight="700">{v}</text>
+                  <text x={x + 22} y={142} fontSize="9" fill="#94a3b8" textAnchor="middle">{WEEKS[i]}</text>
+                </g>
+              )
+            })}
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 3. Fight Camp Load tab (HERO for JOHAN pitch) ──────────────────────────
+
+function BoxingGpsCampTab({ fighter }: { fighter: BoxingFighter }) {
+  const CAMP_TOTAL_WEEKS = 8
+  const CAMP_CURRENT_WEEK = 5
+  const PHASES = [
+    { id:'foundation', label:'Foundation', weeks:[1,2], color:'#0ea5e9' },
+    { id:'build',      label:'Build',      weeks:[3,4,5], color:'#22c55e' },
+    { id:'peak',       label:'Peak',       weeks:[6,7], color:'#ef4444' },
+    { id:'taper',      label:'Taper',      weeks:[8], color:'#facc15' },
+  ]
+  const phaseFor = (wk: number) => PHASES.find(p => p.weeks.includes(wk))!
+
+  const TRAINING_TYPES = ['Roadwork','Pads','Sparring','S&C','Rest'] as const
+  type TrainType = typeof TRAINING_TYPES[number]
+  const TYPE_COLOR: Record<TrainType, string> = {
+    Roadwork:'#22c55e', Pads:'#f59e0b', Sparring:'#ef4444', 'S&C':'#a855f7', Rest:'#475569',
+  }
+  // 5 rows × (8 weeks * 7 days = 56 days) — but keep grid manageable: 5 × 56 dots
+  // Build per-day load (0–1) by training type; dominant type per day for cell colour band on the calendar.
+  const DAILY: Array<{ day:number; week:number; type:TrainType; load:number }> = []
+  for (let i = 0; i < CAMP_TOTAL_WEEKS * 7; i++) {
+    const week = Math.floor(i / 7) + 1
+    const dow = i % 7
+    let type: TrainType = 'Rest'
+    if (dow === 0) type = 'Roadwork'
+    else if (dow === 1) type = 'S&C'
+    else if (dow === 2) type = 'Sparring'
+    else if (dow === 3) type = 'Roadwork'
+    else if (dow === 4) type = 'S&C'
+    else if (dow === 5) type = 'Sparring'
+    else if (dow === 6) type = 'Rest'
+    // Phase intensity multiplier
+    const phase = phaseFor(week).id
+    const base = phase === 'foundation' ? 0.45 : phase === 'build' ? 0.65 : phase === 'peak' ? 0.95 : 0.32
+    const wobble = ((i * 17) % 9) / 30
+    const load = type === 'Rest' ? 0.08 : Math.max(0.1, Math.min(1, base + wobble))
+    DAILY.push({ day:i, week, type, load })
+  }
+
+  // Daily load heatmap: rows = training type, columns = day index, intensity per cell.
+  const HEATMAP: Record<TrainType, number[]> = { Roadwork:[], Pads:[], Sparring:[], 'S&C':[], Rest:[] }
+  for (let i = 0; i < CAMP_TOTAL_WEEKS * 7; i++) {
+    TRAINING_TYPES.forEach(t => HEATMAP[t].push(0))
+  }
+  DAILY.forEach((d) => { HEATMAP[d.type][d.day] = d.load })
+  // Add some cross-type variety: Pads + Sparring overlap.
+  for (let w = 0; w < CAMP_TOTAL_WEEKS; w++) {
+    HEATMAP['Pads'][w * 7 + 4] = phaseFor(w + 1).id === 'peak' ? 0.85 : 0.55
+    HEATMAP['Pads'][w * 7 + 1] = 0.45
+  }
+
+  // Load curves — planned vs actual (8 weeks)
+  const PLANNED = [620, 760, 880, 940, 1020, 1100, 1080, 720]
+  const ACTUAL  = [600, 740, 900, 980, 1060,  860,    0,   0] // weeks 6 onwards = future / current at W5
+  const maxLoad = Math.max(...PLANNED, ...ACTUAL.filter(v => v > 0))
+
+  // Sparring rounds per week + ceiling line
+  const SPAR_PER_WEEK = [12, 18, 24, 28, 32, 26, 18, 8]
+  const SPAR_CEILING  = 32
+
+  // Weight tracking
+  const WEIGHT_BY_WEEK = [
+    { wk:1, current:97.4, target:92.7, start:97.8 },
+    { wk:2, current:96.8, target:92.7, start:97.8 },
+    { wk:3, current:96.0, target:92.7, start:97.8 },
+    { wk:4, current:95.2, target:92.7, start:97.8 },
+    { wk:5, current:94.4, target:92.7, start:97.8 },
+    { wk:6, current:93.8, target:92.7, start:97.8 },
+    { wk:7, current:93.2, target:92.7, start:97.8 },
+    { wk:8, current:92.7, target:92.7, start:97.8 },
+  ]
+
+  // Taper compliance — last 2 weeks
+  const taperWeeks = WEIGHT_BY_WEEK.slice(-2)
+  const taperCompliance: 'green'|'amber'|'red' = ACTUAL[6] > 0 && ACTUAL[6] > PLANNED[6] * 1.05 ? 'red'
+    : ACTUAL[6] > 0 && ACTUAL[6] > PLANNED[6] ? 'amber'
+    : 'green'
+
+  // KPI rollups
+  const totalTrainingDays = DAILY.filter(d => d.type !== 'Rest').length
+  const totalSparringRounds = SPAR_PER_WEEK.reduce((s, v) => s + v, 0)
+  const peakWeek = ACTUAL.indexOf(Math.max(...ACTUAL.filter(v => v > 0))) + 1
+  const currentACWR = 1.18
+
+  return (
+    <div className="space-y-5">
+      {/* Camp timeline */}
+      <div className="rounded-xl p-5" style={{ background:'linear-gradient(180deg,#0d1117 0%,#0a0d13 100%)', border:'1px solid #ef444430' }}>
+        <div className="flex items-baseline justify-between mb-2 flex-wrap gap-2">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color:'#ef4444' }}>Hero · Fight Camp Load</div>
+            <h2 className="text-2xl font-black text-white mt-1">Camp Day {fighter.camp_day} of {fighter.camp_total} · Week {CAMP_CURRENT_WEEK} of {CAMP_TOTAL_WEEKS}</h2>
+            <p className="text-[12px] text-gray-400 mt-1">{fighter.next_fight.opponent} · {fighter.next_fight.date} · {fighter.next_fight.days_away} days out</p>
+          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-md" style={{ background: `${phaseFor(CAMP_CURRENT_WEEK).color}26`, color: phaseFor(CAMP_CURRENT_WEEK).color, border:`1px solid ${phaseFor(CAMP_CURRENT_WEEK).color}55` }}>
+            Current phase: {phaseFor(CAMP_CURRENT_WEEK).label}
+          </span>
+        </div>
+        {/* Phase bar */}
+        <div className="flex h-9 rounded-md overflow-hidden mt-3" style={{ background:'#1F2937' }}>
+          {Array.from({ length: CAMP_TOTAL_WEEKS }).map((_, i) => {
+            const week = i + 1
+            const phase = phaseFor(week)
+            const isCurrent = week === CAMP_CURRENT_WEEK
+            const isPast    = week < CAMP_CURRENT_WEEK
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center justify-center text-[10px] font-bold transition-all relative"
+                style={{
+                  background: phase.color,
+                  opacity: isPast ? 0.5 : isCurrent ? 1 : 0.7,
+                  borderRight: i < CAMP_TOTAL_WEEKS - 1 ? '1px solid rgba(0,0,0,0.4)' : 'none',
+                  color: '#0a0805',
+                  textShadow: 'none',
+                }}>
+                <span>W{week}</span>
+                {isCurrent && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[#ef4444] text-base">▼</span>}
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex gap-3 mt-4 flex-wrap text-[10px]">
+          {PHASES.map(p => (
+            <div key={p.id} className="flex items-center gap-1.5" style={{ color:'#94a3b8' }}>
+              <span className="w-3 h-3 rounded-sm" style={{ background: p.color }} />
+              {p.label} <span className="text-gray-600">(W{p.weeks.join('·')})</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Camp summary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label:'Training days',    value:`${totalTrainingDays}`, sub:`/ ${CAMP_TOTAL_WEEKS * 7} days`, accent:'#22c55e' },
+          { label:'Sparring rounds',  value:`${totalSparringRounds}`, sub:'across full camp',           accent:'#ef4444' },
+          { label:'Peak load week',   value:`W${peakWeek}`,         sub:`${Math.max(...ACTUAL.filter(v => v > 0))} AU`,    accent:'#facc15' },
+          { label:'Current ACWR',     value:`${currentACWR}`,        sub: currentACWR > 1.5 ? 'Overload' : currentACWR > 1.3 ? 'Manage' : 'Optimal', accent: currentACWR > 1.5 ? '#ef4444' : currentACWR > 1.3 ? '#f59e0b' : '#22c55e' },
+        ].map(k => (
+          <div key={k.label} className="rounded-xl p-3" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">{k.label}</div>
+            <div className="text-2xl font-black mt-1 tabular-nums" style={{ color: k.accent }}>{k.value}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Daily load heatmap — rows = training type */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Daily Load Heatmap · Rows = training type, columns = days</h3>
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
+            {/* Day index header */}
+            <div className="flex items-center gap-0.5 mb-1 ml-[88px]">
+              {Array.from({ length: CAMP_TOTAL_WEEKS }).map((_, w) => (
+                <div key={w} className="flex-1 flex gap-0.5">
+                  {Array.from({ length: 7 }).map((_, d) => (
+                    <div key={d} className="flex-1 text-center text-[8px] text-gray-600" style={{ minWidth: 12 }}>
+                      {d === 0 ? `W${w + 1}` : ''}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            {TRAINING_TYPES.map(t => (
+              <div key={t} className="flex items-center gap-0.5 mb-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ width:80, color: TYPE_COLOR[t] }}>{t}</div>
+                {HEATMAP[t].map((v, di) => {
+                  const c = v
+                  return (
+                    <div key={di} className="flex-1 rounded-sm aspect-square" title={`Day ${di + 1} · ${t} · load ${(v * 100).toFixed(0)}`}
+                      style={{
+                        background: TYPE_COLOR[t],
+                        opacity: 0.08 + c * 0.92,
+                        boxShadow: c > 0.85 ? `0 0 6px ${TYPE_COLOR[t]}88` : 'none',
+                        minWidth: 12,
+                        minHeight: 12,
+                      }} />
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Load curve + sparring accumulation */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Planned vs Actual Load (AU/week)</h3>
+          <svg viewBox="0 0 360 200" width="100%">
+            {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={350} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+            {[0,300,600,900].map((v, i) => <text key={i} x={32} y={20 + (1 - v / maxLoad) * 140 + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+            {/* Phase shading */}
+            {PHASES.map(p => {
+              const x0 = 36 + ((p.weeks[0] - 1) / 7) * 314
+              const x1 = 36 + ((p.weeks[p.weeks.length - 1]) / 7) * 314
+              return <rect key={p.id} x={x0} y={20} width={x1 - x0} height={140} fill={p.color} fillOpacity="0.04" />
+            })}
+            {/* Planned line (dashed) */}
+            <path d={PLANNED.map((v, i) => `${i === 0 ? 'M' : 'L'} ${36 + (i / (PLANNED.length - 1)) * 314} ${20 + (1 - v / maxLoad) * 140}`).join(' ')}
+              fill="none" stroke="#a855f7" strokeWidth="2" strokeDasharray="5 3" />
+            {/* Actual line (solid, only where actual > 0) */}
+            {(() => {
+              const pts = ACTUAL.map((v, i) => v > 0 ? { x: 36 + (i / (ACTUAL.length - 1)) * 314, y: 20 + (1 - v / maxLoad) * 140 } : null).filter((p): p is {x:number;y:number} => p !== null)
+              const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+              return <path d={path} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+            })()}
+            {/* Markers */}
+            {ACTUAL.map((v, i) => v > 0 && (
+              <g key={i}>
+                <circle cx={36 + (i / (ACTUAL.length - 1)) * 314} cy={20 + (1 - v / maxLoad) * 140} r="3.5" fill="#ef4444" />
+              </g>
+            ))}
+            {/* X labels */}
+            {PLANNED.map((_, i) => (
+              <text key={i} x={36 + (i / (PLANNED.length - 1)) * 314} y={178} fontSize="9" fill="#94a3b8" textAnchor="middle">W{i + 1}</text>
+            ))}
+            {/* Now line */}
+            <line x1={36 + ((CAMP_CURRENT_WEEK - 1) / 7) * 314} x2={36 + ((CAMP_CURRENT_WEEK - 1) / 7) * 314} y1={20} y2={160} stroke="#facc15" strokeWidth="1" strokeDasharray="3 3" />
+            <text x={36 + ((CAMP_CURRENT_WEEK - 1) / 7) * 314} y={14} fontSize="9" fill="#facc15" textAnchor="middle" fontWeight="700">NOW</text>
+          </svg>
+          <div className="flex gap-4 mt-2 text-[10px]">
+            <span className="text-gray-400"><span className="inline-block w-3 h-px border-t border-dashed border-purple-400 align-middle mr-1.5" />Planned</span>
+            <span className="text-gray-400"><span className="inline-block w-3 h-0.5 bg-red-500 align-middle mr-1.5" />Actual</span>
+          </div>
+        </div>
+
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Sparring Rounds per Week · ceiling {SPAR_CEILING}</h3>
+          <svg viewBox="0 0 360 200" width="100%">
+            {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={350} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+            <line x1={36} x2={350} y1={20 + (1 - SPAR_CEILING / 36) * 140} y2={20 + (1 - SPAR_CEILING / 36) * 140} stroke="#ef4444" strokeWidth="1.4" strokeDasharray="4 3" />
+            <text x={350} y={20 + (1 - SPAR_CEILING / 36) * 140 - 2} fontSize="9" fill="#ef4444" textAnchor="end">Ceiling {SPAR_CEILING}</text>
+            {SPAR_PER_WEEK.map((v, i) => {
+              const max = 36
+              const x = 60 + (i * 38)
+              const h = (v / max) * 140
+              const c = v > SPAR_CEILING ? '#ef4444' : v > SPAR_CEILING * 0.85 ? '#f59e0b' : '#22c55e'
+              return (
+                <g key={i}>
+                  <rect x={x} y={160 - h} width="26" height={h} fill={c} opacity="0.85" rx="2" />
+                  <text x={x + 13} y={160 - h - 4} fontSize="10" fill={c} textAnchor="middle" fontWeight="700">{v}</text>
+                  <text x={x + 13} y={178} fontSize="9" fill="#94a3b8" textAnchor="middle">W{i + 1}</text>
+                </g>
+              )
+            })}
+          </svg>
+          <p className="text-[11px] mt-2 text-gray-500">Peak sparring at W5 (32 rounds) — ceiling held. Taper drops to 8 rounds W8.</p>
+        </div>
+      </div>
+
+      {/* Weight tracking */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Weight Tracking · {fighter.weight_class} · target {fighter.target_weight}kg</h3>
+        <svg viewBox="0 0 600 200" width="100%">
+          {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={48} x2={580} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+          {[92,94,96,98].map((v, i) => <text key={i} x={44} y={20 + ((98 - v) / 6) * 140 + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+          {/* Target line */}
+          <line x1={48} x2={580} y1={20 + ((98 - fighter.target_weight) / 6) * 140} y2={20 + ((98 - fighter.target_weight) / 6) * 140} stroke="#ef4444" strokeDasharray="5 3" strokeWidth="1.2" />
+          <text x={580} y={20 + ((98 - fighter.target_weight) / 6) * 140 - 4} fontSize="9" fill="#ef4444" textAnchor="end">Fight weight {fighter.target_weight}kg</text>
+          {/* Start line */}
+          <line x1={48} x2={580} y1={20 + ((98 - 97.8) / 6) * 140} y2={20 + ((98 - 97.8) / 6) * 140} stroke="#475569" strokeDasharray="2 4" strokeWidth="1" />
+          {/* Curve */}
+          <path d={WEIGHT_BY_WEEK.map((d, i) => `${i === 0 ? 'M' : 'L'} ${48 + (i / (WEIGHT_BY_WEEK.length - 1)) * 532} ${20 + ((98 - d.current) / 6) * 140}`).join(' ')}
+            fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
+          {WEIGHT_BY_WEEK.map((d, i) => (
+            <g key={i}>
+              <circle cx={48 + (i / (WEIGHT_BY_WEEK.length - 1)) * 532} cy={20 + ((98 - d.current) / 6) * 140} r="3.5" fill="#0ea5e9" />
+              <text x={48 + (i / (WEIGHT_BY_WEEK.length - 1)) * 532} y={20 + ((98 - d.current) / 6) * 140 - 8} fontSize="9" fill="#0ea5e9" textAnchor="middle" fontWeight="700">{d.current}</text>
+              <text x={48 + (i / (WEIGHT_BY_WEEK.length - 1)) * 532} y={178} fontSize="9" fill="#94a3b8" textAnchor="middle">W{d.wk}</text>
+            </g>
+          ))}
+        </svg>
+        <div className="grid grid-cols-3 gap-3 mt-3">
+          {[
+            { k:'Camp start', v:`${WEIGHT_BY_WEEK[0].start} kg`, c:'#475569' },
+            { k:'Current',    v:`${WEIGHT_BY_WEEK[CAMP_CURRENT_WEEK - 1].current} kg`, c:'#0ea5e9' },
+            { k:'Fight target',v:`${fighter.target_weight} kg`, c:'#ef4444' },
+          ].map(s => (
+            <div key={s.k} className="rounded-lg p-3" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">{s.k}</div>
+              <div className="text-xl font-black tabular-nums" style={{ color: s.c }}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Taper compliance */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:`1px solid ${taperCompliance === 'green' ? '#22c55e44' : taperCompliance === 'amber' ? '#f59e0b44' : '#ef444444'}` }}>
+        <div className="flex items-baseline justify-between mb-2 flex-wrap gap-2">
+          <h3 className="text-sm font-bold text-white">Taper Compliance · final 2 weeks</h3>
+          <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-md"
+            style={{
+              background: taperCompliance === 'green' ? 'rgba(34,197,94,0.16)' : taperCompliance === 'amber' ? 'rgba(245,158,11,0.16)' : 'rgba(239,68,68,0.16)',
+              color: taperCompliance === 'green' ? '#22c55e' : taperCompliance === 'amber' ? '#f59e0b' : '#ef4444',
+              border: `1px solid ${taperCompliance === 'green' ? '#22c55e55' : taperCompliance === 'amber' ? '#f59e0b55' : '#ef444455'}`,
+            }}>
+            {taperCompliance === 'green' ? '✓ On plan' : taperCompliance === 'amber' ? '⚠ Slightly over' : '⚠ Off plan'}
+          </span>
+        </div>
+        <p className="text-[12px] text-gray-400">Target reduction: 30% W7, 50% W8 vs peak. Current trajectory shows planned drop to {PLANNED[6]} AU (W7) and {PLANNED[7]} AU (W8).</p>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          {taperWeeks.map((w, i) => (
+            <div key={w.wk} className="rounded-lg p-3" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Week {w.wk} ({i === 0 ? 'pre-fight' : 'fight week'})</div>
+              <div className="text-base font-bold text-white mt-1">{PLANNED[w.wk - 1]} AU planned · {w.current} kg</div>
+              <div className="text-[11px] text-gray-500">{i === 0 ? '50% sparring volume reduction' : 'No sparring · pads + roadwork only'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 4. Roadwork & Conditioning tab ─────────────────────────────────────────
+
+function BoxingGpsRoadworkTab({ fighter }: { fighter: BoxingFighter }) {
+  const RUNS = [
+    { date:'Wed 9 Apr',  km:8.4, dur:'40:52', pace:'4:52', max:6.8, load:198 },
+    { date:'Mon 7 Apr',  km:9.0, dur:'44:30', pace:'4:56', max:6.6, load:212 },
+    { date:'Sat 5 Apr',  km:6.8, dur:'34:18', pace:'5:02', max:6.2, load:158 },
+    { date:'Fri 4 Apr',  km:8.4, dur:'41:18', pace:'4:55', max:6.7, load:198 },
+    { date:'Wed 2 Apr',  km:7.4, dur:'37:02', pace:'5:00', max:6.4, load:174 },
+    { date:'Mon 31 Mar', km:8.1, dur:'40:30', pace:'5:00', max:6.5, load:188 },
+    { date:'Sat 29 Mar', km:6.2, dur:'31:12', pace:'5:02', max:6.0, load:142 },
+    { date:'Fri 28 Mar', km:7.2, dur:'36:12', pace:'5:02', max:6.3, load:170 },
+    { date:'Wed 26 Mar', km:7.8, dur:'39:18', pace:'5:02', max:6.4, load:182 },
+    { date:'Mon 24 Mar', km:6.8, dur:'34:12', pace:'5:01', max:6.2, load:160 },
+  ]
+
+  const WEEKLY_KM = [
+    { wk:1, km:24, target:25 },
+    { wk:2, km:30, target:30 },
+    { wk:3, km:34, target:34 },
+    { wk:4, km:36, target:36 },
+    { wk:5, km:32, target:34 },
+    { wk:6, km:28, target:30 },
+    { wk:7, km:20, target:22 },
+    { wk:8, km:12, target:14 },
+  ]
+  const maxKm = Math.max(...WEEKLY_KM.map(w => Math.max(w.km, w.target)))
+
+  const PACE_ZONES = [
+    { z:'Easy',      min:'5:30+',     time:24, c:'#22c55e' },
+    { z:'Steady',    min:'5:00–5:30', time:42, c:'#0ea5e9' },
+    { z:'Tempo',     min:'4:30–5:00', time:18, c:'#f59e0b' },
+    { z:'Threshold', min:'<4:30',     time: 6, c:'#ef4444' },
+  ]
+  const totalTime = PACE_ZONES.reduce((s, z) => s + z.time, 0)
+
+  const SC_SESSIONS = [
+    { date:'Tue 8 Apr', focus:'Lower body', volume:'4×8 squat / 3×10 RDL / 3×12 lunge', load:280, recovery:'High' },
+    { date:'Sat 5 Apr', focus:'Upper body', volume:'4×6 bench / 4×6 row / 3×10 OHP',     load:240, recovery:'Medium' },
+    { date:'Thu 3 Apr', focus:'Core/anti-rotation', volume:'4 circuits, 30s on/off',   load:160, recovery:'Low' },
+    { date:'Tue 1 Apr', focus:'Lower power',  volume:'5×3 box jump / 4×4 trap bar DL',  load:300, recovery:'High' },
+  ]
+
+  const FITNESS_TREND = [
+    { wk:1, paceAtHR150:'5:18' },
+    { wk:2, paceAtHR150:'5:14' },
+    { wk:3, paceAtHR150:'5:08' },
+    { wk:4, paceAtHR150:'5:04' },
+    { wk:5, paceAtHR150:'5:00' },
+    { wk:6, paceAtHR150:'4:56' },
+  ]
+  const paceToSec = (s: string) => {
+    const [m, sec] = s.split(':').map(Number)
+    return m * 60 + sec
+  }
+
+  const thisWeek = WEEKLY_KM[4]
+  const progressPct = Math.round((thisWeek.km / thisWeek.target) * 100)
+
+  return (
+    <div className="space-y-5">
+      {/* Roadwork log */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Roadwork Session Log · last 10</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                <th className="text-left py-2 px-2">Date</th>
+                <th className="text-right py-2">Distance</th>
+                <th className="text-right py-2">Duration</th>
+                <th className="text-right py-2">Avg Pace</th>
+                <th className="text-right py-2">Max Speed</th>
+                <th className="text-right py-2">Load</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RUNS.map((r, i) => (
+                <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
+                  <td className="py-2 px-2 text-white">{r.date}</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.km.toFixed(1)} km</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.dur}</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.pace} /km</td>
+                  <td className="py-2 text-right tabular-nums" style={{ color: r.max > 6.5 ? '#ef4444' : '#94a3b8' }}>{r.max.toFixed(1)} m/s</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{r.load} AU</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Weekly volume */}
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">Weekly Roadwork Volume · km</h3>
+          <svg viewBox="0 0 360 200" width="100%">
+            {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={36} x2={350} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+            {WEEKLY_KM.map((w, i) => {
+              const x = 60 + i * 38
+              const h = (w.km / maxKm) * 140
+              const tH = (w.target / maxKm) * 140
+              const c = w.km >= w.target ? '#22c55e' : '#f59e0b'
+              return (
+                <g key={i}>
+                  <rect x={x} y={160 - tH} width="26" height={tH} fill="#475569" fillOpacity="0.3" rx="2" />
+                  <rect x={x} y={160 - h}  width="26" height={h}  fill={c} opacity="0.9" rx="2" />
+                  <text x={x + 13} y={160 - h - 4} fontSize="10" fill={c} textAnchor="middle" fontWeight="700">{w.km}</text>
+                  <text x={x + 13} y={178} fontSize="9" fill="#94a3b8" textAnchor="middle">W{w.wk}</text>
+                </g>
+              )
+            })}
+          </svg>
+          <div className="flex gap-4 mt-2 text-[10px] text-gray-500">
+            <span><span className="inline-block w-3 h-3 bg-gray-600 rounded-sm align-middle mr-1.5" />Target</span>
+            <span><span className="inline-block w-3 h-3 bg-green-500 rounded-sm align-middle mr-1.5" />Actual</span>
+          </div>
+        </div>
+
+        {/* This week vs target */}
+        <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold text-white mb-3">This Week · {thisWeek.km}/{thisWeek.target} km</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="text-3xl font-black tabular-nums" style={{ color: progressPct >= 100 ? '#22c55e' : progressPct >= 85 ? '#f59e0b' : '#ef4444' }}>{progressPct}%</div>
+            <div className="flex-1">
+              <div className="h-3 rounded-full overflow-hidden" style={{ background:'#1F2937' }}>
+                <div className="h-full" style={{ width:`${Math.min(100, progressPct)}%`, background: progressPct >= 100 ? '#22c55e' : progressPct >= 85 ? '#f59e0b' : '#ef4444' }} />
+              </div>
+              <div className="text-[11px] text-gray-500 mt-1">{thisWeek.km} km logged · {Math.max(0, thisWeek.target - thisWeek.km).toFixed(1)} km to plan</div>
+            </div>
+          </div>
+          <div className="text-[11px] text-gray-400 leading-relaxed">Behind schedule by 2 km. Plan a tempo session Thursday plus a steady 8 km Friday to hit the 34 km target before peak.</div>
+        </div>
+      </div>
+
+      {/* Pace by effort zone */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Pace by Effort Zone · time-in-zone</h3>
+        <div className="space-y-2">
+          {PACE_ZONES.map(z => {
+            const pct = (z.time / totalTime) * 100
+            return (
+              <div key={z.z} className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-300" style={{ width:90 }}>{z.z}</span>
+                <span className="text-[10px] tabular-nums text-gray-500" style={{ width:90 }}>{z.min}</span>
+                <div className="flex-1 h-3 rounded-md overflow-hidden bg-gray-800">
+                  <div className="h-full" style={{ width:`${pct}%`, background: z.c, boxShadow: z.c === '#ef4444' ? `0 0 6px ${z.c}66` : 'none' }} />
+                </div>
+                <span className="text-[11px] tabular-nums font-bold" style={{ width:60, color: z.c }}>{z.time} min</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* S&C sessions */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">S&amp;C Sessions · last 4</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                <th className="text-left py-2 px-2">Date</th>
+                <th className="text-left py-2">Focus</th>
+                <th className="text-left py-2">Volume</th>
+                <th className="text-right py-2">Load</th>
+                <th className="text-center py-2">Recovery impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SC_SESSIONS.map((s, i) => (
+                <tr key={i} className="border-b border-gray-800/40">
+                  <td className="py-2 px-2 text-white">{s.date}</td>
+                  <td className="py-2 text-gray-300">{s.focus}</td>
+                  <td className="py-2 text-gray-400 text-[11px]">{s.volume}</td>
+                  <td className="py-2 text-right tabular-nums text-gray-200">{s.load} AU</td>
+                  <td className="py-2 text-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                      style={{
+                        background: s.recovery === 'High' ? 'rgba(239,68,68,0.16)' : s.recovery === 'Medium' ? 'rgba(245,158,11,0.16)' : 'rgba(34,197,94,0.16)',
+                        color:      s.recovery === 'High' ? '#ef4444' : s.recovery === 'Medium' ? '#f59e0b' : '#22c55e',
+                      }}>{s.recovery}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Conditioning trend */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Conditioning Trend · pace at HR 150 (lower = fitter)</h3>
+        <svg viewBox="0 0 360 180" width="100%">
+          {[0,0.25,0.5,0.75,1].map((t, i) => <line key={i} x1={48} x2={350} y1={16 + (1 - t) * 130} y2={16 + (1 - t) * 130} stroke="rgba(255,255,255,0.05)" />)}
+          {(() => {
+            const seconds = FITNESS_TREND.map(f => paceToSec(f.paceAtHR150))
+            const min = Math.min(...seconds), max = Math.max(...seconds)
+            const norm = (s: number) => (s - min) / (max - min || 1)
+            const path = FITNESS_TREND.map((f, i) => `${i === 0 ? 'M' : 'L'} ${48 + (i / (FITNESS_TREND.length - 1)) * 302} ${16 + norm(seconds[i]) * 130}`).join(' ')
+            return (
+              <g>
+                <path d={path} fill="none" stroke="#0ea5e9" strokeWidth="2.5" />
+                {FITNESS_TREND.map((f, i) => (
+                  <g key={i}>
+                    <circle cx={48 + (i / (FITNESS_TREND.length - 1)) * 302} cy={16 + norm(seconds[i]) * 130} r="3.5" fill="#0ea5e9" />
+                    <text x={48 + (i / (FITNESS_TREND.length - 1)) * 302} y={16 + norm(seconds[i]) * 130 - 8} fontSize="9" fill="#0ea5e9" textAnchor="middle" fontWeight="700">{f.paceAtHR150}</text>
+                    <text x={48 + (i / (FITNESS_TREND.length - 1)) * 302} y={166} fontSize="9" fill="#94a3b8" textAnchor="middle">W{f.wk}</text>
+                  </g>
+                ))}
+              </g>
+            )
+          })()}
+        </svg>
+        <p className="text-[11px] mt-2 text-gray-400">Pace at HR 150 has dropped 22 seconds over 6 weeks — strong aerobic adaptation as camp builds.</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── 6. Connect GPS tab ─────────────────────────────────────────────────────
+
+function BoxingGpsConnectTab({ fighter }: { fighter: BoxingFighter }) {
+  const OTHER = [
+    { name: 'Johan Sports',       sub:'10Hz GPS + IMU · OAuth or CSV import' },
+    { name: 'CSV Upload',         sub:'Generic GPS export · any vendor · drag and drop' },
+    { name: 'Polar Team Pro',     sub:'HR + GPS · Bluetooth sync' },
+    { name: 'Whoop 4.0',          sub:'Strain + recovery score · personal device' },
+    { name: 'Lumio Punch Analytics',sub:'Live punch tagging · sparring + fights' },
+  ]
+  return (
+    <div className="space-y-5">
+      {/* JOHAN featured partner card */}
+      <div className="rounded-2xl p-6" style={{ background:'linear-gradient(135deg, rgba(239,68,68,0.18) 0%, rgba(255,87,87,0.06) 70%, transparent 100%)', border:'1px solid #ef444466' }}>
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl flex-shrink-0" style={{ background:'#ef4444', color:'#fff', boxShadow:'0 0 24px rgba(239,68,68,0.4)' }}>
+            🥊
+          </div>
+          <div className="flex-1 min-w-[260px]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#fca5a5' }}>Featured Partner</div>
+            <h2 className="text-2xl font-black text-white mt-1">JOHAN Sports</h2>
+            <p className="text-[12px] text-gray-300 mt-1 leading-relaxed">The only GPS platform purpose-built for combat sports — UWB ring tracking, sparring telemetry, roadwork GPS and camp load automation in one feed. Lumio Boxing is JOHAN's official combat-sport surface.</p>
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <button className="px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background:'#ef4444', cursor:'pointer', border:'none', boxShadow:'0 0 16px rgba(239,68,68,0.4)' }}>Connect JOHAN GPS →</button>
+              <button className="px-5 py-2 rounded-lg text-sm font-medium" style={{ background:'transparent', color:'#fca5a5', border:'1px solid #ef444466', cursor:'pointer' }}>Read setup guide</button>
+            </div>
+          </div>
+        </div>
+
+        {/* What JOHAN unlocks */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { icon:'🏃',  k:'Roadwork GPS tracking',     v:'10Hz GPS · pace zones · sprint-effort detection · automatic upload to Lumio.' },
+            { icon:'🛰️', k:'Ring movement real data',   v:'UWB beacons at corners · centre/ropes/corner % live · per-round position map.' },
+            { icon:'🗓️', k:'Camp load automation',      v:'Daily load auto-aggregated · ACWR · taper compliance · weight tracking overlay.' },
+          ].map(c => (
+            <div key={c.k} className="rounded-xl p-4" style={{ background:'rgba(13,17,23,0.6)', border:'1px solid #1F2937' }}>
+              <div className="text-2xl mb-2">{c.icon}</div>
+              <div className="text-sm font-bold text-white">{c.k}</div>
+              <div className="text-[11px] text-gray-400 mt-1 leading-relaxed">{c.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Other devices */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Other Compatible Devices</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {OTHER.map(d => (
+            <div key={d.name} className="flex items-center justify-between p-3 rounded-lg" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <div>
+                <div className="text-sm font-semibold text-white">{d.name}</div>
+                <div className="text-[11px] text-gray-500 mt-0.5">{d.sub}</div>
+              </div>
+              <button className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md" style={{ background:'#1F2937', color:'#94a3b8', border:'1px solid #1F2937', cursor:'pointer' }}>Connect</button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sync status */}
+      <div className="rounded-xl p-5" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold text-white mb-3">Sync Status</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+          <div className="p-3 rounded-lg" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Active devices</div>
+            <div className="text-xl font-black text-green-400">2</div>
+            <div className="text-gray-500">JOHAN vest · Whoop band</div>
+          </div>
+          <div className="p-3 rounded-lg" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Last sync</div>
+            <div className="text-xl font-black text-purple-400">Today 09:14</div>
+            <div className="text-gray-500">After morning roadwork</div>
+          </div>
+          <div className="p-3 rounded-lg" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Backlog</div>
+            <div className="text-xl font-black text-green-400">0 MB</div>
+            <div className="text-gray-500">All sessions ingested</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ─── GPS HEATMAPS VIEW (multi-section) ────────────────────────────────────────
+// Hero: Ring Movement. Plus Punch Zone, Footwork, Camp Load, Session GPS,
+// Opponent Comparison. Pulls existing GPS_SESSIONS + RingHeatmap as the
+// foundation for section 1 then layers boxing-specific overlays on top.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// Red→amber→green heat scale (boxing aesthetic — high intensity = red).
+function bxHeat(v: number): string {
+  const c = Math.max(0, Math.min(1, v))
+  const hue = 130 - c * 130
+  const sat = 65 + c * 15
+  const lig = 48 - c * 4
+  return `hsl(${hue}, ${sat}%, ${lig}%)`
+}
+function bxGlow(v: number): string {
+  const c = Math.max(0, Math.min(1, v))
+  const hue = 130 - c * 130
+  return `hsla(${hue}, 80%, 55%, ${0.2 + c * 0.5})`
+}
+
+function BoxingGpsHeatmapsView({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
+  // ── Section 1 state — Ring Movement ─────────────────────────────────────
+  const [activeRound, setActiveRound] = useState<number>(1)
+  const [fullFight, setFullFight]     = useState(false)
+  const [fightId, setFightId]         = useState('m5')
+  const [activeFighter, setActiveFighter] = useState<'self'|'orthodox-pressure'|'southpaw-counter'>('self')
+
+  // Round-by-round drawn from the prior heatmap tab content (kept verbatim).
   const ROUND_DATA = [
     { round:1, centre:61, ropes:18, corners:4, moving:17, distance:124, note:'Strong start — controls centre well' },
     { round:2, centre:54, ropes:24, corners:6, moving:16, distance:138, note:'Stoyan pressure beginning — gives ground' },
@@ -8102,115 +9146,405 @@ function GpsRingHeatmapView() {
     { round:4, centre:52, ropes:22, corners:5, moving:21, distance:131, note:'Recovery round — Jim adjusts between' },
     { round:5, centre:58, ropes:17, corners:3, moving:22, distance:126, note:'Best round — game plan working' },
     { round:6, centre:49, ropes:27, corners:9, moving:15, distance:147, note:'Tired — corner time spikes — flag physio' },
+    { round:7, centre:46, ropes:30, corners:8, moving:16, distance:135, note:'Mid-fight pressure phase' },
+    { round:8, centre:52, ropes:25, corners:6, moving:17, distance:130, note:'Corner adjustments help' },
+    { round:9, centre:55, ropes:22, corners:5, moving:18, distance:128, note:'Re-asserting centre' },
+    { round:10,centre:50, ropes:26, corners:7, moving:17, distance:133, note:'Trading on the move' },
+    { round:11,centre:47, ropes:29, corners:8, moving:16, distance:139, note:'Late fatigue — still landing' },
+    { round:12,centre:53, ropes:23, corners:6, moving:18, distance:131, note:'Closing strong — title round' },
   ]
-  const round = ROUND_DATA[activeRound - 1]
+  const round = ROUND_DATA[activeRound - 1] || ROUND_DATA[0]
+  const fightAvg = {
+    centre:  Math.round(ROUND_DATA.reduce((s,r)=>s+r.centre,0)/ROUND_DATA.length),
+    ropes:   Math.round(ROUND_DATA.reduce((s,r)=>s+r.ropes,0)/ROUND_DATA.length),
+    corners: Math.round(ROUND_DATA.reduce((s,r)=>s+r.corners,0)/ROUND_DATA.length),
+    moving:  Math.round(ROUND_DATA.reduce((s,r)=>s+r.moving,0)/ROUND_DATA.length),
+    distance:ROUND_DATA.reduce((s,r)=>s+r.distance,0),
+  }
+  const view = fullFight ? fightAvg : round
 
-  const KPI_CARDS = [
-    { label:'Roadwork Distance', value:'8.4km', sub:'Morning run', color:'#22c55e', icon:'🏃' },
-    { label:'Max Speed', value:'6.8 m/s', sub:'24.5 km/h — vs PB 7.1', color:'#0ea5e9', icon:'⚡' },
-    { label:'Sprint Efforts', value:'12', sub:'Target: 8–15/session', color:'#a855f7', icon:'💨' },
-    { label:'Gym Session Load', value:'312 AU', sub:'Green: under 350', color:'#22c55e', icon:'🏋️' },
-    { label:'Accel Events', value:'48', sub:'Footwork intensity', color:'#f59e0b', icon:'📈' },
-    { label:'Weekly ACWR', value:'1.18', sub:'Red at > 1.5', color:'#22c55e', icon:'🛰️' },
+  const FIGHTS = [
+    { id:'m5', vs:'Maks Stoyan',     date:'Jun 6',   state:'upcoming' },
+    { id:'m4', vs:'Vasil Demirov',   date:'14 Feb',  state:'recent'   },
+    { id:'m3', vs:'Tane Lealofi',    date:'18 Oct',  state:'recent'   },
+    { id:'m2', vs:'Ben Hoffman',     date:'02 Aug',  state:'recent'   },
+    { id:'m1', vs:'Jordan Markham',  date:'12 May',  state:'recent'   },
+  ] as const
+
+  // 9-zone ring heat (3×3) — used by the hero SVG. Higher = more time spent.
+  const RING_ZONES = useMemo(() => {
+    if (fullFight) {
+      return [
+        [0.18, 0.45, 0.18],
+        [0.62, 1.00, 0.55],
+        [0.20, 0.50, 0.22],
+      ]
+    }
+    // Round-specific drift derived from centre/ropes ratio.
+    const c = view.centre / 100
+    const r = view.ropes / 100
+    return [
+      [r * 0.4, r * 0.9, r * 0.4],
+      [c * 0.7, c * 1.0, c * 0.7],
+      [r * 0.4, r * 0.8, r * 0.4],
+    ]
+  }, [fullFight, view.centre, view.ropes])
+
+  // ── Section 2 state — Punch Zones ───────────────────────────────────────
+  const [punchDir, setPunchDir]   = useState<'thrown'|'received'>('thrown')
+  const [punchType, setPunchType] = useState<'all'|'jab'|'cross'|'hook'|'uppercut'>('all')
+
+  // Body target zones (front-facing fighter). Heat values per punch type.
+  type BodyZone = { id:string; label:string; cx:number; cy:number; jab:number; cross:number; hook:number; uppercut:number }
+  const TARGETS_THROWN: BodyZone[] = [
+    { id:'head-top',   label:'Head',           cx:100, cy:55,  jab:0.95, cross:0.85, hook:0.55, uppercut:0.30 },
+    { id:'temple-l',   label:'Temple L',       cx:78,  cy:60,  jab:0.40, cross:0.30, hook:0.92, uppercut:0.10 },
+    { id:'temple-r',   label:'Temple R',       cx:122, cy:60,  jab:0.30, cross:0.42, hook:0.78, uppercut:0.10 },
+    { id:'chin',       label:'Chin',           cx:100, cy:80,  jab:0.55, cross:0.62, hook:0.35, uppercut:1.00 },
+    { id:'body-l',     label:'Body (liver)',   cx:80,  cy:160, jab:0.10, cross:0.18, hook:0.95, uppercut:0.42 },
+    { id:'body-r',     label:'Body (rib)',     cx:120, cy:160, jab:0.12, cross:0.22, hook:0.70, uppercut:0.38 },
+    { id:'solar',      label:'Solar plexus',   cx:100, cy:165, jab:0.20, cross:0.55, hook:0.30, uppercut:0.65 },
   ]
+  const TARGETS_RECEIVED: BodyZone[] = [
+    { id:'head-top',   label:'Head',           cx:100, cy:55,  jab:0.62, cross:0.40, hook:0.28, uppercut:0.20 },
+    { id:'temple-l',   label:'Temple L',       cx:78,  cy:60,  jab:0.18, cross:0.20, hook:0.55, uppercut:0.05 },
+    { id:'temple-r',   label:'Temple R',       cx:122, cy:60,  jab:0.42, cross:0.55, hook:0.78, uppercut:0.10 },
+    { id:'chin',       label:'Chin',           cx:100, cy:80,  jab:0.32, cross:0.45, hook:0.20, uppercut:0.42 },
+    { id:'body-l',     label:'Body (liver)',   cx:80,  cy:160, jab:0.05, cross:0.10, hook:0.45, uppercut:0.18 },
+    { id:'body-r',     label:'Body (rib)',     cx:120, cy:160, jab:0.08, cross:0.16, hook:0.40, uppercut:0.20 },
+    { id:'solar',      label:'Solar plexus',   cx:100, cy:165, jab:0.10, cross:0.28, hook:0.18, uppercut:0.30 },
+  ]
+  const targets = punchDir === 'thrown' ? TARGETS_THROWN : TARGETS_RECEIVED
+  const zoneVal = (z: BodyZone) => punchType === 'all'
+    ? Math.max(0, Math.min(1, (z.jab + z.cross + z.hook + z.uppercut) / 4 * 1.6))
+    : (z as any)[punchType] as number
+
+  // Power-vs-jab counts per punch type.
+  const PUNCH_BREAKDOWN = punchDir === 'thrown'
+    ? [{ k:'Jab', v:182, c:0.22 }, { k:'Cross', v:96, c:0.62 }, { k:'Hook', v:74, c:0.85 }, { k:'Uppercut', v:38, c:0.95 }]
+    : [{ k:'Jab', v:88,  c:0.22 }, { k:'Cross', v:42, c:0.62 }, { k:'Hook', v:36, c:0.85 }, { k:'Uppercut', v:14, c:0.95 }]
+  const totalPunches = PUNCH_BREAKDOWN.reduce((s, x) => s + x.v, 0)
+  const powerPunches = PUNCH_BREAKDOWN.filter(p => p.k !== 'Jab').reduce((s, x) => s + x.v, 0)
+  const jabs = totalPunches - powerPunches
+
+  // ── Section 3 — Footwork & Movement ─────────────────────────────────────
+  const FOOTWORK_PATH: { x:number; y:number }[] = [
+    { x:150, y:150 }, { x:160, y:130 }, { x:175, y:118 }, { x:200, y:115 },
+    { x:225, y:130 }, { x:235, y:155 }, { x:225, y:185 }, { x:200, y:200 },
+    { x:170, y:195 }, { x:150, y:175 }, { x:140, y:150 }, { x:160, y:130 },
+  ]
+  const ADVANCE_RETREAT = [
+    { zone:'Centre',         adv:62, ret:18, neu:20 },
+    { zone:'Ropes (front)',  adv:28, ret:48, neu:24 },
+    { zone:'Ropes (back)',   adv:18, ret:62, neu:20 },
+    { zone:'Corners',        adv:12, ret:74, neu:14 },
+  ]
+  const LATERAL_PREF = { left:58, right:42 }
+  const CORNER_TRAPS = [
+    { round:1, traps:0 }, { round:2, traps:1 }, { round:3, traps:3 }, { round:4, traps:1 },
+    { round:5, traps:0 }, { round:6, traps:4 }, { round:7, traps:2 }, { round:8, traps:1 },
+    { round:9, traps:1 }, { round:10,traps:2 }, { round:11,traps:3 }, { round:12,traps:1 },
+  ]
+  const DISTANCE_BY_ROUND = ROUND_DATA.map(r => ({ round:r.round, distance:r.distance }))
+
+  // ── Section 4 — Fight Camp Load ─────────────────────────────────────────
+  // 8-week × 7-day calendar. Each cell = load 0–1 + training type.
+  type CampDay = { load:number; type:'roadwork'|'sparring'|'sandc'|'pads'|'rest' }
+  const TRAINING_TYPES = {
+    roadwork: { color:'#22c55e', label:'Roadwork' },
+    sparring: { color:'#ef4444', label:'Sparring' },
+    sandc:    { color:'#a855f7', label:'S&C' },
+    pads:     { color:'#f59e0b', label:'Pads' },
+    rest:     { color:'#475569', label:'Rest' },
+  } as const
+  const CAMP_GRID: CampDay[][] = [
+    // W1 (foundation)
+    [{load:0.45,type:'roadwork'},{load:0.50,type:'sandc'},{load:0.55,type:'pads'},{load:0.40,type:'roadwork'},{load:0.55,type:'sandc'},{load:0.60,type:'sparring'},{load:0.10,type:'rest'}],
+    [{load:0.55,type:'roadwork'},{load:0.62,type:'sandc'},{load:0.72,type:'sparring'},{load:0.45,type:'roadwork'},{load:0.60,type:'sandc'},{load:0.78,type:'sparring'},{load:0.10,type:'rest'}],
+    [{load:0.60,type:'roadwork'},{load:0.70,type:'sandc'},{load:0.82,type:'sparring'},{load:0.50,type:'roadwork'},{load:0.65,type:'sandc'},{load:0.85,type:'sparring'},{load:0.10,type:'rest'}],
+    [{load:0.65,type:'roadwork'},{load:0.78,type:'sandc'},{load:0.92,type:'sparring'},{load:0.55,type:'pads'},{load:0.72,type:'sandc'},{load:0.95,type:'sparring'},{load:0.10,type:'rest'}],
+    // W5 (peak load)
+    [{load:0.72,type:'roadwork'},{load:0.85,type:'sandc'},{load:0.98,type:'sparring'},{load:0.60,type:'pads'},{load:0.80,type:'sandc'},{load:1.00,type:'sparring'},{load:0.10,type:'rest'}],
+    [{load:0.70,type:'roadwork'},{load:0.78,type:'sandc'},{load:0.92,type:'sparring'},{load:0.55,type:'pads'},{load:0.72,type:'sandc'},{load:0.88,type:'sparring'},{load:0.10,type:'rest'}],
+    // W7-8 (taper)
+    [{load:0.55,type:'roadwork'},{load:0.50,type:'pads'},{load:0.62,type:'sparring'},{load:0.40,type:'pads'},{load:0.45,type:'sandc'},{load:0.50,type:'sparring'},{load:0.10,type:'rest'}],
+    [{load:0.40,type:'roadwork'},{load:0.32,type:'pads'},{load:0.30,type:'pads'},{load:0.20,type:'rest'},{load:0.18,type:'pads'},{load:0.15,type:'rest'},{load:0.05,type:'rest'}],
+  ]
+  // Sparring rounds cumulative (head contact load proxy).
+  const SPARRING_CUM = CAMP_GRID.map((wk,i) => wk.filter(d => d.type === 'sparring').reduce((s,d) => s + Math.round(d.load * 8), 0))
+  const SPARRING_TOTALS = SPARRING_CUM.reduce<number[]>((acc, v, i) => { acc.push((acc[i-1] ?? 0) + v); return acc }, [])
+  // Weight cut tracking — kg over target per week.
+  const WEIGHT_OVER = [9.8, 8.6, 7.2, 6.1, 5.0, 4.0, 2.4, 0.4]
+
+  // ── Section 5 — Session GPS ─────────────────────────────────────────────
+  const SESSION_ZONES = [
+    { label:'Roadwork', zones:[
+      { z:'Walk',    m:420,  c:0.10 },
+      { z:'Jog',     m:3200, c:0.35 },
+      { z:'Tempo',   m:3100, c:0.62 },
+      { z:'Sprint',  m:1480, c:0.95 },
+      { z:'Recovery',m:200,  c:0.05 },
+    ]},
+    { label:'Pad work', zones:[
+      { z:'Stand',   m:240,  c:0.08 },
+      { z:'Step',    m:880,  c:0.32 },
+      { z:'Bounce',  m:1640, c:0.55 },
+      { z:'Burst',   m:540,  c:0.92 },
+    ]},
+    { label:'Sparring', zones:[
+      { z:'Stand',   m:160,  c:0.08 },
+      { z:'Move',    m:2240, c:0.45 },
+      { z:'Pursue',  m:1120, c:0.70 },
+      { z:'Burst',   m:380,  c:0.95 },
+    ]},
+  ]
+  const ROADWORK_ACCEL = [
+    { x:18, y:32, v:0.45 }, { x:30, y:28, v:0.55 }, { x:42, y:34, v:0.62 }, { x:55, y:30, v:0.78 },
+    { x:68, y:36, v:0.92 }, { x:75, y:42, v:0.85 }, { x:82, y:50, v:0.55 }, { x:88, y:58, v:0.42 },
+  ]
+  const WEEKLY_LOAD = [
+    { lbl:'This week',    val:1850, c:0.78 },
+    { lbl:'Last week',    val:1620, c:0.62 },
+    { lbl:'Camp average', val:1580, c:0.50 },
+  ]
+
+  // ── Section 6 — Opponent Comparison ─────────────────────────────────────
+  const OPP_ZONES = [
+    [0.30, 0.65, 0.30], // pressure fighter — works front/middle ropes
+    [0.42, 0.78, 0.40],
+    [0.10, 0.30, 0.10],
+  ]
+  const COMPARISON = [
+    { zone:'Centre',  self: fightAvg.centre,  opp: 35 },
+    { zone:'Ropes',   self: fightAvg.ropes,   opp: 48 },
+    { zone:'Corners', self: fightAvg.corners, opp: 12 },
+    { zone:'Moving',  self: fightAvg.moving,  opp:  5 },
+  ]
+
+  // ── Render helpers ──────────────────────────────────────────────────────
+  const heatStops = Array.from({ length: 24 }).map((_, i) => bxHeat(i / 23))
+
+  const Pill = ({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) => (
+    <button onClick={onClick}
+      className="text-[11px] font-medium px-3 py-1.5 rounded-full transition-colors"
+      style={{
+        border: `1px solid ${active ? '#ef4444' : '#1F2937'}`,
+        background: active ? 'rgba(239,68,68,0.16)' : 'transparent',
+        color: active ? '#fca5a5' : '#94a3b8',
+        cursor: 'pointer',
+      }}>
+      {children}
+    </button>
+  )
+
+  const SectionTitle = ({ k, t, sub }: { k:string; t:string; sub?:string }) => (
+    <div className="mb-4">
+      <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: '#ef4444' }}>{k}</div>
+      <h3 className="text-base font-bold text-white mt-1">{t}</h3>
+      {sub && <p className="text-[11px]" style={{ color: '#94a3b8' }}>{sub}</p>}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-3xl">🛰️</span>
-          <div>
-            <h2 className="text-xl font-black text-white">GPS & Ring Heatmap</h2>
-            <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>WORLD FIRST — Punch analytics fused with GPS ring movement data</p>
+      <SectionHeader icon="🔥" title="GPS Heatmaps" subtitle="Ring movement, punch zones, footwork, camp load and opponent comparison — all from Lumio GPS + Lumio Punch Analytics feeds." />
+
+      {/* ─── 1. RING MOVEMENT HEATMAP (HERO) ─────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: 'linear-gradient(180deg,#0d1117 0%,#0a0d13 100%)', border: '1px solid #1F2937' }}>
+        <div className="flex items-start gap-4 mb-4 flex-wrap">
+          <div className="flex-1 min-w-[240px]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: '#ef4444' }}>Hero · Ring Movement Heatmap</div>
+            <h2 className="text-2xl font-black text-white mt-1">Where {fighter.name.split(' ')[0]} fought</h2>
+            <p className="text-xs mt-1" style={{ color: '#94a3b8' }}>Position density across {fullFight ? 'the full fight' : `Round ${activeRound}`} — UWB beacons at the corners track at 10 Hz.</p>
+          </div>
+          <div className="flex flex-col gap-2 items-end">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.06em]" style={{ color: '#475569' }}>HEAT</span>
+              <span className="text-[10px]" style={{ color: '#475569' }}>rare</span>
+              <div className="flex h-1.5 w-32 overflow-hidden rounded-sm" style={{ border: '1px solid #1F2937' }}>
+                {heatStops.map((s, i) => <div key={i} className="flex-1" style={{ background: s }} />)}
+              </div>
+              <span className="text-[10px]" style={{ color: '#475569' }}>primary</span>
+            </div>
+            <div className="text-[11px] flex gap-3" style={{ color: '#475569' }}>
+              <span>DIST <span className="text-white font-semibold">{(fightAvg.distance/1000).toFixed(2)} km</span></span>
+              <span>·</span>
+              <span>ROUNDS <span className="text-white font-semibold">{ROUND_DATA.length}</span></span>
+            </div>
           </div>
         </div>
-        <p className="text-xs" style={{ color: '#94a3b8' }}>UWB beacons at ring corners track position at 10Hz. Combined with CompuBox punch data to reveal footwork-performance correlation.</p>
-      </div>
 
-      {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {KPI_CARDS.map(k => (
-          <div key={k.label} className="rounded-xl p-3" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-            <div className="text-lg mb-1">{k.icon}</div>
-            <div className="text-xl font-black" style={{ color: k.color }}>{k.value}</div>
-            <div className="text-[11px] font-semibold text-white mt-0.5">{k.label}</div>
-            <div className="text-[10px]" style={{ color: '#475569' }}>{k.sub}</div>
-          </div>
-        ))}
-      </div>
+        {/* Fighter selector */}
+        <div className="flex gap-1.5 flex-wrap mb-2">
+          {[
+            { id:'self' as const,              label:`${fighter.name} (You)` },
+            { id:'orthodox-pressure' as const, label:'Orthodox / pressure' },
+            { id:'southpaw-counter' as const,  label:'Southpaw / counter' },
+          ].map(f => <Pill key={f.id} active={f.id === activeFighter} onClick={() => setActiveFighter(f.id)}>{f.label}</Pill>)}
+        </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {(['heatmap','load','roadwork'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)}
-            className="px-4 py-2 rounded-lg text-xs font-semibold"
-            style={{ background: activeTab === t ? '#ef4444' : '#1F2937', color: activeTab === t ? '#fff' : '#94a3b8' }}>
-            {t === 'heatmap' ? '🥊 Ring Heatmap' : t === 'load' ? '📊 Session Load' : '🏃 Roadwork GPS'}
+        {/* Fight selector */}
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          {FIGHTS.map(f => (
+            <Pill key={f.id} active={f.id === fightId} onClick={() => setFightId(f.id)}>
+              <span className="opacity-70 mr-1.5">{f.date}</span>
+              vs {f.vs}
+              {f.state === 'upcoming' && <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded-sm" style={{ background:'#ef4444', color:'#fff' }}>NEXT</span>}
+            </Pill>
+          ))}
+        </div>
+
+        {/* Round selector + full-fight toggle */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Round</span>
+          {ROUND_DATA.map((_, i) => (
+            <button key={i} onClick={() => { setFullFight(false); setActiveRound(i + 1) }}
+              className="rounded-md text-[11px] font-bold transition-colors"
+              style={{
+                width: 28, height: 28,
+                background: !fullFight && activeRound === i + 1 ? '#ef4444' : '#1F2937',
+                color: !fullFight && activeRound === i + 1 ? '#fff' : '#94a3b8',
+                border: 'none', cursor: 'pointer',
+              }}>R{i + 1}</button>
+          ))}
+          <button onClick={() => setFullFight(f => !f)}
+            className="text-[11px] font-semibold px-3 py-1.5 rounded-md ml-2"
+            style={{
+              background: fullFight ? '#ef4444' : 'transparent',
+              color: fullFight ? '#fff' : '#fca5a5',
+              border: `1px solid ${fullFight ? '#ef4444' : '#ef444466'}`,
+              cursor: 'pointer',
+            }}>
+            {fullFight ? '✓ Full fight' : 'Full fight'}
           </button>
-        ))}
-      </div>
+        </div>
 
-      {activeTab === 'heatmap' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* SVG Ring Heatmap */}
-          <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-white">Ring Position Map</h3>
-              <div className="flex gap-1.5">
-                {ROUND_DATA.map((_, i) => (
-                  <button key={i} onClick={() => setActiveRound(i + 1)}
-                    className="w-7 h-7 rounded-full text-[11px] font-bold"
-                    style={{ background: activeRound === i + 1 ? '#ef4444' : '#1F2937', color: activeRound === i + 1 ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer' }}>
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <svg viewBox="0 0 300 300" className="w-full max-w-[280px] mx-auto block">
-              <rect x="10" y="10" width="280" height="280" rx="8" fill="#1a1a2e" stroke="#374151" strokeWidth="2"/>
-              {[[20,20],[280,20],[20,280],[280,280]].map(([cx,cy],i) => (
-                <circle key={i} cx={cx} cy={cy} r="8" fill="#374151" stroke="#6B7280" strokeWidth="1"/>
+        {/* Hero ring SVG */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
+          <div className="rounded-xl overflow-hidden" style={{ background: '#07090f', border: '1px solid #1F2937' }}>
+            <svg viewBox="0 0 400 400" className="w-full h-full block">
+              <defs>
+                <radialGradient id="bx-canvas" cx="50%" cy="50%" r="65%">
+                  <stop offset="0%"  stopColor="#1f1a14" />
+                  <stop offset="100%" stopColor="#0a0805" />
+                </radialGradient>
+                <pattern id="bx-canvas-tex" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+                  <path d="M0 6 L6 0" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                </pattern>
+                <filter id="bx-blur" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="14" />
+                </filter>
+                {/* Per-cell radial gradients */}
+                {RING_ZONES.map((row, ri) => row.map((v, ci) => (
+                  <radialGradient key={`${ri}-${ci}`} id={`bx-cell-${ri}-${ci}`} cx="50%" cy="50%" r="60%">
+                    <stop offset="0%"  stopColor={bxHeat(v)} stopOpacity={0.7 + v * 0.3} />
+                    <stop offset="55%" stopColor={bxHeat(v)} stopOpacity={0.18 + v * 0.3} />
+                    <stop offset="100%" stopColor={bxHeat(v)} stopOpacity={0} />
+                  </radialGradient>
+                )))}
+              </defs>
+
+              {/* Canvas */}
+              <rect x="40" y="40" width="320" height="320" rx="6" fill="url(#bx-canvas)" />
+              <rect x="40" y="40" width="320" height="320" rx="6" fill="url(#bx-canvas-tex)" />
+
+              {/* Apron border */}
+              <rect x="34" y="34" width="332" height="332" rx="8" fill="none" stroke="#3a2a14" strokeWidth="3" />
+              <rect x="40" y="40" width="320" height="320" rx="6" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
+
+              {/* Ropes (4 strands per side) */}
+              {[0, 1, 2, 3].map(i => {
+                const off = 8 + i * 7
+                const colors = ['#dc2626','#fafafa','#1d4ed8','#facc15']
+                return (
+                  <g key={`ropes-${i}`} stroke={colors[i]} strokeWidth="1.6" opacity="0.8" fill="none">
+                    <line x1={40 - off} y1="40" x2={40 - off} y2="360" />
+                    <line x1={360 + off} y1="40" x2={360 + off} y2="360" />
+                    <line x1="40" y1={40 - off} x2="360" y2={40 - off} />
+                    <line x1="40" y1={360 + off} x2="360" y2={360 + off} />
+                  </g>
+                )
+              })}
+
+              {/* Corner posts (red / blue / neutral / neutral) */}
+              {[
+                { x:20,  y:20,  c:'#dc2626' },
+                { x:360, y:20,  c:'#1d4ed8' },
+                { x:20,  y:360, c:'#fafafa' },
+                { x:360, y:360, c:'#fafafa' },
+              ].map((p, i) => (
+                <g key={`post-${i}`}>
+                  <rect x={p.x} y={p.y} width="20" height="20" rx="3" fill={p.c} stroke="rgba(0,0,0,0.5)" strokeWidth="1" />
+                  <rect x={p.x + 4} y={p.y + 4} width="12" height="12" rx="1.5" fill="rgba(0,0,0,0.25)" />
+                </g>
               ))}
-              <rect x="20" y="20" width="260" height="260" fill="none" stroke="#4B5563" strokeWidth="1.5" strokeDasharray="4,4"/>
-              <ellipse cx="150" cy="150" rx="65" ry="65" fill={`rgba(250,204,21,${round.centre / 100 * 0.7 + 0.1})`}/>
-              <rect x="10" y="10" width="280" height="35" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.8})`}/>
-              <rect x="10" y="255" width="280" height="35" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.6})`}/>
-              <rect x="10" y="10" width="35" height="280" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.5})`}/>
-              <rect x="255" y="10" width="35" height="280" rx="4" fill={`rgba(239,68,68,${round.ropes / 100 * 0.5})`}/>
-              {[[10,10],[265,10],[10,265],[265,265]].map(([x,y],i) => (
-                <rect key={i} x={x} y={y} width="30" height="30" fill={`rgba(245,158,11,${round.corners / 100 * 1.5})`}/>
+
+              {/* Centre lines */}
+              <line x1="200" y1="40" x2="200" y2="360" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 4" />
+              <line x1="40" y1="200" x2="360" y2="200" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 4" />
+
+              {/* Heat blobs (3×3 cells) */}
+              <g filter="url(#bx-blur)">
+                {RING_ZONES.map((row, ri) => row.map((v, ci) => (
+                  v > 0.05 && (
+                    <circle key={`blob-${ri}-${ci}`}
+                      cx={70 + ci * 130} cy={70 + ri * 130}
+                      r={48 + v * 36}
+                      fill={`url(#bx-cell-${ri}-${ci})`} />
+                  )
+                )))}
+              </g>
+
+              {/* Per-cell labels */}
+              {RING_ZONES.map((row, ri) => row.map((v, ci) => (
+                <g key={`lbl-${ri}-${ci}`}>
+                  <text x={70 + ci * 130} y={70 + ri * 130 + 3} textAnchor="middle"
+                    fontSize="11" fontWeight="700"
+                    fill={v > 0.5 ? '#fff' : 'rgba(255,255,255,0.4)'}>
+                    {Math.round(v * 100)}%
+                  </text>
+                </g>
+              )))}
+
+              {/* Centre primary marker */}
+              {RING_ZONES[1][1] > 0.55 && (
+                <circle cx="200" cy="200" r="14" fill="none" stroke={bxHeat(RING_ZONES[1][1])} strokeWidth="1.6" opacity="0.9">
+                  <animate attributeName="r"       values="12;22;12" dur="2.4s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.9;0.15;0.9" dur="2.4s" repeatCount="indefinite" />
+                </circle>
+              )}
+
+              {/* Zone labels (subtle) */}
+              {[
+                { t:'NW', x:70,  y:55  }, { t:'N', x:200, y:55  }, { t:'NE', x:330, y:55  },
+                { t:'W',  x:55,  y:200 }, { t:'CENTRE', x:200, y:182 }, { t:'E', x:345, y:200 },
+                { t:'SW', x:70,  y:355 }, { t:'S', x:200, y:355 }, { t:'SE', x:330, y:355 },
+              ].map((l, i) => (
+                <text key={i} x={l.x} y={l.y} textAnchor="middle" fontSize="7.5"
+                  fill="rgba(255,255,255,0.32)" letterSpacing="0.12em">{l.t}</text>
               ))}
-              <text x="150" y="154" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="13" fontWeight="bold">{round.centre}%</text>
-              <text x="150" y="168" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="9">Centre</text>
             </svg>
-            <div className="flex gap-3 justify-center mt-3">
-              {[['#facc15','Centre'],['#ef4444','Ropes'],['#f59e0b','Corners'],['#3b82f6','Moving']].map(([c,l]) => (
-                <div key={l} className="flex items-center gap-1">
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
-                  <span className="text-[10px]" style={{ color: '#94a3b8' }}>{l}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* Round stats + AI insight */}
+          {/* Round breakdown */}
           <div className="space-y-3">
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-              <h3 className="text-sm font-bold text-white mb-3">Round {activeRound} Breakdown</h3>
+            <div className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+              <div className="flex items-baseline gap-2 mb-3">
+                <h3 className="text-sm font-bold text-white">{fullFight ? 'Fight Average' : `Round ${activeRound}`}</h3>
+                <span className="text-[10px]" style={{ color:'#475569' }}>vs {FIGHTS.find(f=>f.id===fightId)?.vs}</span>
+              </div>
               {[
-                { label:'Centre Control', value:round.centre, target:55, color:'#facc15' },
-                { label:'Ropes Time', value:round.ropes, target:15, color:'#ef4444', invert:true },
-                { label:'Corner Time', value:round.corners, target:5, color:'#f59e0b', invert:true },
-                { label:'Active Movement', value:round.moving, target:20, color:'#3b82f6' },
+                { label:'Centre Control', value:view.centre,  target:55, color:'#22c55e' },
+                { label:'Ropes Time',     value:view.ropes,    target:25, color:'#ef4444', invert:true },
+                { label:'Corner Time',    value:view.corners,  target:7,  color:'#f59e0b', invert:true },
+                { label:'Active Movement',value:view.moving,   target:18, color:'#0ea5e9' },
               ].map(stat => (
                 <div key={stat.label} className="mb-2.5">
                   <div className="flex justify-between mb-1">
                     <span className="text-xs" style={{ color: '#94a3b8' }}>{stat.label}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold" style={{ color: stat.color }}>{stat.value}%</span>
-                      <span className="text-[10px]" style={{ color: '#475569' }}>target: {stat.target}%</span>
-                      <span className="text-[10px]">{stat.invert ? stat.value <= stat.target : stat.value >= stat.target ? '✅' : '⚠️'}</span>
+                      <span className="text-[10px]" style={{ color: '#475569' }}>target {stat.target}%</span>
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full" style={{ background: '#1F2937' }}>
@@ -8218,99 +9552,538 @@ function GpsRingHeatmapView() {
                   </div>
                 </div>
               ))}
-              <p className="text-xs italic mt-3" style={{ color: '#94a3b8' }}>{round.note}</p>
-              <p className="text-[11px]" style={{ color: '#6B7280' }}>Distance covered: <span className="text-white font-semibold">{round.distance}m</span></p>
+              {!fullFight && <p className="text-xs italic mt-3" style={{ color: '#94a3b8' }}>{round.note}</p>}
+              <p className="text-[11px] mt-2" style={{ color: '#6B7280' }}>Distance: <span className="text-white font-semibold">{view.distance}m</span></p>
             </div>
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #ef444430' }}>
-              <div className="flex items-center gap-2 mb-2"><span>✨</span><span className="text-xs font-bold" style={{ color: '#ef4444' }}>AI Ring Intelligence</span></div>
-              <p className="text-xs leading-relaxed" style={{ color: '#94a3b8' }}>
-                Marcus&apos;s ropes % increases by 8 percentage points in rounds 3 and 6 — a consistent fatigue signature. Centre control in rounds 1–2 is strong at 60%+ but drops sharply under sustained pressure. Drill priority: lateral ring escape when on ropes, and maintaining foot speed in rounds 5–8 of sparring.
+            <div className="rounded-xl p-4" style={{ background: '#0d1117', border: '1px solid #ef444430' }}>
+              <div className="flex items-center gap-2 mb-2"><span>✨</span><span className="text-xs font-bold" style={{ color:'#ef4444' }}>AI Ring Intelligence</span></div>
+              <p className="text-xs leading-relaxed" style={{ color:'#94a3b8' }}>
+                Marcus&apos;s ropes % rises 8 pp in rounds 3 and 6 — a fatigue signature. Centre control is strong rounds 1–2 but compresses under sustained pressure. Drill priority: lateral ring escape on ropes and foot-speed maintenance rounds 5–8 of sparring.
               </p>
             </div>
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-              <h3 className="text-xs font-bold text-white mb-2">Session Averages (All Rounds)</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label:'Avg Centre', value:`${Math.round(ROUND_DATA.reduce((s,r)=>s+r.centre,0)/ROUND_DATA.length)}%`, color:'#facc15' },
-                  { label:'Avg Ropes', value:`${Math.round(ROUND_DATA.reduce((s,r)=>s+r.ropes,0)/ROUND_DATA.length)}%`, color:'#ef4444' },
-                  { label:'Total Distance', value:`${ROUND_DATA.reduce((s,r)=>s+r.distance,0)}m`, color:'#22c55e' },
-                  { label:'Best Round', value:`Rd ${ROUND_DATA.reduce((best,r,i)=>r.centre>ROUND_DATA[best].centre?i:best,0)+1}`, color:'#a855f7' },
-                ].map(s => (
-                  <div key={s.label} className="rounded-lg p-2.5" style={{ background: '#1F2937' }}>
-                    <div className="text-base font-black" style={{ color: s.color }}>{s.value}</div>
-                    <div className="text-[10px]" style={{ color: '#6B7280' }}>{s.label}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 2. PUNCH ZONE HEATMAP ────────────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+        <SectionTitle k="Section 02" t="Punch Zone Heatmap" sub="Where punches landed (or were absorbed). Punch-analytics-fused per round." />
+
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="flex gap-1 rounded-lg p-1" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <button onClick={() => setPunchDir('thrown')}   className="px-3 py-1 rounded text-[11px] font-medium" style={{ background: punchDir==='thrown' ? '#ef4444' : 'transparent', color: punchDir==='thrown' ? '#fff' : '#94a3b8', border:'none', cursor:'pointer' }}>Thrown to →</button>
+            <button onClick={() => setPunchDir('received')} className="px-3 py-1 rounded text-[11px] font-medium" style={{ background: punchDir==='received' ? '#ef4444' : 'transparent', color: punchDir==='received' ? '#fff' : '#94a3b8', border:'none', cursor:'pointer' }}>← Received from</button>
+          </div>
+          <span style={{ color:'#475569' }} className="text-[10px] uppercase tracking-wider mx-2">Filter</span>
+          {(['all','jab','cross','hook','uppercut'] as const).map(t => (
+            <Pill key={t} active={punchType === t} onClick={() => setPunchType(t)}>{t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}</Pill>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-5">
+          {/* Body silhouette SVG */}
+          <div className="rounded-xl p-4 flex justify-center" style={{ background: '#07090f', border: '1px solid #1F2937' }}>
+            <svg viewBox="0 0 200 280" className="w-full max-w-[280px] block">
+              <defs>
+                <radialGradient id="bx-body-bg" cx="50%" cy="50%" r="60%">
+                  <stop offset="0%" stopColor="#11151d" />
+                  <stop offset="100%" stopColor="#07090f" />
+                </radialGradient>
+                <filter id="bx-body-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="6" />
+                </filter>
+                {targets.map(z => {
+                  const v = zoneVal(z)
+                  return (
+                    <radialGradient key={`bg-${z.id}`} id={`bx-bz-${z.id}`} cx="50%" cy="50%" r="50%">
+                      <stop offset="0%"  stopColor={bxHeat(v)} stopOpacity={0.7 + v * 0.3} />
+                      <stop offset="55%" stopColor={bxHeat(v)} stopOpacity={0.2 + v * 0.25} />
+                      <stop offset="100%" stopColor={bxHeat(v)} stopOpacity={0} />
+                    </radialGradient>
+                  )
+                })}
+              </defs>
+              <rect width="200" height="280" fill="url(#bx-body-bg)" />
+
+              {/* Silhouette */}
+              <g fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" strokeWidth="1">
+                {/* Head */}
+                <ellipse cx="100" cy="50" rx="22" ry="26" />
+                {/* Neck */}
+                <rect x="92" y="73" width="16" height="10" />
+                {/* Torso */}
+                <path d="M 68 84 L 132 84 L 138 130 L 130 200 L 70 200 L 62 130 Z" />
+                {/* Arms */}
+                <path d="M 68 86 L 50 110 L 44 160 L 50 200 L 60 198 L 58 160 L 64 120 Z" />
+                <path d="M 132 86 L 150 110 L 156 160 L 150 200 L 140 198 L 142 160 L 136 120 Z" />
+                {/* Gloves */}
+                <ellipse cx="48" cy="208" rx="14" ry="16" fill="#dc2626" stroke="#7f1d1d" />
+                <ellipse cx="152" cy="208" rx="14" ry="16" fill="#dc2626" stroke="#7f1d1d" />
+                {/* Trunks */}
+                <path d="M 70 200 L 130 200 L 132 240 L 100 248 L 68 240 Z" fill="rgba(220,38,38,0.18)" stroke="rgba(220,38,38,0.4)" />
+                {/* Legs */}
+                <path d="M 78 248 L 86 280 L 96 280 L 98 248 Z" />
+                <path d="M 102 248 L 104 280 L 114 280 L 122 248 Z" />
+                {/* Shoulders / muscle hint */}
+                <line x1="80" y1="100" x2="120" y2="100" stroke="rgba(255,255,255,0.05)" />
+                <line x1="100" y1="84" x2="100" y2="200" stroke="rgba(255,255,255,0.05)" />
+              </g>
+
+              {/* Heat blobs */}
+              <g filter="url(#bx-body-glow)">
+                {targets.map(z => {
+                  const v = zoneVal(z)
+                  return v > 0.04 && (
+                    <circle key={`blob-${z.id}`} cx={z.cx} cy={z.cy} r={14 + v * 22} fill={`url(#bx-bz-${z.id})`} />
+                  )
+                })}
+              </g>
+
+              {/* Markers + labels */}
+              {targets.map(z => {
+                const v = zoneVal(z)
+                return (
+                  <g key={`m-${z.id}`}>
+                    <circle cx={z.cx} cy={z.cy} r={v > 0.05 ? 3.5 + v * 2 : 2}
+                      fill={v > 0.05 ? bxHeat(v) : 'rgba(255,255,255,0.25)'}
+                      stroke="rgba(0,0,0,0.6)" strokeWidth="0.8" />
+                    {v > 0.4 && (
+                      <text x={z.cx} y={z.cy + 3} textAnchor="middle" fontSize="7" fontWeight="700" fill="#fff">
+                        {Math.round(v * 100)}
+                      </text>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+
+          {/* Punch breakdown */}
+          <div className="space-y-3">
+            <div className="rounded-xl p-4" style={{ background: '#0a0d13', border: '1px solid #1F2937' }}>
+              <div className="flex items-baseline gap-2 mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#94a3b8' }}>{punchDir === 'thrown' ? 'Punches thrown' : 'Punches received'}</h4>
+                <span className="ml-auto text-[10px]" style={{ color:'#475569' }}>last fight · 12 rounds</span>
+              </div>
+              {PUNCH_BREAKDOWN.map(p => {
+                const pct = (p.v / Math.max(...PUNCH_BREAKDOWN.map(x => x.v))) * 100
+                return (
+                  <div key={p.k} className="mb-2.5">
+                    <div className="flex justify-between mb-1 text-[11px]">
+                      <span className="text-white font-medium">{p.k}</span>
+                      <span style={{ color: bxHeat(p.c) }} className="font-bold">{p.v}</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background:'#1F2937' }}>
+                      <div className="h-full" style={{ background: bxHeat(p.c), width: `${pct}%`, boxShadow: p.c > 0.7 ? `0 0 8px ${bxGlow(p.c)}` : 'none' }} />
+                    </div>
                   </div>
-                ))}
+                )
+              })}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color:'#475569' }}>Power punches</div>
+                <div className="text-2xl font-black mt-1" style={{ color: '#ef4444' }}>{powerPunches}</div>
+                <div className="text-[11px]" style={{ color:'#94a3b8' }}>{Math.round(powerPunches / totalPunches * 100)}% of total · cross+hook+uppercut</div>
+              </div>
+              <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color:'#475569' }}>Jabs</div>
+                <div className="text-2xl font-black mt-1" style={{ color: '#22c55e' }}>{jabs}</div>
+                <div className="text-[11px]" style={{ color:'#94a3b8' }}>{Math.round(jabs / totalPunches * 100)}% of total · range setting</div>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {activeTab === 'load' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-          <h3 className="text-sm font-bold text-white mb-4">📊 Session Load Monitor</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                  {['Round','Centre %','Ropes %','Corners %','Distance','Status'].map(h => (
-                    <th key={h} className="text-left text-[11px] font-semibold uppercase" style={{ padding: '8px 12px', color: '#6B7280' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ROUND_DATA.map(r => (
-                  <tr key={r.round} style={{ borderBottom: '1px solid #0d1117' }}>
-                    <td className="font-semibold text-white" style={{ padding: '10px 12px' }}>Rd {r.round}</td>
-                    <td className="font-bold" style={{ padding: '10px 12px', color: '#facc15' }}>{r.centre}%</td>
-                    <td style={{ padding: '10px 12px', color: r.ropes > 25 ? '#ef4444' : '#94a3b8' }}>{r.ropes}%</td>
-                    <td style={{ padding: '10px 12px', color: r.corners > 7 ? '#f59e0b' : '#94a3b8' }}>{r.corners}%</td>
-                    <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{r.distance}m</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
-                        style={{ background: r.centre >= 55 ? 'rgba(34,197,94,0.15)' : r.centre >= 48 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)', color: r.centre >= 55 ? '#22c55e' : r.centre >= 48 ? '#f59e0b' : '#ef4444' }}>
-                        {r.centre >= 55 ? '✓ On target' : r.centre >= 48 ? '⚠ Marginal' : '✗ Off target'}
-                      </span>
-                    </td>
-                  </tr>
+      {/* ─── 3. FOOTWORK & MOVEMENT ──────────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+        <SectionTitle k="Section 03" t="Footwork & Movement Heatmap" sub="Path, advance/retreat ratios and corner-trap frequency." />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-5">
+          {/* Movement path SVG */}
+          <div className="rounded-xl p-4" style={{ background:'#07090f', border:'1px solid #1F2937' }}>
+            <div className="text-[10px] uppercase tracking-wider mb-3" style={{ color:'#475569' }}>Round {activeRound} movement path</div>
+            <svg viewBox="0 0 320 320" className="w-full block">
+              <defs>
+                <marker id="bx-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444" />
+                </marker>
+              </defs>
+              <rect x="20" y="20" width="280" height="280" rx="6" fill="#1a1408" stroke="#3a2a14" strokeWidth="2" />
+              <rect x="20" y="20" width="280" height="280" rx="6" fill="none" stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" />
+              {/* Heat circles along path */}
+              {FOOTWORK_PATH.map((p, i) => {
+                const v = 0.3 + (Math.sin(i / 1.5) + 1) / 4
+                return <circle key={i} cx={p.x} cy={p.y} r={6 + v * 10} fill={bxHeat(v)} fillOpacity={0.18 + v * 0.3} style={{ filter:'blur(6px)' }} />
+              })}
+              {/* Path */}
+              <path d={FOOTWORK_PATH.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+                fill="none" stroke="#ef4444" strokeWidth="1.6" strokeOpacity="0.85" markerEnd="url(#bx-arrow)" />
+              {/* Path nodes */}
+              {FOOTWORK_PATH.map((p, i) => (
+                <circle key={`n-${i}`} cx={p.x} cy={p.y} r="2.5" fill="#fca5a5" stroke="#7f1d1d" strokeWidth="0.6" />
+              ))}
+              {/* Corner posts */}
+              {[[8,8],[300,8],[8,300],[300,300]].map(([x,y],i) => {
+                const colors = ['#dc2626','#1d4ed8','#fafafa','#fafafa']
+                return <rect key={i} x={x} y={y} width="14" height="14" rx="2" fill={colors[i]} opacity="0.6" />
+              })}
+            </svg>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="rounded-lg p-3" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color:'#475569' }}>Lateral preference</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="h-2 flex-1 rounded-full overflow-hidden flex" style={{ background:'#1F2937' }}>
+                    <div style={{ width: `${LATERAL_PREF.left}%`,  background: '#0ea5e9' }} />
+                    <div style={{ width: `${LATERAL_PREF.right}%`, background: '#a855f7' }} />
+                  </div>
+                </div>
+                <div className="flex justify-between text-[10px] mt-1">
+                  <span style={{ color:'#0ea5e9' }}>← Left {LATERAL_PREF.left}%</span>
+                  <span style={{ color:'#a855f7' }}>Right {LATERAL_PREF.right}% →</span>
+                </div>
+              </div>
+              <div className="rounded-lg p-3" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color:'#475569' }}>Corner traps · per round</div>
+                <div className="flex items-end gap-1 h-10 mt-1">
+                  {CORNER_TRAPS.map(c => {
+                    const max = Math.max(...CORNER_TRAPS.map(x => x.traps))
+                    const h = max > 0 ? (c.traps / max) * 100 : 0
+                    return <div key={c.round} className="flex-1 rounded-t" style={{ height:`${h}%`, background: bxHeat(c.traps / max), boxShadow: c.traps >= 3 ? `0 0 6px ${bxGlow(0.9)}` : 'none' }} title={`R${c.round}: ${c.traps}`} />
+                  })}
+                </div>
+                <div className="text-[10px] mt-1" style={{ color:'#94a3b8' }}>Total traps <span className="text-white font-bold">{CORNER_TRAPS.reduce((s,c) => s + c.traps, 0)}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div className="space-y-3">
+            <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Advance vs retreat by zone</h4>
+              {ADVANCE_RETREAT.map(r => (
+                <div key={r.zone} className="mb-2.5">
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-white font-medium">{r.zone}</span>
+                    <span style={{ color:'#475569' }}><span style={{ color:'#22c55e' }}>{r.adv}</span> · <span style={{ color:'#ef4444' }}>{r.ret}</span> · <span style={{ color:'#94a3b8' }}>{r.neu}</span></span>
+                  </div>
+                  <div className="flex h-2 rounded-full overflow-hidden" style={{ background:'#1F2937' }}>
+                    <div style={{ width:`${r.adv}%`, background:'#22c55e' }} />
+                    <div style={{ width:`${r.neu}%`, background:'#475569' }} />
+                    <div style={{ width:`${r.ret}%`, background:'#ef4444' }} />
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-3 mt-2 text-[10px]" style={{ color:'#94a3b8' }}>
+                <span>● <span style={{ color:'#22c55e' }}>Advance</span></span>
+                <span>● <span style={{ color:'#475569' }}>Neutral</span></span>
+                <span>● <span style={{ color:'#ef4444' }}>Retreat</span></span>
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Distance covered per round</h4>
+              <div className="flex items-end gap-1.5" style={{ height:80 }}>
+                {DISTANCE_BY_ROUND.map(r => {
+                  const max = Math.max(...DISTANCE_BY_ROUND.map(x => x.distance))
+                  const v = r.distance / max
+                  return (
+                    <div key={r.round} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full rounded-t" style={{ height:`${v * 64}px`, background: bxHeat(v), boxShadow: v > 0.85 ? `0 0 6px ${bxGlow(v)}` : 'none' }} title={`R${r.round}: ${r.distance}m`} />
+                      <span className="text-[9px]" style={{ color:'#475569' }}>{r.round}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 4. FIGHT CAMP LOAD HEATMAP ──────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+        <SectionTitle k="Section 04" t="Fight Camp Load Heatmap" sub="8-week camp · training type, sparring contact load, taper and weight cut overlay." />
+
+        {/* Calendar grid */}
+        <div className="rounded-xl p-4 mb-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            {(Object.keys(TRAINING_TYPES) as Array<keyof typeof TRAINING_TYPES>).map(k => (
+              <div key={k} className="flex items-center gap-1.5 text-[10px]" style={{ color:'#94a3b8' }}>
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: TRAINING_TYPES[k].color }} />
+                {TRAINING_TYPES[k].label}
+              </div>
+            ))}
+            <div className="ml-auto text-[10px]" style={{ color:'#475569' }}>cell brightness = intensity · ring = sparring · last 2 weeks = taper</div>
+          </div>
+          <div className="grid gap-2" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+            <div />
+            {['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d => <div key={d} className="text-[10px]" style={{ color:'#475569' }}>{d}</div>)}
+            {CAMP_GRID.map((week, wi) => {
+              const isTaper = wi >= CAMP_GRID.length - 2
+              return (
+                <React.Fragment key={wi}>
+                  <div className="text-[10px] flex items-center gap-1" style={{ color: isTaper ? '#facc15' : '#94a3b8' }}>
+                    W{wi + 1}{isTaper && <span className="text-[8px] uppercase tracking-wider px-1 py-0.5 rounded-sm" style={{ background:'rgba(250,204,21,0.16)', color:'#facc15' }}>TAPER</span>}
+                  </div>
+                  {week.map((d, di) => {
+                    const meta = TRAINING_TYPES[d.type]
+                    const isSparring = d.type === 'sparring'
+                    return (
+                      <div key={di} className="aspect-square rounded-md p-1 relative flex flex-col justify-between"
+                        title={`W${wi+1} ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][di]} · ${meta.label} · load ${(d.load * 100).toFixed(0)}`}
+                        style={{
+                          background: meta.color,
+                          opacity: 0.15 + d.load * 0.85,
+                          border: isSparring ? `1px solid ${meta.color}` : `1px solid transparent`,
+                          boxShadow: isSparring && d.load > 0.85 ? `0 0 8px ${bxGlow(d.load)}` : 'none',
+                          outline: isTaper ? '1px dashed rgba(250,204,21,0.4)' : 'none',
+                          outlineOffset: '-2px',
+                        }}>
+                        <div className="text-[8px] font-bold" style={{ color:'rgba(255,255,255,0.85)' }}>{['M','T','W','T','F','S','S'][di]}</div>
+                        <div className="text-[10px] font-black tabular-nums" style={{ color:'#fff', textShadow:'0 1px 2px rgba(0,0,0,0.6)' }}>{Math.round(d.load * 100)}</div>
+                      </div>
+                    )
+                  })}
+                </React.Fragment>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Sparring rounds cumulative */}
+          <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Cumulative sparring rounds · head contact load proxy</h4>
+            <svg viewBox="0 0 320 100" className="w-full block">
+              <defs>
+                <linearGradient id="bx-spar" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%"  stopColor="#ef4444" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {(() => {
+                const max = Math.max(...SPARRING_TOTALS)
+                const pts = SPARRING_TOTALS.map((v, i) => ({ x: 20 + i * 40, y: 90 - (v / max) * 70 }))
+                const area = `M 20 90 ${pts.map(p => `L ${p.x} ${p.y}`).join(' ')} L ${pts[pts.length-1].x} 90 Z`
+                const line = `M ${pts[0].x} ${pts[0].y} ${pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')}`
+                return (
+                  <g>
+                    <path d={area} fill="url(#bx-spar)" />
+                    <path d={line} fill="none" stroke="#ef4444" strokeWidth="2" />
+                    {pts.map((p, i) => (
+                      <g key={i}>
+                        <circle cx={p.x} cy={p.y} r="3" fill="#ef4444" />
+                        <text x={p.x} y={p.y - 6} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="700">{SPARRING_TOTALS[i]}</text>
+                        <text x={p.x} y={97} textAnchor="middle" fontSize="9" fill="#475569">W{i + 1}</text>
+                      </g>
+                    ))}
+                  </g>
+                )
+              })()}
+            </svg>
+            <p className="text-[11px] mt-1" style={{ color:'#94a3b8' }}>Total sparring rounds across camp: <span className="text-white font-bold">{SPARRING_TOTALS[SPARRING_TOTALS.length - 1]}</span></p>
+          </div>
+
+          {/* Weight cut overlay */}
+          <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Weight cut tracker · kg over target</h4>
+            <div className="space-y-2">
+              {WEIGHT_OVER.map((kg, i) => {
+                const max = WEIGHT_OVER[0]
+                const pct = (kg / max) * 100
+                const c = kg > 5 ? 0.85 : kg > 2 ? 0.55 : 0.15
+                const isTaper = i >= WEIGHT_OVER.length - 2
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-[10px] w-10" style={{ color: isTaper ? '#facc15' : '#94a3b8' }}>W{i + 1}{isTaper && ' ★'}</span>
+                    <div className="flex-1 h-3 rounded-md overflow-hidden" style={{ background:'#1F2937' }}>
+                      <div className="h-full rounded-md" style={{ width:`${pct}%`, background: bxHeat(c), boxShadow: c > 0.7 ? `0 0 6px ${bxGlow(c)}` : 'none' }} />
+                    </div>
+                    <span className="text-[11px] tabular-nums w-14 text-right" style={{ color:'#fff', fontWeight:600 }}>+{kg.toFixed(1)} kg</span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[11px] mt-3" style={{ color:'#94a3b8' }}>Cut trajectory matches plan — sub-2 kg over by W7 means a smooth final week.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 5. SESSION GPS HEATMAP ──────────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+        <SectionTitle k="Section 05" t="Session GPS Heatmap" sub="Distance by intensity zone, roadwork acceleration map and weekly load comparison." />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          {SESSION_ZONES.map(s => (
+            <div key={s.label} className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+              <h4 className="text-xs font-semibold text-white mb-3">{s.label}</h4>
+              {s.zones.map(z => {
+                const max = Math.max(...s.zones.map(x => x.m))
+                const pct = (z.m / max) * 100
+                return (
+                  <div key={z.z} className="mb-2">
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span className="text-white">{z.z}</span>
+                      <span style={{ color: bxHeat(z.c) }} className="font-bold">{z.m.toLocaleString()} m</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background:'#1F2937' }}>
+                      <div className="h-full" style={{ width:`${pct}%`, background: bxHeat(z.c), boxShadow: z.c > 0.8 ? `0 0 6px ${bxGlow(z.c)}` : 'none' }} />
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="text-[10px] mt-2 pt-2 border-t" style={{ color:'#475569', borderColor:'#1F2937' }}>
+                Total <span className="text-white font-bold">{s.zones.reduce((sum, z) => sum + z.m, 0).toLocaleString()} m</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+          {/* Roadwork accel map */}
+          <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Roadwork · sprint &amp; acceleration map</h4>
+            <svg viewBox="0 0 100 80" className="w-full block">
+              <defs>
+                <pattern id="bx-route-grid" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.3" />
+                </pattern>
+                <filter id="bx-route-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2" />
+                </filter>
+              </defs>
+              <rect width="100" height="80" fill="#07090f" />
+              <rect width="100" height="80" fill="url(#bx-route-grid)" />
+              {/* Route path (loop) */}
+              <path d="M 8 70 Q 18 30 35 25 T 70 18 Q 90 25 92 50 T 75 72 Q 50 78 25 75 Z"
+                fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" strokeDasharray="1.5 1.5" />
+              {/* Heat dots along route */}
+              <g filter="url(#bx-route-glow)">
+                {ROADWORK_ACCEL.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r={2 + p.v * 5} fill={bxHeat(p.v)} fillOpacity={0.45 + p.v * 0.4} />
                 ))}
-              </tbody>
-            </table>
+              </g>
+              {ROADWORK_ACCEL.map((p, i) => (
+                <g key={`a-${i}`}>
+                  <circle cx={p.x} cy={p.y} r="0.8" fill="#fff" />
+                  {p.v > 0.85 && <text x={p.x} y={p.y - 3} textAnchor="middle" fontSize="2.5" fill="#fca5a5" fontWeight="700">SPRINT</text>}
+                </g>
+              ))}
+            </svg>
+            <p className="text-[11px] mt-2" style={{ color:'#94a3b8' }}>8.4 km loop · 12 sprint efforts · max 6.8 m/s</p>
+          </div>
+          {/* Weekly load comparison */}
+          <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Weekly load · AU</h4>
+            {WEEKLY_LOAD.map(w => {
+              const max = Math.max(...WEEKLY_LOAD.map(x => x.val))
+              const pct = (w.val / max) * 100
+              return (
+                <div key={w.lbl} className="mb-3">
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-white">{w.lbl}</span>
+                    <span style={{ color: bxHeat(w.c) }} className="font-bold tabular-nums">{w.val.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2.5 rounded-md overflow-hidden" style={{ background:'#1F2937' }}>
+                    <div className="h-full rounded-md" style={{ width:`${pct}%`, background: bxHeat(w.c), boxShadow: w.c > 0.7 ? `0 0 8px ${bxGlow(w.c)}` : 'none' }} />
+                  </div>
+                </div>
+              )
+            })}
+            <div className="text-[11px] mt-2 pt-3 border-t" style={{ color:'#94a3b8', borderColor:'#1F2937' }}>
+              ACWR: <span className="font-bold" style={{ color:'#22c55e' }}>1.18</span> · optimal load zone
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {activeTab === 'roadwork' && (
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
-          <h3 className="text-sm font-bold text-white mb-4">🏃 Roadwork GPS — Morning Run</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-            {[
-              { label:'Total Distance', value:'8.4 km', color:'#22c55e' },
-              { label:'Avg Pace', value:'4:52 /km', color:'#0ea5e9' },
-              { label:'Max Speed', value:'6.8 m/s', color:'#a855f7' },
-              { label:'Sprint Efforts', value:'12', color:'#ef4444' },
-              { label:'Elevation', value:'+142m', color:'#f59e0b' },
-              { label:'Duration', value:'40:52', color:'#94a3b8' },
-            ].map(s => (
-              <div key={s.label} className="rounded-xl p-3" style={{ background: '#1F2937' }}>
-                <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-[11px]" style={{ color: '#6B7280' }}>{s.label}</div>
+      {/* ─── 6. OPPONENT COMPARISON ──────────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: '#0d1117', border: '1px solid #1F2937' }}>
+        <SectionTitle k="Section 06" t="Opponent Comparison · Fight Prep"
+          sub={`${fighter.name} ring profile vs scouted ${fighter.next_fight.opponent} (${fighter.next_fight.opponent_record}).`} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {[
+            { who:fighter.name,                  zones: RING_ZONES, label:'Your average', accent:'#ef4444' },
+            { who:fighter.next_fight.opponent,   zones: OPP_ZONES,  label:'Opponent style', accent:'#1d4ed8' },
+          ].map(side => (
+            <div key={side.who} className="rounded-xl p-4" style={{ background:'#07090f', border:`1px solid ${side.accent}33` }}>
+              <div className="flex items-baseline gap-2 mb-2">
+                <h4 className="text-sm font-bold text-white">{side.who}</h4>
+                <span className="text-[10px]" style={{ color:'#475569' }}>{side.label}</span>
               </div>
-            ))}
-          </div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#94a3b8' }}>7-Day Distance Trend</h4>
-          <div className="flex gap-2 items-end" style={{ height: 80 }}>
-            {[6.2,8.1,7.4,9.0,6.8,8.4,0].map((d,i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full rounded-t" style={{ background: d === 0 ? '#1F2937' : '#ef4444', height: `${(d / 9.0) * 64}px`, opacity: d === 0 ? 0.3 : 1 }} />
-                <span className="text-[10px]" style={{ color: '#475569' }}>{['M','T','W','T','F','S','S'][i]}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-[11px] mt-3" style={{ color: '#475569' }}>ACWR: <span className="font-bold" style={{ color: '#22c55e' }}>1.18</span> — Optimal load zone. Camp load trending correctly for peak phase.</p>
+              <svg viewBox="0 0 320 320" className="w-full block">
+                <defs>
+                  <radialGradient id={`bx-cmp-bg-${side.accent}`} cx="50%" cy="50%" r="60%">
+                    <stop offset="0%" stopColor="#1f1a14" />
+                    <stop offset="100%" stopColor="#0a0805" />
+                  </radialGradient>
+                  <filter id={`bx-cmp-blur-${side.accent}`} x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="10" />
+                  </filter>
+                  {side.zones.map((row, ri) => row.map((v, ci) => (
+                    <radialGradient key={`g-${side.accent}-${ri}-${ci}`} id={`bx-cmp-${side.accent}-${ri}-${ci}`} cx="50%" cy="50%" r="60%">
+                      <stop offset="0%"  stopColor={bxHeat(v)} stopOpacity={0.7 + v * 0.3} />
+                      <stop offset="55%" stopColor={bxHeat(v)} stopOpacity={0.18 + v * 0.3} />
+                      <stop offset="100%" stopColor={bxHeat(v)} stopOpacity={0} />
+                    </radialGradient>
+                  )))}
+                </defs>
+                <rect x="20" y="20" width="280" height="280" rx="6" fill={`url(#bx-cmp-bg-${side.accent})`} />
+                <rect x="20" y="20" width="280" height="280" rx="6" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
+                {[20,140,300].map((y, i) => (
+                  <line key={`h-${i}`} x1="20" y1={y} x2="300" y2={y} stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+                ))}
+                {[20,140,300].map((x, i) => (
+                  <line key={`v-${i}`} x1={x} y1="20" x2={x} y2="300" stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+                ))}
+                {[[8,8],[298,8],[8,298],[298,298]].map(([x,y], i) => (
+                  <rect key={i} x={x} y={y} width="14" height="14" rx="2" fill={side.accent} opacity="0.7" />
+                ))}
+                <g filter={`url(#bx-cmp-blur-${side.accent})`}>
+                  {side.zones.map((row, ri) => row.map((v, ci) => (
+                    v > 0.05 && <circle key={`b-${ri}-${ci}`} cx={60 + ci * 110} cy={60 + ri * 110} r={42 + v * 28} fill={`url(#bx-cmp-${side.accent}-${ri}-${ci})`} />
+                  )))}
+                </g>
+                {side.zones.map((row, ri) => row.map((v, ci) => (
+                  <text key={`t-${ri}-${ci}`} x={60 + ci * 110} y={60 + ri * 110 + 3}
+                    textAnchor="middle" fontSize="10" fontWeight="700"
+                    fill={v > 0.5 ? '#fff' : 'rgba(255,255,255,0.4)'}>
+                    {Math.round(v * 100)}%
+                  </text>
+                )))}
+              </svg>
+            </div>
+          ))}
         </div>
-      )}
+
+        {/* Zone dominance comparison */}
+        <div className="rounded-xl p-4" style={{ background:'#0a0d13', border:'1px solid #1F2937' }}>
+          <h4 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color:'#94a3b8' }}>Zone dominance · {fighter.name.split(' ')[0]} vs {fighter.next_fight.opponent.split(' ')[0]}</h4>
+          {COMPARISON.map(c => {
+            const total = c.self + c.opp
+            const selfPct = total > 0 ? (c.self / total) * 100 : 50
+            const oppPct  = 100 - selfPct
+            const winner = c.self > c.opp ? 'self' : 'opp'
+            return (
+              <div key={c.zone} className="mb-3">
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span style={{ color: winner === 'self' ? '#ef4444' : '#94a3b8' }} className="font-bold">{c.self}%</span>
+                  <span className="text-white font-medium">{c.zone}</span>
+                  <span style={{ color: winner === 'opp'  ? '#1d4ed8' : '#94a3b8' }} className="font-bold">{c.opp}%</span>
+                </div>
+                <div className="flex h-2 rounded-md overflow-hidden" style={{ background:'#1F2937' }}>
+                  <div style={{ width:`${selfPct}%`, background:'#ef4444' }} />
+                  <div style={{ width:`${oppPct}%`,  background:'#1d4ed8' }} />
+                </div>
+              </div>
+            )
+          })}
+          <div className="text-[11px] mt-3 pt-3 border-t" style={{ color:'#94a3b8', borderColor:'#1F2937' }}>
+            <span className="font-bold" style={{ color:'#fff' }}>Tactical read:</span> Stoyan&apos;s pressure-on-front-ropes profile means R3, R6 and R11 are the rope-time risk windows. Drill ring escapes off the front ropes and reset to centre by mid-round.
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -8417,7 +10190,7 @@ function BoxingMobileAppView({ fighter, session }: { fighter: BoxingFighter; ses
 function BoxingIntegrationsHub({ fighter, session }: { fighter: BoxingFighter; session: SportsDemoSession }) {
   const entries: HubEntry[] = [
     { id: 'boxrec',      icon: '📊', label: 'BoxRec Database',      category: 'Data Feeds',       kind: 'generic', config: BOXING_INTEGRATIONS.boxrec },
-    { id: 'compubox',    icon: '🥊', label: 'CompuBox Stats',       category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.compubox },
+    { id: 'lumiopunchanalytics', icon: '🥊', label: 'Lumio Punch Analytics', category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.lumiopunchanalytics },
     { id: 'striketec',   icon: '📡', label: 'Punch Sensors',        category: 'Hardware Sensors', kind: 'generic', config: BOXING_INTEGRATIONS.striketec },
     { id: 'whoop',       icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS.whoop },
     { id: 'gps-vest',    icon: '🛰️', label: 'Lumio GPS Vest',       category: 'Wearables',        kind: 'generic', config: BOXING_INTEGRATIONS['gps-vest'] },
@@ -8611,6 +10384,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
       case 'broadcasttracker': return gate('📺', 'No broadcast data', 'Connect your data to unlock this', <BroadcastTrackerView fighter={fighter} session={session} />);
       case 'news':            return gate('📰', 'No news feed', 'Connect your data to unlock this', <IndustryNewsView fighter={fighter} session={session} />);
       case 'gps':             return gate('🛰️', 'No GPS data', 'Connect your Lumio GPS to unlock this', <BoxingGpsView fighter={fighter} session={session} />);
+      case 'gps-heatmaps':    return gate('🔥', 'No heatmap data', 'Connect your Lumio GPS to unlock this', <BoxingGpsHeatmapsView fighter={fighter} session={session} />);
       case 'findpro':         return gate('🎯', 'No directory data', 'Connect your location to unlock this', <FindProView fighter={fighter} session={session} />);
       case 'travel':          return gate('✈️', 'No travel booked', 'Connect your data to unlock this', <BoxingTravelView fighter={fighter} session={session} />);
       case 'integrations':    return <BoxingIntegrationsHub fighter={fighter} session={session} />;
@@ -8663,7 +10437,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
                 { name: 'IBF Rankings', desc: 'International Boxing Federation ratings' },
                 { name: 'Lumio GPS', desc: 'Movement & load tracking' },
                 { name: 'Lumio Vision', desc: 'Sparring video capture & analysis' },
-                { name: 'Compubox', desc: 'Live punch stats', connected: !isFoundingMember },
+                { name: 'Lumio Punch Analytics', desc: 'Live punch stats', connected: !isFoundingMember },
               ],
             },
             {
@@ -8759,7 +10533,7 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
       <PwaInstaller sport="boxing" />
       {toast && !toastDismissed && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#0d0f1a] border border-yellow-500/40 rounded-xl p-4 shadow-2xl" style={{animation:'slideUp 0.26s ease'}}>
@@ -8772,134 +10546,83 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
           </div>
         </div>
       )}
-      {/* Sidebar */}
-      <aside
-        className="hidden md:flex flex-col overflow-hidden"
-        style={{
-          width: sidebarExpanded ? 220 : 72,
-          backgroundColor: '#0a0c14',
-          borderRight: '1px solid #1F2937',
-          transition: 'width 250ms ease',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          height: '100vh',
-          zIndex: 40,
-        }}
-        onMouseEnter={handleSidebarEnter}
-        onMouseLeave={handleSidebarLeave}>
-
-        {/* Sidebar Header */}
-        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
-          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {liveBrandLogo
-              ? <img src={liveBrandLogo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
-              : session.logoDataUrl
-                ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                : !isFoundingMember
-                  ? <img src="/cole_boxing_camp_crest.svg" alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" style={{ background: '#ffffff08', padding: 2 }} />
-                  : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                      style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                      🥊
-                    </div>
-            }
-            {sidebarExpanded && (
-              liveBrandName
-                ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>{liveBrandName}</span>
-                : !isFoundingMember
-                  ? <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#F9FAFB' }}>COLE BOXING CAMP</span>
-                  : <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ background: 'linear-gradient(90deg, #EF4444, #F97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                      Lumio Fight
-                    </span>
-            )}
-          </div>
-          {sidebarExpanded && (
-            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#dc2626' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
-            </button>
-          )}
-        </div>
-
-        {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
-          {groups.map(group => {
-            const items = visibleSidebarItems
-              .filter(i => i.group === group)
-              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
-            if (items.length === 0) return null;
-            return (
-              <div key={group} className="mb-3">
+      {/* V2 Sidebar — Lucide icons + section headers + boxing red accent.
+          Role + customise filter (kept from v1) is applied to BOXING_NAV_GROUPS
+          here so the v2 visuals don't change which destinations are shown. */}
+      {(() => {
+        const allowed = roleConfig.sidebar === 'all' ? null : (roleConfig.sidebar as string[])
+        const filteredGroups = BOXING_NAV_GROUPS
+          .map(g => ({ g: g.g, items: g.items.filter(it => (!allowed || allowed.includes(it.id)) && !isHidden(it.id)) }))
+          .filter(g => g.items.length > 0)
+        const v2T_outer      = THEMES.dark
+        const v2Accent_outer = BOXING_ACCENT
+        return (
+          <BoxingSidebar
+            T={v2T_outer}
+            accent={v2Accent_outer}
+            active={activeSection}
+            onNav={(id) => { setActiveSection(id); if (!sidebarPinned) setSidebarHovered(false) }}
+            expanded={sidebarExpanded}
+            pinned={sidebarPinned}
+            onMouseEnter={handleSidebarEnter}
+            onMouseLeave={handleSidebarLeave}
+            onTogglePin={togglePin}
+            groups={filteredGroups}
+            logoUrl={liveBrandLogo || session.logoDataUrl || (!isFoundingMember ? '/cole_boxing_camp_crest.svg' : null)}
+            brandLabel={liveBrandName || (!isFoundingMember ? 'Cole Boxing Camp' : 'Lumio Fight')}
+            footer={
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <RoleSwitcher
+                  session={liveSession}
+                  roles={BOXING_ROLES}
+                  accentColor={v2Accent_outer.hex}
+                  onRoleChange={(role) => {
+                    setRoleOverride(role)
+                    const newConfig = BOXING_ROLE_CONFIG[role as keyof typeof BOXING_ROLE_CONFIG]
+                    if (newConfig) {
+                      const firstAllowed = newConfig.sidebar === 'all'
+                        ? SIDEBAR_ITEMS[0]?.id
+                        : newConfig.sidebar[0]
+                      if (firstAllowed) setActiveSection(firstAllowed)
+                    }
+                    const key = 'lumio_boxing_demo_session'
+                    const stored = localStorage.getItem(key)
+                    if (stored) {
+                      const parsed = JSON.parse(stored)
+                      localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+                    }
+                  }}
+                  sidebarCollapsed={!sidebarExpanded}
+                />
+                <button onClick={() => {
+                  if (onSignOut) { onSignOut(); return }
+                  clearDemoSession('boxing')
+                  window.location.href = '/boxing/demo'
+                }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10"
+                  style={{ borderTop: `1px solid ${v2T_outer.border}`, color: v2T_outer.text3, justifyContent: sidebarExpanded ? 'flex-start' : 'center' }}
+                  title="Sign out">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  {sidebarExpanded && <span>Sign out</span>}
+                </button>
                 {sidebarExpanded && (
-                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
+                  <div style={{ padding: 12, borderTop: `1px solid ${v2T_outer.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/boxing_logo.png" alt="Lumio Boxing" style={{ maxHeight: 32, objectFit: 'contain' }} />
+                  </div>
                 )}
-                {items.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
-                    style={{
-                      backgroundColor: activeSection === item.id ? 'rgba(220,38,38,0.12)' : 'transparent',
-                      color: activeSection === item.id ? '#FCA5A5' : '#6B7280',
-                      borderLeft: activeSection === item.id ? '2px solid #dc2626' : '2px solid transparent',
-                      paddingLeft: sidebarExpanded ? 10 : 0,
-                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
-                    }}
-                    title={sidebarExpanded ? undefined : item.label}
-                  >
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
-                    {item.id === 'fightcamp' && sidebarExpanded && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white ml-auto" style={{ backgroundColor: '#F59E0B' }}>NEW</span>}
-                  </button>
-                ))}
               </div>
-            );
-          })}
-        </nav>
-
-        {/* Role Switcher */}
-        <RoleSwitcher
-          session={liveSession}
-          roles={BOXING_ROLES}
-          accentColor="#dc2626"
-          onRoleChange={(role) => {
-            setRoleOverride(role)
-            // Reset activeSection to the new role's first allowed tab so we
-            // never render fighter content under a sponsor view (or vice versa).
-            const newConfig = BOXING_ROLE_CONFIG[role as keyof typeof BOXING_ROLE_CONFIG]
-            if (newConfig) {
-              const firstAllowed = newConfig.sidebar === 'all'
-                ? SIDEBAR_ITEMS[0]?.id
-                : newConfig.sidebar[0]
-              if (firstAllowed) setActiveSection(firstAllowed)
             }
-            const key = 'lumio_boxing_demo_session'
-            const stored = localStorage.getItem(key)
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
-            }
-          }}
-          sidebarCollapsed={!sidebarExpanded}
-        />
-
-        {/* Sidebar Footer */}
-        <button onClick={() => {
-          if (onSignOut) { onSignOut(); return }
-          clearDemoSession('boxing')
-          window.location.href = '/boxing/demo'
-        }} className="flex items-center gap-2 w-full px-4 py-2.5 text-xs transition-all hover:bg-red-600/10" style={{ borderTop: '1px solid #1F2937', color: '#6B7280', justifyContent: sidebarExpanded ? 'flex-start' : 'center' }} title="Sign out">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          {sidebarExpanded && <span>Sign out</span>}
-        </button>
-        {sidebarExpanded && (
-          <div className="p-3 border-t border-gray-800 flex items-center justify-center">
-            <img src="/boxing_logo.png" alt="Lumio Boxing" style={{ maxHeight: 32, objectFit: 'contain' }} />
-          </div>
-        )}
-      </aside>
+          />
+        )
+      })()}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner — hidden when rendered inside /boxing/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"

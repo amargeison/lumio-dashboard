@@ -270,13 +270,6 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
               </>
             ) : (
               <>
-                <Link href="/sports-signup"
-                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
-                  style={{ backgroundColor: '#8B5CF6', color: '#F9FAFB' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#8B5CF6' }}>
-                  Apply for founding access
-                </Link>
                 <Link href="/sports/try-demo"
                   className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
                   style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
@@ -368,10 +361,6 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                 </>
               ) : (
                 <>
-                  <Link href="/sports-signup"
-                    className="text-sm font-semibold py-2 text-center rounded-lg"
-                    style={{ backgroundColor: '#8B5CF6', color: '#F9FAFB' }}
-                    onClick={() => setMobileOpen(false)}>Apply for founding access</Link>
                   <Link href="/sports/try-demo"
                     className="text-sm font-semibold py-2 text-center rounded-lg"
                     style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}

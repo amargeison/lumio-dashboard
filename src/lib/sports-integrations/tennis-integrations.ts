@@ -111,21 +111,21 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'Included with Lumio Tour Pro and Pro+ at launch. No third-party subscription required.',
   },
 
-  hawkeye: {
+  lumioballtracking: {
     icon: '👁️',
-    title: 'Hawk-Eye',
+    title: 'Lumio Ball Tracking',
     subtitle: 'Ball-tracking data from Grand Slams and Masters 1000 venues.',
-    partnerBadge: 'Hawk-Eye Innovations · per-tournament rights · enterprise tier',
-    connectLabel: 'Connect Hawk-Eye',
-    summaryText: 'Ball-tracking, serve speed, spin, and placement data from venues where Hawk-Eye is installed. The gold standard for competitive-match analytics — feeds the rally deconstruction view.',
+    partnerBadge: 'Per-tournament rights · enterprise tier · venue-installed cameras',
+    connectLabel: 'Connect Lumio Ball Tracking',
+    summaryText: 'Ball-tracking, serve speed, spin, and placement data from venues with installed multi-camera ball-tracking. The gold standard for competitive-match analytics — feeds the rally deconstruction view.',
     connectedStats: [
       { label: 'Matches Indexed', value: '62' },
       { label: 'Tournaments', value: '14' },
       { label: 'Rallies', value: '8,400+' },
       { label: 'Access', value: 'Player tier' },
     ],
-    whyHeading: 'Why Hawk-Eye is a tier-one integration for competitive analysis',
-    whyBody: 'Hawk-Eye is the only system producing millimetre-accurate ball-tracking in the pro game — which means every serve bounce location, every baseline depth, and every cross-court spin rate comes from it. Piping Hawk-Eye into Lumio closes the loop between live broadcast stats and the player\'s own post-match review. If your Sunday second-serve placement was 40cm shorter than your tournament average, Hawk-Eye is the only source that can tell you with that precision.',
+    whyHeading: 'Why ball-tracking is a tier-one integration for competitive analysis',
+    whyBody: 'Multi-camera ball-tracking systems are the only source producing millimetre-accurate placement data in the pro game — which means every serve bounce location, every baseline depth, and every cross-court spin rate comes from it. Piping that data into Lumio closes the loop between live broadcast stats and the player\'s own post-match review. If your Sunday second-serve placement was 40cm shorter than your tournament average, ball-tracking is the only source that can tell you with that precision.',
     endpointsTitle: 'Data Flows Used by Lumio Tennis',
     endpoints: [
       { endpoint: 'Serve Placement Heatmap', desc: 'Exact bounce coordinates for every serve — singles + doubles.', status: 'Live' },
@@ -137,7 +137,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Point-Level Replays', desc: '3D replay data for any point — Planned integration for scout prep.', status: 'Planned' },
     ],
     coverage: {
-      title: 'Venue Coverage — Hawk-Eye',
+      title: 'Venue Coverage — Ball Tracking',
       columns: ['Tier', 'Installed', 'Depth', 'Heatmaps', 'Historical'],
       rows: [
         ['Grand Slams', '✓ All 4', '✓ Full', '✓', '✓ 2015+'],
@@ -148,7 +148,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
         ['Challenger / ITF', 'N/A', 'N/A', 'N/A', 'N/A'],
       ],
     },
-    pricing: 'Hawk-Eye match data is licensed per-tournament — access is typically negotiated through the player\'s federation or management company as part of the rights package. Lumio absorbs the aggregation / hosting cost; the player sees their own historical Hawk-Eye data in one place.',
+    pricing: 'Ball-tracking match data is licensed per-tournament — access is typically negotiated through the player\'s federation or management company as part of the rights package. Lumio absorbs the aggregation / hosting cost; the player sees their own historical ball-tracking data in one place.',
   },
 
   playsight: {
@@ -178,20 +178,20 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'PlaySight SmartCourt installations are paid-for by the academy or club (typically $15k+ install + annual fee). For players, access is free through the academy account — OAuth connection brings the historical session archive into Lumio.',
   },
 
-  catapult: {
+  johansports: {
     icon: '🛰️',
-    title: 'Lumio GPS GPS',
+    title: 'Johan Sports',
     subtitle: 'Court-coverage, movement load, and distance per match.',
-    partnerBadge: 'Lumio GPS One / Vector · GPS vest · used by ATP + WTA physios',
-    connectLabel: 'Connect Lumio GPS',
+    partnerBadge: 'OAuth · 10Hz GPS + IMU · CSV import for any other vendor',
+    connectLabel: 'Connect Johan Sports',
     summaryText: 'GPS vest data from practice and match sessions. Tracks total distance, high-speed running, court coverage, and accumulated movement load week-over-week.',
     connectedStats: [
       { label: 'Last Session', value: 'Today 09:40' },
       { label: 'Distance (match)', value: '4.2 km' },
       { label: 'Load 7-day', value: '1,640 AU' },
-      { label: 'Device', value: 'Lumio GPS Vector' },
+      { label: 'Device', value: 'Johan Sports' },
     ],
-    whyHeading: 'Why Lumio GPS GPS is a performance-critical integration',
+    whyHeading: 'Why GPS load tracking is performance-critical',
     whyBody: 'Best-of-five Grand Slam tennis is one of the highest-load match formats in pro sport. Accumulated load across a 14-day Slam — plus practice before each match — is a proven predictor of late-tournament injury. Feeding the GPS-vest data into Lumio means the physio sees the cumulative strain metric every morning and can throttle practice before the load enters red-flag territory.',
     endpointsTitle: 'Data Flows Used by Lumio Tennis',
     endpoints: [
@@ -203,7 +203,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Heat / Environmental', desc: 'Ambient temp, humidity, estimated core temp during match.', status: 'Beta' },
       { endpoint: 'Gym Load Sync', desc: 'Indoor strength sessions tagged separately from on-court work.', status: 'Planned' },
     ],
-    pricing: 'Lumio GPS One consumer-tier subscriptions start at approximately £20/month. Lumio GPS Vector (pro tier) is approximately £800–£1,400/year per unit. Lumio is hardware-agnostic — Lumio GPS Pro and PlayerTek use the same data contract via the parallel integration.',
+    pricing: 'Johan Sports licences are quoted per unit on a per-team basis — speak to the Johan Sports sales team for current pricing. Lumio is hardware-agnostic — drop a CSV from any other vendor and the same dashboards backfill.',
   },
 
   whoop: {

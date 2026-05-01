@@ -33,6 +33,9 @@ import { useParams } from 'next/navigation'
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { GolfDashboardView, GolfHeroBlock, GolfGridBlock, GOLF_THEME, GOLF_ACCENT } from './_components/GolfDashboardModules'
+import { GolfSidebarNav } from './_components/GolfShell'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { createBrowserClient } from '@supabase/ssr'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { generateSmartBriefing, buildRoundupSummary, buildScheduleItems, getUserTimezone } from '@/lib/sports/smartBriefing'
@@ -1155,114 +1158,80 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
 
   return (
     <div className="space-y-6">
-      {/* ── PERSONAL BANNER — matching tennis pattern exactly ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #052e16 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(21,128,61,0.2)' }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white">Good morning, {firstName} ⛳</h1>
-              <button onClick={speakBriefing} title={isSpeaking ? 'Stop reading' : 'Text-to-Speech — Lumio Golf will read your morning headlines, round schedule and urgent items aloud. Upgrade for 20 human-sounding voices.'} className="flex items-center justify-center rounded-lg transition-all"
-                style={{ width: 32, height: 32, flexShrink: 0, backgroundColor: isSpeaking ? 'rgba(21,128,61,0.25)' : 'rgba(255,255,255,0.08)', border: isSpeaking ? '1px solid rgba(21,128,61,0.5)' : '1px solid rgba(255,255,255,0.12)', color: isSpeaking ? '#4ade80' : '#9CA3AF' }}>
-                <Volume2 size={15} strokeWidth={1.75} />
-              </button>
-            </div>
-            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs italic" style={{ color: '#facc15' }}>
-              &ldquo;{getDailyQuote(GOLF_QUOTES).text}&rdquo; &mdash; {getDailyQuote(GOLF_QUOTES).author}
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {[
-              { icon:'📊', value: isDemoShellDash ? `#${player.owgr}` : '—', label:'OWGR', color:'#15803D' },
-              { icon:'🏆', value: isDemoShellDash ? `#${player.race_to_dubai_pos}` : '—', label:'Race', color:'#0D9488' },
-              { icon:'💰', value: isDemoShellDash ? '£367k' : '—', label:'Earnings', color:'#F59E0B' },
-              { icon:'🎯', value: isDemoShellDash ? '70.2' : '—', label:'Scoring', color:'#8B5CF6' },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px] cursor-pointer transition-all hover:scale-105"
-                style={{ backgroundColor: `${s.color}20`, borderColor: `${s.color}4d` }}>
-                <span className="text-base">{s.icon}</span>
-                <span className="text-lg font-black text-white">{s.value}</span>
-                <span className="text-xs opacity-70">{s.label}</span>
-              </div>
-            ))}
-            <div className="flex flex-col items-center px-3 py-2 rounded-xl border min-w-[70px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
-              <span className="text-base">🌤️</span>
-              <span className="text-lg font-black text-white">22°C</span>
-              <span className="text-xs opacity-70">Munich</span>
-            </div>
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {[{ city:'London', tz:'Europe/London', isUser:true },{ city:'New York', tz:'America/New_York', isUser:false },{ city:'Ashbourne', tz:'America/New_York', isUser:false },{ city:'Dubai', tz:'Asia/Dubai', isUser:false }].map(({ city, tz, isUser }) => (
-                  <div key={city} className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold tabular-nums" style={{ color: isUser ? '#facc15' : '#e2e8f0' }}>{new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit' })}</span>
-                    <span className="text-[10px]" style={{ color: isUser ? '#facc15' : '#6B7280' }}>{city}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Hero — match-day context, persistent across all tabs (matches cricket v2) */}
+      <GolfHeroBlock onAskLumio={() => onOpenModal('caddiebriefai')} onCourseStrategy={() => onOpenModal('coursestrategy')} />
 
-      {/* Tab Bar */}
-      <div className="flex items-center gap-0 border-b border-gray-800/50" style={{ overflowX: 'hidden' }}>
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#15803D' : 'transparent', color: dashTab === 'gettingstarted' ? '#4ade80' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#15803D0d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#15803D' }}>10</span>
-        </button>
+      {/* Tab Bar — matches cricket v2 styling exactly */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${GOLF_THEME.border}`, overflowX: 'auto' }}>
         {([
-          { id: 'today' as const, label: 'Today', icon: '🏠' },
-          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
-          { id: 'tasks' as const, label: 'Daily Tasks', icon: '✅' },
-          { id: 'insights' as const, label: 'Insights', icon: '📊' },
-          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
-          { id: 'team' as const, label: 'Team', icon: '👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all -mb-px"
-            style={{ borderBottomColor: dashTab === t.id ? '#15803D' : 'transparent', color: dashTab === t.id ? '#4ade80' : '#6B7280', backgroundColor: dashTab === t.id ? '#15803D0d' : 'transparent' }}>
-            <span className="text-base">{t.icon}</span>{t.label}
-          </button>
-        ))}
+          { id: 'gettingstarted' as const, label: 'Getting Started', icon: 'sparkles' },
+          { id: 'today' as const,          label: 'Today',           icon: 'home' },
+          { id: 'quickwins' as const,      label: 'Quick Wins',      icon: 'lightning' },
+          { id: 'tasks' as const,          label: 'Daily Tasks',     icon: 'check' },
+          { id: 'insights' as const,       label: 'Insights',        icon: 'bars' },
+          { id: 'dontmiss' as const,       label: "Don't Miss",      icon: 'flag' },
+          { id: 'team' as const,           label: 'Team',            icon: 'people' },
+        ]).map(t => {
+          const active = dashTab === t.id
+          return (
+            <button key={t.id} onClick={() => setDashTab(t.id)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.color = GOLF_THEME.text2 }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.color = GOLF_THEME.text3 }}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px',
+                fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : GOLF_THEME.text3,
+                borderBottom: `2px solid ${active ? GOLF_ACCENT.hex : 'transparent'}`,
+                marginBottom: -1,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                transition: 'color .12s, border-color .12s',
+              }}>
+              <V2Icon name={t.icon} size={12} stroke={1.6} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Quick Actions — below tab bar (Today only) */}
-      {dashTab === 'today' && <div className="mb-5 mt-4">
+      {/* Quick Actions — desaturated rectangular (matches rugby v2), persistent across tabs */}
+      <div className="mb-5 mt-4">
         <div className="text-xs font-bold uppercase tracking-wider mb-2.5 px-1" style={{ color: '#4B5563' }}>Quick actions</div>
         <div className="flex flex-wrap gap-2">
           {[
-            { id:'sendmessage', label:'Send Message', icon:'📨', color:'#15803D', hot:false },
-            { id:'flight', label:'Smart Flights', icon:'✈️', color:'#0ea5e9', hot:true },
-            { id:'hotel', label:'Find Hotel', icon:'🏨', color:'#0ea5e9', hot:true },
-            { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', color:'#15803D', hot:true },
-            { id:'loground', label:'Log Round', icon:'📋', color:'#15803D', hot:false },
-            { id:'trackman', label:'Lumio Range Session', icon:'📡', color:'#0ea5e9', hot:true },
-            { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', color:'#F59E0B', hot:true },
-            { id:'sponsorpost', label:'Sponsor Post', icon:'📱', color:'#F59E0B', hot:true },
-            { id:'ranking', label:'Ranking Sim', icon:'📊', color:'#0ea5e9', hot:true },
-            { id:'injury', label:'Log Injury', icon:'💊', color:'#EF4444', hot:false },
-            { id:'expense', label:'Add Expense', icon:'💰', color:'#6B7280', hot:false },
-            { id:'mentalprep', label:'Mental Prep', icon:'🧠', color:'#8B5CF6', hot:true },
-            { id:'socialmedia', label:'Social Media AI', icon:'📲', color:'#8B5CF6', hot:true },
-            { id:'visa', label:'Visa Check', icon:'🌍', color:'#6B7280', hot:true },
+            { id:'sendmessage', label:'Send Message', icon:'📨', hot:false },
+            { id:'flight', label:'Smart Flights', icon:'✈️', hot:true },
+            { id:'hotel', label:'Find Hotel', icon:'🏨', hot:true },
+            { id:'coursestrategy', label:'Course Notes AI', icon:'🗺️', hot:true },
+            { id:'loground', label:'Log Round', icon:'📋', hot:false },
+            { id:'lumiorange', label:'Lumio Range Session', icon:'📡', hot:true },
+            { id:'caddiebriefai', label:'Caddie Brief', icon:'🏌️', hot:true },
+            { id:'sponsorpost', label:'Sponsor Post', icon:'📱', hot:true },
+            { id:'ranking', label:'Ranking Sim', icon:'📊', hot:true },
+            { id:'injury', label:'Log Injury', icon:'💊', hot:false },
+            { id:'expense', label:'Add Expense', icon:'💰', hot:false },
+            { id:'mentalprep', label:'Mental Prep', icon:'🧠', hot:true },
+            { id:'socialmedia', label:'Social Media AI', icon:'📲', hot:true },
+            { id:'visa', label:'Visa Check', icon:'🌍', hot:true },
           ].map(a => (
             <button key={a.id} onClick={() => onOpenModal(a.id)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0 relative"
-              style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--brand-secondary)' }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#15803D'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+                position: 'relative', whiteSpace: 'nowrap',
+              }}>
               <span>{a.icon}</span>{a.label}
-              {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-full font-black leading-none" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)' }}>AI</span>}
+              {a.hot && <span style={{ position: 'absolute', top: -6, right: -6, fontSize: 8, fontWeight: 800, padding: '2px 5px', borderRadius: 999, background: '#1F2937', color: '#9CA3AF', border: '1px solid #374151', lineHeight: 1 }}>AI</span>}
             </button>
           ))}
         </div>
-      </div>}
+      </div>
 
       {/* Getting Started */}
       {dashTab === 'gettingstarted' && (() => {
@@ -1333,8 +1302,18 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
         )
       })()}
 
-      {/* Tab Content */}
+      {/* Tab Content — Today renders v2 modular grid (hero is hoisted above tab bar) */}
       {dashTab === 'today' && (
+        <GolfGridBlock
+          onAskLumio={() => onOpenModal('caddiebriefai')}
+          photoDataUrl={session.photoDataUrl ?? null}
+        />
+      )}
+
+      {/* Legacy v1 today grid — retained as dead code under `false &&` so the
+          state setters defined above (expandedChannel, roundupOrder, etc.)
+          stay referenced and the v1 layout is recoverable if needed. */}
+      {false && dashTab === 'today' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Col 1: Morning Roundup — expandable channels */}
           {session.isDemoShell === false
@@ -1525,9 +1504,9 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
               </div>
               <div className="rounded-xl overflow-hidden h-48 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(21,128,61,0.15) 0%, rgba(13,148,136,0.15) 100%)' }}>
                 {dashPhotoSrc
-                  ? <img src={dashPhotoSrc} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                  ? <img src={dashPhotoSrc as string} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                   : session.photoDataUrl
-                    ? <img src={session.photoDataUrl} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
+                    ? <img src={session.photoDataUrl as string} alt="" className={`w-full h-full object-${dashPhotoFit}`} />
                     : <div className="text-center"><div className="text-4xl mb-2">⛳</div><div className="text-xs text-gray-600">Add a photo — family, holidays, inspiration</div></div>}
               </div>
               <div className="mt-3">
@@ -1640,7 +1619,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
           { id:'dt1', time:'07:00', title:'Range session — driving focus, 90 min', priority:'high', category:'Training', action:'Log session', modal:'loground' },
           { id:'dt2', time:'09:24', title:'Tee time R2 — with Hartwell, Donovan', priority:'critical', category:'Match', action:'Open caddie brief', modal:'caddiebriefai' },
           { id:'dt3', time:'13:00', title:'Physio — lower back treatment', priority:'high', category:'Medical', action:'Log medical', modal:'injury' },
-          { id:'dt4', time:'15:00', title:'Lumio Range session analysis — review numbers', priority:'medium', category:'Performance', action:'Open Lumio Range', modal:'trackman' },
+          { id:'dt4', time:'15:00', title:'Lumio Range session analysis — review numbers', priority:'medium', category:'Performance', action:'Open Lumio Range', modal:'lumiorange' },
           { id:'dt5', time:'17:00', title:'Scottish Open entry deadline — closes today', priority:'critical', category:'Entries', action:'Enter now', modal:'' },
           { id:'dt6', time:'18:00', title:'Vanta Sports sponsor post — due before 18:00', priority:'high', category:'Sponsor', action:'Generate post', modal:'sponsorpost' },
           { id:'dt7', time:'EOD', title:'Submit Munich expenses', priority:'medium', category:'Finance', action:'Log expense', modal:'expense' },
@@ -4441,7 +4420,7 @@ function GolfFindProView({ player, session }: { player: GolfPlayer; session: Spo
                 </div>
                 <p className="text-[11px] text-gray-400 mb-2">{r.description}</p>
                 <div className="space-y-1 text-[11px] text-gray-400 mb-3">
-                  <div><span className="text-gray-500">Trackman bays:</span> {r.trackmanBays}</div>
+                  <div><span className="text-gray-500">Range bays:</span> {r.rangeBays}</div>
                   <div><span className="text-gray-500">Hourly rate:</span> {r.hourlyRate}</div>
                   <div><span className="text-gray-500">Access:</span> {r.access}</div>
                   <div className="text-gray-500">Facilities: <span className="text-gray-300">{r.facilities.join(' · ')}</span></div>
@@ -4779,26 +4758,24 @@ function GolfTravelView({ player, session }: { player: GolfPlayer; session: Spor
   )
 }
 
-// Generic placeholder for remaining views
-
 // ─── Q-SCHOOL & QUALIFYING VIEW ───────────────────────────────────────────────
 function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const QSCHOOL_FINAL_START = '11 Nov 2026';
   const daysToFinal = 206;
   const mondayQualifiers = [
-    { date: '21 Apr', event: 'Spanish Open MQ',  course: 'Valderrama',       entries: 112, spots: 4, status: 'Entered',      statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
-    { date: '12 May', event: 'Dutch Open MQ',     course: 'Bernardus',        entries: 98,  spots: 4, status: 'Eligible',     statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
-    { date: '2 Jun',  event: 'Italian Open MQ',   course: 'Marco Simone',     entries: 128, spots: 4, status: 'Entered',      statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
-    { date: '30 Jun', event: 'BMW Int. Open MQ',  course: 'Golfclub München', entries: 108, spots: 4, status: 'Waitlist',     statusColour: 'bg-amber-600/20 text-amber-300 border-amber-600/40' },
-    { date: '4 Aug',  event: 'Danish Open MQ',    course: 'Great Northern',   entries: 94,  spots: 4, status: 'Eligible',     statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
-    { date: '1 Sep',  event: 'Irish Open MQ',     course: 'Mount Juliet',     entries: 118, spots: 4, status: 'Too far down', statusColour: 'bg-gray-700 text-gray-400 border-gray-700' },
+    { date: '21 Apr', event: 'Spanish Open MQ',  course: 'Valderrama',       entries: 112, spots: 4, status: 'Entered',        statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
+    { date: '12 May', event: 'Dutch Open MQ',     course: 'Bernardus',        entries: 98,  spots: 4, status: 'Eligible',       statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
+    { date: '2 Jun',  event: 'Italian Open MQ',   course: 'Marco Simone',     entries: 128, spots: 4, status: 'Entered',        statusColour: 'bg-green-600/20 text-green-300 border-green-600/40' },
+    { date: '30 Jun', event: 'BMW Int. Open MQ',  course: 'Golfclub München', entries: 108, spots: 4, status: 'Waitlist',       statusColour: 'bg-amber-600/20 text-amber-300 border-amber-600/40' },
+    { date: '4 Aug',  event: 'Danish Open MQ',    course: 'Great Northern',   entries: 94,  spots: 4, status: 'Eligible',       statusColour: 'bg-blue-600/20 text-blue-300 border-blue-600/40' },
+    { date: '1 Sep',  event: 'Irish Open MQ',     course: 'Mount Juliet',     entries: 118, spots: 4, status: 'Too far down',   statusColour: 'bg-gray-700 text-gray-400 border-gray-700' },
   ];
   const sectionalEntries = [
-    { event: 'The Open Regional Qualifier', date: '23 Jun',            location: 'West Lancashire GC',     deadline: '5 May',  status: 'Entered (via OWGR exemption)' },
-    { event: 'US Open International Q',     date: '11 May',            location: 'Walton Heath',            deadline: '22 Apr', status: 'Not entered — outside OWGR window' },
-    { event: 'European Q-School Stage 2',   date: '8 Oct',             location: 'El Saler, Spain',         deadline: '1 Sep',  status: 'Conditional — only if DP World card lost' },
-    { event: 'Korn Ferry Q-School Stage 1', date: '3 Sep',             location: "TPC Sawgrass Dye's",      deadline: '15 Aug', status: 'Backup route — under review' },
-    { event: 'European Q-School Final',     date: QSCHOOL_FINAL_START,  location: 'Lumine Golf Club, Spain', deadline: '20 Oct', status: 'Only required if cards lost' },
+    { event: 'The Open Regional Qualifier', date: '23 Jun',              location: 'West Lancashire GC',  deadline: '5 May',  status: 'Entered (via OWGR exemption)' },
+    { event: 'US Open International Q',     date: '11 May',              location: 'Walton Heath',         deadline: '22 Apr', status: 'Not entered — outside OWGR window' },
+    { event: 'European Q-School Stage 2',   date: '8 Oct',               location: 'El Saler, Spain',      deadline: '1 Sep',  status: 'Conditional — only if DP World card lost' },
+    { event: 'Korn Ferry Q-School Stage 1', date: '3 Sep',               location: "TPC Sawgrass Dye's",   deadline: '15 Aug', status: 'Backup route — under review' },
+    { event: 'European Q-School Final',     date: QSCHOOL_FINAL_START,    location: 'Lumine Golf Club, Spain', deadline: '20 Oct', status: 'Only required if cards lost' },
   ];
   const history = [
     { year: 2022, stage: 'Final Stage', result: 'Tied 18th — earned DP World Tour card' },
@@ -4861,7 +4838,13 @@ function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: Spo
       <div className="bg-[#0d0f1a] border border-gray-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-800"><div className="text-sm font-bold text-white">Sectional Qualifying Entries</div></div>
         <table className="w-full text-sm">
-          <thead><tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Event</th><th className="text-left p-3">Date</th><th className="text-left p-3">Location</th><th className="text-left p-3">Entry Deadline</th><th className="text-left p-3">Status</th></tr></thead>
+          <thead><tr className="text-gray-500 text-[10px] uppercase tracking-wider border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Event</th>
+            <th className="text-left p-3">Date</th>
+            <th className="text-left p-3">Location</th>
+            <th className="text-left p-3">Entry Deadline</th>
+            <th className="text-left p-3">Status</th>
+          </tr></thead>
           <tbody>
             {sectionalEntries.map((s, i) => (
               <tr key={i} className="border-b border-gray-800/50">
@@ -4898,7 +4881,10 @@ function GolfQSchoolView({ player, session }: { player: GolfPlayer; session: Spo
           ].map((d, i) => (
             <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/60 last:border-0">
               <span className="text-white font-medium">{d.label}</span>
-              <div className="flex items-center gap-3"><span className="text-gray-400">{d.date}</span><span className="text-[10px] text-green-400 font-semibold">{d.countdown}</span></div>
+              <div className="flex items-center gap-3">
+                <span className="text-gray-400">{d.date}</span>
+                <span className="text-[10px] text-green-400 font-semibold">{d.countdown}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -5229,7 +5215,7 @@ function GolfShotTrackingLegacyView({ player, session }: { player: GolfPlayer; s
   );
 }
 
-// ─── DATAGOLF INTEGRATION VIEW ────────────────────────────────────────────────
+// ─── LUMIO DATA INTEGRATION VIEW ──────────────────────────────────────────────
 function GolfDataFeedLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const coverage = [
@@ -5331,7 +5317,7 @@ function GolfDataFeedLegacyView({ player, session }: { player: GolfPlayer; sessi
   );
 }
 
-// ─── TRACKMAN INTEGRATION VIEW ────────────────────────────────────────────────
+// ─── LUMIO RANGE INTEGRATION VIEW ─────────────────────────────────────────────
 function GolfLaunchMonitorLegacyView({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const [connected, setConnected] = useState(false);
   const sessions = [
@@ -5776,14 +5762,14 @@ const PIPELINE: PipelineColumn[] = [
 // ─── INTEGRATIONS HUB ────────────────────────────────────────────────────────
 function GolfIntegrationsHub({ player, session }: { player: GolfPlayer; session: SportsDemoSession }) {
   const entries: HubEntry[] = [
-    { id: 'datagolf',  icon: '🌐', label: 'Lumio Data',             category: 'Data Feeds',       kind: 'custom',  render: () => <GolfDataFeedLegacyView player={player} session={session} /> },
+    { id: 'lumiodata', icon: '🌐', label: 'Lumio Data',             category: 'Data Feeds',       kind: 'custom',  render: () => <GolfDataFeedLegacyView player={player} session={session} /> },
     { id: 'lpga',      icon: '🏆', label: 'LPGA / LET Mode',      category: 'Data Feeds',       kind: 'custom',  render: () => <LPGAView player={player} session={session} /> },
     { id: 'shotlink',  icon: '🔗', label: 'ShotLink',             category: 'Data Feeds',       kind: 'custom',  render: () => <ShotLinkView player={player} session={session} /> },
     { id: 'arccos',    icon: '📡', label: 'Lumio Range',               category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfShotTrackingLegacyView player={player} session={session} /> },
-    { id: 'trackman',  icon: '🎯', label: 'Lumio Range',             category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
+    { id: 'lumiorange', icon: '🎯', label: 'Lumio Range',            category: 'Hardware Sensors', kind: 'custom',  render: () => <GolfLaunchMonitorLegacyView player={player} session={session} /> },
     { id: 'v1golf',    icon: '🎥', label: 'V1 Golf Video',        category: 'Hardware Sensors', kind: 'generic', config: GOLF_INTEGRATIONS.v1golf },
     { id: 'whoop',     icon: '💚', label: 'Lumio Wear / Oura',         category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.whoop },
-    { id: 'catapult',  icon: '🛰️', label: 'Lumio GPS / Lumio GPS', category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.catapult },
+    { id: 'johansports', icon: '🛰️', label: 'Johan Sports',        category: 'Wearables',        kind: 'generic', config: GOLF_INTEGRATIONS.johansports },
     { id: 'workspace', icon: '📧', label: 'Gmail + Calendar',     category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.workspace },
     { id: 'slack',     icon: '💬', label: 'Slack',                category: 'Team Tools',       kind: 'generic', config: GOLF_INTEGRATIONS.slack },
     { id: 'broadcast', icon: '📺', label: 'Meridian Sports',      category: 'Distribution',     kind: 'generic', config: GOLF_INTEGRATIONS.broadcast },
@@ -7346,7 +7332,12 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
     const gate = (icon: string, title: string, sub: string, el: React.ReactNode) =>
       isFounder ? <EmptyState icon={icon} title={title} sub={sub} /> : el
     switch (activeSection) {
-      case 'dashboard':   return <DashboardView player={player} session={session} setActiveSection={setActiveSection} onOpenModal={setActiveModal} />;
+      case 'dashboard':   return <DashboardView
+                                    player={player}
+                                    session={session}
+                                    setActiveSection={setActiveSection}
+                                    onOpenModal={setActiveModal}
+                                  />;
       case 'morning':     return gate('🌅', 'No briefing data yet', 'Connect your data to unlock this', <MorningBriefingView player={player} session={session} />);
       case 'owgr':        return gate('📊', 'No OWGR data', 'Connect your tour feed to unlock this', <OWGRView player={player} session={session} />);
       case 'schedule':    return gate('🗓️', 'No tournaments loaded', 'Connect your tour feed to unlock this', <ScheduleView player={player} session={session} />);
@@ -7502,7 +7493,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB', zoom: 0.9 }}>
       <PwaInstaller sport="golf" />
       {/* Modal overlay */}
       {activeModal && (
@@ -7512,7 +7503,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             {activeModal === 'hotel' && <GolfHotelFinder onClose={closeModal} session={session} />}
             {activeModal === 'coursestrategy' && <GolfCourseStrategyAI onClose={closeModal} session={session} />}
             {activeModal === 'loground' && <GolfRoundLogger onClose={closeModal} />}
-            {activeModal === 'trackman' && <GolfLaunchMonitorAnalysis onClose={closeModal} session={session} player={player} />}
+            {activeModal === 'lumiorange' && <GolfLaunchMonitorAnalysis onClose={closeModal} session={session} player={player} />}
             {activeModal === 'caddiebriefai' && <GolfCaddieBriefAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'matchprep' && <GolfMatchPrepAI onClose={closeModal} session={session} player={player} />}
             {activeModal === 'sponsorpost' && <GolfSponsorPost onClose={closeModal} session={session} player={player} />}
@@ -7579,7 +7570,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
           backgroundColor: '#0a0c14',
           borderRight: '1px solid #1F2937',
           transition: 'width 250ms ease',
-          position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 40,
+          position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', flexShrink: 0, zIndex: 40,
         }}
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}>
@@ -7601,35 +7592,14 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
             </button>
           )}
         </div>
-        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
-          {groups.map(group => {
-            const items = visibleSidebarItems
-              .filter(i => i.group === group)
-              .sort((a, b) => (a.id === 'settings' ? 1 : b.id === 'settings' ? -1 : 0));
-            if (items.length === 0) return null;
-            return (
-              <div key={group} className="mb-3">
-                {sidebarExpanded && <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>}
-                {items.map(item => (
-                  <button key={item.id}
-                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
-                    style={{
-                      backgroundColor: activeSection === item.id ? 'rgba(21,128,61,0.12)' : 'transparent',
-                      color: activeSection === item.id ? '#86efac' : '#6B7280',
-                      borderLeft: activeSection === item.id ? '2px solid #15803D' : '2px solid transparent',
-                      paddingLeft: sidebarExpanded ? 10 : 0,
-                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
-                    }}
-                    title={sidebarExpanded ? undefined : item.label}>
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
+        <GolfSidebarNav
+          T={GOLF_THEME}
+          accent={GOLF_ACCENT}
+          items={visibleSidebarItems.map(i => ({ id: i.id, label: i.label, icon: i.icon, group: i.group }))}
+          expanded={sidebarExpanded}
+          activeId={activeSection}
+          onSelect={(id: string) => { setActiveSection(id); if (!sidebarPinned) setSidebarHovered(false) }}
+        />
         <RoleSwitcher
           session={liveSession}
           roles={GOLF_ROLES}
@@ -7671,7 +7641,7 @@ export function GolfPortalInner({ session, onSignOut }: { session: SportsDemoSes
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh', marginTop: !isPlayer && !isSponsor && roleConfig.message ? '32px' : 0 }}>
         {/* Demo workspace banner — hidden when rendered inside /golf/app for a real signed-in user */}
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"

@@ -15,14 +15,20 @@ export interface ParsedPlayerLoad {
   trainingLoad: number
 }
 
+export type GPSSource = 'Lumio' | 'Generic' | 'Unknown'
+
 export interface ParsedGPSSession {
-  source: 'Catapult' | 'STATSports' | 'Unknown'
+  source: GPSSource
   sessionDate: string
   sessionType: string
   rows: ParsedPlayerLoad[]
 }
 
-export const CATAPULT_COLUMNS = {
+// Column heuristics for the two most common GPS-export shapes seen in real
+// CSV uploads. Both are vendor-agnostic — drop in any export and one set will
+// match. The label on the parsed session is "Lumio" or "Generic" depending on
+// which heuristic scored highest, so we never leak vendor names downstream.
+export const GPS_COLUMNS_A = {
   playerName: ['Name', 'Player Name', 'Athlete'],
   totalDistance: ['Total Distance', 'Distance (m)', 'Total Dist'],
   highSpeedDistance: ['HSR Distance', 'High Speed Running', 'HSR'],
@@ -34,7 +40,7 @@ export const CATAPULT_COLUMNS = {
   sessionType: ['Session Type', 'Type', 'Activity Type'],
 } as const
 
-export const STATSPORTS_COLUMNS = {
+export const GPS_COLUMNS_B = {
   playerName: ['Player', 'Name', 'Athlete Name'],
   totalDistance: ['Total Distance', 'Dist (m)', 'Distance'],
   highSpeedDistance: ['High Speed Distance', 'HSD', 'High Intensity'],
@@ -60,12 +66,12 @@ function scoreFormat(headers: string[], cols: ColMap): number {
   return score
 }
 
-export function detectFormat(headers: string[]): 'Catapult' | 'STATSports' | 'Unknown' {
+export function detectFormat(headers: string[]): GPSSource {
   if (!headers || headers.length === 0) return 'Unknown'
-  const cat = scoreFormat(headers, CATAPULT_COLUMNS)
-  const sts = scoreFormat(headers, STATSPORTS_COLUMNS)
-  if (cat === 0 && sts === 0) return 'Unknown'
-  return cat >= sts ? 'Catapult' : 'STATSports'
+  const a = scoreFormat(headers, GPS_COLUMNS_A)
+  const b = scoreFormat(headers, GPS_COLUMNS_B)
+  if (a === 0 && b === 0) return 'Unknown'
+  return a >= b ? 'Lumio' : 'Generic'
 }
 
 function findHeaderKey(headers: string[], candidates: readonly string[]): string | null {
@@ -123,7 +129,7 @@ export function parseCSV(csvText: string): ParsedGPSSession | null {
 
     const headers = splitCSVLine(lines[0])
     const source = detectFormat(headers)
-    const cols = source === 'STATSports' ? STATSPORTS_COLUMNS : CATAPULT_COLUMNS
+    const cols = source === 'Generic' ? GPS_COLUMNS_B : GPS_COLUMNS_A
 
     const playerCol = findHeaderKey(headers, cols.playerName)
     const totalCol = findHeaderKey(headers, cols.totalDistance)

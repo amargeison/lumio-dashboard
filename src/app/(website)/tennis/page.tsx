@@ -375,7 +375,7 @@ function GPSCourtMockup() {
   return (
     <MockupFrame>
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>📡 GPS &amp; Court Heatmap</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monte-Carlo 2026 · Lumio GPS Vest · Clay</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monte-Carlo 2026 · Johan Sports Vest · Clay</div>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
         <svg width="220" height="150" viewBox="0 0 220 150">
           <rect x="0" y="0" width="220" height="150" fill="#1a0a00" />
@@ -467,7 +467,7 @@ export default function TennisLandingPage() {
             The world&apos;s first tennis management platform with built-in GPS tracking, AI video analysis and coaching briefs — all in one portal.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
-            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ World First — Lumio GPS Tracker</span>
+            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ World First — Johan Sports for Tennis</span>
             <span style={{ background: '#a855f718', border: '1px solid #a855f7', color: '#a855f7', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎬 Lumio Vision</span>
             <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Coaching Briefs</span>
           </div>
@@ -497,10 +497,10 @@ export default function TennisLandingPage() {
                 <span style={{ background: '#06b6d4', color: '#000', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>⚡ World First in Tennis</span>
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 700, lineHeight: 1.2 }}>GPS Intelligence built<br /><span style={{ color: '#06b6d4' }}>specifically for tennis players.</span></h2>
-              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>Every other GPS tracker is built for team sports. Lumio GPS Tracker is the first wearable built for the individual tennis player — tracking court coverage, sprint load and recovery between points, feeding directly into your portal and combining with shot and load data for an AI coaching brief after every session and set.</p>
+              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>Every other GPS tracker is built for team sports. Johan Sports for Tennis is the first wearable built for the individual tennis player — tracking court coverage, sprint load and recovery between points, feeding directly into your portal and combining with shot and load data for an AI coaching brief after every session and set.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
-                  { icon: '🛰️', title: 'Lumio GPS Tracker', color: '#06b6d4', desc: 'Lightweight clip-on device. Auto-syncs to your portal after every session. Court heatmaps, sprint zones and load scores — all in real time.', price: '£299 one-off · Included in Pro plan' },
+                  { icon: '🛰️', title: 'Johan Sports for Tennis', color: '#06b6d4', desc: 'Lightweight clip-on device. Auto-syncs to your portal after every session. Court heatmaps, sprint zones and load scores — all in real time.', price: '£299 one-off · Included in Pro plan' },
                   { icon: '🎬', title: 'Lumio Vision', color: '#a855f7', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', price: 'Coming Soon · Rolling out through 2026' },
                   { icon: '🤖', title: 'AI Coaching Briefs', color: '#10b981', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.', price: 'Auto-generated · ATP coaching tone' },
                 ].map((f, i) => (
@@ -518,7 +518,7 @@ export default function TennisLandingPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 16 }}>
-                <a href="mailto:hello@lumiosports.com?subject=Lumio%20GPS%20Tracker%20Order" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Order Lumio GPS Tracker →</a>
+                <a href="mailto:hello@lumiosports.com?subject=Johan%20Sports%20for%20Tennis%20Order" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Order Johan Sports for Tennis →</a>
                 <Link href="/tennis/demo" style={{ background: 'transparent', color: '#06b6d4', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: '1px solid #06b6d4', cursor: 'pointer', textDecoration: 'none' }}>See it in the portal</Link>
               </div>
             </div>
@@ -571,7 +571,7 @@ export default function TennisLandingPage() {
       <Spotlight
         eyebrow="SPOTLIGHT · GPS & COURT HEATMAP"
         title="Every step. Quantified."
-        body="Lumio GPS Vest + UWB court beacons track your movement at 10Hz. Court heatmaps show where you spend time during matches — baseline vs mid-court vs net. ACWR load monitoring flags fatigue risk before it becomes injury."
+        body="Johan Sports Vest + UWB court beacons track your movement at 10Hz. Court heatmaps show where you spend time during matches — baseline vs mid-court vs net. ACWR load monitoring flags fatigue risk before it becomes injury."
         bullets={["Court heatmap: baseline / mid-court / net zone breakdown per session", 'ACWR 28-day rolling load vs 7-day acute — green/amber/red risk zones', 'Sarah Okafor receives automated alert when ACWR enters amber zone', 'Double fault heatmap: where you miss serves under pressure (30-40)']}
         mockup={<GPSCourtMockup />}
       />
@@ -657,12 +657,12 @@ export default function TennisLandingPage() {
               GPS Intelligence built for tennis — and powered by Lumio
             </h2>
             <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.7, maxWidth: 700, margin: '0 auto' }}>
-              Most GPS trackers are built for team sports. Lumio GPS Tracker is the first wearable built specifically for tennis players — tracking court coverage, sprint load, and recovery between points, all feeding directly into your Lumio portal.
+              Most GPS trackers are built for team sports. Johan Sports for Tennis is the first wearable built specifically for tennis players — tracking court coverage, sprint load, and recovery between points, all feeding directly into your Lumio portal.
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
             {([
-              { icon: '📡', title: 'Lumio GPS Tracker', desc: 'Lightweight clip-on device. Automatic sync. Court heatmaps after every session.' },
+              { icon: '📡', title: 'Johan Sports for Tennis', desc: 'Lightweight clip-on device. Automatic sync. Court heatmaps after every session.' },
               { icon: '🎬', title: 'Lumio Vision', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', comingSoon: true },
               { icon: '🤖', title: 'AI Coaching Briefs', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.' },
             ] as Array<{icon:string; title:string; desc:string; comingSoon?:boolean}>).map((f, i) => (
@@ -684,8 +684,8 @@ export default function TennisLandingPage() {
             ))}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <a href="mailto:hello@lumiosports.com?subject=Lumio%20GPS%20Tracker%20Order" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
-              Order Your Lumio GPS Tracker →
+            <a href="mailto:hello@lumiosports.com?subject=Johan%20Sports%20for%20Tennis%20Order" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+              Order Your Johan Sports for Tennis →
             </a>
           </div>
         </div>

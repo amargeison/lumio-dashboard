@@ -21,6 +21,8 @@ import GrassrootsSetPiecesView from '@/components/football/GrassrootsSetPiecesVi
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
+import { GrassrootsDashboardView, GR_THEME, GR_ACCENT } from './_components/GrassrootsDashboardModules'
+import { GrassrootsSidebarNav } from './_components/GrassrootsShell'
 
 // ─── GRASSROOTS ROLES ─────────────────────────────────────────────────────────
 const GRASSROOTS_ROLES = [
@@ -444,21 +446,20 @@ function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: 
 
   return (
     <>
-      <aside className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 z-30 transition-all duration-200" style={{ width: expanded ? 220 : 72, backgroundColor: BG, borderRight: `1px solid ${BORDER}` }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <aside className="hidden md:flex flex-col shrink-0 z-30 transition-all duration-200" style={{ width: expanded ? 220 : 72, backgroundColor: BG, borderRight: `1px solid ${BORDER}`, position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <div className="flex items-center gap-2.5 px-2.5 py-3 shrink-0" style={{ borderBottom: `1px solid ${BORDER}`, minHeight: 52 }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold shrink-0" style={{ backgroundColor: tierColor, color: '#fff' }}>SR</div>
           {expanded && (<><div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: TEXT }}>Sunday Rovers FC</p><p className="text-[10px] truncate" style={{ color: TEXT_SEC }}>Grassroots Portal</p></div>
             <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: pinned ? tierColor : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg></button></>)}
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 px-1.5 py-3 overflow-y-auto amateur-sidebar-scroll">
-          {sections.map((sec, si) => (<div key={si}>{sec.label && expanded && <p className="text-[10px] font-semibold uppercase tracking-wider px-3 pt-3 pb-1.5" style={{ color: '#4B5563' }}>{sec.label}</p>}
-            {sec.items.map(item => { const active = activeDept === item.id; return (
-              <button key={item.id} onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }} className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
-                style={{ backgroundColor: active ? `${tierColor}1f` : 'transparent', color: active ? tierColor : TEXT_SEC, borderLeft: active ? `2px solid ${tierColor}` : '2px solid transparent', paddingLeft: expanded ? 12 : 0, justifyContent: expanded ? 'flex-start' : 'center' }} title={expanded ? undefined : item.label}>
-                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />{expanded && <><span className="truncate">{item.label}</span>{item.badge && <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{backgroundColor:PRIMARY}}>{item.badge}</span>}</>}
-              </button>
-            )})}</div>))}
-        </nav>
+        <GrassrootsSidebarNav
+          T={GR_THEME}
+          accent={GR_ACCENT}
+          items={items.map(i => ({ id: i.id, label: i.label, group: i.section ?? undefined, badge: i.badge }))}
+          expanded={expanded}
+          activeId={activeDept}
+          onSelect={(id: string) => { onSelect(id); if (!pinned) setHovered(false) }}
+        />
         {session && (
           <RoleSwitcher
             session={session}
@@ -2594,7 +2595,7 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
   const deptLabel = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: TEXT, height: '100vh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: TEXT, minHeight: '100vh', zoom: 0.9 }}>
       <Toast message={toast} />
 
       {/* Scrollbar styles */}
@@ -2621,10 +2622,10 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
       </div>
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
         <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d as DeptId)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} onPinChange={setSidebarPinned} />
 
-        <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+        <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
           {/* Demo workspace banner */}
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#F97316', color: '#ffffff' }}>
             <span>This is a demo &middot; sample data</span>
@@ -2700,7 +2701,12 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
                   </div>
 
                   {activeTab === 'gettingstarted' && <GettingStartedView onToast={fireToast} />}
-                  {activeTab === 'today' && <OverviewView clubName={clubName} onAction={handleQuickAction} session={session} />}
+                  {activeTab === 'today' && (
+                    <GrassrootsDashboardView
+                      onAskLumio={() => fireToast('Ask Lumio — opening...')}
+                      onWhosPlaying={() => setActiveDept('availability')}
+                    />
+                  )}
                   {activeTab === 'quickwins' && <div className="pt-4 space-y-3">
                     <div className="flex items-center justify-between mb-2"><div><h2 className="text-xl font-black flex items-center gap-2" style={{color:TEXT}}>⚡ Quick Wins</h2><p className="text-sm mt-0.5" style={{color:TEXT_SEC}}>High impact, low effort — sorted by priority.</p></div></div>
                     {[{a:'3 players haven\'t replied to availability — deadline Thursday 20:00',i:'Critical',c:'Squad',cta:'Chase now',effort:'2min'},{a:'Dave Nolan DBS OVERDUE — safeguarding risk',i:'Critical',c:'Safeguarding',cta:'Renew now',effort:'5min'},{a:'4 players owe subs — £110 outstanding',i:'High',c:'Finance',cta:'Chase subs',effort:'2min'},{a:'Last result not submitted to FA FULL-TIME',i:'High',c:'Admin',cta:'Submit now',effort:'5min'},{a:'Referee not yet booked for 20 Apr home match',i:'Medium',c:'Admin',cta:'Book referee',effort:'5min'}].map((w,i)=>(<div key={i} className="rounded-2xl p-5 transition-all" style={{backgroundColor:'#111318',border:'1px solid #1F2937'}}><div className="flex items-start justify-between gap-4"><div className="flex-1"><div className="flex items-center gap-2 mb-2 flex-wrap"><span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{backgroundColor:w.i==='Critical'?'rgba(239,68,68,0.12)':w.i==='High'?'rgba(245,158,11,0.12)':'rgba(107,114,128,0.12)',color:w.i==='Critical'?'#EF4444':w.i==='High'?'#F59E0B':'#6B7280'}}>{w.i.toUpperCase()} IMPACT</span><span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{backgroundColor:'#F973161e',color:'#F97316'}}>⏱ {w.effort}</span></div><h3 className="font-bold mb-1" style={{color:'#F9FAFB'}}>{w.a}</h3><p className="text-xs mt-2" style={{color:'#374151'}}>Source: {w.c}</p></div><div className="flex flex-col gap-2 flex-shrink-0"><button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{backgroundColor:'#F97316'}}>{w.cta} →</button><button className="px-4 py-2 text-xs rounded-xl transition-colors" style={{backgroundColor:'rgba(255,255,255,0.05)',color:'#6B7280'}}>Mark done</button></div></div></div>))}

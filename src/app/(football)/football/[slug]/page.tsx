@@ -4,7 +4,6 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -21,20 +20,52 @@ import {
   UserPlus, DollarSign, Heart, Eye, Video, MapPin,
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
-  Maximize2, Printer, Share2,
+  Maximize2, Printer, Share2, Flame,
+  Building, Plane, Brain, Calculator,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import FootballActionModal from '@/components/modals/FootballActionModal'
-import DeptAISummary from '@/components/DeptAISummary'
-import AIInsightsReport from '@/components/AIInsightsReport'
+import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
+import CommercialView from '@/components/football/CommercialView'
+import CommunityView from '@/components/football/CommunityView'
+import ToursAndCampsView from '@/components/football/ToursAndCampsView'
+import DiscoverView from '@/components/football/DiscoverView'
+import ConcussionTrackerView from '@/components/football/ConcussionTrackerView'
+import PSRScenarioModellerView from '@/components/football/PSRScenarioModellerView'
+import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
+// ─── Football v2 dashboard imports ────────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import {
+  HeroToday as FbHeroToday,
+  TodaySchedule as FbTodaySchedule,
+  StatTiles as FbStatTiles,
+  AIBrief as FbAIBrief,
+  Inbox as FbInbox,
+  Squad as FbSquadModule,
+  Fixtures as FbFixturesModule,
+  Perf as FbPerf,
+  Recents as FbRecents,
+  Season as FbSeason,
+} from './_components/FootballDashboardModules'
+import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
+import type { FbFixture } from './_lib/football-dashboard-data'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
-import { FootballScoutIntegrationView, ScoutingDBView, GPSHardwareView, FootballEventDataView, FindClubView, FindPlayerView, FootballPyramidView } from '@/components/football/IntegrationViews'
-import { TeamsView, LeaguesView, FixturesView, FootballLeagueDataView } from '@/components/football/LeagueViews'
+import { FootballScoutIntegrationView, ScoutingDBView, GPSHardwareView, FootballEventDataView } from '@/components/football/IntegrationViews'
+import { FootballLeagueDataView } from '@/components/football/LeagueViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
@@ -46,16 +77,17 @@ type DeptId =
   | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
-  | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
+  | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
   | 'staff' | 'facilities' | 'settings'
-  | 'wyscout' | 'scouting-db' | 'gps-hardware' | 'opta'
-  | 'find-club' | 'find-player' | 'pyramid'
-  | 'teams' | 'leagues' | 'fixtures-results' | 'statsbomb'
-  | 'preseason'
+  | 'lumio-vision' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
+  | 'discover' | 'lumio-data-pro'
+  | 'tours-camps'
+  | 'player-welfare' | 'club-operations'
+  | 'commercial' | 'community'
 
-type OverviewTab = 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
+type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'Departments' | 'Tools' | 'Leagues' | 'Integrations'
+type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'COMMUNITY' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'OPERATIONS' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'DISCOVER' | 'INTEGRATIONS'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -88,42 +120,42 @@ const BG_GRADIENTS = [
 ]
 
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
-  { id: 'overview',    label: 'Overview',       icon: Home,           section: null },
-  { id: 'insights',    label: 'Insights',       icon: Sparkles,       section: null },
-  { id: 'board',       label: 'Board Suite',    icon: Crown,          section: null },
-  { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
-  { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
-  { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
-  { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
-  { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
-  { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
-  { id: 'academy',     label: 'Academy',        icon: GraduationCap,  section: 'Departments' },
-  { id: 'analytics',   label: 'Analytics',      icon: BarChart3,      section: 'Departments' },
-  { id: 'dynamics',    label: 'Dynamics',       icon: Heart,          section: 'Departments' },
-  { id: 'media',       label: 'Media & PR',     icon: Newspaper,      section: 'Departments' },
-  { id: 'social',      label: 'Social Media',   icon: MessageSquare,  section: 'Departments' },
-  { id: 'matchday',    label: 'Match Day',      icon: Trophy,         section: 'Departments' },
-  { id: 'training',    label: 'Training',       icon: Activity,       section: 'Tools' },
-  { id: 'performance', label: 'Performance & GPS', icon: Activity,    section: 'Tools' },
-  { id: 'psr',         label: 'Finance & PSR',  icon: DollarSign,     section: 'Tools' },
-  { id: 'squad-planner', label: 'Squad Planner', icon: Clipboard,     section: 'Tools' },
-  { id: 'club-profile', label: 'Club Profile',  icon: Trophy,         section: 'Tools' },
-  { id: 'finance',     label: 'Finance',        icon: DollarSign,     section: 'Tools' },
-  { id: 'staff',       label: 'Staff',          icon: Users,          section: 'Tools' },
-  { id: 'facilities',  label: 'Facilities',     icon: MapPin,         section: 'Tools' },
-  { id: 'wyscout',     label: 'Lumio Scout / Video', icon: Video,    section: 'Integrations' },
-  { id: 'scouting-db', label: 'Scouting Database', icon: Search,       section: 'Integrations' },
-  { id: 'gps-hardware', label: 'GPS Hardware',   icon: Activity,       section: 'Integrations' },
-  { id: 'opta',        label: 'Lumio Data',       icon: BarChart3,     section: 'Integrations' },
-  { id: 'teams',        label: 'Teams',          icon: Users,          section: 'Leagues' },
-  { id: 'leagues',     label: 'Leagues & Tables', icon: Trophy,       section: 'Leagues' },
-  { id: 'fixtures-results', label: 'Fixtures & Results', icon: Calendar, section: 'Leagues' },
-  { id: 'pyramid',     label: 'All Leagues',    icon: BarChart3,      section: 'Leagues' },
-  { id: 'find-club',   label: 'Find Club',      icon: Search,         section: 'Leagues' },
-  { id: 'find-player', label: 'Find Player',    icon: Target,         section: 'Leagues' },
-  { id: 'statsbomb',   label: 'Lumio Data',     icon: Activity,       section: 'Leagues' },
-  { id: 'preseason',   label: 'Pre-Season',     icon: Calendar,       section: 'Tools' },
-  { id: 'settings',    label: 'Settings',       icon: Settings,       section: 'Tools' },
+  { id: 'overview',       label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
+  { id: 'insights',       label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
+  { id: 'board',          label: 'Board Suite',          icon: Crown,          section: 'BOARD' },
+  { id: 'facilities',     label: 'Stadium & Facilities', icon: MapPin,         section: 'BOARD' },
+  { id: 'community',      label: 'Community',            icon: Heart,          section: 'COMMUNITY' },
+  { id: 'matchday',       label: 'Match Centre',         icon: Trophy,         section: 'PERFORMANCE' },
+  { id: 'lumio-vision',   label: 'Lumio Vision',         icon: Video,          section: 'PERFORMANCE' },
+  { id: 'analytics',      label: 'Performance Stats',    icon: BarChart3,      section: 'PERFORMANCE' },
+  { id: 'set-pieces',     label: 'Set Piece Analysis',   icon: Target,         section: 'PERFORMANCE' },
+  { id: 'scouting',       label: 'Opposition Scout',     icon: Eye,            section: 'PERFORMANCE' },
+  { id: 'squad',          label: 'Squad Manager',        icon: Shirt,          section: 'FIRST TEAM' },
+  { id: 'squad-planner',  label: 'Team Selection',       icon: Clipboard,      section: 'FIRST TEAM' },
+  { id: 'tactics',        label: 'Formation Builder',    icon: Clipboard,      section: 'FIRST TEAM' },
+  { id: 'training',       label: 'Training Planner',     icon: Activity,       section: 'FIRST TEAM' },
+  { id: 'tours-camps',    label: 'Tours & Camps',        icon: Plane,          section: 'FIRST TEAM' },
+  { id: 'staff',          label: 'Staff',                icon: Users,          section: 'FIRST TEAM' },
+  { id: 'medical',        label: 'Medical Hub',          icon: Heart,          section: 'MEDICAL' },
+  { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,         section: 'MEDICAL' },
+  { id: 'dynamics',       label: 'Mental Performance',   icon: Heart,          section: 'MEDICAL' },
+  { id: 'player-welfare', label: 'Player Welfare Hub',   icon: Heart,          section: 'MEDICAL' },
+  { id: 'performance',    label: 'GPS Tracking',         icon: Activity,       section: 'GPS & LOAD' },
+  { id: 'gps-heatmaps',   label: 'Heatmaps',             icon: Flame,          section: 'GPS & LOAD' },
+  { id: 'gps-hardware',   label: 'GPS Hardware',         icon: Activity,       section: 'GPS & LOAD' },
+  { id: 'club-operations', label: 'Club Operations',     icon: Building,       section: 'OPERATIONS' },
+  { id: 'transfers',      label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'RECRUITMENT' },
+  { id: 'academy',        label: 'Academy',              icon: GraduationCap,  section: 'RECRUITMENT' },
+  { id: 'commercial',     label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
+  { id: 'media',          label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
+  { id: 'social',         label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'finance',        label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller', icon: Calculator,     section: 'COMPLIANCE' },
+  { id: 'discover',       label: 'Discover',             icon: Search,         section: 'DISCOVER' },
+  { id: 'scouting-db',    label: 'Scouting Database',    icon: Search,         section: 'INTEGRATIONS' },
+  { id: 'opta',           label: 'Lumio Data',           icon: BarChart3,      section: 'INTEGRATIONS' },
+  { id: 'lumio-data-pro', label: 'Lumio Data Pro',       icon: Activity,       section: 'INTEGRATIONS' },
+  { id: 'settings',       label: 'Settings',             icon: Settings,       section: null },
 ]
 
 const FOOTBALL_ROLE_OPTIONS = [
@@ -476,8 +508,12 @@ function WorldClock() {
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
-  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string
+function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, session, onRoleChange, isFootballDemo }: {
+  activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string;
+  allowedIds: 'all' | string[];
+  session?: SportsDemoSession;
+  onRoleChange?: (role: string) => void;
+  isFootballDemo?: boolean;
 }) {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
@@ -495,27 +531,47 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   const DARK = '#002D7A'
   const SECONDARY = '#F1C40F'
 
-  // group items by section
+  // group items by section — granular grouping matches Women's FC pattern
+  // Role-gated: when allowedIds !== 'all', filter every section by the whitelist
+  // so the active role only sees the nav items it has access to.
+  const isAllowed = (id: DeptId) => allowedIds === 'all' || (allowedIds as string[]).includes(id)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
-    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null) },
-    { label: 'Departments', items: SIDEBAR_ITEMS.filter(i => i.section === 'Departments') },
-    { label: 'Tools', items: SIDEBAR_ITEMS.filter(i => i.section === 'Tools') },
-    { label: 'Leagues', items: SIDEBAR_ITEMS.filter(i => i.section === 'Leagues') },
-    { label: 'Integrations', items: SIDEBAR_ITEMS.filter(i => i.section === 'Integrations') },
+    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW' && isAllowed(i.id)) },
+    { label: 'BOARD', items: SIDEBAR_ITEMS.filter(i => i.section === 'BOARD' && isAllowed(i.id)) },
+    { label: 'COMMUNITY', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMUNITY' && isAllowed(i.id)) },
+    { label: 'PERFORMANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'PERFORMANCE' && isAllowed(i.id)) },
+    { label: 'FIRST TEAM', items: SIDEBAR_ITEMS.filter(i => i.section === 'FIRST TEAM' && isAllowed(i.id)) },
+    { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL' && isAllowed(i.id)) },
+    { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD' && isAllowed(i.id)) },
+    { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
+    { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT' && isAllowed(i.id)) },
+    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
+    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
+    { label: 'DISCOVER', items: SIDEBAR_ITEMS.filter(i => i.section === 'DISCOVER' && isAllowed(i.id)) },
+    { label: 'INTEGRATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'INTEGRATIONS' && isAllowed(i.id)) },
+    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null && isAllowed(i.id)) },
   ]
 
   return (
     <>
       {/* Desktop sidebar */}
+      {/* SIDEBAR/PADDING ALIGNMENT — values aligned to cricket reference
+          (cricket/[slug]/page.tsx). Same fonts and densities; horizontal
+          width parity needs identical sidebar width + main padding to
+          prevent "football looks bigger" perception. */}
       <aside
         className="hidden md:flex flex-col shrink-0 overflow-hidden"
-        style={{ width: expanded ? 208 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease' }}
+        style={{ width: expanded ? 220 : 72, backgroundColor: '#0A0B10', borderRight: '1px solid #1F2937', transition: 'width 250ms ease', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
           <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
-            {clubLogo ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} /> : 'FC'}
+            {clubLogo
+              ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} />
+              : isFootballDemo
+                ? <img src="/badges/oakridge_fc_crest.svg" alt="Oakridge FC" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} />
+                : 'FC'}
           </div>
           {expanded && (
             <>
@@ -540,32 +596,49 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
                 return (
                   <button key={item.id}
                     onClick={() => { onSelect(item.id); if (!pinned) setHovered(false) }}
-                    className="flex items-center gap-2.5 py-2 rounded-lg text-sm font-medium text-left w-full transition-all"
+                    className="flex items-center gap-2.5 py-2 rounded-lg text-left w-full transition-all"
                     style={{
                       backgroundColor: active ? `${PRIMARY}1f` : 'transparent',
                       color: active ? PRIMARY : '#9CA3AF',
                       borderLeft: active ? `2px solid ${PRIMARY}` : '2px solid transparent',
                       paddingLeft: expanded ? 12 : 0,
                       justifyContent: expanded ? 'flex-start' : 'center',
+                      // FONT — sidebar nav matches cricket/rugby reference (12.5px,
+                      // weight 400 inactive / 600 active). The fontFamily resolves to
+                      // Geist via inheritance from body. Critical: do NOT use Tailwind
+                      // text-sm or font-medium here — those override the inline values
+                      // and break parity with sister portals. Prior commit 6780cbce
+                      // changed fontFamily but missed this; the real cause was the
+                      // Tailwind size/weight classes.
+                      fontFamily: V2_FONT,
+                      fontSize: 12.5,
+                      fontWeight: active ? 600 : 400,
                     }}
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     {expanded && <span className="truncate">{item.label}</span>}
+                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'tours-camps' || item.id === 'discover') && (
+                      <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: PRIMARY }}>NEW</span>
+                    )}
                   </button>
                 )
               })}
             </div>
           ))}
         </nav>
-        <div className="mt-auto shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
-          {expanded && (
-            <div className="pb-3">
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
-              </a>
-            </div>
-          )}
-        </div>
+        {session && onRoleChange && (
+          <div style={{ flexShrink: 0 }}>
+            <RoleSwitcher
+              session={session}
+              roles={FOOTBALL_ROLES}
+              accentColor={PRIMARY}
+              onRoleChange={onRoleChange}
+              sidebarCollapsed={!expanded}
+            />
+          </div>
+        )}
+        {/* Sidebar footer logo removed — redundant brand mark inside
+            Lumio's own product. Bottom of sidebar ends at role selector. */}
       </aside>
 
       {/* Mobile overlay */}
@@ -582,19 +655,16 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
                 const active = activeDept === item.id
                 return (
                   <button key={item.id} onClick={() => { onSelect(item.id); onClose() }}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left w-full"
-                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF' }}>
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left w-full"
+                    style={{ backgroundColor: active ? `${PRIMARY}1f` : 'transparent', color: active ? PRIMARY : '#9CA3AF', fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 400 }}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     <span className="truncate">{item.label}</span>
                   </button>
                 )
               })}
             </nav>
-            <div className="mt-auto px-4 pb-3" style={{ borderTop: '1px solid #1F2937' }}>
-              <a href="https://lumiocms.com" target="_blank" rel="noreferrer" className="block mx-auto opacity-40 hover:opacity-70 transition-opacity" style={{ width: 'fit-content' }}>
-                <Image src="/lumio-transparent-new.png" alt="Lumio" width={180} height={90} style={{ width: 120, height: 'auto', objectFit: 'contain' }} />
-              </a>
-            </div>
+            {/* Sidebar footer logo removed — redundant brand mark inside
+                Lumio's own product. Bottom of sidebar ends at the nav. */}
           </aside>
         </div>
       )}
@@ -690,43 +760,29 @@ function PersonalBanner({ clubName, firstName, onNavigate, isDemo = false, clubL
   )
 }
 
-// ─── Quick Actions Bar ──────────────────────────────────────────────────────
-
-const FOOTBALL_QUICK_ACTIONS = [
-  { label: 'Team Sheet', icon: Clipboard },
-  { label: 'Log Injury', icon: Heart },
-  { label: 'Transfer Hub', icon: ArrowUpDown },
-  { label: 'Book Video Room', icon: Video },
-  { label: 'Press Conf', icon: Newspaper },
-  { label: 'Training Plan', icon: Activity },
-  { label: 'Scout Report', icon: Eye },
-  { label: 'Board Report', icon: Briefcase },
-  { label: 'Dept Insights', icon: BarChart3 },
-]
-
-function QuickActionsBar({ onAction }: { onAction: (label: string) => void }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto football-quickactions-hide-scroll" style={{ backgroundColor: '#0D0E14', borderBottom: '1px solid #1F2937' }}>
-      <span className="text-xs font-semibold shrink-0 mr-1" style={{ color: '#4B5563' }}>Quick actions</span>
-      {FOOTBALL_QUICK_ACTIONS.map(a => (
-        <button key={a.label} onClick={() => onAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 whitespace-nowrap shrink-0"
-          style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
-          <a.icon size={12} />{a.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // ─── Tab Bar ─────────────────────────────────────────────────────────────────
 
 const OVERVIEW_TABS: { id: OverviewTab; label: string; icon: string }[] = [
+  { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
   { id: 'today', label: 'Today', icon: '🏠' },
   { id: 'quick-wins', label: 'Quick Wins', icon: '⚡' },
   { id: 'match-week', label: 'Match Week', icon: '⚽' },
   { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'dont-miss', label: "Don't Miss", icon: '🔴' },
   { id: 'staff', label: 'Staff', icon: '👥' },
+]
+
+const FB_ONBOARDING_ITEMS = [
+  'Connect your club profile',
+  'Upload squad & staff data (25 players)',
+  'Set up Board Suite (directors, reporting schedule)',
+  'Configure team formation (4-3-3 default)',
+  'Add upcoming fixtures',
+  'Connect GPS tracking (Johan Sports)',
+  'Set up scouting pipeline',
+  'Configure medical records',
+  'Upload sponsor agreements',
+  'Invite coaching staff',
 ]
 
 function TabBar({ tab, onChange }: { tab: OverviewTab; onChange: (t: OverviewTab) => void }) {
@@ -1319,10 +1375,46 @@ function TeamInfoTab() {
 
 function TabContent({ tab }: { tab: OverviewTab }) {
   const [activeStaffTab, setActiveStaffTab] = useState<'today'|'orgchart'|'clubinfo'|'teaminfo'>('today')
+  const [onboarding, setOnboarding] = useState<boolean[]>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_onboarding') : null; return s ? JSON.parse(s) : Array(10).fill(false) } catch { return Array(10).fill(false) }
+  })
+  const toggleOnboarding = (idx: number) => {
+    const next = [...onboarding]; next[idx] = !next[idx]; setOnboarding(next)
+    try { localStorage.setItem('lumio_football_onboarding', JSON.stringify(next)); if (next.every(Boolean)) localStorage.setItem('football_getting_started_seen', '1') } catch {}
+  }
   if (tab === 'today') return null // handled separately
 
+  if (tab === 'getting-started') return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">🚀</span>
+        <div>
+          <h2 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Getting Started</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Complete these 10 steps to set up your club</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {FB_ONBOARDING_ITEMS.map((item, idx) => (
+          <button key={idx} onClick={() => toggleOnboarding(idx)}
+            className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+            style={{ backgroundColor: onboarding[idx] ? '#111318' : '#0D1117', border: onboarding[idx] ? '1px solid #22C55E30' : '1px solid #1F2937' }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: onboarding[idx] ? '#22C55E20' : '#1F2937', border: onboarding[idx] ? '1px solid #22C55E50' : '1px solid #374151' }}>
+              {onboarding[idx] ? <span className="text-green-400 text-xs">✓</span> : <span className="text-gray-500 text-xs">{idx + 1}</span>}
+            </div>
+            <span className={`text-xs ${onboarding[idx] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{item}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 p-3 rounded-xl text-xs" style={{ backgroundColor: '#003DA515', border: '1px solid #003DA530' }}>
+        <span style={{ color: '#F1C40F' }} className="font-semibold">{onboarding.filter(Boolean).length}/10 complete</span>
+        <span className="text-gray-500 ml-2">— {onboarding.every(Boolean) ? 'All done! Switch to Today tab.' : 'Keep going, you\'re doing great!'}</span>
+      </div>
+    </div>
+  )
+
   if (tab === 'quick-wins') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>⚡ Quick Wins</h2>
@@ -1368,7 +1460,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'match-week') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📅 Match Week</h2>
@@ -1441,7 +1533,7 @@ function TabContent({ tab }: { tab: OverviewTab }) {
   )
 
   if (tab === 'dont-miss') return (
-    <div className="max-w-4xl">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>🔴 Don&apos;t Miss</h2>
@@ -1729,138 +1821,334 @@ function InjuryRoomCard() {
   )
 }
 
-// ─── Overview View ──────────────────────────────────────────────────────────
+// ─── Overview View (v2 modular grid + tabs + quick actions) ────────────────
 
-function OverviewView({ clubName, firstName, onAction, onNavigate, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
-  const [tab, setTab] = useState<OverviewTab>('today')
+const FOOTBALL_INBOX_BODIES: Record<string, string> = {
+  'SMS · Coaches':      'Evans: confirm Saturday XI please. Walsh ban served, Henderson scan at 14:00. Need team sheet by 13:30 for league submission.',
+  'WhatsApp · Squad':   'Captain: pitch walk done, surface firm but soft underfoot. 4G studs recommended. Met steward, away end open from 13:30.',
+  'Email · Selectors':  'Henderson scan results — Grade 1 hamstring, 10 days minimum. Recommend Wilson holds the 8 spot, monitor Saturday training intensity.',
+  'Agent messages':     'Okafor — wants 3-year extension at £8k/wk. Current expires June. Competing offer from Championship side reportedly £10k. Decision Friday.',
+  'Board messages':     'Caroline: Q3 financials filed. Cap return due 10 May. PSR position remains compliant. Stadium feasibility doc ready Monday.',
+  'Medical Hub':        'Dr Patel: Osei ACL review with consultant — 4 months minimum. Targeted return September pre-season. Trescott ankle scan clear.',
+  'Media & Press':      'Northbridge Sport — pre-match feature with you + captain Friday 14:00. Talking points: Walsh return, Henderson absence, automatic vs play-off race.',
+  'Scouting':           'Okafor (Ridgefield) watched twice — strong, deceptive pace, weak right foot. Suggest one more live look before recommending.',
+  'Academy':            'U18s won 3-1 last night — Bryant brace + assist, Patel scored. Two prospects (Bryant, Lopez) ready for first-team training next week.',
+}
+
+function fbBtnGhost(): React.CSSProperties {
+  return { fontSize: 11, padding: '5px 10px', background: 'transparent', color: '#9CA3AF', border: '1px solid #2d3139', borderRadius: 6, cursor: 'pointer', transition: 'border-color .12s, color .12s' }
+}
+function fbBtnPrimary(accentHex: string): React.CSSProperties {
+  return { fontSize: 11.5, padding: '5px 12px', background: accentHex, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
+}
+
+function InteractiveFootballInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof FOOTBALL_ACCENT; density: typeof DENSITY.regular }) {
+  type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
+  const init = (): Record<string, RowState> => Object.fromEntries(FOOTBALL_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }]))
+  const [state, setState] = useState<Record<string, RowState>>(init)
+  const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
+  const items = FOOTBALL_INBOX.filter(c => !state[c.ch]?.dismissed)
+  return (
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
+        <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 420, overflow: 'auto' }}>
+        {items.map((c, i) => {
+          const s = state[c.ch] ?? { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }
+          const body = FOOTBALL_INBOX_BODIES[c.ch] ?? c.last
+          return (
+            <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 4px', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
+                  <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'monospace' }}>{c.time}</div>
+                <div className="tnum" style={{ minWidth: 22, height: 18, padding: '0 6px', borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 600, background: c.urgent ? 'rgba(199,90,90,0.12)' : T.hover, color: c.urgent ? T.bad : T.text2 }}>{c.count}</div>
+              </div>
+              {s.expanded && (
+                <div style={{ padding: '6px 6px 12px 22px' }}>
+                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, padding: 10, background: T.panel2, borderRadius: 6, border: `1px solid ${T.border}` }}>{body}</div>
+                  {s.sentLabel && <div style={{ marginTop: 6, fontSize: 11, color: T.good, fontFamily: 'monospace' }}>{s.sentLabel}</div>}
+                  {s.mode === 'idle' && !s.sentLabel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => update(c.ch, { mode: 'replying' })}   style={fbBtnGhost()}>Reply</button>
+                      <button onClick={() => update(c.ch, { mode: 'forwarding' })} style={fbBtnGhost()}>Forward</button>
+                      <button onClick={() => update(c.ch, { dismissed: true })}    style={fbBtnGhost()}>Dismiss</button>
+                    </div>
+                  )}
+                  {s.mode === 'replying' && (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={s.reply} onChange={e => update(c.ch, { reply: e.target.value })}
+                        placeholder="Type your reply…" rows={3}
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: 8, fontSize: 12, fontFamily: V2_FONT, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '', sentLabel: 'Sent ✓' })} style={fbBtnPrimary(accent.hex)}>Send</button>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '' })} style={fbBtnGhost()}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {s.mode === 'forwarding' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: T.text3 }}>Forward to:</span>
+                      <select value={s.forwardTo} onChange={e => update(c.ch, { forwardTo: e.target.value })}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontFamily: V2_FONT }}>
+                        <option>Head Coach</option><option>Assistant Manager</option><option>Director of Football</option>
+                        <option>Medical Lead</option><option>CEO</option><option>Head of Recruitment</option>
+                      </select>
+                      <button onClick={() => update(c.ch, { mode: 'idle', sentLabel: `Forwarded to ${s.forwardTo} ✓` })} style={fbBtnPrimary(accent.hex)}>Forward</button>
+                      <button onClick={() => update(c.ch, { mode: 'idle' })} style={fbBtnGhost()}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {items.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+      </div>
+    </div>
+  )
+}
+
+function FootballMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof FOOTBALL_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Oakridge FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Hartwell Town</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>League One · MD-39</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sat 02 May 2026 · Oakridge Park · Kick-off 15:00</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
+
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 12°C light cloud, 11 mph SW wind.</div>
+          <div><strong style={{ color: T.text }}>Pitch:</strong> Natural grass, firm surface, soft underfoot — 4G studs recommended.</div>
+          <div><strong style={{ color: T.text }}>Wind factor:</strong> Slight cross-wind, attacking the south end first half preferred for set-piece delivery.</div>
+          <div><strong style={{ color: T.text }}>Referee:</strong> M. Carter — strict on holding at corners (12 fouls/match avg). Yellow-card-prone, watch reckless tackles.</div>
+        </Section>
+
+        <Section title="02 · Opposition Analysis · Hartwell Town">
+          <div><strong style={{ color: T.text }}>Position:</strong> 11th in League One. <strong style={{ color: T.text }}>Last 5:</strong> W L L W D — middle-of-the-table form.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Striker <strong>R. Kanu</strong> — 14 league goals, dangerous off the shoulder of the last defender.</li>
+            <li>Winger <strong>J. Doyle</strong> — quick on the half-turn, 6 assists, takes set-pieces left-foot.</li>
+            <li>Midfielder <strong>L. Greenway</strong> — sets the tempo, top in the league for forward passes (12.4/match).</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Weakness:</strong> High press from goal kicks but back four play very flat — space behind for runners. Their LB pushes high; exploit the channel with Morris diagonal.</div>
+        </Section>
+
+        <Section title="03 · Our Team News">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Walsh:</strong> 3-match ban served — available for selection. Decision: start or hold for Tuesday cup.</li>
+            <li><strong style={{ color: T.text }}>Henderson:</strong> Hamstring tightness — light training only. Scan results 14:00. Likely unavailable.</li>
+            <li><strong style={{ color: T.text }}>Osei:</strong> Long-term ACL — 4 months. Out.</li>
+            <li><strong style={{ color: T.text }}>Front line:</strong> Forwards coach recommends Morris–Porter pairing; Rowe off the bench from 65 minutes.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Priorities">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Short build-up vs their high press from goal kicks — split CBs wide, bring 6 deep.</li>
+            <li>Attack the LB channel — Morris diagonal runs, Tilley overlap.</li>
+            <li>Set pieces — 22% of our goals come from these. Three rehearsed routines, target near post.</li>
+            <li>PPDA target 8.0 — press their CB on first pass, force long ball to Kanu (in the air we win).</li>
+            <li>Late-game tempo — substitutions 60'/70'/80' to hold a lead or chase a goal.</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Kit van: confirmed 09:00, all GPS vests charged.</li>
+            <li>Warm-up: 14:15 on main pitch, set-piece runs 14:35.</li>
+            <li>Media: Northbridge Sport pitchside from 14:00, manager + captain post-match.</li>
+            <li>Medical: Dr Patel pitchside, ambulance confirmed, away medics briefed.</li>
+            <li>Backup venue: Glenmoor Park (3G) on standby if pitch fails inspection.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo', onModal, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; role?: string; onModal?: (modalId: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
+  const [tab, setTab] = useState<OverviewTab>(() => {
+    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('football_getting_started_seen') : null; return seen ? 'today' : 'getting-started' } catch { return 'today' }
+  })
+  const T       = THEMES.dark
+  const accent  = FOOTBALL_ACCENT
+  const density = DENSITY.regular
+  const greeting = v2GetGreeting('matchday')
+
+  const [openFixture, setOpenFixture] = useState<FbFixture | null>(null)
+  const [cmdOpen,     setCmdOpen]     = useState(false)
+  const [askOpen,     setAskOpen]     = useState(false)
+  const [briefOpen,   setBriefOpen]   = useState(false)
+  const [dashToast,   showDashToast]  = useV2Toast()
+
+  useV2Key('cmdk', () => setCmdOpen(o => !o))
+
+  const tabIcon = (id: OverviewTab): string => ({
+    'getting-started': 'sparkles',
+    today: 'home',
+    'quick-wins': 'lightning',
+    'match-week': 'flag',
+    insights: 'bars',
+    'dont-miss': 'flame',
+    staff: 'people',
+  } as const)[id]
 
   return (
-    <div className="space-y-4">
-      <PersonalBanner clubName={clubName} firstName={firstName} onNavigate={onNavigate} isDemo={isDemo} clubLogo={clubLogo} />
-      <TabBar tab={tab} onChange={setTab} />
+    <>
+      <style jsx global>{`
+        .tnum { font-variant-numeric: tabular-nums; }
+        @keyframes cricketV2PulseDim   { 0%,100% { opacity: .5 } 50% { opacity: .95 } }
+        @keyframes cricketV2FadeUp     { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideLeft  { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+      `}</style>
 
-      {tab === 'today' ? (
-        <div className="space-y-4">
-          <QuickActionsBar onAction={onAction} />
+      <div style={{ background: T.bg, color: T.text, fontFamily: V2_FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
-          {!isDemo && (
-            <>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="text-5xl mb-4">⚽</div>
-              <h3 className="text-xl font-semibold mb-2" style={{ color: '#F9FAFB' }}>Connect your club data to get started</h3>
-              <p className="text-sm max-w-md mb-6" style={{ color: '#6B7280' }}>Your daily overview, AI insights and fixtures will appear here once your data is connected. Load demo data to explore.</p>
-              <button onClick={() => { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.reload() }} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>✨ Explore with Demo Data</button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📨 Match Inbox</h3>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your communications to see WhatsApp, email and Slack messages in one place.</p>
-                <div className="space-y-2">
-                  {['WhatsApp Group Chat', 'Club Email', 'Slack Channel'].map(s => (
-                    <div key={s} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{s}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F' }}>Connect</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="lg:col-span-1 rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>📅 Fixtures This Week</h3>
-                <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Connect your calendar to see training sessions, matches and meetings.</p>
-                <div className="flex items-center justify-center py-6">
-                  <button className="text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.12)', color: '#F1C40F', border: '1px solid rgba(0,61,165,0.3)' }}>Connect Calendar →</button>
-                </div>
-              </div>
-              <div className="lg:col-span-1 flex flex-col gap-4">
-                <PhotoFrame />
-                <div className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                  <h3 className="font-bold text-sm mb-3" style={{ color: '#F9FAFB' }}>🤖 AI Match Summary</h3>
-                  <p className="text-xs" style={{ color: '#6B7280' }}>Connect your tools to generate your AI match day summary with squad news, form analysis and tactical suggestions.</p>
-                </div>
-              </div>
-            </div>
-            </>
-          )}
-
-          {isDemo && <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-            <div className="lg:col-span-1 flex flex-col">
-              <MorningRoundup />
-            </div>
-            <div className="lg:col-span-1 flex flex-col">
-              <FixturesPanel />
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-4">
-              <PhotoFrame />
-              <MorningAIPanel />
-            </div>
+        {/* Hero — match-day banner FIRST, persistent across tabs */}
+        {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+            row alongside AI Morning Summary and Inbox; Squad Availability
+            moved to bottom of page as full-width strip. Layout reflow per
+            user spec — do not re-add Today as banner sibling without
+            product approval. The wrapper div with explicit gridColumn
+            overrides the FbHeroToday Card's internal '1 / span 8'. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <FbHeroToday
+              T={T} accent={accent} density={density} greeting={greeting}
+              onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
+              onAsk={() => setAskOpen(true)}
+              onMatchBrief={() => setBriefOpen(true)}
+            />
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                <StatCard label="Squad Size" value={String(SQUAD.length)} icon={Users} color="#003DA5" />
-                <StatCard label="Fit Players" value={String(SQUAD.filter(p => p.fitness === 'fit').length)} icon={CheckCircle2} color="#22C55E" />
-                <StatCard label="Transfer Budget" value="£4.2m" icon={DollarSign} color="#F59E0B" />
-                <StatCard label="Next Match" value={FIXTURES[0]?.date.split(' ')[1] || '--'} icon={Calendar} color="#3B82F6" />
-              </div>
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Workflow Activity</p>
-                  <span className="text-xs" style={{ color: '#003DA5' }}>Live</span>
-                </div>
-                {WORKFLOW_FEED.map((run, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: i < WORKFLOW_FEED.length - 1 ? '1px solid #1F2937' : undefined }}>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium" style={{ color: '#F9FAFB' }}>{run.name}</p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <WFStatusBadge status={run.status} />
-                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{run.ts}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Squad Readiness — GPS */}
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #003DA5' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1F2937', backgroundColor: 'rgba(0,61,165,0.06)' }}>
-                  <div className="flex items-center gap-2">
-                    <Activity size={14} style={{ color: '#003DA5' }} />
-                    <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Squad Readiness</p>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>GPS</span>
-                  </div>
-                  <span className="text-xs" style={{ color: '#6B7280' }}>ACWR-based</span>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="flex items-center gap-1.5"><span>🟢</span><span className="text-sm font-bold" style={{ color: '#22C55E' }}>7</span><span className="text-xs" style={{ color: '#6B7280' }}>ready</span></div>
-                    <div className="flex items-center gap-1.5"><span>🟡</span><span className="text-sm font-bold" style={{ color: '#F59E0B' }}>3</span><span className="text-xs" style={{ color: '#6B7280' }}>manage</span></div>
-                    <div className="flex items-center gap-1.5"><span>🔴</span><span className="text-sm font-bold" style={{ color: '#EF4444' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>rest</span></div>
-                    <div className="flex items-center gap-1.5"><span>🔵</span><span className="text-sm font-bold" style={{ color: '#3B82F6' }}>1</span><span className="text-xs" style={{ color: '#6B7280' }}>under</span></div>
-                  </div>
-                  {/* Injury Risk Alert */}
-                  <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                    <div className="flex items-center gap-2">
-                      <AlertCircle size={14} style={{ color: '#EF4444' }} />
-                      <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>GPS Injury Risk: Sean O&apos;Brien (ACWR 1.58) — rest recommended</p>
-                    </div>
-                  </div>
-                  <p className="text-xs mb-2" style={{ color: '#6B7280' }}>Last session: 31 Mar — Tactical Session — Set Pieces</p>
-                  <button className="text-xs font-semibold" style={{ color: '#003DA5' }}>View Performance Dashboard →</button>
-                </div>
-              </div>
-
-              {/* Injury Room */}
-              <InjuryRoomCard />
-            </div>
-          </div>
-          </>}
         </div>
-      ) : (
-        <TabContent tab={tab} />
-      )}
-    </div>
+
+        {/* Tab bar — Lucide icons + accent underline (matches rugby v2). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>
+          {OVERVIEW_TABS.map(t => {
+            const active = tab === t.id
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}
+                style={{
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px',
+                  fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : T.text3,
+                  borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
+                  marginBottom: -1,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  transition: 'color .12s, border-color .12s',
+                }}>
+                <V2Icon name={tabIcon(t.id)} size={12} stroke={1.6} />
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
+        {/* QUICK ACTIONS row centered horizontally for breathing space
+            between the left-aligned Tabs row above and the KPI cards
+            below. Visual hierarchy: navigation flush-left, actions
+            centered. */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <RoleAwareQuickActionsBar
+            sport="football"
+            role={role}
+            onNavigate={(dept) => { if (onNavigate) onNavigate(dept); else onAction(dept) }}
+            onAction={(modalId) => { if (onModal) onModal(modalId); else onAction(modalId) }}
+            accentHex={accent.hex}
+          />
+        </div>
+
+
+        {/* TAB CONTENT — Today renders v2 grid; others fall through to v1 TabContent */}
+        {tab === 'today' ? (
+          <>
+            <FbStatTiles T={T} accent={accent} density={density} />
+
+            {/* Three-column row — AI Morning Summary | Inbox | Today.
+                Cards rendered as DIRECT grid children, matching cricket's
+                canonical three-card row pattern at
+                src/app/cricket/[slug]/page.tsx:3925. Each card sets its
+                own gridColumn internally (FbAIBrief '1/span 4',
+                InteractiveFootballInbox '5/span 4', FbTodaySchedule
+                '9/span 4' — totalling 12). No per-card wrapper divs.
+                AI and Inbox carry density reductions
+                (FootballDashboardModules AIBrief, this file's
+                InteractiveFootballInbox) so heights converge on Today's
+                compact natural look.
+                CARD ROW GAP — gap: 8 (tighter than the density.gap=14
+                cricket uses) so the three cards read as one unified
+                row visual. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              <InteractiveFootballInbox T={T} accent={accent} density={density} />
+              <FbTodaySchedule T={T} accent={accent} density={density} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <FbFixturesModule T={T} accent={accent} density={density} onPick={f => setOpenFixture(f)} />
+              <FbPerf            T={T} accent={accent} density={density} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <FbRecents T={T} accent={accent} density={density} />
+              <FbSeason  T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Squad Availability — full-width strip at bottom of page.
+                Wrapper div overrides FbSquadModule's internal '10 / span 3'. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <FbSquadModule T={T} accent={accent} density={density} />
+              </div>
+            </div>
+
+            <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
+              <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
+            </div>
+          </>
+        ) : (
+          <TabContent tab={tab} />
+        )}
+      </div>
+
+      <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} sport="football" />
+      <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
+      <V2Toast          T={T} accent={accent} msg={dashToast} />
+      <FootballMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+    </>
   )
 }
 
@@ -1894,7 +2182,7 @@ function PlaceholderView({ title, subtitle, stats, highlights, actionButtons, on
         <div className="flex items-center gap-2 flex-wrap">
           {actionButtons.map((a, i) => (
             <button key={i} onClick={() => handleAction(a.label)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-              style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+              style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
               <a.icon size={12} />{a.label}
             </button>
           ))}
@@ -2395,9 +2683,9 @@ function SquadView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Team Sheet', i: Clipboard }, { l: 'Training Plan', i: Calendar }, { l: 'Player Ratings', i: Star }, { l: 'Match Report', i: FileText }, { l: 'Set Pieces', i: Target }, { l: 'Recovery Session', i: Heart }].map(a => (
           <button key={a.l} onClick={() => sqAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -2684,7 +2972,6 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
         { label: 'Opposition Report', icon: Eye },
         { label: 'Set Piece Planner', icon: Target },
         { label: 'Video Analysis', icon: Video },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -2719,6 +3006,7 @@ function TacticsView({ onActionClick }: { onActionClick?: (label: string) => voi
 
 function TransfersView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   const [researchStep, setResearchStep] = useState(1)
+  const [recruitTab, setRecruitTab] = useState<'window' | 'contracts' | 'agents' | 'loans'>('window')
 
   const RESEARCH_TARGETS = [
     { name: 'Aaron Collins', position: 'LW', club: 'Redmill United', age: 26, value: '£700k', fit: 92, summary: 'Direct left winger, strong in 1v1 duels. 4 assists this season. Suited to wide attacking style.' },
@@ -2726,7 +3014,155 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
     { name: 'Harvey Knibbs', position: 'ST', club: 'Oakridge Albion', age: 24, value: '£500k', fit: 78, summary: 'Mobile striker, good movement. 2 goals from set pieces this season.' },
   ]
 
+  const CONTRACTS = [
+    { player: 'Henderson',  pos: 'CB', expires: 'Jun 2026', wage: '£8,400/wk', status: 'Renewal in negotiation', flag: 'amber' as const },
+    { player: 'Walsh',      pos: 'CM', expires: 'Jun 2027', wage: '£6,200/wk', status: 'Active',                   flag: 'green' as const },
+    { player: 'Knibbs',     pos: 'ST', expires: 'Jun 2026', wage: '£5,800/wk', status: 'Renewal pending',         flag: 'amber' as const },
+    { player: 'Diallo',     pos: 'LB', expires: 'Jan 2027', wage: '£4,400/wk', status: 'Active',                   flag: 'green' as const },
+    { player: 'Wilson',     pos: 'CM', expires: 'May 2026', wage: '£3,800/wk', status: 'Released — formal letter', flag: 'red' as const   },
+    { player: 'Osei',       pos: 'CB', expires: 'Jun 2028', wage: '£7,100/wk', status: 'Active',                   flag: 'green' as const },
+  ]
+
+  const AGENTS = [
+    { agent: 'Stellar Group',     player: 'Henderson',  status: 'Negotiating',  meetingDue: 'Fri 02 May', notes: 'Wants 4-yr deal at £10k/wk. Counter at 3+1 / £9k.' },
+    { agent: 'Base Soccer',       player: 'Knibbs',     status: 'Reviewing',    meetingDue: 'Mon 12 May', notes: 'Open to renewal — son just signed Academy.' },
+    { agent: 'Wasserman',         player: 'Diallo',     status: 'Long-term',    meetingDue: '—',           notes: 'Annual catch-up due Q3. No active issues.' },
+    { agent: 'Unique Sports',     player: 'Aaron Collins (target)', status: 'Initial contact', meetingDue: 'Tue 06 May', notes: 'Player open to move. Club willing to listen above £900k.' },
+    { agent: 'CAA Stellar',       player: 'Louie Barry (target)',   status: 'Watching',         meetingDue: '—',          notes: 'Agent flagged interest from Championship clubs.' },
+  ]
+
+  const LOANS = [
+    { player: 'Tanaka',     to: 'Northshore Athletic',  league: 'NL South',     until: 'May 2026', minutes: 1840, rating: 7.4, recallClause: 'Yes' },
+    { player: 'Pollard',    to: 'Heritage Hill Town',   league: 'NL North',     until: 'May 2026', minutes: 2210, rating: 7.1, recallClause: 'Yes' },
+    { player: 'Mason (U21)',to: 'Riverside FC',          league: 'Step 4',       until: 'May 2026', minutes: 1480, rating: 6.9, recallClause: 'Yes' },
+    { player: 'Frost (U21)',to: 'Calderbrook Rovers',   league: 'Step 5',       until: 'Jan 2026', minutes: 920,  rating: 7.0, recallClause: 'No'  },
+  ]
+
+  const flagColor = (f: 'green' | 'amber' | 'red') => f === 'red' ? '#EF4444' : f === 'amber' ? '#F59E0B' : '#22C55E'
+  const TABS: { id: 'window' | 'contracts' | 'agents' | 'loans'; label: string }[] = [
+    { id: 'window',    label: 'Transfer Window Plan' },
+    { id: 'contracts', label: 'Contract Tracker' },
+    { id: 'agents',    label: 'Agent Pipeline' },
+    { id: 'loans',     label: 'Loan Watchlist' },
+  ]
+
+  if (recruitTab !== 'window') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2" style={{ color: '#F9FAFB' }}>📥 Recruitment Hub</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>Window plan · contracts · agents · loans</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid #1F2937', overflowX: 'auto' }}>
+          {TABS.map(t => {
+            const active = recruitTab === t.id
+            return (
+              <button key={t.id} onClick={() => setRecruitTab(t.id)}
+                style={{
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px', fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : '#9CA3AF',
+                  borderBottom: `2px solid ${active ? '#003DA5' : 'transparent'}`,
+                  marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'color .12s, border-color .12s',
+                }}>{t.label}</button>
+            )
+          })}
+        </div>
+
+        {recruitTab === 'contracts' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Player','Position','Expires','Wage','Status','Flag'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {CONTRACTS.map(c => (
+                  <tr key={c.player} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{c.player}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{c.pos}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: flagColor(c.flag) }}>{c.expires}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#D1D5DB' }}>{c.wage}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{c.status}</td>
+                    <td className="px-3 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${flagColor(c.flag)}26`, color: flagColor(c.flag) }}>{c.flag.toUpperCase()}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {recruitTab === 'agents' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Agency','Re: Player','Status','Next meeting','Notes'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {AGENTS.map((a, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{a.agent}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{a.player}</td>
+                    <td className="px-3 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,61,165,0.26)', color: '#7AAEFF' }}>{a.status.toUpperCase()}</span></td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{a.meetingDue}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{a.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {recruitTab === 'loans' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+            <table className="w-full text-xs">
+              <thead><tr style={{ background: '#0D0F14' }}>
+                {['Player','Loaned to','League','Until','Minutes','Rating','Recall'].map(h => (
+                  <th key={h} className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {LOANS.map(l => (
+                  <tr key={l.player} style={{ borderTop: '1px solid #1F2937' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{l.player}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{l.to}</td>
+                    <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{l.league}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#9CA3AF' }}>{l.until}</td>
+                    <td className="px-3 py-2.5 font-mono" style={{ color: '#D1D5DB' }}>{l.minutes}</td>
+                    <td className="px-3 py-2.5 font-mono font-bold" style={{ color: l.rating >= 7.2 ? '#22C55E' : '#D1D5DB' }}>{l.rating.toFixed(1)}</td>
+                    <td className="px-3 py-2.5" style={{ color: l.recallClause === 'Yes' ? '#22C55E' : '#9CA3AF' }}>{l.recallClause}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
+    <div className="space-y-4">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid #1F2937', overflowX: 'auto' }}>
+        {TABS.map(t => {
+          const active = recruitTab === t.id
+          return (
+            <button key={t.id} onClick={() => setRecruitTab(t.id)}
+              style={{
+                appearance: 'none', border: 0, background: 'transparent',
+                padding: '10px 14px', fontSize: 12.5, fontWeight: active ? 600 : 500,
+                color: active ? '#fff' : '#9CA3AF',
+                borderBottom: `2px solid ${active ? '#003DA5' : 'transparent'}`,
+                marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap',
+                transition: 'color .12s, border-color .12s',
+              }}>{t.label}</button>
+          )
+        })}
+      </div>
     <PlaceholderView
       title="Transfer Hub"
       subtitle="Target research, negotiations, and budget tracking."
@@ -2748,7 +3184,6 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         { label: 'New Target', icon: Plus },
         { label: 'Scout Network', icon: Eye },
         { label: 'Board Approval', icon: Briefcase },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -2888,6 +3323,7 @@ function TransfersView({ onActionClick }: { onActionClick?: (label: string) => v
         )}
       </div>
     </PlaceholderView>
+    </div>
   )
 }
 
@@ -2905,9 +3341,9 @@ function MedicalView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Log Injury', i: Heart }, { l: 'Return to Play', i: CheckCircle2 }, { l: 'Load Report', i: BarChart3 }, { l: 'Screen Player', i: Eye }, { l: 'Medical Clearance', i: Shield }, { l: 'GPS Report', i: Activity }].map(a => (
           <button key={a.l} onClick={() => medAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -3081,10 +3517,9 @@ function MedicalView() {
           { label: 'Log Injury', icon: Heart },
           { label: 'Rehab Plan', icon: Activity },
           { label: 'Fitness Report', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3108,10 +3543,9 @@ function ScoutingView() {
           { label: 'New Report', icon: FileText },
           { label: 'Watchlist', icon: Star },
           { label: 'Trip Planner', icon: MapPin },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3252,7 +3686,6 @@ function AcademyView({ onActionClick }: { onActionClick?: (label: string) => voi
         { label: 'Promote to First Team', icon: ArrowRight },
         { label: 'Development Plan', icon: FileText },
         { label: 'Scholarship Offers', icon: GraduationCap },
-        { label: 'Dept Insights', icon: BarChart3 },
       ]}
       onActionClick={onActionClick}
     >
@@ -3320,9 +3753,9 @@ function AnalyticsView() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Match Report', i: FileText }, { l: 'Opposition Analysis', i: Search }, { l: 'Set Piece Review', i: Target }, { l: 'Formation Builder', i: Clipboard }, { l: 'Video Session', i: Video }, { l: 'Stats Report', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => anAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.i size={12} />{a.l}
           </button>
         ))}
@@ -3472,10 +3905,9 @@ function AnalyticsView() {
           { label: 'Player Comparison', icon: Users },
           { label: 'Heat Maps', icon: BarChart3 },
           { label: 'Video Clips', icon: Video },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3497,10 +3929,9 @@ function MediaView() {
           { label: 'Press Brief', icon: FileText },
           { label: 'Social Post', icon: MessageSquare },
           { label: 'Media Schedule', icon: Calendar },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3792,10 +4223,9 @@ Respond ONLY in JSON (no markdown):
           { label: 'Team Sheet', icon: Clipboard },
           { label: 'Operations Checklist', icon: CheckCircle2 },
           { label: 'Ticketing', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -3960,7 +4390,7 @@ function PerformanceGPSView() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [connectToken, setConnectToken] = useState('')
-  const [connectProvider, setConnectProvider] = useState<'catapult' | 'statsports'>('catapult')
+  const [connectProvider, setConnectProvider] = useState<'johansports' | 'csv'>('johansports')
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionAnalysis, setSessionAnalysis] = useState<{
     session_rating: string;
@@ -4053,11 +4483,10 @@ Respond ONLY in JSON (no markdown):
           { label: 'Load Report', icon: BarChart3 },
           { label: 'Readiness Check', icon: CheckCircle2 },
           { label: 'Upload CSV', icon: FileText },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} onClick={() => { setToast(`${a.label} — opening workflow...`); setTimeout(() => setToast(null), 2500) }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4488,8 +4917,8 @@ Respond ONLY in JSON (no markdown):
               <input type="text" placeholder="Enter your Lumio GPS API key"
                 className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
                 style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
-                value={connectProvider === 'catapult' ? connectToken : ''}
-                onChange={e => { setConnectProvider('catapult'); setConnectToken(e.target.value) }} />
+                value={connectProvider === 'johansports' ? connectToken : ''}
+                onChange={e => { setConnectProvider('johansports'); setConnectToken(e.target.value) }} />
               <button onClick={() => { setToast('Lumio GPS connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
                 className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#3B82F6', color: '#FFF' }}>
@@ -4511,8 +4940,8 @@ Respond ONLY in JSON (no markdown):
               <input type="text" placeholder="Paste legacy provider API key..."
                 className="w-full px-4 py-2.5 rounded-lg text-sm mb-3"
                 style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB', outline: 'none' }}
-                value={connectProvider === 'statsports' ? connectToken : ''}
-                onChange={e => { setConnectProvider('statsports'); setConnectToken(e.target.value) }} />
+                value={connectProvider === 'csv' ? connectToken : ''}
+                onChange={e => { setConnectProvider('csv'); setConnectToken(e.target.value) }} />
               <button onClick={() => { setToast('Legacy provider connected — syncing sessions...'); setConnectToken(''); setTimeout(() => setToast(null), 2500) }}
                 className="w-full px-4 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#22C55E', color: '#FFF' }}>
@@ -4571,6 +5000,774 @@ Respond ONLY in JSON (no markdown):
   )
 }
 
+// ─── GPS Heatmaps View ──────────────────────────────────────────────────────
+// Showpiece visualisation hub — pure inline SVG, green→red heat scale,
+// brand colours pulled from localStorage at mount. All data is demo seed
+// (deterministic per player so the view is stable across re-renders).
+
+const HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
+const heatColor = (intensity: number) => {
+  const t = Math.max(0, Math.min(1, intensity))
+  const idx = Math.min(HEAT_STOPS.length - 1, Math.floor(t * (HEAT_STOPS.length - 1)))
+  return HEAT_STOPS[idx]
+}
+
+// Deterministic pseudo-random — keeps heat clouds stable across renders
+// without seeding a full PRNG. Inputs collapse name + index into a hash.
+function hashAt(str: string, salt: number): number {
+  let h = 2166136261 ^ salt
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 16777619)
+  }
+  return ((h >>> 0) % 10000) / 10000
+}
+
+const GPS_HEATMAP_PLAYERS = [
+  { name: 'Tom Fletcher',  position: 'LB',  group: 'Defenders' },
+  { name: 'Daniel Webb',   position: 'CB',  group: 'Defenders' },
+  { name: 'Marcus Reid',   position: 'CB',  group: 'Defenders' },
+  { name: 'Kyle Osei',     position: 'RB',  group: 'Defenders' },
+  { name: 'Liam Barker',   position: 'CM',  group: 'Midfielders' },
+  { name: 'Connor Walsh',  position: 'CM',  group: 'Midfielders' },
+  { name: 'Ryan Cole',     position: 'CM',  group: 'Midfielders' },
+  { name: 'Paul Granger',  position: 'CDM', group: 'Midfielders' },
+  { name: 'Dean Morris',   position: 'LW',  group: 'Forwards' },
+  { name: 'Sam Porter',    position: 'ST',  group: 'Forwards' },
+  { name: 'Myles Okafor',  position: 'LW',  group: 'Forwards' },
+  { name: 'James Tilley',  position: 'RW',  group: 'Forwards' },
+]
+
+const GPS_HEATMAP_MATCHES = [
+  'Northgate City (H) — 1-2 L',
+  'Plymouth Argyle (A) — 1-2 L',
+  'Fernbrook Athletic (H) — 1-1 D',
+  'Castleton Rovers (A) — 2-0 W',
+  'Redmill United (H) — 2-2 D',
+]
+
+const GPS_HEATMAP_TRAINING = [
+  'Tue — Tactical (90min)',
+  'Wed — High Intensity (75min)',
+  'Thu — S&C (60min)',
+  "Fri — Captain's Run (45min)",
+]
+
+function FootballPitch({ width, height, lineCol = 'rgba(255,255,255,0.18)' }: { width: number; height: number; lineCol?: string }) {
+  const W = width, H = height
+  return (
+    <g>
+      <rect width={W} height={H} fill="#06140a" rx={6} />
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={lineCol} strokeWidth={1.5} />
+      <line x1={W / 2} y1={0} x2={W / 2} y2={H} stroke={lineCol} strokeWidth={1.2} />
+      <circle cx={W / 2} cy={H / 2} r={H * 0.13} fill="none" stroke={lineCol} strokeWidth={1} />
+      <circle cx={W / 2} cy={H / 2} r={2.5} fill={lineCol} />
+      {/* Penalty boxes */}
+      <rect x={0} y={H * 0.22} width={W * 0.16} height={H * 0.56} fill="none" stroke={lineCol} strokeWidth={1} />
+      <rect x={W - W * 0.16} y={H * 0.22} width={W * 0.16} height={H * 0.56} fill="none" stroke={lineCol} strokeWidth={1} />
+      {/* 6-yard boxes */}
+      <rect x={0} y={H * 0.36} width={W * 0.06} height={H * 0.28} fill="none" stroke={lineCol} strokeWidth={1} />
+      <rect x={W - W * 0.06} y={H * 0.36} width={W * 0.06} height={H * 0.28} fill="none" stroke={lineCol} strokeWidth={1} />
+      {/* Goals */}
+      <line x1={0} y1={H * 0.44} x2={0} y2={H * 0.56} stroke="rgba(255,255,255,0.55)" strokeWidth={3} />
+      <line x1={W} y1={H * 0.44} x2={W} y2={H * 0.56} stroke="rgba(255,255,255,0.55)" strokeWidth={3} />
+      {/* Penalty arcs */}
+      <path d={`M ${W * 0.16} ${H * 0.4} A ${H * 0.13} ${H * 0.13} 0 0 1 ${W * 0.16} ${H * 0.6}`} fill="none" stroke={lineCol} strokeWidth={1} />
+      <path d={`M ${W - W * 0.16} ${H * 0.4} A ${H * 0.13} ${H * 0.13} 0 0 0 ${W - W * 0.16} ${H * 0.6}`} fill="none" stroke={lineCol} strokeWidth={1} />
+    </g>
+  )
+}
+
+function PositionalHeatmap({ width, height, player, matchIdx, intensity = 1 }: {
+  width: number; height: number; player: string; matchIdx: number; intensity?: number
+}) {
+  const W = width, H = height
+  // 12x8 cell grid sampled deterministically. Anchor the densest cell on a
+  // player-specific zone so each squad member's heatmap has a believable
+  // shape (LB hugs left flank, ST hovers around the box, etc).
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  const anchor = (() => {
+    switch (meta?.position) {
+      case 'LB': return { x: 0.18, y: 0.22 }
+      case 'RB': return { x: 0.18, y: 0.78 }
+      case 'CB': return { x: 0.22, y: 0.5 }
+      case 'CM': return { x: 0.5, y: 0.5 }
+      case 'CDM': return { x: 0.36, y: 0.5 }
+      case 'CAM': return { x: 0.62, y: 0.5 }
+      case 'LW': return { x: 0.78, y: 0.22 }
+      case 'RW': return { x: 0.78, y: 0.78 }
+      case 'ST':
+      case 'CF': return { x: 0.82, y: 0.5 }
+      default: return { x: 0.5, y: 0.5 }
+    }
+  })()
+  const cols = 14, rows = 9
+  const cellW = W / cols, cellH = H / rows
+  const cells: { x: number; y: number; t: number }[] = []
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = (c + 0.5) / cols
+      const cy = (r + 0.5) / rows
+      const dx = cx - anchor.x
+      const dy = cy - anchor.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const noise = hashAt(`${player}-${matchIdx}-${r}-${c}`, 7) * 0.45
+      const base = Math.max(0, 1 - dist * 1.9) + noise * 0.5
+      const t = Math.min(1, base * intensity)
+      if (t > 0.08) cells.push({ x: c * cellW, y: r * cellH, t })
+    }
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 360 }}>
+      <defs>
+        <filter id={`blur-${player.replace(/\s+/g, '')}-${matchIdx}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <FootballPitch width={W} height={H} />
+      <g filter={`url(#blur-${player.replace(/\s+/g, '')}-${matchIdx})`} opacity={0.85}>
+        {cells.map((cell, i) => (
+          <rect
+            key={i}
+            x={cell.x}
+            y={cell.y}
+            width={cellW + 2}
+            height={cellH + 2}
+            fill={heatColor(cell.t)}
+            opacity={0.35 + cell.t * 0.55}
+          />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function TouchMap({ width, height, player, matchIdx, brandPrimary }: {
+  width: number; height: number; player: string; matchIdx: number; brandPrimary: string
+}) {
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  const cluster = (() => {
+    switch (meta?.position) {
+      case 'LB': return { x: 0.22, y: 0.2, spread: 0.18 }
+      case 'RB': return { x: 0.22, y: 0.8, spread: 0.18 }
+      case 'CB': return { x: 0.18, y: 0.5, spread: 0.14 }
+      case 'CM': return { x: 0.5, y: 0.5, spread: 0.22 }
+      case 'CDM': return { x: 0.34, y: 0.5, spread: 0.18 }
+      case 'LW': return { x: 0.74, y: 0.22, spread: 0.18 }
+      case 'RW': return { x: 0.74, y: 0.78, spread: 0.18 }
+      case 'ST':
+      case 'CF': return { x: 0.82, y: 0.5, spread: 0.16 }
+      default: return { x: 0.5, y: 0.5, spread: 0.2 }
+    }
+  })()
+  const touches = 48
+  const dots: { x: number; y: number; r: number }[] = []
+  for (let i = 0; i < touches; i++) {
+    const a = hashAt(`${player}-tm-${matchIdx}-${i}-a`, 11) * Math.PI * 2
+    const r = hashAt(`${player}-tm-${matchIdx}-${i}-r`, 13) * cluster.spread
+    const x = (cluster.x + Math.cos(a) * r) * width
+    const y = (cluster.y + Math.sin(a) * r) * height
+    dots.push({ x, y, r: 2.5 + hashAt(`${player}-tm-${matchIdx}-${i}-s`, 19) * 2.5 })
+  }
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
+      <FootballPitch width={width} height={height} />
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={d.r} fill={brandPrimary} opacity={0.75} stroke="white" strokeOpacity={0.35} strokeWidth={0.6} />
+      ))}
+    </svg>
+  )
+}
+
+function ZoneThirdsMap({ width, height, player, matchIdx }: {
+  width: number; height: number; player: string; matchIdx: number
+}) {
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  // Skew thirds by role
+  const baseDef = (() => {
+    if (meta?.group === 'Defenders') return 58
+    if (meta?.group === 'Midfielders') return 32
+    return 12
+  })()
+  const baseAtt = (() => {
+    if (meta?.group === 'Forwards') return 56
+    if (meta?.group === 'Midfielders') return 30
+    return 10
+  })()
+  const noise = Math.round((hashAt(`${player}-zt-${matchIdx}`, 23) - 0.5) * 8)
+  const def = Math.max(5, Math.min(80, baseDef + noise))
+  const att = Math.max(5, Math.min(80, baseAtt - noise))
+  const mid = Math.max(5, 100 - def - att)
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={width} height={height} />
+      <rect x={0} y={0} width={width / 3} height={height} fill={heatColor(def / 80)} opacity={0.45} />
+      <rect x={width / 3} y={0} width={width / 3} height={height} fill={heatColor(mid / 80)} opacity={0.45} />
+      <rect x={(width / 3) * 2} y={0} width={width / 3} height={height} fill={heatColor(att / 80)} opacity={0.45} />
+      <text x={width / 6} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{def}%</text>
+      <text x={width / 2} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{mid}%</text>
+      <text x={(width / 6) * 5} y={height / 2 + 6} textAnchor="middle" fontSize={28} fontWeight={800} fill="white" opacity={0.92}>{att}%</text>
+      <text x={width / 6} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>DEFENSIVE</text>
+      <text x={width / 2} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>MIDDLE</text>
+      <text x={(width / 6) * 5} y={height - 10} textAnchor="middle" fontSize={9} fill="white" opacity={0.55}>ATTACKING</text>
+    </svg>
+  )
+}
+
+function SprintPathOverlay({ width, height, player, matchIdx, brandSecondary }: {
+  width: number; height: number; player: string; matchIdx: number; brandSecondary: string
+}) {
+  const sprintCount = 8 + Math.floor(hashAt(`${player}-sp-${matchIdx}`, 29) * 6)
+  const sprints: { x1: number; y1: number; x2: number; y2: number; speed: number }[] = []
+  for (let i = 0; i < sprintCount; i++) {
+    const sx = hashAt(`${player}-sp-${matchIdx}-${i}-x`, 31)
+    const sy = hashAt(`${player}-sp-${matchIdx}-${i}-y`, 37)
+    const ex = sx + (hashAt(`${player}-sp-${matchIdx}-${i}-dx`, 41) - 0.5) * 0.5
+    const ey = sy + (hashAt(`${player}-sp-${matchIdx}-${i}-dy`, 43) - 0.5) * 0.4
+    sprints.push({
+      x1: sx * width,
+      y1: sy * height,
+      x2: Math.max(8, Math.min(width - 8, ex * width)),
+      y2: Math.max(8, Math.min(height - 8, ey * height)),
+      speed: 0.5 + hashAt(`${player}-sp-${matchIdx}-${i}-s`, 47) * 0.5,
+    })
+  }
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={width} height={height} />
+      {sprints.map((s, i) => (
+        <g key={i}>
+          <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={heatColor(s.speed)} strokeWidth={2.2} strokeLinecap="round" opacity={0.85} />
+          <circle cx={s.x2} cy={s.y2} r={3.2} fill={brandSecondary} stroke={heatColor(s.speed)} strokeWidth={1.5} />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function HighIntensityZones({ width, height, sessionIdx }: { width: number; height: number; sessionIdx: number }) {
+  const W = width, H = height
+  const blobs: { cx: number; cy: number; r: number; t: number }[] = []
+  for (let i = 0; i < 16; i++) {
+    blobs.push({
+      cx: hashAt(`hi-${sessionIdx}-${i}-x`, 53) * W,
+      cy: hashAt(`hi-${sessionIdx}-${i}-y`, 59) * H,
+      r: 18 + hashAt(`hi-${sessionIdx}-${i}-r`, 61) * 38,
+      t: 0.4 + hashAt(`hi-${sessionIdx}-${i}-t`, 67) * 0.6,
+    })
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 320 }}>
+      <defs>
+        <filter id={`hi-blur-${sessionIdx}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="8" />
+        </filter>
+      </defs>
+      <FootballPitch width={W} height={H} />
+      <g filter={`url(#hi-blur-${sessionIdx})`}>
+        {blobs.map((b, i) => (
+          <circle key={i} cx={b.cx} cy={b.cy} r={b.r} fill={heatColor(b.t)} opacity={0.45} />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
+function WeeklyLoadCalendar({ brandPrimary, brandSecondary }: { brandPrimary: string; brandSecondary: string }) {
+  void brandPrimary
+  void brandSecondary
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const labels = ['Recovery', 'Tactical', 'High Intensity', 'S&C', "Captain's Run", 'MATCH', 'Off']
+  // Authentic football week microcycle: peak Wed, MD-1 (Fri) light, match Sat
+  const intensities = [0.18, 0.62, 0.92, 0.45, 0.3, 1.0, 0.05]
+  const distances = [3.2, 7.4, 9.8, 5.1, 4.0, 11.2, 0]
+  const loads = [320, 740, 1140, 560, 420, 1410, 0]
+  const cellW = 100 / 7
+  return (
+    <svg viewBox="0 0 700 200" width="100%" style={{ maxHeight: 220 }}>
+      <rect width={700} height={200} fill="#0d1117" rx={8} />
+      {days.map((d, i) => {
+        const x = i * (700 / 7)
+        const w = 700 / 7 - 6
+        return (
+          <g key={d}>
+            <rect x={x + 3} y={28} width={w} height={150} rx={6}
+              fill={heatColor(intensities[i])} opacity={0.18 + intensities[i] * 0.55} />
+            <rect x={x + 3} y={28} width={w} height={150} rx={6}
+              fill="none" stroke={heatColor(intensities[i])} strokeOpacity={0.6} strokeWidth={1} />
+            <text x={x + (700 / 7) / 2} y={20} textAnchor="middle" fontSize={11} fontWeight={700} fill="rgba(255,255,255,0.7)">{d}</text>
+            <text x={x + (700 / 7) / 2} y={62} textAnchor="middle" fontSize={10} fill="white" opacity={0.85}>{labels[i]}</text>
+            <text x={x + (700 / 7) / 2} y={110} textAnchor="middle" fontSize={26} fontWeight={800} fill="white">{loads[i]}</text>
+            <text x={x + (700 / 7) / 2} y={128} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.6)">AU load</text>
+            <text x={x + (700 / 7) / 2} y={158} textAnchor="middle" fontSize={11} fontWeight={600} fill="white" opacity={0.9}>{distances[i] > 0 ? `${distances[i]} km` : '—'}</text>
+          </g>
+        )
+      })}
+      <text x={4} y={195} fontSize={9} fill="rgba(255,255,255,0.4)">Squad average · 7-day rolling intensity</text>
+      <text x={696} y={195} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.4)">Cell colour = relative session intensity</text>
+      <line x1={0} y1={0} x2={cellW} y2={0} stroke="transparent" />
+    </svg>
+  )
+}
+
+function SpeedZoneBars({ player, brandPrimary }: { player: string; brandPrimary: string }) {
+  void brandPrimary
+  const meta = GPS_HEATMAP_PLAYERS.find(p => p.name === player)
+  // Default split adjusted by group
+  const base = meta?.group === 'Forwards'
+    ? [10, 22, 28, 24, 16]
+    : meta?.group === 'Defenders'
+    ? [16, 30, 28, 18, 8]
+    : [12, 26, 30, 20, 12]
+  const noise = (i: number) => Math.round((hashAt(`${player}-sz-${i}`, 71) - 0.5) * 6)
+  const dist = base.map((v, i) => Math.max(2, v + noise(i)))
+  const total = dist.reduce((a, b) => a + b, 0)
+  const pct = dist.map(v => (v / total) * 100)
+  const labels = ['Stand 0–2 km/h', 'Walk 2–7', 'Jog 7–14', 'Run 14–20', 'Sprint 20+']
+  const colors = [HEAT_STOPS[0], HEAT_STOPS[1], HEAT_STOPS[2], HEAT_STOPS[3], HEAT_STOPS[4]]
+  const W = 700, BAR_H = 30, GAP = 14
+  const totalH = labels.length * (BAR_H + GAP) + 16
+  return (
+    <svg viewBox={`0 0 ${W} ${totalH}`} width="100%" style={{ maxHeight: totalH + 8 }}>
+      {labels.map((label, i) => {
+        const y = 8 + i * (BAR_H + GAP)
+        const barW = (pct[i] / 100) * (W - 220)
+        return (
+          <g key={label}>
+            <text x={4} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={600} fill="rgba(255,255,255,0.85)">{label}</text>
+            <rect x={150} y={y} width={W - 220} height={BAR_H} rx={4} fill="rgba(255,255,255,0.04)" />
+            <rect x={150} y={y} width={barW} height={BAR_H} rx={4} fill={colors[i]} opacity={0.85} />
+            <text x={150 + barW + 8} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={700} fill="white">
+              {pct[i].toFixed(1)}% · {(dist[i] * 0.13).toFixed(2)} km
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function TopSpeedScatter({ brandPrimary }: { brandPrimary: string }) {
+  const players = GPS_HEATMAP_PLAYERS
+  const W = 700, H = 240, padL = 36, padB = 28
+  const minSpeed = 24, maxSpeed = 34
+  const points = players.flatMap((p, pi) => {
+    return Array.from({ length: 6 }, (_, si) => {
+      const session = si
+      const baseSpeed = p.group === 'Forwards' ? 31 : p.group === 'Midfielders' ? 29 : 28.5
+      const v = baseSpeed + (hashAt(`${p.name}-ts-${si}`, 79) - 0.5) * 4
+      const clamped = Math.max(minSpeed, Math.min(maxSpeed, v))
+      const x = padL + (session / 5) * (W - padL - 16)
+      const y = H - padB - ((clamped - minSpeed) / (maxSpeed - minSpeed)) * (H - padB - 16)
+      return { x, y, v: clamped, group: p.group, pi, si }
+    })
+  })
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 280 }}>
+      <rect width={W} height={H} fill="#0d1117" rx={6} />
+      {/* Y axis ticks */}
+      {[24, 26, 28, 30, 32, 34].map(v => {
+        const y = H - padB - ((v - minSpeed) / (maxSpeed - minSpeed)) * (H - padB - 16)
+        return (
+          <g key={v}>
+            <line x1={padL} y1={y} x2={W - 8} y2={y} stroke="rgba(255,255,255,0.06)" />
+            <text x={padL - 6} y={y + 3} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.45)">{v}</text>
+          </g>
+        )
+      })}
+      {/* X axis labels */}
+      {['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].map((s, i) => {
+        const x = padL + (i / 5) * (W - padL - 16)
+        return <text key={s} x={x} y={H - 8} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.5)">{s}</text>
+      })}
+      <text x={padL - 30} y={14} fontSize={10} fill="rgba(255,255,255,0.6)" fontWeight={700}>km/h</text>
+      {points.map((p, i) => {
+        const norm = (p.v - minSpeed) / (maxSpeed - minSpeed)
+        return (
+          <circle key={i} cx={p.x + (p.pi % 5) * 1.2 - 3} cy={p.y} r={3.6}
+            fill={heatColor(norm)} stroke={brandPrimary} strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
+        )
+      })}
+    </svg>
+  )
+}
+
+function AccelDecelMap({ width, height }: { width: number; height: number }) {
+  const W = width, H = height
+  const events = Array.from({ length: 24 }, (_, i) => ({
+    x: hashAt(`accel-${i}-x`, 83) * W,
+    y: hashAt(`accel-${i}-y`, 89) * H,
+    accel: hashAt(`accel-${i}-a`, 97) > 0.5,
+    intensity: 0.4 + hashAt(`accel-${i}-int`, 101) * 0.6,
+  }))
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: 320 }}>
+      <FootballPitch width={W} height={H} />
+      {events.map((e, i) => (
+        <g key={i}>
+          <circle cx={e.x} cy={e.y} r={6 + e.intensity * 6} fill={heatColor(e.intensity)} opacity={0.25} />
+          <polygon
+            points={e.accel
+              ? `${e.x},${e.y - 5} ${e.x - 4},${e.y + 4} ${e.x + 4},${e.y + 4}`
+              : `${e.x},${e.y + 5} ${e.x - 4},${e.y - 4} ${e.x + 4},${e.y - 4}`}
+            fill={e.accel ? '#22C55E' : '#EF4444'}
+            stroke="white" strokeOpacity={0.3} strokeWidth={0.6}
+          />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function GPSHeatmapsView() {
+  const [brandPrimary, setBrandPrimary] = useState('#003DA5')
+  const [brandSecondary, setBrandSecondary] = useState('#F1C40F')
+  const [matchIdx, setMatchIdx] = useState(0)
+  const [selectedPlayer, setSelectedPlayer] = useState(GPS_HEATMAP_PLAYERS[0].name)
+  const [trainingIdx, setTrainingIdx] = useState(0)
+  const [compareSessionA, setCompareSessionA] = useState(0)
+  const [compareSessionB, setCompareSessionB] = useState(1)
+  const [comparePlayers, setComparePlayers] = useState<string[]>([
+    GPS_HEATMAP_PLAYERS[0].name,
+    GPS_HEATMAP_PLAYERS[4].name,
+    GPS_HEATMAP_PLAYERS[8].name,
+    GPS_HEATMAP_PLAYERS[9].name,
+  ])
+
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem('lumio_football_brand_primary')
+      const s = localStorage.getItem('lumio_football_brand_secondary')
+      if (p) setBrandPrimary(p)
+      if (s) setBrandSecondary(s)
+    } catch { /* localStorage may be unavailable */ }
+  }, [])
+
+  const PW = 600, PH = 380
+  const PW_S = 360, PH_S = 230
+
+  const Section = ({ title, subtitle, children, accentColor }: { title: string; subtitle?: string; children: React.ReactNode; accentColor?: string }) => (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold" style={{ color: accentColor || brandPrimary }}>{title}</h2>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+        <div className="hidden md:flex items-center gap-3 text-[10px] text-gray-500">
+          <span className="uppercase tracking-wider">Heat scale</span>
+          <div className="flex h-2 rounded overflow-hidden border border-gray-800" style={{ width: 220 }}>
+            {HEAT_STOPS.map(c => <div key={c} style={{ flex: 1, background: c }} />)}
+          </div>
+          <span className="text-gray-500">low → high</span>
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+
+  const Card = ({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) => (
+    <div className="rounded-xl p-4 border" style={{ background: '#0d1117', borderColor: '#1F2937' }}>
+      {(title || subtitle) && (
+        <div className="mb-3">
+          {title && <div className="text-sm font-semibold text-white">{title}</div>}
+          {subtitle && <div className="text-[11px] text-gray-500 mt-0.5">{subtitle}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+
+  return (
+    <div className="space-y-10">
+      {/* Page header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${brandPrimary}, ${brandSecondary})` }}>
+              <Flame className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white">GPS Heatmaps</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Spatial movement analysis across matches, training, and the season — squad and individual.</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[10px]">
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: `${brandPrimary}20`, color: brandPrimary, border: `1px solid ${brandPrimary}50` }}>
+            10Hz GPS
+          </span>
+          <span className="px-2 py-1 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.4)' }}>
+            Live · synced 12 min ago
+          </span>
+        </div>
+      </div>
+
+      {/* ─── 1. MATCH HEATMAPS ─────────────────────────────────────── */}
+      <Section title="1 · Match Heatmaps" subtitle="Match-day positional intelligence — who covered which space, where they touched the ball, and what they did under load.">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Player</label>
+            <div className="flex flex-wrap gap-1">
+              {GPS_HEATMAP_PLAYERS.map(p => (
+                <button key={p.name} onClick={() => setSelectedPlayer(p.name)}
+                  className="px-2.5 py-1 rounded text-[11px] font-medium transition-all border"
+                  style={selectedPlayer === p.name
+                    ? { background: brandPrimary, color: 'white', borderColor: brandPrimary }
+                    : { background: '#0d1117', color: '#9CA3AF', borderColor: '#1F2937' }}>
+                  {p.name} <span className="opacity-60">· {p.position}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Match</label>
+            <select value={matchIdx} onChange={e => setMatchIdx(Number(e.target.value))}
+              className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              style={{ borderColor: '#1F2937' }}>
+              {GPS_HEATMAP_MATCHES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Positional Heatmap" subtitle={`${selectedPlayer} — full pitch density`}>
+            <PositionalHeatmap width={PW} height={PH} player={selectedPlayer} matchIdx={matchIdx} />
+          </Card>
+          <Card title="Touch Map" subtitle="Every ball touch logged by GPS-synced event data">
+            <TouchMap width={PW} height={PH} player={selectedPlayer} matchIdx={matchIdx} brandPrimary={brandPrimary} />
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Defensive vs Attacking Thirds" subtitle="% of total time spent in each third of the pitch">
+            <ZoneThirdsMap width={PW} height={PH * 0.8} player={selectedPlayer} matchIdx={matchIdx} />
+          </Card>
+          <Card title="Sprint Path Overlay" subtitle="High-speed runs (>20 km/h) — colour = peak speed">
+            <SprintPathOverlay width={PW} height={PH * 0.8} player={selectedPlayer} matchIdx={matchIdx} brandSecondary={brandSecondary} />
+          </Card>
+        </div>
+      </Section>
+
+      {/* ─── 2. TRAINING HEATMAPS ──────────────────────────────────── */}
+      <Section title="2 · Training Heatmaps" subtitle="Session-level distribution and weekly load microcycle." accentColor={brandSecondary}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Session</label>
+            <select value={trainingIdx} onChange={e => setTrainingIdx(Number(e.target.value))}
+              className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Session Movement Heatmap" subtitle={`${GPS_HEATMAP_TRAINING[trainingIdx]} — squad aggregate`}>
+            <PositionalHeatmap width={PW} height={PH} player="Liam Barker" matchIdx={trainingIdx + 100} intensity={0.85} />
+          </Card>
+          <Card title="High-Intensity Zones" subtitle="Sprints + accelerations density (≥3 m/s²)">
+            <HighIntensityZones width={PW} height={PH} sessionIdx={trainingIdx} />
+          </Card>
+        </div>
+
+        <Card title="Session vs Session Comparison" subtitle="Side-by-side movement footprint">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <select value={compareSessionA} onChange={e => setCompareSessionA(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+            <select value={compareSessionB} onChange={e => setCompareSessionB(Number(e.target.value))}
+              className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-3 py-2 text-xs text-white">
+              {GPS_HEATMAP_TRAINING.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{GPS_HEATMAP_TRAINING[compareSessionA]}</div>
+              <PositionalHeatmap width={PW_S} height={PH_S} player="Connor Walsh" matchIdx={compareSessionA + 200} intensity={0.85} />
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{GPS_HEATMAP_TRAINING[compareSessionB]}</div>
+              <PositionalHeatmap width={PW_S} height={PH_S} player="Connor Walsh" matchIdx={compareSessionB + 200} intensity={0.85} />
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Weekly Load Calendar" subtitle="7-day microcycle — match Saturday">
+          <WeeklyLoadCalendar brandPrimary={brandPrimary} brandSecondary={brandSecondary} />
+        </Card>
+      </Section>
+
+      {/* ─── 3. SPEED & INTENSITY ZONES ────────────────────────────── */}
+      <Section title="3 · Speed & Intensity Zones" subtitle="How distance, speed and accel/decel events distribute across the squad.">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Distance by Speed Zone" subtitle={`${selectedPlayer} — match average across last 5`}>
+            <SpeedZoneBars player={selectedPlayer} brandPrimary={brandPrimary} />
+          </Card>
+          <Card title="Top Speed Distribution" subtitle="All squad members across last 6 sessions">
+            <TopSpeedScatter brandPrimary={brandPrimary} />
+          </Card>
+        </div>
+        <Card title="Acceleration & Deceleration Map" subtitle="Where high-magnitude accel (▲ green) and decel (▼ red) events happen on the pitch">
+          <AccelDecelMap width={PW} height={PH * 0.7} />
+        </Card>
+      </Section>
+
+      {/* ─── 4. SQUAD COMPARISON ───────────────────────────────────── */}
+      <Section title="4 · Squad Comparison" subtitle="Up to 4 players side-by-side — grouped by role.">
+        <Card>
+          <div className="mb-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Comparing 4 players (click a slot to change)</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {comparePlayers.map((p, slot) => (
+                <select key={slot} value={p}
+                  onChange={e => {
+                    const next = [...comparePlayers]
+                    next[slot] = e.target.value
+                    setComparePlayers(next)
+                  }}
+                  className="w-full bg-[#0a0c12] border border-gray-800 rounded-lg px-2 py-1.5 text-[11px] text-white">
+                  {GPS_HEATMAP_PLAYERS.map(pl => <option key={pl.name} value={pl.name}>{pl.name} · {pl.position}</option>)}
+                </select>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {comparePlayers.map((p, slot) => {
+              const meta = GPS_HEATMAP_PLAYERS.find(pl => pl.name === p)
+              return (
+                <div key={`${p}-${slot}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold text-white">{p}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                      style={{ background: `${brandPrimary}25`, color: brandPrimary }}>
+                      {meta?.position}
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-gray-500 mb-1">{meta?.group}</div>
+                  <PositionalHeatmap width={300} height={190} player={p} matchIdx={matchIdx} />
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+
+        <Card title="Position Group Aggregates" subtitle="Combined heat for each role group">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(['Defenders', 'Midfielders', 'Forwards'] as const).map(group => {
+              const groupAnchor = GPS_HEATMAP_PLAYERS.find(p => p.group === group)?.name ?? GPS_HEATMAP_PLAYERS[0].name
+              return (
+                <div key={group}>
+                  <div className="text-[11px] font-bold text-white mb-1" style={{ color: brandSecondary }}>{group}</div>
+                  <PositionalHeatmap width={400} height={250} player={groupAnchor} matchIdx={matchIdx + 1000} intensity={0.95} />
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      </Section>
+
+      {/* ─── 5. SEASON OVERVIEW ────────────────────────────────────── */}
+      <Section title="5 · Season Overview" subtitle="Trend grids and home/away differentials across the campaign.">
+        <Card title="Rolling 10-Match Load Grid" subtitle="Rows = players · columns = last 10 matches · cell colour = relative load (AU)">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="text-left p-1.5 text-gray-500 font-semibold">Player</th>
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <th key={i} className="p-1.5 text-gray-500 font-semibold">M{i + 1}</th>
+                  ))}
+                  <th className="p-1.5 text-gray-400 font-semibold">Avg</th>
+                </tr>
+              </thead>
+              <tbody>
+                {GPS_HEATMAP_PLAYERS.map(p => {
+                  const cells = Array.from({ length: 10 }, (_, i) => {
+                    const baseRange = p.group === 'Forwards' ? [0.55, 0.95] : p.group === 'Midfielders' ? [0.6, 0.98] : [0.5, 0.85]
+                    const t = baseRange[0] + hashAt(`${p.name}-rolling-${i}`, 103) * (baseRange[1] - baseRange[0])
+                    return t
+                  })
+                  const avg = cells.reduce((a, b) => a + b, 0) / cells.length
+                  return (
+                    <tr key={p.name} className="border-t border-gray-900">
+                      <td className="p-1.5 text-white whitespace-nowrap">
+                        {p.name} <span className="text-gray-600">· {p.position}</span>
+                      </td>
+                      {cells.map((t, i) => (
+                        <td key={i} className="p-0.5">
+                          <div className="rounded text-center font-bold text-white"
+                            style={{
+                              background: heatColor(t),
+                              opacity: 0.45 + t * 0.5,
+                              padding: '6px 0',
+                              minWidth: 28,
+                              fontSize: 10,
+                            }}>
+                            {Math.round(800 + t * 800)}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="p-0.5">
+                        <div className="rounded text-center font-bold text-white"
+                          style={{
+                            background: heatColor(avg),
+                            opacity: 0.6 + avg * 0.4,
+                            padding: '6px 0',
+                            minWidth: 36,
+                            fontSize: 10,
+                            border: '1px solid rgba(255,255,255,0.2)',
+                          }}>
+                          {Math.round(800 + avg * 800)}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card title="Home vs Away Positional Difference" subtitle="Δ density — which zones each side of the squad covers more away vs home">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[11px] mb-1 font-semibold" style={{ color: brandPrimary }}>Home — squad average</div>
+              <PositionalHeatmap width={PW_S + 60} height={PH_S + 30} player="Liam Barker" matchIdx={500} intensity={0.95} />
+            </div>
+            <div>
+              <div className="text-[11px] mb-1 font-semibold" style={{ color: brandSecondary }}>Away — squad average</div>
+              <PositionalHeatmap width={PW_S + 60} height={PH_S + 30} player="Liam Barker" matchIdx={501} intensity={0.78} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 mt-4 gap-3 text-[11px]">
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Home territory</div>
+              <div className="text-white text-xl font-black">+8.4%</div>
+              <div className="text-gray-400">more time in opp half at home</div>
+            </div>
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Defensive shape (away)</div>
+              <div className="text-white text-xl font-black">−12 m</div>
+              <div className="text-gray-400">deeper defensive line away</div>
+            </div>
+            <div className="rounded-lg p-3 border" style={{ borderColor: '#1F2937', background: '#0a0c12' }}>
+              <div className="text-gray-500 uppercase tracking-wider text-[9px]">Sprint volume</div>
+              <div className="text-white text-xl font-black">+14%</div>
+              <div className="text-gray-400">higher away (more transitions)</div>
+            </div>
+          </div>
+        </Card>
+      </Section>
+
+      <div className="text-[10px] text-gray-700 text-center pt-2">
+        GPS data sourced from Lumio GPS · 10Hz sampling · Demo data shown — connect Johan Sports or import via CSV for live feed
+      </div>
+    </div>
+  )
+}
+
 // ─── Training View ──────────────────────────────────────────────────────────
 
 function TrainingView() {
@@ -4586,10 +5783,9 @@ function TrainingView() {
           { label: 'Session Plan', icon: Clipboard },
           { label: 'Load Report', icon: BarChart3 },
           { label: 'Recovery Schedule', icon: Heart },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4694,10 +5890,9 @@ function FinanceView() {
           { label: 'Budget Overview', icon: DollarSign },
           { label: 'Wage Report', icon: FileText },
           { label: 'Revenue Dashboard', icon: BarChart3 },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4792,10 +5987,9 @@ function _OriginalStaffView() {
           { label: 'Staff Directory', icon: Users },
           { label: 'Leave Calendar', icon: Calendar },
           { label: 'Recruitment', icon: UserPlus },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -4889,10 +6083,9 @@ function FacilitiesView() {
           { label: 'Pitch Report', icon: FileText },
           { label: 'Maintenance Log', icon: Clipboard },
           { label: 'Booking Schedule', icon: Calendar },
-          { label: 'Dept Insights', icon: BarChart3 },
-        ].map((a, i) => (
+          ].map((a, i) => (
           <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.label === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
             <a.icon size={12} />{a.label}
           </button>
         ))}
@@ -5022,9 +6215,9 @@ function SocialMediaView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Lumio Sports FC</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }].map(a => (
           <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -5121,9 +6314,9 @@ function DynamicsView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Dressing Room Intelligence</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Squad harmony, morale and player wellbeing</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Team Meeting', i: Users }, { l: 'Player Chat', i: MessageSquare }, { l: 'Issue Fine', i: AlertCircle }, { l: 'Set Mentoring', i: Heart }, { l: 'Code of Conduct', i: Shield }, { l: 'Atmosphere Report', i: BarChart3 }].map(a => (
           <button key={a.l} onClick={() => action(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -5164,57 +6357,6 @@ function DynamicsView() {
   )
 }
 
-function PSRView() {
-  const [purchaseSlider, setPurchaseSlider] = useState(0)
-  const [saleSlider, setSaleSlider] = useState(0)
-  const baseLoss = 20.7
-  const projected = baseLoss + purchaseSlider - saleSlider
-  const [psrToast, setPsrToast] = useState<string | null>(null)
-  function psrAction(l: string) { setPsrToast(`${l} — generating...`); setTimeout(() => setPsrToast(null), 2500) }
-
-  return (
-    <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Finance & Profit & Sustainability Rules</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Championship PSR limit: £39m loss over 3 rolling years</p></div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'PSR Report', i: FileText }, { l: 'Revenue Forecast', i: TrendingUp }, { l: 'Budget Review', i: BarChart3 }, { l: 'What-If Calculator', i: Target }, { l: 'Board Financial Pack', i: Briefcase }, { l: 'Flag Risk', i: AlertCircle }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
-          <button key={a.l} onClick={() => psrAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
-        ))}
-      </div>
-
-      <div className="rounded-2xl p-6" style={{ backgroundColor: '#111318', border: '2px solid #F59E0B' }}>
-        <p className="text-xs font-bold mb-2" style={{ color: '#F59E0B' }}>PSR STATUS: ⚠️ MONITOR</p>
-        <div className="flex items-center gap-6"><div><p className="text-3xl font-black" style={{ color: '#F9FAFB' }}>£{projected.toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>3-year rolling loss</p></div><div><p className="text-3xl font-black" style={{ color: '#22C55E' }}>£{(39 - projected).toFixed(1)}m</p><p className="text-xs" style={{ color: '#6B7280' }}>Headroom remaining</p></div><div className="flex-1"><div className="h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${(projected / 39) * 100}%`, backgroundColor: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }} /></div><p className="text-[10px] text-right mt-0.5" style={{ color: '#6B7280' }}>£39m limit</p></div></div>
-      </div>
-
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
-        <table className="w-full text-sm"><thead><tr style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}>{['Year','Revenue','Expenditure','Net P&L','Deductions','PSR Figure'].map(h => <th key={h} className="text-left px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
-        <tbody>{[['2023/24','£42.1m','£54.3m','-£12.2m','-£4.1m','-£8.1m'],['2024/25','£46.8m','£57.2m','-£10.4m','-£3.8m','-£6.6m'],['2025/26*','£51.2m','£61.1m','-£9.9m','-£3.9m','-£6.0m']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-3" style={{ color: j === 0 ? '#F9FAFB' : c.startsWith('-') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}<tr style={{ backgroundColor: '#0A0B10' }}><td className="px-4 py-3 font-bold" style={{ color: '#F9FAFB' }}>TOTAL</td><td colSpan={3} /><td /><td className="px-4 py-3 font-bold" style={{ color: '#22C55E' }}>-£20.7m ✅</td></tr></tbody></table>
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        {[{ l: 'Match Day', v: '£8.2m', b: '£8.5m' },{ l: 'Broadcasting', v: '£22.4m', b: '£22.0m' },{ l: 'Commercial', v: '£12.1m', b: '£14.0m' },{ l: 'Weekly Wages', v: '£187k', b: '£200k limit' }].map(r => (
-          <div key={r.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{r.l}</p><p className="text-lg font-black" style={{ color: '#F9FAFB' }}>{r.v}</p><p className="text-[10px]" style={{ color: '#6B7280' }}>Budget: {r.b}</p></div>
-        ))}
-      </div>
-
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-4" style={{ color: '#F9FAFB' }}>What-If PSR Calculator</p>
-        <div className="grid grid-cols-2 gap-6">
-          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Purchase: £{purchaseSlider}m</p><input type="range" min={0} max={20} step={0.5} value={purchaseSlider} onChange={e => setPurchaseSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#003DA5' }} /></div>
-          <div><p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>Sale: £{saleSlider}m</p><input type="range" min={0} max={20} step={0.5} value={saleSlider} onChange={e => setSaleSlider(parseFloat(e.target.value))} className="w-full" style={{ accentColor: '#22C55E' }} /></div>
-        </div>
-        <div className="mt-4 rounded-lg p-3 text-center" style={{ backgroundColor: projected > 30 ? 'rgba(239,68,68,0.08)' : projected > 20 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${projected > 30 ? 'rgba(239,68,68,0.3)' : projected > 20 ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)'}` }}>
-          <p className="text-sm font-bold" style={{ color: projected > 30 ? '#EF4444' : projected > 20 ? '#F59E0B' : '#22C55E' }}>Projected PSR: -£{projected.toFixed(1)}m of £39m limit — {projected > 39 ? '❌ BREACH' : projected > 30 ? '⚠️ AT RISK' : '✅ SAFE'}</p>
-        </div>
-      </div>
-
-      {psrToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{psrToast}</div>}
-    </div>
-  )
-}
-
 function SquadPlannerView() {
   const [season, setSeason] = useState<'current' | 'next' | 'after'>('current')
   const [spToast, setSpToast] = useState<string | null>(null)
@@ -5225,9 +6367,9 @@ function SquadPlannerView() {
       <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Squad Planner</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Plan your squad for this season, next season and beyond</p></div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }, { l: 'Dept Insights', i: BarChart3 }].map(a => (
+        {[{ l: 'Add Target', i: Plus }, { l: 'Save Plan', i: Check }, { l: 'Export to Board', i: FileText }, { l: 'Reset', i: X }, { l: 'Age Profile', i: BarChart3 }, { l: 'Recruitment Priorities', i: Target }].map(a => (
           <button key={a.l} onClick={() => spAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={a.l === 'Dept Insights' ? { backgroundColor: 'transparent', border: '1px solid #F1C40F', color: '#F1C40F' } : { backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
+            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
         ))}
       </div>
 
@@ -5267,45 +6409,6 @@ function SquadPlannerView() {
       </div>
 
       {spToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{spToast}</div>}
-    </div>
-  )
-}
-
-function ClubProfileView() {
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#003DA5' }}>⚽</div>
-        <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Lumio Sports FC</h2><p className="text-sm" style={{ color: '#9CA3AF' }}>EFL League One · Founded 2002</p></div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[{ l: 'Nickname', v: 'Lumio Sports FC' },{ l: 'Colours', v: 'Blue & Yellow' },{ l: 'Stadium', v: 'Lumio Park' },{ l: 'Capacity', v: '9,215' }].map(s => (
-          <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>{s.l}</p><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{s.v}</p></div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F1C40F' }}>🏆 Honours</p>
-          {['League Two Play-off Winners: 2015/16','National League Promotion: 2010/11','Combined Counties League Premier: 2004/05','Isthmian League Division One: 2007/08'].map(h => <p key={h} className="text-xs py-1" style={{ color: '#D1D5DB' }}>{h}</p>)}
-        </div>
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</p>
-          {[{ l: 'Training Ground', v: '⭐⭐⭐⭐ Cat 1' },{ l: 'Stadium', v: '⭐⭐⭐ Championship' },{ l: 'Academy', v: '⭐⭐⭐⭐ EPPP Cat 2' },{ l: 'Medical Centre', v: '⭐⭐⭐⭐' }].map(f => <div key={f.l} className="flex justify-between py-1"><span className="text-xs" style={{ color: '#9CA3AF' }}>{f.l}</span><span className="text-xs" style={{ color: '#F1C40F' }}>{f.v}</span></div>)}
-        </div>
-      </div>
-
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Board & Ownership</p>
-        {[['Owner', 'Lumio Sports FC Trust (fan-owned)'],['Manager', 'Johnnie Jackson'],['Founded', '2002'],['Philosophy', '"By the fans, for the fans"']].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{v}</span></div>)}
-      </div>
-
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ backgroundColor: '#111318', borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Recent League History</p></div>
-        <table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Season','Division','Position','Pts'].map(h => <th key={h} className="text-left px-4 py-2" style={{ color: '#6B7280' }}>{h}</th>)}</tr></thead>
-        <tbody>{[['2025/26','League One','14th (current)','—'],['2024/25','League Two','3rd (Promoted)','77'],['2023/24','League Two','10th','62'],['2022/23','League Two','19th','50'],['2021/22','League One','24th (Relegated)','41']].map((r,i) => <tr key={i} style={{ borderBottom: '1px solid #1F2937' }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? '#F9FAFB' : c.includes('Promoted') ? '#22C55E' : c.includes('Relegated') ? '#EF4444' : '#9CA3AF' }}>{c}</td>)}</tr>)}</tbody></table>
-      </div>
     </div>
   )
 }
@@ -5461,7 +6564,7 @@ function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLog
           <div className="flex items-center justify-between px-5 py-3">
             <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
             <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-              <option>None</option><option>Lumio GPS (recommended)</option><option>Lumio GPS Pro (with live data)</option><option>CSV Upload (manual)</option>
+              <option>None</option><option>Johan Sports (recommended)</option><option>CSV Upload (manual)</option>
             </select>
           </div>
           <div className="flex items-center justify-between px-5 py-3">
@@ -6026,312 +7129,31 @@ function PlayerProfileModal({ player, onClose, PRIMARY, SECONDARY }: { player: P
   )
 }
 
-// ─── Pre-Season Camp View (Football) ─────────────────────────────────────────
-function PreSeasonCampView() {
-  const SK = 'lumio_football_preseason'
-  const CK = 'lumio_football_training_camp'
-  const ACCENT = '#003DA5'
-  const ACCENT_DIM = 'rgba(0,61,165,0.15)'
-  const BG = '#07080F'
-  const CARD = '#0F1629'
-  const CARD_ALT = '#111827'
-  const BORDER = 'rgba(255,255,255,0.07)'
-  const TEXT = '#F1F5F9'
-  const MUTED = '#94A3B8'
-  const DIM = '#475569'
-  const GREEN = '#10B981'
-  const RED = '#EF4444'
-  const AMBER = '#F59E0B'
-
-  const scoreColor = (s: number) => s >= 80 ? GREEN : s >= 60 ? AMBER : RED
-
-  // Pre-season activation state
-  const [camp, setCamp] = useState<{ opener: string; opposition: string; squad: number; formation: string } | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ opener: '', opposition: '', squad: '25', formation: '4-4-2' })
-  useEffect(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(SK) : null; if (s) setCamp(JSON.parse(s)) } catch {} }, [])
-  const activate = () => { const c = { opener: form.opener, opposition: form.opposition, squad: parseInt(form.squad), formation: form.formation }; setCamp(c); localStorage.setItem(SK, JSON.stringify(c)); setShowModal(false) }
-  const deactivate = () => { setCamp(null); localStorage.removeItem(SK) }
-  const daysTo = camp ? Math.max(0, Math.ceil((new Date(camp.opener).getTime() - Date.now()) / 86400000)) : 0
-
-  // Readiness scores
-  const readinessScores = [
-    { label: 'Fitness Base', score: 72 },
-    { label: 'Tactical Shape', score: 58 },
-    { label: 'Set Pieces', score: 65 },
-    { label: 'Squad Depth', score: 71 },
-    { label: 'Match Sharpness', score: 51 },
-    { label: 'Injury Status', score: 80 },
-  ]
-  const overallScore = Math.round(readinessScores.reduce((a, s) => a + s.score, 0) / readinessScores.length)
-
-  // Daily checklist
-  const today2 = new Date().toISOString().split('T')[0]
-  const checklistKey = `${SK}_checklist_${today2}`
-  const checklistItems = ['Morning fitness session', 'Tactical shape drill', 'Set piece practice', 'Small-sided games', 'Video analysis session', 'Recovery & physio', 'Match simulation', 'Nutrition check-in']
-  const [checklist, setChecklist] = useState<boolean[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(checklistKey) : null; return s ? JSON.parse(s) : Array(8).fill(false) } catch { return Array(8).fill(false) } })
-  useEffect(() => { localStorage.setItem(checklistKey, JSON.stringify(checklist)) }, [checklist, checklistKey])
-  const completedChecklist = checklist.filter(Boolean).length
-
-  // Training Camp state
-  const [campSections, setCampSections] = useState<Record<string, boolean>>({ venue: false, schedule: false, kit: false, budget: false, content: false })
-  const toggleSection = (s: string) => setCampSections(p => ({ ...p, [s]: !p[s] }))
-
-  // Venue AI
-  const [venueQuery, setVenueQuery] = useState({ destination: '', squad: camp?.squad?.toString() || '25', requirements: 'Full size grass pitch, gym, pool, 2 meeting rooms' })
-  const [venueResults, setVenueResults] = useState<string | null>(null)
-  const [venueLoading, setVenueLoading] = useState(false)
-  const searchVenues = async () => {
-    setVenueLoading(true)
-    try {
-      const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a football pre-season training camp venue finder. Find 3 ideal training camp venues near/in "${venueQuery.destination}" for a squad of ${venueQuery.squad}. Requirements: ${venueQuery.requirements}. For each venue give: name, location, facilities, approximate cost per day, pros/cons. Format as a clear numbered list.` }] }) })
-      const data = await res.json()
-      setVenueResults(data.content?.[0]?.text || 'No results returned')
-    } catch { setVenueResults('Failed to search venues') }
-    setVenueLoading(false)
-  }
-
-  // Schedule
-  const DAYS = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
-  const AM_DEFAULTS = ['Fitness testing', 'Tactical shape', 'Set pieces', 'Double session', 'Match simulation', 'Fitness testing', 'Tactical shape']
-  const PM_DEFAULTS = ['Recovery & gym', 'Video analysis', 'Small-sided games', 'Rest', 'Friendly match', 'Recovery & gym', 'Video analysis']
-  const [schedule, setSchedule] = useState<{ am: string; pm: string; eve: string }[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_schedule`) : null; return s ? JSON.parse(s) : DAYS.map((_, i) => ({ am: AM_DEFAULTS[i] || 'Training', pm: PM_DEFAULTS[i] || 'Recovery', eve: 'Team meeting' })) } catch { return DAYS.map((_, i) => ({ am: AM_DEFAULTS[i] || 'Training', pm: PM_DEFAULTS[i] || 'Recovery', eve: 'Team meeting' })) } })
-  useEffect(() => { localStorage.setItem(`${CK}_schedule`, JSON.stringify(schedule)) }, [schedule])
-
-  // Kit & Equipment
-  const KIT_ITEMS = ['Training kits (home)', 'Training kits (away)', 'Match kits', 'Goalkeeping kits', 'Training boots (spare)', 'Cones & markers', 'Training bibs', 'Footballs (x30)']
-  const MEDICAL_ITEMS = ['Physio table (portable)', 'Ice bath supplies', 'Strapping & tape', 'First aid kits (x3)', 'Resistance bands', 'Foam rollers', 'GPS vests', 'Heart rate monitors']
-  const [kitChecked, setKitChecked] = useState<boolean[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_kit`) : null; return s ? JSON.parse(s) : Array(16).fill(false) } catch { return Array(16).fill(false) } })
-  useEffect(() => { localStorage.setItem(`${CK}_kit`, JSON.stringify(kitChecked)) }, [kitChecked])
-  const kitProgress = Math.round((kitChecked.filter(Boolean).length / 16) * 100)
-
-  // Budget
-  const [budget, setBudget] = useState<{ flights: number; accommodation: number; meals: number; facility: number; misc: number; total: number }>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_budget`) : null; return s ? JSON.parse(s) : { flights: 12000, accommodation: 18000, meals: 8000, facility: 5000, misc: 2000, total: 50000 } } catch { return { flights: 12000, accommodation: 18000, meals: 8000, facility: 5000, misc: 2000, total: 50000 } } })
-  useEffect(() => { localStorage.setItem(`${CK}_budget`, JSON.stringify(budget)) }, [budget])
-  const budgetSpent = budget.flights + budget.accommodation + budget.meals + budget.facility + budget.misc
-  const budgetPct = Math.round((budgetSpent / budget.total) * 100)
-
-  // Content & Sponsor Planner
-  const [contentSlots, setContentSlots] = useState<{ title: string; type: string; sponsor: string }[]>(() => { try { const s = typeof window !== 'undefined' ? localStorage.getItem(`${CK}_content`) : null; return s ? JSON.parse(s) : [{ title: 'Arrival day vlog', type: 'Video', sponsor: '' }, { title: 'Training montage', type: 'Reel', sponsor: '' }, { title: 'Player interview', type: 'Video', sponsor: '' }, { title: 'Behind the scenes', type: 'Story', sponsor: '' }, { title: 'Match highlights', type: 'Video', sponsor: '' }] } catch { return [{ title: 'Arrival day vlog', type: 'Video', sponsor: '' }, { title: 'Training montage', type: 'Reel', sponsor: '' }, { title: 'Player interview', type: 'Video', sponsor: '' }, { title: 'Behind the scenes', type: 'Story', sponsor: '' }, { title: 'Match highlights', type: 'Video', sponsor: '' }] } })
-  useEffect(() => { localStorage.setItem(`${CK}_content`, JSON.stringify(contentSlots)) }, [contentSlots])
-  const [contentIdeas, setContentIdeas] = useState<string | null>(null)
-  const [contentLoading, setContentLoading] = useState(false)
-  const generateContentIdeas = async () => {
-    setContentLoading(true)
-    try {
-      const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a football club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) })
-      const data = await res.json()
-      setContentIdeas(data.content?.[0]?.text || null)
-    } catch { setContentIdeas('Failed to generate ideas') }
-    setContentLoading(false)
-  }
-
-  // Card helper
-  const cardStyle = { backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12 }
-  const sectionHeader = (label: string, key: string, emoji: string) => (
-    <button onClick={() => toggleSection(key)} className="w-full flex items-center justify-between p-4" style={{ ...cardStyle, cursor: 'pointer' }}>
-      <div className="flex items-center gap-2"><span>{emoji}</span><span className="text-sm font-bold" style={{ color: TEXT }}>{label}</span></div>
-      <span style={{ color: MUTED, fontSize: 18 }}>{campSections[key] ? '−' : '+'}</span>
-    </button>
-  )
-
-  if (!camp) return (
-    <div className="space-y-6">
-      <div className="rounded-2xl p-12 text-center" style={cardStyle}>
-        <div className="text-6xl mb-4">⚽</div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: TEXT }}>Pre-Season Camp Mode</h2>
-        <p className="text-lg mb-2" style={{ color: ACCENT }}>Build fitness. Shape tactics. Start strong.</p>
-        <p className="text-sm max-w-lg mx-auto mb-8" style={{ color: MUTED }}>Activate pre-season and Lumio tracks every session, fitness test, tactical drill, and squad readiness metric — all the way to your opening fixture.</p>
-        <button onClick={() => setShowModal(true)} className="px-8 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: ACCENT, color: '#FFFFFF' }}>Activate Pre-Season</button>
-      </div>
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={cardStyle}>
-            <h3 className="text-lg font-bold" style={{ color: TEXT }}>Activate Pre-Season</h3>
-            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Season opener date</label><input type="date" value={form.opener} onChange={e => setForm(f => ({ ...f, opener: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Opposition</label><input value={form.opposition} onChange={e => setForm(f => ({ ...f, opposition: e.target.value }))} placeholder="e.g. Manchester City" className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Squad size</label><input type="number" value={form.squad} onChange={e => setForm(f => ({ ...f, squad: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-            <div><label className="text-xs mb-1 block" style={{ color: DIM }}>Formation</label><select value={form.formation} onChange={e => setForm(f => ({ ...f, formation: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl text-sm" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}><option value="4-4-2">4-4-2</option><option value="4-3-3">4-3-3</option><option value="3-5-2">3-5-2</option><option value="4-2-3-1">4-2-3-1</option><option value="3-4-3">3-4-3</option></select></div>
-            <button onClick={activate} disabled={!form.opener || !form.opposition} className="w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: form.opener && form.opposition ? ACCENT : BORDER, color: form.opener && form.opposition ? '#FFFFFF' : DIM }}>Activate Pre-Season ⚽</button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-
-  return (
-    <div className="space-y-6">
-      {/* Active banner */}
-      <div className="flex items-center justify-between px-5 py-3 rounded-xl" style={{ backgroundColor: ACCENT_DIM, border: `1px solid ${ACCENT}40` }}>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span>⚽</span>
-          <span className="text-sm font-bold" style={{ color: TEXT }}>Pre-Season Active</span>
-          <span className="text-sm" style={{ color: ACCENT }}>vs {camp.opposition} | {daysTo} days | {camp.formation}</span>
-        </div>
-        <button onClick={deactivate} className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: CARD_ALT, color: MUTED }}>Deactivate</button>
-      </div>
-
-      {/* Readiness Score */}
-      <div className="rounded-xl p-5" style={cardStyle}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-bold" style={{ color: TEXT }}>Pre-Season Readiness Score</div>
-          <div className="text-3xl font-black" style={{ color: scoreColor(overallScore) }}>{overallScore}<span className="text-sm" style={{ color: DIM }}>/100</span></div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {readinessScores.map(s => (
-            <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs" style={{ color: TEXT }}>{s.label}</span>
-                <span className="text-sm font-black" style={{ color: scoreColor(s.score) }}>{s.score}{s.score < 55 && ' \u26A0\uFE0F'}</span>
-              </div>
-              <div className="w-full rounded-full h-1.5" style={{ background: BORDER }}><div className="h-1.5 rounded-full" style={{ width: `${s.score}%`, backgroundColor: scoreColor(s.score) }} /></div>
-              {s.score < 60 && <div className="text-[9px] mt-1" style={{ color: RED }}>Needs attention</div>}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Daily Checklist */}
-      <div className="rounded-xl p-5" style={cardStyle}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-bold" style={{ color: TEXT }}>Today&apos;s Session Checklist</div>
-          <div className="text-xs" style={{ color: scoreColor(completedChecklist >= 6 ? 80 : completedChecklist >= 4 ? 65 : 40) }}>{completedChecklist}/8</div>
-        </div>
-        <div className="space-y-2">
-          {checklistItems.map((item, i) => (
-            <button key={i} onClick={() => setChecklist(ck => ck.map((v, j) => j === i ? !v : v))} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left" style={{ backgroundColor: checklist[i] ? `${GREEN}15` : 'transparent', border: checklist[i] ? `1px solid ${GREEN}33` : `1px solid ${BORDER}` }}>
-              <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: checklist[i] ? GREEN : BORDER, backgroundColor: checklist[i] ? `${GREEN}33` : 'transparent' }}>{checklist[i] && <span className="text-[10px]" style={{ color: GREEN }}>✓</span>}</div>
-              <span className="text-xs" style={{ color: checklist[i] ? GREEN : TEXT, textDecoration: checklist[i] ? 'line-through' : 'none' }}>{item}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Training Camp ── */}
-      <div className="rounded-xl p-5" style={cardStyle}>
-        <div className="text-sm font-bold mb-1" style={{ color: TEXT }}>Training Camp</div>
-        <div className="text-xs mb-4" style={{ color: MUTED }}>Plan your pre-season training camp end-to-end</div>
-        <div className="space-y-3">
-
-          {/* 1. Venue Finder AI */}
-          {sectionHeader('Venue Finder AI', 'venue', '\uD83C\uDFDF\uFE0F')}
-          {campSections.venue && (
-            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Destination</label><input value={venueQuery.destination} onChange={e => setVenueQuery(q => ({ ...q, destination: e.target.value }))} placeholder="e.g. Marbella, Spain" className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Squad size</label><input value={venueQuery.squad} onChange={e => setVenueQuery(q => ({ ...q, squad: e.target.value }))} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-                <div><label className="text-[10px] block mb-1" style={{ color: DIM }}>Requirements</label><input value={venueQuery.requirements} onChange={e => setVenueQuery(q => ({ ...q, requirements: e.target.value }))} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></div>
-              </div>
-              <button onClick={searchVenues} disabled={venueLoading || !venueQuery.destination} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: ACCENT, color: '#FFF' }}>{venueLoading ? 'Searching...' : 'Search Venues'}</button>
-              {venueResults && <div className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-lg" style={{ backgroundColor: CARD, color: TEXT }}>{venueResults}</div>}
-            </div>
-          )}
-
-          {/* 2. Camp Schedule */}
-          {sectionHeader('Camp Schedule', 'schedule', '\uD83D\uDCC5')}
-          {campSections.schedule && (
-            <div className="rounded-xl p-4 overflow-x-auto" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <table className="w-full text-xs" style={{ color: TEXT }}>
-                <thead><tr style={{ color: DIM }}><th className="text-left p-2">Day</th><th className="text-left p-2">AM</th><th className="text-left p-2">PM</th><th className="text-left p-2">Evening</th></tr></thead>
-                <tbody>
-                  {DAYS.map((day, i) => (
-                    <tr key={day} style={{ borderTop: `1px solid ${BORDER}` }}>
-                      <td className="p-2 font-bold" style={{ color: ACCENT }}>{day}</td>
-                      <td className="p-2"><select value={schedule[i]?.am || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, am: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
-                        {['Fitness testing', 'Tactical shape', 'Set pieces', 'Double session', 'Match simulation'].map(o => <option key={o} value={o}>{o}</option>)}
-                      </select></td>
-                      <td className="p-2"><select value={schedule[i]?.pm || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, pm: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
-                        {['Recovery & gym', 'Video analysis', 'Small-sided games', 'Rest', 'Friendly match'].map(o => <option key={o} value={o}>{o}</option>)}
-                      </select></td>
-                      <td className="p-2"><input value={schedule[i]?.eve || ''} onChange={e => setSchedule(s => s.map((r, j) => j === i ? { ...r, eve: e.target.value } : r))} className="w-full px-2 py-1 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* 3. Kit & Equipment */}
-          {sectionHeader('Kit & Equipment', 'kit', '\uD83D\uDC55')}
-          {campSections.kit && (
-            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs" style={{ color: MUTED }}>Packed: {kitChecked.filter(Boolean).length}/16</span>
-                <span className="text-xs font-bold" style={{ color: kitProgress === 100 ? GREEN : kitProgress >= 50 ? AMBER : RED }}>{kitProgress}%</span>
-              </div>
-              <div className="w-full rounded-full h-2" style={{ background: BORDER }}><div className="h-2 rounded-full transition-all" style={{ width: `${kitProgress}%`, backgroundColor: kitProgress === 100 ? GREEN : kitProgress >= 50 ? AMBER : RED }} /></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                <div><div className="text-[10px] font-bold uppercase mb-2" style={{ color: DIM }}>Kit</div>{KIT_ITEMS.map((item, i) => (
-                  <button key={i} onClick={() => setKitChecked(k => k.map((v, j) => j === i ? !v : v))} className="w-full flex items-center gap-2 px-2 py-1.5 text-left rounded" style={{ color: kitChecked[i] ? GREEN : TEXT }}>
-                    <span className="text-[10px]">{kitChecked[i] ? '✅' : '⬜'}</span><span className="text-xs" style={{ textDecoration: kitChecked[i] ? 'line-through' : 'none' }}>{item}</span>
-                  </button>
-                ))}</div>
-                <div><div className="text-[10px] font-bold uppercase mb-2" style={{ color: DIM }}>Medical</div>{MEDICAL_ITEMS.map((item, i) => (
-                  <button key={i + 8} onClick={() => setKitChecked(k => k.map((v, j) => j === i + 8 ? !v : v))} className="w-full flex items-center gap-2 px-2 py-1.5 text-left rounded" style={{ color: kitChecked[i + 8] ? GREEN : TEXT }}>
-                    <span className="text-[10px]">{kitChecked[i + 8] ? '✅' : '⬜'}</span><span className="text-xs" style={{ textDecoration: kitChecked[i + 8] ? 'line-through' : 'none' }}>{item}</span>
-                  </button>
-                ))}</div>
-              </div>
-            </div>
-          )}
-
-          {/* 4. Camp Budget */}
-          {sectionHeader('Camp Budget', 'budget', '\uD83D\uDCB0')}
-          {campSections.budget && (
-            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs" style={{ color: MUTED }}>Spent: {'\u00A3'}{budgetSpent.toLocaleString()}</span>
-                <span className="text-xs font-bold" style={{ color: budgetPct > 100 ? RED : budgetPct > 80 ? AMBER : GREEN }}>of {'\u00A3'}{budget.total.toLocaleString()} ({budgetPct}%)</span>
-              </div>
-              <div className="w-full rounded-full h-2" style={{ background: BORDER }}><div className="h-2 rounded-full" style={{ width: `${Math.min(100, budgetPct)}%`, backgroundColor: budgetPct > 100 ? RED : budgetPct > 80 ? AMBER : GREEN }} /></div>
-              <div className="space-y-2 mt-3">
-                {([['Flights', 'flights'], ['Accommodation', 'accommodation'], ['Meals', 'meals'], ['Facility hire', 'facility'], ['Miscellaneous', 'misc']] as const).map(([label, key]) => (
-                  <div key={key} className="flex items-center justify-between gap-3">
-                    <span className="text-xs w-28" style={{ color: TEXT }}>{label}</span>
-                    <input type="number" value={budget[key]} onChange={e => setBudget(b => ({ ...b, [key]: parseInt(e.target.value) || 0 }))} className="flex-1 px-2 py-1 rounded text-xs text-right" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} />
-                  </div>
-                ))}
-                <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${BORDER}` }}>
-                  <span className="text-xs font-bold" style={{ color: TEXT }}>Budget cap</span>
-                  <input type="number" value={budget.total} onChange={e => setBudget(b => ({ ...b, total: parseInt(e.target.value) || 0 }))} className="w-32 px-2 py-1 rounded text-xs text-right" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: ACCENT }} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 5. Content & Sponsor Planner */}
-          {sectionHeader('Content & Sponsor Planner', 'content', '\uD83C\uDFA5')}
-          {campSections.content && (
-            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
-              <div className="space-y-2">
-                {contentSlots.map((slot, i) => (
-                  <div key={i} className="grid grid-cols-3 gap-2">
-                    <input value={slot.title} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, title: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Content title" />
-                    <select value={slot.type} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, type: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }}>
-                      {['Video', 'Reel', 'Story', 'Photo', 'Blog'].map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <input value={slot.sponsor} onChange={e => setContentSlots(s => s.map((r, j) => j === i ? { ...r, sponsor: e.target.value } : r))} className="px-2 py-1.5 rounded text-xs" style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Sponsor (optional)" />
-                  </div>
-                ))}
-              </div>
-              <button onClick={generateContentIdeas} disabled={contentLoading} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ backgroundColor: ACCENT, color: '#FFF' }}>{contentLoading ? 'Generating...' : 'AI Content Ideas'}</button>
-              {contentIdeas && <div className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-lg" style={{ backgroundColor: CARD, color: TEXT }}>{contentIdeas}</div>}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 const FOOTBALL_ROLES = [
-  { id: 'ceo',        label: 'CEO / Chairman',        icon: '🏛️' },
-  { id: 'dof',        label: 'Director of Football',  icon: '📋' },
-  { id: 'coach',      label: 'Head Coach',             icon: '🎽' },
-  { id: 'medical',    label: 'Head of Medical',        icon: '🏥' },
-  { id: 'commercial', label: 'Commercial Director',    icon: '💼' },
-  { id: 'academy',    label: 'Academy Director',       icon: '🎓' },
+  { id: 'ceo',                label: 'CEO',                       icon: '🏛️' },
+  { id: 'chairman',           label: 'Chairman',                  icon: '👑' },
+  { id: 'manager',            label: 'Manager / Head Coach',      icon: '🎽' },
+  { id: 'director_football',  label: 'Director of Football',      icon: '📋' },
+  { id: 'head_performance',   label: 'Head of Performance',       icon: '🏃' },
+  { id: 'head_medical',       label: 'Head of Medical',           icon: '🏥' },
+  { id: 'analyst',            label: 'Analyst / Head of Data',    icon: '📊' },
+  { id: 'commercial',         label: 'Commercial Director',       icon: '💼' },
+  { id: 'head_operations',    label: 'Head of Operations',        icon: '🧰' },
+  { id: 'head_community',     label: 'Head of Community',         icon: '❤️' },
 ]
+
+const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
+  ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
+  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr-scr-modeller','commercial','community','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
+  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
+  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
+  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
+  head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','concussion-tracker','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
+  analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','lumio-vision','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
+  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr-scr-modeller','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
+  head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
+}
 
 export default function FootballDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
@@ -6360,7 +7182,10 @@ function defaultClubNameForSlug(slug: string): string {
 }
 
 function FootballDashboardInner({ slug, session }: { slug: string; session: SportsDemoSession }) {
-  void session
+  const [roleOverride, setRoleOverride] = useState<string>(session?.role || 'ceo')
+  const currentRole = (roleOverride || 'ceo') as keyof typeof FOOTBALL_ROLE_CONFIG
+  const roleConfig = FOOTBALL_ROLE_CONFIG[currentRole] ?? FOOTBALL_ROLE_CONFIG.ceo
+  const liveSession = session ? { ...session, role: roleOverride } : session
 
   const [activeDept, setActiveDept] = useState<DeptId>('overview')
   const [clubName, setClubName] = useState(() => {
@@ -6380,7 +7205,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   const [fbNotifOpen, setFbNotifOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<string | null>(null)
-  const [showAIInsights, setShowAIInsights] = useState(false)
   const [isFootballDemo, setIsFootballDemo] = useState(false)
   const [fbMounted, setFbMounted] = useState(false)
   const [clubLogo, setClubLogo] = useState<string | null>(() =>
@@ -6476,7 +7300,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   }
 
   function handleActionClick(label: string) {
-    if (label === 'Dept Insights') { setShowAIInsights(true); return }
     const actionId = LABEL_TO_ACTION[label]
     if (actionId) setActiveAction(actionId)
     else fireToast(`${label} — coming soon`)
@@ -6495,7 +7318,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
   if (!fbMounted) return null
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', height: '100vh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', minHeight: '100vh', zoom: 0.9 }}>
       <Toast message={toast} />
 
       {/* Demo banner */}
@@ -6523,11 +7346,43 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
       </div>
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeDept={activeDept} onSelect={setActiveDept} open={sidebarOpen} onClose={() => setSidebarOpen(false)} clubName={clubName} />
+      <div className="flex flex-1" style={{ minHeight: '100vh' }}>
+        <Sidebar
+          activeDept={activeDept}
+          onSelect={setActiveDept}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          clubName={clubName}
+          allowedIds={roleConfig.sidebar}
+          session={liveSession}
+          isFootballDemo={isFootballDemo}
+          onRoleChange={(role) => {
+            setRoleOverride(role)
+            const newConfig = FOOTBALL_ROLE_CONFIG[role as keyof typeof FOOTBALL_ROLE_CONFIG]
+            if (newConfig) {
+              const allFlat = SIDEBAR_ITEMS.map(s => s.id)
+              const firstAllowed = newConfig.sidebar === 'all'
+                ? allFlat[0]
+                : (newConfig.sidebar as string[])[0]
+              if (firstAllowed) setActiveDept(firstAllowed as DeptId)
+            }
+            try {
+              const key = 'lumio_sports_demo_football'
+              const stored = localStorage.getItem(key)
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                localStorage.setItem(key, JSON.stringify({ ...parsed, role }))
+              }
+            } catch { /* ignore */ }
+          }}
+        />
 
-        <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
-          <main className="flex-1 p-4 sm:p-5">
+        <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
+          {/* SIDEBAR/PADDING ALIGNMENT — values aligned to cricket reference
+              (cricket/[slug]/page.tsx). Same fonts and densities; horizontal
+              width parity needs identical sidebar width + main padding to
+              prevent "football looks bigger" perception. */}
+          <main className="flex-1" style={{ padding: '24px 28px' }}>
             {activeDept !== 'overview' && (
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -6537,7 +7392,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
               </div>
             )}
 
-            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
+            {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {isFootballDemo && activeDept === 'squad' && <SquadView />}
@@ -6554,79 +7409,26 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
+            {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
             {isFootballDemo && activeDept === 'finance' && <FinanceView />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
             {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
-            {isFootballDemo && activeDept === 'psr' && <PSRView />}
+            {isFootballDemo && activeDept === 'concussion-tracker' && <ConcussionTrackerView />}
+            {isFootballDemo && activeDept === 'psr-scr-modeller' && <PSRScenarioModellerView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
-            {isFootballDemo && activeDept === 'club-profile' && <ClubProfileView />}
-            {isFootballDemo && activeDept === 'preseason' && <PreSeasonCampView />}
-            {activeDept === 'wyscout' && <FootballScoutIntegrationView />}
+            {isFootballDemo && activeDept === 'tours-camps' && <ToursAndCampsView />}
+            {activeDept === 'lumio-vision' && <FootballScoutIntegrationView />}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
             {activeDept === 'opta' && <FootballEventDataView />}
-            {activeDept === 'find-club' && <FindClubView />}
-            {activeDept === 'find-player' && <FindPlayerView />}
-            {activeDept === 'teams' && <TeamsView />}
-            {activeDept === 'leagues' && <LeaguesView />}
-            {activeDept === 'fixtures-results' && <FixturesView />}
-            {activeDept === 'pyramid' && <FootballPyramidView />}
-            {activeDept === 'statsbomb' && <FootballLeagueDataView />}
+            {activeDept === 'discover' && <DiscoverView />}
+            {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && isFootballDemo && (() => {
-              const DEPT_HIGHLIGHTS: Record<string, string[]> = {
-                squad: ['Top performers this week: Dean Morris (8.2 avg), Sam Porter (7.9)', 'Jamie Torres back from injury — available for selection Saturday', '2 contract renewals due before June window', 'Academy graduate Ryan Mills recommended for first-team squad', 'No international call-ups affecting next 3 fixtures'],
-                tactics: ['4-3-3 formation win rate 62% — highest this season', 'Set piece conversion improved to 18% after Thursday drill', 'Opposition weakness: left-back area exploitable on transitions', 'Key matchup: Adeyemi vs their RB — pace advantage significant', 'Pressing success rate 34% — above league average 28%'],
-                transfers: ['3 inbound targets shortlisted for summer window', 'Enquiry received for James Dutton — £180k offer', '2 contracts expiring in 6 months — negotiations needed', 'Transfer budget remaining: £120k of £400k allocation', 'Agent meeting scheduled Thursday for loan extension'],
-                medical: ['2 players currently in rehab — Nwosu (calf), Chen (hamstring)', 'Nwosu expected return: 10 days, Chen: 3 weeks', 'Fitness tests due this week for 4 returning players', 'Injury risk flag: Morris high load last 3 matches', 'Match fitness: squad average 87% — target 90%'],
-                scouting: ['3 new targets added to watchlist this month', '2 scouting reports due by end of week', 'Trial session scheduled Saturday AM — 2 youth prospects', 'Recommended signing: LB target rated 8/10 by chief scout', 'Watchlist updated: 14 active targets across 3 positions'],
-                academy: ['2 graduates ready for first-team consideration', 'Academy win rate this season: 71% across all age groups', '3 scholarship renewals due for review by April', 'Talent pathway review meeting scheduled next Tuesday', 'Parent liaison meetings: 4 outstanding this term'],
-                analytics: ['xG vs actual goals: +2.3 over-performance this month', 'Pressing intensity 12% above league average', 'Defensive line height 34m — 2m higher than last month', 'Set piece efficiency: 22% from corners (league avg 16%)', 'Possession vs win rate: 58% possession correlates with 68% win rate'],
-                dynamics: ['Team morale indicators: 8.2/10 — highest since October', 'Training intensity scores up 6% week-on-week', 'Leadership group action: captain meeting scheduled Friday', 'No conflict flags this week', 'Team bonding session planned for Wednesday afternoon'],
-                media: ['Press conference scheduled Friday 2pm — pre-match', 'Social media reach this week: 124k (+18% vs last week)', 'Sponsor content deadline: Thursday for matchday programme', '2 interview requests pending — local press + podcast', 'No crisis comms flags currently active'],
-                social: ['Best performing post: matchday highlight reel (42k views)', 'Follower growth: +820 this week across all platforms', 'Content schedule: 2 gaps identified in next week plan', 'Fan engagement rate: 4.8% — above 3.5% benchmark', 'Viral opportunity: behind-the-scenes training video trending'],
-                matchday: ['Pre-match prep checklist: 85% complete', 'Travel arrangements confirmed for Saturday away fixture', 'Kit and equipment check completed — all clear', 'Referee briefing notes shared with coaching staff', 'Starting XI finalised — announced Friday 3pm'],
-                training: ['Session attendance this week: 94%', 'Fitness benchmark results: 3 players improved their times', 'Tactical drill completion rate: 88%', 'Load management flag: Adeyemi recommended light session Thursday', 'Next session plan uploaded — Friday AM recovery session'],
-                performance: ['Highest load player this week: Dele Adeyemi (2,840 AU)', 'Recovery scores: squad average 7.8/10', 'Sprint distance leaders: Adeyemi 1.2km, Cole 1.1km', 'Fatigue risk players: Torres (amber), Adeyemi (amber)', 'GPS anomaly flagged: Fletcher — reduced output in last session'],
-                finance: ['PSR headroom: £85k remaining for this reporting period', 'Wage bill at 72% of revenue — target under 75%', 'Player sale target: £150k needed to balance books by June', 'Commercial revenue 8% above target year-to-date', 'Cost overrun flagged: medical department 12% over budget'],
-                staff: ['All coaching staff DBS checks current', 'Physio vacancy — interviews scheduled next week', 'CPD compliance: 2 staff outstanding', 'Staff wellbeing survey results: 7.6/10', 'Annual reviews: 3 due this month'],
-                facilities: ['Pitch maintenance scheduled Monday', 'Floodlight inspection due — annual certificate expiring', 'Changing room refurb quote received — £12k', 'Car park resurfacing flagged', 'Groundsman leave cover arranged'],
-                'squad-planner': ['Left-back position still requires cover signing', 'Squad depth: thin at centre-back if Dutton injured', '1 loan return due end of April — decision needed', '2 trialists awaiting final decision by Friday', 'Summer window priority: left-back, central midfielder, backup striker'],
-                'club-profile': ['Club rating 7.2 — above league average 6.8', 'Stadium capacity utilisation: 78% average this season', 'Academy output rank: 3rd in division', 'Fanbase growth: +4.2% year-on-year', 'Commercial partnerships: 8 active, 2 in negotiation'],
-                psr: ['PSR submission deadline: 45 days away', 'Current projected position: within limits', 'Wage-to-revenue ratio: 72% (limit 75%)', 'Amortisation schedule on track', 'No transfer embargo risk flagged'],
-              }
-              const highlights = DEPT_HIGHLIGHTS[activeDept] || ['No highlights available for this department']
-              const deptName = SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || activeDept
-              return (
-                <div className="mt-8 pt-6 border-t border-gray-800 space-y-4">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">{'\u{1F916}'} AI Department Intelligence</div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-                    <DeptAISummary dept={activeDept} portal="football" />
-                    <div className="rounded-xl overflow-hidden flex flex-col" style={{ border: '1px solid rgba(0,61,165,0.4)' }}>
-                      <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: 'rgba(0,61,165,0.08)', borderBottom: '1px solid rgba(0,61,165,0.2)' }}>
-                        <Sparkles size={14} style={{ color: '#003DA5' }} />
-                        <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>AI Key Highlights</span>
-                        <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{deptName}</span>
-                      </div>
-                      <div className="flex flex-col gap-3 p-4 flex-1" style={{ backgroundColor: '#07080F' }}>
-                        {highlights.map((item, i) => (
-                          <div key={i} className="flex gap-3">
-                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#F1C40F' }}>{i + 1}</span>
-                            <p className="text-xs leading-relaxed" style={{ color: '#D1D5DB' }}>{item}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <button onClick={() => setShowAIInsights(true)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#1a1a2e', border: '1px solid #F1C40F', color: '#F1C40F' }}>
-                      {'\u{1F4CA}'} Insights
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
+            {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
+            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="travel" title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />}
+            {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
+            {isFootballDemo && activeDept === 'community' && <CommunityView />}
           </main>
         </div>
       </div>
@@ -6638,7 +7440,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
           onToast={fireToast}
         />
       )}
-      <AIInsightsReport dept={activeDept} portal="football" isOpen={showAIInsights} onClose={() => setShowAIInsights(false)} />
     </div>
   )
 }

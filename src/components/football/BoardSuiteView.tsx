@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { Crown, TrendingUp, TrendingDown, Users, DollarSign, Trophy, Calendar, Shield, MapPin, CheckCircle2, AlertCircle, FileText, Building2 } from 'lucide-react'
 import ClubPlannerTab from './ClubPlannerTab'
+import GovernanceView from './GovernanceView'
 
 const C = { bg: '#07080F', card: '#0D1017', border: '#1F2937', text: '#F9FAFB', muted: '#6B7280', purple: '#6C3FC5', teal: '#0D9488', red: '#C0392B', gold: '#F1C40F' } as const
 
-type Tab = 'overview' | 'finance' | 'squad' | 'governance' | 'facilities' | 'planner'
+type Tab = 'overview' | 'strategy' | 'profile' | 'finance' | 'squad' | 'governance' | 'facilities'
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>{children}</div>
@@ -591,134 +592,46 @@ function SquadTab() {
 // ─── Governance Tab ───────────────────────────────────────────────────────────
 
 function GovernanceTab() {
+  return <GovernanceView />
+}
+
+// ─── Profile Tab ──────────────────────────────────────────────────────────────
+
+function ProfileTab() {
   return (
-    <div className="space-y-4">
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Board Meetings</p>
-        <div className="space-y-0">
-          {[
-            { date: '18 Apr 2025', status: 'Upcoming', note: 'Agenda pending', color: '#F59E0B' },
-            { date: '15 Mar 2025', status: 'Completed ✅', note: 'Minutes available', color: '#22C55E' },
-            { date: '15 Feb 2025', status: 'Completed ✅', note: '', color: '#22C55E' },
-            { date: '18 Jan 2025', status: 'Completed ✅', note: '', color: '#22C55E' },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center gap-4 py-3" style={{ borderBottom: i < 3 ? `1px solid ${C.border}` : undefined }}>
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-              <span className="text-xs font-bold w-24 shrink-0" style={{ color: C.text }}>{m.date}</span>
-              <span className="text-xs" style={{ color: m.color }}>{m.status}</span>
-              {m.note && <span className="text-[10px]" style={{ color: C.muted }}>— {m.note}</span>}
-            </div>
-          ))}
-        </div>
-      </Card>
+    <div className="space-y-5">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: "#003DA5" }}>⚽</div>
+        <div><h2 className="text-xl font-bold" style={{ color: "#F9FAFB" }}>Lumio Sports FC</h2><p className="text-sm" style={{ color: "#9CA3AF" }}>EFL League One · Founded 2002</p></div>
+      </div>
 
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Compliance Checklist</p>
-        <div className="space-y-2">
-          {[
-            { text: 'FA Club Licence renewed', done: true },
-            { text: 'Ground safety certificate valid', done: true },
-            { text: 'Financial fair play submission (Mar 2025)', done: true },
-            { text: 'DBS checks — all staff completed', done: true },
-            { text: 'Companies House annual return — due 30 Apr', done: false },
-            { text: 'Safeguarding audit — scheduled 25 Apr', done: false },
-          ].map((c, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: c.done ? 'rgba(34,197,94,0.04)' : 'rgba(245,158,11,0.04)', border: `1px solid ${c.done ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'}` }}>
-              {c.done ? <CheckCircle2 size={14} style={{ color: '#22C55E' }} /> : <AlertCircle size={14} style={{ color: '#F59E0B' }} />}
-              <span className="text-xs" style={{ color: c.done ? C.muted : C.text }}>{c.text}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[{ l: "Nickname", v: "Lumio Sports FC" },{ l: "Colours", v: "Blue & Yellow" },{ l: "Stadium", v: "Lumio Park" },{ l: "Capacity", v: "9,215" }].map(s => (
+          <div key={s.l} className="rounded-xl p-4" style={{ backgroundColor: "#111318", border: "1px solid #1F2937" }}><p className="text-xs" style={{ color: "#6B7280" }}>{s.l}</p><p className="text-sm font-bold" style={{ color: "#F9FAFB" }}>{s.v}</p></div>
+        ))}
+      </div>
 
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Key Contacts</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { role: 'Club Solicitor', name: 'Hartley & Co', contact: '020 7123 4567', icon: FileText },
-            { role: 'Accountants', name: 'Meridian Financial', contact: '020 8234 5678', icon: DollarSign },
-            { role: 'FA Liaison Officer', name: 'Sarah Booth', contact: 's.booth@thefa.com', icon: Shield },
-          ].map(c => (
-            <div key={c.role} className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
-              <div className="flex items-center gap-2 mb-2"><c.icon size={12} style={{ color: C.gold }} /><span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>{c.role}</span></div>
-              <p className="text-xs font-bold" style={{ color: C.text }}>{c.name}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: C.teal }}>{c.contact}</p>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: "#111318", border: "1px solid #1F2937" }}>
+          <p className="text-sm font-bold mb-3" style={{ color: "#F1C40F" }}>🏆 Honours</p>
+          {["League Two Play-off Winners: 2015/16","National League Promotion: 2010/11","Combined Counties League Premier: 2004/05","Isthmian League Division One: 2007/08"].map(h => <p key={h} className="text-xs py-1" style={{ color: "#D1D5DB" }}>{h}</p>)}
         </div>
-      </Card>
+        <div className="rounded-xl p-5" style={{ backgroundColor: "#111318", border: "1px solid #1F2937" }}>
+          <p className="text-sm font-bold mb-3" style={{ color: "#F9FAFB" }}>Facilities</p>
+          {[{ l: "Training Ground", v: "⭐⭐⭐⭐ Cat 1" },{ l: "Stadium", v: "⭐⭐⭐ Championship" },{ l: "Academy", v: "⭐⭐⭐⭐ EPPP Cat 2" },{ l: "Medical Centre", v: "⭐⭐⭐⭐" }].map(f => <div key={f.l} className="flex justify-between py-1"><span className="text-xs" style={{ color: "#9CA3AF" }}>{f.l}</span><span className="text-xs" style={{ color: "#F1C40F" }}>{f.v}</span></div>)}
+        </div>
+      </div>
 
-      {/* Shareholder Structure */}
-      <Card>
-        <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Shareholder Structure</p>
-        <div className="flex items-center gap-6">
-          <div className="shrink-0" style={{ width: 100, height: 100, borderRadius: '50%', background: `conic-gradient(${C.gold} 0% 45%, ${C.purple} 45% 75%, ${C.teal} 75% 90%, #6B7280 90% 100%)` }}>
-            <div className="flex items-center justify-center rounded-full" style={{ width: 60, height: 60, backgroundColor: C.card, margin: '20px auto 0' }} />
-          </div>
-          <div className="space-y-1.5">
-            {[{ l: 'James Hartley (Chairman)', v: '45%', c: C.gold }, { l: 'Riverside Capital Ltd', v: '30%', c: C.purple }, { l: 'Community Trust', v: '15%', c: C.teal }, { l: 'Other shareholders', v: '10%', c: '#6B7280' }].map(s => (
-              <div key={s.l} className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.c }} /><span className="text-xs" style={{ color: C.muted }}>{s.l} — <span style={{ color: C.text, fontWeight: 700 }}>{s.v}</span></span></div>
-            ))}
-          </div>
-        </div>
-      </Card>
+      <div className="rounded-xl p-5" style={{ backgroundColor: "#111318", border: "1px solid #1F2937" }}>
+        <p className="text-sm font-bold mb-3" style={{ color: "#F9FAFB" }}>Board & Ownership</p>
+        {[["Owner", "Lumio Sports FC Trust (fan-owned)"],["Manager", "Johnnie Jackson"],["Founded", "2002"],["Philosophy", "\"By the fans, for the fans\""]].map(([l,v]) => <div key={l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: "#9CA3AF" }}>{l}</span><span className="text-xs font-medium" style={{ color: "#F9FAFB" }}>{v}</span></div>)}
+      </div>
 
-      {/* Board Members */}
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Board Members</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[
-            { n: 'James Hartley', r: 'Chairman', y: '2018', c: C.gold },
-            { n: 'Sarah Bloom', r: 'Finance Director', y: '2020', c: C.teal },
-            { n: 'Mike Okafor', r: 'Football Director', y: '2022', c: C.red },
-            { n: 'Priya Singh', r: 'Non-Executive Director', y: '2021', c: C.purple },
-            { n: 'Tom Carver', r: 'Club Secretary', y: '2019', c: '#3B82F6' },
-          ].map(b => (
-            <div key={b.n} className="rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: `${b.c}20`, color: b.c }}>{b.n.split(' ').map(w => w[0]).join('')}</div>
-              <div><p className="text-xs font-bold" style={{ color: C.text }}>{b.n}</p><p className="text-[10px]" style={{ color: C.muted }}>{b.r} · since {b.y}</p></div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Insurance & Legal */}
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Insurance & Legal</p>
-        <div className="space-y-2">
-          {[
-            { text: 'Public liability insurance — valid to Dec 2025', done: true },
-            { text: 'Employer liability — valid to Dec 2025', done: true },
-            { text: 'Player personal accident cover — 23 players covered', done: true },
-            { text: 'Directors & Officers insurance — renewal due 1 May 2025', done: false },
-          ].map((c, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: c.done ? 'rgba(34,197,94,0.04)' : 'rgba(245,158,11,0.04)', border: `1px solid ${c.done ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'}` }}>
-              {c.done ? <CheckCircle2 size={14} style={{ color: '#22C55E' }} /> : <AlertCircle size={14} style={{ color: '#F59E0B' }} />}
-              <span className="text-xs" style={{ color: c.done ? C.muted : C.text }}>{c.text}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Strategic Plan */}
-      <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Strategic Plan Milestones</p>
-        <div className="space-y-2">
-          {[
-            { icon: '✅', text: 'Q1 2025: Achieve top-6 position', status: 'DONE', c: '#22C55E' },
-            { icon: '✅', text: 'Q1 2025: Complete west stand refurb plan', status: 'DONE', c: '#22C55E' },
-            { icon: '🔄', text: 'Q2 2025: Sign 3 summer signings within budget', status: 'IN PROGRESS', c: '#F59E0B' },
-            { icon: '⬜', text: 'Q3 2025: Launch new club app', status: 'PLANNED', c: C.muted },
-            { icon: '⬜', text: 'Q4 2025: Academy affiliation with PL club', status: 'PLANNED', c: C.muted },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5">
-              <span>{m.icon}</span>
-              <span className="text-xs flex-1" style={{ color: C.text }}>{m.text}</span>
-              <span className="text-[10px] font-bold" style={{ color: m.c }}>{m.status}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1F2937" }}>
+        <div className="px-5 py-4" style={{ backgroundColor: "#111318", borderBottom: "1px solid #1F2937" }}><p className="text-sm font-bold" style={{ color: "#F9FAFB" }}>Recent League History</p></div>
+        <table className="w-full text-xs"><thead><tr style={{ borderBottom: "1px solid #1F2937" }}>{["Season","Division","Position","Pts"].map(h => <th key={h} className="text-left px-4 py-2" style={{ color: "#6B7280" }}>{h}</th>)}</tr></thead>
+        <tbody>{[["2025/26","League One","14th (current)","—"],["2024/25","League Two","3rd (Promoted)","77"],["2023/24","League Two","10th","62"],["2022/23","League Two","19th","50"],["2021/22","League One","24th (Relegated)","41"]].map((r,i) => <tr key={i} style={{ borderBottom: "1px solid #1F2937" }}>{r.map((c,j) => <td key={j} className="px-4 py-2" style={{ color: j === 0 ? "#F9FAFB" : c.includes("Promoted") ? "#22C55E" : c.includes("Relegated") ? "#EF4444" : "#9CA3AF" }}>{c}</td>)}</tr>)}</tbody></table>
+      </div>
     </div>
   )
 }
@@ -862,21 +775,23 @@ export default function BoardSuiteView() {
       <div className="flex gap-2 flex-wrap">
         {([
           { id: 'overview' as Tab, label: 'Overview' },
+          { id: 'strategy' as Tab, label: 'Strategy' },
+          { id: 'profile' as Tab, label: 'Profile' },
           { id: 'finance' as Tab, label: 'Finance' },
           { id: 'squad' as Tab, label: 'Squad & Performance' },
           { id: 'governance' as Tab, label: 'Governance' },
           { id: 'facilities' as Tab, label: 'Facilities' },
-          { id: 'planner' as Tab, label: '🗺️ Club Planner' },
         ]).map(t => <TabBtn key={t.id} active={tab === t.id} label={t.label} onClick={() => setTab(t.id)} />)}
       </div>
 
       {/* Content */}
       {tab === 'overview' && <OverviewTab />}
+      {tab === 'strategy' && <ClubPlannerTab />}
+      {tab === 'profile' && <ProfileTab />}
       {tab === 'finance' && <FinanceTab />}
       {tab === 'squad' && <SquadTab />}
       {tab === 'governance' && <GovernanceTab />}
       {tab === 'facilities' && <FacilitiesTab />}
-      {tab === 'planner' && <ClubPlannerTab />}
     </div>
   )
 }

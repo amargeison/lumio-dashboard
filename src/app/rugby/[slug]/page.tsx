@@ -4,6 +4,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import RugbyToursAndCampsView from '@/components/rugby/ToursAndCampsView'
+// ─── Rugby v2 dashboard imports ───────────────────────────────────────────
+import { THEMES, DENSITY, FONT, getGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import {
+  HeroToday as RugbyHeroToday,
+  TodaySchedule as RugbyTodaySchedule,
+  StatTiles as RugbyStatTiles,
+  AIBrief as RugbyAIBrief,
+  Inbox as RugbyInbox,
+  Squad as RugbySquadModule,
+  Fixtures as RugbyFixturesModule,
+  Perf as RugbyPerf,
+  Recents as RugbyRecents,
+  Season as RugbySeason,
+} from './_components/RugbyDashboardModules'
+import { RugbySidebar } from './_components/RugbyShell'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import { RUGBY_NAV_GROUPS, RUGBY_ACCENT, RUGBY_INBOX, RUGBY_ORG } from './_lib/rugby-dashboard-data'
+import type { RugbyFixture } from './_lib/rugby-dashboard-data'
 
 type RugbyCode = 'union'
 
@@ -38,60 +65,7 @@ const RUGBY_ROLES = [
   { id: 'sponsor', label: 'Sponsor / Partner',  icon: '🤝', description: 'Brand presence and ROI' },
 ]
 
-// ─── SIDEBAR ITEMS ────────────────────────────────────────────────────────────
-const SIDEBAR_ITEMS = [
-  { id: 'dashboard',       label: 'Club Dashboard',        icon: '🏠', group: 'CLUB OVERVIEW' },
-  { id: 'dorbriefing',     label: 'DoR Briefing',          icon: '🌅', group: 'CLUB OVERVIEW' },
-  { id: 'insights',        label: 'Insights',              icon: '📊', group: 'CLUB OVERVIEW' },
-  { id: 'matchday',        label: 'Match Day Centre',      icon: '🏟️', group: 'CLUB OVERVIEW' },
-  { id: 'calendar',        label: 'Club Calendar',         icon: '📅', group: 'CLUB OVERVIEW' },
-  { id: 'preseason',       label: 'Pre-Season',            icon: '🏉', group: 'CLUB OVERVIEW' },
-  { id: 'capdashboard',    label: 'Cap Dashboard',         icon: '⚖️', group: 'SALARY CAP' },
-  { id: 'contracts',       label: 'Player Contracts',      icon: '📋', group: 'SALARY CAP' },
-  { id: 'scenario',        label: 'Scenario Modeller',     icon: '🧮', group: 'SALARY CAP' },
-  { id: 'audittrail',      label: 'Audit Trail',           icon: '📜', group: 'SALARY CAP' },
-  { id: 'readiness',       label: 'Readiness Score',       icon: '🏆', group: 'FRANCHISE' },
-  { id: 'criteria',        label: 'Criteria Tracker',      icon: '✅', group: 'FRANCHISE' },
-  { id: 'eoi',             label: 'Expression of Interest',icon: '📄', group: 'FRANCHISE' },
-  { id: 'gapanalysis',     label: 'Gap Analysis',          icon: '📊', group: 'FRANCHISE' },
-  { id: 'availability',    label: 'Squad Availability',    icon: '👥', group: 'SQUAD' },
-  { id: 'selection',       label: 'Selection Planner',     icon: '📝', group: 'SQUAD' },
-  { id: 'playerprofile',   label: 'Player Profiles',       icon: '👤', group: 'SQUAD' },
-  { id: 'international',   label: 'International Duty',    icon: '🌍', group: 'SQUAD' },
-  { id: 'loans',           label: 'Loan Management',       icon: '🔄', group: 'SQUAD' },
-  { id: 'gps-load',        label: 'GPS & Load',            icon: '📡', group: 'PERFORMANCE' },
-  { id: 'heatmap',         label: 'Player Heatmap',        icon: '🗺️', group: 'PERFORMANCE' },
-  { id: 'video-analysis',  label: 'Video Analysis',        icon: '🎬', group: 'PERFORMANCE' },
-  { id: 'match-stats',     label: 'Match Stats',           icon: '📊', group: 'PERFORMANCE' },
-  { id: 'setpiece',        label: 'Set Piece Analytics',   icon: '📐', group: 'PERFORMANCE' },
-  { id: 'carryanalytics', label: 'Carry Analytics',        icon: '⚡', group: 'PERFORMANCE' },
-  { id: 'training-planner',label: 'Training Planner',      icon: '📋', group: 'PERFORMANCE' },
-  { id: 'periodisation',  label: 'Periodisation',          icon: '📈', group: 'PERFORMANCE' },
-  { id: 'scouting',        label: 'Scouting Pipeline',     icon: '🔍', group: 'RECRUITMENT' },
-  { id: 'capimpact',       label: 'Cap Impact Modeller',   icon: '💷', group: 'RECRUITMENT' },
-  { id: 'agents',          label: 'Agent Contacts',        icon: '📞', group: 'RECRUITMENT' },
-  { id: 'targets',         label: 'Targets Shortlist',     icon: '🎯', group: 'RECRUITMENT' },
-  { id: 'concussion',      label: 'Concussion & HIA',      icon: '🧠', group: 'WELFARE' },
-  { id: 'rtp',             label: 'Return to Play',        icon: '🏥', group: 'WELFARE' },
-  { id: 'medical',         label: 'Medical Records',       icon: '📂', group: 'WELFARE' },
-  { id: 'welfareaudit',    label: 'Welfare Audit',         icon: '🛡️', group: 'WELFARE' },
-  { id: 'mentalperformance',label:'Mental Performance',    icon: '🧠', group: 'WELFARE' },
-  { id: 'sponsorship',     label: 'Sponsorship Pipeline',  icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'matchdayrev',     label: 'Matchday Revenue',      icon: '💰', group: 'COMMERCIAL' },
-  { id: 'stadium',         label: 'Stadium & Venue',       icon: '🏟️', group: 'COMMERCIAL' },
-  { id: 'activation',      label: 'Partnership Activation',icon: '🎯', group: 'COMMERCIAL' },
-  { id: 'mediahr',         label: 'Media & Content',       icon: '📱', group: 'COMMERCIAL' },
-  { id: 'fanhub',          label: 'Fan Hub',               icon: '💜', group: 'COMMERCIAL' },
-  { id: 'womenssquad',     label: "Women's Squad",         icon: '⭐', group: "WOMEN'S RUGBY" },
-  { id: 'pwrcompliance',   label: 'PWR Compliance',        icon: '📋', group: "WOMEN'S RUGBY" },
-  { id: 'sharedfacilities',label: 'Shared Facilities',     icon: '🏢', group: "WOMEN'S RUGBY" },
-  { id: 'womenscommercial',label: "Women's Commercial",    icon: '💼', group: "WOMEN'S RUGBY" },
-  { id: 'aibriefing',      label: 'AI Morning Briefing',   icon: '🤖', group: 'INTELLIGENCE' },
-  { id: 'halftime',        label: 'AI Halftime Brief',     icon: '🤖', group: 'INTELLIGENCE' },
-  { id: 'clubtocountry',   label: 'Club-to-Country',       icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', group: 'INTELLIGENCE' },
-  { id: 'opposition',      label: 'Opposition Analysis',   icon: '🔎', group: 'INTELLIGENCE' },
-  { id: 'industrynews',    label: 'Industry News',         icon: '📰', group: 'INTELLIGENCE' },
-];
+// ─── SIDEBAR ITEMS — replaced by RUGBY_NAV_GROUPS in _lib/rugby-dashboard-data.ts ───
 
 // ─── DEMO CLUB ────────────────────────────────────────────────────────────────
 const DEMO_CLUB: RugbyClub = {
@@ -210,509 +184,2317 @@ const QuickActionsBar = () => {
   );
 };
 
-// ─── CLUB DASHBOARD VIEW ──────────────────────────────────────────────────────
-function ClubDashboardView({club, session, onOpenModal, rugbyCode}:{club:RugbyClub; session?: SportsDemoSession; onOpenModal?: (id: string) => void; rugbyCode?: RugbyCode}) {
-  const available = SQUAD.filter((p:{status:string})=>p.status==='available').length;
-  const headroom = club.capCeiling - club.currentSpend;
-  const floorBuffer = club.currentSpend - club.capFloor;
-  // Rugby League removed — Union is the only variant.
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today');
-  const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
-    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_rugby_checklist') : null; return s ? JSON.parse(s) : {} } catch { return {} }
-  });
-  const toggleCheck = (id: string) => setChecklist(prev => { const next = { ...prev, [id]: !prev[id] }; try { localStorage.setItem('lumio_rugby_checklist', JSON.stringify(next)) } catch {} return next });
+// ─── CLUB DASHBOARD VIEW (v2 modular grid + polish) ──────────────────────────
+// Quick Actions row (8 modal-opening buttons + Ask Lumio) · v2 grid (HeroToday ·
+// TodaySchedule · StatTiles · Morning brief · Interactive Inbox · Squad 15+8 ·
+// Fixtures · Perf signals · Recents · Season) · Match Brief overlay from
+// HeroToday. No tab bar — rugby v1 didn't have tabs.
 
-  // Rotating daily quotes
-  const RUGBY_QUOTES = [
-    { text: 'Rugby is a game for barbarians played by gentlemen.', author: 'Winston Churchill' },
-    { text: 'Good players inspire themselves. Great players inspire others.', author: 'Richie McCaw' },
-    { text: 'It is not the size of the dog in the fight, but the size of the fight in the dog.', author: 'Jonah Lomu' },
-    { text: 'The strength of the team is each individual member. The strength of each member is the team.', author: 'Phil Jackson' },
-    { text: 'Nobody who ever gave their best regretted it.', author: 'George Halas' },
-    { text: 'Hard work beats talent when talent doesn\'t work hard.', author: 'Tim Notke' },
-    { text: 'Champions do extra. Champions make the effort.', author: 'Martin Johnson' },
-  ];
-  const dailyQuote = RUGBY_QUOTES[Math.floor(Date.now() / 86400000) % RUGBY_QUOTES.length];
+type RugbyInboxBody = { body: string }
+const RUGBY_INBOX_BODIES: Record<string, RugbyInboxBody> = {
+  'SMS · Coaches':     { body: 'Evans: confirm Saturday XV please — need to submit team sheet to Cherry Rugby by 12:00 Friday. Henderson cleared, Williams still on protocol. Bench spots TBC. Ring me after the unit session.' },
+  'WhatsApp · Squad':  { body: 'Karan: pitch looks firm, studs 13mm should be fine. Groundsman confirmed no covers needed overnight. Bus leaves Friday 17:30 from the Grange — usual.' },
+  'Email · Selectors': { body: 'Henderson completed full contact session Tuesday — moved well, no reaction. Recommend start at 12. Open question on whether Cole goes to bench or carries into 22 vs Bath next week.' },
+  'Agent messages':    { body: 'Patel contract renewal — wants 2-year extension, +£200/wk, performance bonus restructured. Current terms expire June. Board needs decision this month — competing offer reportedly on the table.' },
+  'Board messages':    { body: 'Caroline: Q3 financials filed. Cap return due 10 May. Investment pack signed off legally — ready for distribution. Quick chat re: PWR registration budget Wednesday morning?' },
+  'Medical Hub':       { body: 'Dr Marsh: Williams concussion Day 4 of 6 — symptom-free, baseline test scheduled Thursday AM. Earliest contact return Friday if cleared. Still need scan results from Trescott (ankle).' },
+  'Media & Press':     { body: 'Northbridge Sport — pre-match feature requested with you + captain Friday 14:00, runs in Saturday matchday programme. 12 minutes max. Talking points coming through this afternoon.' },
+  'Academy':           { body: 'Okonkwo — England U20 confirmed call-up for Six Nations summer camp. Need release from us by Wednesday. Replacement pathway: Foley already up training with seniors, ready to step in.' },
+  'Slack · Coaches':   { body: 'Forwards group: new lineout call (Echo-2) — front ball to 4, dummy peel from 6. Working well in unit session. Suggest we run it twice in warm-up before deciding to deploy.' },
+}
 
-  // Live weather via Open-Meteo — derived from timezone (no geolocation)
-  const [weather, setWeather] = useState<{ temp:number; condition:string; icon:string; city:string } | null>(null);
-  const userTimezone = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/London';
-  useEffect(() => {
-    const TZ_COORDS: Record<string,{lat:number;lon:number;city:string}> = {
-      'Europe/London':{lat:51.51,lon:-0.13,city:'London'},'Europe/Paris':{lat:48.85,lon:2.35,city:'Paris'},'Europe/Berlin':{lat:52.52,lon:13.41,city:'Berlin'},'Europe/Madrid':{lat:40.42,lon:-3.70,city:'Madrid'},'Europe/Rome':{lat:41.90,lon:12.50,city:'Rome'},
-      'America/New_York':{lat:40.71,lon:-74.01,city:'New York'},'America/Chicago':{lat:41.88,lon:-87.63,city:'Chicago'},'America/Los_Angeles':{lat:34.05,lon:-118.24,city:'Los Angeles'},'America/Toronto':{lat:43.65,lon:-79.38,city:'Toronto'},
-      'Asia/Dubai':{lat:25.20,lon:55.27,city:'Dubai'},'Asia/Tokyo':{lat:35.68,lon:139.69,city:'Tokyo'},'Asia/Singapore':{lat:1.35,lon:103.82,city:'Singapore'},
-      'Australia/Sydney':{lat:-33.87,lon:151.21,city:'Sydney'},'Australia/Melbourne':{lat:-37.81,lon:144.96,city:'Melbourne'},'Pacific/Auckland':{lat:-36.85,lon:174.76,city:'Auckland'},
-      'Africa/Johannesburg':{lat:-26.20,lon:28.04,city:'Cape Town'},
-    };
-    const coords = TZ_COORDS[userTimezone] || {lat:51.51,lon:-0.13,city:'London'};
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=auto`)
-      .then(r => r.json())
-      .then(data => {
-        const temp = Math.round(data.current?.temperature_2m ?? 10);
-        const wc = data.current?.weather_code ?? 0;
-        const getC = (c:number) => { if(c===0) return {label:'Clear',icon:'☀️'}; if(c<=2) return {label:'Partly cloudy',icon:'⛅'}; if(c===3) return {label:'Overcast',icon:'☁️'}; if(c<=49) return {label:'Foggy',icon:'🌫️'}; if(c<=59) return {label:'Drizzle',icon:'🌦️'}; if(c<=69) return {label:'Rainy',icon:'🌧️'}; if(c<=79) return {label:'Snowy',icon:'❄️'}; return {label:'Stormy',icon:'⛈️'} };
-        const {label,icon} = getC(wc);
-        setWeather({temp,condition:label,icon,city:coords.city});
-      })
-      .catch(() => setWeather({temp:10,condition:'Partly cloudy',icon:'⛅',city:'London'}));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // World clocks
-  const now = new Date();
-  const clocks = [
-    { city: 'London', tz: 'Europe/London' },
-    { city: 'Auckland', tz: 'Pacific/Auckland' },
-    { city: 'Sydney', tz: 'Australia/Sydney' },
-    { city: 'Cape Town', tz: 'Africa/Johannesburg' },
-  ];
-
-  // Banner stat boxes matching spec
-  const BANNER_STATS = [
-    { label: 'Championship', value: '#7', icon: '🏆', color: '#7C3AED' },
-    { label: 'Tackles', value: '847', icon: '💪', color: '#22C55E' },
-    { label: 'Lineout', value: '94%', icon: '📊', color: '#0ea5e9' },
-    { label: 'Days to Fixture', value: '12', icon: '📅', color: '#EF4444' },
-  ];
-
-  const GETTING_STARTED = [
-    { id: 'gs1', label: 'Upload your club badge', desc: 'Personalise your portal' },
-    { id: 'gs2', label: 'Set your club name and league', desc: 'Appears throughout the portal' },
-    { id: 'gs3', label: 'Enter salary cap figures', desc: 'Enables cap dashboard and compliance tracking' },
-    { id: 'gs4', label: 'Add your squad (player list)', desc: 'Unlocks availability, GPS, medical and selection views' },
-    { id: 'gs5', label: 'Connect GPS provider (Lumio GPS / Lumio GPS)', desc: 'Live load data feed' },
-    { id: 'gs6', label: 'Enter franchise readiness data', desc: 'Tracks your progress against governing body criteria' },
-    { id: 'gs7', label: 'Add sponsor details', desc: 'Commercial CRM and obligation tracking' },
-    { id: 'gs8', label: 'Set up AI briefing preferences', desc: 'Configure role-specific daily intelligence' },
-    { id: 'gs9', label: 'Add international duty players', desc: 'Club-to-country data handoff' },
-    { id: 'gs10', label: 'Invite your coaching and medical staff', desc: 'Role-based access control' },
-  ];
-
-  const QUICK_ACTIONS = [
-    { icon: '📋', label: 'Match Prep', modal: 'matchprep' },
-    { icon: '✈️', label: 'Flights', modal: 'flights' },
-    { icon: '📱', label: 'Sponsor Post', modal: 'sponsorpost' },
-    { icon: '⚕️', label: 'Log Injury', modal: 'injury' },
-    { icon: '🧾', label: 'Expense', modal: 'expense' },
-    { icon: '🎬', label: 'Video', modal: 'video' },
-    { icon: '📋', label: 'Contracts', modal: 'contracts' },
-    { icon: '🌍', label: 'Visa Check', modal: 'visa' },
-  ];
-
+function RugbyMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof RUGBY_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
   return (
-    <div className="space-y-0">
-
-      {/* ── MORNING BANNER — Single dark card ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6"
-        style={{ background: 'linear-gradient(135deg, #1e1035 0%, #0f172a 60%, #0c1321 100%)', border: '1px solid rgba(124,58,237,0.2)' }}>
-
-        <div className="flex items-start justify-between">
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: FONT, color: T.text }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
-              Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}{session?.userName ? `, ${session.userName}` : ''} 👋
-            </h1>
-            <p className="text-sm mb-2" style={{ color: '#9CA3AF' }}>
-              {now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </p>
-            <p className="text-xs italic" style={{ color: '#F1C40F' }}>
-              &ldquo;{dailyQuote.text}&rdquo; &mdash; {dailyQuote.author}
-            </p>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Hartfield RFC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Jersey Reds</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>Cherry Rugby · Round 22</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sat 11 Apr 2026 · The Grange · Kick-off 15:00</div>
           </div>
-
-          <div className="hidden md:flex items-center gap-3 ml-4">
-            {BANNER_STATS.map((s, i) => (
-              <div key={i}
-                className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl cursor-pointer transition-all hover:scale-105"
-                style={{ background: `${s.color}22`, border: `1px solid ${s.color}44` }}>
-                <div className="text-xl mb-0.5">{s.icon}</div>
-                <div className="text-base font-black leading-none" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-[9px] mt-0.5" style={{ color: '#6B7280' }}>{s.label}</div>
-              </div>
-            ))}
-
-            <div className="flex flex-col items-center justify-center w-[72px] h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {weather ? (<>
-                <div className="text-xl">{weather.icon}</div>
-                <div className="text-sm font-bold text-white">{weather.temp}&deg;C</div>
-                <div className="text-[9px] text-center leading-tight" style={{ color: '#6B7280' }}>{weather.city.split(' ')[0]}</div>
-              </>) : (<>
-                <div className="text-xl">🌤️</div>
-                <div className="text-sm font-bold text-white">--&deg;C</div>
-                <div className="text-[9px]" style={{ color: '#6B7280' }}>Loading</div>
-              </>)}
-            </div>
-
-            <div className="flex flex-col justify-center px-3 h-[72px] rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: '120px' }}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {clocks.map(c => {
-                  const t = now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' });
-                  return (
-                    <div key={c.city} className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold tabular-nums text-white">{t}</span>
-                      <span className="text-[10px]" style={{ color: '#6B7280' }}>{c.city}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="text-[9px] mt-1" style={{ color: '#4B5563' }}>World Clock</div>
-            </div>
-          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
         </div>
 
-      </div>
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 12°C partly cloudy, 14 mph SW wind.</div>
+          <div><strong style={{ color: T.text }}>Pitch:</strong> Natural grass, well-drained, firm underfoot.</div>
+          <div><strong style={{ color: T.text }}>Wind factor:</strong> Kicking to the north end first half recommended (wind advantage).</div>
+          <div><strong style={{ color: T.text }}>Referee:</strong> J. Hawthorne — strict on breakdown penalties, average 14 penalties/match.</div>
+        </Section>
 
-      {/* ── TAB BAR ── */}
-      <div className="flex gap-0 border-b mb-0" style={{ borderColor: '#1F2937', overflowX: 'hidden' }}>
-        {([
-          { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
-          { id: 'today' as const, label: 'Today', icon: '🏠' },
-          { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
-          { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
-          { id: 'insights' as const, label: 'Insights', icon: '📊' },
-          { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
-          { id: 'team' as const, label: 'Team', icon: '👥' },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setDashTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-            style={{ borderBottomColor: dashTab === t.id ? '#7C3AED' : 'transparent', color: dashTab === t.id ? '#c084fc' : '#6B7280', backgroundColor: dashTab === t.id ? '#7C3AED0d' : 'transparent' }}>
-            <span className="text-base">{t.icon}</span>{t.label}
-          </button>
+        <Section title="02 · Opposition Analysis · Jersey Reds">
+          <div><strong style={{ color: T.text }}>Position:</strong> 7th in Cherry Rugby. <strong style={{ color: T.text }}>Last 5:</strong> W L W L L — inconsistent form.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Fly-half <strong>M. Torres</strong> — kicks at 82%, controls tempo, dangerous from hand in broken play.</li>
+            <li>Openside flanker <strong>D. Kamara</strong> — 14 turnovers last 3 matches, targets the breakdown aggressively.</li>
+            <li>Tighthead prop <strong>V. Moala</strong> — dominant scrummager, concedes few penalties at set piece.</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Weakness:</strong> Lineout defence 64% steal rate — worst in league. Target lineout as primary attacking platform.</div>
+        </Section>
+
+        <Section title="03 · Our Team News">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Henderson:</strong> cleared by physio, available for selection — start or bench?</li>
+            <li><strong style={{ color: T.text }}>Williams:</strong> concussion protocol Day 4 of 6 — cannot train contact until Thursday. Unavailable Saturday.</li>
+            <li><strong style={{ color: T.text }}>Okonkwo:</strong> called to England U20 camp — confirm release by Wed.</li>
+            <li><strong style={{ color: T.text }}>Front row rotation:</strong> Forwards coach recommends starting Clarke at loosehead, Fischer off the bench at 55 mins.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Priorities">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Target Jersey lineout (64% steal rate) — throw to tail, drive or peel.</li>
+            <li>Kicking strategy: territorial in first half with wind, counter-attack second half.</li>
+            <li>Breakdown speed: commit minimum bodies, Kamara hunts slow ball — ruck in under 2 seconds.</li>
+            <li>Scrum: bind tight on engagement, referee strict on timing.</li>
+            <li>Set piece try target: 2 lineout drives in opposition 22.</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Kit van: confirmed 08:00, all GPS vests charged.</li>
+            <li>Warm-up: 14:15 on main pitch.</li>
+            <li>Media: Northbridge Sport cameras from 14:00, post-match interview with captain + DoR.</li>
+            <li>Medical: Dr Patel pitchside, ambulance confirmed.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InteractiveRugbyInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof RUGBY_ACCENT; density: typeof DENSITY.regular }) {
+  type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
+  const init = (): Record<string, RowState> => Object.fromEntries(RUGBY_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }]))
+  const [state, setState] = useState<Record<string, RowState>>(init)
+  const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
+
+  const items = RUGBY_INBOX.filter(c => !state[c.ch]?.dismissed)
+  return (
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
+        <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 360, overflow: 'auto' }}>
+        {items.map((c, i) => {
+          const s = state[c.ch] ?? { expanded: false, mode: 'idle', reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }
+          const body = RUGBY_INBOX_BODIES[c.ch]?.body ?? c.last
+          return (
+            <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              {/* Row */}
+              <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
+                  <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'monospace' }}>{c.time}</div>
+                <div className="tnum" style={{ minWidth: 22, height: 18, padding: '0 6px', borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 600, background: c.urgent ? 'rgba(199,90,90,0.12)' : T.hover, color: c.urgent ? T.bad : T.text2 }}>{c.count}</div>
+              </div>
+              {/* Expanded */}
+              {s.expanded && (
+                <div style={{ padding: '6px 6px 12px 22px' }}>
+                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, padding: 10, background: T.panel2, borderRadius: 6, border: `1px solid ${T.border}` }}>
+                    {body}
+                  </div>
+                  {s.sentLabel && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: T.good, fontFamily: 'monospace' }}>{s.sentLabel}</div>
+                  )}
+                  {s.mode === 'idle' && !s.sentLabel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => update(c.ch, { mode: 'replying' })}   style={btnGhost(T, accent)}>Reply</button>
+                      <button onClick={() => update(c.ch, { mode: 'forwarding' })} style={btnGhost(T, accent)}>Forward</button>
+                      <button onClick={() => update(c.ch, { dismissed: true })}    style={btnGhost(T, accent)}>Dismiss</button>
+                    </div>
+                  )}
+                  {s.mode === 'replying' && (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={s.reply} onChange={e => update(c.ch, { reply: e.target.value })}
+                        placeholder="Type your reply…"
+                        rows={3}
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: 8, fontSize: 12, fontFamily: FONT, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '', sentLabel: 'Sent ✓' })} style={btnPrimary(accent, T)}>Send</button>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '' })}                       style={btnGhost(T, accent)}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {s.mode === 'forwarding' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: T.text3 }}>Forward to:</span>
+                      <select value={s.forwardTo} onChange={e => update(c.ch, { forwardTo: e.target.value })}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontFamily: FONT }}>
+                        <option>Head Coach</option>
+                        <option>Forwards Coach</option>
+                        <option>Backs Coach</option>
+                        <option>Medical Lead</option>
+                        <option>CEO</option>
+                        <option>Performance Analyst</option>
+                      </select>
+                      <button onClick={() => update(c.ch, { mode: 'idle', sentLabel: `Forwarded to ${s.forwardTo} ✓` })} style={btnPrimary(accent, T)}>Forward</button>
+                      <button onClick={() => update(c.ch, { mode: 'idle' })} style={btnGhost(T, accent)}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {items.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+      </div>
+    </div>
+  )
+}
+function btnGhost(T: typeof THEMES.dark, accent: typeof RUGBY_ACCENT): React.CSSProperties {
+  return { fontSize: 11, padding: '5px 10px', background: 'transparent', color: '#9CA3AF', border: '1px solid #2d3139', borderRadius: 6, cursor: 'pointer', transition: 'border-color .12s, color .12s' }
+}
+function btnPrimary(accent: typeof RUGBY_ACCENT, T: typeof THEMES.dark): React.CSSProperties {
+  return { fontSize: 11.5, padding: '5px 12px', background: accent.hex, color: T.btnText, border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
+}
+
+
+type RugbyDashTab = 'gettingstarted' | 'today' | 'quickwins' | 'dailytasks' | 'insights' | 'dontmiss' | 'team'
+
+// Club leadership panel for the Team tab — values match the demo club
+// (Hartfield RFC) defined at the top of this file so the names line up
+// with everything else the user sees in the portal.
+function TeamLeadershipPanel() {
+  const leadership = [
+    { name: 'Steve Whitfield',  role: 'Director of Rugby',          icon: '🏉' },
+    { name: 'Mark Ellison',     role: 'Head Coach',                 icon: '🎽' },
+    { name: 'Caroline Hughes',  role: 'CEO',                        icon: '🏛️' },
+    { name: 'Dr. James Marsh',  role: 'Head of Medical',            icon: '🏥' },
+    { name: 'Rachel Turner',    role: "Head of Women's Rugby",       icon: '⭐' },
+  ]
+  return (
+    <Card>
+      <div className="text-sm font-semibold text-white mb-3">Club Leadership</div>
+      <div className="space-y-2">
+        {leadership.map((p, i) => (
+          <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
+            <span className="text-lg">{p.icon}</span>
+            <div>
+              <div className="text-xs text-white font-medium">{p.name}</div>
+              <div className="text-[10px] text-gray-500">{p.role}</div>
+            </div>
+          </div>
         ))}
       </div>
+    </Card>
+  )
+}
 
-      {/* Quick Actions — below tab bar */}
-      {onOpenModal && (
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mt-4 mb-4">
-          {QUICK_ACTIONS.map((a, i) => (
-            <button key={i} onClick={() => onOpenModal(a.modal)}
-              className="bg-[#0d1117] border border-gray-800 hover:border-purple-500/50 rounded-xl p-3 text-center transition-all hover:scale-105">
-              <div className="text-xl mb-1">{a.icon}</div>
-              <div className="text-[10px] text-gray-400">{a.label}</div>
+const RUGBY_GETTING_STARTED: { id: string; label: string; desc: string }[] = [
+  { id: 'gs1',  label: 'Upload your club badge',                                            desc: 'Personalise your portal' },
+  { id: 'gs2',  label: 'Set your club name and league',                                     desc: 'Appears throughout the portal' },
+  { id: 'gs3',  label: 'Enter salary cap figures',                                          desc: 'Enables cap dashboard and compliance tracking' },
+  { id: 'gs4',  label: 'Add your squad (player list)',                                      desc: 'Unlocks availability, GPS, medical and selection views' },
+  { id: 'gs5',  label: 'Connect GPS provider (Lumio GPS)',                                   desc: 'Live load data feed' },
+  { id: 'gs6',  label: 'Enter franchise readiness data',                                    desc: 'Tracks your progress against governing body criteria' },
+  { id: 'gs7',  label: 'Add sponsor details',                                               desc: 'Commercial CRM and obligation tracking' },
+  { id: 'gs8',  label: 'Set up AI briefing preferences',                                    desc: 'Configure role-specific daily intelligence' },
+  { id: 'gs9',  label: 'Add international duty players',                                    desc: 'Club-to-country data handoff' },
+  { id: 'gs10', label: 'Invite your coaching and medical staff',                             desc: 'Role-based access control' },
+]
+
+function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: string) => void; onNavigate?: (section: string) => void }) {
+  const T       = THEMES.dark
+  const accent  = RUGBY_ACCENT
+  const density = DENSITY.regular
+  const greeting = getGreeting('matchday')
+
+  const [openFixture, setOpenFixture] = useState<RugbyFixture | null>(null)
+  const [cmdOpen,     setCmdOpen]     = useState(false)
+  const [askOpen,     setAskOpen]     = useState(false)
+  const [briefOpen,   setBriefOpen]   = useState(false)
+  const [dashToast,   showDashToast]  = useV2Toast()
+
+  // Tab system restored from rugby v1 — same pattern across all Lumio
+  // sport portals (cricket / tennis / darts / etc). 'today' renders the
+  // v2 dashboard grid; other tabs render their v1 content recovered from
+  // commit 43c7eadb. The rich role-based <InsightsView /> is reached via
+  // the sidebar nav, NOT this dashboard tab — these two namespaces both
+  // existed in v1 and we keep them separate.
+  const [dashTab, setDashTab] = useState<RugbyDashTab>('today')
+  const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('lumio_rugby_checklist') : null; return s ? JSON.parse(s) as Record<string, boolean> : {} } catch { return {} }
+  })
+  const toggleCheck = (id: string) => setChecklist(prev => {
+    const next = { ...prev, [id]: !prev[id] }
+    try { localStorage.setItem('lumio_rugby_checklist', JSON.stringify(next)) } catch { /* private mode etc */ }
+    return next
+  })
+  const completedCount  = RUGBY_GETTING_STARTED.filter(g => checklist[g.id]).length
+  const remainingCount  = RUGBY_GETTING_STARTED.length - completedCount
+
+  useV2Key('cmdk', () => setCmdOpen(o => !o))
+
+  // ── Quick Actions — full v1 set (8 buttons) plus team-sport extensions
+  // wired into existing sidebar destinations. "Match brief" intentionally
+  // NOT here — it lives in the hero panel. Removed: Flights and Visa Check
+  // (individual-athlete actions; the club has logistics + ops staff). Each
+  // button either opens an existing modal renderer (defined further down
+  // in this file) or navigates to an existing sidebar section.
+  const QUICK_ACTIONS: { icon: string; label: string; ai?: boolean; onClick: () => void }[] = [
+    { icon: '🎯', label: 'Match Prep',     ai: true, onClick: () => onOpenModal('matchprep') },
+    { icon: '🏉', label: 'Selection',                onClick: () => onNavigate?.('selection') },
+    { icon: '📱', label: 'Sponsor Post',   ai: true, onClick: () => onOpenModal('sponsorpost') },
+    { icon: '⚕️', label: 'Log Injury',               onClick: () => onOpenModal('injury') },
+    { icon: '🏋️', label: 'Log Training',             onClick: () => onNavigate?.('training-planner') },
+    { icon: '🏥', label: 'Medical Review',           onClick: () => onNavigate?.('medical') },
+    { icon: '💰', label: 'Cap Check',                onClick: () => onNavigate?.('capdashboard') },
+    { icon: '🔍', label: 'Scouting',                 onClick: () => onNavigate?.('scouting') },
+    { icon: '🌅', label: 'AI Briefing',    ai: true, onClick: () => onNavigate?.('dorbriefing') },
+    { icon: '🤖', label: 'Halftime Brief', ai: true, onClick: () => onNavigate?.('halftime') },
+    { icon: '🎬', label: 'Video',                    onClick: () => onOpenModal('video') },
+    { icon: '📋', label: 'Contracts',                onClick: () => onOpenModal('contracts') },
+    { icon: '💼', label: 'Agent Brief',    ai: true, onClick: () => onNavigate?.('agents') },
+    { icon: '🧾', label: 'Expense',                  onClick: () => onOpenModal('expense') },
+    { icon: '✨', label: 'Ask Lumio',      ai: true, onClick: () => setAskOpen(true) },
+  ]
+
+  return (
+    <>
+      <style jsx global>{`
+        .tnum { font-variant-numeric: tabular-nums; }
+        @keyframes cricketV2PulseDim   { 0%,100% { opacity: .5 } 50% { opacity: .95 } }
+        @keyframes cricketV2FadeUp     { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideLeft  { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: none } }
+        @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+      `}</style>
+      {/* Hero banner — match-day context, persistent across tabs.
+          Mirrors cricket v1's hero wrapper exactly: own padded block with
+          marginBottom: density.gap, NOT inside a flex-column container.
+          Previously the hero was inside a single flex-column wrapper which
+          stacked outer padding (14) + flex gap (14) + inner Card padding
+          (16) creating extra vertical space the cricket layout doesn't have. */}
+      {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+          row alongside AI Morning Summary and Inbox; Squad Availability
+          moved to bottom of page as full-width strip. Layout reflow per
+          user spec — do not re-add Today as banner sibling without
+          product approval. align-items: start retained defensively in
+          case future siblings get added to this row. */}
+      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
+          <RugbyHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onConfirm={() => showDashToast('Starting XV confirmed · squad notified')}
+            onAsk={() => setAskOpen(true)}
+            onMatchBrief={() => setBriefOpen(true)}
+          />
+        </div>
+      </div>
+
+      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
+
+        {/* Tab bar — restored from rugby v1, styled to match v2 aesthetic
+            (clean text labels + monochrome Lucide icons + accent underline). */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          borderBottom: `1px solid ${T.border}`, overflowX: 'auto',
+        }}>
+          {([
+            { id: 'gettingstarted', label: 'Getting Started', icon: 'sparkles', badge: remainingCount > 0 ? remainingCount : undefined },
+            { id: 'today',          label: 'Today',           icon: 'home' },
+            { id: 'quickwins',      label: 'Quick Wins',      icon: 'lightning' },
+            { id: 'dailytasks',     label: 'Daily Tasks',     icon: 'check' },
+            { id: 'insights',       label: 'Insights',        icon: 'bars' },
+            { id: 'dontmiss',       label: "Don't Miss",      icon: 'flag' },
+            { id: 'team',           label: 'Team',            icon: 'people' },
+          ] as { id: RugbyDashTab; label: string; icon: string; badge?: number }[]).map(t => {
+            const active = dashTab === t.id
+            return (
+              <button key={t.id} onClick={() => setDashTab(t.id)}
+                style={{
+                  appearance: 'none', border: 0, background: 'transparent',
+                  padding: '10px 14px',
+                  fontFamily: FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                  color: active ? '#fff' : T.text3,
+                  borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
+                  marginBottom: -1,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  transition: 'color .12s, border-color .12s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}>
+                <V2Icon name={t.icon} size={12} stroke={1.6} />
+                {t.label}
+                {t.badge !== undefined && (
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 600,
+                    padding: '1px 6px', borderRadius: 9,
+                    background: T.hover, color: T.text3,
+                    border: `1px solid ${T.border}`,
+                    fontFamily: 'var(--font-geist-mono, monospace)',
+                  }}>{t.badge}</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Quick Actions — desaturated row */}
+        {/* QUICK ACTIONS row centered horizontally for breathing space
+            between left-aligned Tabs row above and KPI cards below. */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {QUICK_ACTIONS.map((qa, i) => (
+            <button key={i} onClick={qa.onClick}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
+              style={{
+                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #2d3139',
+                color: '#9CA3AF', fontSize: 12, fontFamily: FONT, cursor: 'pointer',
+                transition: 'border-color .12s, color .12s',
+              }}>
+              <span style={{ fontSize: 13 }}>{qa.icon}</span>
+              <span>{qa.label}</span>
+              {qa.ai && (
+                <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>
+              )}
             </button>
           ))}
         </div>
-      )}
 
-      {/* Getting Started Tab */}
-      {dashTab === 'gettingstarted' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-4">Getting Started — {GETTING_STARTED.filter(g => checklist[g.id]).length}/{GETTING_STARTED.length} complete</div>
-          <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
-            <div className="h-2 rounded-full bg-purple-500 transition-all" style={{ width: `${(GETTING_STARTED.filter(g => checklist[g.id]).length / GETTING_STARTED.length) * 100}%` }} />
-          </div>
-          <div className="space-y-2">
-            {GETTING_STARTED.map(g => (
-              <button key={g.id} onClick={() => toggleCheck(g.id)}
-                className={`w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-lg border transition-all ${checklist[g.id] ? 'border-green-600/30 bg-green-600/5' : 'border-gray-800 hover:border-gray-700'}`}>
-                <span className={`text-xs ${checklist[g.id] ? 'text-green-400' : 'text-gray-600'}`}>{checklist[g.id] ? '✓' : '○'}</span>
-                <div>
-                  <div className={`text-xs font-medium ${checklist[g.id] ? 'text-gray-500 line-through' : 'text-white'}`}>{g.label}</div>
-                  <div className="text-[10px] text-gray-600">{g.desc}</div>
+        {/* TODAY tab — full v2 dashboard grid (hero is rendered above for
+            all tabs; this block holds the rest of the today layout). */}
+        {dashTab === 'today' && (
+          <>
+            {/* Row 2 — Stat tiles */}
+            <RugbyStatTiles T={T} accent={accent} density={density} />
+
+            {/* Row 3 — Morning brief + Inbox + Today (three-column).
+                Cards rendered as DIRECT grid children, matching cricket
+                reference. RugbyAIBrief '1/span 4',
+                InteractiveRugbyInbox '5/span 4', RugbyTodaySchedule
+                '9/span 4' — totalling 12.
+                CARD ROW GAP — gap: 8 (tighter than density.gap=14)
+                so the three cards read as one unified row visual. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+              <RugbyAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              <InteractiveRugbyInbox T={T} accent={accent} density={density} />
+              <RugbyTodaySchedule T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Row 4 — Fixtures + Performance signals */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <RugbyFixturesModule T={T} accent={accent} density={density} onPick={f => setOpenFixture(f)} />
+              <RugbyPerf           T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Row 5 — Recents + Season */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <RugbyRecents T={T} accent={accent} density={density} />
+              <RugbySeason  T={T} accent={accent} density={density} />
+            </div>
+
+            {/* Row 6 — Squad availability full-width strip */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+              <RugbySquadModule T={T} accent={accent} density={density} />
+            </div>
+          </>
+        )}
+
+        {/* GETTING STARTED tab — 10-step onboarding checklist */}
+        {dashTab === 'gettingstarted' && (
+          <Card>
+            <div className="text-sm font-semibold text-white mb-1">Getting Started — {completedCount}/{RUGBY_GETTING_STARTED.length} complete</div>
+            <div className="text-xs text-gray-500 mb-4">Set up your portal · 10 steps</div>
+            <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+              <div className="h-2 rounded-full bg-purple-500 transition-all" style={{ width: `${(completedCount / RUGBY_GETTING_STARTED.length) * 100}%` }} />
+            </div>
+            <div className="space-y-2">
+              {RUGBY_GETTING_STARTED.map(g => (
+                <button key={g.id} onClick={() => toggleCheck(g.id)}
+                  className={`w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-lg border transition-all ${checklist[g.id] ? 'border-green-600/30 bg-green-600/5' : 'border-gray-800 hover:border-gray-700'}`}>
+                  <span className={`text-xs ${checklist[g.id] ? 'text-green-400' : 'text-gray-600'}`}>{checklist[g.id] ? '✓' : '○'}</span>
+                  <div>
+                    <div className={`text-xs font-medium ${checklist[g.id] ? 'text-gray-500 line-through' : 'text-white'}`}>{g.label}</div>
+                    <div className="text-[10px] text-gray-600">{g.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* QUICK WINS tab — high-impact short-effort tasks */}
+        {dashTab === 'quickwins' && (
+          <div className="space-y-3">
+            {[
+              { icon: '📋', title: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start', impact: 'high'   as const, effort: '15min', category: 'Franchise',   description: 'Investment Capacity criterion needs documentation — Caroline Hughes waiting.' },
+              { icon: '🤝', title: 'Schedule Hartfield Building Society renewal meeting',              action: 'Book',  impact: 'high'   as const, effort: '5min',  category: 'Sponsor',     description: 'Renewal due June 2026. Early meeting secures better terms.' },
+              { icon: '📡', title: 'Review GPS overload flags before Thursday session',                action: 'View',  impact: 'medium' as const, effort: '5min',  category: 'Performance', description: '3 players flagged with high ACWR — review before training.' },
+            ].map((w, i) => (
+              <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: w.impact === 'high' ? '#EF4444' : '#F59E0B' }}>{w.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7C3AED1a', color: '#c084fc' }}>⏱ {w.effort}</span>
+                      <span className="text-xs" style={{ color: '#6B7280' }}>{w.category}</span>
+                    </div>
+                    <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
+                    <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: Club systems</p>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>{w.action} →</button>
+                    <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
+                  </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
-        </Card>
-      )}
+        )}
 
-      {/* Today Tab */}
-      {dashTab === 'today' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Morning Roundup */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Morning Roundup</div>
-            <div className="space-y-2 text-xs">
-              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">🔴</span><span className="text-gray-300">HIA: Danny Foster Day 8 — monitor</span></div>
-              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-amber-400">🟡</span><span className="text-gray-300">Cap return due in 34 days</span></div>
-              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-amber-400">🟡</span><span className="text-gray-300">2 sponsor renewals approaching</span></div>
-              <div className="flex gap-2 py-1.5"><span className="text-purple-400">🟣</span><span className="text-gray-300">Jersey Reds match prep — Thu AM</span></div>
-            </div>
-          </Card>
-
-          {/* Match Card */}
-          <Card className="border-purple-600/30">
-            <div className="text-sm font-semibold text-white mb-3">Next Match</div>
-            <div className="text-center py-4">
-              <div className="text-3xl mb-2">🏉</div>
-              <div className="text-lg font-bold text-white">{club.nextFixture}</div>
-              <div className="text-xs text-gray-400 mt-1">{club.nextFixtureDate} · KO 3:00pm</div>
-              <div className="text-xs text-gray-500 mt-1">{club.stadium}</div>
-              <div className="text-xs text-purple-400 font-medium mt-2">4 days to go</div>
-            </div>
-          </Card>
-
-          {/* Photo Frame */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Photo Frame</div>
-            <div className="aspect-video bg-gray-900/50 rounded-lg border border-gray-800 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl mb-2">📸</div>
-                <div className="text-xs text-gray-500">Upload a team photo</div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Quick Wins */}
-      {dashTab === 'quickwins' && (
-        <div className="space-y-3">
-          {[
-            { icon: '📋', title: 'Complete franchise documentation for Investment Capacity criterion', action: 'Start', impact: 'high' as const, effort: '15min', category: 'Franchise', description: 'Investment Capacity criterion needs documentation — Caroline Hughes waiting.' },
-            { icon: '🤝', title: 'Schedule Hartfield Building Society renewal meeting', action: 'Book', impact: 'high' as const, effort: '5min', category: 'Sponsor', description: 'Renewal due June 2026. Early meeting secures better terms.' },
-            { icon: '📡', title: 'Review GPS overload flags before Thursday session', action: 'View', impact: 'medium' as const, effort: '5min', category: 'Performance', description: '3 players flagged with high ACWR — review before training.' },
-          ].map((w, i) => (
-            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: w.impact === 'high' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: w.impact === 'high' ? '#EF4444' : '#F59E0B' }}>{w.impact === 'high' ? 'HIGH IMPACT' : 'MEDIUM IMPACT'}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7C3AED1a', color: '#c084fc' }}>⏱ {w.effort}</span>
-                    <span className="text-xs" style={{ color: '#6B7280' }}>{w.category}</span>
+        {/* DAILY TASKS tab — today's schedule with priority tags */}
+        {dashTab === 'dailytasks' && (
+          <div className="space-y-3">
+            {[
+              { time: '10:00', task: 'Team meeting — game plan finalised',     cat: 'Coaching',   priority: 'high'   as const },
+              { time: '11:00', task: 'Pre-match press conference',              cat: 'Media',      priority: 'medium' as const },
+              { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole',  cat: 'Medical',    priority: 'high'   as const },
+              { time: '16:00', task: 'Sponsor call — Hartfield Building Society', cat: 'Commercial', priority: 'medium' as const },
+            ].map((t, i) => (
+              <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+                <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority === 'high' ? 'rgba(249,115,22,0.12)' : 'rgba(245,158,11,0.12)', color: t.priority === 'high' ? '#F97316' : '#F59E0B' }}>{t.priority}</span>
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
+                    <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
                   </div>
-                  <h3 className="font-bold mb-1" style={{ color: '#F9FAFB' }}>{w.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{w.description}</p>
-                  <p className="text-xs mt-2" style={{ color: '#374151' }}>Source: Club systems</p>
+                  <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{t.task}</h4>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>{w.action} →</button>
+                  <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>Open →</button>
                   <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Daily Tasks */}
-      {dashTab === 'dailytasks' && (
-        <div className="space-y-3">
-          {[
-            { time: '10:00', task: 'Team meeting — game plan finalised', cat: 'Coaching', priority: 'high' as const },
-            { time: '11:00', task: 'Pre-match press conference', cat: 'Media', priority: 'medium' as const },
-            { time: '14:00', task: 'Medical reviews — Foster, Patel, Cole', cat: 'Medical', priority: 'high' as const },
-            { time: '16:00', task: 'Sponsor call — Hartfield Building Society', cat: 'Commercial', priority: 'medium' as const },
-          ].map((t, i) => (
-            <div key={i} className="rounded-xl p-4 flex items-start gap-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-              <button className="w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: '#4B5563' }} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: t.priority==='high'?'rgba(249,115,22,0.12)':'rgba(245,158,11,0.12)', color: t.priority==='high'?'#F97316':'#F59E0B' }}>{t.priority}</span>
-                  <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{t.cat}</span>
-                  <span className="text-xs ml-auto" style={{ color: '#6B7280' }}>{t.time}</span>
-                </div>
-                <h4 className="font-semibold text-sm" style={{ color: '#E5E7EB' }}>{t.task}</h4>
-              </div>
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                <button className="px-4 py-2 text-white text-sm font-bold rounded-xl whitespace-nowrap" style={{ backgroundColor: '#7C3AED' }}>Open →</button>
-                <button className="px-4 py-2 text-xs rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>Mark done</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Insights */}
-      {dashTab === 'insights' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Key Insights</div>
-          <div className="space-y-2 text-xs">
-            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Tackle success rate improved 4% over last 3 games</span></div>
-            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">↓</span><span className="text-gray-300">Scrum penalty rate increasing — 3 in last match</span></div>
-            <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Matchday revenue up 8% vs same fixture last season</span></div>
-            <div className="flex gap-2 py-1.5"><span className="text-amber-400">→</span><span className="text-gray-300">Franchise score static at 71% — needs Investment Capacity action</span></div>
-          </div>
-        </Card>
-      )}
-
-      {/* Don't Miss */}
-      {dashTab === 'dontmiss' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Don&apos;t Miss</div>
-          <div className="space-y-2 text-xs">
-            <div className="bg-red-600/5 border border-red-600/30 rounded-lg p-3"><span className="text-red-400 font-bold">URGENT:</span> Women&apos;s PWR registration deadline — 30 April (24 days)</div>
-            <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">DUE SOON:</span> Salary cap return — 10 May (34 days)</div>
-            <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">RENEWAL:</span> Hartfield Building Society sponsorship — June 2026</div>
-          </div>
-        </Card>
-      )}
-
-      {/* Team */}
-      {dashTab === 'team' && (
-        <Card>
-          <div className="text-sm font-semibold text-white mb-3">Club Leadership</div>
-          <div className="space-y-2">
-            {[
-              { name: club.dor, role: 'Director of Rugby', icon: '🏉' },
-              { name: club.headCoach, role: 'Head Coach', icon: '🎽' },
-              { name: club.ceo, role: 'CEO', icon: '🏛️' },
-              { name: club.headMedical, role: 'Head of Medical', icon: '🏥' },
-              { name: club.headWomens, role: "Head of Women's Rugby", icon: '⭐' },
-            ].map((p, i) => (
-              <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50">
-                <span className="text-lg">{p.icon}</span>
-                <div><div className="text-xs text-white font-medium">{p.name}</div><div className="text-[10px] text-gray-500">{p.role}</div></div>
-              </div>
             ))}
           </div>
-        </Card>
-      )}
+        )}
 
-      {/* Alert Banner */}
-      <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4 text-sm text-amber-400">
-        <span className="font-bold">FRANCHISE READINESS: {club.franchiseScore}%</span> — 2 criteria require attention. Cap audit window: 34 days. Next fixture: {club.nextFixture} {club.nextFixtureDate}.
-      </div>
-
-      <SectionHeader icon="🏠" title={`${club.name} — Club Dashboard`} subtitle={`${club.league} · ${club.stadium} · Capacity ${club.capacity.toLocaleString()}`} />
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard label="Cap Headroom" value={fmt(headroom)} sub="To ceiling — compliant" color="green" />
-        <StatCard label="Floor Buffer" value={`+${fmt(floorBuffer)}`} sub="Above minimum" color="green" />
-        <StatCard label="Franchise Score" value={`${club.franchiseScore}%`} sub="Target: 85%" color="orange" />
-        <StatCard label="Squad Available" value={`${available}/${club.squadSize}`} sub={`${club.squadSize - available} unavailable`} color={available >= 30 ? 'teal' : 'orange'} />
-        <StatCard label="Next Fixture" value="4 days" sub={club.nextFixture} color="purple" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Weekly Schedule */}
+        {/* INSIGHTS tab — quick-glance bullets (NOT the rich role InsightsView,
+            which is a separate sidebar destination) */}
+        {dashTab === 'insights' && (
           <Card>
-            <div className="text-sm font-semibold text-white mb-3">Match Week Schedule</div>
-            <div className="space-y-2">
-              {[
-                {day:'Mon',items:'Squad training 10am (29 players), Medical reviews 2pm'},
-                {day:'Tue',items:'Team run 10am, Analysis session 2pm'},
-                {day:'Wed',items:'REST (home fixture)'},
-                {day:'Thu',items:'Pre-match walkthrough 11am'},
-                {day:'Sat',items:'KO 3pm vs Jersey Reds, The Grange'},
-              ].map((d:{day:string;items:string},i:number)=>(
-                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
-                  <span className="text-xs text-purple-400 font-bold w-10">{d.day}</span>
-                  <span className="text-sm text-gray-300">{d.items}</span>
-                </div>
-              ))}
+            <div className="text-sm font-semibold text-white mb-3">Key Insights</div>
+            <div className="space-y-2 text-xs">
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Tackle success rate improved 4% over last 3 games</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-red-400">↓</span><span className="text-gray-300">Scrum penalty rate increasing — 3 in last match</span></div>
+              <div className="flex gap-2 py-1.5 border-b border-gray-800/50"><span className="text-green-400">↑</span><span className="text-gray-300">Matchday revenue up 8% vs same fixture last season</span></div>
+              <div className="flex gap-2 py-1.5"><span className="text-amber-400">→</span><span className="text-gray-300">Franchise score static at 71% — needs Investment Capacity action</span></div>
+            </div>
+            <div className="text-[10px] text-gray-600 mt-4">For role-based deep-dive intelligence, open the Insights item in the sidebar.</div>
+          </Card>
+        )}
+
+        {/* DON'T MISS tab — urgent deadlines */}
+        {dashTab === 'dontmiss' && (
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Don&apos;t Miss</div>
+            <div className="space-y-2 text-xs">
+              <div className="bg-red-600/5 border border-red-600/30 rounded-lg p-3"><span className="text-red-400 font-bold">URGENT:</span> Women&apos;s PWR registration deadline — 30 April (24 days)</div>
+              <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">DUE SOON:</span> Salary cap return — 10 May (34 days)</div>
+              <div className="bg-amber-600/5 border border-amber-600/30 rounded-lg p-3"><span className="text-amber-400 font-bold">RENEWAL:</span> Hartfield Building Society sponsorship — June 2026</div>
             </div>
           </Card>
+        )}
 
-          {/* Lumio Health Readiness */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Lumio Health — Player Readiness</div>
-            <div className="space-y-2">
-              {SQUAD.slice(0,6).map((p:{name:string;pos:string;readiness:number;status:string},i:number)=>(
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-[10px] font-bold text-purple-400">{p.name.split(' ').map((w:string)=>w[0]).join('')}</div>
-                    <div><div className="text-sm text-white">{p.name}</div><div className="text-xs text-gray-500">{p.pos}</div></div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 bg-gray-800 rounded-full h-2"><div className={`h-2 rounded-full ${p.readiness>=80?'bg-green-500':p.readiness>=60?'bg-amber-500':'bg-red-500'}`} style={{width:`${p.readiness}%`}}></div></div>
-                    <span className={`text-xs font-bold w-10 text-right ${p.readiness>=80?'text-green-400':p.readiness>=60?'text-amber-400':'text-red-400'}`}>{p.readiness}%</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${p.readiness>=80?'bg-green-600/20 text-green-400':p.readiness>=60?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400'}`}>
-                      {p.readiness>=80?'READY':p.readiness>=60?'AMBER':'RED'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+        {/* TEAM tab — club leadership */}
+        {dashTab === 'team' && <TeamLeadershipPanel />}
 
-          {/* Salary Cap Meter */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Salary Cap — Live</div>
-            <div className="relative h-8 bg-gray-800 rounded-full overflow-hidden mb-2">
-              <div className="absolute inset-0 flex">
-                <div style={{width:`${((club.capFloor)/club.capCeiling)*100}%`}} className="bg-gray-700/50"></div>
-                <div style={{width:`${((club.currentSpend - club.capFloor)/club.capCeiling)*100}%`}} className="bg-green-600/40"></div>
-                <div style={{width:`${((club.capCeiling - club.currentSpend)/club.capCeiling)*100}%`}} className="bg-green-600/10"></div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold">{fmt(club.currentSpend)}</div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Floor: {fmt(club.capFloor)}</span>
-              <span className="text-green-400 font-medium">{fmt(headroom)} headroom</span>
-              <span>Ceiling: {fmt(club.capCeiling)}</span>
-            </div>
-          </Card>
-        </div>
-
-        {/* Right Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Franchise Readiness */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Franchise Readiness</div>
-            <div className="flex items-center justify-center mb-4">
-              <svg viewBox="0 0 120 120" className="w-28 h-28">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#1f2937" strokeWidth="8"/>
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#8B5CF6" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${(club.franchiseScore/100)*314} 314`} transform="rotate(-90 60 60)"/>
-                <text x="60" y="55" textAnchor="middle" fill="white" fontSize="24" fontWeight="bold">{club.franchiseScore}</text>
-                <text x="60" y="72" textAnchor="middle" fill="#6b7280" fontSize="10">/ 100</text>
-              </svg>
-            </div>
-            <div className="space-y-2">
-              {FRANCHISE_CRITERIA.map((c:{name:string;score:number;status:string},i:number)=>(
-                <div key={i} className="flex items-center justify-between py-1 border-b border-gray-800/50">
-                  <span className="text-xs text-gray-300">{c.name}</span>
-                  <StatusPill status={c.status}/>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 space-y-1">
-              <div className="text-xs text-red-400">→ Complete investor documentation — Caroline Hughes</div>
-              <div className="text-xs text-red-400">→ Register Women&apos;s PWR team by 30 April</div>
-            </div>
-          </Card>
-
-          {/* Bottom Alerts */}
-          <Card>
-            <div className="text-sm font-semibold text-white mb-3">Alerts</div>
-            <div className="space-y-2">
-              {[
-                {icon:'🧠',text:'1 active HIA: Danny Foster (Day 8 of protocol)',color:'text-red-400'},
-                {icon:'🤝',text:'2 sponsorship renewals due within 30 days',color:'text-amber-400'},
-                {icon:'📋',text:'Salary cap return due in 34 days',color:'text-amber-400'},
-              ].map((a:{icon:string;text:string;color:string},i:number)=>(
-                <div key={i} className={`flex items-center gap-2 text-xs ${a.color} py-1.5 border-b border-gray-800/50`}>
-                  <span>{a.icon}</span><span>{a.text}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+        <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
+          <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
         </div>
       </div>
 
-      {/* AI Section */}
-      {session && rugbyCode && (
-        <RugbyAISection context="dashboard" club={club} session={session} rugbyCode={rugbyCode} />
-      )}
-    </div>
-  );
+      <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
+      <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
+      <V2Toast          T={T} accent={accent} msg={dashToast} />
+      <RugbyMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+    </>
+  )
 }
 
 // ─── INSIGHTS VIEW ──────────────────────────────────────────────────────────
+// ─── Insights helpers — small SVG charts + status helpers ───────────────────
+// All inline SVG, dark-theme, deterministic. Used only inside InsightsView.
+
+const INSIGHTS_ACCENT = '#7C3AED'
+type RAG = 'GREEN' | 'AMBER' | 'RED'
+const ragHex = (s: RAG) => s === 'GREEN' ? '#22C55E' : s === 'AMBER' ? '#F59E0B' : '#EF4444'
+const ragBg  = (s: RAG) => s === 'GREEN' ? 'bg-green-600/15 text-green-400 border-green-600/30'
+                          : s === 'AMBER' ? 'bg-amber-600/15 text-amber-400 border-amber-600/30'
+                          : 'bg-red-600/15 text-red-400 border-red-600/30'
+const trendArrow = (t: 'up' | 'down' | 'flat') =>
+  t === 'up' ? <span className="text-green-400">↑</span>
+  : t === 'down' ? <span className="text-red-400">↓</span>
+  : <span className="text-gray-500">→</span>
+
+function ProgressBar({ value, max = 100, color = INSIGHTS_ACCENT, height = 6 }: { value: number; max?: number; color?: string; height?: number }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100))
+  return (
+    <div className="w-full rounded-full overflow-hidden" style={{ height, background: 'rgba(255,255,255,0.06)' }}>
+      <div style={{ height: '100%', width: `${pct}%`, background: color, transition: 'width .3s' }} />
+    </div>
+  )
+}
+
+function BarChart({ values, labels, max, height = 120, color = INSIGHTS_ACCENT, target }: {
+  values: number[]; labels?: string[]; max?: number; height?: number; color?: string; target?: number
+}) {
+  const m = max ?? Math.max(...values, 1)
+  const w = 600, padL = 28, padB = 22
+  const innerW = w - padL - 12, innerH = height - padB - 8
+  const barW = innerW / values.length - 4
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" style={{ maxHeight: height + 8 }}>
+      {target !== undefined && (() => {
+        const ty = 8 + innerH - (target / m) * innerH
+        return <line x1={padL} y1={ty} x2={padL + innerW} y2={ty} stroke="#F59E0B" strokeWidth={1} strokeDasharray="4 3" />
+      })()}
+      {values.map((v, i) => {
+        const x = padL + i * (barW + 4) + 2
+        const h = (v / m) * innerH
+        const y = 8 + innerH - h
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={barW} height={h} rx={3} fill={color} opacity={0.85} />
+            <text x={x + barW / 2} y={y - 3} textAnchor="middle" fontSize={9} fontWeight={700} fill="#F9FAFB">{v}</text>
+            {labels && <text x={x + barW / 2} y={height - 6} textAnchor="middle" fontSize={9} fill="#6B7280">{labels[i]}</text>}
+          </g>
+        )
+      })}
+      {[0, 0.5, 1].map(p => {
+        const y = 8 + innerH - p * innerH
+        return <line key={p} x1={padL} y1={y} x2={padL + innerW} y2={y} stroke="rgba(255,255,255,0.04)" />
+      })}
+    </svg>
+  )
+}
+
+function Sparkline({ values, color = INSIGHTS_ACCENT, height = 36, width = 120 }: { values: number[]; color?: string; height?: number; width?: number }) {
+  const max = Math.max(...values), min = Math.min(...values)
+  const range = max - min || 1
+  const path = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * (width - 4) + 2
+    const y = height - 4 - ((v - min) / range) * (height - 8)
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+  }).join(' ')
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <path d={path} stroke={color} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function LineChart({ values, labels, max, min = 0, color = INSIGHTS_ACCENT, height = 160, width = 600 }: {
+  values: number[]; labels?: string[]; max?: number; min?: number; color?: string; height?: number; width?: number
+}) {
+  const m = max ?? Math.max(...values, 1)
+  const padX = 32, padB = 22
+  const innerW = width - padX - 12, innerH = height - padB - 14
+  const path = values.map((v, i) => {
+    const x = padX + (i / (values.length - 1 || 1)) * innerW
+    const y = 12 + innerH - ((v - min) / (m - min)) * innerH
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+  }).join(' ')
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: height + 4 }}>
+      {[0, 0.25, 0.5, 0.75, 1].map(p => {
+        const y = 12 + innerH - p * innerH
+        return (
+          <g key={p}>
+            <line x1={padX} y1={y} x2={padX + innerW} y2={y} stroke="rgba(255,255,255,0.04)" />
+            <text x={padX - 6} y={y + 3} textAnchor="end" fontSize={9} fill="#6B7280">{Math.round((m - min) * p + min)}</text>
+          </g>
+        )
+      })}
+      <path d={path} stroke={color} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+      {values.map((v, i) => {
+        const x = padX + (i / (values.length - 1 || 1)) * innerW
+        const y = 12 + innerH - ((v - min) / (m - min)) * innerH
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r={3} fill={color} />
+            <text x={x} y={y - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#F9FAFB">{v}</text>
+            {labels && <text x={x} y={height - 6} textAnchor="middle" fontSize={9} fill="#6B7280">{labels[i]}</text>}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function Donut({ data, size = 120 }: { data: { label: string; value: number; color: string }[]; size?: number }) {
+  const total = data.reduce((a, b) => a + b.value, 0)
+  const r = size / 2 - 10
+  const circ = 2 * Math.PI * r
+  let offset = 0
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={14} />
+        {data.map((d, i) => {
+          const len = (d.value / total) * circ
+          const dash = `${len} ${circ - len}`
+          const dashOffset = -offset
+          offset += len
+          return (
+            <circle key={i}
+              cx={size / 2} cy={size / 2} r={r}
+              fill="none" stroke={d.color} strokeWidth={14}
+              strokeDasharray={dash} strokeDashoffset={dashOffset}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+          )
+        })}
+        <text x={size / 2} y={size / 2 - 2} textAnchor="middle" fontSize={14} fontWeight={800} fill="#F9FAFB">{total}</text>
+        <text x={size / 2} y={size / 2 + 12} textAnchor="middle" fontSize={9} fill="#9CA3AF">total</text>
+      </svg>
+      <div className="space-y-1.5 text-xs">
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />
+            <span className="text-gray-300">{d.label}</span>
+            <span className="text-gray-500 ml-auto font-mono">{d.value}</span>
+            <span className="text-gray-600 text-[10px] w-10 text-right font-mono">{((d.value / total) * 100).toFixed(0)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function InsightCard({ title, subtitle, children, className = '' }: { title?: string; subtitle?: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-[#0d1117] border border-gray-800/60 rounded-xl p-5 ${className}`}>
+      {(title || subtitle) && (
+        <div className="mb-4">
+          {title && <div className="text-sm font-bold text-white">{title}</div>}
+          {subtitle && <div className="text-[11px] text-gray-500 mt-0.5">{subtitle}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function KpiCard({ label, value, sub, accent = INSIGHTS_ACCENT, trend, trendValue }: {
+  label: string; value: string | number; sub?: string; accent?: string
+  trend?: 'up' | 'down' | 'flat'; trendValue?: string
+}) {
+  return (
+    <div className="bg-[#0d1117] border border-gray-800/60 rounded-xl p-3.5">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] uppercase tracking-wider text-gray-500">{label}</span>
+        {trend && (
+          <span className="text-[10px] font-mono">
+            {trendArrow(trend)} <span className="text-gray-500">{trendValue}</span>
+          </span>
+        )}
+      </div>
+      <div className="text-2xl font-black text-white" style={{ color: accent }}>{value}</div>
+      {sub && <div className="text-[10px] text-gray-500 mt-0.5">{sub}</div>}
+    </div>
+  )
+}
+
+// ─── Insights View — 8 role dashboards, each rich with charts/tables ──────
+
 function InsightsView({club, activeRole: activeRoleProp = 'dor'}:{club:RugbyClub; activeRole?: string}) {
   const [localRole, setLocalRole] = useState(activeRoleProp);
   const activeRole = localRole;
   const setActiveRole = setLocalRole;
-  const roles = [{id:'dor',label:'Director of Rugby',icon:'🏉'},{id:'coach',label:'Head Coach',icon:'🎽'},{id:'medical',label:'Head of Medical',icon:'🏥'},{id:'recruitment',label:'Recruitment',icon:'🔍'},{id:'academy',label:'Academy',icon:'🎓'},{id:'analysis',label:'Analysis',icon:'🎬'},{id:'commercial',label:'Commercial',icon:'💼'},{id:'ceo',label:'CEO / Chairman',icon:'🏛️'}];
-  const headroom = club.capCeiling - club.currentSpend;
+  const roles = [
+    { id: 'dor',         label: 'Director of Rugby', icon: '🏉' },
+    { id: 'coach',       label: 'Head Coach',        icon: '🎽' },
+    { id: 'medical',     label: 'Head of Medical',   icon: '🏥' },
+    { id: 'recruitment', label: 'Recruitment',       icon: '🔍' },
+    { id: 'academy',     label: 'Academy',           icon: '🎓' },
+    { id: 'analysis',    label: 'Analysis',          icon: '🎬' },
+    { id: 'commercial',  label: 'Commercial',        icon: '💼' },
+    { id: 'ceo',         label: 'CEO / Chairman',    icon: '🏛️' },
+  ]
+
   return (
     <div className="space-y-6">
-      <QuickActionsBar/><SectionHeader icon="📊" title="Insights" subtitle="Role-specific dashboards — 8 views"/>
-      <div className="flex gap-1 border-b border-gray-800 pb-0" style={{ overflowX: 'hidden' }}>{roles.map(r=><button key={r.id} onClick={()=>setActiveRole(r.id)} className={`px-4 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all -mb-px whitespace-nowrap`} style={{ borderBottomColor: activeRole===r.id?'#7C3AED':'transparent', color: activeRole===r.id?'#c084fc':'#6B7280', backgroundColor: activeRole===r.id?'#7C3AED0d':'transparent' }}><span className="text-base">{r.icon}</span>{r.label}</button>)}</div>
-      {activeRole==='dor'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Cap Headroom" value={fmt(headroom)} sub="Compliant" color="green"/><StatCard label="Franchise" value={`${club.franchiseScore}%`} sub="2 RED criteria" color="orange"/><StatCard label="Targets" value="6" sub="2 priority" color="purple"/><StatCard label="Contract Exp" value="7" sub="Before Jun 2026" color="red"/></div><div className="grid grid-cols-1 md:grid-cols-2 gap-5"><Card><div className="text-sm font-semibold text-white mb-3">Priority Actions</div>{[{a:'Confirm No.8 — Foster HIA Day 8',u:'red'},{a:'LHP contract — external interest',u:'red'},{a:"Women's Game plan — submit by 30 Apr",u:'amber'},{a:'Investment Capacity pack — CEO sign-off',u:'amber'},{a:'Salary cap return — due 10 May',u:'blue'}].map((a,i)=><div key={i} className="flex gap-2 py-2 border-b border-gray-800/50 last:border-0"><span className={`text-xs mt-0.5 flex-shrink-0 ${a.u==='red'?'text-red-400':a.u==='amber'?'text-amber-400':'text-blue-400'}`}>{a.u==='red'?'🔴':a.u==='amber'?'🟡':'🔵'}</span><span className="text-xs text-gray-300">{a.a}</span></div>)}</Card><Card><div className="text-sm font-semibold text-white mb-3">Franchise Gap — 30-Day Sprint</div>{[{c:"Women's Game (42%)",a:'Submit PWR reg',d:'30 Apr',p:'CRITICAL'},{c:'Investment (48%)',a:'Complete investor pack',d:'15 May',p:'HIGH'},{c:'Operating (65%)',a:'Book matchday assessment',d:'30 Jun',p:'MEDIUM'}].map((g,i)=><div key={i} className={`p-3 rounded-lg border mb-2 ${g.p==='CRITICAL'?'border-red-600/30 bg-red-600/5':g.p==='HIGH'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><div className="flex justify-between mb-1"><span className="text-xs font-bold text-white">{g.c}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${g.p==='CRITICAL'?'bg-red-600/20 text-red-400':g.p==='HIGH'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{g.p}</span></div><div className="text-[10px] text-gray-400">{g.a} · {g.d}</div></div>)}</Card></div></div>}
-      {activeRole==='coach'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Available" value="28/38" sub="2 HIA · 2 injured" color="teal"/><StatCard label="GPS Overloads" value="2" sub="Barnes · Foster" color="red"/><StatCard label="Team ACWR" value="1.22" sub="Amber" color="orange"/><StatCard label="Next Match" value="Sat" sub="vs Jersey Reds" color="purple"/></div><Card><div className="text-sm font-semibold text-white mb-3">Set Piece + Opposition</div><div className="space-y-2 text-xs"><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Lineout</span><span className="text-green-400 font-bold">85%</span></div><div className="flex justify-between py-1.5 border-b border-gray-800/50"><span className="text-gray-400">Scrum</span><span className="text-amber-400 font-bold">71% ⚠</span></div><div className="flex justify-between py-1.5"><span className="text-gray-400">Gainline</span><span className="text-white font-bold">61%</span></div></div><div className="mt-3 text-xs text-gray-400"><div>• Jersey scrum weakness — 4 pen last 3</div><div>• Hawkins kicks left 60%</div><div>• Morris (OF) — 9 turnovers last 3</div></div></Card></div>}
-      {activeRole==='medical'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="HIA Active" value="1" sub="Danny Foster" color="red"/><StatCard label="Injured" value="2" sub="Briggs · Patel" color="amber"/><StatCard label="Overload" value="2" sub="Barnes · Foster K." color="orange"/><StatCard label="Screenings" value="2" sub="Overdue" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">Medical Register</div><table className="w-full text-xs"><tbody>{[{p:'Danny Foster',i:'HIA Day 8',r:'19 Apr',s:'Active'},{p:'Karl Briggs',i:'Shoulder post-op',r:'2 May',s:'RTP'},{p:'Ryan Patel',i:'Hamstring Gr2',r:'18 Apr',s:'Rehab'},{p:'Luke Barnes',i:'ACWR 1.52',r:'Managed',s:'Load mgmt'}].map((r,i)=><tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-white">{r.p}</td><td className="py-2 text-gray-400">{r.i}</td><td className="py-2 text-gray-300">{r.r}</td><td className="py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.s==='Active'?'bg-red-600/20 text-red-400':r.s==='RTP'?'bg-blue-600/20 text-blue-400':'bg-gray-800 text-gray-500'}`}>{r.s}</span></td></tr>)}</tbody></table></Card></div>}
-      {activeRole==='recruitment'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Cap Headroom" value={fmt(headroom)} sub="For signings" color="green"/><StatCard label="Priority" value="2" sub="LHP + DM" color="red"/><StatCard label="Agents" value="5" sub="3 negotiating" color="purple"/><StatCard label="Window" value="Open" sub="Summer" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">Target Pipeline</div><table className="w-full text-xs"><tbody>{[{n:'Mike Donovan',p:'LHP',c:'Richmond',s:78000,st:'Offer made'},{n:'Jake Morton',p:'DM',c:'Coventry',s:65000,st:'Approach'},{n:'Chris Lawton',p:'CB',c:'Nottingham',s:58000,st:'Scouting'},{n:'Rory Flynn',p:'FH',c:'Free agent',s:72000,st:'Meeting Thu'}].map((t,i)=>{const ca=headroom-t.s;return<tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-white">{t.n}</td><td className="py-2"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">{t.p}</span></td><td className="py-2 text-gray-400">{t.c}</td><td className="py-2 text-right text-gray-300">{fmt(t.s)}</td><td className={`py-2 text-right font-bold ${ca>200000?'text-green-400':'text-amber-400'}`}>{fmt(ca)}</td><td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded ${t.st==='Offer made'?'bg-green-600/20 text-green-400':t.st.includes('Meet')?'bg-purple-600/20 text-purple-400':'bg-gray-800 text-gray-500'}`}>{t.st}</span></td></tr>;})}</tbody></table></Card></div>}
-      {activeRole==='academy'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Academy" value="28" sub="U18:14 · U21:14" color="purple"/><StatCard label="1st Team Ready" value="3" sub="Dual reg" color="green"/><StatCard label="Franchise pts" value="+12" sub="CoE compliance" color="teal"/><StatCard label="Graduates" value="2" sub="This season" color="blue"/></div><Card><div className="text-sm font-semibold text-white mb-3">U21 First Team Bridge</div>{[{n:'Tom Foley',a:20,p:'No.8',s:'First team debut R14',ss:18},{n:'Ali Rashid',a:19,p:'Wing',s:'Dual reg — Coventry',ss:12},{n:'Sam Clarke',a:21,p:'Hooker',s:'Training with 1st team',ss:8}].map((p,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs"><div><div className="text-white font-medium">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.a} · {p.s}</div></div><div className="text-right"><div className="text-purple-400 font-bold">{p.ss}</div><div className="text-[10px] text-gray-600">1st team sessions</div></div></div>)}</Card></div>}
-      {activeRole==='analysis'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Clips" value="128" sub="5 categories" color="purple"/><StatCard label="Set Piece" value="85%/71%" sub="LO / Scrum" color="teal"/><StatCard label="Gainline" value="61%" sub="vs 56% bench ↑" color="green"/><StatCard label="Tackle Miss" value="10%" sub="Target <12% ✓" color="green"/></div><Card><div className="text-sm font-semibold text-white mb-3">Analysis Queue</div>{[{t:'Jersey Reds opp report',d:'Thu AM',s:'In progress'},{t:'Own lineout call review',d:'Thu AM',s:'Complete ✓'},{t:'Bath tackle patterns (18 events)',d:'Wed',s:'Complete ✓'},{t:'Foster HIA video — contact events',d:'Tue',s:'Complete ✓'}].map((t,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs"><div className="flex-1 text-gray-300 mr-4">{t.t}</div><div className="flex items-center gap-3 flex-shrink-0"><span className="text-gray-500">{t.d}</span><span className={`px-2 py-0.5 rounded text-[10px] ${t.s.includes('✓')?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{t.s}</span></div></div>)}</Card></div>}
-      {activeRole==='commercial'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Sponsors" value="£172k" sub="5 active" color="green"/><StatCard label="Pipeline" value="£43k" sub="2 prospects" color="orange"/><StatCard label="Matchday Rev" value="£374k" sub="vs £400k (94%)" color="teal"/><StatCard label="Renewals" value="2" sub="Jun 2026" color="red"/></div><Card><div className="text-sm font-semibold text-white mb-3">Sponsor Actions</div>{[{s:'Hartfield Building Society',a:'Renewal — prepare for May',v:'£85k',u:'amber'},{s:'West Country Energy',a:'Meeting follow-up — proposal due',v:'£28k est.',u:'red'},{s:"Smith & Sons",a:'Activate obligation review',v:'£35k',u:'blue'}].map((s,i)=><div key={i} className={`p-3 rounded-lg border mb-2 ${s.u==='red'?'border-red-600/30 bg-red-600/5':s.u==='amber'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><div className="flex justify-between mb-1 text-xs"><span className="font-bold text-white">{s.s}</span><span className="text-purple-400">{s.v}</span></div><div className="text-[10px] text-gray-400">{s.a}</div></div>)}</Card></div>}
-      {activeRole==='ceo'&&<div className="space-y-5"><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Franchise" value={`${club.franchiseScore}%`} sub="Target: 85%" color="orange"/><StatCard label="Cap" value="SAFE" sub={fmt(headroom)} color="green"/><StatCard label="Revenue" value="£1.84M" sub="Projected" color="purple"/><StatCard label="Operating" value="-£180k" sub="On plan" color="teal"/></div><Card><div className="text-sm font-semibold text-white mb-3">Board Actions</div>{[{a:"Women's Game — PWR registration budget (£180k/yr)",u:'red',d:'30 Apr'},{a:'Investment pack — legal due diligence',u:'amber',d:'15 May'},{a:'Stadium feasibility — East Stand (4,800→6,500)',u:'blue',d:'30 Jun'}].map((a,i)=><div key={i} className={`flex gap-3 p-3 rounded-lg border mb-2 ${a.u==='red'?'border-red-600/30 bg-red-600/5':a.u==='amber'?'border-amber-600/30 bg-amber-600/5':'border-gray-800'}`}><span className="text-lg flex-shrink-0">{a.u==='red'?'🔴':a.u==='amber'?'🟡':'🔵'}</span><div><div className="text-xs text-gray-300">{a.a}</div><div className="text-[10px] text-gray-600 mt-1">Deadline: {a.d}</div></div></div>)}</Card></div>}
+      <QuickActionsBar />
+      <SectionHeader icon="📊" title="Insights" subtitle="Role-specific dashboards — 8 views" />
+      <div className="flex gap-1 border-b border-gray-800 pb-0 overflow-x-auto">
+        {roles.map(r => (
+          <button key={r.id} onClick={() => setActiveRole(r.id)}
+            className="px-4 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all -mb-px whitespace-nowrap"
+            style={{
+              borderBottomColor: activeRole === r.id ? INSIGHTS_ACCENT : 'transparent',
+              color: activeRole === r.id ? '#c084fc' : '#6B7280',
+              backgroundColor: activeRole === r.id ? '#7C3AED0d' : 'transparent',
+            }}>
+            <span className="text-base">{r.icon}</span>{r.label}
+          </button>
+        ))}
+      </div>
+
+      {activeRole === 'dor'         && <DoRInsights club={club} />}
+      {activeRole === 'coach'       && <CoachInsights />}
+      {activeRole === 'medical'     && <MedicalInsights />}
+      {activeRole === 'recruitment' && <RecruitmentInsights />}
+      {activeRole === 'academy'     && <AcademyInsights />}
+      {activeRole === 'analysis'    && <AnalysisInsights />}
+      {activeRole === 'commercial'  && <CommercialInsights />}
+      {activeRole === 'ceo'         && <CeoInsights club={club} />}
     </div>
   );
+}
+
+// ─── 1 · DIRECTOR OF RUGBY ────────────────────────────────────────────────
+
+function DoRInsights({ club }: { club: RugbyClub }) {
+  const headroom = club.capCeiling - club.currentSpend
+  const compliance: { criteria: string; score: number; status: RAG; deadline: string; action: string }[] = [
+    { criteria: "Women's Game",     score: 42, status: 'RED',   deadline: '30 Apr', action: 'Submit PWR registration plan' },
+    { criteria: 'Investment',       score: 48, status: 'RED',   deadline: '15 May', action: 'Complete investor pack' },
+    { criteria: 'Operating',        score: 86, status: 'GREEN', deadline: '30 Jun', action: 'Book matchday assessment' },
+    { criteria: 'Community',        score: 91, status: 'GREEN', deadline: '—',      action: '2 events remaining' },
+    { criteria: 'Academy',          score: 78, status: 'AMBER', deadline: '20 May', action: 'Pathway review outstanding' },
+    { criteria: 'Facilities',       score: 65, status: 'AMBER', deadline: '12 May', action: 'Pitch inspection due' },
+    { criteria: 'Governance',       score: 95, status: 'GREEN', deadline: '—',      action: 'Board minutes up to date' },
+    { criteria: 'Commercial',       score: 72, status: 'AMBER', deadline: '25 May', action: '2 sponsor activations needed' },
+  ]
+  const complianceDonut = [
+    { label: 'Green', value: compliance.filter(c => c.status === 'GREEN').length, color: '#22C55E' },
+    { label: 'Amber', value: compliance.filter(c => c.status === 'AMBER').length, color: '#F59E0B' },
+    { label: 'Red',   value: compliance.filter(c => c.status === 'RED').length,   color: '#EF4444' },
+  ]
+  const monthlyRevenue   = [142, 168, 184, 156, 198, 215, 192, 178, 165, 188, 172, 145]
+  const monthlyBudget    = [160, 170, 180, 165, 195, 210, 200, 185, 175, 195, 180, 160]
+  const monthLabels      = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar']
+  const matchdayTrend    = [3210, 3890, 2940, 4100, 3520, 3680, 3210, 2890, 3410, 3720, 4050, 3210]
+  const capBreakdown = [
+    { label: 'Forwards', value: 920000, color: '#7C3AED' },
+    { label: 'Backs',    value: 740000, color: '#A855F7' },
+    { label: 'Bench',    value: 180000, color: '#C084FC' },
+    { label: 'Academy',  value: 100000, color: '#E9D5FF' },
+  ]
+  const targets: { target: string; progress: string; deadline: string; owner: string; status: RAG }[] = [
+    { target: 'Top 4 finish',                     progress: '4th',      deadline: 'May 2026', owner: 'Head Coach',   status: 'GREEN' },
+    { target: 'Average attendance 3,500',         progress: '3,210',    deadline: 'May 2026', owner: 'Commercial',   status: 'AMBER' },
+    { target: 'Academy → 2 first-team players',   progress: '1 so far', deadline: 'Jun 2026', owner: 'Academy',      status: 'GREEN' },
+    { target: 'Commercial revenue +15%',          progress: '+11%',     deadline: 'Jun 2026', owner: 'Commercial',   status: 'AMBER' },
+    { target: 'Franchise score 80%+',             progress: '71%',      deadline: 'Aug 2026', owner: 'DoR',          status: 'RED'   },
+    { target: "Women's PWR registration",         progress: 'Plan due', deadline: '30 Apr',   owner: 'DoR',          status: 'RED'   },
+  ]
+  const priorityActions: { a: string; o: string; d: string; u: 'RED' | 'AMBER' | 'BLUE' }[] = [
+    { a: 'Confirm No.8 — Foster HIA Day 8',                    o: 'Medical',  d: 'Today',  u: 'RED'   },
+    { a: 'LHP contract — external interest from Championship', o: 'DoR',      d: 'Fri',    u: 'RED'   },
+    { a: "Women's Game plan — submit by 30 Apr",                o: 'DoR',      d: '30 Apr', u: 'RED'   },
+    { a: 'Investment Capacity pack — CEO sign-off',            o: 'CEO',      d: '15 May', u: 'AMBER' },
+    { a: 'Salary cap return — RFU due 10 May',                 o: 'Finance',  d: '10 May', u: 'AMBER' },
+    { a: 'Pitch inspection — facilities scoring',              o: 'Ops',      d: '12 May', u: 'AMBER' },
+    { a: 'Pathway review — academy compliance',                o: 'Academy',  d: '20 May', u: 'AMBER' },
+    { a: 'Hartfield Building Society renewal call',            o: 'Comm.',    d: '3 May',  u: 'BLUE'  },
+    { a: 'Pre-season schedule sign-off',                       o: 'Coach',    d: '30 May', u: 'BLUE'  },
+    { a: 'Shareholder update memo',                            o: 'CEO',      d: '5 Jun',  u: 'BLUE'  },
+  ]
+  const expiry: { name: string; pos: string; current: number; market: number; rec: 'Renew' | 'Release' | 'Loan'; month: string }[] = [
+    { name: 'Tom Harrison',  pos: 'LHP',   current: 95000, market: 110000, rec: 'Renew',   month: 'Jun' },
+    { name: 'Karl Briggs',   pos: 'Hooker', current: 78000, market: 65000,  rec: 'Renew',   month: 'Jun' },
+    { name: 'Marcus Webb',   pos: 'Lock',   current: 82000, market: 80000,  rec: 'Renew',   month: 'Jul' },
+    { name: 'Danny Cole',    pos: 'FH',     current: 110000, market: 95000, rec: 'Renew',   month: 'Jul' },
+    { name: 'Ryan Patel',    pos: 'Wing',   current: 68000, market: 45000,  rec: 'Release', month: 'Aug' },
+    { name: 'Ali Rashid',    pos: 'Wing',   current: 32000, market: 35000,  rec: 'Loan',    month: 'Aug' },
+    { name: 'Joe Lewis',     pos: 'CB',     current: 58000, market: 60000,  rec: 'Renew',   month: 'Sep' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Cap Headroom"     value={fmt(headroom)} sub={`of ${fmt(club.capCeiling)}`} trend="flat" trendValue="compliant" accent="#22C55E" />
+        <KpiCard label="Franchise Score"  value={`${club.franchiseScore}%`} sub="2 RED criteria" trend="up" trendValue="+3" accent="#F59E0B" />
+        <KpiCard label="Squad"            value="38" sub="28 fit · 2 inj · 2 rehab" trend="flat" trendValue="stable" />
+        <KpiCard label="League Position"  value="4th" sub="of 12" trend="up" trendValue="↑1 vs Mar" />
+        <KpiCard label="Renewals Due"     value="7" sub="3 priority · by Jun" trend="flat" trendValue="" accent="#EF4444" />
+      </div>
+
+      <InsightCard title="Franchise Compliance" subtitle="Live RFU framework score · per criteria">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 items-start">
+          <table className="w-full text-xs">
+            <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <th className="text-left py-2">Criteria</th>
+              <th className="text-left py-2">Score</th>
+              <th className="text-left py-2">Status</th>
+              <th className="text-left py-2">Deadline</th>
+              <th className="text-left py-2">Action</th>
+            </tr></thead>
+            <tbody>
+              {compliance.map((c, i) => (
+                <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20">
+                  <td className="py-2.5 text-white font-medium">{c.criteria}</td>
+                  <td className="py-2.5 w-32">
+                    <div className="flex items-center gap-2">
+                      <ProgressBar value={c.score} color={ragHex(c.status)} />
+                      <span className="text-gray-300 font-mono w-8">{c.score}%</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5"><span className={`text-[10px] px-2 py-0.5 rounded border ${ragBg(c.status)}`}>{c.status}</span></td>
+                  <td className="py-2.5 text-gray-400 font-mono">{c.deadline}</td>
+                  <td className="py-2.5 text-gray-300">{c.action}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Distribution</div>
+            <Donut data={complianceDonut} size={140} />
+          </div>
+        </div>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Revenue vs Budget" subtitle="Monthly · season Apr → Mar (£k)">
+          <BarChart values={monthlyRevenue} labels={monthLabels} max={250} height={160} />
+          <div className="flex items-center justify-between mt-3 text-[11px] text-gray-400">
+            <span>Total YTD: <span className="text-white font-bold">£2.10M</span></span>
+            <span>Budget YTD: <span className="text-gray-300 font-bold">£2.18M</span></span>
+            <span>Variance: <span className="text-amber-400 font-bold">−3.7%</span></span>
+          </div>
+        </InsightCard>
+        <InsightCard title="Salary Cap Breakdown" subtitle={`Total ${fmt(club.currentSpend)}`}>
+          <Donut data={capBreakdown} size={140} />
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Matchday Income Trend" subtitle="Last 12 home matches (£)">
+        <BarChart values={matchdayTrend.map(v => Math.round(v / 100))} max={50} height={120} color="#3B82F6" />
+        <div className="text-[10px] text-gray-500 mt-2">Hundreds of pounds per fixture · best 4,100 · worst 2,890</div>
+      </InsightCard>
+
+      <InsightCard title="Strategic Targets" subtitle="2025/26 board-level KPIs">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Target</th>
+            <th className="text-left py-2">Progress</th>
+            <th className="text-left py-2">Deadline</th>
+            <th className="text-left py-2">Owner</th>
+            <th className="text-left py-2">Status</th>
+          </tr></thead>
+          <tbody>
+            {targets.map((t, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2.5 text-white">{t.target}</td>
+                <td className="py-2.5 text-gray-300 font-mono">{t.progress}</td>
+                <td className="py-2.5 text-gray-400 font-mono">{t.deadline}</td>
+                <td className="py-2.5 text-gray-400">{t.owner}</td>
+                <td className="py-2.5"><span className={`text-[10px] px-2 py-0.5 rounded border ${ragBg(t.status)}`}>{t.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Priority Actions" subtitle="Top 10 — sequenced by urgency + deadline">
+          <ol className="space-y-2">
+            {priorityActions.map((a, i) => (
+              <li key={i} className={`flex items-start gap-3 p-2.5 rounded-lg border ${a.u === 'RED' ? 'border-red-600/30 bg-red-600/5' : a.u === 'AMBER' ? 'border-amber-600/30 bg-amber-600/5' : 'border-gray-800 bg-gray-800/20'}`}>
+                <span className="text-[10px] font-mono font-bold w-5 text-gray-500">{(i + 1).toString().padStart(2, '0')}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-gray-200">{a.a}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">{a.o} · {a.d}</div>
+                </div>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${a.u === 'RED' ? 'bg-red-600/20 text-red-400' : a.u === 'AMBER' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-800 text-gray-400'}`}>{a.u}</span>
+              </li>
+            ))}
+          </ol>
+        </InsightCard>
+
+        <InsightCard title="Contract Expiry Timeline" subtitle="Next 4 months · 7 contracts ending">
+          <div className="space-y-3">
+            {['Jun', 'Jul', 'Aug', 'Sep'].map(month => {
+              const rows = expiry.filter(e => e.month === month)
+              return (
+                <div key={month}>
+                  <div className="text-[10px] uppercase tracking-wider text-purple-400 mb-1.5 font-bold">{month} 2026</div>
+                  <div className="space-y-1.5">
+                    {rows.map((p, i) => {
+                      const recColor = p.rec === 'Renew' ? 'text-green-400' : p.rec === 'Loan' ? 'text-blue-400' : 'text-red-400'
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#0a0c14] border border-gray-800/60">
+                          <span className="text-xs text-white font-medium w-32 truncate">{p.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">{p.pos}</span>
+                          <span className="text-[10px] text-gray-500 font-mono">{fmt(p.current)} → est. {fmt(p.market)}</span>
+                          <span className={`text-[10px] font-bold ml-auto ${recColor}`}>{p.rec}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </InsightCard>
+      </div>
+    </div>
+  )
+}
+
+// ─── 2 · HEAD COACH ───────────────────────────────────────────────────────
+
+function CoachInsights() {
+  const last10: { res: 'W' | 'L' | 'D'; opp: string; score: string; pf: number; pa: number }[] = [
+    { res: 'W', opp: 'Westmoor',     score: '24-19', pf: 24, pa: 19 },
+    { res: 'L', opp: 'Coventry',     score: '12-31', pf: 12, pa: 31 },
+    { res: 'W', opp: 'Doncaster',    score: '38-14', pf: 38, pa: 14 },
+    { res: 'W', opp: 'Caldy',        score: '27-18', pf: 27, pa: 18 },
+    { res: 'L', opp: 'Ealing',       score: '15-22', pf: 15, pa: 22 },
+    { res: 'W', opp: 'Hartpury',     score: '31-21', pf: 31, pa: 21 },
+    { res: 'W', opp: 'Cornish All',  score: '22-18', pf: 22, pa: 18 },
+    { res: 'L', opp: 'Riverbank',    score: '14-23', pf: 14, pa: 23 },
+    { res: 'W', opp: 'London Scot.', score: '26-19', pf: 26, pa: 19 },
+    { res: 'L', opp: 'Nott. CC',     score: '16-24', pf: 16, pa: 24 },
+  ]
+  const lineoutLast6 = [82, 75, 88, 70, 65, 68]
+  const scrumLast6 = [80, 76, 82, 79, 74, 78]
+  const trySources = [
+    { label: 'Set piece',  value: 14, color: '#7C3AED' },
+    { label: 'Phase play', value: 22, color: '#A855F7' },
+    { label: 'Turnover',   value: 6,  color: '#22C55E' },
+    { label: 'Penalty',    value: 4,  color: '#F59E0B' },
+  ]
+  const trainingLoad = [580, 720, 840, 920, 410, 220]
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const acwr: { name: string; acute: number; chronic: number; ratio: number; status: RAG }[] = [
+    { name: 'Luke Barnes',   acute: 1240, chronic: 815, ratio: 1.52, status: 'RED' },
+    { name: 'Karl Foster',   acute: 1110, chronic: 802, ratio: 1.38, status: 'AMBER' },
+    { name: 'Tom Harrison',  acute: 980,  chronic: 770, ratio: 1.27, status: 'GREEN' },
+    { name: 'Marcus Webb',   acute: 940,  chronic: 745, ratio: 1.26, status: 'GREEN' },
+    { name: 'Oliver Grant',  acute: 920,  chronic: 740, ratio: 1.24, status: 'GREEN' },
+    { name: 'Danny Cole',    acute: 870,  chronic: 720, ratio: 1.21, status: 'GREEN' },
+    { name: 'Matt Jones',    acute: 850,  chronic: 720, ratio: 1.18, status: 'GREEN' },
+    { name: 'David Obi',     acute: 820,  chronic: 715, ratio: 1.15, status: 'GREEN' },
+    { name: 'Ben Taylor',    acute: 740,  chronic: 660, ratio: 1.12, status: 'GREEN' },
+    { name: 'Josh White',    acute: 700,  chronic: 720, ratio: 0.97, status: 'GREEN' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Available"      value="28/38" sub="2 HIA · 2 inj · 6 academy" />
+        <KpiCard label="GPS Overloads"  value="2" sub="Barnes · K. Foster" accent="#EF4444" trend="up" trendValue="+1" />
+        <KpiCard label="Team ACWR"      value="1.22" sub="Amber zone (0.8-1.3 optimal)" accent="#F59E0B" />
+        <KpiCard label="Win Rate"       value="58%" sub="W11 L8 D0" trend="up" trendValue="+5%" />
+        <KpiCard label="Next Match"     value="Sat" sub="vs Jersey Reds · 4d" />
+      </div>
+
+      <InsightCard title="Set Piece Performance" subtitle="Last 6 matches">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-bold text-white">Lineout</div>
+              <div className="text-xs text-green-400 font-mono">68% · own throw</div>
+            </div>
+            <BarChart values={lineoutLast6} labels={['M-5','M-4','M-3','M-2','M-1','Now']} max={100} height={120} color="#22C55E" target={75} />
+            <div className="mt-3 space-y-1 text-[11px] text-gray-400">
+              <div className="flex justify-between"><span>Own throw win %</span><span className="text-white font-bold">68%</span></div>
+              <div className="flex justify-between"><span>Opposition steal %</span><span className="text-red-400 font-bold">32% (worst in div.)</span></div>
+              <div className="flex justify-between"><span>Best call · Utah (tail)</span><span className="text-green-400 font-bold">89%</span></div>
+              <div className="flex justify-between"><span>Worst call · Arrow (mid)</span><span className="text-red-400 font-bold">43%</span></div>
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-bold text-white">Scrum</div>
+              <div className="text-xs text-amber-400 font-mono">77.8% · own put-in</div>
+            </div>
+            <BarChart values={scrumLast6} labels={['M-5','M-4','M-3','M-2','M-1','Now']} max={100} height={120} color="#F59E0B" target={80} />
+            <div className="mt-3 space-y-1 text-[11px] text-gray-400">
+              <div className="flex justify-between"><span>Own put-in win %</span><span className="text-white font-bold">91%</span></div>
+              <div className="flex justify-between"><span>Penalty conceded /match</span><span className="text-red-400 font-bold">4.2 (above 3.0 ⚠)</span></div>
+              <div className="flex justify-between"><span>Best side · tighthead</span><span className="text-green-400 font-bold">82%</span></div>
+              <div className="flex justify-between"><span>Loosehead struggles</span><span className="text-amber-400 font-bold">68%</span></div>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white mb-2">Gameday averages</div>
+            <Donut size={120} data={[
+              { label: 'Possession', value: 53, color: '#7C3AED' },
+              { label: 'Opp poss',   value: 47, color: '#374151' },
+            ]} />
+            <Donut size={120} data={[
+              { label: 'Territory',  value: 56, color: '#22C55E' },
+              { label: 'Opp terr.',  value: 44, color: '#374151' },
+            ]} />
+          </div>
+        </div>
+      </InsightCard>
+
+      <InsightCard title="Opposition Intel · Next match" subtitle="Jersey Reds · Sat · 6th in Champ Rugby (W L W W L)">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Key threats</div>
+            <div className="space-y-2 text-xs">
+              <div><span className="text-white font-bold">J. Hawkins (10)</span><div className="text-gray-400 text-[11px]">Goal kicker · 78% conversion · kicks left 60%</div></div>
+              <div><span className="text-white font-bold">C. Morris (7)</span><div className="text-gray-400 text-[11px]">9 turnovers L3 · plays high in defensive line</div></div>
+              <div><span className="text-white font-bold">B. Knight (12)</span><div className="text-gray-400 text-[11px]">Crash-ball merchant · lateral defender · dummy runs</div></div>
+            </div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Set piece weaknesses</div>
+            <div className="space-y-2 text-xs text-gray-300">
+              <div>• Scrum: 4 penalties conceded last 3 — target tighthead</div>
+              <div>• Lineout: 88% retention but only 6% steal rate</div>
+              <div>• Restart receipt: drops on 14% of high balls</div>
+              <div>• 5m line-out defence: 3 tries conceded L4</div>
+            </div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Tactical opportunities</div>
+            <div className="space-y-2 text-xs text-gray-300">
+              <div>• Kick chase to left wing — poor under high ball</div>
+              <div>• Driving maul — concede 1.4 maul tries/match</div>
+              <div>• Tempo at the breakdown — slow ruck speed (+0.4s)</div>
+              <div>• Bench drops off — last 20 min defence weakest</div>
+            </div>
+          </div>
+        </div>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Training Load · This week" subtitle="Squad average AU per session">
+          <BarChart values={trainingLoad} labels={dayLabels} max={1000} height={140} color="#7C3AED" target={700} />
+          <div className="mt-3 text-[11px] text-gray-400">
+            Wed peak 920 AU · Fri taper 410 · MD-1 captain&apos;s run 220. Yellow line = recommended ceiling.
+          </div>
+        </InsightCard>
+        <InsightCard title="ACWR · Squad distribution" subtitle="Top 10 by acute load · 7d / 28d ratio">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-1.5">Player</th>
+                <th className="text-right py-1.5">Acute</th>
+                <th className="text-right py-1.5">Chronic</th>
+                <th className="text-right py-1.5">ACWR</th>
+                <th className="text-left py-1.5 pl-3">Status</th>
+              </tr></thead>
+              <tbody>
+                {acwr.map((p, i) => (
+                  <tr key={i} className="border-b border-gray-800/40">
+                    <td className="py-1.5 text-white">{p.name}</td>
+                    <td className="py-1.5 text-right text-gray-300 font-mono">{p.acute}</td>
+                    <td className="py-1.5 text-right text-gray-400 font-mono">{p.chronic}</td>
+                    <td className="py-1.5 text-right font-mono font-bold" style={{ color: ragHex(p.status) }}>{p.ratio.toFixed(2)}</td>
+                    <td className="py-1.5 pl-3"><span className={`text-[9px] px-1.5 py-0.5 rounded border ${ragBg(p.status)}`}>{p.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </InsightCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Form & Results" subtitle="Last 10 matches · points trend">
+          <div className="flex gap-1 mb-3">
+            {last10.map((m, i) => (
+              <div key={i} className={`flex-1 text-center py-1.5 rounded text-[10px] font-bold ${m.res === 'W' ? 'bg-green-600/20 text-green-400' : m.res === 'L' ? 'bg-red-600/20 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
+                <div>{m.res}</div>
+                <div className="text-[8px] font-mono text-gray-500 mt-0.5">{m.score}</div>
+              </div>
+            ))}
+          </div>
+          <LineChart values={last10.map(m => m.pf)} labels={last10.map(m => m.opp.slice(0, 4))} max={45} height={150} color="#22C55E" />
+          <div className="text-[10px] text-gray-500 mt-1 text-center">Points for · trend</div>
+        </InsightCard>
+        <InsightCard title="Try Sources" subtitle={`46 tries scored · season`}>
+          <Donut data={trySources} size={140} />
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Selection Dilemmas" subtitle="Decisions for this weekend">
+        <div className="space-y-2">
+          {[
+            { q: 'Henderson cleared — start or bench?',                                 ctx: 'Returns from 4-week shoulder. 1 full session. Bench more conservative; start if Foster fails HIA.' },
+            { q: 'Williams on concussion protocol — replacement at 12?',                  ctx: 'Day 4/6 of HIA. Jones available, Owens (academy) on standby. Match-day decision.' },
+            { q: 'Okonkwo U20 camp release — weaken back row depth?',                    ctx: 'England U20 want him for 3 days mid-week. Foster on HIA, White carrying knock — risk to depth.' },
+            { q: 'Clarke vs Hughes at loosehead — scrummaging vs carrying?',              ctx: 'Clarke: scrum dominance, low carry stats. Hughes: 4.2m/carry but conceded 2 scrum pen L2.' },
+          ].map((d, i) => (
+            <div key={i} className="p-3 rounded-lg bg-[#0a0c14] border border-gray-800/60">
+              <div className="text-xs font-bold text-white">{d.q}</div>
+              <div className="text-[11px] text-gray-400 mt-1 leading-relaxed">{d.ctx}</div>
+            </div>
+          ))}
+        </div>
+      </InsightCard>
+    </div>
+  )
+}
+
+// ─── 3 · HEAD OF MEDICAL ──────────────────────────────────────────────────
+
+function MedicalInsights() {
+  const register: { player: string; injury: string; date: string; phase: string; ret: string; status: RAG; notes: string }[] = [
+    { player: 'Danny Foster',   injury: 'HIA Day 8 (concussion)',     date: '11 Apr', phase: 'Day 8 of 14', ret: '19 Apr',     status: 'RED',   notes: 'Returns to running Day 10. Final clearance scan Day 12.' },
+    { player: 'Karl Briggs',    injury: 'Shoulder post-op (AC repair)', date: '12 Mar', phase: 'RTP Phase 4', ret: '2 May',     status: 'AMBER', notes: 'Contact training cleared. Match exposure 12 May.' },
+    { player: 'Ryan Patel',     injury: 'Hamstring Gr 2',              date: '4 Apr',  phase: 'Rehab',       ret: '18 Apr',     status: 'AMBER', notes: 'Outdoor running cleared, await straight-line sprints.' },
+    { player: 'Sam Ellis',      injury: 'Ankle sprain Gr 1',           date: '14 Apr', phase: 'Acute',       ret: '23 Apr',     status: 'AMBER', notes: 'Ice + compression. Pool rehab Day 4.' },
+    { player: 'Luke Barnes',    injury: 'ACWR 1.52 (load)',            date: '14 Apr', phase: 'Load mgmt',   ret: 'Managed',     status: 'AMBER', notes: 'No injury · pre-emptive deload week.' },
+    { player: 'Joe Lewis',      injury: 'Calf strain Gr 1 (history)',  date: '5 Apr',  phase: 'RTP Phase 5', ret: 'Cleared',     status: 'GREEN', notes: 'Full training. Monitor on match day.' },
+    { player: 'Tom Foley',      injury: 'Quad contusion',              date: '15 Apr', phase: 'Acute',       ret: '21 Apr',     status: 'AMBER', notes: 'Bruise + scan negative. 5-day plan.' },
+  ]
+  const bodyArea = [
+    { label: 'Shoulder',   value: 6, color: '#7C3AED' },
+    { label: 'Knee',       value: 4, color: '#A855F7' },
+    { label: 'Hamstring',  value: 7, color: '#22C55E' },
+    { label: 'Ankle',      value: 5, color: '#F59E0B' },
+    { label: 'Concussion', value: 4, color: '#EF4444' },
+    { label: 'Other',      value: 3, color: '#6B7280' },
+  ]
+  const positionGroup = [
+    { label: 'Forwards', value: 17, color: '#7C3AED' },
+    { label: 'Backs',    value: 12, color: '#A855F7' },
+  ]
+  const contactSplit = [
+    { label: 'Contact',     value: 22, color: '#EF4444' },
+    { label: 'Non-contact', value: 7,  color: '#22C55E' },
+  ]
+  const monthly = [3, 2, 4, 5, 3, 2, 5, 6]
+  const monthLabels = ['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr']
+  const wellness: { player: string; sleep: number; fatigue: number; mood: number; soreness: number }[] = [
+    { player: 'Tom Harrison',  sleep: 8, fatigue: 7, mood: 8, soreness: 7 },
+    { player: 'Karl Foster',   sleep: 5, fatigue: 5, mood: 6, soreness: 5 },
+    { player: 'Marcus Webb',   sleep: 8, fatigue: 8, mood: 9, soreness: 8 },
+    { player: 'Luke Barnes',   sleep: 4, fatigue: 4, mood: 6, soreness: 4 },
+    { player: 'Oliver Grant',  sleep: 8, fatigue: 8, mood: 8, soreness: 8 },
+    { player: 'Danny Cole',    sleep: 7, fatigue: 7, mood: 7, soreness: 7 },
+    { player: 'Matt Jones',    sleep: 9, fatigue: 8, mood: 9, soreness: 9 },
+    { player: 'David Obi',     sleep: 7, fatigue: 7, mood: 8, soreness: 8 },
+    { player: 'Ben Taylor',    sleep: 6, fatigue: 6, mood: 7, soreness: 6 },
+    { player: 'Josh White',    sleep: 8, fatigue: 8, mood: 9, soreness: 8 },
+  ]
+  const screening: { player: string; cardiac: string; musculoskeletal: string; dental: string; blood: string; flag: 'ok' | 'overdue' }[] = [
+    { player: 'Tom Harrison',  cardiac: 'Aug 2025', musculoskeletal: 'Jan 2026', dental: 'Sep 2025', blood: 'Feb 2026', flag: 'ok' },
+    { player: 'Karl Briggs',   cardiac: 'Aug 2024', musculoskeletal: 'Mar 2026', dental: 'Sep 2025', blood: 'Feb 2026', flag: 'overdue' },
+    { player: 'Marcus Webb',   cardiac: 'Sep 2025', musculoskeletal: 'Feb 2026', dental: 'Oct 2024', blood: 'Mar 2026', flag: 'overdue' },
+    { player: 'Luke Barnes',   cardiac: 'Aug 2025', musculoskeletal: 'Jan 2026', dental: 'Aug 2025', blood: 'Feb 2026', flag: 'ok' },
+    { player: 'Danny Cole',    cardiac: 'Sep 2025', musculoskeletal: 'Feb 2026', dental: 'Sep 2025', blood: 'Feb 2026', flag: 'ok' },
+  ]
+  const wellnessColor = (v: number) => v >= 7 ? '#22C55E' : v >= 5 ? '#F59E0B' : '#EF4444'
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Injured"          value="4" sub="2 short · 1 long · 1 HIA" accent="#EF4444" />
+        <KpiCard label="Days Lost"         value="47" sub="this month" trend="down" trendValue="−12 vs Mar" />
+        <KpiCard label="ACWR Alerts"       value="3" sub=">1.5 threshold" accent="#F59E0B" trend="up" trendValue="+1" />
+        <KpiCard label="Concussion"        value="1" sub="Williams · Day 4/6" accent="#EF4444" />
+        <KpiCard label="RTP Phases"        value="2" sub="Briggs · Patel" />
+      </div>
+
+      <InsightCard title="Current Injury Register" subtitle="Active cases · 7">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Player</th>
+            <th className="text-left py-2">Injury</th>
+            <th className="text-left py-2">Date</th>
+            <th className="text-left py-2">Phase</th>
+            <th className="text-left py-2">Expected return</th>
+            <th className="text-left py-2 w-3">Status</th>
+            <th className="text-left py-2">Notes</th>
+          </tr></thead>
+          <tbody>
+            {register.map((r, i) => (
+              <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20">
+                <td className="py-2 text-white font-medium">{r.player}</td>
+                <td className="py-2 text-gray-300">{r.injury}</td>
+                <td className="py-2 text-gray-500 font-mono">{r.date}</td>
+                <td className="py-2 text-gray-300">{r.phase}</td>
+                <td className="py-2 text-gray-300 font-mono">{r.ret}</td>
+                <td className="py-2"><span className="w-2 h-2 rounded-full inline-block" style={{ background: ragHex(r.status) }} /></td>
+                <td className="py-2 text-[11px] text-gray-400">{r.notes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <InsightCard title="Injuries by Body Area" subtitle="Season total · 29">
+          <Donut data={bodyArea} size={140} />
+        </InsightCard>
+        <InsightCard title="Forwards vs Backs" subtitle="Position group split">
+          <Donut data={positionGroup} size={140} />
+        </InsightCard>
+        <InsightCard title="Contact vs Non-contact" subtitle="Mechanism">
+          <Donut data={contactSplit} size={140} />
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Monthly Injury Count" subtitle="Sep — Apr">
+        <BarChart values={monthly} labels={monthLabels} max={8} height={140} color="#EF4444" target={4} />
+        <div className="text-[10px] text-gray-500 mt-2">Yellow line = season average (3.75/month). Apr trending up — review training load.</div>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Concussion Tracker" subtitle="Active protocols + season summary">
+          <div className="bg-red-600/5 border border-red-600/20 rounded-lg p-3 mb-4">
+            <div className="text-xs font-bold text-red-400 mb-2">Active · Williams (12) — Day 4/6</div>
+            <div className="space-y-1 text-[11px] text-gray-300">
+              <div>✓ 24h symptom-free</div>
+              <div>✓ Light aerobic exercise (Day 3)</div>
+              <div>○ Sport-specific exercise (Day 5)</div>
+              <div>○ Non-contact training (Day 6)</div>
+              <div>○ Full contact (Day 7)</div>
+              <div>○ Return to play (Day 8)</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-white">4</div>
+              <div className="text-[10px] text-gray-500">Season total</div>
+            </div>
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-amber-400">3.2</div>
+              <div className="text-[10px] text-gray-500">League avg</div>
+            </div>
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-green-400">3/4</div>
+              <div className="text-[10px] text-gray-500">HIA passed</div>
+            </div>
+          </div>
+        </InsightCard>
+
+        <InsightCard title="Squad Wellness" subtitle="Daily questionnaire · 0-10 scale">
+          <table className="w-full text-[11px]">
+            <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <th className="text-left py-1.5">Player</th>
+              <th className="text-center py-1.5">Sleep</th>
+              <th className="text-center py-1.5">Fatigue</th>
+              <th className="text-center py-1.5">Mood</th>
+              <th className="text-center py-1.5">Soreness</th>
+            </tr></thead>
+            <tbody>
+              {wellness.map((p, i) => (
+                <tr key={i} className="border-b border-gray-800/40">
+                  <td className="py-1.5 text-white">{p.player}</td>
+                  <td className="py-1.5 text-center font-mono font-bold" style={{ color: wellnessColor(p.sleep) }}>{p.sleep}</td>
+                  <td className="py-1.5 text-center font-mono font-bold" style={{ color: wellnessColor(p.fatigue) }}>{p.fatigue}</td>
+                  <td className="py-1.5 text-center font-mono font-bold" style={{ color: wellnessColor(p.mood) }}>{p.mood}</td>
+                  <td className="py-1.5 text-center font-mono font-bold" style={{ color: wellnessColor(p.soreness) }}>{p.soreness}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Screening & Compliance" subtitle="RFU mandatory + club discretionary screens">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Player</th>
+            <th className="text-left py-2">Cardiac</th>
+            <th className="text-left py-2">Musculoskeletal</th>
+            <th className="text-left py-2">Dental</th>
+            <th className="text-left py-2">Blood panel</th>
+          </tr></thead>
+          <tbody>
+            {screening.map((s, i) => (
+              <tr key={i} className={`border-b border-gray-800/40 ${s.flag === 'overdue' ? 'bg-red-600/5' : ''}`}>
+                <td className="py-2 text-white">{s.player}</td>
+                <td className={`py-2 font-mono ${s.cardiac.includes('2024') ? 'text-red-400' : 'text-gray-300'}`}>{s.cardiac}</td>
+                <td className="py-2 text-gray-300 font-mono">{s.musculoskeletal}</td>
+                <td className={`py-2 font-mono ${s.dental.includes('2024') ? 'text-red-400' : 'text-gray-300'}`}>{s.dental}</td>
+                <td className="py-2 text-gray-300 font-mono">{s.blood}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-3 text-[10px] text-gray-500">Red = overdue (more than 12 months since last screen). 2 players need cardiac re-screening.</div>
+      </InsightCard>
+    </div>
+  )
+}
+
+// ─── 4 · RECRUITMENT ──────────────────────────────────────────────────────
+
+function RecruitmentInsights() {
+  const positionMatrix: { pos: string; depth: string; quality: number; priority: RAG; target: string }[] = [
+    { pos: 'Loosehead Prop', depth: '2 (1 ageing)',  quality: 6.8, priority: 'RED',   target: 'Mike Donovan (Richmond)' },
+    { pos: 'Hooker',         depth: '3',             quality: 8.1, priority: 'GREEN', target: '—' },
+    { pos: 'Tighthead Prop', depth: '2',             quality: 7.4, priority: 'AMBER', target: 'Watching list' },
+    { pos: 'Lock',           depth: '4',             quality: 8.4, priority: 'GREEN', target: '—' },
+    { pos: 'Back row',       depth: '6',             quality: 7.9, priority: 'GREEN', target: '—' },
+    { pos: 'Scrum half',     depth: '3',             quality: 7.6, priority: 'GREEN', target: '—' },
+    { pos: 'Fly half',       depth: '2 (1 academy)', quality: 7.2, priority: 'RED',   target: 'Rory Flynn (FA)' },
+    { pos: 'Centre',         depth: '4',             quality: 8.0, priority: 'GREEN', target: '—' },
+    { pos: 'Wing',           depth: '3',             quality: 6.9, priority: 'AMBER', target: 'Chris Lawton (Stannerton)' },
+    { pos: 'Fullback',       depth: '2',             quality: 7.8, priority: 'AMBER', target: 'Watching' },
+  ]
+  const pipeline: { stage: string; players: { name: string; pos: string; club: string; salary: number; note: string }[] }[] = [
+    { stage: 'Long list',  players: [
+      { name: 'Sam Ridley',    pos: 'Wing',  club: 'Bath Acad.',  salary: 28000, note: '20 · pace · raw' },
+      { name: 'Jack Thurston', pos: 'Lock',  club: 'Hartpury',    salary: 35000, note: '21 · physical' },
+    ] },
+    { stage: 'Watching',   players: [
+      { name: 'Chris Lawton',  pos: 'CB',    club: 'Nottingham', salary: 58000, note: '24 · scout 2 visits' },
+      { name: 'Tom Vance',     pos: 'OF',    club: 'Yorkshire',  salary: 62000, note: '23 · breakdown specialist' },
+    ] },
+    { stage: 'Priority',   players: [
+      { name: 'Mike Donovan',  pos: 'LHP',   club: 'Richmond',   salary: 78000, note: '25 · SCRUM ANCHOR' },
+    ] },
+    { stage: 'Contacted',  players: [
+      { name: 'Jake Morton',   pos: 'DM',    club: 'Coventry',   salary: 65000, note: 'Approach made' },
+    ] },
+    { stage: 'Negotiating', players: [
+      { name: 'Rory Flynn',    pos: 'FH',    club: 'Free agent', salary: 72000, note: 'Meeting Thu' },
+    ] },
+    { stage: 'Offer',      players: [
+      { name: 'Mike Donovan',  pos: 'LHP',   club: 'Richmond',   salary: 78000, note: 'Counter expected' },
+    ] },
+    { stage: 'Signed',     players: [] },
+  ]
+  const top3: { name: string; age: number; pos: string; club: string; status: string; salary: number; strengths: string[]; weaknesses: string[]; videos: number; rating: number }[] = [
+    { name: 'Mike Donovan', age: 25, pos: 'LHP', club: 'Richmond',   status: 'Out of contract Jun', salary: 78000,
+      strengths:  ['Dominant scrum (SCRA 1.84)', 'High work rate (12 tackles/match)', 'Set-piece leader'],
+      weaknesses: ['Carry stats below average', 'Yellow card history (3 this season)'],
+      videos: 8, rating: 8.4,
+    },
+    { name: 'Jake Morton',  age: 23, pos: 'DM',  club: 'Coventry',   status: 'Year left on deal',     salary: 65000,
+      strengths:  ['Box-kick accuracy 91%', 'Pace from base', 'Tactical kicking game'],
+      weaknesses: ['Physical at the breakdown', 'Yellow card aggression'],
+      videos: 6, rating: 7.9,
+    },
+    { name: 'Rory Flynn',   age: 27, pos: 'FH',  club: 'Free agent', status: 'Available immediately', salary: 72000,
+      strengths:  ['Goal kicking 81%', 'Game management', '3 caps Italy'],
+      weaknesses: ['Defensive line speed', 'Recent shoulder surgery'],
+      videos: 12, rating: 8.1,
+    },
+  ]
+  const renewals: { player: string; pos: string; expiry: string; current: number; rec: 'Renew' | 'Release' | 'Loan' | 'Negotiate' }[] = [
+    { player: 'Tom Harrison',  pos: 'LHP',    expiry: 'Jun 2026', current: 95000,  rec: 'Renew' },
+    { player: 'Karl Briggs',   pos: 'Hooker', expiry: 'Jun 2026', current: 78000,  rec: 'Renew' },
+    { player: 'Marcus Webb',   pos: 'Lock',   expiry: 'Jul 2026', current: 82000,  rec: 'Renew' },
+    { player: 'Danny Cole',    pos: 'FH',     expiry: 'Jul 2026', current: 110000, rec: 'Negotiate' },
+    { player: 'Ryan Patel',    pos: 'Wing',   expiry: 'Aug 2026', current: 68000,  rec: 'Release' },
+    { player: 'Ali Rashid',    pos: 'Wing',   expiry: 'Aug 2026', current: 32000,  rec: 'Loan' },
+    { player: 'Joe Lewis',     pos: 'CB',     expiry: 'Sep 2026', current: 58000,  rec: 'Renew' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Pipeline"           value="14" sub="3 priority · 5 watching" />
+        <KpiCard label="Budget Available"   value="£180k" sub="of £350k · 51%" accent="#22C55E" />
+        <KpiCard label="Positions Needed"   value="3" sub="LHP · 10 · Wing" accent="#EF4444" />
+        <KpiCard label="Contracts Ending"   value="7" sub="3 priority renewals" accent="#F59E0B" />
+        <KpiCard label="Agents Contacted"   value="8" sub="this month" trend="up" trendValue="+3" />
+      </div>
+
+      <InsightCard title="Recruitment Pipeline" subtitle="Kanban view · 14 active players">
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            {pipeline.map((col, i) => (
+              <div key={i} className="w-44 flex-shrink-0">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2 font-bold flex items-center justify-between">
+                  <span>{col.stage}</span>
+                  <span className="text-purple-400">{col.players.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {col.players.length === 0 && <div className="text-[10px] text-gray-700 text-center py-2">—</div>}
+                  {col.players.map((p, j) => (
+                    <div key={j} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2">
+                      <div className="text-xs font-bold text-white truncate">{p.name}</div>
+                      <div className="text-[10px] text-purple-400">{p.pos} · {p.club}</div>
+                      <div className="text-[10px] text-gray-500 mt-1">{fmt(p.salary)}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">{p.note}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </InsightCard>
+
+      <InsightCard title="Position Priority Matrix" subtitle="Depth + quality assessment per position group">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Position</th>
+            <th className="text-left py-2">Current depth</th>
+            <th className="text-left py-2">Quality</th>
+            <th className="text-left py-2">Priority</th>
+            <th className="text-left py-2">Active target</th>
+          </tr></thead>
+          <tbody>
+            {positionMatrix.map((p, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white font-medium">{p.pos}</td>
+                <td className="py-2 text-gray-300">{p.depth}</td>
+                <td className="py-2 w-32">
+                  <div className="flex items-center gap-2">
+                    <ProgressBar value={p.quality} max={10} color={p.quality >= 8 ? '#22C55E' : p.quality >= 7 ? '#F59E0B' : '#EF4444'} />
+                    <span className="text-gray-300 font-mono w-8">{p.quality}</span>
+                  </div>
+                </td>
+                <td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded border ${ragBg(p.priority)}`}>{p.priority}</span></td>
+                <td className="py-2 text-gray-300">{p.target}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <InsightCard title="Target Profiles" subtitle="Top 3 priority targets · scout-rated">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {top3.map((t, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="text-sm font-bold text-white">{t.name}</div>
+                  <div className="text-[11px] text-gray-400">{t.age} · {t.pos} · {t.club}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-black text-purple-400">{t.rating}</div>
+                  <div className="text-[9px] text-gray-500">scout</div>
+                </div>
+              </div>
+              <div className="text-[10px] text-amber-400 mb-2">{t.status}</div>
+              <div className="text-[11px] text-gray-300 mb-2">Est. {fmt(t.salary)}</div>
+              <div className="space-y-1 mb-2">
+                <div className="text-[10px] uppercase tracking-wider text-green-400 font-bold">Strengths</div>
+                {t.strengths.map((s, j) => <div key={j} className="text-[10px] text-gray-300">• {s}</div>)}
+              </div>
+              <div className="space-y-1 mb-2">
+                <div className="text-[10px] uppercase tracking-wider text-red-400 font-bold">Weaknesses</div>
+                {t.weaknesses.map((s, j) => <div key={j} className="text-[10px] text-gray-300">• {s}</div>)}
+              </div>
+              <div className="flex justify-between pt-2 border-t border-gray-800 text-[10px] text-gray-500">
+                <span>📹 {t.videos} sessions</span>
+                <span>Rating {t.rating}/10</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Contract Renewals" subtitle="Due before Sep 2026 · 7 contracts">
+          <table className="w-full text-xs">
+            <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <th className="text-left py-2">Player</th>
+              <th className="text-left py-2">Pos</th>
+              <th className="text-left py-2">Expiry</th>
+              <th className="text-right py-2">Salary</th>
+              <th className="text-left py-2 pl-3">Recommendation</th>
+            </tr></thead>
+            <tbody>
+              {renewals.map((r, i) => {
+                const recColor = r.rec === 'Renew' ? 'text-green-400' : r.rec === 'Loan' ? 'text-blue-400' : r.rec === 'Negotiate' ? 'text-amber-400' : 'text-red-400'
+                return (
+                  <tr key={i} className="border-b border-gray-800/40">
+                    <td className="py-2 text-white">{r.player}</td>
+                    <td className="py-2"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">{r.pos}</span></td>
+                    <td className="py-2 text-gray-400 font-mono">{r.expiry}</td>
+                    <td className="py-2 text-right text-gray-300 font-mono">{fmt(r.current)}</td>
+                    <td className={`py-2 pl-3 font-bold ${recColor}`}>{r.rec}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </InsightCard>
+
+        <InsightCard title="Budget Tracker" subtitle="Recruitment spend · summer window 2026">
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-[11px] mb-1">
+                <span className="text-gray-400">Spent</span>
+                <span className="text-white font-bold">{fmt(95000)}</span>
+              </div>
+              <ProgressBar value={95} max={350} color="#7C3AED" height={8} />
+            </div>
+            <div>
+              <div className="flex justify-between text-[11px] mb-1">
+                <span className="text-gray-400">Committed (offers out)</span>
+                <span className="text-amber-400 font-bold">{fmt(75000)}</span>
+              </div>
+              <ProgressBar value={75} max={350} color="#F59E0B" height={8} />
+            </div>
+            <div>
+              <div className="flex justify-between text-[11px] mb-1">
+                <span className="text-gray-400">Remaining</span>
+                <span className="text-green-400 font-bold">{fmt(180000)}</span>
+              </div>
+              <ProgressBar value={180} max={350} color="#22C55E" height={8} />
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-800">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Breakdown by category</div>
+            <div className="space-y-1.5 text-[11px]">
+              <div className="flex justify-between"><span className="text-gray-400">New signings</span><span className="text-white font-bold">£170k (49%)</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Renewals</span><span className="text-white font-bold">£140k (40%)</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Loan fees</span><span className="text-white font-bold">£25k (7%)</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Agent fees</span><span className="text-white font-bold">£15k (4%)</span></div>
+            </div>
+          </div>
+        </InsightCard>
+      </div>
+    </div>
+  )
+}
+
+// ─── 5 · ACADEMY ──────────────────────────────────────────────────────────
+
+function AcademyInsights() {
+  const pathway = [
+    { stage: 'U16',              count: 22, color: '#6B7280' },
+    { stage: 'U18',              count: 12, color: '#A855F7' },
+    { stage: 'U20',              count: 8,  color: '#7C3AED' },
+    { stage: 'Senior Academy',   count: 4,  color: '#22C55E' },
+    { stage: 'First XV bridge',  count: 2,  color: '#F59E0B' },
+  ]
+  const ageGrades: { team: string; p: number; w: number; l: number; d: number; pf: number; pa: number; pos: string }[] = [
+    { team: 'U18',             p: 14, w: 9, l: 4, d: 1, pf: 312, pa: 224, pos: '3rd / 12' },
+    { team: 'U20',             p: 12, w: 7, l: 5, d: 0, pf: 286, pa: 261, pos: '5th / 10' },
+    { team: 'Development XV',  p: 10, w: 8, l: 2, d: 0, pf: 294, pa: 168, pos: '2nd / 8' },
+  ]
+  const prospects: { name: string; age: number; pos: string; level: string; targets: string[]; coachNote: string; pathway: string }[] = [
+    { name: 'Tom Foley',  age: 20, pos: 'No.8',  level: 'U20 captain · senior camp',
+      targets: ['Lift max strength +12kg', 'Improve 40m sprint to 4.7s', 'Lead U20 line-out calls'],
+      coachNote: '6 first-team training sessions. Carry stats projecting at senior level. Game management 18 months ahead of age.',
+      pathway: 'Senior contract Jun 2026 (likely)' },
+    { name: 'Ali Rashid', age: 19, pos: 'Wing',  level: 'Dual reg Coventry',
+      targets: ['Add 6kg muscle mass', 'Reduce missed tackles to <5%', '20 senior-level minutes'],
+      coachNote: 'Pace 6.32 over 40m (top 5% in age). Decision-making the hold-back. Sharp aerial game.',
+      pathway: 'Loan + 2-year senior offer' },
+    { name: 'Sam Clarke', age: 21, pos: 'Hooker', level: 'Senior academy',
+      targets: ['Improve lineout throw to 88%', 'Double scrum dominance score'],
+      coachNote: 'Ready physically. Throwing under pressure inconsistent. 3 starts in second half of season expected.',
+      pathway: 'First XV breakthrough Sep 2026' },
+    { name: 'Marcus Hill', age: 18, pos: 'Lock',  level: 'U18 / U20 stretch',
+      targets: ['First U20 starts', 'Strength gains across the squad block'],
+      coachNote: 'Played U18 captain · 6 ft 8 in · works hard in contact areas. Still raw with ball in hand.',
+      pathway: 'Academy contract Jul 2026' },
+  ]
+  const dualReg: { player: string; loanClub: string; pos: string; apps: number; perf: string }[] = [
+    { player: 'Ali Rashid',   loanClub: 'Coventry',     pos: 'Wing',   apps: 8,  perf: '4 tries · MoTM x1' },
+    { player: 'James Pearce', loanClub: 'Cinderford',   pos: 'CB',     apps: 11, perf: '76 carries · captained 4' },
+    { player: 'Ben Reid',     loanClub: 'Birmingham', pos: 'Lock',   apps: 6,  perf: 'Solid · 3 starts' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Academy Players"   value="24" sub="U18:12 · U20:8 · Dev:4" />
+        <KpiCard label="Promoted to 1st XV" value="1" sub="target: 2" trend="flat" trendValue="on track" accent="#22C55E" />
+        <KpiCard label="Dual Registered"    value="3" sub="players on loan" />
+        <KpiCard label="Rep Honours"        value="4" sub="Eng U20 · County · etc." accent="#F59E0B" />
+        <KpiCard label="EPAS Score"         value="78%" sub="academy accreditation" trend="up" trendValue="+4%" />
+      </div>
+
+      <InsightCard title="Pathway Tracker" subtitle="U16 → First XV · 48 players in pathway">
+        <div className="grid grid-cols-5 gap-2">
+          {pathway.map((s, i) => {
+            const max = Math.max(...pathway.map(p => p.count))
+            return (
+              <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+                <div className="text-2xl font-black text-white" style={{ color: s.color }}>{s.count}</div>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">{s.stage}</div>
+                <div className="mt-2"><ProgressBar value={s.count} max={max} color={s.color} height={4} /></div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-3 text-[10px] text-gray-500">Funnel narrows as expected. 2 players at first-XV bridge currently — both U20 graduates.</div>
+      </InsightCard>
+
+      <InsightCard title="Age Grade Results" subtitle="Season summary · 3 teams">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Team</th>
+            <th className="text-center py-2">P</th>
+            <th className="text-center py-2">W</th>
+            <th className="text-center py-2">L</th>
+            <th className="text-center py-2">D</th>
+            <th className="text-center py-2">PF</th>
+            <th className="text-center py-2">PA</th>
+            <th className="text-center py-2">PD</th>
+            <th className="text-left py-2 pl-3">Position</th>
+          </tr></thead>
+          <tbody>
+            {ageGrades.map((t, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white font-medium">{t.team}</td>
+                <td className="py-2 text-center text-gray-300 font-mono">{t.p}</td>
+                <td className="py-2 text-center text-green-400 font-mono font-bold">{t.w}</td>
+                <td className="py-2 text-center text-red-400 font-mono font-bold">{t.l}</td>
+                <td className="py-2 text-center text-gray-400 font-mono">{t.d}</td>
+                <td className="py-2 text-center text-gray-300 font-mono">{t.pf}</td>
+                <td className="py-2 text-center text-gray-300 font-mono">{t.pa}</td>
+                <td className={`py-2 text-center font-mono font-bold ${t.pf - t.pa > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.pf - t.pa > 0 ? '+' : ''}{t.pf - t.pa}</td>
+                <td className="py-2 pl-3 text-purple-400 font-bold">{t.pos}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <InsightCard title="Player Development Plans" subtitle="4 highlighted prospects">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {prospects.map((p, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
+              <div className="flex items-baseline justify-between mb-2">
+                <div>
+                  <div className="text-sm font-bold text-white">{p.name}</div>
+                  <div className="text-[11px] text-gray-400">{p.age} · {p.pos}</div>
+                </div>
+                <div className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">{p.level}</div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 mt-2 font-bold">Development targets</div>
+              <ul className="space-y-1 text-[11px] text-gray-300 mb-2">
+                {p.targets.map((t, j) => <li key={j}>• {t}</li>)}
+              </ul>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 mt-2 font-bold">Coach note</div>
+              <div className="text-[11px] text-gray-300 leading-relaxed">{p.coachNote}</div>
+              <div className="mt-3 pt-2 border-t border-gray-800 text-[10px] text-amber-400">→ {p.pathway}</div>
+            </div>
+          ))}
+        </div>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Dual Registration" subtitle="3 players on loan · lower-league exposure">
+          <table className="w-full text-xs">
+            <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <th className="text-left py-2">Player</th>
+              <th className="text-left py-2">On loan to</th>
+              <th className="text-left py-2">Pos</th>
+              <th className="text-center py-2">Apps</th>
+              <th className="text-left py-2 pl-3">Performance</th>
+            </tr></thead>
+            <tbody>
+              {dualReg.map((d, i) => (
+                <tr key={i} className="border-b border-gray-800/40">
+                  <td className="py-2 text-white">{d.player}</td>
+                  <td className="py-2 text-gray-300">{d.loanClub}</td>
+                  <td className="py-2"><span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">{d.pos}</span></td>
+                  <td className="py-2 text-center text-gray-300 font-mono">{d.apps}</td>
+                  <td className="py-2 pl-3 text-[11px] text-gray-400">{d.perf}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </InsightCard>
+
+        <InsightCard title="Schools & Community" subtitle="Talent ID + community engagement">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-purple-400">6</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Partner schools</div>
+              <div className="text-[10px] text-gray-400 mt-2 leading-tight">3 grammar · 2 state · 1 independent. Total 1,420 boys in programme.</div>
+            </div>
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-green-400">14</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Community sessions</div>
+              <div className="text-[10px] text-gray-400 mt-2 leading-tight">This term · 3 talent ID events held. Next: Hartfield primary tournament 2 May.</div>
+            </div>
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-amber-400">3</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Talent ID events</div>
+              <div className="text-[10px] text-gray-400 mt-2 leading-tight">Attended this term. Coaches present at U14/U16/U18 trials.</div>
+            </div>
+            <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+              <div className="text-2xl font-black text-blue-400">8</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Prospects ID&apos;d</div>
+              <div className="text-[10px] text-gray-400 mt-2 leading-tight">New names added to the long list this term. 2 invited to development trial.</div>
+            </div>
+          </div>
+        </InsightCard>
+      </div>
+    </div>
+  )
+}
+
+// ─── 6 · ANALYSIS ─────────────────────────────────────────────────────────
+
+function AnalysisInsights() {
+  const kpis: { kpi: string; target: string; actual: string; trend: 'up' | 'down' | 'flat'; status: RAG }[] = [
+    { kpi: 'Tackle %',                  target: '>85%',   actual: '87%',  trend: 'up',   status: 'GREEN' },
+    { kpi: 'Lineout retention',          target: '>85%',   actual: '68%',  trend: 'down', status: 'RED'   },
+    { kpi: 'Scrum success',              target: '>80%',   actual: '78%',  trend: 'flat', status: 'AMBER' },
+    { kpi: 'Ruck speed (sec)',           target: '<3.0',   actual: '3.1',  trend: 'flat', status: 'AMBER' },
+    { kpi: 'Carries / match',            target: '>110',   actual: '124',  trend: 'up',   status: 'GREEN' },
+    { kpi: 'Offloads / match',           target: '>10',    actual: '14',   trend: 'up',   status: 'GREEN' },
+    { kpi: 'Turnovers won',              target: '>8',     actual: '11',   trend: 'up',   status: 'GREEN' },
+    { kpi: 'Penalties conceded',         target: '<10',    actual: '12',   trend: 'down', status: 'AMBER' },
+    { kpi: 'Territory %',                target: '>52%',   actual: '56%',  trend: 'up',   status: 'GREEN' },
+    { kpi: 'Possession %',               target: '>50%',   actual: '53%',  trend: 'flat', status: 'GREEN' },
+    { kpi: 'Metres gained',              target: '>500',   actual: '482',  trend: 'down', status: 'AMBER' },
+    { kpi: 'Clean breaks',               target: '>6',     actual: '8',    trend: 'up',   status: 'GREEN' },
+  ]
+  const triesByPhase = [
+    { label: '1-3 phases', value: 18, color: '#22C55E' },
+    { label: '4-6 phases', value: 16, color: '#7C3AED' },
+    { label: '7+ phases',  value: 12, color: '#F59E0B' },
+  ]
+  const trySources = [
+    { label: 'Set piece', value: 14, color: '#7C3AED' },
+    { label: 'Turnover',  value: 8,  color: '#22C55E' },
+    { label: 'Counter',   value: 14, color: '#A855F7' },
+    { label: 'Penalty',   value: 10, color: '#F59E0B' },
+  ]
+  const pointsByQuarter = [108, 134, 88, 112]
+  const concededByQuarter = [82, 96, 124, 105]
+  const channels = [
+    { label: '1-2 (close)',  value: 168, color: '#7C3AED' },
+    { label: '3-4 (mid)',    value: 142, color: '#A855F7' },
+    { label: '5+ (wide)',    value: 96,  color: '#22C55E' },
+  ]
+  const tackleTrend = [82, 88, 91, 78, 86, 89, 84, 90]
+  const tackleLabels = ['M-7','M-6','M-5','M-4','M-3','M-2','M-1','Now']
+  const missedByPosition: { pos: string; missed: number; total: number; rate: string }[] = [
+    { pos: '1 LHP',   missed: 12, total: 142, rate: '8.5%' },
+    { pos: '2 H',     missed: 8,  total: 156, rate: '5.1%' },
+    { pos: '3 THP',   missed: 11, total: 138, rate: '8.0%' },
+    { pos: '4-5 Lock', missed: 18, total: 268, rate: '6.7%' },
+    { pos: '6-8 BR',  missed: 26, total: 312, rate: '8.3%' },
+    { pos: '9 SH',    missed: 14, total: 98,  rate: '14.3%' },
+    { pos: '10 FH',   missed: 19, total: 124, rate: '15.3%' },
+    { pos: '12-13 C', missed: 24, total: 224, rate: '10.7%' },
+    { pos: '11-14 W', missed: 16, total: 156, rate: '10.3%' },
+    { pos: '15 FB',   missed: 9,  total: 88,  rate: '10.2%' },
+  ]
+  const lineoutCalls: { call: string; success: number; attempts: number; pct: number }[] = [
+    { call: 'Utah (tail)',   success: 16, attempts: 18, pct: 89 },
+    { call: 'Apple (front)', success: 12, attempts: 15, pct: 80 },
+    { call: 'Bravo (front)', success: 10, attempts: 13, pct: 77 },
+    { call: 'Echo (mid)',    success: 8,  attempts: 11, pct: 73 },
+    { call: 'Delta (peel)',  success: 7,  attempts: 10, pct: 70 },
+    { call: 'Charlie (mid)', success: 5,  attempts: 8,  pct: 63 },
+    { call: 'Foxtrot (move)', success: 4, attempts: 7,  pct: 57 },
+    { call: 'Arrow (mid)',   success: 6,  attempts: 14, pct: 43 },
+  ]
+  const oppDb: { team: string; scouted: 'Y' | 'N'; report: 'Complete' | 'In progress' | 'Not started'; threats: string; video: number }[] = [
+    { team: 'Jersey Reds',     scouted: 'Y', report: 'Complete',     threats: 'Lineout 88% · 9 turnovers Morris', video: 12 },
+    { team: 'Caldy',           scouted: 'Y', report: 'In progress',  threats: 'Pack power · maul tries x6 L4',     video: 8 },
+    { team: 'Cornish All',     scouted: 'Y', report: 'Complete',     threats: 'Counter-attack · backs pace',         video: 10 },
+    { team: 'Coventry',        scouted: 'N', report: 'Not started',  threats: '—',                                    video: 0 },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Matches Coded"      value="18/19" sub="1 outstanding · Hartpury" />
+        <KpiCard label="Video Sessions"     value="42" sub="this season" trend="up" trendValue="+6 this month" />
+        <KpiCard label="Opposition Reports" value="6" sub="completed for next block" />
+        <KpiCard label="KPI Targets Met"    value="7/12" sub="this month" accent="#F59E0B" />
+        <KpiCard label="Data Points"        value="14.2K" sub="this season" trend="up" trendValue="+1.8K" />
+      </div>
+
+      <InsightCard title="Team KPIs" subtitle="12 metrics · target / actual / trend / RAG">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">KPI</th>
+            <th className="text-center py-2">Target</th>
+            <th className="text-center py-2">Actual</th>
+            <th className="text-center py-2">Trend</th>
+            <th className="text-left py-2 pl-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {kpis.map((k, i) => (
+              <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20">
+                <td className="py-2 text-white">{k.kpi}</td>
+                <td className="py-2 text-center text-gray-400 font-mono">{k.target}</td>
+                <td className="py-2 text-center text-white font-mono font-bold" style={{ color: ragHex(k.status) }}>{k.actual}</td>
+                <td className="py-2 text-center text-base">{trendArrow(k.trend)}</td>
+                <td className="py-2 pl-3"><span className={`text-[10px] px-2 py-0.5 rounded border ${ragBg(k.status)}`}>{k.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Tries by Phase" subtitle="46 total · how the team scores">
+          <Donut data={triesByPhase} size={140} />
+        </InsightCard>
+        <InsightCard title="Try Sources" subtitle="46 total · attack origin">
+          <Donut data={trySources} size={140} />
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Points by Quarter" subtitle="When the team scores · concedes (season aggregate)">
+        <div className="grid grid-cols-4 gap-3">
+          {pointsByQuarter.map((p, i) => (
+            <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Q{i + 1}</div>
+              <div className="text-xl font-black text-green-400 mt-1">+{p}</div>
+              <div className="text-xs text-red-400 font-mono">−{concededByQuarter[i]}</div>
+              <div className={`text-[10px] mt-1 font-bold ${p - concededByQuarter[i] > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {p - concededByQuarter[i] > 0 ? '+' : ''}{p - concededByQuarter[i]}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-[10px] text-gray-500">Q3 problem area — 36-point negative differential. Possible bench drop-off / fitness pattern.</div>
+      </InsightCard>
+
+      <InsightCard title="Metres Gained by Channel" subtitle="Where the attack goes · season">
+        <Donut data={channels} size={140} />
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Tackles · Last 8" subtitle="Made vs missed · trend">
+          <LineChart values={tackleTrend} labels={tackleLabels} max={100} min={70} color="#22C55E" />
+          <div className="text-[11px] text-gray-400 mt-2 flex items-center justify-between">
+            <span>Dominant tackle %: <span className="text-white font-bold">38%</span></span>
+            <span>Red zone tries conceded: <span className="text-red-400 font-bold">14</span></span>
+          </div>
+        </InsightCard>
+        <InsightCard title="Missed Tackles by Position" subtitle="Season-to-date · % of attempts">
+          <table className="w-full text-[11px]">
+            <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <th className="text-left py-1.5">Position</th>
+              <th className="text-right py-1.5">Missed</th>
+              <th className="text-right py-1.5">Attempted</th>
+              <th className="text-right py-1.5">Rate</th>
+            </tr></thead>
+            <tbody>
+              {missedByPosition.map((p, i) => {
+                const rateNum = parseFloat(p.rate)
+                return (
+                  <tr key={i} className="border-b border-gray-800/40">
+                    <td className="py-1.5 text-white">{p.pos}</td>
+                    <td className="py-1.5 text-right text-gray-300 font-mono">{p.missed}</td>
+                    <td className="py-1.5 text-right text-gray-400 font-mono">{p.total}</td>
+                    <td className="py-1.5 text-right font-mono font-bold" style={{ color: rateNum > 12 ? '#EF4444' : rateNum > 8 ? '#F59E0B' : '#22C55E' }}>{p.rate}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Lineout Calls · Deep Dive" subtitle="8 calls · success rates · season">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Call</th>
+            <th className="text-center py-2">Success</th>
+            <th className="text-center py-2">Attempts</th>
+            <th className="text-left py-2 pl-3 w-1/2">Success rate</th>
+          </tr></thead>
+          <tbody>
+            {lineoutCalls.map((c, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white font-medium">{c.call}</td>
+                <td className="py-2 text-center text-gray-300 font-mono">{c.success}</td>
+                <td className="py-2 text-center text-gray-400 font-mono">{c.attempts}</td>
+                <td className="py-2 pl-3">
+                  <div className="flex items-center gap-3">
+                    <ProgressBar value={c.pct} color={c.pct >= 80 ? '#22C55E' : c.pct >= 65 ? '#F59E0B' : '#EF4444'} />
+                    <span className="font-mono font-bold w-12 text-right" style={{ color: c.pct >= 80 ? '#22C55E' : c.pct >= 65 ? '#F59E0B' : '#EF4444' }}>{c.pct}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <InsightCard title="Opposition Database" subtitle="Next 4 opponents">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Team</th>
+            <th className="text-center py-2">Scouted</th>
+            <th className="text-left py-2">Report status</th>
+            <th className="text-left py-2">Key threats</th>
+            <th className="text-center py-2">Video</th>
+          </tr></thead>
+          <tbody>
+            {oppDb.map((o, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white font-medium">{o.team}</td>
+                <td className="py-2 text-center"><span className={`text-[10px] px-2 py-0.5 rounded ${o.scouted === 'Y' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>{o.scouted}</span></td>
+                <td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded ${o.report === 'Complete' ? 'bg-green-600/20 text-green-400' : o.report === 'In progress' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-800 text-gray-500'}`}>{o.report}</span></td>
+                <td className="py-2 text-[11px] text-gray-300">{o.threats}</td>
+                <td className="py-2 text-center text-gray-400 font-mono">{o.video}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+    </div>
+  )
+}
+
+// ─── 7 · COMMERCIAL ───────────────────────────────────────────────────────
+
+function CommercialInsights() {
+  const revenueBreakdown: { cat: string; budget: number; actual: number; color: string }[] = [
+    { cat: 'Matchday',     budget: 720, actual: 684, color: '#7C3AED' },
+    { cat: 'Sponsorship',  budget: 540, actual: 520, color: '#A855F7' },
+    { cat: 'Hospitality',  budget: 320, actual: 296, color: '#22C55E' },
+    { cat: 'Merchandise',  budget: 110, actual: 142, color: '#F59E0B' },
+    { cat: 'Broadcasting', budget: 180, actual: 168, color: '#3B82F6' },
+    { cat: 'Other',        budget: 80,  actual: 92,  color: '#6B7280' },
+  ]
+  const attendance = [3210, 3890, 2940, 4100, 3520, 3680, 3210, 2890, 3410, 3720]
+  const attendanceLabels = ['M-9','M-8','M-7','M-6','M-5','M-4','M-3','M-2','M-1','Now']
+  const ticketMix = [
+    { label: 'Season',       value: 1840, color: '#7C3AED' },
+    { label: 'Walk-up',      value: 980,  color: '#A855F7' },
+    { label: 'Hospitality',  value: 280,  color: '#F59E0B' },
+    { label: 'Comp',         value: 110,  color: '#6B7280' },
+  ]
+  const sponsors: { name: string; value: number; status: 'Active' | 'Renewal' | 'Pipeline'; renewal: string; contact: string }[] = [
+    { name: 'Hartfield Building Society',  value: 85000, status: 'Renewal',  renewal: 'May 2026', contact: 'Dan Mason' },
+    { name: 'West Country Energy',         value: 28000, status: 'Active',   renewal: 'Jul 2026', contact: 'Sara Khan' },
+    { name: 'Smith & Sons Builders',       value: 35000, status: 'Active',   renewal: 'Aug 2026', contact: 'M. Smith' },
+    { name: 'Lexington Motors',            value: 24000, status: 'Active',   renewal: 'Aug 2026', contact: 'L. Reed' },
+    { name: 'Riverbend Insurance',         value: 18000, status: 'Active',   renewal: 'Sep 2026', contact: 'P. Tate' },
+    { name: 'Hartfield Estates',           value: 15000, status: 'Active',   renewal: 'Sep 2026', contact: 'A. Ozawa' },
+    { name: 'Bridge Brewery',              value: 12000, status: 'Active',   renewal: 'Oct 2026', contact: 'C. White' },
+    { name: 'Northgate Logistics',         value: 22000, status: 'Active',   renewal: 'Nov 2026', contact: 'R. Drury' },
+    { name: 'Linton Plumbing',             value: 8000,  status: 'Active',   renewal: 'Dec 2026', contact: 'L. Fox' },
+    { name: 'Westside Print',              value: 6500,  status: 'Active',   renewal: 'Dec 2026', contact: 'J. Weir' },
+    { name: 'Caldwell Foods',              value: 14000, status: 'Renewal',  renewal: 'Jun 2026', contact: 'S. Caldwell' },
+    { name: 'Alderfield Solutions',        value: 11000, status: 'Active',   renewal: 'Mar 2027', contact: 'B. Park' },
+    { name: 'Pinedale Tools',              value: 18000, status: 'Pipeline', renewal: '—',         contact: 'pending' },
+    { name: 'Westvale Health',             value: 25000, status: 'Pipeline', renewal: '—',         contact: 'pending' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Revenue YTD"     value="£1.82M" sub="vs £1.95M budget · 93%" accent="#F59E0B" />
+        <KpiCard label="Matchday Avg"    value="3,210" sub="target 3,500" trend="up" trendValue="+4%" />
+        <KpiCard label="Sponsors"        value="12" sub="active · 2 renewals due" />
+        <KpiCard label="Hospitality"     value="78%" sub="sold · next home match" trend="up" trendValue="+12%" accent="#22C55E" />
+        <KpiCard label="Social"          value="14.2K" sub="followers · +8% Q" trend="up" trendValue="+8%" />
+      </div>
+
+      <InsightCard title="Revenue Breakdown" subtitle="Budget vs actual by category · £k YTD">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Category</th>
+            <th className="text-right py-2">Budget</th>
+            <th className="text-right py-2">Actual</th>
+            <th className="text-right py-2">Variance</th>
+            <th className="text-left py-2 pl-3 w-2/5">Progress</th>
+          </tr></thead>
+          <tbody>
+            {revenueBreakdown.map((r, i) => {
+              const variance = r.actual - r.budget
+              const pct = (r.actual / r.budget) * 100
+              return (
+                <tr key={i} className="border-b border-gray-800/40">
+                  <td className="py-2 text-white font-medium">{r.cat}</td>
+                  <td className="py-2 text-right text-gray-400 font-mono">£{r.budget}k</td>
+                  <td className="py-2 text-right text-white font-mono font-bold">£{r.actual}k</td>
+                  <td className={`py-2 text-right font-mono font-bold ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>{variance >= 0 ? '+' : ''}£{variance}k</td>
+                  <td className="py-2 pl-3">
+                    <div className="flex items-center gap-2">
+                      <ProgressBar value={r.actual} max={r.budget * 1.2} color={r.color} />
+                      <span className="font-mono w-12 text-right" style={{ color: pct >= 100 ? '#22C55E' : '#F59E0B' }}>{pct.toFixed(0)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Attendance · Last 10" subtitle="Home matches · paying">
+          <BarChart values={attendance.map(v => Math.round(v / 100))} labels={attendanceLabels} max={45} height={140} color="#7C3AED" target={35} />
+          <div className="mt-3 text-[11px] text-gray-400 flex items-center justify-between">
+            <span>Best: <span className="text-white font-bold">vs Cornish All (4,100)</span></span>
+            <span>Worst: <span className="text-white font-bold">vs Bedford (2,890)</span></span>
+          </div>
+        </InsightCard>
+        <InsightCard title="Ticket Mix" subtitle="Season-to-date · 3,210 ticket holders">
+          <Donut data={ticketMix} size={140} />
+          <div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-3 text-[11px]">
+            <div><span className="text-gray-400">Avg spend per head</span><div className="text-white font-bold">£22.40</div></div>
+            <div><span className="text-gray-400">Food + drink + merch</span><div className="text-white font-bold">£71.9k / month</div></div>
+          </div>
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Sponsorship Pipeline" subtitle="12 active + 2 in pipeline · total live value £296k">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Sponsor</th>
+            <th className="text-right py-2">Value</th>
+            <th className="text-left py-2 pl-3">Status</th>
+            <th className="text-left py-2">Renewal</th>
+            <th className="text-left py-2">Contact</th>
+          </tr></thead>
+          <tbody>
+            {sponsors.map((s, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white">{s.name}</td>
+                <td className="py-2 text-right text-gray-300 font-mono font-bold">{fmt(s.value)}</td>
+                <td className="py-2 pl-3"><span className={`text-[10px] px-2 py-0.5 rounded ${s.status === 'Active' ? 'bg-green-600/20 text-green-400' : s.status === 'Renewal' ? 'bg-amber-600/20 text-amber-400' : 'bg-purple-600/20 text-purple-400'}`}>{s.status}</span></td>
+                <td className="py-2 text-gray-400 font-mono">{s.renewal}</td>
+                <td className="py-2 text-gray-400">{s.contact}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Social & Digital" subtitle="14,200 followers across 4 platforms">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {[
+              { p: 'Instagram', n: 6800, c: '#E1306C' },
+              { p: 'X',         n: 3200, c: '#1DA1F2' },
+              { p: 'Facebook',  n: 2700, c: '#1877F2' },
+              { p: 'TikTok',    n: 1500, c: '#69C9D0' },
+            ].map((x, i) => (
+              <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">{x.p}</div>
+                <div className="text-lg font-black text-white">{x.n.toLocaleString()}</div>
+                <div className="mt-1"><ProgressBar value={x.n} max={7000} color={x.c} height={3} /></div>
+              </div>
+            ))}
+          </div>
+          <div className="text-[11px] text-gray-400 space-y-1.5">
+            <div className="flex justify-between border-t border-gray-800 pt-2"><span>Engagement rate</span><span className="text-green-400 font-bold">4.2% (vs 2.8% industry)</span></div>
+            <div className="flex justify-between"><span>Top post this month</span><span className="text-white font-bold">Foster try clip · 12K reach</span></div>
+            <div className="flex justify-between"><span>Content calendar</span><span className="text-white font-bold">5 posts queued · next Sat AM</span></div>
+          </div>
+        </InsightCard>
+
+        <InsightCard title="Merchandise" subtitle="Top sellers + stock alerts">
+          <div className="space-y-2 mb-4">
+            {[
+              { item: 'Replica home shirt',     sold: 218, color: '#7C3AED' },
+              { item: 'Bobble hat',             sold: 142, color: '#A855F7' },
+              { item: 'Training top',           sold: 86,  color: '#22C55E' },
+              { item: 'Scarf · classic',         sold: 64,  color: '#F59E0B' },
+              { item: 'Stadium pin badge',      sold: 92,  color: '#3B82F6' },
+            ].map((m, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-xs text-gray-300 w-32">{m.item}</span>
+                <div className="flex-1"><ProgressBar value={m.sold} max={250} color={m.color} /></div>
+                <span className="text-xs text-white font-mono font-bold w-12 text-right">{m.sold}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-800">
+            <div className="text-[11px]">
+              <div className="text-gray-400">Revenue this month</div>
+              <div className="text-white font-bold text-base">£18,420</div>
+              <div className="text-green-400 text-[10px]">+12% vs last month</div>
+            </div>
+            <div className="text-[11px]">
+              <div className="text-gray-400">Stock alerts</div>
+              <div className="text-amber-400 font-bold">2 items low stock</div>
+              <div className="text-[10px] text-gray-500">Bobble hats · scarves</div>
+            </div>
+          </div>
+        </InsightCard>
+      </div>
+    </div>
+  )
+}
+
+// ─── 8 · CEO / CHAIRMAN ───────────────────────────────────────────────────
+
+function CeoInsights({ club }: { club: RugbyClub }) {
+  const headroom = club.capCeiling - club.currentSpend
+  const pl: { line: string; ytd: number; budget: number; lastYear: number; status: RAG; bold?: boolean; isTotal?: boolean }[] = [
+    { line: 'Matchday',         ytd: 684,  budget: 720,  lastYear: 642,  status: 'AMBER' },
+    { line: 'Commercial',       ytd: 520,  budget: 540,  lastYear: 480,  status: 'AMBER' },
+    { line: 'Broadcasting',     ytd: 168,  budget: 180,  lastYear: 165,  status: 'AMBER' },
+    { line: 'Other',            ytd: 92,   budget: 80,   lastYear: 78,   status: 'GREEN' },
+    { line: 'Total revenue',    ytd: 1820, budget: 1950, lastYear: 1730, status: 'AMBER', bold: true, isTotal: true },
+    { line: 'Playing costs',    ytd: 1240, budget: 1200, lastYear: 1180, status: 'RED'   },
+    { line: 'Non-playing',      ytd: 320,  budget: 340,  lastYear: 310,  status: 'GREEN' },
+    { line: 'Operations',       ytd: 145,  budget: 150,  lastYear: 142,  status: 'GREEN' },
+    { line: 'Facilities',       ytd: 78,   budget: 90,   lastYear: 82,   status: 'GREEN' },
+    { line: 'Total costs',      ytd: 1783, budget: 1780, lastYear: 1714, status: 'AMBER', bold: true, isTotal: true },
+    { line: 'Operating surplus', ytd: 42,  budget: 65,   lastYear: 16,   status: 'AMBER', bold: true, isTotal: true },
+  ]
+  const strategic: { priority: string; kpi: string; target: string; actual: string; status: RAG }[] = [
+    { priority: 'Top 4 finish',                kpi: 'League position',           target: 'Top 4',     actual: '4th',      status: 'GREEN' },
+    { priority: 'Franchise compliance',         kpi: 'RFU score',                 target: '80%+',      actual: '71%',      status: 'AMBER' },
+    { priority: 'Attendance growth',            kpi: 'Avg attendance',            target: '3,500',     actual: '3,210',    status: 'AMBER' },
+    { priority: 'Academy pathway',              kpi: '1st-team graduates',        target: '2/season',  actual: '1',        status: 'GREEN' },
+    { priority: 'Commercial revenue',           kpi: 'Sponsor + matchday growth', target: '+15%',      actual: '+11%',     status: 'AMBER' },
+    { priority: 'Facilities investment',        kpi: 'Capex deployed',            target: '£250k',     actual: '£185k',    status: 'AMBER' },
+    { priority: 'Community engagement',         kpi: 'Hours donated',             target: '1,000',     actual: '1,180',    status: 'GREEN' },
+    { priority: "Women's programme",             kpi: 'PWR registration',          target: 'Submitted', actual: 'In draft', status: 'RED' },
+  ]
+  const risks: { risk: string; likelihood: 'L' | 'M' | 'H'; impact: 'L' | 'M' | 'H'; mitigation: string; owner: string }[] = [
+    { risk: 'Franchise non-compliance',          likelihood: 'M', impact: 'H', mitigation: 'PWR plan + facilities works prioritised', owner: 'DoR'      },
+    { risk: 'Key player season-ending injury',   likelihood: 'M', impact: 'H', mitigation: 'Squad depth review · loan options open',  owner: 'Medical'  },
+    { risk: 'Budget overrun (playing costs)',     likelihood: 'M', impact: 'M', mitigation: 'Contract review board · cap ceiling',     owner: 'Finance'  },
+    { risk: 'Sponsor non-renewal (Hartfield)',   likelihood: 'M', impact: 'M', mitigation: 'Renewal meetings + activation review',     owner: 'Comm.'    },
+    { risk: 'Pitch condition (winter games)',    likelihood: 'L', impact: 'H', mitigation: 'Drainage works + cover schedule',          owner: 'Ops'      },
+    { risk: 'Safeguarding incident',             likelihood: 'L', impact: 'H', mitigation: 'DBS audit current · training quarterly',    owner: 'CEO'      },
+  ]
+  const board: { date: string; event: string; type: string }[] = [
+    { date: '12 May', event: 'Board meeting · Q4 review',           type: 'board' },
+    { date: '15 May', event: 'Investment pack — legal due diligence', type: 'compliance' },
+    { date: '30 May', event: 'AGM prep · 2026/27 budget tabled',     type: 'agm' },
+    { date: '14 Jun', event: 'Sponsor & supplier dinner',             type: 'commercial' },
+    { date: '28 Jun', event: 'AGM',                                   type: 'agm' },
+    { date: '15 Jul', event: 'Pre-season strategy day',               type: 'board' },
+  ]
+  const npsTrend = [62, 68, 70, 72]
+  const npsLabels = ['Q1', 'Q2', 'Q3', 'Q4']
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Operating Surplus" value="£42k" sub="vs £65k budget" accent="#F59E0B" trend="up" trendValue="+£26k vs LY" />
+        <KpiCard label="Franchise Score"   value={`${club.franchiseScore}%`} sub="target 80%" accent="#F59E0B" />
+        <KpiCard label="League Position"   value="4th" sub="target: top 4" accent="#22C55E" />
+        <KpiCard label="Headcount"         value="86" sub="52 playing · 34 non-playing" />
+        <KpiCard label="NPS"               value="72" sub="fan satisfaction" trend="up" trendValue="+10 YoY" accent="#22C55E" />
+      </div>
+
+      <InsightCard title="P&L Summary" subtitle="YTD vs budget vs prior year (£k)">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2"></th>
+            <th className="text-right py-2">YTD</th>
+            <th className="text-right py-2">Budget</th>
+            <th className="text-right py-2">Var.</th>
+            <th className="text-right py-2">Last year</th>
+            <th className="text-right py-2">YoY</th>
+            <th className="text-left py-2 pl-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {pl.map((r, i) => {
+              const varBudget = r.ytd - r.budget
+              const varLY     = r.ytd - r.lastYear
+              return (
+                <tr key={i} className={`border-b border-gray-800/40 ${r.bold ? 'bg-gray-800/20' : ''}`}>
+                  <td className={`py-2 ${r.bold ? 'text-white font-bold' : 'text-gray-300'}`}>{r.line}</td>
+                  <td className={`py-2 text-right font-mono ${r.bold ? 'text-white font-bold' : 'text-gray-300'}`}>£{r.ytd}k</td>
+                  <td className="py-2 text-right text-gray-400 font-mono">£{r.budget}k</td>
+                  <td className={`py-2 text-right font-mono font-bold ${varBudget >= 0 ? 'text-green-400' : 'text-red-400'}`}>{varBudget >= 0 ? '+' : ''}£{varBudget}k</td>
+                  <td className="py-2 text-right text-gray-500 font-mono">£{r.lastYear}k</td>
+                  <td className={`py-2 text-right font-mono ${varLY >= 0 ? 'text-green-400' : 'text-red-400'}`}>{varLY >= 0 ? '+' : ''}£{varLY}k</td>
+                  <td className="py-2 pl-3"><span className="w-2 h-2 rounded-full inline-block" style={{ background: ragHex(r.status) }} /></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <InsightCard title="Strategic Dashboard" subtitle="Board-level priorities · 8 KPIs">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Priority</th>
+            <th className="text-left py-2">KPI</th>
+            <th className="text-center py-2">Target</th>
+            <th className="text-center py-2">Actual</th>
+            <th className="text-left py-2 pl-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {strategic.map((s, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white">{s.priority}</td>
+                <td className="py-2 text-gray-400">{s.kpi}</td>
+                <td className="py-2 text-center text-gray-400 font-mono">{s.target}</td>
+                <td className="py-2 text-center text-white font-mono font-bold" style={{ color: ragHex(s.status) }}>{s.actual}</td>
+                <td className="py-2 pl-3"><span className={`text-[10px] px-2 py-0.5 rounded border ${ragBg(s.status)}`}>{s.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <InsightCard title="Risk Register" subtitle="6 board-tracked risks">
+        <table className="w-full text-xs">
+          <thead><tr className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left py-2">Risk</th>
+            <th className="text-center py-2">Likelihood</th>
+            <th className="text-center py-2">Impact</th>
+            <th className="text-left py-2">Mitigation</th>
+            <th className="text-left py-2">Owner</th>
+          </tr></thead>
+          <tbody>
+            {risks.map((r, i) => (
+              <tr key={i} className="border-b border-gray-800/40">
+                <td className="py-2 text-white font-medium">{r.risk}</td>
+                <td className="py-2 text-center"><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${r.likelihood === 'H' ? 'bg-red-600/20 text-red-400' : r.likelihood === 'M' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-800 text-gray-400'}`}>{r.likelihood}</span></td>
+                <td className="py-2 text-center"><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${r.impact === 'H' ? 'bg-red-600/20 text-red-400' : r.impact === 'M' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-800 text-gray-400'}`}>{r.impact}</span></td>
+                <td className="py-2 text-[11px] text-gray-300">{r.mitigation}</td>
+                <td className="py-2 text-gray-400">{r.owner}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </InsightCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <InsightCard title="Board Calendar" subtitle="Next 90 days · 6 entries">
+          <div className="space-y-2">
+            {board.map((b, i) => (
+              <div key={i} className="flex items-baseline gap-3 py-2 border-b border-gray-800/40">
+                <span className="text-[11px] text-purple-400 font-mono font-bold w-16">{b.date}</span>
+                <span className="text-xs text-white flex-1">{b.event}</span>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${b.type === 'agm' ? 'bg-red-600/20 text-red-400' : b.type === 'compliance' ? 'bg-amber-600/20 text-amber-400' : b.type === 'commercial' ? 'bg-blue-600/20 text-blue-400' : 'bg-purple-600/20 text-purple-400'}`}>{b.type}</span>
+              </div>
+            ))}
+          </div>
+        </InsightCard>
+
+        <InsightCard title="Stakeholder Summary" subtitle="Fan · player · staff · community">
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-[11px] mb-1">
+                <span className="text-gray-400">Fan satisfaction (NPS)</span>
+                <span className="text-green-400 font-bold">72 · trending up</span>
+              </div>
+              <LineChart values={npsTrend} labels={npsLabels} max={80} min={50} color="#22C55E" height={80} width={300} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
+                <div className="text-lg font-black text-purple-400">8.4</div>
+                <div className="text-[10px] text-gray-500">Player satisfaction</div>
+                <div className="text-[10px] text-gray-400 mt-1">/10 anon. survey</div>
+              </div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
+                <div className="text-lg font-black text-green-400">12%</div>
+                <div className="text-[10px] text-gray-500">Staff turnover</div>
+                <div className="text-[10px] text-gray-400 mt-1">vs 18% industry</div>
+              </div>
+              <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-2 text-center">
+                <div className="text-lg font-black text-amber-400">1,180</div>
+                <div className="text-[10px] text-gray-500">Hours donated</div>
+                <div className="text-[10px] text-gray-400 mt-1">community impact</div>
+              </div>
+            </div>
+          </div>
+        </InsightCard>
+      </div>
+    </div>
+  )
 }
 
 // ─── DIRECTOR OF RUGBY BRIEFING VIEW ──────────────────────────────────────────
@@ -1028,7 +2810,7 @@ function ScenarioModellerView({club}:{club:RugbyClub}) {
 function AuditTrailView() {
   const entries: Array<{date:string;type:string;player:string;detail:string;before:string;after:string;by:string}> = [
     {date:'2 Apr',type:'Contract amended',player:'Danny Cole',detail:'Bonus clause added',before:'£2,300/wk',after:'£2,300/wk + £200/win',by:'Caroline Hughes'},
-    {date:'28 Mar',type:'Loan in',player:'Jake Rawlings',detail:'Bath Rugby, until 30 Apr',before:'—',after:'£1,200/wk',by:'Steve Whitfield'},
+    {date:'28 Mar',type:'Loan in',player:'Jake Rawlings',detail:'Westmoor Lions, until 30 Apr',before:'—',after:'£1,200/wk',by:'Steve Whitfield'},
     {date:'15 Mar',type:'New contract',player:'David Obi',detail:'2-year extension',before:'£1,400/wk',after:'£1,700/wk',by:'Steve Whitfield'},
     {date:'1 Mar',type:'Academy credit',player:'Josh White',detail:'U23 academy designation',before:'Full charge',after:'−£12,000 credit',by:'Mark Ellison'},
     {date:'15 Feb',type:'Exclusion applied',player:'Marcus Webb',detail:'Excluded player designation',before:'Full charge',after:'Excluded',by:'RFU Salary Cap Director'},
@@ -1322,9 +3104,9 @@ function LoanManagementView() {
       <div className="text-sm font-semibold text-white mb-2">Incoming Loans (3)</div>
       <div className="space-y-3">
         {[
-          {name:'Jake Rawlings',pos:'Prop',parent:'Bath Rugby',until:'30 April',cap:'£1,200/wk',recall:'7 days notice'},
-          {name:'Connor Walsh',pos:'Fly Half',parent:'Bristol Bears',until:'Season end',cap:'£900/wk',recall:'No recall'},
-          {name:'Ben Taylor',pos:'Wing',parent:'Exeter Chiefs',until:'Season end',cap:'£800/wk',recall:'No recall'},
+          {name:'Jake Rawlings',pos:'Prop',parent:'Westmoor Lions',until:'30 April',cap:'£1,200/wk',recall:'7 days notice'},
+          {name:'Connor Walsh',pos:'Fly Half',parent:'Penmoor Bears',until:'Season end',cap:'£900/wk',recall:'No recall'},
+          {name:'Ben Taylor',pos:'Wing',parent:'Easthaven Mariners',until:'Season end',cap:'£800/wk',recall:'No recall'},
         ].map((p:{name:string;pos:string;parent:string;until:string;cap:string;recall:string},i:number)=>(
           <Card key={i}>
             <div className="flex items-center justify-between">
@@ -1361,7 +3143,7 @@ function ScoutingPipelineView() {
   const targets: Array<{name:string;club:string;pos:string;age:number;contractEnds:string;estCap:string;stage:string;agent:string}> = [
     {name:'Marcus Jennings',club:'Jersey Reds',pos:'Openside',age:26,contractEnds:'June 2026',estCap:'£65,000/yr',stage:'In Talks',agent:'Dan Hooper, DHR Sports'},
     {name:'Tom Clarke',club:'Doncaster Knights',pos:'Fly Half',age:24,contractEnds:'June 2026',estCap:'£48,000/yr',stage:'Approached',agent:'Mike Carroll'},
-    {name:'Jake Forster',club:'Sale Sharks',pos:'Prop',age:22,contractEnds:'Dual reg available',estCap:'£25,000/yr',stage:'Watching',agent:'—'},
+    {name:'Jake Forster',club:'Aldermount Sharks',pos:'Prop',age:22,contractEnds:'Dual reg available',estCap:'£25,000/yr',stage:'Watching',agent:'—'},
   ];
   return (
     <div className="space-y-6">
@@ -1759,7 +3541,7 @@ function PartnershipActivationView() {
 // ─── WOMEN'S SQUAD VIEW ───────────────────────────────────────────────────────
 function MediaPRRugbyView({club:_club}:{club:RugbyClub}){const[activeTab,setActiveTab]=useState<'requests'|'calendar'|'coverage'|'guidelines'>('requests');const REQUESTS=[{id:1,outlet:'Rugby World',type:'Feature',contact:'Dan Carter (ed.)',subject:'Championship clubs and franchise pathway — Hartfield RFC case study',deadline:'18 Apr 2026',urgency:'high',status:'Pending approval',notes:'National rugby magazine. Franchise readiness story is well-timed.',recommended:'Accept — franchise exposure before assessments.'},{id:2,outlet:'Crown Broadcasting Rugby',type:'Interview',contact:'Sian Hughes',subject:'Danny Foster HIA — concussion protocol best practice',deadline:'15 Apr 2026',urgency:'urgent',status:'Handle with care',notes:'Sensitive. Do NOT discuss medical details. Welfare Lead must approve.',recommended:'Decline medical specifics. Offer welfare statement.'},{id:3,outlet:'Champ Rugby Podcast',type:'Podcast',contact:'Mike Selby',subject:'DoR Steve Whitfield — season review and promotion push',deadline:'22 Apr 2026',urgency:'medium',status:'Pending approval',notes:'Championship-specific audience. Good DoR platform.',recommended:'Accept — strong fit for DoR profile.'},{id:4,outlet:'Local Gazette',type:'Preview',contact:'Rachel Moore',subject:'vs Jersey Reds Saturday — preview and ticket info',deadline:'Thu 10 Apr',urgency:'low',status:'Approved',notes:'Standard pre-match local press.',recommended:'Already approved.'}];const COVERAGE=[{date:'5 Apr',outlet:'Rugby World',headline:'Hartfield RFC among Champ clubs closest to franchise criteria',reach:'48k',sentiment:'positive'},{date:'2 Apr',outlet:'Crown Broadcasting Rugby',headline:'Championship Round 17 — Hartfield lose to Bath 18–24',reach:'180k',sentiment:'neutral'},{date:'29 Mar',outlet:'Champ Rugby Podcast',headline:'Episode 112 — Hartfield RFC season deep dive',reach:'22k',sentiment:'positive'},{date:'22 Mar',outlet:'Local Gazette',headline:'Hartfield RFC win at Doncaster — season back on track',reach:'8k',sentiment:'positive'},{date:'15 Mar',outlet:'Rugby Pass',headline:'Championship salary cap — which clubs are closest to ceiling?',reach:'31k',sentiment:'neutral'}];const urgencyStyle=(u:string)=>u==='urgent'?'bg-red-600/20 text-red-400 border border-red-600/30':u==='high'?'bg-amber-600/20 text-amber-400':u==='medium'?'bg-blue-600/20 text-blue-400':'bg-gray-800 text-gray-500';return(<div className="space-y-6"><QuickActionsBar/><SectionHeader icon="📣" title="Media & PR" subtitle="Requests · Calendar · Coverage log · Guidelines"/><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Open Requests" value="3" sub="1 urgent · 2 pending" color="amber"/><StatCard label="Coverage (month)" value="5" sub="4 positive · 1 neutral" color="green"/><StatCard label="Total Reach" value="289k" sub="Cumulative this month" color="purple"/><StatCard label="Next Press Day" value="Sat" sub="vs Jersey Reds matchday" color="blue"/></div><div className="flex gap-1 border-b border-gray-800">{([{id:'requests' as const,label:'Requests',icon:'📬'},{id:'calendar' as const,label:'PR Calendar',icon:'📅'},{id:'coverage' as const,label:'Coverage',icon:'📰'},{id:'guidelines' as const,label:'Guidelines',icon:'📋'}]).map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>{activeTab==='requests'&&<div className="space-y-4">{REQUESTS.map(r=><Card key={r.id} className={r.urgency==='urgent'?'border-red-600/40':r.urgency==='high'?'border-amber-600/30':''}><div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-2 mb-1"><span className="text-sm font-bold text-white">{r.outlet}</span><span className={`text-[10px] px-2 py-0.5 rounded ${urgencyStyle(r.urgency)}`}>{r.urgency==='urgent'?'🔴 URGENT':r.urgency==='high'?'🟡 High':r.urgency==='medium'?'Medium':'Low'}</span><span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">{r.type}</span></div><p className="text-xs text-gray-300 font-medium">{r.subject}</p><p className="text-[10px] text-gray-600">Contact: {r.contact} · Deadline: {r.deadline}</p></div><span className={`text-[10px] px-2 py-1 rounded font-medium flex-shrink-0 ml-4 ${r.status==='Approved'?'bg-green-600/20 text-green-400':r.status==='Handle with care'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{r.status}</span></div><p className="text-xs text-gray-400 mb-2">{r.notes}</p><div className="flex items-center justify-between pt-2 border-t border-gray-800"><p className="text-[10px] text-purple-400">💡 {r.recommended}</p>{r.status!=='Approved'&&r.status!=='Handle with care'&&<div className="flex gap-2"><button className="px-3 py-1 rounded text-[10px] bg-gray-800 text-gray-400 hover:text-white">Decline</button><button className="px-3 py-1 rounded text-[10px] font-bold bg-purple-600 hover:bg-purple-500 text-white">Accept →</button></div>}</div></Card>)}</div>}{activeTab==='coverage'&&<div className="space-y-4"><div className="grid grid-cols-3 gap-4"><StatCard label="Positive" value="4/5" sub="This month" color="green"/><StatCard label="Reach" value="289k" sub="Cumulative" color="purple"/><StatCard label="Top outlet" value="Crown Broadcasting" sub="180k reach" color="blue"/></div><Card><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider"><th className="text-left py-2">Date</th><th className="text-left py-2">Outlet</th><th className="text-left py-2">Headline</th><th className="text-center py-2">Reach</th><th className="text-center py-2">Sentiment</th></tr></thead><tbody>{COVERAGE.map((c,i)=><tr key={i} className="border-b border-gray-800/40"><td className="py-2 text-gray-500">{c.date}</td><td className="py-2 text-gray-300 font-medium">{c.outlet}</td><td className="py-2 text-gray-400">{c.headline}</td><td className="py-2 text-center text-purple-400 font-bold">{c.reach}</td><td className="py-2 text-center"><span className={`text-xs font-medium ${c.sentiment==='positive'?'text-green-400':'text-gray-400'}`}>{c.sentiment==='positive'?'↑ Positive':'→ Neutral'}</span></td></tr>)}</tbody></table></div></Card></div>}{activeTab==='calendar'&&<Card><div className="text-sm font-semibold text-white mb-4">PR & Media Calendar — April / May 2026</div><div className="divide-y divide-gray-800">{[{date:'Thu 10 Apr',items:[{time:'11:00',type:'Press conf',label:'Pre-match presser — Jersey Reds'},{time:'14:00',type:'Deadline',label:'Local Gazette preview copy'}]},{date:'Sat 12 Apr',items:[{time:'12:30',type:'Matchday',label:'Media accreditation — The Grange'},{time:'15:00',type:'Matchday',label:'KO vs Jersey Reds'},{time:'17:00',type:'Post-match',label:'Mixed zone + Head Coach interview'}]},{date:'Wed 16 Apr',items:[{time:'—',type:'Deadline',label:'Rugby World feature submission'}]},{date:'22 Apr',items:[{time:'TBC',type:'Podcast',label:'Champ Rugby Podcast — DoR'}]}].map((day,i)=><div key={i} className="flex gap-4 py-3"><div className="w-20 flex-shrink-0"><div className="text-xs font-bold text-white">{day.date}</div></div><div className="flex-1 space-y-1.5">{day.items.map((item,j)=><div key={j} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-gray-900/30 border border-gray-800/30"><span className="text-[10px] text-gray-600 w-10 flex-shrink-0">{item.time}</span><span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${item.type==='Matchday'?'bg-purple-600/20 text-purple-400':item.type==='Press conf'?'bg-blue-600/20 text-blue-400':item.type==='Deadline'?'bg-red-600/20 text-red-400':item.type==='Podcast'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-500'}`}>{item.type}</span><span className="text-xs text-gray-300">{item.label}</span></div>)}</div></div>)}</div></Card>}{activeTab==='guidelines'&&<div className="space-y-4"><div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-4"><p className="text-xs text-amber-300">All media requests must be approved by Communications lead. Restricted topics require additional department head sign-off.</p></div><Card><div className="text-sm font-semibold text-white mb-3">Media Response Guidelines</div><div className="divide-y divide-gray-800">{[{topic:'Player medical / HIA',rule:'NO comment. Refer to club medical statement template.',restricted:true},{topic:'Salary cap details',rule:'No specific figures. "We are compliant with all Championship Rugby regulations."',restricted:true},{topic:'Transfer speculation',rule:'"Hartfield RFC does not comment on player movements."',restricted:true},{topic:'Franchise readiness',rule:'CEO or DoR only. Positive messaging.',restricted:false},{topic:'Match results',rule:'Head Coach or DoR only post-match.',restricted:false},{topic:'Academy players (U21)',rule:'Parental consent required. Academy Director approves.',restricted:true}].map((g,i)=><div key={i} className={`py-3 ${g.restricted?'bg-red-600/5 px-2 -mx-2 rounded':''}`}><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold text-white">{g.topic}</span>{g.restricted&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-red-600/20 text-red-400">🔒 Restricted</span>}</div><p className="text-xs text-gray-400">{g.rule}</p></div>)}</div></Card></div>}</div>)}
 
-function FanHubRugbyView({club:_club}:{club:RugbyClub}){const[activeTab,setActiveTab]=useState<'overview'|'forum'|'events'|'memberships'>('overview');const FORUM_TOPICS=[{id:1,cat:'Match Discussion',title:'Jersey Reds (H) — Match thread 🏉',posts:62,views:940,hot:true,last:'1h ago'},{id:2,cat:'Franchise',title:'Franchise readiness — how close are we really?',posts:88,views:1480,hot:true,last:'3h ago'},{id:3,cat:'Recruitment',title:'Summer window wishlist — who do we need?',posts:104,views:1820,hot:true,last:'45m ago'},{id:4,cat:'Match Discussion',title:'Bath away post-match — disappointing 2nd half',posts:44,views:680,hot:false,last:'8h ago'},{id:5,cat:'General',title:'Season tickets 2026/27 — pricing thoughts?',posts:38,views:560,hot:false,last:'1d ago'},{id:6,cat:'Academy',title:'Tom Foley — ready for first team start?',posts:31,views:490,hot:false,last:'2d ago'},{id:7,cat:'Commercial',title:'New kit launch reaction — love/hate thread',posts:72,views:1120,hot:true,last:'2h ago'}];const MEMBERS=[{name:'Supporter',price:'£20/yr',count:488,features:['Forum access','Match notifications','Monthly newsletter','Early ticket access (24h)'],color:'border-gray-700',badge:'bg-gray-800 text-gray-400'},{name:'Club Member',price:'£45/yr',count:214,features:['Everything in Supporter','Annual meet-the-players','Training ground access (1/yr)','Member kit discount (10%)','Monthly DoR Q&A'],color:'border-purple-600/40',badge:'bg-purple-600/20 text-purple-400'},{name:'Franchise',price:'£120/yr',count:48,features:['Everything in Club Member','Board room matchday hospitality','Named in franchise EOI document','Franchise progress briefing (quarterly)','Signed squad photo'],color:'border-amber-600/40',badge:'bg-amber-600/20 text-amber-400'}];const EVENTS=[{date:'Sat 11 Apr',event:'Fan Zone — Jersey Reds (H)',type:'Matchday',tickets:'Free entry'},{date:'Sun 19 Apr',event:'Club Member Q&A — DoR Steve Whitfield',type:'Members',tickets:'Members only'},{date:'Sat 26 Apr',event:'Open training — fan day',type:'All fans',tickets:'RSVP required'},{date:'Sat 3 May',event:'Hartfield Building Society hospitality',type:'Sponsor',tickets:'Invite only'},{date:'Sat 10 May',event:'Season finale — fan day vs Saracens',type:'All fans',tickets:'Free entry'},{date:'Sun 25 May',event:'End of season awards night',type:'Members',tickets:'Club Members+'},{date:'Sat 20 Jun',event:'New kit launch — Fan Hub members first',type:'All fans',tickets:'Free entry'}];const catColor=(c:string)=>c==='Match Discussion'?'bg-purple-600/20 text-purple-400':c==='Franchise'?'bg-amber-600/20 text-amber-400':c==='Recruitment'?'bg-blue-600/20 text-blue-400':c==='Academy'?'bg-teal-600/20 text-teal-400':c==='Commercial'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500';const GROWTH=[620,740,820,910,1010,1120,1240,1520,1820,2140];const G_LABELS=['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'];const GW=500,GH=130,gPL=36,gPR=12,gPT=16,gPB=28;const gIW=GW-gPL-gPR,gIH=GH-gPT-gPB;const gMin=500,gMax=2500,gStepX=gIW/(GROWTH.length-1);const gPath=GROWTH.map((v,i)=>`${i===0?'M':'L'} ${gPL+i*gStepX} ${gPT+gIH-((v-gMin)/(gMax-gMin))*gIH}`).join(' ');const gArea=`${gPath} L ${gPL+(GROWTH.length-1)*gStepX} ${gPT+gIH} L ${gPL} ${gPT+gIH} Z`;const totalMembers=MEMBERS.reduce((s,m)=>s+m.count,0);return(<div className="space-y-6"><QuickActionsBar/><SectionHeader icon="💜" title="Fan Hub" subtitle={`${totalMembers.toLocaleString()} members · Forum · Events · Memberships`}/><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Members" value={totalMembers.toLocaleString()} sub="+380 this season" color="purple"/><StatCard label="Forum Posts" value="359" sub="This month" color="blue"/><StatCard label="Events" value="7" sub="Apr–Jun 2026" color="teal"/><StatCard label="Membership rev" value="£28.3k" sub="YTD" color="green"/></div><div className="flex gap-1 border-b border-gray-800">{([{id:'overview' as const,label:'Overview',icon:'📊'},{id:'forum' as const,label:'Forum',icon:'💬'},{id:'events' as const,label:'Events',icon:'🎟️'},{id:'memberships' as const,label:'Memberships',icon:'🏅'}]).map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>{activeTab==='overview'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-1">Member Growth — Season</div><p className="text-xs text-gray-500 mb-4">620 → {totalMembers.toLocaleString()} (+245%)</p><svg viewBox={`0 0 ${GW} ${GH}`} width="100%">{[0,0.5,1].map((t,i)=><line key={i} x1={gPL} x2={GW-gPR} y1={gPT+gIH-t*gIH} y2={gPT+gIH-t*gIH} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}<path d={gArea} fill="#8B5CF6" opacity="0.08"/><path d={gPath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{GROWTH.map((v,i)=><g key={i}><circle cx={gPL+i*gStepX} cy={gPT+gIH-((v-gMin)/(gMax-gMin))*gIH} r="3.5" fill="#8B5CF6"/><text x={gPL+i*gStepX} y={GH-4} fontSize="9" fill="#6B7280" textAnchor="middle">{G_LABELS[i]}</text></g>)}</svg></Card><Card><div className="text-sm font-semibold text-white mb-3">Trending Topics</div><div className="space-y-2">{FORUM_TOPICS.filter(t=>t.hot).map((t,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className="text-orange-400 text-xs">🔥</span><div><div className="text-xs text-gray-200">{t.title}</div><div className="flex items-center gap-2 mt-0.5"><span className={`text-[9px] px-1.5 py-0.5 rounded ${catColor(t.cat)}`}>{t.cat}</span><span className="text-[10px] text-gray-600">{t.last}</span></div></div></div><div className="text-right flex-shrink-0 ml-4"><div className="text-xs text-purple-400 font-bold">{t.posts} posts</div><div className="text-[10px] text-gray-600">{t.views.toLocaleString()} views</div></div></div>)}</div></Card></div>}{activeTab==='forum'&&<Card><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider"><th className="text-left py-2">Topic</th><th className="text-left py-2">Category</th><th className="text-center py-2">Posts</th><th className="text-center py-2">Views</th><th className="text-center py-2">Last</th></tr></thead><tbody>{FORUM_TOPICS.map((t,i)=><tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]"><td className="py-2"><div className="flex items-center gap-2">{t.hot&&<span className="text-orange-400">🔥</span>}<span className="text-gray-200">{t.title}</span></div></td><td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded ${catColor(t.cat)}`}>{t.cat}</span></td><td className="py-2 text-center text-purple-400 font-bold">{t.posts}</td><td className="py-2 text-center text-gray-400">{t.views.toLocaleString()}</td><td className="py-2 text-center text-gray-500 text-[10px]">{t.last}</td></tr>)}</tbody></table></Card>}{activeTab==='events'&&<div className="space-y-3">{EVENTS.map((e,i)=><Card key={i}><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 mb-1"><span className="text-sm font-bold text-white">{e.event}</span><span className={`text-[10px] px-2 py-0.5 rounded ${e.type==='Matchday'?'bg-purple-600/20 text-purple-400':e.type==='Members'?'bg-blue-600/20 text-blue-400':e.type==='Sponsor'?'bg-amber-600/20 text-amber-400':'bg-green-600/20 text-green-400'}`}>{e.type}</span></div><div className="flex items-center gap-3 text-[10px] text-gray-500"><span>📅 {e.date}</span><span>🎟️ {e.tickets}</span></div></div></div></Card>)}</div>}{activeTab==='memberships'&&<div className="space-y-5"><div className="grid grid-cols-1 md:grid-cols-3 gap-5">{MEMBERS.map((m,i)=><div key={i} className={`bg-[#0D1117] border-2 rounded-xl p-5 ${m.color}`}><div className="flex items-center justify-between mb-3"><div><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${m.badge}`}>{m.name}</span><div className="text-xl font-bold text-white mt-2">{m.price}</div></div><div className="text-right"><div className="text-lg font-bold text-purple-400">{m.count}</div><div className="text-[10px] text-gray-600">members</div></div></div><div className="space-y-1.5">{m.features.map((f,j)=><div key={j} className="flex items-start gap-1.5 text-xs text-gray-300"><span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>{f}</div>)}</div></div>)}</div><Card><div className="text-sm font-semibold text-white mb-4">Revenue — YTD</div><div className="space-y-3">{[{tier:'Supporter',count:488,annual:20,color:'#6B7280'},{tier:'Club Member',count:214,annual:45,color:'#8B5CF6'},{tier:'Franchise',count:48,annual:120,color:'#F59E0B'}].map((r,i)=>{const rev=r.count*r.annual;return(<div key={i}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{r.tier} ({r.count} × £{r.annual})</span><span className="text-white font-bold">£{rev.toLocaleString()}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{width:`${(rev/9630)*100}%`,backgroundColor:r.color}}/></div></div>)})}<div className="pt-3 border-t border-gray-800 flex justify-between text-sm"><span className="text-gray-400 font-medium">Total YTD</span><span className="text-purple-400 font-bold">£{(488*20+214*45+48*120).toLocaleString()}</span></div></div></Card></div>}</div>)}
+function FanHubRugbyView({club:_club}:{club:RugbyClub}){const[activeTab,setActiveTab]=useState<'overview'|'forum'|'events'|'memberships'>('overview');const FORUM_TOPICS=[{id:1,cat:'Match Discussion',title:'Jersey Reds (H) — Match thread 🏉',posts:62,views:940,hot:true,last:'1h ago'},{id:2,cat:'Franchise',title:'Franchise readiness — how close are we really?',posts:88,views:1480,hot:true,last:'3h ago'},{id:3,cat:'Recruitment',title:'Summer window wishlist — who do we need?',posts:104,views:1820,hot:true,last:'45m ago'},{id:4,cat:'Match Discussion',title:'Westmoor away post-match — disappointing 2nd half',posts:44,views:680,hot:false,last:'8h ago'},{id:5,cat:'General',title:'Season tickets 2026/27 — pricing thoughts?',posts:38,views:560,hot:false,last:'1d ago'},{id:6,cat:'Academy',title:'Tom Foley — ready for first team start?',posts:31,views:490,hot:false,last:'2d ago'},{id:7,cat:'Commercial',title:'New kit launch reaction — love/hate thread',posts:72,views:1120,hot:true,last:'2h ago'}];const MEMBERS=[{name:'Supporter',price:'£20/yr',count:488,features:['Forum access','Match notifications','Monthly newsletter','Early ticket access (24h)'],color:'border-gray-700',badge:'bg-gray-800 text-gray-400'},{name:'Club Member',price:'£45/yr',count:214,features:['Everything in Supporter','Annual meet-the-players','Training ground access (1/yr)','Member kit discount (10%)','Monthly DoR Q&A'],color:'border-purple-600/40',badge:'bg-purple-600/20 text-purple-400'},{name:'Franchise',price:'£120/yr',count:48,features:['Everything in Club Member','Board room matchday hospitality','Named in franchise EOI document','Franchise progress briefing (quarterly)','Signed squad photo'],color:'border-amber-600/40',badge:'bg-amber-600/20 text-amber-400'}];const EVENTS=[{date:'Sat 11 Apr',event:'Fan Zone — Jersey Reds (H)',type:'Matchday',tickets:'Free entry'},{date:'Sun 19 Apr',event:'Club Member Q&A — DoR Steve Whitfield',type:'Members',tickets:'Members only'},{date:'Sat 26 Apr',event:'Open training — fan day',type:'All fans',tickets:'RSVP required'},{date:'Sat 3 May',event:'Hartfield Building Society hospitality',type:'Sponsor',tickets:'Invite only'},{date:'Sat 10 May',event:'Season finale — fan day vs Northbridge Saxons',type:'All fans',tickets:'Free entry'},{date:'Sun 25 May',event:'End of season awards night',type:'Members',tickets:'Club Members+'},{date:'Sat 20 Jun',event:'New kit launch — Fan Hub members first',type:'All fans',tickets:'Free entry'}];const catColor=(c:string)=>c==='Match Discussion'?'bg-purple-600/20 text-purple-400':c==='Franchise'?'bg-amber-600/20 text-amber-400':c==='Recruitment'?'bg-blue-600/20 text-blue-400':c==='Academy'?'bg-teal-600/20 text-teal-400':c==='Commercial'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500';const GROWTH=[620,740,820,910,1010,1120,1240,1520,1820,2140];const G_LABELS=['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'];const GW=500,GH=130,gPL=36,gPR=12,gPT=16,gPB=28;const gIW=GW-gPL-gPR,gIH=GH-gPT-gPB;const gMin=500,gMax=2500,gStepX=gIW/(GROWTH.length-1);const gPath=GROWTH.map((v,i)=>`${i===0?'M':'L'} ${gPL+i*gStepX} ${gPT+gIH-((v-gMin)/(gMax-gMin))*gIH}`).join(' ');const gArea=`${gPath} L ${gPL+(GROWTH.length-1)*gStepX} ${gPT+gIH} L ${gPL} ${gPT+gIH} Z`;const totalMembers=MEMBERS.reduce((s,m)=>s+m.count,0);return(<div className="space-y-6"><QuickActionsBar/><SectionHeader icon="💜" title="Fan Hub" subtitle={`${totalMembers.toLocaleString()} members · Forum · Events · Memberships`}/><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><StatCard label="Members" value={totalMembers.toLocaleString()} sub="+380 this season" color="purple"/><StatCard label="Forum Posts" value="359" sub="This month" color="blue"/><StatCard label="Events" value="7" sub="Apr–Jun 2026" color="teal"/><StatCard label="Membership rev" value="£28.3k" sub="YTD" color="green"/></div><div className="flex gap-1 border-b border-gray-800">{([{id:'overview' as const,label:'Overview',icon:'📊'},{id:'forum' as const,label:'Forum',icon:'💬'},{id:'events' as const,label:'Events',icon:'🎟️'},{id:'memberships' as const,label:'Memberships',icon:'🏅'}]).map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-purple-500 text-purple-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>)}</div>{activeTab==='overview'&&<div className="space-y-5"><Card><div className="text-sm font-semibold text-white mb-1">Member Growth — Season</div><p className="text-xs text-gray-500 mb-4">620 → {totalMembers.toLocaleString()} (+245%)</p><svg viewBox={`0 0 ${GW} ${GH}`} width="100%">{[0,0.5,1].map((t,i)=><line key={i} x1={gPL} x2={GW-gPR} y1={gPT+gIH-t*gIH} y2={gPT+gIH-t*gIH} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}<path d={gArea} fill="#8B5CF6" opacity="0.08"/><path d={gPath} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{GROWTH.map((v,i)=><g key={i}><circle cx={gPL+i*gStepX} cy={gPT+gIH-((v-gMin)/(gMax-gMin))*gIH} r="3.5" fill="#8B5CF6"/><text x={gPL+i*gStepX} y={GH-4} fontSize="9" fill="#6B7280" textAnchor="middle">{G_LABELS[i]}</text></g>)}</svg></Card><Card><div className="text-sm font-semibold text-white mb-3">Trending Topics</div><div className="space-y-2">{FORUM_TOPICS.filter(t=>t.hot).map((t,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className="text-orange-400 text-xs">🔥</span><div><div className="text-xs text-gray-200">{t.title}</div><div className="flex items-center gap-2 mt-0.5"><span className={`text-[9px] px-1.5 py-0.5 rounded ${catColor(t.cat)}`}>{t.cat}</span><span className="text-[10px] text-gray-600">{t.last}</span></div></div></div><div className="text-right flex-shrink-0 ml-4"><div className="text-xs text-purple-400 font-bold">{t.posts} posts</div><div className="text-[10px] text-gray-600">{t.views.toLocaleString()} views</div></div></div>)}</div></Card></div>}{activeTab==='forum'&&<Card><table className="w-full text-xs"><thead><tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider"><th className="text-left py-2">Topic</th><th className="text-left py-2">Category</th><th className="text-center py-2">Posts</th><th className="text-center py-2">Views</th><th className="text-center py-2">Last</th></tr></thead><tbody>{FORUM_TOPICS.map((t,i)=><tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]"><td className="py-2"><div className="flex items-center gap-2">{t.hot&&<span className="text-orange-400">🔥</span>}<span className="text-gray-200">{t.title}</span></div></td><td className="py-2"><span className={`text-[10px] px-2 py-0.5 rounded ${catColor(t.cat)}`}>{t.cat}</span></td><td className="py-2 text-center text-purple-400 font-bold">{t.posts}</td><td className="py-2 text-center text-gray-400">{t.views.toLocaleString()}</td><td className="py-2 text-center text-gray-500 text-[10px]">{t.last}</td></tr>)}</tbody></table></Card>}{activeTab==='events'&&<div className="space-y-3">{EVENTS.map((e,i)=><Card key={i}><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 mb-1"><span className="text-sm font-bold text-white">{e.event}</span><span className={`text-[10px] px-2 py-0.5 rounded ${e.type==='Matchday'?'bg-purple-600/20 text-purple-400':e.type==='Members'?'bg-blue-600/20 text-blue-400':e.type==='Sponsor'?'bg-amber-600/20 text-amber-400':'bg-green-600/20 text-green-400'}`}>{e.type}</span></div><div className="flex items-center gap-3 text-[10px] text-gray-500"><span>📅 {e.date}</span><span>🎟️ {e.tickets}</span></div></div></div></Card>)}</div>}{activeTab==='memberships'&&<div className="space-y-5"><div className="grid grid-cols-1 md:grid-cols-3 gap-5">{MEMBERS.map((m,i)=><div key={i} className={`bg-[#0D1117] border-2 rounded-xl p-5 ${m.color}`}><div className="flex items-center justify-between mb-3"><div><span className={`text-[10px] px-2 py-0.5 rounded font-bold ${m.badge}`}>{m.name}</span><div className="text-xl font-bold text-white mt-2">{m.price}</div></div><div className="text-right"><div className="text-lg font-bold text-purple-400">{m.count}</div><div className="text-[10px] text-gray-600">members</div></div></div><div className="space-y-1.5">{m.features.map((f,j)=><div key={j} className="flex items-start gap-1.5 text-xs text-gray-300"><span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>{f}</div>)}</div></div>)}</div><Card><div className="text-sm font-semibold text-white mb-4">Revenue — YTD</div><div className="space-y-3">{[{tier:'Supporter',count:488,annual:20,color:'#6B7280'},{tier:'Club Member',count:214,annual:45,color:'#8B5CF6'},{tier:'Franchise',count:48,annual:120,color:'#F59E0B'}].map((r,i)=>{const rev=r.count*r.annual;return(<div key={i}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{r.tier} ({r.count} × £{r.annual})</span><span className="text-white font-bold">£{rev.toLocaleString()}</span></div><div className="w-full bg-gray-800 rounded-full h-1.5"><div className="h-1.5 rounded-full" style={{width:`${(rev/9630)*100}%`,backgroundColor:r.color}}/></div></div>)})}<div className="pt-3 border-t border-gray-800 flex justify-between text-sm"><span className="text-gray-400 font-medium">Total YTD</span><span className="text-purple-400 font-bold">£{(488*20+214*45+48*120).toLocaleString()}</span></div></div></Card></div>}</div>)}
 
 function WomensSquadView() {
   return (
@@ -2085,7 +3867,7 @@ function CarryAnalyticsView() {
 }
 
 // ─── PERIODISATION VIEW ──────────────────────────────────────────────────────
-const DEMO_CLUB_FIXTURES=[{date:'11 Apr',opponent:'Jersey Reds',venue:'H',importance:'High'},{date:'18 Apr',opponent:'Bath RFC',venue:'A',importance:'Very High'},{date:'25 Apr',opponent:'Coventry',venue:'H',importance:'Medium'},{date:'2 May',opponent:'Doncaster',venue:'A',importance:'Medium'},{date:'9 May',opponent:'Saracens',venue:'H',importance:'Very High'},{date:'16 May',opponent:'Bedford',venue:'A',importance:'High'}];
+const DEMO_CLUB_FIXTURES=[{date:'11 Apr',opponent:'Jersey Reds',venue:'H',importance:'High'},{date:'18 Apr',opponent:'Westmoor Lions',venue:'A',importance:'Very High'},{date:'25 Apr',opponent:'Coventry',venue:'H',importance:'Medium'},{date:'2 May',opponent:'Doncaster',venue:'A',importance:'Medium'},{date:'9 May',opponent:'Northbridge Saxons',venue:'H',importance:'Very High'},{date:'16 May',opponent:'Riverbank Crusaders',venue:'A',importance:'High'}];
 const SEASON_WEEKS=[{week:1,label:'W1',phase:'Pre',planned:3200,actual:3050,match:false},{week:2,label:'W2',phase:'Pre',planned:3600,actual:3580,match:false},{week:3,label:'W3',phase:'Pre',planned:4000,actual:4120,match:false},{week:4,label:'W4',phase:'Pre',planned:3200,actual:3180,match:true},{week:5,label:'W5',phase:'Champ',planned:4400,actual:4380,match:true},{week:6,label:'W6',phase:'Champ',planned:4200,actual:4310,match:true},{week:7,label:'W7',phase:'Champ',planned:4600,actual:4480,match:true},{week:8,label:'W8',phase:'Champ',planned:4200,actual:4190,match:true},{week:9,label:'W9',phase:'Champ',planned:4800,actual:4920,match:true},{week:10,label:'W10',phase:'Champ',planned:4200,actual:4080,match:true},{week:11,label:'W11',phase:'Champ',planned:4600,actual:4750,match:true},{week:12,label:'W12',phase:'Champ',planned:3800,actual:3820,match:true},{week:13,label:'W13',phase:'Intl',planned:3000,actual:2980,match:false},{week:14,label:'W14',phase:'Champ',planned:4800,actual:4860,match:true},{week:15,label:'W15',phase:'Champ',planned:4600,actual:4780,match:true},{week:16,label:'W16',phase:'Champ',planned:4800,actual:0,match:true},{week:17,label:'W17',phase:'Champ',planned:4600,actual:0,match:true},{week:18,label:'W18',phase:'Champ',planned:5000,actual:0,match:true},{week:19,label:'W19',phase:'Play',planned:4200,actual:0,match:true},{week:20,label:'W20',phase:'Play',planned:5200,actual:0,match:true}];
 
 function PeriodisationView() {
@@ -2095,7 +3877,7 @@ function PeriodisationView() {
   const generateRotation = async () => {
     setPerLoading(true);setRotation(null);
     try {
-      const res=await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Bath (18 Apr) and Saracens (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
+      const res=await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Westmoor Lions (18 Apr) and Northbridge Saxons (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
       const data=await res.json();setRotation(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
     } catch { setRotation('Connection error.'); }
     setPerLoading(false);
@@ -2128,47 +3910,131 @@ function PeriodisationView() {
         <Card><div className="text-sm font-semibold text-white mb-3">Fixture Load Targets</div>{DEMO_CLUB_FIXTURES.map((f,i)=>{const tACWR=f.importance==='Very High'?'0.90–1.05':f.importance==='High'?'1.05–1.15':'1.10–1.20';const tLoad=f.importance==='Very High'?4200:f.importance==='High'?4600:4800;return<div key={i} className={`flex items-center justify-between py-2 px-3 rounded-lg border mb-2 ${f.importance==='Very High'?'border-purple-600/30 bg-purple-600/5':f.importance==='High'?'border-blue-600/20 bg-blue-600/5':'border-gray-800'}`}><div><span className="text-xs font-bold text-white">vs {f.opponent}</span><span className="text-[10px] text-gray-500 ml-2">{f.date} · {f.venue}</span></div><div className="flex items-center gap-4 text-[10px]"><span className={`font-bold ${f.importance==='Very High'?'text-purple-400':f.importance==='High'?'text-blue-400':'text-gray-500'}`}>{f.importance}</span><span className="text-gray-400">{tLoad} AU</span><span className="text-teal-400">ACWR: {tACWR}</span></div></div>;})}</Card>
       </div>}
       {perTab==='rotation'&&<div className="space-y-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4"><Card className="border-red-600/30"><div className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">⚠ Overloads</div><div className="space-y-1 text-xs text-gray-400"><div className="text-red-400">Barnes — ACWR 1.52</div><div className="text-amber-400">D.Foster — 1.38</div><div className="text-amber-400">K.Foster — 1.44</div></div></Card><Card><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Priority Matches</div><div className="space-y-1 text-xs"><div className="text-purple-400 font-bold">18 Apr — Bath (A)</div><div className="text-purple-400 font-bold">9 May — Saracens (H)</div></div></Card><Card><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Academy Available</div><div className="space-y-1 text-xs text-gray-400"><div>Tom Foley (No.8)</div><div>Ali Rashid (Wing)</div><div>Jack Summers (Centre)</div></div></Card></div>
-        <div><button onClick={generateRotation} disabled={perLoading} className="px-6 py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:text-purple-800 text-white transition-all flex items-center gap-2">{perLoading?<><span className="animate-spin inline-block">⟳</span> Generating...</>:<><span>🤖</span> Generate 6-Week Rotation Plan</>}</button>{!rotation&&!perLoading&&<p className="text-xs text-gray-600 mt-2">GPS ACWR + fixtures + availability → optimal rotation to peak for Bath and Saracens.</p>}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4"><Card className="border-red-600/30"><div className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">⚠ Overloads</div><div className="space-y-1 text-xs text-gray-400"><div className="text-red-400">Barnes — ACWR 1.52</div><div className="text-amber-400">D.Foster — 1.38</div><div className="text-amber-400">K.Foster — 1.44</div></div></Card><Card><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Priority Matches</div><div className="space-y-1 text-xs"><div className="text-purple-400 font-bold">18 Apr — Westmoor (A)</div><div className="text-purple-400 font-bold">9 May — Northbridge Saxons (H)</div></div></Card><Card><div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Academy Available</div><div className="space-y-1 text-xs text-gray-400"><div>Tom Foley (No.8)</div><div>Ali Rashid (Wing)</div><div>Jack Summers (Centre)</div></div></Card></div>
+        <div><button onClick={generateRotation} disabled={perLoading} className="px-6 py-3 rounded-xl text-sm font-bold bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:text-purple-800 text-white transition-all flex items-center gap-2">{perLoading?<><span className="animate-spin inline-block">⟳</span> Generating...</>:<><span>🤖</span> Generate 6-Week Rotation Plan</>}</button>{!rotation&&!perLoading&&<p className="text-xs text-gray-600 mt-2">GPS ACWR + fixtures + availability → optimal rotation to peak for Westmoor Lions and Northbridge Saxons.</p>}</div>
         {rotation&&<Card className="border-purple-600/30"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><span className="text-purple-400 font-bold text-sm">🤖 AI Rotation Model</span><span className="text-[10px] px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 border border-purple-600/30">S&C ONLY</span></div><button onClick={generateRotation} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button></div><div>{renderMd(rotation)}</div><div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · Hartfield RFC S&C</span><button className="text-xs text-purple-400 hover:text-purple-300">Share with Head Coach →</button></div></Card>}
       </div>}
     </div>
   );
 }
 
+// ─── GPS & LOAD VIEW (multi-tab rebuild) ─────────────────────────────────────
+// 8-KPI strip + 6 tabs: Session Overview · Collision & Contact Load ·
+// Load Trends & ACWR · Match vs Training · Position Group Analysis · Connect GPS.
+// All SVGs inline. Rugby-specific data throughout.
+
+type GpsLoadStatus = 'optimal' | 'manage' | 'overload' | 'underload'
+type ImpactBand = 'low' | 'medium' | 'high'
+interface RgPlayerLoad {
+  name: string
+  pos: string
+  group: 'Props' | 'Hooker' | 'Locks' | 'Flankers' | 'No.8' | 'Backs'
+  // Today's session
+  distance: number     // km
+  hsr: number          // m (>5.5 m/s)
+  collisions: number
+  topSpeed: number     // km/h
+  todayAU: number
+  // Load history (28d / 7d)
+  chronic: number
+  acute: number
+  status: GpsLoadStatus
+  // Intensity zones (m)
+  zones: { stand:number; walk:number; jog:number; run:number; sprint:number }
+  // Contact / non-contact AU split
+  contactAU: number
+  nonContactAU: number
+  impactBand: ImpactBand
+  // Recovery score 0–100
+  recovery: number
+}
+
+const RG_LOAD_SQUAD: RgPlayerLoad[] = [
+  { name:'Tom Harrison',  pos:'Loosehead',     group:'Props',    distance: 6.4, hsr: 220, collisions:14, topSpeed:27.8, todayAU:380, chronic:4820, acute:1340, status:'optimal',
+    zones:{stand:1840,walk:2280,jog:1640,run:560,sprint:120},  contactAU:240, nonContactAU:140, impactBand:'high',   recovery:78 },
+  { name:'Phil Dowd',     pos:'Tighthead',     group:'Props',    distance: 6.1, hsr: 180, collisions:12, topSpeed:26.4, todayAU:320, chronic:4200, acute:1050, status:'underload',
+    zones:{stand:2040,walk:2160,jog:1340,run:480,sprint: 80},  contactAU:200, nonContactAU:120, impactBand:'high',   recovery:84 },
+  { name:'Jake Rawlings', pos:'Loosehead',     group:'Props',    distance: 6.7, hsr: 240, collisions:11, topSpeed:27.1, todayAU:360, chronic:4560, acute:1240, status:'optimal',
+    zones:{stand:1820,walk:2380,jog:1720,run:620,sprint:160},  contactAU:220, nonContactAU:140, impactBand:'medium', recovery:72 },
+  { name:'James Briggs',  pos:'Hooker',        group:'Hooker',   distance: 6.9, hsr: 280, collisions:13, topSpeed:28.3, todayAU:410, chronic:4910, acute:1380, status:'optimal',
+    zones:{stand:1780,walk:2240,jog:1740,run:780,sprint:360},  contactAU:260, nonContactAU:150, impactBand:'high',   recovery:74 },
+  { name:'Marcus Webb',   pos:'Lock',          group:'Locks',    distance: 8.2, hsr: 380, collisions:11, topSpeed:29.2, todayAU:420, chronic:5100, acute:1450, status:'optimal',
+    zones:{stand:1640,walk:2380,jog:2240,run:1180,sprint:760}, contactAU:240, nonContactAU:180, impactBand:'high',   recovery:76 },
+  { name:'Chris Palmer',  pos:'Lock',          group:'Locks',    distance: 7.8, hsr: 340, collisions: 9, topSpeed:28.6, todayAU:390, chronic:4780, acute:1320, status:'optimal',
+    zones:{stand:1700,walk:2420,jog:2080,run:1080,sprint:520}, contactAU:200, nonContactAU:190, impactBand:'medium', recovery:80 },
+  { name:'Karl Foster',   pos:'Flanker',       group:'Flankers', distance: 9.4, hsr: 720, collisions:18, topSpeed:30.5, todayAU:440, chronic:5080, acute:1620, status:'manage',
+    zones:{stand:1340,walk:2180,jog:2620,run:1820,sprint:1440},contactAU:280, nonContactAU:160, impactBand:'high',   recovery:62 },
+  { name:'Josh White',    pos:'Flanker',       group:'Flankers', distance: 9.1, hsr: 660, collisions:14, topSpeed:30.1, todayAU:380, chronic:4740, acute:1300, status:'optimal',
+    zones:{stand:1380,walk:2200,jog:2580,run:1740,sprint:1200},contactAU:240, nonContactAU:140, impactBand:'high',   recovery:70 },
+  { name:'Danny Foster',  pos:'No.8',          group:'No.8',     distance:10.2, hsr: 880, collisions:22, topSpeed:32.1, todayAU:  0, chronic:5240, acute:1820, status:'overload',
+    zones:{stand:1240,walk:2040,jog:2540,run:2080,sprint:2300},contactAU:320, nonContactAU:200, impactBand:'high',   recovery:48 },
+  { name:'Sam Ellis',     pos:'Scrum Half',    group:'Backs',    distance: 9.8, hsr: 880, collisions: 6, topSpeed:31.4, todayAU:360, chronic:4640, acute:1280, status:'optimal',
+    zones:{stand:1240,walk:2160,jog:2540,run:1860,sprint:2000},contactAU:120, nonContactAU:240, impactBand:'low',    recovery:82 },
+  { name:'Oliver Grant',  pos:'Scrum Half',    group:'Backs',    distance: 9.6, hsr: 820, collisions: 5, topSpeed:31.0, todayAU:370, chronic:4600, acute:1270, status:'optimal',
+    zones:{stand:1280,walk:2240,jog:2440,run:1840,sprint:1800},contactAU:120, nonContactAU:250, impactBand:'low',    recovery:84 },
+  { name:'Danny Cole',    pos:'Fly Half',      group:'Backs',    distance: 9.3, hsr: 640, collisions: 4, topSpeed:29.6, todayAU:290, chronic:4380, acute: 980, status:'underload',
+    zones:{stand:1320,walk:2300,jog:2360,run:1820,sprint:1480},contactAU: 80, nonContactAU:210, impactBand:'low',    recovery:88 },
+  { name:'Connor Walsh',  pos:'Fly Half',      group:'Backs',    distance: 9.5, hsr: 700, collisions: 5, topSpeed:30.2, todayAU:340, chronic:4280, acute:1180, status:'optimal',
+    zones:{stand:1280,walk:2260,jog:2420,run:1820,sprint:1720},contactAU: 80, nonContactAU:260, impactBand:'low',    recovery:80 },
+  { name:'Matt Jones',    pos:'Inside Centre', group:'Backs',    distance:10.1, hsr: 920, collisions:13, topSpeed:30.8, todayAU:390, chronic:4820, acute:1340, status:'optimal',
+    zones:{stand:1180,walk:2120,jog:2640,run:1980,sprint:2180},contactAU:200, nonContactAU:190, impactBand:'medium', recovery:76 },
+  { name:'David Obi',     pos:'Outside Centre',group:'Backs',    distance: 9.9, hsr: 880, collisions:11, topSpeed:30.4, todayAU:370, chronic:4680, acute:1290, status:'optimal',
+    zones:{stand:1240,walk:2080,jog:2560,run:1880,sprint:2140},contactAU:160, nonContactAU:210, impactBand:'medium', recovery:78 },
+  { name:'Ryan Patel',    pos:'Wing',          group:'Backs',    distance:10.4, hsr:1080, collisions: 4, topSpeed:32.4, todayAU:  0, chronic:4120, acute: 820, status:'underload',
+    zones:{stand:1120,walk:1960,jog:2380,run:2240,sprint:2700},contactAU: 60, nonContactAU:  0, impactBand:'low',    recovery:90 },
+  { name:'Ben Taylor',    pos:'Wing',          group:'Backs',    distance:10.2, hsr:1020, collisions: 6, topSpeed:32.0, todayAU:350, chronic:4450, acute:1210, status:'optimal',
+    zones:{stand:1180,walk:2080,jog:2300,run:2140,sprint:2500},contactAU:100, nonContactAU:250, impactBand:'low',    recovery:82 },
+  { name:'Callum Reeves', pos:'Wing',          group:'Backs',    distance:10.0, hsr: 980, collisions: 5, topSpeed:31.6, todayAU:360, chronic:4510, acute:1240, status:'optimal',
+    zones:{stand:1200,walk:2080,jog:2420,run:2080,sprint:2220},contactAU:100, nonContactAU:260, impactBand:'low',    recovery:80 },
+  { name:'Luke Barnes',   pos:'Fullback',      group:'Backs',    distance:10.6, hsr:1120, collisions: 9, topSpeed:31.9, todayAU:460, chronic:5160, acute:1680, status:'overload',
+    zones:{stand:1080,walk:1980,jog:2440,run:2240,sprint:2860},contactAU:160, nonContactAU:300, impactBand:'medium', recovery:54 },
+]
+
+const RG_POSITION_BENCHMARKS: Record<string, { distance:number; hsr:number; collisions:number; topSpeed:number }> = {
+  Props:    { distance: 6.6, hsr: 220, collisions: 13, topSpeed:27.4 },
+  Hooker:   { distance: 7.0, hsr: 280, collisions: 14, topSpeed:28.0 },
+  Locks:    { distance: 8.0, hsr: 360, collisions: 10, topSpeed:28.8 },
+  Flankers: { distance: 9.2, hsr: 700, collisions: 16, topSpeed:30.2 },
+  'No.8':   { distance:10.0, hsr: 860, collisions: 20, topSpeed:31.6 },
+  Backs:    { distance: 9.8, hsr: 880, collisions:  7, topSpeed:31.0 },
+}
+
 function GPSLoadView() {
-  const [filterStatus, setFilterStatus] = useState<'all'|'optimal'|'manage'|'overload'|'underload'>('all')
+  type GpsTab = 'session' | 'collision' | 'trends' | 'matchVtraining' | 'position' | 'connect'
+  const [tab, setTab] = useState<GpsTab>('session')
+  const [filterStatus, setFilterStatus] = useState<'all' | GpsLoadStatus>('all')
 
-  const FULL_SQUAD_LOAD = [
-    { name:'Tom Harrison',   pos:'Prop',       chronic:4820, acute:1340, todayAU:380, status:'optimal'   as const },
-    { name:'James Briggs',   pos:'Hooker',     chronic:4910, acute:1380, todayAU:410, status:'optimal'   as const },
-    { name:'Phil Dowd',      pos:'Prop',       chronic:4200, acute:1050, todayAU:320, status:'underload' as const },
-    { name:'Marcus Webb',    pos:'Lock',       chronic:5100, acute:1450, todayAU:420, status:'optimal'   as const },
-    { name:'Chris Palmer',   pos:'Lock',       chronic:4780, acute:1320, todayAU:390, status:'optimal'   as const },
-    { name:'Danny Foster',   pos:'No.8',       chronic:5240, acute:1820, todayAU:0,   status:'overload'  as const },
-    { name:'Karl Foster',    pos:'Flanker',    chronic:5080, acute:1620, todayAU:440, status:'manage'    as const },
-    { name:'Sam Ellis',      pos:'Scrum Half', chronic:4640, acute:1280, todayAU:360, status:'optimal'   as const },
-    { name:'Danny Cole',     pos:'Fly Half',   chronic:4380, acute:980,  todayAU:290, status:'underload' as const },
-    { name:'Ryan Patel',     pos:'Wing',       chronic:4120, acute:820,  todayAU:0,   status:'underload' as const },
-    { name:'Jake Rawlings',  pos:'Prop',       chronic:4560, acute:1240, todayAU:360, status:'optimal'   as const },
-    { name:'Connor Walsh',   pos:'Fly Half',   chronic:4280, acute:1180, todayAU:340, status:'optimal'   as const },
-    { name:'Ben Taylor',     pos:'Wing',       chronic:4450, acute:1210, todayAU:350, status:'optimal'   as const },
-    { name:'Matt Jones',     pos:'Centre',     chronic:4820, acute:1340, todayAU:390, status:'optimal'   as const },
-    { name:'Luke Barnes',    pos:'Fullback',   chronic:5160, acute:1680, todayAU:460, status:'overload'  as const },
-    { name:'Josh White',     pos:'Flanker',    chronic:4740, acute:1300, todayAU:380, status:'optimal'   as const },
-    { name:'David Obi',      pos:'Centre',     chronic:4680, acute:1290, todayAU:370, status:'optimal'   as const },
-    { name:'Callum Reeves',  pos:'Wing',       chronic:4510, acute:1240, todayAU:360, status:'optimal'   as const },
-    { name:'Oliver Grant',   pos:'Scrum Half', chronic:4600, acute:1270, todayAU:370, status:'optimal'   as const },
-  ]
+  const acwrOf = (p: RgPlayerLoad) => p.chronic === 0 ? 0 : (p.acute / (p.chronic / 4))
 
-  const acwr = (p: typeof FULL_SQUAD_LOAD[0]) => p.chronic === 0 ? 0 : (p.acute / (p.chronic / 4))
-  const statusColor = (s: string) => s === 'optimal' ? 'text-green-400' : s === 'manage' ? 'text-amber-400' : s === 'overload' ? 'text-red-400' : s === 'underload' ? 'text-blue-400' : 'text-gray-600'
-  const statusBg = (s: string) => s === 'optimal' ? 'bg-green-600/10 border-green-600/30' : s === 'manage' ? 'bg-amber-600/10 border-amber-600/30' : s === 'overload' ? 'bg-red-600/10 border-red-600/30' : s === 'underload' ? 'bg-blue-600/10 border-blue-600/30' : 'bg-gray-800/30 border-gray-800'
-  const statusLabel = (s: string) => s === 'optimal' ? 'Ready' : s === 'manage' ? 'Manage' : s === 'overload' ? 'Rest' : s === 'underload' ? 'Build' : 'Unavail'
+  // ── KPI strip values (rolled up from the squad) ──────────────────────
+  const KPI_TEAM_LOAD     = RG_LOAD_SQUAD.reduce((s, p) => s + p.todayAU, 0)
+  const KPI_TOTAL_DIST    = RG_LOAD_SQUAD.reduce((s, p) => s + p.distance, 0)
+  const KPI_HSR           = RG_LOAD_SQUAD.reduce((s, p) => s + p.hsr, 0)
+  const KPI_TOP_SPEED     = Math.max(...RG_LOAD_SQUAD.map(p => p.topSpeed))
+  const KPI_TOP_SPEED_P   = RG_LOAD_SQUAD.find(p => p.topSpeed === KPI_TOP_SPEED)
+  const KPI_COLLISIONS    = RG_LOAD_SQUAD.reduce((s, p) => s + p.collisions, 0)
+  const KPI_SPRINTS       = RG_LOAD_SQUAD.reduce((s, p) => s + Math.round(p.zones.sprint / 80), 0)
+  const KPI_RECOVERY      = Math.round(RG_LOAD_SQUAD.reduce((s, p) => s + p.recovery, 0) / RG_LOAD_SQUAD.length)
+  const KPI_HIGH_LOAD     = RG_LOAD_SQUAD.filter(p => p.status === 'overload' || p.status === 'manage').length
 
-  const filtered = filterStatus === 'all' ? FULL_SQUAD_LOAD : FULL_SQUAD_LOAD.filter(p => p.status === filterStatus)
-  const counts = { optimal: FULL_SQUAD_LOAD.filter(p=>p.status==='optimal').length, manage: FULL_SQUAD_LOAD.filter(p=>p.status==='manage').length, overload: FULL_SQUAD_LOAD.filter(p=>p.status==='overload').length, underload: FULL_SQUAD_LOAD.filter(p=>p.status==='underload').length }
+  // ── Status helpers ──
+  const sColor = (s: GpsLoadStatus) => s === 'optimal' ? 'text-green-400' : s === 'manage' ? 'text-amber-400' : s === 'overload' ? 'text-red-400' : 'text-blue-400'
+  const sBg    = (s: GpsLoadStatus) => s === 'optimal' ? 'bg-green-600/10 border-green-600/30' : s === 'manage' ? 'bg-amber-600/10 border-amber-600/30' : s === 'overload' ? 'bg-red-600/10 border-red-600/30' : 'bg-blue-600/10 border-blue-600/30'
+  const sLabel = (s: GpsLoadStatus) => s === 'optimal' ? 'Ready' : s === 'manage' ? 'Manage' : s === 'overload' ? 'Rest' : 'Build'
 
+  // ── Collision band colour helper ──
+  const colCol = (c: number) => c > 10 ? '#EF4444' : c >= 5 ? '#F59E0B' : '#22C55E'
+
+  // Filtered squad for ACWR table.
+  const filtered = filterStatus === 'all' ? RG_LOAD_SQUAD : RG_LOAD_SQUAD.filter(p => p.status === filterStatus)
+
+  // ── 30-day rolling team load + 5-week comparison data ──
+  const TEAM_30D = Array.from({ length: 30 }).map((_, i) => {
+    const base = 3800 + Math.sin(i / 4) * 600 + (i / 30) * 400
+    const matchSpike = (i % 7 === 5) ? 800 : 0
+    const wobble = ((i * 13) % 7) * 30
+    return { d: i + 1, au: Math.round(base + matchSpike + wobble) }
+  })
   const WEEKLY_LOAD = [
     { week: 'W-4', planned: 4200, actual: 3980 },
     { week: 'W-3', planned: 4600, actual: 4720 },
@@ -2176,322 +4042,1630 @@ function GPSLoadView() {
     { week: 'W-1', planned: 4800, actual: 5040 },
     { week: 'Now', planned: 4600, actual: 4280 },
   ]
-  const maxLoad = 5500, W = 560, H = 160, padL = 36, padR = 12, padT = 16, padB = 32
-  const innerW = W - padL - padR, innerH = H - padT - padB
-  const stepX = innerW / (WEEKLY_LOAD.length - 1)
-  const plannedPath = WEEKLY_LOAD.map((d, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (d.planned / maxLoad) * innerH}`).join(' ')
-  const actualPath = WEEKLY_LOAD.map((d, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (d.actual / maxLoad) * innerH}`).join(' ')
+
+  // ── Match vs training comparison ──
+  const RG_MATCH_VS_TRAIN = RG_LOAD_SQUAD.slice(0, 10).map(p => ({
+    name: p.name.split(' ')[1] ?? p.name,
+    matchDist: +(p.distance * 1.05).toFixed(1),
+    trainDist: +(p.distance * 0.62 + 1.2).toFixed(1),
+    matchHsr:  Math.round(p.hsr * 1.1),
+    trainHsr:  Math.round(p.hsr * 0.42 + 80),
+    matchCol:  p.collisions,
+    trainCol:  Math.max(0, Math.round(p.collisions * 0.32)),
+  }))
+
+  // ── Section components ──
+
+  const KpiTile = ({ label, value, sub, accent, hint }: { label:string; value:string; sub?:string; accent:string; hint?:string }) => (
+    <div className="rounded-xl p-3" style={{ background:'#0d1117', border:'1px solid #1F2937' }}>
+      <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
+      <div className="text-xl font-black mt-1" style={{ color: accent }}>{value}</div>
+      {sub && <div className="text-[10px] text-gray-500 mt-0.5">{sub}</div>}
+      {hint && <div className="text-[10px] text-gray-600 mt-0.5">{hint}</div>}
+    </div>
+  )
+
+  const TabButton = ({ id, icon, label }: { id: GpsTab; icon: string; label: string }) => (
+    <button onClick={() => setTab(id)}
+      className={`px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${tab === id ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+      <span>{icon}</span>{label}
+    </button>
+  )
+
+  // ── 1. Session Overview ──
+  const renderSession = () => {
+    const SESSION_HEADER = { date: 'Tue 8 Apr 2026', type: 'Contact', phase: 'In-Season', focus: 'Tactical · pre-Jersey Reds' }
+    const zoneMax = Math.max(...RG_LOAD_SQUAD.map(p => p.zones.stand + p.zones.walk + p.zones.jog + p.zones.run + p.zones.sprint))
+    const zoneCol = { stand:'#475569', walk:'#3B82F6', jog:'#22C55E', run:'#F59E0B', sprint:'#EF4444' } as const
+    return (
+      <div className="space-y-5">
+        {/* Session header */}
+        <Card>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Session</div>
+              <div className="text-base font-bold text-white">{SESSION_HEADER.date} · {SESSION_HEADER.focus}</div>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-red-600/15 text-red-300 border border-red-600/30">{SESSION_HEADER.type}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-purple-600/15 text-purple-300 border border-purple-600/30">{SESSION_HEADER.phase}</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* AI summary + highlights */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card className="lg:col-span-2 border-purple-600/30">
+            <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color:'#a855f7' }}>🤖 AI Session Summary</div>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Tactical contact session with team load of <span className="text-white font-semibold">{KPI_TEAM_LOAD.toLocaleString()} AU</span>. Foster (No.8) and Barnes (FB) flagged overload — both ACWR &gt;1.4. Backs averaged
+              <span className="text-white font-semibold"> {(RG_LOAD_SQUAD.filter(p => p.group === 'Backs').reduce((s, p) => s + p.distance, 0) / RG_LOAD_SQUAD.filter(p => p.group === 'Backs').length).toFixed(1)} km</span> with strong sprint output. Pack distance proportional but collision count high — Foster 22, K. Foster 18 — monitor for Friday.
+            </p>
+          </Card>
+          <Card>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Session highlights</div>
+            <div className="space-y-1 text-[11px]">
+              <div><span className="text-purple-400 font-bold">Top speed</span> · {KPI_TOP_SPEED_P?.name} {KPI_TOP_SPEED} km/h</div>
+              <div><span className="text-amber-400 font-bold">Top collisions</span> · D. Foster (22)</div>
+              <div><span className="text-green-400 font-bold">Top HSR</span> · L. Barnes 1,120 m</div>
+              <div><span className="text-red-400 font-bold">Rest today</span> · {RG_LOAD_SQUAD.filter(p => p.status === 'overload').length} players</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Player breakdown table */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Player Breakdown</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                  <th className="text-left py-2 px-2">Player</th>
+                  <th className="text-left py-2">Position</th>
+                  <th className="text-right py-2">Distance</th>
+                  <th className="text-right py-2">HSR</th>
+                  <th className="text-right py-2">Collisions</th>
+                  <th className="text-right py-2">Top Speed</th>
+                  <th className="text-right py-2">Load</th>
+                  <th className="text-right py-2">ACWR</th>
+                  <th className="text-center py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {RG_LOAD_SQUAD.map((p, i) => {
+                  const ratio = acwrOf(p)
+                  return (
+                    <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
+                      <td className="py-2 px-2 text-white font-medium">{p.name}</td>
+                      <td className="py-2 text-gray-400">{p.pos}</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.distance.toFixed(1)} km</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.hsr} m</td>
+                      <td className="py-2 text-right tabular-nums font-bold" style={{ color: colCol(p.collisions) }}>{p.collisions}</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.topSpeed.toFixed(1)} km/h</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.todayAU > 0 ? `${p.todayAU} AU` : '—'}</td>
+                      <td className={`py-2 text-right font-bold tabular-nums ${sColor(p.status)}`}>{ratio > 0 ? ratio.toFixed(2) : '—'}</td>
+                      <td className="py-2 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${sBg(p.status)} ${sColor(p.status)}`}>{sLabel(p.status)}</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Distance by intensity zone — horizontal stacked bar per player */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Distance by Intensity Zone</div>
+          <div className="flex items-center gap-3 mb-3 text-[10px]">
+            {(['stand','walk','jog','run','sprint'] as const).map(k => (
+              <span key={k} className="flex items-center gap-1.5 capitalize text-gray-400">
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ background: zoneCol[k] }} />
+                {k}
+              </span>
+            ))}
+          </div>
+          <svg viewBox={`0 0 600 ${RG_LOAD_SQUAD.length * 22 + 16}`} width="100%">
+            {RG_LOAD_SQUAD.map((p, i) => {
+              const total = p.zones.stand + p.zones.walk + p.zones.jog + p.zones.run + p.zones.sprint
+              const w = (total / zoneMax) * 460
+              let off = 130
+              const segs: Array<[keyof typeof zoneCol, number]> = [
+                ['stand',  p.zones.stand],
+                ['walk',   p.zones.walk],
+                ['jog',    p.zones.jog],
+                ['run',    p.zones.run],
+                ['sprint', p.zones.sprint],
+              ]
+              const y = 12 + i * 22
+              return (
+                <g key={i}>
+                  <text x={4} y={y + 11} fontSize="10" fill="#cbd5e1">{p.name.split(' ')[1] ?? p.name}</text>
+                  <text x={120} y={y + 11} fontSize="9" fill="#475569" textAnchor="end">{p.pos.slice(0, 6)}</text>
+                  {segs.map(([k, v], si) => {
+                    const ww = total > 0 ? (v / total) * w : 0
+                    const r = <rect key={si} x={off} y={y} width={ww} height={14} fill={zoneCol[k]} opacity="0.85" />
+                    off += ww
+                    return r
+                  })}
+                  <text x={off + 4} y={y + 11} fontSize="9" fill="#94a3b8" className="tabular-nums">{(total / 1000).toFixed(2)} km</text>
+                </g>
+              )
+            })}
+          </svg>
+        </Card>
+      </div>
+    )
+  }
+
+  // ── 2. Collision & Contact Load ──
+  const renderCollision = () => {
+    const groups = ['Props','Hooker','Locks','Flankers','No.8','Backs'] as const
+    const groupCollisions = groups.map(g => {
+      const players = RG_LOAD_SQUAD.filter(p => p.group === g)
+      return { group: g, total: players.reduce((s, p) => s + p.collisions, 0), avg: players.length === 0 ? 0 : players.reduce((s, p) => s + p.collisions, 0) / players.length }
+    })
+    const maxGroup = Math.max(...groupCollisions.map(g => g.total))
+
+    // 4-week sparkline data per player.
+    const sparkline = (seed: number) => Array.from({ length: 28 }).map((_, i) => Math.round(8 + Math.sin((i + seed) / 3) * 4 + ((i * seed) % 3)))
+
+    return (
+      <div className="space-y-5">
+        {/* Group collision bars */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Collision Count by Position Group</div>
+          <svg viewBox="0 0 620 200" width="100%">
+            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={48} x2={600} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+            {groupCollisions.map((g, i) => {
+              const x = 80 + i * 90
+              const h = (g.total / maxGroup) * 140
+              return (
+                <g key={g.group}>
+                  <rect x={x} y={160 - h} width="64" height={h} fill="#8B5CF6" opacity="0.35" rx="2" />
+                  <rect x={x} y={160 - h} width="64" height={h} fill="url(#gpsBarGrad)" />
+                  <text x={x + 32} y={160 - h - 6} fontSize="11" fill="#a855f7" textAnchor="middle" fontWeight="700">{g.total}</text>
+                  <text x={x + 32} y={178} fontSize="10" fill="#94a3b8" textAnchor="middle">{g.group}</text>
+                  <text x={x + 32} y={192} fontSize="9" fill="#475569" textAnchor="middle">avg {g.avg.toFixed(1)}</text>
+                </g>
+              )
+            })}
+            <defs>
+              <linearGradient id="gpsBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="#a855f7" stopOpacity="1" />
+                <stop offset="100%" stopColor="#a855f7" stopOpacity="0.4" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </Card>
+
+        {/* Individual collision load table + sparklines */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Individual Collision Load · 4-week trend</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                  <th className="text-left py-2 px-2">Player</th>
+                  <th className="text-left py-2">Position</th>
+                  <th className="text-right py-2">Today</th>
+                  <th className="text-center py-2">Impact band</th>
+                  <th className="text-right py-2">Contact AU</th>
+                  <th className="text-center py-2">28-day trend</th>
+                  <th className="text-right py-2">Flag</th>
+                </tr>
+              </thead>
+              <tbody>
+                {RG_LOAD_SQUAD.map((p, i) => {
+                  const benchmark = RG_POSITION_BENCHMARKS[p.group].collisions
+                  const flag = p.collisions > benchmark * 1.15
+                  const seed = (p.name.charCodeAt(0) + i)
+                  const data = sparkline(seed)
+                  const max = Math.max(...data)
+                  const path = data.map((v, j) => `${j === 0 ? 'M' : 'L'} ${j * (110 / (data.length - 1))} ${22 - (v / max) * 18}`).join(' ')
+                  const bandCol = p.impactBand === 'high' ? '#EF4444' : p.impactBand === 'medium' ? '#F59E0B' : '#22C55E'
+                  return (
+                    <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
+                      <td className="py-2 px-2 text-white font-medium">{p.name}</td>
+                      <td className="py-2 text-gray-400">{p.pos}</td>
+                      <td className="py-2 text-right tabular-nums font-bold" style={{ color: colCol(p.collisions) }}>{p.collisions}</td>
+                      <td className="py-2 text-center"><span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider" style={{ background:`${bandCol}22`, color: bandCol, border:`1px solid ${bandCol}44` }}>{p.impactBand}</span></td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.contactAU} AU</td>
+                      <td className="py-2 text-center">
+                        <svg viewBox="0 0 110 24" width="110" height="24">
+                          <path d={path} fill="none" stroke={bandCol} strokeWidth="1.5" strokeLinecap="round" />
+                          {data.map((v, j) => <circle key={j} cx={j * (110 / (data.length - 1))} cy={22 - (v / max) * 18} r={j === data.length - 1 ? 1.6 : 0.8} fill={bandCol} />)}
+                        </svg>
+                      </td>
+                      <td className="py-2 text-right">{flag ? <span className="text-red-400 font-bold">⚠ over</span> : <span className="text-gray-600">—</span>}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="text-[10px] text-gray-600 mt-2">⚠ over = collisions exceed position benchmark by 15%+.</div>
+        </Card>
+
+        {/* Contact vs non-contact ratio */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Contact vs Non-Contact Load Ratio</div>
+          <div className="space-y-2">
+            {RG_LOAD_SQUAD.map(p => {
+              const total = p.contactAU + p.nonContactAU
+              const cPct = total === 0 ? 0 : (p.contactAU / total) * 100
+              return (
+                <div key={p.name} className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-300 truncate" style={{ width:130 }}>{p.name}</span>
+                  <div className="flex-1 h-3 rounded-md overflow-hidden flex bg-gray-800">
+                    <div style={{ width:`${cPct}%`, background:'#EF4444' }} />
+                    <div style={{ width:`${100 - cPct}%`, background:'#3B82F6' }} />
+                  </div>
+                  <span className="text-[10px] tabular-nums text-gray-400" style={{ width:120 }}>
+                    <span className="text-red-400">{p.contactAU}</span> · <span className="text-blue-400">{p.nonContactAU}</span> AU
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="text-[10px] text-gray-600 mt-3 flex gap-4">
+            <span><span className="inline-block w-3 h-3 bg-red-500 rounded-sm align-middle mr-1.5" /> Contact</span>
+            <span><span className="inline-block w-3 h-3 bg-blue-500 rounded-sm align-middle mr-1.5" /> Non-contact</span>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // ── 3. Load Trends & ACWR ──
+  const renderTrends = () => {
+    const max30 = Math.max(...TEAM_30D.map(d => d.au))
+    const path30 = TEAM_30D.map((d, i) => `${i === 0 ? 'M' : 'L'} ${20 + (i / (TEAM_30D.length - 1)) * 580} ${20 + 140 - (d.au / max30) * 140}`).join(' ')
+
+    const maxLoad = 5500, W = 560, H = 160, padL = 36, padR = 12, padT = 16, padB = 32
+    const innerW = W - padL - padR, innerH = H - padT - padB
+    const stepX = innerW / (WEEKLY_LOAD.length - 1)
+
+    return (
+      <div className="space-y-5">
+        {/* 30-day team load rolling chart */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">30-Day Team Load (AU/day)</div>
+          <svg viewBox="0 0 620 180" width="100%">
+            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={20} x2={600} y1={20 + (1 - t) * 140} y2={20 + (1 - t) * 140} stroke="rgba(255,255,255,0.05)" />)}
+            {[0, 1500, 3000, 4500].map((v, i) => <text key={i} x={16} y={20 + (1 - v / max30) * 140 + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+            <defs>
+              <linearGradient id="loadArea" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%"  stopColor="#0D9488" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#0D9488" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={`${path30} L 600 160 L 20 160 Z`} fill="url(#loadArea)" />
+            <path d={path30} fill="none" stroke="#0D9488" strokeWidth="2" />
+            {TEAM_30D.filter((_, i) => i % 5 === 0).map((d) => (
+              <text key={d.d} x={20 + ((d.d - 1) / (TEAM_30D.length - 1)) * 580} y={175} fontSize="9" fill="#475569" textAnchor="middle">D{d.d}</text>
+            ))}
+          </svg>
+        </Card>
+
+        {/* Full squad ACWR table */}
+        <Card>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="text-sm font-semibold text-white">Full Squad ACWR — {filtered.length} players{filterStatus !== 'all' ? ` (${filterStatus})` : ''}</div>
+            <div className="flex gap-1">
+              {(['all', 'optimal', 'manage', 'overload', 'underload'] as const).map(s => (
+                <button key={s} onClick={() => setFilterStatus(s)}
+                  className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${filterStatus === s ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                  <th className="text-left py-2 px-2">Player</th>
+                  <th className="text-left py-2">Pos</th>
+                  <th className="text-right py-2">Chronic</th>
+                  <th className="text-right py-2">Acute</th>
+                  <th className="text-right py-2">ACWR</th>
+                  <th className="text-center py-2">Trend</th>
+                  <th className="text-center py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p, i) => {
+                  const ratio = acwrOf(p)
+                  const trend = p.status === 'overload' ? '↑' : p.status === 'underload' ? '↓' : p.acute > p.chronic / 4 ? '↑' : '↓'
+                  const tCol = trend === '↑' && (p.status === 'overload' || p.status === 'manage') ? '#EF4444' : trend === '↓' ? '#3B82F6' : '#22C55E'
+                  return (
+                    <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
+                      <td className="py-2 px-2 text-white font-medium">{p.name}</td>
+                      <td className="py-2 text-gray-400">{p.pos}</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.chronic.toLocaleString()}</td>
+                      <td className="py-2 text-right text-gray-200 tabular-nums">{p.acute.toLocaleString()}</td>
+                      <td className={`py-2 text-right font-bold tabular-nums ${sColor(p.status)}`}>{ratio.toFixed(2)}</td>
+                      <td className="py-2 text-center font-bold" style={{ color: tCol }}>{trend}</td>
+                      <td className="py-2 text-center"><span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${sBg(p.status)} ${sColor(p.status)}`}>{sLabel(p.status)}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Injury risk matrix 2x2 */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-1">Injury Risk Matrix</div>
+          <p className="text-[11px] text-gray-500 mb-3">ACWR (x-axis) × Collision load (y-axis). Top-right quadrant = highest risk.</p>
+          <svg viewBox="0 0 600 380" width="100%">
+            {/* Quadrants */}
+            <rect x={40}   y={20}  width={260} height={160} fill="#F59E0B" fillOpacity="0.06" />
+            <rect x={300}  y={20}  width={260} height={160} fill="#EF4444" fillOpacity="0.10" />
+            <rect x={40}   y={180} width={260} height={160} fill="#22C55E" fillOpacity="0.06" />
+            <rect x={300}  y={180} width={260} height={160} fill="#F59E0B" fillOpacity="0.06" />
+            {/* Axes */}
+            <line x1={40} y1={340} x2={560} y2={340} stroke="rgba(255,255,255,0.18)" />
+            <line x1={40} y1={20}  x2={40}  y2={340} stroke="rgba(255,255,255,0.18)" />
+            <line x1={300} y1={20} x2={300} y2={340} stroke="rgba(255,255,255,0.07)" strokeDasharray="3 3" />
+            <line x1={40} y1={180} x2={560} y2={180} stroke="rgba(255,255,255,0.07)" strokeDasharray="3 3" />
+            {/* Axis labels */}
+            <text x={300} y={372} fontSize="10" fill="#94a3b8" textAnchor="middle">ACWR →</text>
+            <text x={290} y={358} fontSize="9"  fill="#475569" textAnchor="middle">1.3 (manage)</text>
+            <text x={50}  y={358} fontSize="9"  fill="#475569" textAnchor="start">0.8</text>
+            <text x={550} y={358} fontSize="9"  fill="#475569" textAnchor="end">2.0</text>
+            <text x={20} y={180} fontSize="10" fill="#94a3b8" transform="rotate(-90 20 180)" textAnchor="middle">Collisions →</text>
+            <text x={26} y={184} fontSize="9"  fill="#475569" textAnchor="middle">10</text>
+            {/* Quadrant labels */}
+            <text x={170} y={36}  fontSize="10" fill="#F59E0B" textAnchor="middle">High contact / safe ACWR</text>
+            <text x={430} y={36}  fontSize="10" fill="#EF4444" textAnchor="middle" fontWeight="700">High risk</text>
+            <text x={170} y={356} fontSize="10" fill="#22C55E" textAnchor="middle">Safe</text>
+            <text x={430} y={356} fontSize="10" fill="#F59E0B" textAnchor="middle">High ACWR / low contact</text>
+            {/* Players */}
+            {RG_LOAD_SQUAD.map((p, i) => {
+              const ratio = acwrOf(p)
+              const x = 40 + Math.max(0, Math.min(1, (ratio - 0.5) / 1.5)) * 520
+              const y = 340 - Math.max(0, Math.min(1, p.collisions / 24)) * 320
+              const fill = p.status === 'overload' ? '#EF4444' : p.status === 'manage' ? '#F59E0B' : p.status === 'underload' ? '#3B82F6' : '#22C55E'
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={y} r="5" fill={fill} stroke="rgba(0,0,0,0.5)" strokeWidth="0.6" />
+                  <text x={x + 7} y={y + 3} fontSize="8.5" fill="#cbd5e1">{p.name.split(' ')[1] ?? p.name}</text>
+                </g>
+              )
+            })}
+          </svg>
+        </Card>
+
+        {/* Week-on-week grouped bar */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Week-on-Week Load · Planned vs Actual</div>
+          <svg viewBox={`0 0 ${W} ${H + 16}`} width="100%">
+            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" />)}
+            {[0, 1500, 3000, 4500].map((v, i) => <text key={i} x={padL - 4} y={padT + innerH - (v / maxLoad) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
+            {WEEKLY_LOAD.map((d, i) => {
+              const cx = padL + i * stepX
+              const ph = (d.planned / maxLoad) * innerH
+              const ah = (d.actual / maxLoad) * innerH
+              return (
+                <g key={i}>
+                  <rect x={cx - 24} y={padT + innerH - ph} width={20} height={ph} fill="#8B5CF6" opacity="0.7" rx="2" />
+                  <rect x={cx + 4}  y={padT + innerH - ah} width={20} height={ah} fill="#0D9488" opacity="0.85" rx="2" />
+                  <text x={cx} y={H - 4} fontSize="9" fill="#6B7280" textAnchor="middle">{d.week}</text>
+                  <text x={cx - 14} y={padT + innerH - ph - 4} fontSize="8" fill="#a855f7" textAnchor="middle">{d.planned}</text>
+                  <text x={cx + 14} y={padT + innerH - ah - 4} fontSize="8" fill="#0D9488" textAnchor="middle">{d.actual}</text>
+                </g>
+              )
+            })}
+          </svg>
+          <div className="flex gap-4 text-[10px] text-gray-500 mt-2">
+            <span><span className="inline-block w-3 h-3 bg-purple-500 rounded-sm align-middle mr-1.5" /> Planned</span>
+            <span><span className="inline-block w-3 h-3 bg-teal-500 rounded-sm align-middle mr-1.5" /> Actual</span>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // ── 4. Match vs Training ──
+  const renderMatchVsTraining = () => {
+    const max = Math.max(...RG_MATCH_VS_TRAIN.flatMap(r => [r.matchDist, r.trainDist])) * 1.05
+    const w = 600, h = 24 * RG_MATCH_VS_TRAIN.length + 30
+    return (
+      <div className="space-y-5">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Match vs Training · Distance (km)</div>
+          <svg viewBox={`0 0 ${w} ${h}`} width="100%">
+            {RG_MATCH_VS_TRAIN.map((r, i) => {
+              const y = 14 + i * 24
+              const wM = (r.matchDist / max) * 440
+              const wT = (r.trainDist / max) * 440
+              return (
+                <g key={i}>
+                  <text x={4} y={y + 7} fontSize="10" fill="#cbd5e1">{r.name}</text>
+                  <rect x={130} y={y - 5} width={wM} height={9} fill="#8B5CF6" opacity="0.85" rx="1.5" />
+                  <text x={130 + wM + 4} y={y + 3} fontSize="8" fill="#a855f7" className="tabular-nums">{r.matchDist}</text>
+                  <rect x={130} y={y + 5} width={wT} height={9} fill="#0D9488" opacity="0.85" rx="1.5" />
+                  <text x={130 + wT + 4} y={y + 13} fontSize="8" fill="#0D9488" className="tabular-nums">{r.trainDist}</text>
+                </g>
+              )
+            })}
+          </svg>
+          <div className="flex gap-4 text-[10px] text-gray-500 mt-2">
+            <span><span className="inline-block w-3 h-3 bg-purple-500 rounded-sm align-middle mr-1.5" /> Match day</span>
+            <span><span className="inline-block w-3 h-3 bg-teal-500 rounded-sm align-middle mr-1.5" /> Training</span>
+          </div>
+        </Card>
+
+        {/* Collision count vs contact drill count */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">Collisions · Match vs Training drills</div>
+            <svg viewBox="0 0 320 280" width="100%">
+              {RG_MATCH_VS_TRAIN.map((r, i) => {
+                const y = 18 + i * 26
+                const wM = (r.matchCol / 25) * 200
+                const wT = (r.trainCol / 25) * 200
+                return (
+                  <g key={i}>
+                    <text x={4} y={y + 6} fontSize="9.5" fill="#cbd5e1">{r.name}</text>
+                    <rect x={104} y={y - 4} width={wM} height={7} fill="#EF4444" opacity="0.85" rx="1.5" />
+                    <text x={104 + wM + 4} y={y + 2} fontSize="8" fill="#EF4444">{r.matchCol}</text>
+                    <rect x={104} y={y + 5} width={wT} height={7} fill="#F59E0B" opacity="0.85" rx="1.5" />
+                    <text x={104 + wT + 4} y={y + 11} fontSize="8" fill="#F59E0B">{r.trainCol}</text>
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="flex gap-4 text-[10px] text-gray-500 mt-2">
+              <span><span className="inline-block w-3 h-3 bg-red-500 rounded-sm align-middle mr-1.5" /> Match</span>
+              <span><span className="inline-block w-3 h-3 bg-amber-500 rounded-sm align-middle mr-1.5" /> Training drills</span>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="text-sm font-semibold text-white mb-3">High-Speed Running · Match vs Training</div>
+            <svg viewBox="0 0 320 280" width="100%">
+              {RG_MATCH_VS_TRAIN.map((r, i) => {
+                const y = 18 + i * 26
+                const max = 1300
+                const wM = (r.matchHsr / max) * 200
+                const wT = (r.trainHsr / max) * 200
+                return (
+                  <g key={i}>
+                    <text x={4} y={y + 6} fontSize="9.5" fill="#cbd5e1">{r.name}</text>
+                    <rect x={104} y={y - 4} width={wM} height={7} fill="#8B5CF6" opacity="0.85" rx="1.5" />
+                    <text x={104 + wM + 4} y={y + 2} fontSize="8" fill="#a855f7">{r.matchHsr}</text>
+                    <rect x={104} y={y + 5} width={wT} height={7} fill="#0D9488" opacity="0.85" rx="1.5" />
+                    <text x={104 + wT + 4} y={y + 11} fontSize="8" fill="#0D9488">{r.trainHsr}</text>
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="flex gap-4 text-[10px] text-gray-500 mt-2">
+              <span><span className="inline-block w-3 h-3 bg-purple-500 rounded-sm align-middle mr-1.5" /> Match (m)</span>
+              <span><span className="inline-block w-3 h-3 bg-teal-500 rounded-sm align-middle mr-1.5" /> Training (m)</span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Fitness deficit indicator */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Fitness Deficit Indicator</div>
+          <p className="text-[11px] text-gray-500 mb-3">Players whose training output significantly lags match demands — flagged for top-up sessions.</p>
+          <div className="space-y-2">
+            {RG_MATCH_VS_TRAIN.map(r => {
+              const ratio = r.matchHsr === 0 ? 0 : r.trainHsr / r.matchHsr
+              const deficit = ratio < 0.45
+              return (
+                <div key={r.name} className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-300" style={{ width:130 }}>{r.name}</span>
+                  <div className="flex-1 h-2 rounded-full overflow-hidden bg-gray-800">
+                    <div className="h-full rounded-full" style={{ width:`${ratio * 100}%`, background: deficit ? '#EF4444' : '#22C55E' }} />
+                  </div>
+                  <span className="text-[11px] tabular-nums" style={{ width:120, color: deficit ? '#EF4444' : '#94a3b8' }}>
+                    {Math.round(ratio * 100)}% of match {deficit && '⚠'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // ── 5. Position Group Analysis ──
+  const renderPosition = () => {
+    const groups = ['Props','Hooker','Locks','Flankers','No.8','Backs'] as const
+    const groupSummary = groups.map(g => {
+      const players = RG_LOAD_SQUAD.filter(p => p.group === g)
+      const n = players.length
+      if (n === 0) return { group: g, distance:0, hsr:0, collisions:0, topSpeed:0, n:0 }
+      return {
+        group: g,
+        distance:   players.reduce((s, p) => s + p.distance,  0) / n,
+        hsr:        players.reduce((s, p) => s + p.hsr,       0) / n,
+        collisions: players.reduce((s, p) => s + p.collisions,0) / n,
+        topSpeed:   Math.max(...players.map(p => p.topSpeed)),
+        n,
+      }
+    })
+
+    // Forwards vs Backs
+    const forwards = RG_LOAD_SQUAD.filter(p => p.group !== 'Backs')
+    const backs    = RG_LOAD_SQUAD.filter(p => p.group === 'Backs')
+    const fbCmp = [
+      { k: 'Distance (km)',   f: forwards.reduce((s,p) => s + p.distance, 0) / forwards.length,   b: backs.reduce((s,p) => s + p.distance, 0) / backs.length,   max: 12 },
+      { k: 'HSR (m)',         f: forwards.reduce((s,p) => s + p.hsr, 0) / forwards.length,        b: backs.reduce((s,p) => s + p.hsr, 0) / backs.length,        max: 1200 },
+      { k: 'Collisions',      f: forwards.reduce((s,p) => s + p.collisions, 0) / forwards.length, b: backs.reduce((s,p) => s + p.collisions, 0) / backs.length, max: 22 },
+      { k: 'Top speed (km/h)',f: Math.max(...forwards.map(p => p.topSpeed)), b: Math.max(...backs.map(p => p.topSpeed)), max: 33 },
+    ]
+
+    // Pie data — share of total squad load by group.
+    const pieTotal = groupSummary.reduce((s, g) => s + g.distance * g.n, 0)
+    let pieAcc = 0
+    const pieColors = ['#EF4444','#F59E0B','#22C55E','#0D9488','#3B82F6','#8B5CF6']
+    const pieSlices = groupSummary.map((g, i) => {
+      const frac = pieTotal === 0 ? 0 : (g.distance * g.n) / pieTotal
+      const start = pieAcc
+      const end = pieAcc + frac
+      pieAcc = end
+      const a0 = (start * 360 - 90) * Math.PI / 180
+      const a1 = (end   * 360 - 90) * Math.PI / 180
+      const x0 = 100 + 80 * Math.cos(a0), y0 = 100 + 80 * Math.sin(a0)
+      const x1 = 100 + 80 * Math.cos(a1), y1 = 100 + 80 * Math.sin(a1)
+      const large = frac > 0.5 ? 1 : 0
+      const path = `M 100 100 L ${x0} ${y0} A 80 80 0 ${large} 1 ${x1} ${y1} Z`
+      return { path, color: pieColors[i % pieColors.length], group: g.group, pct: Math.round(frac * 100) }
+    })
+
+    return (
+      <div className="space-y-5">
+        {/* Forwards vs Backs */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Forwards vs Backs · GPS comparison</div>
+          {fbCmp.map(r => {
+            const fw = (r.f / r.max) * 100
+            const bw = (r.b / r.max) * 100
+            return (
+              <div key={r.k} className="mb-3">
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-gray-300">{r.k}</span>
+                  <span className="tabular-nums">
+                    <span className="text-amber-400">{r.f.toFixed(1)}</span>
+                    <span className="text-gray-600 mx-1">vs</span>
+                    <span className="text-teal-400">{r.b.toFixed(1)}</span>
+                  </span>
+                </div>
+                <div className="flex h-2 rounded-full overflow-hidden bg-gray-800">
+                  <div style={{ width:`${fw}%`, background:'#F59E0B' }} />
+                  <div style={{ width:`${100 - fw}%`, background:'transparent' }} />
+                </div>
+                <div className="flex h-2 rounded-full overflow-hidden bg-gray-800 mt-1">
+                  <div style={{ width:`${bw}%`, background:'#0D9488' }} />
+                </div>
+              </div>
+            )
+          })}
+          <div className="flex gap-4 text-[10px] text-gray-500 mt-2">
+            <span><span className="inline-block w-3 h-3 bg-amber-500 rounded-sm align-middle mr-1.5" /> Forwards (1–8)</span>
+            <span><span className="inline-block w-3 h-3 bg-teal-500 rounded-sm align-middle mr-1.5" /> Backs (9–15)</span>
+          </div>
+        </Card>
+
+        {/* Group KPI table */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">By Position Group</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
+                  <th className="text-left py-2 px-2">Group</th>
+                  <th className="text-right py-2">Players</th>
+                  <th className="text-right py-2">Avg distance</th>
+                  <th className="text-right py-2">Avg HSR</th>
+                  <th className="text-right py-2">Avg collisions</th>
+                  <th className="text-right py-2">Max top speed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupSummary.map(g => (
+                  <tr key={g.group} className="border-b border-gray-800/40">
+                    <td className="py-2 px-2 text-white font-medium">{g.group}</td>
+                    <td className="py-2 text-right text-gray-300 tabular-nums">{g.n}</td>
+                    <td className="py-2 text-right text-gray-200 tabular-nums">{g.distance.toFixed(1)} km</td>
+                    <td className="py-2 text-right text-gray-200 tabular-nums">{Math.round(g.hsr)} m</td>
+                    <td className="py-2 text-right tabular-nums" style={{ color: colCol(Math.round(g.collisions)) }}>{g.collisions.toFixed(1)}</td>
+                    <td className="py-2 text-right text-gray-200 tabular-nums">{g.topSpeed.toFixed(1)} km/h</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Position benchmark comparison */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Player vs Position Benchmark · Distance</div>
+          <div className="space-y-2">
+            {RG_LOAD_SQUAD.map(p => {
+              const benchmark = RG_POSITION_BENCHMARKS[p.group].distance
+              const delta = p.distance - benchmark
+              const pct = benchmark === 0 ? 0 : (delta / benchmark) * 100
+              const ahead = delta > 0
+              return (
+                <div key={p.name} className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-300" style={{ width:130 }}>{p.name}</span>
+                  <span className="text-[10px] text-gray-500" style={{ width:90 }}>{p.group} · {benchmark.toFixed(1)}km</span>
+                  <div className="flex-1 h-2 rounded-full overflow-hidden bg-gray-800 relative">
+                    <div className="absolute inset-y-0" style={{ left:'50%', width:1, background:'rgba(255,255,255,0.2)' }} />
+                    <div className="h-full" style={{
+                      width: `${Math.min(50, Math.abs(pct))}%`,
+                      marginLeft: ahead ? '50%' : `${50 - Math.min(50, Math.abs(pct))}%`,
+                      background: ahead ? '#22C55E' : '#EF4444',
+                    }} />
+                  </div>
+                  <span className="text-[11px] tabular-nums" style={{ width:80, color: ahead ? '#22C55E' : '#EF4444' }}>
+                    {ahead ? '+' : ''}{pct.toFixed(0)}%
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+
+        {/* Pie chart by position group */}
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Load Distribution by Position Group</div>
+          <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 items-center">
+            <svg viewBox="0 0 200 200" width="100%" style={{ maxWidth: 200 }}>
+              <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              {pieSlices.map((s, i) => <path key={i} d={s.path} fill={s.color} opacity="0.9" stroke="#0a0c14" strokeWidth="1" />)}
+              <circle cx="100" cy="100" r="36" fill="#0a0c14" stroke="rgba(255,255,255,0.08)" />
+              <text x="100" y="98" fontSize="11" fill="#94a3b8" textAnchor="middle">Total dist</text>
+              <text x="100" y="112" fontSize="13" fill="#fff" textAnchor="middle" fontWeight="700" className="tabular-nums">{KPI_TOTAL_DIST.toFixed(1)} km</text>
+            </svg>
+            <div className="grid grid-cols-2 gap-2">
+              {pieSlices.map(s => (
+                <div key={s.group} className="flex items-center gap-2 text-[11px]">
+                  <span className="w-3 h-3 rounded-sm" style={{ background: s.color }} />
+                  <span className="text-gray-300">{s.group}</span>
+                  <span className="ml-auto text-gray-500 tabular-nums">{s.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // ── 6. Connect GPS ──
+  const renderConnect = () => {
+    const integrations = [
+      { name: 'Lumio GPS Pro',     status: 'connected' as const, sub: 'Last session: Tue 8 Apr · 29 vests active' },
+      { name: 'Lumio Health',      status: 'connected' as const, sub: 'Player readiness · 20/38 logged today 07:24' },
+      { name: 'Johan Sports',      status: 'available' as const, sub: 'OAuth · 10Hz GPS + IMU · live session sync' },
+      { name: 'CSV Upload',        status: 'available' as const, sub: 'Generic GPS export · any vendor · drag and drop' },
+      { name: 'Polar Team Pro',    status: 'available' as const, sub: 'Heart rate + GPS combined · Bluetooth sync' },
+      { name: 'FrameSports tags',  status: 'connected' as const, sub: 'Auto-tag tackles, rucks, set-pieces · 2h post-match' },
+    ]
+    return (
+      <div className="space-y-5">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">GPS &amp; Telemetry Integrations</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {integrations.map(it => (
+              <div key={it.name} className="flex items-center justify-between p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+                <div>
+                  <div className="text-sm font-semibold text-white">{it.name}</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">{it.sub}</div>
+                </div>
+                {it.status === 'connected'
+                  ? <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-green-600/15 text-green-400 border border-green-600/30">● Connected</span>
+                  : <button className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-500 text-white">Connect</button>}
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="text-sm font-semibold text-white mb-2">Sync Status</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+            <div className="p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Vests active</div>
+              <div className="text-xl font-black text-green-400">29 / 38</div>
+              <div className="text-gray-500">Last sync: 09:14 today</div>
+            </div>
+            <div className="p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Battery health</div>
+              <div className="text-xl font-black text-amber-400">3 vests &lt; 20%</div>
+              <div className="text-gray-500">Charging dock: 4 free slots</div>
+            </div>
+            <div className="p-3 rounded-lg border border-gray-800 bg-[#0a0c14]">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Data backlog</div>
+              <div className="text-xl font-black text-purple-400">0 MB</div>
+              <div className="text-gray-500">All sessions ingested</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="text-sm font-semibold text-white mb-2">Calibration &amp; Maintenance</div>
+          <div className="space-y-1.5 text-[11px]">
+            <div className="flex justify-between py-1 border-b border-gray-800/50">
+              <span className="text-gray-300">Vest firmware version</span><span className="text-white tabular-nums">3.4.1</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-gray-800/50">
+              <span className="text-gray-300">Last calibration</span><span className="text-white">Mon 7 Apr</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-gray-800/50">
+              <span className="text-gray-300">Next scheduled</span><span className="text-white">Mon 14 Apr</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-gray-300">Field surveys</span><span className="text-white">The Grange · 3D mapped 2025-09</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="📡" title="GPS & Load — Squad Dashboard" subtitle="28-day rolling ACWR · All players · Lumio GPS + Lumio GPS" />
+      <SectionHeader icon="📡" title="GPS & Load — Squad Dashboard" subtitle="Session telemetry, collision load, ACWR trends, match-vs-training comparison and position-group analysis." />
 
-      {counts.overload > 0 && (
-        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 text-sm text-red-300">
-          ⚠ <strong>{counts.overload} player{counts.overload > 1 ? 's' : ''} in overload zone</strong> — {FULL_SQUAD_LOAD.filter(p => p.status === 'overload').map(p => p.name).join(', ')}. Recommend rest or minimal load today.
-        </div>
-      )}
-
+      {/* Top KPI strip — 8 tiles in 2 rows of 4 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Ready', count: counts.optimal, color: 'green', status: 'optimal' as const },
-          { label: 'Manage', count: counts.manage, color: 'amber', status: 'manage' as const },
-          { label: 'Rest', count: counts.overload, color: 'red', status: 'overload' as const },
-          { label: 'Build', count: counts.underload, color: 'blue', status: 'underload' as const },
-        ].map(z => (
-          <button key={z.status} onClick={() => setFilterStatus(filterStatus === z.status ? 'all' : z.status)}
-            className={`rounded-xl p-4 border text-left transition-all bg-${z.color}-600/10 border-${z.color}-600/30 hover:border-${z.color}-500/40`}>
-            <div className={`text-3xl font-bold text-${z.color}-400`}>{z.count}</div>
-            <div className="text-xs text-gray-400 mt-1">{z.label}</div>
-          </button>
-        ))}
+        <KpiTile label="Team Load"           value={`${KPI_TEAM_LOAD.toLocaleString()} AU`}  sub="All players · today"            accent="#a855f7" />
+        <KpiTile label="Total Distance"      value={`${KPI_TOTAL_DIST.toFixed(1)} km`}        sub="Squad cumulative"               accent="#0ea5e9" />
+        <KpiTile label="High Speed Running"  value={`${KPI_HSR.toLocaleString()} m`}          sub=">5.5 m/s · session"             accent="#22c55e" />
+        <KpiTile label="Top Speed"           value={`${KPI_TOP_SPEED} km/h`}                  sub={KPI_TOP_SPEED_P?.name ?? '—'}    accent="#facc15" />
+        <KpiTile label="Collision Count"     value={`${KPI_COLLISIONS}`}                       sub={`${RG_LOAD_SQUAD.filter(p=>p.collisions>10).length} players >10`} accent="#ef4444" />
+        <KpiTile label="Sprint Efforts"      value={`${KPI_SPRINTS}`}                          sub="Squad cumulative"               accent="#f59e0b" />
+        <KpiTile label="Recovery Score"      value={`${KPI_RECOVERY}/100`}                     sub={KPI_RECOVERY >= 75 ? 'Squad fresh' : 'Some fatigue'} accent={KPI_RECOVERY >= 75 ? '#22c55e' : '#f59e0b'} />
+        <KpiTile label="High Load Players"   value={`${KPI_HIGH_LOAD}`}                        sub="Manage or rest"                 accent="#ef4444" />
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-semibold text-white">Team Load — 28-Day Rolling (AU)</div>
-          <div className="flex items-center gap-4 text-[10px]">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-purple-400" />Planned</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block bg-teal-400" />Actual</span>
-          </div>
-        </div>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%">
-          {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />)}
-          {[0, 1500, 3000, 4500].map((v, i) => <text key={i} x={padL - 4} y={padT + innerH - (v / maxLoad) * innerH + 3} fontSize="9" fill="#6B7280" textAnchor="end">{v}</text>)}
-          <path d={plannedPath} fill="none" stroke="#8B5CF6" strokeWidth="2" strokeDasharray="5 3" strokeLinecap="round" />
-          <path d={actualPath} fill="none" stroke="#0D9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {WEEKLY_LOAD.map((d, i) => (
-            <g key={i}>
-              <circle cx={padL + i * stepX} cy={padT + innerH - (d.actual / maxLoad) * innerH} r="3.5" fill="#0D9488" />
-              <text x={padL + i * stepX} y={H - 4} fontSize="9" fill="#6B7280" textAnchor="middle">{d.week}</text>
-            </g>
-          ))}
-        </svg>
-        <p className="text-[10px] text-gray-600 mt-2">W-1 overshot planned load by 240 AU — contributing to current overload flags.</p>
-      </Card>
-
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-semibold text-white">Full Squad ACWR — {filtered.length} players{filterStatus !== 'all' ? ` (${filterStatus})` : ''}</div>
-          <div className="flex gap-1">
-            {(['all', 'optimal', 'manage', 'overload', 'underload'] as const).map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)}
-                className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${filterStatus === s ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}>{s}</button>
-            ))}
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-gray-500 border-b border-gray-800 text-[10px] uppercase tracking-wider">
-                <th className="text-left py-2 px-2">Player</th><th className="text-left py-2">Pos</th>
-                <th className="text-right py-2">Chronic (28d)</th><th className="text-right py-2">Acute (7d)</th>
-                <th className="text-right py-2">ACWR</th><th className="text-right py-2">Today AU</th>
-                <th className="text-center py-2">Status</th><th className="text-right py-2">ACWR bar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p, i) => {
-                const ratio = acwr(p)
-                const barPct = Math.min((ratio / 2) * 100, 100)
-                const barCol = ratio > 1.5 ? '#EF4444' : ratio > 1.3 ? '#F59E0B' : ratio < 0.8 ? '#3B82F6' : '#22C55E'
-                return (
-                  <tr key={i} className="border-b border-gray-800/40 hover:bg-white/[0.01]">
-                    <td className="py-2 px-2 text-white font-medium">{p.name}</td>
-                    <td className="py-2 text-gray-400">{p.pos}</td>
-                    <td className="py-2 text-right text-gray-300">{p.chronic > 0 ? p.chronic.toLocaleString() : '—'}</td>
-                    <td className="py-2 text-right text-gray-300">{p.acute > 0 ? p.acute.toLocaleString() : '—'}</td>
-                    <td className={`py-2 text-right font-bold ${statusColor(p.status)}`}>{ratio > 0 ? ratio.toFixed(2) : '—'}</td>
-                    <td className="py-2 text-right text-gray-300">{p.todayAU > 0 ? p.todayAU : '—'}</td>
-                    <td className="py-2 text-center">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${statusBg(p.status)} ${statusColor(p.status)}`}>{statusLabel(p.status)}</span>
-                    </td>
-                    <td className="py-2 pl-4 pr-2">
-                      <div className="w-20 bg-gray-800 rounded-full h-1.5 ml-auto">
-                        <div className="h-1.5 rounded-full" style={{ width: `${barPct}%`, backgroundColor: barCol }} />
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 pt-3 border-t border-gray-800 text-[10px] text-gray-600">
-          ACWR zones: &lt;0.8 Underload (blue) · 0.8–1.3 Optimal (green) · 1.3–1.5 Manage (amber) · &gt;1.5 Overload (red)
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lumio Health</div>
-          <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">Player readiness feed</span><span className="text-green-400 text-xs font-bold">● Live</span></div>
-          <div className="text-[10px] text-gray-500">Last sync: today 07:24 · 20/38 players logged</div>
-        </Card>
-        <Card>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lumio GPS</div>
-          <div className="flex items-center justify-between mb-2"><span className="text-xs text-white">GPS vest sync</span><span className="text-green-400 text-xs font-bold">● Connected</span></div>
-          <div className="text-[10px] text-gray-500">Last session: Tue 8 Apr · 29 vests active</div>
-        </Card>
-        <Card>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">S&C Alerts</div>
-          <div className="space-y-1 text-[10px]">
-            <div className="text-red-400">🔴 Danny Foster — Rest today (ACWR 1.38)</div>
-            <div className="text-red-400">🔴 Luke Barnes — Rest today (ACWR 1.52)</div>
-            <div className="text-amber-400">🟡 Karl Foster — Manage (ACWR 1.44)</div>
-          </div>
-        </Card>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-800 overflow-x-auto">
+        <TabButton id="session"        icon="📋" label="Session Overview" />
+        <TabButton id="collision"      icon="💥" label="Collision & Contact Load" />
+        <TabButton id="trends"         icon="📈" label="Load Trends & ACWR" />
+        <TabButton id="matchVtraining" icon="🏟️" label="Match vs Training" />
+        <TabButton id="position"       icon="👥" label="Position Group Analysis" />
+        <TabButton id="connect"        icon="🔌" label="Connect GPS" />
       </div>
+
+      {tab === 'session'        && renderSession()}
+      {tab === 'collision'      && renderCollision()}
+      {tab === 'trends'         && renderTrends()}
+      {tab === 'matchVtraining' && renderMatchVsTraining()}
+      {tab === 'position'       && renderPosition()}
+      {tab === 'connect'        && renderConnect()}
     </div>
   )
 }
 
-// ─── PLAYER HEATMAP VIEW ─────────────────────────────────────────────────────
-function PlayerHeatmapView() {
-  const [selectedPlayer, setSelectedPlayer] = useState('All')
-  const [selectedSession, setSelectedSession] = useState('Match vs Jersey Reds (11 Apr)')
-  const [selectedView, setSelectedView] = useState<'heatmap' | 'zones' | 'lines'>('heatmap')
+// ─── GPS HEATMAPS VIEW (multi-section) ───────────────────────────────────────
+// Hero: Pitch position. Plus tackle/contact, ruck/breakdown, set-piece,
+// squad GPS load grid, training movement. Folded in the original Player
+// Heatmap view — its pitch geometry + HEATMAP_ZONES live as Section 1.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const sessions = [
-    'Match vs Jersey Reds (11 Apr)',
-    "Training — Tue 8 Apr (Tactical)",
-    "Training — Mon 7 Apr (S&C)",
-    'Match vs Bath RFC (5 Apr)',
-    "Training — Thu 3 Apr (Captain's Run)",
-  ]
+// Green → amber → red HSL heat scale.
+function rgHeat(v: number): string {
+  const c = Math.max(0, Math.min(1, v))
+  const hue = 130 - c * 130
+  const sat = 65 + c * 15
+  const lig = 48 - c * 4
+  return `hsl(${hue}, ${sat}%, ${lig}%)`
+}
+function rgGlow(v: number): string {
+  const c = Math.max(0, Math.min(1, v))
+  const hue = 130 - c * 130
+  return `hsla(${hue}, 80%, 55%, ${0.2 + c * 0.5})`
+}
 
-  const players = ['All', 'Tom Harrison', 'Marcus Webb', 'Karl Foster', 'Sam Ellis', 'Danny Cole', 'Matt Jones', 'Luke Barnes', 'David Obi']
-
-  const HEATMAP_ZONES: Record<string, Array<[number, number, number]>> = {
-    'All': [
-      [15,20,0.9],[20,35,0.8],[18,50,0.7],[22,65,0.6],[25,80,0.5],
-      [50,20,0.6],[50,40,0.9],[50,60,0.8],[50,75,0.6],[50,90,0.4],
-      [80,25,0.7],[75,45,0.8],[78,60,0.7],[82,75,0.5],[85,85,0.4],
-      [35,30,0.8],[40,50,0.9],[38,70,0.7],[45,85,0.5],
-      [60,35,0.7],[65,55,0.8],[62,70,0.6],[70,80,0.4],
-      [30,15,0.5],[70,15,0.5],[50,10,0.6],[50,95,0.3],
-    ],
-    'Tom Harrison': [
-      [30,20,0.9],[28,35,0.8],[32,45,0.7],[25,55,0.6],[30,65,0.5],
-      [35,30,0.8],[40,40,0.7],[38,50,0.6],[35,60,0.5],
-      [20,25,0.6],[22,40,0.7],[18,55,0.5],
-    ],
-    'Luke Barnes': [
-      [50,85,0.9],[45,80,0.8],[55,80,0.8],[50,90,0.7],[48,75,0.6],
-      [30,70,0.6],[70,70,0.6],[50,65,0.5],[40,60,0.4],[60,60,0.4],
-      [20,50,0.3],[80,50,0.3],[50,55,0.5],
-    ],
-    'Karl Foster': [
-      [40,45,0.9],[45,55,0.8],[50,50,0.9],[55,45,0.8],[50,40,0.7],
-      [35,40,0.7],[60,40,0.7],[45,35,0.6],[55,35,0.6],
-      [40,60,0.6],[60,60,0.5],[50,65,0.4],
-    ],
-    'Sam Ellis': [
-      [48,30,0.7],[50,35,0.9],[52,30,0.7],[50,40,0.8],[48,45,0.6],
-      [50,50,0.9],[50,55,0.8],[50,60,0.7],[50,65,0.6],
-      [45,25,0.5],[55,25,0.5],[50,20,0.4],
-    ],
-  }
-
-  const zoneData = HEATMAP_ZONES[selectedPlayer] ?? HEATMAP_ZONES['All']
-
-  const ZONE_STATS: Record<string, { ownHalf: number; midfield: number; oppHalf: number; opp22: number }> = {
-    'All':          { ownHalf: 28, midfield: 34, oppHalf: 26, opp22: 12 },
-    'Tom Harrison': { ownHalf: 52, midfield: 31, oppHalf: 14, opp22: 3 },
-    'Luke Barnes':  { ownHalf: 8,  midfield: 22, oppHalf: 42, opp22: 28 },
-    'Karl Foster':  { ownHalf: 18, midfield: 48, oppHalf: 26, opp22: 8 },
-    'Sam Ellis':    { ownHalf: 24, midfield: 44, oppHalf: 24, opp22: 8 },
-  }
-  const zones = ZONE_STATS[selectedPlayer] ?? ZONE_STATS['All']
-
+// Pitch SVG factory. Used by sections 1, 2, 3, 4, 6.
+function rgPitch({ id }: { id: string }) {
   const PW = 600, PH = 400
-  const lineCol = 'rgba(255,255,255,0.18)'
-  const cx = (xPct: number) => (xPct / 100) * PW
-  const cy2 = (yPct: number) => PH - (yPct / 100) * PH
+  return { PW, PH, defs: (
+    <defs>
+      <radialGradient id={`rg-grass-${id}`} cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stopColor="#0e1f0e" />
+        <stop offset="100%" stopColor="#06120a" />
+      </radialGradient>
+      <pattern id={`rg-stripes-${id}`} x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+        <rect width="60" height="60" fill="rgba(255,255,255,0.012)" />
+        <rect width="60" height="30" fill="rgba(255,255,255,0.025)" />
+      </pattern>
+      <filter id={`rg-glow-${id}`} x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" />
+      </filter>
+    </defs>
+  ), markings: (
+    <g>
+      <rect width={PW} height={PH} fill={`url(#rg-grass-${id})`} rx="4" />
+      <rect width={PW} height={PH} fill={`url(#rg-stripes-${id})`} rx="4" />
+      <rect x={0} y={0} width={PW} height={PH} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
+      {/* Halfway */}
+      <line x1={0} y1={PH/2} x2={PW} y2={PH/2} stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
+      {/* Centre circle */}
+      <circle cx={PW/2} cy={PH/2} r={PH*0.12} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+      <circle cx={PW/2} cy={PH/2} r="3" fill="rgba(255,255,255,0.18)" />
+      {/* 22m lines */}
+      <line x1={0} y1={PH*0.22} x2={PW} y2={PH*0.22} stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="6 4" />
+      <line x1={0} y1={PH*0.78} x2={PW} y2={PH*0.78} stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="6 4" />
+      {/* 10m lines (dashed shorter) */}
+      <line x1={0} y1={PH*0.40} x2={PW} y2={PH*0.40} stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="3 6" />
+      <line x1={0} y1={PH*0.60} x2={PW} y2={PH*0.60} stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="3 6" />
+      {/* 5m lines */}
+      <line x1={0} y1={PH*0.05} x2={PW} y2={PH*0.05} stroke="rgba(255,255,255,0.07)" strokeWidth="1" strokeDasharray="1 4" />
+      <line x1={0} y1={PH*0.95} x2={PW} y2={PH*0.95} stroke="rgba(255,255,255,0.07)" strokeWidth="1" strokeDasharray="1 4" />
+      {/* Try lines */}
+      <line x1={0} y1={PH*0.04} x2={PW} y2={PH*0.04} stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
+      <line x1={0} y1={PH*0.96} x2={PW} y2={PH*0.96} stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
+      {/* Goalposts (simplified) */}
+      <rect x={PW*0.46} y={0} width={PW*0.08} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
+      <rect x={PW*0.46} y={PH*0.96} width={PW*0.08} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
+      {/* Zone labels */}
+      <text x="8" y="14" fontSize="8.5" fill="rgba(255,255,255,0.32)" fontFamily="monospace">OWN TRY</text>
+      <text x="8" y={PH*0.22 - 4} fontSize="8.5" fill="rgba(255,255,255,0.32)" fontFamily="monospace">OWN 22</text>
+      <text x="8" y={PH/2 - 4} fontSize="8.5" fill="rgba(255,255,255,0.32)" fontFamily="monospace">HALFWAY</text>
+      <text x="8" y={PH*0.78 - 4} fontSize="8.5" fill="rgba(255,255,255,0.32)" fontFamily="monospace">OPP 22</text>
+      <text x="8" y={PH - 8} fontSize="8.5" fill="rgba(255,255,255,0.32)" fontFamily="monospace">OPP TRY</text>
+    </g>
+  )}
+}
+
+// ─── MOCK DATA ──────────────────────────────────────────────────────────────
+
+const RG_PLAYERS = [
+  // Forwards 1–8
+  { id:'all',       name:'All squad',     group:'all',     posNum: 0  },
+  { id:'forwards',  name:'Forwards',      group:'forwards',posNum: 0  },
+  { id:'backs',     name:'Backs',         group:'backs',   posNum: 0  },
+  { id:'tom-h',     name:'Tom Harrison',  group:'forwards',posNum: 1, pos:'Loosehead'   },
+  { id:'marcus',    name:'Marcus Webb',   group:'forwards',posNum: 4, pos:'Lock'         },
+  { id:'karl',      name:'Karl Foster',   group:'forwards',posNum: 7, pos:'Flanker'      },
+  { id:'danny-fos', name:'Danny Foster',  group:'forwards',posNum: 8, pos:'No.8'         },
+  { id:'sam',       name:'Sam Ellis',     group:'backs',   posNum: 9, pos:'Scrum Half'   },
+  { id:'cole',      name:'Danny Cole',    group:'backs',   posNum:10, pos:'Fly Half'     },
+  { id:'matt',      name:'Matt Jones',    group:'backs',   posNum:12, pos:'Inside Centre' },
+  { id:'obi',       name:'David Obi',     group:'backs',   posNum:13, pos:'Outside Centre' },
+  { id:'luke',      name:'Luke Barnes',   group:'backs',   posNum:15, pos:'Fullback'     },
+] as const
+type RgPlayerId = typeof RG_PLAYERS[number]['id']
+
+const RG_SESSIONS = [
+  { id:'m1', label:'Match · vs Jersey Reds (11 Apr)', kind:'match' },
+  { id:'m2', label:'Match · vs Westmoor Lions (5 Apr)',     kind:'match' },
+  { id:'m3', label:'Match · vs Northbridge Saxons (29 Mar)',    kind:'match' },
+  { id:'t1', label:'Training · Tue 8 Apr (Tactical)', kind:'training' },
+  { id:'t2', label:'Training · Mon 7 Apr (S&C)',      kind:'training' },
+] as const
+
+// Per-player (or grouping) heat blobs on the pitch [x%, y%, intensity 0–1].
+const RG_HEAT: Record<string, Array<[number, number, number]>> = {
+  all: [
+    [15,20,0.9],[20,35,0.8],[18,50,0.7],[22,65,0.6],[25,80,0.5],
+    [50,20,0.6],[50,40,0.95],[50,60,0.85],[50,75,0.6],[50,90,0.4],
+    [80,25,0.7],[75,45,0.8],[78,60,0.7],[82,75,0.5],[85,85,0.4],
+    [35,30,0.8],[40,50,0.95],[38,70,0.7],[45,85,0.5],
+    [60,35,0.7],[65,55,0.85],[62,70,0.6],[70,80,0.4],
+    [30,15,0.5],[70,15,0.5],[50,10,0.6],[50,95,0.3],
+  ],
+  forwards: [
+    [40,30,0.85],[50,40,1.0],[60,35,0.78],[42,52,0.92],[58,52,0.85],
+    [48,18,0.62],[52,22,0.55],[40,68,0.68],[60,65,0.62],
+    [30,42,0.55],[70,46,0.55],[50,12,0.42],[50,82,0.32],
+  ],
+  backs: [
+    [20,80,0.78],[80,80,0.75],[50,85,0.92],[35,75,0.65],[65,72,0.62],
+    [25,55,0.72],[75,55,0.7],[50,55,0.85],[40,42,0.55],[60,42,0.55],
+    [50,90,0.45],[15,40,0.5],[85,40,0.5],
+  ],
+  'tom-h': [
+    [30,20,0.95],[28,35,0.85],[32,45,0.72],[25,55,0.62],[30,65,0.5],
+    [35,30,0.82],[40,40,0.75],[38,50,0.62],[35,60,0.5],
+    [20,25,0.6],[22,40,0.7],[18,55,0.5],
+  ],
+  marcus: [
+    [40,32,0.85],[48,45,0.95],[52,48,0.92],[58,40,0.78],[45,55,0.72],
+    [42,18,0.55],[55,22,0.5],[38,62,0.55],[60,58,0.52],
+  ],
+  karl: [
+    [40,45,0.9],[45,55,0.85],[50,50,0.95],[55,45,0.85],[50,40,0.72],
+    [35,40,0.72],[60,40,0.72],[45,35,0.62],[55,35,0.62],
+    [40,60,0.62],[60,60,0.55],[50,65,0.45],
+  ],
+  'danny-fos': [
+    [45,55,0.92],[55,52,0.95],[50,62,0.88],[42,68,0.78],[58,68,0.75],
+    [38,42,0.62],[60,42,0.62],[48,80,0.62],[52,80,0.6],
+  ],
+  sam: [
+    [48,30,0.72],[50,35,0.95],[52,30,0.72],[50,40,0.85],[48,45,0.62],
+    [50,50,0.92],[50,55,0.85],[50,60,0.75],[50,65,0.62],
+    [45,25,0.55],[55,25,0.55],[50,20,0.45],
+  ],
+  cole: [
+    [40,40,0.78],[50,45,0.92],[60,42,0.78],[45,35,0.7],[55,38,0.72],
+    [40,55,0.62],[60,55,0.6],[50,30,0.65],[50,60,0.55],
+  ],
+  matt: [
+    [35,55,0.8],[45,52,0.92],[55,55,0.92],[65,52,0.78],[42,42,0.65],
+    [58,42,0.65],[40,68,0.55],[60,68,0.55],
+  ],
+  obi: [
+    [60,55,0.78],[70,52,0.88],[80,55,0.7],[50,55,0.62],[68,42,0.55],
+    [75,68,0.55],[55,72,0.45],
+  ],
+  luke: [
+    [50,85,0.92],[45,80,0.85],[55,80,0.85],[50,90,0.72],[48,75,0.62],
+    [30,70,0.62],[70,70,0.62],[50,65,0.55],[40,60,0.45],[60,60,0.45],
+    [20,50,0.32],[80,50,0.32],[50,55,0.55],
+  ],
+}
+
+// Per-player territory split.
+const RG_ZONE_STATS: Record<string, { ownHalf:number; midfield:number; oppHalf:number; opp22:number }> = {
+  all:        { ownHalf:28, midfield:34, oppHalf:26, opp22:12 },
+  forwards:   { ownHalf:32, midfield:42, oppHalf:20, opp22:6 },
+  backs:      { ownHalf:22, midfield:30, oppHalf:30, opp22:18 },
+  'tom-h':    { ownHalf:52, midfield:31, oppHalf:14, opp22:3  },
+  marcus:     { ownHalf:34, midfield:46, oppHalf:16, opp22:4  },
+  karl:       { ownHalf:18, midfield:48, oppHalf:26, opp22:8  },
+  'danny-fos':{ ownHalf:22, midfield:44, oppHalf:24, opp22:10 },
+  sam:        { ownHalf:24, midfield:44, oppHalf:24, opp22:8  },
+  cole:       { ownHalf:30, midfield:48, oppHalf:18, opp22:4  },
+  matt:       { ownHalf:18, midfield:42, oppHalf:30, opp22:10 },
+  obi:        { ownHalf:14, midfield:38, oppHalf:34, opp22:14 },
+  luke:       { ownHalf:8,  midfield:22, oppHalf:42, opp22:28 },
+}
+
+// Section 2 — tackle / contact events. [x%, y%, type, dominant=intensity 0–1]
+type TackleType = 'dominant' | 'normal' | 'missed'
+const RG_TACKLES: Array<[number, number, TackleType, number]> = [
+  [22,30,'dominant',0.95],[28,42,'dominant',0.88],[32,55,'normal',0.6],[40,38,'normal',0.55],
+  [48,52,'dominant',0.92],[52,48,'dominant',0.85],[60,55,'normal',0.6],[68,52,'normal',0.55],
+  [44,68,'normal',0.55],[36,72,'missed',0.3],[58,72,'normal',0.55],[72,68,'normal',0.5],
+  [22,50,'normal',0.55],[78,50,'normal',0.55],[44,80,'missed',0.32],[55,82,'normal',0.5],
+  [50,30,'dominant',0.78],[35,45,'dominant',0.82],[64,45,'normal',0.62],
+  [32,60,'normal',0.55],[68,60,'dominant',0.78],[42,28,'normal',0.55],[58,28,'normal',0.55],
+  [12,38,'missed',0.28],[88,42,'missed',0.3],
+]
+
+// Section 3 — ruck heat blobs + ruck speed by zone.
+const RG_RUCKS: Array<[number, number, number]> = [
+  [42,38,0.85],[48,42,0.95],[55,40,0.92],[58,48,0.85],[44,52,0.82],
+  [50,58,0.95],[52,62,0.88],[42,68,0.7],[60,68,0.72],
+  [38,32,0.62],[62,32,0.6],[34,75,0.5],[68,75,0.5],
+  [22,45,0.45],[78,48,0.45],[50,82,0.55],
+]
+const RG_RUCK_SPEED = [
+  { zone:'Own 22',     avg:5.4, target:4.5, wonPct:78, color:0.78 },
+  { zone:'Own half',   avg:4.2, target:4.0, wonPct:88, color:0.55 },
+  { zone:'Opp half',   avg:3.6, target:3.5, wonPct:92, color:0.38 },
+  { zone:'Opp 22',     avg:3.2, target:3.2, wonPct:94, color:0.28 },
+]
+const RG_TURNOVERS: Array<[number, number, number]> = [
+  [44,48,0.85],[55,52,0.92],[40,68,0.62],[60,72,0.55],[48,42,0.78],[35,32,0.45],[65,32,0.45],
+]
+
+// Section 4 — set-piece event positions.
+type SetPieceEvent = { x:number; y:number; kind:'lineout-won'|'lineout-lost'|'scrum-won'|'scrum-lost' }
+const RG_SETPIECES: SetPieceEvent[] = [
+  // Lineouts (touchlines x≈4 / x≈96)
+  { x:4,  y:28, kind:'lineout-won'  },
+  { x:4,  y:42, kind:'lineout-won'  },
+  { x:96, y:35, kind:'lineout-won'  },
+  { x:4,  y:62, kind:'lineout-lost' },
+  { x:96, y:55, kind:'lineout-won'  },
+  { x:96, y:78, kind:'lineout-won'  },
+  { x:4,  y:82, kind:'lineout-won'  },
+  { x:96, y:88, kind:'lineout-lost' },
+  // Scrums (mid-pitch)
+  { x:35, y:30, kind:'scrum-won'    },
+  { x:50, y:42, kind:'scrum-won'    },
+  { x:55, y:55, kind:'scrum-won'    },
+  { x:50, y:62, kind:'scrum-lost'   },
+  { x:65, y:75, kind:'scrum-won'    },
+  { x:42, y:68, kind:'scrum-won'    },
+]
+const RG_LINEOUT_BY_ZONE = [
+  { zone:'Own 22',  won:18, lost:2,  pct:90 },
+  { zone:'Midfield',won:28, lost:6,  pct:82 },
+  { zone:'Opp 22',  won:22, lost:4,  pct:85 },
+]
+
+// Section 5 — squad GPS load (10 matches × players).
+const RG_SQUAD_LOAD_PLAYERS = [
+  { name:'Tom Harrison',  pos:'Prop',     acwr:0.94 },
+  { name:'Marcus Webb',   pos:'Lock',     acwr:1.12 },
+  { name:'Karl Foster',   pos:'Flanker',  acwr:1.44 },
+  { name:'Danny Foster',  pos:'No.8',     acwr:1.38 },
+  { name:'Sam Ellis',     pos:'Scrum',    acwr:1.08 },
+  { name:'Danny Cole',    pos:'Fly',      acwr:0.78 },
+  { name:'Matt Jones',    pos:'Centre',   acwr:1.16 },
+  { name:'David Obi',     pos:'Centre',   acwr:1.08 },
+  { name:'Luke Barnes',   pos:'Fullback', acwr:1.52 },
+  { name:'Will Briggs',   pos:'Wing',     acwr:0.88 },
+  { name:'Ben Patel',     pos:'Hooker',   acwr:1.05 },
+]
+const RG_SQUAD_LOAD_GRID: number[][] = RG_SQUAD_LOAD_PLAYERS.map((_, r) =>
+  Array.from({ length: 10 }).map((__, c) => {
+    const seed = (r * 31 + c * 13 + 7) % 23
+    const base = 0.35 + (seed / 23) * 0.55
+    const spike = (r === 8 && c === 7) || (r === 3 && c === 5) || (r === 2 && c === 6) ? 0.22 : 0
+    return Math.max(0, Math.min(1, base + spike))
+  })
+)
+
+// Section 6 — training movement.
+const RG_TRAIN_INTENSITY_A = [0.78, 0.42, 0.92, 0.35, 0.7, 0.55, 0.28, 0.85, 0.62, 0.45]
+const RG_TRAIN_INTENSITY_B = [0.5, 0.72, 0.45, 0.82, 0.48, 0.62, 0.92, 0.38, 0.7, 0.6]
+const RG_DISTANCE_BANDS = [
+  { label:'Stand',  a:1820, b:1620, color:0.05 },
+  { label:'Walk',   a:2240, b:1980, color:0.20 },
+  { label:'Jog',    a:1640, b:1880, color:0.45 },
+  { label:'Run',    a: 920, b:1240, color:0.75 },
+  { label:'Sprint', a: 280, b: 410, color:0.98 },
+]
+
+// ─── COMPONENT ──────────────────────────────────────────────────────────────
+
+function RugbyGpsHeatmapsView() {
+  // ── Section 1 state ──
+  const [pid,  setPid]  = useState<RgPlayerId>('all')
+  const [sid,  setSid]  = useState<typeof RG_SESSIONS[number]['id']>('m1')
+  const [view, setView] = useState<'heatmap' | 'zones' | 'lines'>('heatmap')
+
+  const player  = RG_PLAYERS.find(p => p.id === pid) ?? RG_PLAYERS[0]
+  const session = RG_SESSIONS.find(s => s.id === sid) ?? RG_SESSIONS[0]
+  const heat    = RG_HEAT[pid] ?? RG_HEAT.all
+  const zones   = RG_ZONE_STATS[pid] ?? RG_ZONE_STATS.all
+
+  // ── Section 2 state ──
+  const [tkType, setTkType] = useState<'all' | TackleType>('all')
+  const tackles = RG_TACKLES.filter(t => tkType === 'all' ? true : t[2] === tkType)
+  const tackleCounts = {
+    dominant: RG_TACKLES.filter(t => t[2] === 'dominant').length,
+    normal:   RG_TACKLES.filter(t => t[2] === 'normal').length,
+    missed:   RG_TACKLES.filter(t => t[2] === 'missed').length,
+    total:    RG_TACKLES.length,
+  }
+  const completionPct = Math.round((tackleCounts.total - tackleCounts.missed) / tackleCounts.total * 100)
+
+  // ── Section 4 state ──
+  const [spType, setSpType] = useState<'all' | 'lineout' | 'scrum'>('all')
+  const spEvents = RG_SETPIECES.filter(e =>
+    spType === 'all' ? true : e.kind.startsWith(spType)
+  )
+
+  // ── Section 6 state ──
+  const totalA = RG_DISTANCE_BANDS.reduce((s, z) => s + z.a, 0)
+  const totalB = RG_DISTANCE_BANDS.reduce((s, z) => s + z.b, 0)
+
+  const heatStops = Array.from({ length: 24 }).map((_, i) => rgHeat(i / 23))
+
+  const Pill = ({ active, onClick, children }: { active?:boolean; onClick?:()=>void; children:React.ReactNode }) => (
+    <button onClick={onClick}
+      className="text-[11px] font-medium px-3 py-1 rounded-full transition-colors"
+      style={{
+        border: `1px solid ${active ? '#8B5CF6' : '#1F2937'}`,
+        background: active ? 'rgba(139,92,246,0.18)' : 'transparent',
+        color: active ? '#c4b5fd' : '#94a3b8',
+        cursor: 'pointer',
+      }}>{children}</button>
+  )
+
+  // ─── Section 1: Pitch SVG (hero) ────────────────────────────────────────
+  const pitch1 = rgPitch({ id: 'hero' })
+  const cx1 = (xPct: number) => (xPct / 100) * pitch1.PW
+  const cy1 = (yPct: number) => pitch1.PH - (yPct / 100) * pitch1.PH
+  const heroPrimaryZone =
+    zones.opp22 > 25 ? 'Opp 22' :
+    zones.oppHalf > zones.ownHalf ? 'Opp half' :
+    zones.midfield > 40 ? 'Midfield' : 'Own half'
 
   return (
     <div className="space-y-6">
       <QuickActionsBar />
-      <SectionHeader icon="🗺️" title="Player Heatmap" subtitle="GPS x/y position density — match and training sessions" />
+      <SectionHeader icon="🔥" title="GPS Heatmaps" subtitle="Pitch position, tackle, ruck, set-piece, squad load and training movement — all from Lumio GPS + FrameSports tagging." />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Session</label>
-          <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
-            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-            {sessions.map(s => <option key={s}>{s}</option>)}
-          </select>
+      {/* ── 1. PITCH POSITION HEATMAP (HERO) ──────────────────────── */}
+      <Card className="border-purple-600/30">
+        <div className="flex items-start gap-4 mb-4 flex-wrap">
+          <div className="flex-1 min-w-[240px]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Hero · Pitch Position Heatmap</div>
+            <h2 className="text-xl font-black text-white mt-1">Where {player.name} played</h2>
+            <p className="text-xs mt-1 text-gray-400">
+              Primary zone <span className="text-white font-semibold">{heroPrimaryZone}</span>
+              <span className="text-gray-600"> · {session.label}</span>
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 items-end">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.06em] text-gray-600">HEAT</span>
+              <span className="text-[10px] text-gray-600">rare</span>
+              <div className="flex h-1.5 w-32 overflow-hidden rounded-sm border border-gray-800">
+                {heatStops.map((s, i) => <div key={i} className="flex-1" style={{ background: s }} />)}
+              </div>
+              <span className="text-[10px] text-gray-600">primary</span>
+            </div>
+            <div className="text-[11px] flex gap-3 text-gray-600">
+              <span>POSITIONS <span className="text-white font-semibold">{heat.length}</span></span>
+              <span>·</span>
+              <span>DIST <span className="text-white font-semibold">11.4 km</span></span>
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Player</label>
-          <div className="flex flex-wrap gap-1">
-            {players.map(p => (
-              <button key={p} onClick={() => setSelectedPlayer(p)}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${selectedPlayer === p ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>
+
+        {/* Position group filter */}
+        <div className="mb-3">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Position group</div>
+          <div className="flex gap-2 flex-wrap">
+            <Pill active={pid === 'all'}      onClick={() => setPid('all')}>All squad</Pill>
+            <Pill active={pid === 'forwards'} onClick={() => setPid('forwards')}>Forwards (1–8)</Pill>
+            <Pill active={pid === 'backs'}    onClick={() => setPid('backs')}>Backs (9–15)</Pill>
+          </div>
+        </div>
+
+        {/* Individual filter */}
+        <div className="mb-3">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Player</div>
+          <div className="flex gap-1 flex-wrap">
+            {RG_PLAYERS.filter(p => !['all','forwards','backs'].includes(p.id)).map(p => (
+              <Pill key={p.id} active={pid === p.id} onClick={() => setPid(p.id)}>
+                <span className="font-mono text-[10px] mr-1.5 text-gray-500">#{p.posNum}</span>
+                {p.name.split(' ')[1] || p.name}
+              </Pill>
             ))}
           </div>
         </div>
-        <div>
-          <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">View</label>
-          <div className="flex gap-2">
-            {(['heatmap', 'zones', 'lines'] as const).map(v => (
-              <button key={v} onClick={() => setSelectedView(v)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border capitalize transition-all ${selectedView === v ? 'border-purple-500 bg-purple-600/20 text-purple-300' : 'border-gray-800 text-gray-500 hover:text-gray-300'}`}>{v}</button>
-            ))}
+
+        {/* Session + view toggle */}
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3 mb-4">
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Session</label>
+            <select value={sid} onChange={e => setSid(e.target.value as typeof sid)}
+              className="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+              {RG_SESSIONS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">View</label>
+            <div className="flex gap-2">
+              {(['heatmap','zones','lines'] as const).map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border capitalize transition-all ${view === v ? 'border-purple-500 bg-purple-600/20 text-purple-300' : 'border-gray-800 text-gray-500 hover:text-gray-300'}`}>{v}</button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-semibold text-white">{selectedPlayer === 'All' ? 'Full squad' : selectedPlayer} — {selectedSession}</div>
-          <div className="flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-purple-500 opacity-90" />High density</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-blue-500 opacity-60" />Medium</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block bg-teal-500 opacity-40" />Low</span>
-          </div>
-        </div>
+        {/* Pitch */}
+        <svg viewBox={`0 0 ${pitch1.PW} ${pitch1.PH}`} width="100%" style={{ maxHeight: 420 }}>
+          {pitch1.defs}
+          {pitch1.markings}
 
-        <svg viewBox={`0 0 ${PW} ${PH}`} width="100%" style={{ maxHeight: 360 }}>
-          <rect width={PW} height={PH} fill="#0a1a0a" rx="4" />
-          <rect x={0} y={0} width={PW} height={PH} fill="none" stroke={lineCol} strokeWidth="2" />
-          <line x1={0} y1={PH/2} x2={PW} y2={PH/2} stroke={lineCol} strokeWidth="1.5" />
-          <circle cx={PW/2} cy={PH/2} r={PH*0.12} fill="none" stroke={lineCol} strokeWidth="1" />
-          <circle cx={PW/2} cy={PH/2} r="3" fill={lineCol} />
-          <line x1={0} y1={PH*0.22} x2={PW} y2={PH*0.22} stroke={lineCol} strokeWidth="1" strokeDasharray="6 4" />
-          <line x1={0} y1={PH*0.78} x2={PW} y2={PH*0.78} stroke={lineCol} strokeWidth="1" strokeDasharray="6 4" />
-          <line x1={0} y1={PH*0.04} x2={PW} y2={PH*0.04} stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
-          <line x1={0} y1={PH*0.96} x2={PW} y2={PH*0.96} stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
-          <rect x={PW*0.42} y={0} width={PW*0.16} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-          <rect x={PW*0.42} y={PH*0.96} width={PW*0.16} height={PH*0.04} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-          <text x="8" y="16" fontSize="9" fill="rgba(255,255,255,0.3)">Own try line</text>
-          <text x="8" y={PH*0.22 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Own 22</text>
-          <text x="8" y={PH/2 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Halfway</text>
-          <text x="8" y={PH*0.78 - 4} fontSize="9" fill="rgba(255,255,255,0.3)">Opp 22</text>
-          <text x="8" y={PH - 6} fontSize="9" fill="rgba(255,255,255,0.3)">Opp try line</text>
-
-          {selectedView === 'heatmap' && zoneData.map(([x, y, intensity], i) => (
-            <circle key={i} cx={cx(x)} cy={cy2(y)} r={intensity * 55}
-              fill={intensity > 0.75 ? '#8B5CF6' : intensity > 0.5 ? '#3B82F6' : '#0D9488'}
-              opacity={intensity * 0.45} />
+          {view === 'heatmap' && (
+            <g filter="url(#rg-glow-hero)">
+              {heat.map(([x, y, intensity], i) => (
+                <circle key={i} cx={cx1(x)} cy={cy1(y)} r={20 + intensity * 38}
+                  fill={rgHeat(intensity)} fillOpacity={0.18 + intensity * 0.4} />
+              ))}
+            </g>
+          )}
+          {view === 'heatmap' && heat.map(([x, y, intensity], i) => (
+            <circle key={`m-${i}`} cx={cx1(x)} cy={cy1(y)} r={3 + intensity * 2}
+              fill={rgHeat(intensity)} stroke="rgba(0,0,0,0.5)" strokeWidth="0.6" />
           ))}
 
-          {selectedView === 'zones' && (
+          {view === 'zones' && (
             <g>
-              <rect x={0} y={PH*0.78} width={PW} height={PH*0.18} fill="#8B5CF6" opacity={zones.opp22 / 200} rx="2" />
-              <rect x={0} y={PH*0.22} width={PW} height={PH*0.56} fill="#3B82F6" opacity={zones.midfield / 200} rx="2" />
-              <rect x={0} y={0} width={PW} height={PH*0.22} fill="#0D9488" opacity={zones.ownHalf / 200} rx="2" />
-              <text x={PW/2} y={PH*0.88} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.opp22}%</text>
-              <text x={PW/2} y={PH*0.52} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.midfield}%</text>
-              <text x={PW/2} y={PH*0.14} fontSize="20" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.8">{zones.ownHalf}%</text>
+              <rect x={0} y={pitch1.PH*0.78} width={pitch1.PW} height={pitch1.PH*0.18} fill={rgHeat(zones.opp22 / 30)}    fillOpacity="0.5" rx="2" />
+              <rect x={0} y={pitch1.PH*0.50} width={pitch1.PW} height={pitch1.PH*0.28} fill={rgHeat(zones.oppHalf / 50)}  fillOpacity="0.45" rx="2" />
+              <rect x={0} y={pitch1.PH*0.22} width={pitch1.PW} height={pitch1.PH*0.28} fill={rgHeat(zones.midfield / 50)} fillOpacity="0.45" rx="2" />
+              <rect x={0} y={0}                width={pitch1.PW} height={pitch1.PH*0.22} fill={rgHeat(zones.ownHalf / 50)}  fillOpacity="0.45" rx="2" />
+              <text x={pitch1.PW/2} y={pitch1.PH*0.88} fontSize="22" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.85">{zones.opp22}%</text>
+              <text x={pitch1.PW/2} y={pitch1.PH*0.66} fontSize="22" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.85">{zones.oppHalf}%</text>
+              <text x={pitch1.PW/2} y={pitch1.PH*0.38} fontSize="22" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.85">{zones.midfield}%</text>
+              <text x={pitch1.PW/2} y={pitch1.PH*0.13} fontSize="22" fill="white" textAnchor="middle" fontWeight="bold" opacity="0.85">{zones.ownHalf}%</text>
             </g>
           )}
 
-          {selectedView === 'lines' && zoneData.slice(0, -1).map(([x, y], i) => {
-            const next = zoneData[i + 1]
-            if (!next) return null
-            return <line key={i} x1={cx(x)} y1={cy2(y)} x2={cx(next[0])} y2={cy2(next[1])} stroke="#8B5CF6" strokeWidth="1.5" opacity="0.4" strokeLinecap="round" />
+          {view === 'lines' && heat.slice(0, -1).map(([x, y], i) => {
+            const next = heat[i + 1]; if (!next) return null
+            return <line key={`ln-${i}`} x1={cx1(x)} y1={cy1(y)} x2={cx1(next[0])} y2={cy1(next[1])}
+              stroke="#8B5CF6" strokeWidth="1.5" opacity="0.4" strokeLinecap="round" />
           })}
         </svg>
+
+        {/* Stat strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <StatCard label="Own Half"  value={`${zones.ownHalf}%`}  sub="Defensive zone"        color="teal" />
+          <StatCard label="Midfield"  value={`${zones.midfield}%`} sub="22–22 corridor"        color="blue" />
+          <StatCard label="Opp Half"  value={`${zones.oppHalf}%`}  sub="Attacking territory"   color="purple" />
+          <StatCard label="Opp 22"    value={`${zones.opp22}%`}    sub="Red zone time"         color="orange" />
+        </div>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Own Half" value={`${zones.ownHalf}%`} sub="Time in own half" color="teal" />
-        <StatCard label="Midfield" value={`${zones.midfield}%`} sub="22–22 zone" color="blue" />
-        <StatCard label="Opp Half" value={`${zones.oppHalf}%`} sub="Opposition territory" color="purple" />
-        <StatCard label="Opp 22" value={`${zones.opp22}%`} sub="Attacking 22" color="orange" />
-      </div>
-
+      {/* ── 2. TACKLE / CONTACT HEATMAP ──────────────────────────── */}
       <Card>
-        <div className="text-sm font-semibold text-white mb-3">Championship Position Benchmarks — {selectedPlayer}</div>
-        <div className="space-y-2 text-xs text-gray-400">
-          {selectedPlayer === 'Luke Barnes' && (
-            <>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Time in opp 22</span><span className="text-purple-400 font-bold">28% <span className="text-green-400 ml-1">↑ bench: 18%</span></span></div>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Carrying distance</span><span className="text-white">2.4km</span></div>
-              <div className="flex justify-between py-1.5"><span>High-speed runs in opp half</span><span className="text-white">14</span></div>
-            </>
+        <div className="flex items-baseline gap-3 mb-3 flex-wrap">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Section 02</div>
+            <h3 className="text-base font-bold text-white mt-1">Tackle &amp; Contact Heatmap</h3>
+            <p className="text-[11px] text-gray-500">{tackleCounts.total} tackle events · {completionPct}% completion · FrameSports auto-tagged.</p>
+          </div>
+          <div className="ml-auto flex gap-2 flex-wrap">
+            <Pill active={tkType === 'all'}      onClick={() => setTkType('all')}>All ({tackleCounts.total})</Pill>
+            <Pill active={tkType === 'dominant'} onClick={() => setTkType('dominant')}>Dominant ({tackleCounts.dominant})</Pill>
+            <Pill active={tkType === 'normal'}   onClick={() => setTkType('normal')}>Normal ({tackleCounts.normal})</Pill>
+            <Pill active={tkType === 'missed'}   onClick={() => setTkType('missed')}>Missed ({tackleCounts.missed})</Pill>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+          {(() => {
+            const p = rgPitch({ id: 'tackle' })
+            const cxF = (xPct: number) => (xPct / 100) * p.PW
+            const cyF = (yPct: number) => p.PH - (yPct / 100) * p.PH
+            return (
+              <svg viewBox={`0 0 ${p.PW} ${p.PH}`} width="100%">
+                {p.defs}
+                {p.markings}
+                {/* Heat blobs (intensity glow) */}
+                <g filter="url(#rg-glow-tackle)">
+                  {tackles.map(([x,y,_t,intensity], i) => (
+                    <circle key={`tg-${i}`} cx={cxF(x)} cy={cyF(y)} r={14 + intensity * 14}
+                      fill={rgHeat(intensity)} fillOpacity={0.22 + intensity * 0.3} />
+                  ))}
+                </g>
+                {/* Markers per tackle type */}
+                {tackles.map(([x,y,t,intensity], i) => {
+                  const fill = t === 'dominant' ? rgHeat(0.95) : t === 'missed' ? '#ef4444' : rgHeat(0.55)
+                  const stroke = t === 'missed' ? '#fca5a5' : 'rgba(0,0,0,0.6)'
+                  return t === 'missed' ? (
+                    <g key={`tk-${i}`}>
+                      <circle cx={cxF(x)} cy={cyF(y)} r={5} fill="none" stroke={fill} strokeWidth="1.5" />
+                      <line x1={cxF(x)-3} y1={cyF(y)-3} x2={cxF(x)+3} y2={cyF(y)+3} stroke={fill} strokeWidth="1.5" />
+                      <line x1={cxF(x)-3} y1={cyF(y)+3} x2={cxF(x)+3} y2={cyF(y)-3} stroke={fill} strokeWidth="1.5" />
+                    </g>
+                  ) : (
+                    <circle key={`tk-${i}`} cx={cxF(x)} cy={cyF(y)} r={t === 'dominant' ? 5 : 3.5}
+                      fill={fill} stroke={stroke} strokeWidth="0.6"
+                      opacity={t === 'dominant' ? 1 : 0.85} />
+                  )
+                })}
+              </svg>
+            )
+          })()}
+          <div className="space-y-3">
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Type breakdown</div>
+              {[
+                { k:'Dominant', v:tackleCounts.dominant, c:rgHeat(0.95) },
+                { k:'Normal',   v:tackleCounts.normal,   c:rgHeat(0.55) },
+                { k:'Missed',   v:tackleCounts.missed,   c:'#ef4444' },
+              ].map(r => (
+                <div key={r.k} className="mb-2">
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-white">{r.k}</span>
+                    <span className="font-bold tabular-nums" style={{ color:r.c }}>{r.v}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-gray-800">
+                    <div className="h-full" style={{ width:`${(r.v/tackleCounts.total)*100}%`, background:r.c }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Top tacklers</div>
+              {[
+                { name:'Karl Foster', n:18, dom:9 },
+                { name:'Marcus Webb', n:14, dom:6 },
+                { name:'Danny Foster',n:12, dom:5 },
+              ].map(p => (
+                <div key={p.name} className="flex justify-between py-1.5 border-b border-gray-800/50 text-[11px] last:border-0">
+                  <span className="text-gray-300">{p.name}</span>
+                  <span className="text-white">{p.n} <span className="text-gray-500">({p.dom} dom)</span></span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg p-3 bg-purple-600/10 border border-purple-600/30 text-[11px] text-purple-300">
+              💡 36% of dominant hits inside opp 22 — pressure is winning the gainline.
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── 3. RUCK & BREAKDOWN HEATMAP ──────────────────────────── */}
+      <Card>
+        <div className="mb-3">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Section 03</div>
+          <h3 className="text-base font-bold text-white mt-1">Ruck &amp; Breakdown Heatmap</h3>
+          <p className="text-[11px] text-gray-500">Ruck cluster density, ruck speed by zone, and jackal turnover map.</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+          {(() => {
+            const p = rgPitch({ id: 'ruck' })
+            const cxF = (xPct: number) => (xPct / 100) * p.PW
+            const cyF = (yPct: number) => p.PH - (yPct / 100) * p.PH
+            return (
+              <svg viewBox={`0 0 ${p.PW} ${p.PH}`} width="100%">
+                {p.defs}
+                {p.markings}
+                <g filter="url(#rg-glow-ruck)">
+                  {RG_RUCKS.map(([x, y, intensity], i) => (
+                    <circle key={`r-${i}`} cx={cxF(x)} cy={cyF(y)} r={22 + intensity * 26}
+                      fill={rgHeat(intensity)} fillOpacity={0.2 + intensity * 0.35} />
+                  ))}
+                </g>
+                {RG_RUCKS.map(([x, y, intensity], i) => (
+                  <circle key={`rm-${i}`} cx={cxF(x)} cy={cyF(y)} r={3 + intensity * 2}
+                    fill={rgHeat(intensity)} stroke="rgba(0,0,0,0.5)" strokeWidth="0.6" />
+                ))}
+                {/* Turnovers — yellow stars */}
+                {RG_TURNOVERS.map(([x, y, intensity], i) => (
+                  <g key={`to-${i}`}>
+                    <circle cx={cxF(x)} cy={cyF(y)} r="6" fill="none" stroke="#facc15" strokeWidth="1.5" opacity={0.5 + intensity * 0.5}>
+                      <animate attributeName="r" values="5;9;5" dur="2.4s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.9;0.2;0.9" dur="2.4s" repeatCount="indefinite" />
+                    </circle>
+                    <text x={cxF(x)} y={cyF(y) + 3} textAnchor="middle" fontSize="9" fontWeight="700" fill="#facc15">★</text>
+                  </g>
+                ))}
+              </svg>
+            )
+          })()}
+          <div className="space-y-3">
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Ruck speed by zone</div>
+              {RG_RUCK_SPEED.map(z => (
+                <div key={z.zone} className="mb-2">
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-white">{z.zone}</span>
+                    <span className="font-bold tabular-nums" style={{ color: rgHeat(z.color) }}>{z.avg.toFixed(1)}s</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-gray-800">
+                    <div className="h-full" style={{ width:`${Math.min(100, z.avg / 6 * 100)}%`, background: rgHeat(z.color), boxShadow: z.color > 0.7 ? `0 0 6px ${rgGlow(z.color)}` : 'none' }} />
+                  </div>
+                  <div className="text-[10px] text-gray-600 mt-0.5">target {z.target.toFixed(1)}s · won {z.wonPct}%</div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Jackal turnovers</div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-2xl font-black text-yellow-400">{RG_TURNOVERS.length}</span>
+                <span className="text-[11px] text-gray-500">forced this match</span>
+              </div>
+              <div className="text-[11px] text-gray-400">★ markers on the pitch — most concentrated around the breakdown after carry into 22m.</div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── 4. SET-PIECE HEATMAP ─────────────────────────────────── */}
+      <Card>
+        <div className="flex items-baseline gap-3 mb-3 flex-wrap">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Section 04</div>
+            <h3 className="text-base font-bold text-white mt-1">Set-Piece Heatmap</h3>
+            <p className="text-[11px] text-gray-500">Lineout and scrum positions across the pitch, with success markers.</p>
+          </div>
+          <div className="ml-auto flex gap-2 flex-wrap">
+            <Pill active={spType === 'all'}     onClick={() => setSpType('all')}>All</Pill>
+            <Pill active={spType === 'lineout'} onClick={() => setSpType('lineout')}>Lineout ({RG_SETPIECES.filter(e => e.kind.startsWith('lineout')).length})</Pill>
+            <Pill active={spType === 'scrum'}   onClick={() => setSpType('scrum')}>Scrum ({RG_SETPIECES.filter(e => e.kind.startsWith('scrum')).length})</Pill>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+          {(() => {
+            const p = rgPitch({ id: 'setpiece' })
+            const cxF = (xPct: number) => (xPct / 100) * p.PW
+            const cyF = (yPct: number) => p.PH - (yPct / 100) * p.PH
+            return (
+              <svg viewBox={`0 0 ${p.PW} ${p.PH}`} width="100%">
+                {p.defs}
+                {p.markings}
+                {spEvents.map((e, i) => {
+                  const won = e.kind.endsWith('won')
+                  const isLineout = e.kind.startsWith('lineout')
+                  const fill = won ? rgHeat(0.85) : '#ef4444'
+                  return (
+                    <g key={i}>
+                      {isLineout ? (
+                        // Lineout = vertical bar (lift)
+                        <g>
+                          <rect x={cxF(e.x) - 1} y={cyF(e.y) - 8} width="2" height="16" fill={fill} opacity={won ? 1 : 0.85} />
+                          <circle cx={cxF(e.x)} cy={cyF(e.y) - 10} r={4} fill={fill} stroke="rgba(0,0,0,0.6)" strokeWidth="0.6" />
+                        </g>
+                      ) : (
+                        // Scrum = octagon-ish
+                        <g>
+                          <polygon points={`${cxF(e.x)-7},${cyF(e.y)-3} ${cxF(e.x)-3},${cyF(e.y)-7} ${cxF(e.x)+3},${cyF(e.y)-7} ${cxF(e.x)+7},${cyF(e.y)-3} ${cxF(e.x)+7},${cyF(e.y)+3} ${cxF(e.x)+3},${cyF(e.y)+7} ${cxF(e.x)-3},${cyF(e.y)+7} ${cxF(e.x)-7},${cyF(e.y)+3}`}
+                            fill={fill} stroke="rgba(0,0,0,0.6)" strokeWidth="0.6" opacity={won ? 1 : 0.85} />
+                          <text x={cxF(e.x)} y={cyF(e.y) + 3} textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff">S</text>
+                        </g>
+                      )}
+                    </g>
+                  )
+                })}
+              </svg>
+            )
+          })()}
+          <div className="space-y-3">
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Lineout win % by zone</div>
+              {RG_LINEOUT_BY_ZONE.map(z => {
+                const c = z.pct >= 88 ? 0.25 : z.pct >= 80 ? 0.55 : 0.85
+                return (
+                  <div key={z.zone} className="mb-2">
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-white">{z.zone}</span>
+                      <span className="font-bold tabular-nums" style={{ color: rgHeat(c) }}>{z.pct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden bg-gray-800">
+                      <div className="h-full" style={{ width:`${z.pct}%`, background: rgHeat(c) }} />
+                    </div>
+                    <div className="text-[10px] text-gray-600 mt-0.5">{z.won}/{z.won + z.lost} taken cleanly</div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Markers</div>
+              <div className="flex flex-col gap-1.5 text-[11px]">
+                <div className="flex items-center gap-2"><span style={{ width:8, height:14, background:rgHeat(0.85), display:'inline-block', borderRadius:1 }} /> Lineout won</div>
+                <div className="flex items-center gap-2"><span style={{ width:8, height:14, background:'#ef4444', display:'inline-block', borderRadius:1 }} /> Lineout lost</div>
+                <div className="flex items-center gap-2"><span style={{ width:14, height:14, background:rgHeat(0.85), display:'inline-block', borderRadius:2 }} /> Scrum won</div>
+                <div className="flex items-center gap-2"><span style={{ width:14, height:14, background:'#ef4444', display:'inline-block', borderRadius:2 }} /> Scrum lost</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── 5. SQUAD GPS LOAD GRID ───────────────────────────────── */}
+      <Card>
+        <div className="mb-3">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Section 05</div>
+          <h3 className="text-base font-bold text-white mt-1">Squad GPS Load Grid</h3>
+          <p className="text-[11px] text-gray-500">Rolling 10 matches · brightness = total session load · ring = ACWR overload.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <div className="flex items-center gap-1 text-[10px] text-gray-500 mb-2 min-w-[640px]">
+            <span style={{ width:130 }} />
+            {Array.from({ length: 10 }).map((_, i) => <span key={i} className="flex-1 text-center font-mono">M{i + 1}</span>)}
+            <span style={{ width:60 }} className="text-right">ACWR</span>
+          </div>
+          {RG_SQUAD_LOAD_PLAYERS.map((p, r) => (
+            <div key={p.name} className="flex items-center gap-1 mb-1 min-w-[640px]">
+              <span style={{ width:130 }} className="text-[11px] text-gray-300 truncate">
+                {p.name} <span className="text-gray-600">· {p.pos}</span>
+              </span>
+              {RG_SQUAD_LOAD_GRID[r].map((v, c) => (
+                <div key={c} title={`${p.name} · M${c + 1} · load ${Math.round(v * 100)}`}
+                  className="flex-1 rounded-sm"
+                  style={{
+                    height:18,
+                    background: rgHeat(v),
+                    boxShadow: v > 0.85 ? `0 0 8px ${rgGlow(v)}` : 'none',
+                    border: v > 0.85 ? `1px solid #ef4444` : 'none',
+                  }} />
+              ))}
+              <span style={{ width:60 }} className="text-right">
+                <span className={`text-[11px] font-bold tabular-nums ${p.acwr >= 1.5 ? 'text-red-400' : p.acwr >= 1.3 ? 'text-amber-400' : p.acwr <= 0.8 ? 'text-blue-400' : 'text-green-400'}`}>
+                  {p.acwr.toFixed(2)}
+                  {p.acwr >= 1.5 && <span className="ml-1">⚠</span>}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="text-[11px] text-gray-500 mt-3 pt-3 border-t border-gray-800/50 flex items-center gap-3 flex-wrap">
+          <span>Overload (&gt;1.5):</span>
+          {RG_SQUAD_LOAD_PLAYERS.filter(p => p.acwr >= 1.5).map(p =>
+            <span key={p.name} className="text-red-400 font-bold">{p.name}</span>
           )}
-          {selectedPlayer === 'Tom Harrison' && (
-            <>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Time in own half</span><span className="text-purple-400 font-bold">52% <span className="text-gray-400 ml-1">— typical for Prop</span></span></div>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Scrummaging zone entries</span><span className="text-white">18</span></div>
-              <div className="flex justify-between py-1.5"><span>Carrying distance</span><span className="text-white">0.9km</span></div>
-            </>
+          <span className="ml-auto">Underload (&lt;0.8):</span>
+          {RG_SQUAD_LOAD_PLAYERS.filter(p => p.acwr <= 0.8).map(p =>
+            <span key={p.name} className="text-blue-400 font-bold">{p.name}</span>
           )}
-          {(selectedPlayer === 'All' || !['Luke Barnes', 'Tom Harrison'].includes(selectedPlayer)) && (
-            <>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Opp 22 entries</span><span className="text-purple-400 font-bold">{zones.opp22}% <span className="text-gray-400 ml-1">(bench: 14%)</span></span></div>
-              <div className="flex justify-between py-1.5 border-b border-gray-800/50"><span>Midfield density</span><span className="text-white">{zones.midfield}%</span></div>
-              <div className="flex justify-between py-1.5"><span>Own half defensive coverage</span><span className="text-white">{zones.ownHalf}%</span></div>
-            </>
-          )}
+        </div>
+      </Card>
+
+      {/* ── 6. TRAINING MOVEMENT HEATMAP ─────────────────────────── */}
+      <Card>
+        <div className="flex items-baseline gap-3 mb-3 flex-wrap">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color:'#a855f7' }}>Section 06</div>
+            <h3 className="text-base font-bold text-white mt-1">Training Movement Heatmap</h3>
+            <p className="text-[11px] text-gray-500">Side-by-side session comparison · distance by intensity zone.</p>
+          </div>
+          <span className="ml-auto text-[10px] text-gray-600 uppercase tracking-wider">Tue 8 Apr · The Grange</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-4">
+          {/* Session A mini pitch */}
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Session A · Tactical · 6.94 km</div>
+            {(() => {
+              const p = rgPitch({ id: 'train-a' })
+              return (
+                <svg viewBox={`0 0 ${p.PW} ${p.PH}`} width="100%">
+                  {p.defs}
+                  {p.markings}
+                  <g filter="url(#rg-glow-train-a)">
+                    {RG_TRAIN_INTENSITY_A.map((v, i) => {
+                      const angle = (i / RG_TRAIN_INTENSITY_A.length) * Math.PI * 2
+                      const cx = p.PW / 2 + Math.cos(angle) * 130
+                      const cy = p.PH / 2 + Math.sin(angle) * 80
+                      return <circle key={i} cx={cx} cy={cy} r={14 + v * 22} fill={rgHeat(v)} fillOpacity={0.3 + v * 0.4} />
+                    })}
+                  </g>
+                </svg>
+              )
+            })()}
+          </div>
+
+          {/* Distance by zone */}
+          <div className="rounded-lg p-3 bg-[#0a0c14] border border-gray-800">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Distance by intensity</div>
+            {RG_DISTANCE_BANDS.map(z => {
+              const tot = z.a + z.b
+              const aPct = (z.a / tot) * 100
+              return (
+                <div key={z.label} className="mb-2.5">
+                  <div className="flex justify-between text-[11px] mb-1 tabular-nums">
+                    <span className="text-white">{z.label}</span>
+                    <span><span style={{ color: rgHeat(z.color) }}>{z.a}</span> · <span className="text-gray-600">{z.b} m</span></span>
+                  </div>
+                  <div className="flex h-2 rounded-md overflow-hidden bg-gray-800">
+                    <div style={{ width:`${aPct}%`,        background: rgHeat(z.color), boxShadow: z.color > 0.7 ? `0 0 6px ${rgGlow(z.color)}` : 'none' }} />
+                    <div style={{ width:`${100 - aPct}%`,  background: rgHeat(z.color), opacity: 0.3 }} />
+                  </div>
+                </div>
+              )
+            })}
+            <div className="text-[11px] text-gray-500 mt-2 pt-2 border-t border-gray-800/50 flex justify-between tabular-nums">
+              <span>A total <span className="text-white font-bold">{totalA.toLocaleString()} m</span></span>
+              <span>B total <span className="text-white font-bold">{totalB.toLocaleString()} m</span></span>
+            </div>
+          </div>
+
+          {/* Session B mini pitch */}
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Session B · S&amp;C · 7.14 km</div>
+            {(() => {
+              const p = rgPitch({ id: 'train-b' })
+              return (
+                <svg viewBox={`0 0 ${p.PW} ${p.PH}`} width="100%">
+                  {p.defs}
+                  {p.markings}
+                  <g filter="url(#rg-glow-train-b)">
+                    {RG_TRAIN_INTENSITY_B.map((v, i) => {
+                      const angle = (i / RG_TRAIN_INTENSITY_B.length) * Math.PI * 2 + 0.6
+                      const cx = p.PW / 2 + Math.cos(angle) * 110
+                      const cy = p.PH / 2 + Math.sin(angle) * 90
+                      return <circle key={i} cx={cx} cy={cy} r={14 + v * 22} fill={rgHeat(v)} fillOpacity={0.3 + v * 0.4} />
+                    })}
+                  </g>
+                </svg>
+              )
+            })()}
+          </div>
         </div>
       </Card>
 
       <div className="text-[10px] text-gray-700 text-center">
-        GPS position data: Lumio GPS · 10Hz sampling · Updated after each session sync
+        GPS position data: Lumio GPS · 10Hz sampling · Updated after each session sync · Tackle, ruck and set-piece events tagged by FrameSports.
       </div>
     </div>
   )
@@ -2499,9 +5673,9 @@ function PlayerHeatmapView() {
 
 // ─── VIDEO ANALYSIS VIEW ──────────────────────────────────────────────────────
 const VIDEO_CLIPS = [
-  { id: 1, title: 'Opposition — Bath RFC (attack shapes)', category: 'Opposition',  duration: '18:42', date: '8 Apr',  tags: ['Bath', 'Attack', 'Phase play'], notes: 'Look for their 10-12 loop after 3 phases — key attacking shape.' },
+  { id: 1, title: 'Opposition — Westmoor Lions (attack shapes)', category: 'Opposition',  duration: '18:42', date: '8 Apr',  tags: ['Westmoor', 'Attack', 'Phase play'], notes: 'Look for their 10-12 loop after 3 phases — key attacking shape.' },
   { id: 2, title: 'Training — Lineout patterns session',    category: 'Training',    duration: '24:10', date: '7 Apr',  tags: ['Lineout', 'Set piece'],        notes: 'New front-ball option for #2 — discuss Friday.' },
-  { id: 3, title: 'Match review — Saracens (full)',         category: 'Match',       duration: '1:14:30', date: '5 Apr', tags: ['Saracens', 'Full match'],     notes: 'Second-half defence let us down between 60–70.' },
+  { id: 3, title: 'Match review — Northbridge Saxons (full)',         category: 'Match',       duration: '1:14:30', date: '5 Apr', tags: ['Northbridge Saxons', 'Full match'],     notes: 'Second-half defence let us down between 60–70.' },
   { id: 4, title: 'Set piece — attacking maul drive',       category: 'Training',    duration: '11:05', date: '4 Apr',  tags: ['Maul', 'Attack'],              notes: 'Foley cleanout technique — teach to the front row.' },
   { id: 5, title: 'Individual — Foley breakdown technique', category: 'Individual',  duration: '9:22',  date: '3 Apr',  tags: ['Foley', 'Breakdown'],          notes: 'Body height is excellent — share as coaching clip.' },
 ]
@@ -2560,7 +5734,7 @@ function VideoAnalysisView() {
 
 // ─── MATCH STATS VIEW ─────────────────────────────────────────────────────────
 const MATCH_RESULTS = [
-  { date: '5 Apr',  opp: 'Saracens',      ha: 'A' as const, score: '21-27', result: 'L' as const, poss: 48, tackles: 89, lineout: 78, scrum: 75 },
+  { date: '5 Apr',  opp: 'Northbridge Saxons',      ha: 'A' as const, score: '21-27', result: 'L' as const, poss: 48, tackles: 89, lineout: 78, scrum: 75 },
   { date: '29 Mar', opp: 'Bristol',       ha: 'H' as const, score: '34-18', result: 'W' as const, poss: 58, tackles: 91, lineout: 85, scrum: 82 },
   { date: '22 Mar', opp: 'Worcester',     ha: 'A' as const, score: '17-17', result: 'D' as const, poss: 51, tackles: 84, lineout: 80, scrum: 77 },
   { date: '15 Mar', opp: 'Ealing',        ha: 'H' as const, score: '29-12', result: 'W' as const, poss: 61, tackles: 92, lineout: 88, scrum: 81 },
@@ -2720,7 +5894,7 @@ const WEEK_PLAN: { day: string; label: string; sessions: TrainingSession[]; acce
   { day: 'Wed', label: 'Wednesday', accent: 'blue',   sessions: [{ time: '—', title: 'Recovery & analysis only', group: 'Full squad' }] },
   { day: 'Thu', label: 'Thursday',  accent: 'purple', sessions: [{ time: '11:00', title: "Captain's run", group: 'Full squad' }] },
   { day: 'Fri', label: 'Friday',    accent: 'amber',  sessions: [{ time: 'AM',     title: 'Travel + pre-match prep', group: 'Matchday 23' }] },
-  { day: 'Sat', label: 'Saturday',  accent: 'red',    sessions: [{ time: '15:00', title: 'MATCH DAY — Bath RFC (A)', group: 'Matchday 23' }] },
+  { day: 'Sat', label: 'Saturday',  accent: 'red',    sessions: [{ time: '15:00', title: 'MATCH DAY — Westmoor Lions (A)', group: 'Matchday 23' }] },
   { day: 'Sun', label: 'Sunday',    accent: 'green',  sessions: [{ time: '—', title: 'Rest / recovery', group: 'Full squad' }] },
 ]
 
@@ -2906,7 +6080,7 @@ Keep under 400 words.` }]
 const RUGBY_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; roundupChannels: 'all' | string[]; message: string | null }> = {
   player: { label: 'Player', icon: '🏉', accent: '#7C3AED', sidebar: 'all', hiddenTabs: [], roundupChannels: 'all', message: null },
   agent: { label: 'Agent', icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','matchdayrev','contracts','agents','calendar','mediahr','stadium','activation'], hiddenTabs: ['team','dailytasks'], roundupChannels: ['agent','sponsor'], message: 'Commercial and contracts view.' },
-  coach: { label: 'Coach', icon: '📋', accent: '#22C55E', sidebar: ['dashboard','dorbriefing','insights','matchday','selection','availability','gps-load','heatmap','video-analysis','match-stats','setpiece','carryanalytics','training-planner','periodisation','opposition','halftime'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['coach','medical'], message: 'Performance and tactical view.' },
+  coach: { label: 'Coach', icon: '📋', accent: '#22C55E', sidebar: ['dashboard','dorbriefing','insights','matchday','selection','availability','gps-load','gps-heatmaps','video-analysis','match-stats','setpiece','carryanalytics','training-planner','periodisation','opposition','halftime'], hiddenTabs: ['quickwins','dontmiss'], roundupChannels: ['coach','medical'], message: 'Performance and tactical view.' },
   physio: { label: 'Physio', icon: '⚕️', accent: '#EF4444', sidebar: ['dashboard','concussion','rtp','medical','welfareaudit','mentalperformance','gps-load'], hiddenTabs: ['quickwins','dontmiss','team'], roundupChannels: ['medical'], message: 'Medical and recovery view.' },
   sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: ['dashboard','sponsorship','mediahr','fanhub','matchdayrev'], hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], roundupChannels: ['sponsor'], message: null },
 }
@@ -3127,7 +6301,7 @@ function RugbySponsorDashboard({ session, club }: { session: SportsDemoSession; 
             <div className="space-y-2">
               {[
                 { date: 'Sat 11 Apr', match: 'vs Jersey Reds', type: 'Premiership', hospitality: '4 boxes available' },
-                { date: 'Sat 25 Apr', match: 'vs Saracens', type: 'Championship', hospitality: '2 boxes available' },
+                { date: 'Sat 25 Apr', match: 'vs Northbridge Saxons', type: 'Championship', hospitality: '2 boxes available' },
                 { date: 'Sat 3 May', match: 'Hartfield Building Society Day', type: 'Sponsor Event', hospitality: '40 guests confirmed' },
               ].map((m, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 text-xs">
@@ -3186,7 +6360,7 @@ function RugbySponsorDashboard({ session, club }: { session: SportsDemoSession; 
           {[
             { date: 'Sat 11 Apr', event: 'Fan Zone — Jersey Reds (H)', tickets: 'Free entry' },
             { date: 'Sat 3 May', event: 'Hartfield Building Society Hospitality Day', tickets: '40 guests — invite only' },
-            { date: 'Sat 10 May', event: 'Season Finale vs Saracens', tickets: 'Free entry' },
+            { date: 'Sat 10 May', event: 'Season Finale vs Northbridge Saxons', tickets: 'Free entry' },
             { date: 'Sun 25 May', event: 'End of Season Awards', tickets: 'Club Members+' },
           ].map((e, i) => (
             <Card key={i}>
@@ -4298,7 +7472,6 @@ function PreSeasonView({ club, session }: { club: RugbyClub; session?: SportsDem
 function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const [activeSection,setActiveSection]=useState('dashboard');
   const club = DEMO_CLUB;
-  const groups = ['CLUB OVERVIEW','SALARY CAP','FRANCHISE','SQUAD','PERFORMANCE','RECRUITMENT','WELFARE','COMMERCIAL',"WOMEN'S RUGBY",'INTELLIGENCE'];
 
   // Rugby League removed — Union is the only variant. Code retained as a
   // const so existing prop wiring (rugbyCode={rugbyCode}) keeps working.
@@ -4325,16 +7498,15 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
   const roleConfig = RUGBY_ROLE_CONFIG[currentRole] ?? RUGBY_ROLE_CONFIG.player
   const isPlayer = currentRole === 'player'
   const isSponsor = currentRole === 'sponsor'
-  const visibleSidebarItems = roleConfig.sidebar === 'all' ? SIDEBAR_ITEMS : SIDEBAR_ITEMS.filter(item => (roleConfig.sidebar as string[]).includes(item.id))
 
   const renderView = () => {
     switch(activeSection) {
-      case 'dashboard':       return <ClubDashboardView club={club} session={session} onOpenModal={setActiveModal} rugbyCode={rugbyCode}/>;
+      case 'dashboard':       return <ClubDashboardView onOpenModal={setActiveModal} onNavigate={setActiveSection}/>;
       case 'dorbriefing':     return <DoRBriefingView club={club}/>;
       case 'insights':        return <InsightsView club={club} activeRole={session.role}/>;
       case 'matchday':        return <MatchDayCentreView club={club}/>;
       case 'calendar':        return <ClubCalendarView/>;
-      case 'preseason':       return <PreSeasonView club={club} session={session}/>;
+      case 'tours-camps':     return <RugbyToursAndCampsView preSeasonContent={<PreSeasonView club={club} session={session}/>} />;
       case 'capdashboard':    return <CapDashboardView club={club}/>;
       case 'contracts':       return <PlayerContractsView/>;
       case 'scenario':        return <ScenarioModellerView club={club}/>;
@@ -4349,7 +7521,7 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'international':   return <InternationalDutyView/>;
       case 'loans':           return <LoanManagementView/>;
       case 'gps-load':        return <GPSLoadView/>;
-      case 'heatmap':         return <PlayerHeatmapView/>;
+      case 'gps-heatmaps':    return <RugbyGpsHeatmapsView/>;
       case 'video-analysis':  return <VideoAnalysisView/>;
       case 'match-stats':     return <MatchStatsView/>;
       case 'setpiece':        return <SetPieceAnalyticsView/>;
@@ -4380,90 +7552,93 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
-      default:                return <ClubDashboardView club={club} session={session} onOpenModal={setActiveModal} rugbyCode={rugbyCode}/>;
+      default:                return <ClubDashboardView onOpenModal={setActiveModal}/>;
     }
   };
 
   return (
-    <div className="min-h-screen" style={{background:'#07080F',color:'#F9FAFB'}}>
-      {/* Floating/Pinned Sidebar */}
-      <aside className="flex flex-col overflow-hidden"
+    <div className="min-h-screen flex" style={{background:'#07080F',color:'#F9FAFB',zoom:0.9}}>
+      {/* Floating/Pinned Sidebar — v2 style */}
+      <aside
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
         style={{
           width: sidebarExpanded ? 220 : 72,
-          backgroundColor: '#0a0c14',
-          borderRight: '1px solid #1F2937',
+          backgroundColor: THEMES.dark.bg,
+          borderRight: `1px solid ${THEMES.dark.border}`,
           transition: 'width 250ms ease',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          height: '100vh',
-          zIndex: 40,
-        }}
-        onMouseEnter={handleSidebarEnter}
-        onMouseLeave={handleSidebarLeave}>
-
-        {/* Sidebar Header */}
-        <div className="flex items-center shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 56, padding: sidebarExpanded ? '12px 10px' : '12px 4px', gap: sidebarExpanded ? 8 : 0 }}>
-          <div className="flex items-center gap-2 flex-1 min-w-0" style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center', paddingLeft: sidebarExpanded ? 4 : 0 }}>
-            {session.logoDataUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={session.logoDataUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-              : <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)' }}>
-                  🏉
-                </div>
-            }
-            {sidebarExpanded && (
-              <span className="text-xs font-bold uppercase tracking-widest truncate" style={{ color: '#4B5563' }}>
-                Lumio Rugby
-              </span>
-            )}
-          </div>
+          position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', flexShrink: 0, zIndex: 40,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          fontFamily: FONT,
+        }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 12px', minHeight: 56, borderBottom: `1px solid ${THEMES.dark.border}` }}>
+          {session.logoDataUrl
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={session.logoDataUrl} alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+            : <div style={{ width: 28, height: 28, borderRadius: 8, background: RUGBY_ACCENT.hex, display: 'grid', placeItems: 'center', color: THEMES.dark.btnText, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>H</div>
+          }
           {sidebarExpanded && (
-            <button onClick={togglePin} className="shrink-0 p-1 rounded" style={{ color: sidebarPinned ? '#7C3AED' : '#4B5563', transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05, flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: THEMES.dark.text }}>Lumio</span>
+              <span style={{ fontSize: 9.5, color: THEMES.dark.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Hartfield RFC</span>
+            </div>
+          )}
+          {sidebarExpanded && (
+            <button onClick={togglePin} title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              style={{ background: 'transparent', border: 0, cursor: 'pointer', color: sidebarPinned ? RUGBY_ACCENT.hex : THEMES.dark.text3, padding: 4, transform: sidebarPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 200ms, color 200ms' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
             </button>
           )}
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2 px-1.5">
-          {groups.map(group => {
-            const items = visibleSidebarItems.filter(i => i.group === group);
-            if (items.length === 0) return null;
+        {/* Nav groups (sourced from RUGBY_NAV_GROUPS, role-filtered) */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '14px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {RUGBY_NAV_GROUPS.map(grp => {
+            const allowed = roleConfig.sidebar
+            const filtered = allowed === 'all' ? grp.items : grp.items.filter(it => (allowed as string[]).includes(it.id))
+            if (filtered.length === 0) return null
             return (
-              <div key={group} className="mb-3">
+              <div key={grp.g}>
                 {sidebarExpanded && (
-                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-2 mb-1">{group}</div>
+                  <div style={{ padding: '0 8px 6px', fontSize: 9.5, color: THEMES.dark.text3, letterSpacing: '0.1em', textTransform: 'uppercase', userSelect: 'none' }}>{grp.g}</div>
                 )}
-                {items.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
-                    className="w-full flex items-center gap-2.5 py-2 rounded-lg mb-0.5 transition-all text-left"
-                    style={{
-                      backgroundColor: activeSection === item.id ? 'rgba(139,92,246,0.12)' : 'transparent',
-                      color: activeSection === item.id ? '#c084fc' : '#6B7280',
-                      borderLeft: activeSection === item.id ? '2px solid #a855f7' : '2px solid transparent',
-                      paddingLeft: sidebarExpanded ? 10 : 0,
-                      justifyContent: sidebarExpanded ? 'flex-start' : 'center',
-                    }}
-                    title={sidebarExpanded ? undefined : item.label}
-                  >
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    {sidebarExpanded && <span className="text-xs font-medium truncate">{item.label}</span>}
-                    {item.id === 'preseason' && sidebarExpanded && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white ml-auto" style={{ backgroundColor: '#F59E0B' }}>NEW</span>}
-                  </button>
-                ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {filtered.map(item => {
+                    const isActive = activeSection === item.id
+                    return (
+                      <button key={item.id}
+                        onClick={() => { setActiveSection(item.id); if (!sidebarPinned) setSidebarHovered(false) }}
+                        title={sidebarExpanded ? undefined : item.label}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: sidebarExpanded ? '6px 8px' : '6px 0',
+                          borderRadius: 6,
+                          background: isActive ? RUGBY_ACCENT.dim : 'transparent',
+                          color: isActive ? THEMES.dark.text : THEMES.dark.text2,
+                          boxShadow: isActive ? `inset 2px 0 0 ${RUGBY_ACCENT.hex}` : 'none',
+                          border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+                          justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                          transition: 'background .12s, color .12s',
+                        }}>
+                        <V2Icon name={item.icon || 'dot'} size={13} stroke={1.6} style={{ color: isActive ? RUGBY_ACCENT.hex : THEMES.dark.text3, flexShrink: 0 }} />
+                        {sidebarExpanded && <span style={{ flex: 1, fontSize: 12.5 }}>{item.label}</span>}
+                        {sidebarExpanded && item.badge && (
+                          <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: RUGBY_ACCENT.hex, color: THEMES.dark.btnText, fontWeight: 700, letterSpacing: '0.04em' }}>{item.badge}</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            );
+            )
           })}
         </nav>
 
         <RoleSwitcher
           session={session}
           roles={RUGBY_ROLES}
-          accentColor="#7C3AED"
+          accentColor={RUGBY_ACCENT.hex}
           onRoleChange={(role) => {
             setRoleOverride(role)
             const key = 'lumio_rugby_demo_session'
@@ -4476,29 +7651,16 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           sidebarCollapsed={!sidebarExpanded}
         />
 
-        {/* Sidebar Footer */}
         {sidebarExpanded && (
-          <div className="p-3 border-t border-gray-800">
-            <div className="text-[9px] text-gray-700 uppercase tracking-wider font-medium">Plan</div>
-            <div className="text-xs text-purple-400 font-semibold mt-0.5">{club.plan}</div>
+          <div style={{ padding: 12, borderTop: `1px solid ${THEMES.dark.border}` }}>
+            <div style={{ fontSize: 9, color: THEMES.dark.text3, letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500 }}>Plan</div>
+            <div style={{ fontSize: 11.5, color: RUGBY_ACCENT.hex, fontWeight: 600, marginTop: 2 }}>{club.plan}</div>
           </div>
         )}
-        <div className="p-4 border-t flex items-center justify-center" style={{ borderColor: '#1F2937' }}>
-          {sidebarExpanded ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/rugby_logo.png" alt="Lumio Rugby" className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity"
-                onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute('style') }} />
-              <span style={{ display: 'none', color: '#4B5563', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' }}>LUMIO RUGBY</span>
-            </>
-          ) : (
-            <span className="text-lg">🏉</span>
-          )}
-        </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: sidebarPinned ? 220 : 72, transition: 'margin-left 250ms ease' }}>
+      <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
           style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
@@ -4546,47 +7708,11 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           } catch { return null }
         })()}
 
-        {/* Content + Card Row */}
+        {/* Content (right summary panel removed — main fills full width) */}
         {isSponsor ? (
           <RugbySponsorDashboard session={session} club={club} />
         ) : (
-        <div className="flex-1 flex overflow-hidden">
-          {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
-
-          {/* Right Sidebar */}
-          <div className="hidden lg:flex flex-col items-center gap-4 p-4 border-l border-gray-800 flex-shrink-0" style={{width:'220px'}}>
-            <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-4 text-center">
-              {session.logoDataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={session.logoDataUrl} alt="" className="w-10 h-10 rounded-full mx-auto mb-2 object-cover" />
-              ) : (
-                <div className="text-3xl mb-2">🏉</div>
-              )}
-              <div className="text-sm font-bold text-white">{session.clubName || club.name}</div>
-              <div className="text-[10px] text-gray-500">{club.league}</div>
-              <div className="text-xs text-purple-400 font-medium mt-1">#{club.leaguePosition} in league</div>
-              <div className="text-xs text-gray-400 mt-1">{club.stadium}</div>
-              {session.userName && <div className="text-[10px] text-gray-500 mt-2 border-t border-gray-800 pt-2">{session.userName}</div>}
-            </div>
-            <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3">
-              <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Next Match</div>
-              <div className="text-xs text-purple-400 font-medium">{club.nextFixture}</div>
-              <div className="text-xs text-gray-300 mt-1">{club.nextFixtureDate}</div>
-              <div className="text-xs text-gray-500">KO 3:00pm · The Grange</div>
-            </div>
-            <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3">
-              <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Cap Status</div>
-              <div className="text-xs text-green-400 font-medium">COMPLIANT</div>
-              <div className="text-xs text-gray-400 mt-1">{fmt(club.capCeiling - club.currentSpend)} headroom</div>
-            </div>
-            <div className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3">
-              <div className="text-xs text-gray-500 font-semibold uppercase mb-2">Franchise</div>
-              <div className="text-xs text-amber-400 font-medium">{club.franchiseScore}%</div>
-              <div className="text-xs text-gray-400 mt-1">2 criteria RED</div>
-            </div>
-          </div>
-        </div>
         )}
       </div>
 

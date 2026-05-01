@@ -41,12 +41,16 @@ export async function POST(req: NextRequest) {
   // (buffering, setting cookies after building a fresh response) loses
   // the cookies silently.
   //
-  // Cookie options: force `Secure` + `HttpOnly` + `SameSite=Lax`. iOS
-  // Safari ITP increasingly downgrades or discards cookies on HTTPS that
-  // omit `Secure`, which is why DevTools showed zero cookies after OTP
-  // even though the server was returning Set-Cookie. The default options
-  // bag from @supabase/ssr v0.9 doesn't include these — we set them
-  // explicitly here.
+  // Cookie options: force `Secure` + `SameSite=Lax`. iOS Safari ITP
+  // downgrades or discards cookies on HTTPS that omit `Secure`. We DO
+  // NOT force `HttpOnly` — @supabase/ssr's createBrowserClient reads
+  // the session through document.cookie, which by definition cannot
+  // see HttpOnly cookies. Setting HttpOnly here previously caused an
+  // OTP loop: the cookie was written, the browser sent it on requests
+  // to /api/* (so the server saw an authed user), but client-side
+  // supabase.auth.getSession() returned null, so the page guard and
+  // SportsDemoGate's session-rebuild fallback both treated the user
+  // as unauthenticated and bounced them back to the email screen.
   let response = NextResponse.json({ verified: false }) // placeholder, replaced before return
   const ssr = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,7 +63,6 @@ export async function POST(req: NextRequest) {
             response.cookies.set(c.name, c.value, {
               ...(c.options ?? {}),
               secure:   true,
-              httpOnly: true,
               sameSite: 'lax',
               path:     '/',
             })

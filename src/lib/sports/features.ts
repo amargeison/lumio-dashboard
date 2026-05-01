@@ -98,8 +98,8 @@ export const SPORT_FEATURES: Record<string, SportFeature[]> = {
     { id: 'video', label: 'Video Library', icon: '🎥', group: 'TOOLS', defaultOn: false },
     { id: 'findpro', label: 'Find a Pro', icon: '🔍', group: 'TOOLS', defaultOn: false },
     { id: 'arccos', label: 'Lumio Range', icon: '📡', group: 'INTEGRATIONS', defaultOn: false },
-    { id: 'datagolf', label: 'Lumio Data', icon: '📊', group: 'INTEGRATIONS', defaultOn: false },
-    { id: 'trackman', label: 'Lumio Range Pro', icon: '📡', group: 'INTEGRATIONS', defaultOn: false },
+    { id: 'lumiodata', label: 'Lumio Data', icon: '📊', group: 'INTEGRATIONS', defaultOn: false },
+    { id: 'lumiorange', label: 'Lumio Range Pro', icon: '📡', group: 'INTEGRATIONS', defaultOn: false },
   ],
   boxing: [
     { id: 'camp', label: 'Camp Dashboard', icon: '📊', group: 'OVERVIEW', defaultOn: true },

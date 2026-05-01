@@ -19,7 +19,7 @@ const STAT_PILLS = ['50+ features', 'Championship · Blast · OD · Hundred', 'A
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🏏', title: 'Multi-Format Squad Manager', desc: 'One squad across County Championship, Vitality Blast, One-Day Cup and The Hundred. Availability, form and rotation in a single view.' },
   { icon: '📊', title: 'Performance Analytics', desc: 'Batting averages, strike rates, bowling economy, wagon wheels, pitch maps and spell analysis across formats, seasons and opposition.' },
-  { icon: '📡', title: 'GPS Vest Integration', desc: 'Live Lumio GPS feeds powering bowling load management, ACWR monitoring, high-speed distance and red-flag alerts.' },
+  { icon: '📡', title: 'GPS Vest Integration', desc: 'Live Johan Sports feeds powering bowling load management, ACWR monitoring, high-speed distance and red-flag alerts.' },
   { icon: '🛡️', title: 'ECB Compliance Hub', desc: 'CPA tracker, DBS register, safeguarding logs, concussion protocols and PCA welfare — always inspection-ready.' },
   { icon: '🤖', title: 'AI Morning Briefing', desc: 'Claude-powered daily briefing for Director of Cricket — squad availability, load flags, pitch report, opposition intel and toss advisor.' },
   { icon: '💼', title: 'Commercial & Governance', desc: 'Central contracts, signing pipeline kanban, sponsorship activation, board reporting and finance exports for CEO-level visibility.' },
@@ -33,8 +33,8 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 
 const INTEGRATIONS = [
   { icon: '📊', name: 'CricViz', desc: 'Ball-by-ball analytics' },
-  { icon: '🎥', name: 'Hawk-Eye', desc: 'Video and tracking data' },
-  { icon: '📡', name: 'Lumio GPS', desc: 'Vest load and distance data' },
+  { icon: '🎥', name: 'Lumio Ball Tracking', desc: 'Video and tracking data' },
+  { icon: '📡', name: 'Johan Sports', desc: 'Vest load and distance data' },
   { icon: '🤖', name: 'Claude AI', desc: 'Briefings and match reports' },
   { icon: '🎵', name: 'ElevenLabs', desc: 'Voice briefing delivery' },
   { icon: '🏏', name: 'Play-Cricket', desc: 'ECB fixtures and scorecards' },

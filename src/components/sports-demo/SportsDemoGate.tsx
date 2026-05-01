@@ -368,7 +368,7 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
     <img
       src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'}
       alt={sport}
-      style={{ width: 72, height: 72, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+      style={{ width: 144, height: 144, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
     />
   )
 })
@@ -681,15 +681,68 @@ export default function SportsDemoGate({
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
       // Path C: verify-otp set an sb-*-auth-token cookie for the
-      // provisioned demo user. Reload to /<sport>/<slug>?pwa_install=
-      // <JWT> so iOS Safari's Share → Add to Home Screen captures the
-      // install token verbatim from the URL bar as start_url. The
-      // PwaInstallRedeemer client component on the layout then redeems
-      // it on first PWA cold-launch (?pwa_install is intentionally NOT
-      // intercepted by middleware — see src/middleware.ts comment on
-      // install_token; this token name is different and stays in the URL).
+      // provisioned demo user. Before redirecting we MUST persist the
+      // gate session to localStorage — otherwise we get an OTP loop:
+      //   - cookie set, app_metadata.role updated server-side
+      //   - reload happens
+      //   - TennisTourPage (and friends) require a sports_profiles row
+      //     to treat the user as authed, demo users don't have one
+      //   - falls through to <SportsDemoGate>, which checks localStorage
+      //     first (empty before this fix) then Supabase getSession
+      //     (race-prone when app_metadata hasn't propagated yet)
+      //   - lands on the email screen again → loop
+      // Persisting the session key here means the post-reload mount
+      // immediately restores to 'done' regardless of metadata timing.
       if (data.sessionMinted) {
         if (typeof window !== 'undefined') {
+          // Best-effort: pull the saved profile so the persisted session
+          // includes name/avatar/club without waiting for a follow-up
+          // mount fetch. Failure is non-fatal — we still write a minimal
+          // session below so the loop is broken either way.
+          let profile: {
+            user_name?: string; club_name?: string; role?: string
+            avatar_url?: string | null; logo_url?: string | null; nickname?: string | null
+          } | null = null
+          try {
+            const profileRes = await fetch(
+              `/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`,
+            )
+            const profileData = await profileRes.json().catch(() => null)
+            if (profileData?.profile?.user_name) profile = profileData.profile
+          } catch { /* network — fall through with minimal session */ }
+
+          const savedPhoto = (() => {
+            try { return localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) } catch { return null }
+          })()
+
+          const persisted: SportsDemoSession = {
+            email,
+            userName: profile?.user_name || userName || '',
+            clubName: profile?.club_name || defaultClubName,
+            role: profile?.role || selectedRole || roles[0]?.id || 'player',
+            photoDataUrl: profile?.avatar_url ?? savedPhoto ?? null,
+            logoDataUrl: profile?.logo_url ?? null,
+            nickname: profile?.nickname ?? null,
+            sport,
+            verifiedAt: new Date().toISOString(),
+          }
+          try {
+            localStorage.setItem(sessionKey(sport), JSON.stringify(persisted))
+            localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+            // Mark onboarded only when the server confirms a profile —
+            // otherwise the post-reload restore should still drop into
+            // the wizard for first-time users without a profile row.
+            if (profile?.user_name) localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
+            if (persisted.userName) localStorage.setItem(`lumio_${sport}_name`, persisted.userName)
+            if (persisted.nickname) localStorage.setItem(`lumio_${sport}_nickname`, persisted.nickname)
+            if (persisted.photoDataUrl) {
+              localStorage.setItem(`lumio_${sport}_profile_photo`, persisted.photoDataUrl)
+              localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, persisted.photoDataUrl)
+            }
+            if (persisted.logoDataUrl) localStorage.setItem(`lumio_${sport}_brand_logo`, persisted.logoDataUrl)
+            touchDemoSessionTs(sport)
+          } catch { /* localStorage unavailable — Safari private mode etc */ }
+
           if (data.installToken) {
             const url = new URL(window.location.href)
             url.searchParams.set('pwa_install', data.installToken)

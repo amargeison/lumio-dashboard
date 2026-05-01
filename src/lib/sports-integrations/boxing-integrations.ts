@@ -42,21 +42,21 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'BoxRec commercial-tier API access runs approximately $500–$1,500/month depending on call volume. Backend cost absorbed by Lumio, not charged to fighters. Public-facing fighter profiles remain free on boxrec.com.',
   },
 
-  compubox: {
+  lumiopunchanalytics: {
     icon: '🥊',
-    title: 'CompuBox Stats',
-    subtitle: 'Punch-by-punch statistics from televised bouts — the industry reference.',
-    partnerBadge: 'CompuBox data agreement · per-event coverage · US + UK broadcasts',
-    connectLabel: 'Connect CompuBox',
-    summaryText: 'Every televised fight with CompuBox coverage gets punch-level stats imported — jabs thrown, power shots landed, round-by-round accuracy. The ShotLink-equivalent for professional boxing.',
+    title: 'Lumio Punch Analytics',
+    subtitle: 'Punch-by-punch statistics from televised bouts — Lumio-built reference data.',
+    partnerBadge: 'Lumio-built punch analytics · per-event coverage · US + UK broadcasts',
+    connectLabel: 'Connect Lumio Punch Analytics',
+    summaryText: 'Every televised fight gets punch-level stats imported — jabs thrown, power shots landed, round-by-round accuracy. The ShotLink-equivalent for professional boxing.',
     connectedStats: [
       { label: 'Fights Covered', value: '14' },
       { label: 'Total Rounds', value: '148' },
       { label: 'Punch Events', value: '8,420' },
       { label: 'Accuracy Avg', value: '34.2%' },
     ],
-    whyHeading: 'Why CompuBox is a performance-critical integration',
-    whyBody: 'Punch-output data is the single most accurate indicator of how a fighter performed against elite opposition. Without CompuBox, post-fight analysis relies on memory + broadcast commentary. With it, the Career Stats view shows accuracy trends across every televised fight, the Opposition Analysis can pre-model punch output vs upcoming challengers, and training-camp targets (shots-per-round, power-shot %, body-shot ratio) are measurable instead of vibes-based.',
+    whyHeading: 'Why punch analytics is a performance-critical integration',
+    whyBody: 'Punch-output data is the single most accurate indicator of how a fighter performed against elite opposition. Without it, post-fight analysis relies on memory + broadcast commentary. With it, the Career Stats view shows accuracy trends across every televised fight, the Opposition Analysis can pre-model punch output vs upcoming challengers, and training-camp targets (shots-per-round, power-shot %, body-shot ratio) are measurable instead of vibes-based.',
     endpointsTitle: 'Data Flows Used by Lumio Boxing',
     endpoints: [
       { endpoint: 'Round-by-Round Punch Totals', desc: 'Thrown / landed per round, split jabs vs power shots.', status: 'Live' },
@@ -64,10 +64,10 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Body Shot Ratio', desc: 'Body vs head-shot distribution — key against high-guard opponents.', status: 'Live' },
       { endpoint: 'Punch Output by Minute', desc: 'Minute-by-minute punch-output curve — fatigue-detection proxy.', status: 'Live' },
       { endpoint: 'Opponent Comparative', desc: 'Your output vs opponent\'s in the same round — side-by-side.', status: 'Live' },
-      { endpoint: 'Career Aggregates', desc: 'Career totals across all CompuBox-covered fights.', status: 'Beta' },
+      { endpoint: 'Career Aggregates', desc: 'Career totals across all televised fights.', status: 'Beta' },
       { endpoint: 'Round-Outcome Correlation', desc: 'Judges\' scorecards mapped to punch totals — judging-lean indicator.', status: 'Beta' },
     ],
-    pricing: 'CompuBox data agreements are typically arranged per-event via the broadcaster (DAZN, Matchroom, ESPN, etc.) or through the promoter. Lumio absorbs the aggregation cost; fighters see their own historical CompuBox data in one consolidated view.',
+    pricing: 'Bundled with Lumio Tour Pro and Pro+ — no third-party data agreement required. Fighters see their own historical punch-analytics data in one consolidated view.',
   },
 
   sanctioning: {

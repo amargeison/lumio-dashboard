@@ -71,32 +71,32 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'WDF data-sharing is typically free or low-cost — the federation releases rankings publicly. Lumio runs a sync job nightly. No player-level cost.',
   },
 
-  dartconnect: {
+  lumiolivescoring: {
     icon: '🎯',
-    title: 'DartConnect',
+    title: 'Lumio Live Scoring',
     subtitle: 'On-oche digital scorekeeping with live streaming and session analytics.',
-    partnerBadge: 'DartConnect Pro API · tablet-based scoring · venue + home use',
-    connectLabel: 'Connect DartConnect',
-    summaryText: 'Pull every practice session, venue match, and league night into Lumio automatically. DartConnect is the on-oche scorekeeping app used across the tour — connecting it gives Lumio shot-level granularity without manual entry.',
+    partnerBadge: 'Lumio-built live-scoring · tablet-based · venue + home use',
+    connectLabel: 'Connect Lumio Live Scoring',
+    summaryText: 'Pull every practice session, venue match, and league night into Lumio automatically. Live-scoring captures every leg at the oche on a tablet — connecting it gives Lumio shot-level granularity without manual entry.',
     connectedStats: [
       { label: 'Sessions Synced', value: '247' },
       { label: 'Matches', value: '128' },
       { label: 'Practice Logs', value: '119' },
       { label: 'Latest Sync', value: '3 min ago' },
     ],
-    whyHeading: 'Why DartConnect is the performance-critical integration',
-    whyBody: 'Every practice session averaged, every checkout attempted, every leg played at a venue or league — DartConnect captures them all on a tablet at the oche. Without the integration, Lumio relies on post-session manual entry (the thing pro players never actually do). With it, the 3-dart average trend line is real, the checkout % is live, and the dart-cam analytics have context. It\'s the darts equivalent of a golf shot-tracker.',
+    whyHeading: 'Why live-scoring is the performance-critical integration',
+    whyBody: 'Every practice session averaged, every checkout attempted, every leg played at a venue or league — live-scoring captures them all on a tablet at the oche. Without the integration, Lumio relies on post-session manual entry (the thing pro players never actually do). With it, the 3-dart average trend line is real, the checkout % is live, and the dart-cam analytics have context. It\'s the darts equivalent of a golf shot-tracker.',
     endpointsTitle: 'Data Flows Used by Lumio Darts',
     endpoints: [
       { endpoint: 'Session Summary', desc: '3-dart average, first-9 average, checkout % per session.', status: 'Live' },
       { endpoint: 'Match Results', desc: 'Leg-by-leg match scorecards with opponent metadata.', status: 'Live' },
       { endpoint: 'Practice Metrics', desc: 'Drill-specific analytics — doubles practice, combo drills, bogey numbers.', status: 'Live' },
       { endpoint: 'Historical Archive', desc: 'Overnight sync of the full session history when first connected.', status: 'Live' },
-      { endpoint: 'Live Streaming Link', desc: 'DartConnect-streamed matches auto-tagged for review.', status: 'Beta' },
+      { endpoint: 'Live Streaming Link', desc: 'Live-scored matches auto-tagged for review.', status: 'Beta' },
       { endpoint: 'Opponent Tagging', desc: 'Match opponent data sync — feeds head-to-head view.', status: 'Beta' },
       { endpoint: 'Dart-by-Dart Log', desc: 'Individual dart scores per leg for heatmap — Planned.', status: 'Planned' },
     ],
-    pricing: 'DartConnect Pro is approximately £8–£15/month per account. Lumio-connected players usually already have the subscription via a venue or home set-up. OAuth connection is free on Lumio\'s side — no data stored without consent.',
+    pricing: 'Bundled with Lumio Tour Pro and Pro+ — no third-party scoring subscription required. OAuth connection is free, no data stored without consent.',
   },
 
   dartfish: {
@@ -154,21 +154,21 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'Free to connect if the player has Lumio Wear or Oura. Lumio Wear approximately £20/month; Oura approximately £5/month plus ring hardware. Lumio adds no fee — OAuth connection only.',
   },
 
-  statsports: {
+  johansports: {
     icon: '🛰️',
-    title: 'Lumio GPS Pro / Lumio GPS',
+    title: 'Johan Sports',
     subtitle: 'Step count, walk-on HR, and hydration-adjusted strain for TV-week pacing.',
-    partnerBadge: 'Lumio GPS Pro APEX / EDGE · Lumio GPS vest supported · OAuth + CSV',
-    connectLabel: 'Connect Lumio GPS Pro / Lumio GPS',
+    partnerBadge: 'OAuth · 10Hz GPS + IMU · CSV import for any other vendor',
+    connectLabel: 'Connect Johan Sports',
     summaryText: 'Step count, walk-on HR spike, hydration-adjusted strain. Essential for TV-event weeks where practice-room pacing and green-room waits affect in-match sharpness.',
     connectedStats: [
       { label: 'Session (today)', value: '8,420 steps' },
       { label: 'Walk-on HR peak', value: '142 bpm' },
       { label: 'Load 7-day', value: '1,220 AU' },
-      { label: 'Device', value: 'Lumio GPS' },
+      { label: 'Device', value: 'Johan Sports' },
     ],
-    whyHeading: 'Why Lumio GPS Pro / Lumio GPS matters on TV-week',
-    whyBody: 'Darts looks static but a TV night is four hours on your feet — practice room, walk-on lane, green room, stage, back to practice. The total step count and HR-zone distribution during a TV day is a meaningful load number that correlates with late-match average drop. Feeding Lumio GPS Pro or the Lumio GPS vest into the platform lets the physio see hydration-adjusted strain in near-real-time and intervene between matches.',
+    whyHeading: 'Why GPS load tracking matters on TV-week',
+    whyBody: 'Darts looks static but a TV night is four hours on your feet — practice room, walk-on lane, green room, stage, back to practice. The total step count and HR-zone distribution during a TV day is a meaningful load number that correlates with late-match average drop. Feeding the GPS-vest data into the platform lets the physio see hydration-adjusted strain in near-real-time and intervene between matches.',
     endpointsTitle: 'Data Flows Used by Lumio Darts',
     endpoints: [
       { endpoint: 'Step Count', desc: 'Daily step count with practice / match / off-stage breakdown.', status: 'Live' },
@@ -179,7 +179,7 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Green-Room Recovery Window', desc: 'Between-match recovery HR curve — flags under-recovery.', status: 'Beta' },
       { endpoint: 'Tremor Proxy', desc: 'Accelerometer steadiness score during warm-ups — Planned.', status: 'Planned' },
     ],
-    pricing: 'Lumio GPS Pro APEX is approximately £400–£700/year per unit. Lumio GPS vest is bundled in the Premier League plan (£279/month) — no extra hardware cost. CSV upload is always available as a fallback if neither is connected.',
+    pricing: 'Johan Sports licences are quoted per unit on a per-team basis — speak to the Johan Sports sales team for current pricing. CSV upload is always available as a fallback if you use a different vendor.',
   },
 
   workspace: {

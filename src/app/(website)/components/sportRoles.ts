@@ -53,7 +53,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Academy', detail: 'Youth pathway tracker, development ratings, and progression monitoring.' },
       { name: 'GPS & Load', detail: 'ACWR monitoring, pitch heatmaps, training load planner, injury risk flags.' },
     ],
-    integrations: ['Lumio Scout', 'Lumio GPS', 'FA registration tracking'],
+    integrations: ['Lumio Scout', 'Johan Sports', 'FA registration tracking'],
     whatYouGet: [
       'AI Transfer Researcher — 5 targets with Lumio Fit Score',
       'Transfer Kanban pipeline with deadline countdown',
@@ -74,7 +74,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'AI Post-Match Analysis', detail: 'Input scoreline and formation → Claude generates headline, key moments, player ratings, and manager quote.' },
       { name: 'Press Conference', detail: 'AI-generated 5 questions + suggested responses based on last result and team news.' },
     ],
-    integrations: ['Lumio Vision', 'Lumio Scout', 'Lumio GPS'],
+    integrations: ['Lumio Vision', 'Lumio Scout', 'Johan Sports'],
     whatYouGet: [
       'World-first AI half-time GPS brief in under 10 seconds',
       'AI opposition report with tactical suggestions',
@@ -95,7 +95,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Match Analytics', detail: 'xG, possession, pressing stats, formation data, and club comparison tool.' },
       { name: 'Club Comparison', detail: 'Compare vs 3 rivals + division average across 13 metrics with AI analysis.' },
     ],
-    integrations: ['Lumio GPS', 'Lumio Data'],
+    integrations: ['Johan Sports', 'Lumio Data'],
     whatYouGet: [
       'GPS pitch heatmaps per player or full squad',
       'ACWR 28-day rolling load monitoring with risk alerts',
@@ -115,7 +115,7 @@ export const FOOTBALL_ROLES: SportRole[] = [
       { name: 'Return to Play', detail: 'Stage-by-stage RTP protocol with clearance sign-off and load caps.' },
       { name: 'Player Profile — Medical Tab', detail: 'Full injury timeline, severity badges, and season injury summary per player.' },
     ],
-    integrations: ['Lumio GPS'],
+    integrations: ['Johan Sports'],
     whatYouGet: [
       'ACWR risk flag before every training session',
       'GPS readiness scores — know who can go harder',
@@ -158,7 +158,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'GPS Bowling Load', detail: 'Over-count + ACWR for seamers — injury prevention built in.' },
       { name: 'Signing Pipeline', detail: '5-column Kanban: Identified → Approached → Negotiating → Done → Failed.' },
     ],
-    integrations: ['CricViz', 'Lumio GPS', 'Play-Cricket', 'ECB Portal'],
+    integrations: ['CricViz', 'Johan Sports', 'Play-Cricket', 'ECB Portal'],
     whatYouGet: [
       'Format squad optimiser — Championship XI and T20 XI simultaneously',
       'AI contract renewal memo for expiring players',
@@ -179,7 +179,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'Net Session Planner', detail: '7-day session builder with bowling load limits and overuse flagging.' },
       { name: 'Match Report Generator', detail: 'Input scorecard → Claude generates 150-word match report for club comms.' },
     ],
-    integrations: ['CricViz', 'Hawk-Eye', 'Play-Cricket'],
+    integrations: ['CricViz', 'Lumio Ball Tracking', 'Play-Cricket'],
     whatYouGet: [
       'AI opposition dossier — batting threats, weaknesses, game plan',
       'Declaration planner with run rate risk model',
@@ -199,7 +199,7 @@ export const CRICKET_ROLES: SportRole[] = [
       { name: 'Batting Analytics', detail: 'Format-split averages, wagon wheel, run rate trends.' },
       { name: 'D/L Calculator', detail: 'Duckworth-Lewis-Stern par score tool for weather-interrupted matches.' },
     ],
-    integrations: ['Lumio GPS', 'CricViz', 'Hawk-Eye'],
+    integrations: ['Johan Sports', 'CricViz', 'Lumio Ball Tracking'],
     whatYouGet: [
       'Cricket GPS heatmap — fielding zones and bowling runs',
       'ACWR bowling load with 7-day delivery planner',
@@ -243,7 +243,7 @@ export const TENNIS_ROLES: SportRole[] = [
       { name: 'Match Prep', detail: 'Pre-match routine, opponent dossier, surface stats, and tactical notes.' },
       { name: 'Ace & Shot Tracker', detail: 'Career ace milestones, signature shot win rates, and pressure performance stats.' },
     ],
-    integrations: ['ATP Infosys', 'WTA Live', 'Lumio GPS Vest', 'ElevenLabs'],
+    integrations: ['ATP Infosys', 'WTA Live', 'Johan Sports', 'ElevenLabs'],
     whatYouGet: [
       'Live ranking with daily movement and career high',
       'Points expiry urgency strip — flagged automatically',
@@ -264,7 +264,7 @@ export const TENNIS_ROLES: SportRole[] = [
       { name: 'Match Report PDF', detail: 'Fillable A4 match report with GPS summary, set notes, and tactical assessment.' },
       { name: 'String Tension Advisor', detail: 'Humidity slider → automated tension recommendation based on historical string log.' },
     ],
-    integrations: ['Lumio Vision', 'Lumio GPS Vest', 'Hawk-Eye'],
+    integrations: ['Lumio Vision', 'Johan Sports', 'Lumio Ball Tracking'],
     whatYouGet: [
       'AI practice session analysis after every session',
       'AI post-match debrief with GPS fatigue story',
@@ -303,7 +303,7 @@ export const TENNIS_ROLES: SportRole[] = [
       { name: 'Three-Month Match Load', detail: '90-day match count vs 20-match fatigue threshold — automatic withdrawal recommendation.' },
       { name: 'Physio Hub', detail: 'Injury log, treatment notes, return-to-play stages, and medical clearance.' },
     ],
-    integrations: ['Lumio GPS Vest', 'Whoop', 'Polar'],
+    integrations: ['Johan Sports'],
     whatYouGet: [
       'ACWR automated alert when load enters amber zone',
       '90-day match load vs ATP fatigue threshold',
@@ -390,7 +390,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'World Rankings', detail: 'WBC, WBA, WBO, IBF rankings, mandatory timelines, and undisputed tracker.' },
       { name: 'AI Morning Briefing', detail: 'Claude generates camp day briefing including GPS load, weight, sparring focus, and obligations.' },
     ],
-    integrations: ['Lumio Fight GPS Vest', 'UWB Ring Beacons', 'ElevenLabs'],
+    integrations: ['Johan Sports', 'UWB Ring Beacons', 'ElevenLabs'],
     whatYouGet: [
       'Live ring GPS heatmap on the camp dashboard',
       'ACWR load monitoring — green/amber/red zones',
@@ -411,7 +411,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'Corner Sheet PDF', detail: 'A4 with GPS zone targets, game plan, round notes grid, cutman notes.' },
       { name: 'Multi-Session Overlay', detail: 'Compare camp week 1 vs week 8 ring heatmaps — visual proof of footwork improvement.' },
     ],
-    integrations: ['Lumio Fight GPS Vest', 'UWB Ring Beacons', 'CompuBox'],
+    integrations: ['Johan Sports', 'UWB Ring Beacons', 'Lumio Punch Analytics'],
     whatYouGet: [
       'Ring heatmap per sparring session — centre/ropes/corners',
       'AI footwork analyst — 3 drills from zone data',
@@ -432,7 +432,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'Fight Earnings', detail: 'Earnings ledger, purse history, viewership growth, platform breakdown.' },
       { name: 'BBBofC Compliance', detail: 'Licence status, medical records, suspension log, pre-fight requirements checklist.' },
     ],
-    integrations: ['BBBofC Portal', 'CompuBox', 'DAZN API'],
+    integrations: ['BBBofC Portal', 'Lumio Punch Analytics', 'DAZN API'],
     whatYouGet: [
       'Purse bid floor calculated instantly from any total',
       'Mandatory proceedings tracker with deadline alerts',
@@ -451,7 +451,7 @@ export const BOXING_ROLES: SportRole[] = [
       { name: 'Medical Record', detail: 'Injury log, scan results, treatment notes, BBBofC medical requirements tracker.' },
       { name: 'Recovery & HRV', detail: 'Sleep, HRV, soreness, energy — daily wellness tracking through camp.' },
     ],
-    integrations: ['Lumio Fight GPS Vest', 'Whoop', 'BBBofC Portal'],
+    integrations: ['Johan Sports', 'BBBofC Portal'],
     whatYouGet: [
       'ACWR alert when load enters danger zone (>1.3)',
       'Camp load history — 70 days in one chart',
@@ -475,7 +475,7 @@ export const DARTS_ROLES: SportRole[] = [
       { name: 'Match Prep', detail: 'Opponent stats, H2H record, recent form, and venue context.' },
       { name: 'Pressure Analysis', detail: 'Checkout percentage under pressure, decider legs, final-set performance.' },
     ],
-    integrations: ['PDC API', 'DartConnect', 'ElevenLabs'],
+    integrations: ['PDC API', 'Lumio Live Scoring', 'ElevenLabs'],
     whatYouGet: [
       'Live Order of Merit with prize money breakdown',
       'AI morning briefing before every session',
@@ -514,7 +514,7 @@ export const DARTS_ROLES: SportRole[] = [
       { name: 'Practice Log', detail: 'Session logging with drill targets — checkout practice, scoring practice, match simulation.' },
       { name: 'Opponent Analysis', detail: 'Head-to-head records, opponent checkout %, and tactical notes.' },
     ],
-    integrations: ['DartConnect', 'PDC API'],
+    integrations: ['Lumio Live Scoring', 'PDC API'],
     whatYouGet: [
       'Three-dart average trend over rolling 12 months',
       'Checkout percentage by score range',
@@ -615,7 +615,7 @@ export const RUGBY_ROLES: SportRole[] = [
       { name: 'GPS Load', detail: 'ACWR monitoring, contact load tracking, return-to-play protocol.' },
       { name: 'Transfer Pipeline', detail: 'Kanban pipeline with salary cap headroom per target.' },
     ],
-    integrations: ['Lumio GPS', 'RFU Portal'],
+    integrations: ['Johan Sports', 'RFU Portal'],
     whatYouGet: [
       'GPS load with contact impact tracking',
       'ACWR injury risk flags before every session',
@@ -634,7 +634,7 @@ export const RUGBY_ROLES: SportRole[] = [
       { name: 'AI Opposition Report', detail: 'Formation, key threats, set piece tendencies, 3 tactical suggestions.' },
       { name: 'GPS Match Brief', detail: 'First-half GPS data → AI half-time coaching brief.' },
     ],
-    integrations: ['Lumio GPS', 'Lumio Vision'],
+    integrations: ['Johan Sports', 'Lumio Vision'],
     whatYouGet: [
       'AI opposition report with set piece analysis',
       'GPS half-time brief — fatigue alerts and sub recommendation',

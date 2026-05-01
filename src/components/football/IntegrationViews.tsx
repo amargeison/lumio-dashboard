@@ -173,9 +173,9 @@ export function ScoutingDBView() {
 
 // ─── GPS HARDWARE VIEW ───────────────────────────────────────────────────────
 export function GPSHardwareView() {
-  const [provider, setProvider] = useState<'catapult' | 'statsports'>('catapult')
-  const [catConnected, setCatConnected] = useState(false)
-  const [statConnected, setStatConnected] = useState(false)
+  const [provider, setProvider] = useState<'johansports' | 'csv'>('johansports')
+  const [johanConnected, setJohanConnected] = useState(false)
+  const [csvConnected, setCsvConnected] = useState(false)
   const squadLoad = [
     { name: 'M. Browne', pos: 'LW', totalDist: 52.8, hsr: 11.4, accel: 162, acwr: 1.08, readiness: 82, flag: '🟡' },
     { name: 'D. McCoy-Splatt', pos: 'CM', totalDist: 56.1, hsr: 9.8, accel: 148, acwr: 0.94, readiness: 92, flag: '🟢' },
@@ -185,18 +185,18 @@ export function GPSHardwareView() {
     { name: 'N. Asiimwe', pos: 'RB', totalDist: 31.2, hsr: 6.1, accel: 88, acwr: 0.71, readiness: 74, flag: '🟡' },
   ]
   const providerData = {
-    catapult: { name: 'Lumio GPS (Vector T7)', desc: 'Market leader in elite performance tracking.', cost: '£40,000–£120,000/yr', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
-    statsports: { name: 'Lumio GPS Pro (APEX Pro)', desc: 'Challenger to Lumio GPS — better value at League One level.', cost: '£20,000–£60,000/yr', metrics: ['Total distance', 'High metabolic load', 'Sprint speed (peak)', 'Repeated sprint ability', 'Mechanical load', 'Dynamic stress load', 'Live tablet monitoring', 'OLED display'] },
+    johansports: { name: 'Johan Sports', desc: 'Live OAuth feed — 10Hz GPS + IMU streamed per session.', cost: 'Quote on request', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Player load', 'ACWR', 'Heart rate zones', 'Positional heatmaps'] },
+    csv: { name: 'CSV Upload', desc: 'Generic GPS export — drop a CSV from any vendor and the parser auto-maps columns.', cost: 'Included', metrics: ['Total distance', 'High-speed running', 'Sprint distance', 'Accelerations', 'Session RPE', 'Training load', 'Date / type tagging', 'Per-player rows'] },
   }
   const current = providerData[provider]
-  const connected = provider === 'catapult' ? catConnected : statConnected
-  const setConnected = provider === 'catapult' ? setCatConnected : setStatConnected
+  const connected = provider === 'johansports' ? johanConnected : csvConnected
+  const setConnected = provider === 'johansports' ? setJohanConnected : setCsvConnected
 
   return (
     <div className="space-y-6">
-      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Lumio GPS and Lumio GPS Pro wearable data flows into Lumio&apos;s performance and medical modules.</p></div>
+      <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📡</span><h2 className="text-xl font-bold" style={{ color: C.text }}>GPS Hardware Integration</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Connect Johan Sports for live session sync, or drop a CSV from any other vendor — the dashboards backfill the same way.</p></div>
       <div className="grid grid-cols-2 gap-3">
-        {(['catapult', 'statsports'] as const).map(p => (
+        {(['johansports', 'csv'] as const).map(p => (
           <button key={p} onClick={() => setProvider(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: provider === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${provider === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>
             <div className="font-semibold mb-1" style={{ color: C.text }}>{providerData[p].name}</div>
             <div className="text-xs" style={{ color: C.muted }}>{providerData[p].desc}</div>
@@ -250,26 +250,26 @@ export function GPSHardwareView() {
   )
 }
 
-// ─── OPTA / STATSBOMB VIEW ───────────────────────────────────────────────────
+// ─── OPTA / LUMIO DATA PRO EVENT-DATA VIEW ─────────────────────────────────
 export function FootballEventDataView() {
-  const [dataSource, setDataSource] = useState<'statsbomb' | 'opta'>('statsbomb')
+  const [dataSource, setDataSource] = useState<'lumio-data-pro' | 'opta'>('lumio-data-pro')
   const [sbConnected, setSbConnected] = useState(false)
   const [optaConnected, setOptaConnected] = useState(false)
   const sampleMetrics = [
     { metric: 'xG (Expected Goals)', desc: 'Probability of a shot resulting in a goal', provider: 'Both', use: 'Match dashboard, opposition analysis' },
     { metric: 'xA (Expected Assists)', desc: 'Probability that a pass leads to a goal', provider: 'Both', use: 'Player evaluation, recruitment' },
-    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'Lumio Data', use: 'Tactical analysis, press comparison' },
-    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'Lumio Data', use: 'Player comparison in transfers' },
+    { metric: 'PPDA', desc: 'Passes Per Defensive Action — pressing intensity', provider: 'Lumio Data Pro', use: 'Tactical analysis, press comparison' },
+    { metric: 'OBV (On-Ball Value)', desc: 'Impact of each action on scoring probability', provider: 'Lumio Data Pro', use: 'Player comparison in transfers' },
     { metric: 'Progressive passes/carries', desc: 'Actions advancing the ball toward goal', provider: 'Both', use: 'Midfielder evaluation' },
-    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'Lumio Data', use: 'Pre-match tactical briefing' },
+    { metric: 'Pressure events & regains', desc: 'Where and how often pressing actions occur', provider: 'Lumio Data Pro', use: 'Pre-match tactical briefing' },
   ]
   const providers = {
-    statsbomb: { name: 'Lumio Data', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
-    opta: { name: 'Lumio Data Pro', desc: 'The widest-coverage event data feed', cost: '£50,000–£200,000+/yr' },
+    'lumio-data-pro': { name: 'Lumio Data Pro', desc: 'The most granular event data in football', cost: '£30,000–£80,000/yr' },
+    opta: { name: 'Lumio Data', desc: 'The widest-coverage event data feed', cost: '£50,000–£200,000+/yr' },
   }
   const current = providers[dataSource]
-  const connected = dataSource === 'statsbomb' ? sbConnected : optaConnected
-  const setConnected = dataSource === 'statsbomb' ? setSbConnected : setOptaConnected
+  const connected = dataSource === 'lumio-data-pro' ? sbConnected : optaConnected
+  const setConnected = dataSource === 'lumio-data-pro' ? setSbConnected : setOptaConnected
   const matchXG = [
     { opp: 'Stockport (A)', xgFor: 1.84, xgAg: 0.62, result: 'W 2-0' },
     { opp: 'Huddersfield (H)', xgFor: 0.91, xgAg: 1.42, result: 'L 0-1' },
@@ -282,7 +282,7 @@ export function FootballEventDataView() {
     <div className="space-y-6">
       <div className="mb-6"><div className="flex items-center gap-2"><span className="text-xl">📊</span><h2 className="text-xl font-bold" style={{ color: C.text }}>Lumio Data Pro / Lumio Data Event Data</h2></div><p className="text-sm mt-1 ml-7" style={{ color: C.muted }}>Elite event data for tactical analytics — xG, xA, pressure, possession value.</p></div>
       <div className="grid grid-cols-2 gap-3">
-        {(['statsbomb', 'opta'] as const).map(p => (
+        {(['lumio-data-pro', 'opta'] as const).map(p => (
           <button key={p} onClick={() => setDataSource(p)} className="p-4 rounded-xl text-left" style={{ backgroundColor: dataSource === p ? 'rgba(0,61,165,0.08)' : C.card, border: `1px solid ${dataSource === p ? 'rgba(0,61,165,0.3)' : C.border}` }}>
             <div className="font-semibold mb-1" style={{ color: C.text }}>{providers[p].name}</div>
             <div className="text-xs" style={{ color: C.muted }}>{providers[p].desc}</div>

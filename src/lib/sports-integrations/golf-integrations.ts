@@ -29,20 +29,20 @@ export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
     pricing: 'Free if the player already has a Lumio Wear or Oura subscription (both consumer wearables). No additional cost to Lumio — OAuth connection only. If neither is connected, the morning briefing hides the Recovery tile rather than showing a placeholder.',
   },
 
-  catapult: {
+  johansports: {
     icon: '🛰️',
-    title: 'Lumio GPS / Lumio GPS Pro',
+    title: 'Johan Sports',
     subtitle: 'Per-session load tracking across range, course walks, and gym work.',
-    partnerBadge: 'API key required · Lumio GPS Vector + Lumio GPS Pro APEX / EDGE supported',
-    connectLabel: 'Connect Lumio GPS / Lumio GPS Pro',
+    partnerBadge: 'OAuth · 10Hz GPS + IMU · CSV import for any other vendor',
+    connectLabel: 'Connect Johan Sports',
     summaryText: 'Track per-session load across range, course walks, and gym work. Critical for multi-week Majors stretches where cumulative fatigue impacts short-game feel.',
     connectedStats: [
       { label: 'Sessions (30d)', value: '42' },
       { label: 'Avg Distance', value: '9.2 km' },
       { label: 'Load 7-day', value: '1,840 AU' },
-      { label: 'Provider', value: 'Lumio GPS Vector' },
+      { label: 'Provider', value: 'Johan Sports' },
     ],
-    whyHeading: 'Why Lumio GPS / Lumio GPS Pro matters on tour',
+    whyHeading: 'Why GPS load tracking matters on tour',
     whyBody: 'Golf looks low-intensity but 72 holes of competitive walking plus range and gym sessions stacks real cumulative load — especially on hilly links or in heat. Feeding the GPS vest data into Lumio lets the fitness coach see if the player is cumulatively trending into a strain bracket that historically correlates with short-game dropoff. It\'s the difference between "he felt off on Sunday" and "Sunday was inevitable from Wednesday".',
     endpointsTitle: 'Data Flows Used by Lumio Golf',
     endpoints: [
@@ -54,7 +54,7 @@ export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
       { endpoint: 'Gym Sessions', desc: 'Indoor IMU sessions for strength work — tagged separately from range / course.', status: 'Beta' },
       { endpoint: 'Sleep + Load Correlation', desc: 'Cross-references wearable sleep data to flag under-recovery before an acute spike.', status: 'Planned' },
     ],
-    pricing: 'Lumio GPS Vector licences run approximately £800–£1,400/year per unit. Lumio GPS Pro APEX/EDGE is approximately £400–£700/year. Lumio is hardware-agnostic — whichever vendor the player\'s fitness coach uses, the same dashboard shows the data.',
+    pricing: 'Johan Sports licences are quoted per unit on a per-team basis — speak to the Johan Sports sales team for current pricing. Lumio is hardware-agnostic — if your fitness coach uses a different vendor, drop a CSV export and the same dashboards backfill.',
   },
 
   v1golf: {

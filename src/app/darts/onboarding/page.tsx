@@ -6,7 +6,7 @@ const STEPS = [
   { id: 2, title: 'Tour information',    subtitle: 'Tour card and ranking' },
   { id: 3, title: 'Team & setup',        subtitle: 'Coach, agent, equipment' },
   { id: 4, title: 'Commercial',          subtitle: 'Sponsors and walk-on music' },
-  { id: 5, title: 'Connect data',        subtitle: 'DartConnect and integrations' },
+  { id: 5, title: 'Connect data',        subtitle: 'Live scoring and integrations' },
 ];
 
 export default function DartsOnboardingPage() {
@@ -17,7 +17,7 @@ export default function DartsOnboardingPage() {
     threeDartAverage: '', checkoutPercent: '',
     coach: '', agent: '', manager: '',
     sponsor1: '', sponsor2: '', walkOnMusic: '', dartSetup: '',
-    dartconnectId: '', dartconnectKey: '',
+    livescoringId: '', livescoringKey: '',
   });
 
   const update = (field: string, value: string) =>
@@ -136,18 +136,18 @@ export default function DartsOnboardingPage() {
           {step === 5 && (
             <>
               <div className="px-4 py-3 bg-gray-800/40 rounded-xl border border-white/5 text-sm text-gray-400">
-                Connect your DartConnect account to auto-populate session data, averages, and match statistics throughout the portal.
+                Connect your Lumio Live Scoring account to auto-populate session data, averages, and match statistics throughout the portal.
               </div>
               <div>
-                <label className={labelClass}>DartConnect player ID</label>
-                <input className={inputClass} placeholder="Your DartConnect ID" value={data.dartconnectId} onChange={e => update('dartconnectId', e.target.value)} />
+                <label className={labelClass}>Live scoring player ID</label>
+                <input className={inputClass} placeholder="Your live-scoring ID" value={data.livescoringId} onChange={e => update('livescoringId', e.target.value)} />
               </div>
               <div>
-                <label className={labelClass}>DartConnect API key</label>
-                <input className={inputClass} type="password" placeholder="Paste API key" value={data.dartconnectKey} onChange={e => update('dartconnectKey', e.target.value)} />
+                <label className={labelClass}>Live scoring API key</label>
+                <input className={inputClass} type="password" placeholder="Paste API key" value={data.livescoringKey} onChange={e => update('livescoringKey', e.target.value)} />
               </div>
               <p className="text-xs text-gray-600">
-                Don&apos;t have a DartConnect API key? You can skip this and connect later in Settings.
+                Don&apos;t have an API key yet? You can skip this and connect later in Settings.
               </p>
             </>
           )}

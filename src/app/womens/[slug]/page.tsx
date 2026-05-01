@@ -4,9 +4,62 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
-import { ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2, Target, Zap, Calendar, FileText, DollarSign, Award } from 'lucide-react'
+import {
+  ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2,
+  Target, Zap, Calendar, FileText, DollarSign, Award,
+  Home, Sunrise, BarChart3, Activity, Flower2, Baby, Brain,
+  RefreshCw, CircleDot, ArrowLeftRight, TrendingDown, Telescope,
+  GraduationCap, Bot, Handshake, Construction, Landmark,
+  Smartphone, Share2, HeartHandshake, ClipboardList, Radio, Flame,
+  Cross, Settings, type LucideIcon,
+} from 'lucide-react'
+
+// ─── SIDEBAR ICON MAP — Lucide icons keyed by nav item id ─────────────────────
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  dashboard: Home, briefing: Sunrise, insights: BarChart3,
+  fsr: BarChart2, salary: DollarSign, revenue: TrendingUp,
+  welfare: Heart, acl: Activity, cycle: Flower2, maternity: Baby, mental: Brain,
+  squad: Users, dualreg: RefreshCw, tactics: Target, match: CircleDot,
+  transfers: ArrowLeftRight, analytics: TrendingDown, scouting: Telescope,
+  academy: GraduationCap, halftime: Bot,
+  sponsorship: Handshake, standalone: Construction, board: Landmark,
+  financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
+  team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
+  medical: Cross, 'tours-camps': Calendar, settings: Settings,
+  'game-standards': Shield,
+  'player-welfare': Heart, 'club-operations': Landmark,
+}
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
+import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
+import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
+import GameStandardsView from '@/components/womens/GameStandardsView'
+import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
+import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
+// ─── Women's FC v2 dashboard imports ──────────────────────────────────────
+import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
+import {
+  CommandPalette as V2CommandPalette,
+  AskLumio as V2AskLumio,
+  FixtureDrawer as V2FixtureDrawer,
+  Toast as V2Toast,
+  useToast as useV2Toast,
+  useKey as useV2Key,
+} from '@/app/cricket/[slug]/v2/_components/Overlays'
+import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import {
+  HeroToday as WfHeroToday,
+  TodaySchedule as WfTodaySchedule,
+  StatTiles as WfStatTiles,
+  AIBrief as WfAIBrief,
+  Squad as WfSquadModule,
+  Fixtures as WfFixturesModule,
+  Perf as WfPerf,
+  Recents as WfRecents,
+  Season as WfSeason,
+} from './_components/WomensDashboardModules'
+import { WOMENS_INBOX, WOMENS_ACCENT } from './_lib/womens-dashboard-data'
+import type { WfFixture } from './_lib/womens-dashboard-data'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface WomensClub {
@@ -34,11 +87,14 @@ const SIDEBAR_ITEMS = [
   { id: 'fsr',          label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
   { id: 'salary',       label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',      label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
+  { id: 'game-standards', label: 'Game Standards',    icon: '🛡️', group: 'COMPLIANCE' },
   { id: 'welfare',      label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
   { id: 'acl',          label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',        label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
   { id: 'maternity',    label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
   { id: 'mental',       label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
+  { id: 'player-welfare', label: 'Player Welfare Hub', icon: '🌍', group: 'WELFARE' },
+  { id: 'club-operations', label: 'Club Operations',   icon: '🏟️', group: 'OPERATIONS' },
   { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
@@ -50,15 +106,17 @@ const SIDEBAR_ITEMS = [
   { id: 'halftime',    label: 'AI Halftime Brief',   icon: '🤖', group: 'FOOTBALL' },
   { id: 'sponsorship',  label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
   { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
+  { id: 'club-vision',  label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
   { id: 'board',        label: 'Board Suite',         icon: '🏛️', group: 'COMMERCIAL' },
   { id: 'financial',    label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
   { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
   { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
   { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
-  { id: 'gps',          label: 'GPS & Load',          icon: '📡', group: 'OPERATIONS' },
+  { id: 'gps-load',     label: 'GPS & Load',          icon: '📡', group: 'GPS & LOAD' },
+  { id: 'gps-heatmaps', label: 'Heatmaps',            icon: '🔥', group: 'GPS & LOAD' },
   { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
-  { id: 'preseason',    label: 'Pre-Season',           icon: '⚽', group: 'OPERATIONS' },
+  { id: 'tours-camps',  label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ]
 
@@ -3185,140 +3243,990 @@ const MatchPreparationView = () => {
   )
 }
 
+// ─── GPS HEATMAPS VIEW (wraps shared component with women's config) ─────────
+// Includes the optional welfare section (Section 6) — Karen Carney Review
+// compliance context, with weekly load cap flags + rest-day tracking.
+const WOMENS_HEATMAP_PLAYERS: HMPlayer[] = [
+  { name: 'Charlotte Reed', position: 'GK',  group: 'Goalkeeper'  },
+  { name: 'Sophie Turner',  position: 'CB',  group: 'Defenders'   },
+  { name: 'Emma Clarke',    position: 'CB',  group: 'Defenders'   },
+  { name: 'Jade Osei',      position: 'LB',  group: 'Defenders'   },
+  { name: 'Abbi Walsh',     position: 'RB',  group: 'Defenders'   },
+  { name: 'Megan Hughes',   position: 'CDM', group: 'Midfielders' },
+  { name: 'Priya Nair',     position: 'CM',  group: 'Midfielders' },
+  { name: 'Lucy Whitmore',  position: 'CM',  group: 'Midfielders' },
+  { name: 'Fatima Al-Said', position: 'CAM', group: 'Midfielders' },
+  { name: 'Emily Zhang',    position: 'LW',  group: 'Forwards'    },
+  { name: 'Niamh O\'Brien', position: 'RW',  group: 'Forwards'    },
+  { name: 'Sasha Kone',     position: 'ST',  group: 'Forwards'    },
+]
+
+const WOMENS_HEATMAP_MATCHES = [
+  'Manchester City Women (H) — WSL, 2-2 D',
+  'Tottenham Hotspur Women (A) — WSL, 1-0 W',
+  'Manchester United Women (H) — FA Cup R5, 0-1 L',
+  'Brighton Women (A) — WSL, 3-1 W',
+  'Chelsea Women (H) — WSL, 1-3 L',
+]
+
+const WOMENS_HEATMAP_TRAINING = [
+  'Tue — Tactical (90min)',
+  'Wed — High Intensity (75min)',
+  'Thu — S&C + Cycle-Adjusted (60min)',
+  "Fri — Captain's Run (45min)",
+]
+
+function WomensGPSHeatmapsView({ club }: { club: WomensClub }) {
+  return (
+    <GPSHeatmapsView
+      sportLabel={`${club.name} · ${club.league}`}
+      brandPrimaryKey="lumio_womens_brand_primary"
+      brandSecondaryKey="lumio_womens_brand_secondary"
+      defaultPrimary={club.accent}
+      defaultSecondary="#F472B6"
+      players={WOMENS_HEATMAP_PLAYERS}
+      matches={WOMENS_HEATMAP_MATCHES}
+      trainingSessions={WOMENS_HEATMAP_TRAINING}
+      matchDayLabel="MATCH"
+      comparisonMode="four"
+      includeWelfareSection
+      welfareLabel="Welfare & Load Monitoring (Karen Carney Review)"
+    />
+  )
+}
+
 // ─── GPS & LOAD VIEW ─────────────────────────────────────────────────────────
-const GPSLoadView = () => {
-  const players: Array<{name:string;pos:string;distance:number;topSpeed:number;sprints:number;hsr:number;load:string;loadColor:string}> = [
-    {name:'Emma Clarke',pos:'CB',distance:9.2,topSpeed:28.1,sprints:14,hsr:620,load:'Optimal',loadColor:'green'},
-    {name:'Priya Nair',pos:'CM',distance:11.4,topSpeed:29.3,sprints:22,hsr:890,load:'Optimal',loadColor:'green'},
-    {name:'Jade Osei',pos:'ST',distance:10.1,topSpeed:31.2,sprints:26,hsr:780,load:'Optimal',loadColor:'green'},
-    {name:'Abbi Walsh',pos:'RW',distance:10.8,topSpeed:30.5,sprints:28,hsr:850,load:'High',loadColor:'amber'},
-    {name:'Charlotte Reed',pos:'GK',distance:5.4,topSpeed:18.2,sprints:4,hsr:120,load:'Optimal',loadColor:'green'},
-    {name:'Sophie Turner',pos:'LB',distance:7.1,topSpeed:24.0,sprints:8,hsr:340,load:'Restricted',loadColor:'red'},
-    {name:'Fatima Al-Said',pos:'AM',distance:10.6,topSpeed:29.8,sprints:20,hsr:810,load:'Optimal',loadColor:'green'},
-    {name:'Megan Hughes',pos:'DM',distance:10.9,topSpeed:27.6,sprints:18,hsr:720,load:'Optimal',loadColor:'green'},
-    {name:'Sophie Lawson',pos:'RB',distance:0,topSpeed:0,sprints:0,hsr:0,load:'On Leave',loadColor:'blue'},
-    {name:'Tilly Brooks',pos:'LW',distance:9.8,topSpeed:30.1,sprints:24,hsr:760,load:'High',loadColor:'amber'},
+type GPSPlayer = {
+  name: string; pos: string; distance: number; hsr: number; sprints: number; topSpeed: number;
+  load: number; acwr: number; status: 'On' | 'High' | 'Restricted' | 'On Leave';
+  zones: { walk: number; jog: number; run: number; sprint: number };
+  accels: number; decels: number;
+}
+
+const GPS_PLAYERS: GPSPlayer[] = [
+  { name: 'Emma Clarke',     pos: 'GK', distance: 5.4,  hsr: 120, sprints: 4,  topSpeed: 18.2, load: 410,  acwr: 0.94, status: 'On',         zones: { walk: 3.4, jog: 1.4, run: 0.5, sprint: 0.1 }, accels: 6,  decels: 5  },
+  { name: 'Priya Nair',      pos: 'CM', distance: 11.4, hsr: 890, sprints: 22, topSpeed: 29.3, load: 880,  acwr: 1.08, status: 'On',         zones: { walk: 4.8, jog: 3.6, run: 2.1, sprint: 0.9 }, accels: 38, decels: 41 },
+  { name: 'Jade Osei',       pos: 'ST', distance: 10.1, hsr: 780, sprints: 26, topSpeed: 31.2, load: 790,  acwr: 1.12, status: 'On',         zones: { walk: 4.2, jog: 3.0, run: 1.8, sprint: 1.1 }, accels: 44, decels: 48 },
+  { name: 'Abbi Walsh',      pos: 'RW', distance: 10.8, hsr: 850, sprints: 28, topSpeed: 30.5, load: 1080, acwr: 1.42, status: 'High',       zones: { walk: 4.0, jog: 3.2, run: 2.4, sprint: 1.2 }, accels: 49, decels: 52 },
+  { name: 'Charlotte Reed',  pos: 'CB', distance: 9.2,  hsr: 620, sprints: 14, topSpeed: 28.1, load: 720,  acwr: 1.05, status: 'On',         zones: { walk: 4.5, jog: 2.8, run: 1.4, sprint: 0.5 }, accels: 28, decels: 32 },
+  { name: 'Sophie Turner',   pos: 'CB', distance: 7.1,  hsr: 340, sprints: 8,  topSpeed: 24.0, load: 540,  acwr: 0.62, status: 'Restricted', zones: { walk: 3.8, jog: 2.2, run: 0.8, sprint: 0.3 }, accels: 14, decels: 16 },
+  { name: 'Fatima Al-Said',  pos: 'AM', distance: 10.6, hsr: 810, sprints: 20, topSpeed: 29.8, load: 830,  acwr: 1.04, status: 'On',         zones: { walk: 4.4, jog: 3.4, run: 1.9, sprint: 0.9 }, accels: 36, decels: 39 },
+  { name: 'Megan Hughes',    pos: 'DM', distance: 10.9, hsr: 720, sprints: 18, topSpeed: 27.6, load: 770,  acwr: 1.01, status: 'On',         zones: { walk: 4.6, jog: 3.5, run: 1.9, sprint: 0.9 }, accels: 31, decels: 34 },
+  { name: 'Sophie Lawson',   pos: 'RB', distance: 0,    hsr: 0,   sprints: 0,  topSpeed: 0,    load: 0,    acwr: 0,    status: 'On Leave',   zones: { walk: 0,   jog: 0,   run: 0,   sprint: 0   }, accels: 0,  decels: 0  },
+  { name: 'Tilly Brooks',    pos: 'LW', distance: 9.8,  hsr: 760, sprints: 24, topSpeed: 30.1, load: 1010, acwr: 1.38, status: 'High',       zones: { walk: 3.9, jog: 3.0, run: 1.9, sprint: 1.0 }, accels: 41, decels: 45 },
+]
+
+const GPSLoadView = ({ club }: { club: WomensClub }) => {
+  const [activeTab, setActiveTab] = useState('session')
+  const tabs = [
+    { id: 'session',   label: 'Session Overview',         icon: '📋' },
+    { id: 'welfare',   label: 'Welfare & Load Monitoring', icon: '❤️' },
+    { id: 'trends',    label: 'Load Trends & ACWR',       icon: '📈' },
+    { id: 'matchvtr',  label: 'Match vs Training',        icon: '⚽' },
+    { id: 'sprint',    label: 'Sprint Analysis',          icon: '⚡' },
+    { id: 'connect',   label: 'Connect GPS',              icon: '📡' },
   ]
+  const phaseBadge = club.tier === 'pro'
+    ? { label: club.league || 'WSL', cls: 'bg-pink-600/20 text-pink-300 border-pink-600/30' }
+    : club.tier === 'championship'
+    ? { label: 'Championship', cls: 'bg-amber-600/20 text-amber-300 border-amber-600/30' }
+    : { label: 'Grassroots', cls: 'bg-green-600/20 text-green-300 border-green-600/30' }
+
+  const active = GPS_PLAYERS.filter(p => p.status !== 'On Leave')
+  const avgLoad     = Math.round(active.reduce((s,p)=>s+p.load,0)/active.length)
+  const avgDistance = (active.reduce((s,p)=>s+p.distance,0)/active.length).toFixed(1)
+  const avgHsr      = Math.round(active.reduce((s,p)=>s+p.hsr,0)/active.length)
+  const maxSpeed    = Math.max(...active.map(p=>p.topSpeed)).toFixed(1)
+  const sprintCount = active.reduce((s,p)=>s+p.sprints,0)
+  const highLoad    = active.filter(p=>p.status==='High').length
+  const restricted  = active.filter(p=>p.status==='Restricted').length + GPS_PLAYERS.filter(p=>p.status==='On Leave').length
 
   return (
     <div>
-      <SectionHeader title="GPS & Load" subtitle="Training and match load monitoring" icon="📡" />
-      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-3 mb-6 text-xs text-blue-400">
-        📡 GPS data synced — last sync: today 09:14. 9 of 10 devices active.
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+        <SectionHeader title="GPS & Load" subtitle="Training and match load monitoring · JOHAN Sports" icon="📡" />
+        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${phaseBadge.cls}`}>{phaseBadge.label}</span>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Avg Distance" value="9.5 km" sub="Per session (outfield)" color="pink" />
-        <StatCard label="Avg Top Speed" value="28.9 km/h" sub="Squad outfield avg" color="blue" />
-        <StatCard label="High Load" value="2" sub="Walsh, Brooks" color="amber" />
-        <StatCard label="Restricted" value="1" sub="Turner (RTP)" color="red" />
+
+      {/* TOP STRIP — 8 KPI cards (2 rows of 4) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatCard label="Avg Player Load"    value={avgLoad}            sub="AU · session"            color="pink"   />
+        <StatCard label="Avg Distance"       value={`${avgDistance} km`} sub="Per outfield player"    color="teal"   />
+        <StatCard label="Avg HSR"            value={`${avgHsr} m`}      sub=">19.8 km/h"              color="purple" />
+        <StatCard label="Max Speed"          value={`${maxSpeed} km/h`}  sub="Osei · 38' sprint"      color="blue"   />
+        <StatCard label="Sprint Count"       value={sprintCount}        sub="Squad total · session"   color="amber"  />
+        <StatCard label="High Load Count"    value={highLoad}           sub="ACWR > 1.3"              color="amber"  />
+        <StatCard label="Restricted Players" value={restricted}         sub="RTP + on leave"          color="red"    />
+        <StatCard label="Devices Active"     value="9 / 10"             sub="JOHAN vests · 1 charging" color="green"  />
       </div>
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
-        <table className="w-full text-sm">
-          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-            <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-right p-3">Distance (km)</th><th className="text-right p-3">Top Speed (km/h)</th><th className="text-right p-3">Sprints</th><th className="text-right p-3">HSR (m)</th><th className="text-left p-3">Load Status</th>
-          </tr></thead>
-          <tbody>
-            {players.map((p: typeof players[0], i: number) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
-                <td className="p-3 text-gray-400">{p.pos}</td>
-                <td className="p-3 text-right text-gray-300">{p.distance > 0 ? p.distance.toFixed(1) : '—'}</td>
-                <td className="p-3 text-right text-gray-300">{p.topSpeed > 0 ? p.topSpeed.toFixed(1) : '—'}</td>
-                <td className="p-3 text-right text-gray-300">{p.sprints > 0 ? p.sprints : '—'}</td>
-                <td className="p-3 text-right text-gray-300">{p.hsr > 0 ? p.hsr : '—'}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    p.loadColor === 'green' ? 'bg-green-600/20 text-green-400'
-                    : p.loadColor === 'amber' ? 'bg-amber-600/20 text-amber-400'
-                    : p.loadColor === 'red' ? 'bg-red-600/20 text-red-400'
-                    : 'bg-blue-600/20 text-blue-400'
-                  }`}>{p.load}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      {/* TABS */}
+      <div className="overflow-x-auto pb-2 mb-6 border-b border-gray-800">
+        <div className="flex gap-1 min-w-max">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap transition-all ${activeTab===t.id?'bg-pink-600/20 text-pink-400 border-b-2 border-pink-500 -mb-[1px]':'text-gray-500 hover:text-gray-300'}`}>
+              <span>{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
       </div>
-      {/* 8-week load trend — 3 players */}
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-white">8-Week Load Trend</h3>
+
+      {activeTab === 'session'  && <GPSSessionOverview players={GPS_PLAYERS} phase={phaseBadge} />}
+      {activeTab === 'welfare'  && <GPSWelfareLoad players={GPS_PLAYERS} />}
+      {activeTab === 'trends'   && <GPSLoadTrends players={GPS_PLAYERS} />}
+      {activeTab === 'matchvtr' && <GPSMatchVsTraining />}
+      {activeTab === 'sprint'   && <GPSSprintAnalysis players={GPS_PLAYERS} />}
+      {activeTab === 'connect'  && <GPSConnectTab />}
+    </div>
+  )
+}
+
+// ─── SESSION OVERVIEW ────────────────────────────────────────────────────────
+const GPSSessionOverview = ({ players, phase }: { players: GPSPlayer[]; phase: { label: string; cls: string } }) => {
+  const statusBadge = (s: GPSPlayer['status']) => s === 'On' ? 'bg-green-600/20 text-green-400'
+    : s === 'High' ? 'bg-amber-600/20 text-amber-400'
+    : s === 'Restricted' ? 'bg-red-600/20 text-red-400'
+    : 'bg-blue-600/20 text-blue-400'
+  return (
+    <div className="space-y-6">
+      {/* Session header */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Today's Session — Tue 28 Apr 2026 · 09:00–11:30</div>
+            <h3 className="text-base font-bold text-white">MD-3 Tactical + Conditioning Block</h3>
+            <p className="text-xs text-gray-400 mt-1">Possession 6v6 → SSG 8v8 → Set-piece walk-through · Pitch 2 (3G)</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${phase.cls}`}>{phase.label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded border bg-gray-800 text-gray-400 border-gray-700">MD-3</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Player table */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white">Squad — Session Output</h3>
+          <span className="text-[10px] text-gray-500">10 players · 9 outfield active · 1 on leave</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-left p-3">Pos</th>
+              <th className="text-right p-3">Distance (km)</th>
+              <th className="text-right p-3">HSR (m)</th>
+              <th className="text-right p-3">Sprints</th>
+              <th className="text-right p-3">Top Speed</th>
+              <th className="text-right p-3">Load (AU)</th>
+              <th className="text-right p-3">ACWR</th>
+              <th className="text-left p-3">Status</th>
+            </tr></thead>
+            <tbody>
+              {players.map((p, i) => (
+                <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-900/20">
+                  <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                  <td className="p-3 text-gray-400">{p.pos}</td>
+                  <td className="p-3 text-right text-gray-300">{p.distance > 0 ? p.distance.toFixed(1) : '—'}</td>
+                  <td className="p-3 text-right text-gray-300">{p.hsr > 0 ? p.hsr : '—'}</td>
+                  <td className="p-3 text-right text-gray-300">{p.sprints > 0 ? p.sprints : '—'}</td>
+                  <td className="p-3 text-right text-gray-300">{p.topSpeed > 0 ? `${p.topSpeed.toFixed(1)} km/h` : '—'}</td>
+                  <td className="p-3 text-right text-gray-300">{p.load > 0 ? p.load : '—'}</td>
+                  <td className="p-3 text-right">
+                    {p.acwr > 0 ? <span className={`text-xs font-bold ${p.acwr > 1.3 ? 'text-amber-400' : p.acwr < 0.8 ? 'text-blue-400' : 'text-green-400'}`}>{p.acwr.toFixed(2)}</span> : <span className="text-gray-500">—</span>}
+                  </td>
+                  <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${statusBadge(p.status)}`}>{p.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Distance by intensity zone */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h3 className="text-sm font-bold text-white">Distance by Intensity Zone</h3>
           <div className="flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#EC4899' }} /><span className="text-gray-400">Walsh</span></span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#0D9488' }} /><span className="text-gray-400">Nair</span></span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#A78BFA' }} /><span className="text-gray-400">Osei</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#3F3F46' }} /><span className="text-gray-400">Walk</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#0D9488' }} /><span className="text-gray-400">Jog</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#A78BFA' }} /><span className="text-gray-400">Run</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#EC4899' }} /><span className="text-gray-400">Sprint</span></span>
           </div>
         </div>
         {(() => {
-          const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8']
-          // Acute:chronic load (au) — typical range 400–1100
-          const walsh = [620, 680, 740, 810, 880, 940, 1020, 1080]
-          const nair  = [650, 700, 720, 760, 780, 820, 860, 890]
-          const osei  = [580, 620, 680, 700, 730, 760, 770, 790]
-          const W = 600, H = 180, padL = 36, padR = 12, padT = 16, padB = 28
+          const outfield = players.filter(p => p.pos !== 'GK' && p.distance > 0)
+          const W = 600, rowH = 26, padL = 110, padR = 60, padT = 8
+          const H = padT + outfield.length * rowH + 8
           const innerW = W - padL - padR
-          const innerH = H - padT - padB
-          const stepX = innerW / (weeks.length - 1)
-          const yMax = 1200
-          const buildPath = (data: number[]) => data.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / yMax) * innerH}`).join(' ')
+          const maxKm = Math.max(...outfield.map(p => p.distance)) + 0.5
           return (
-            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="8-week training load trend for three players">
-              {/* gridlines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
-                <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-              ))}
-              {/* y axis labels (au) */}
-              {[0, 300, 600, 900, 1200].map((v, i) => (
-                <text key={i} x={padL - 6} y={padT + innerH - (v / yMax) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>
-              ))}
-              {/* high-load threshold ~1000 au */}
-              <line x1={padL} x2={W - padR} y1={padT + innerH - (1000 / yMax) * innerH} y2={padT + innerH - (1000 / yMax) * innerH} stroke="rgba(245,158,11,0.4)" strokeWidth="1" strokeDasharray="3 3" />
-              <text x={W - padR - 4} y={padT + innerH - (1000 / yMax) * innerH - 4} fontSize="9" fill="#F59E0B" textAnchor="end">High-load threshold</text>
-              {/* x axis labels */}
-              {weeks.map((w, i) => (
-                <text key={w} x={padL + i * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">{w}</text>
-              ))}
-              {/* lines + dots */}
-              <path d={buildPath(walsh)} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              {walsh.map((v, i) => <circle key={`wa${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#EC4899" />)}
-              <path d={buildPath(nair)} fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              {nair.map((v, i) => <circle key={`na${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#0D9488" />)}
-              <path d={buildPath(osei)} fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              {osei.map((v, i) => <circle key={`os${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#A78BFA" />)}
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Distance by intensity zone per player">
+              {outfield.map((p, i) => {
+                const y = padT + i * rowH
+                const total = p.zones.walk + p.zones.jog + p.zones.run + p.zones.sprint
+                const segW = (v: number) => (v / maxKm) * innerW
+                const wW = segW(p.zones.walk)
+                const jW = segW(p.zones.jog)
+                const rW = segW(p.zones.run)
+                const sW = segW(p.zones.sprint)
+                return (
+                  <g key={p.name}>
+                    <text x={padL - 8} y={y + 14} fontSize="10" fill="#9CA3AF" textAnchor="end">{p.name}</text>
+                    <rect x={padL}                    y={y + 6} width={wW} height="14" fill="#3F3F46" />
+                    <rect x={padL + wW}               y={y + 6} width={jW} height="14" fill="#0D9488" />
+                    <rect x={padL + wW + jW}          y={y + 6} width={rW} height="14" fill="#A78BFA" />
+                    <rect x={padL + wW + jW + rW}     y={y + 6} width={sW} height="14" fill="#EC4899" />
+                    <text x={padL + segW(total) + 6} y={y + 16} fontSize="10" fill="#D1D5DB">{total.toFixed(1)} km</text>
+                  </g>
+                )
+              })}
             </svg>
           )
         })()}
-        <p className="text-[11px] text-gray-500 mt-2">Walsh trending into the high-load band over the last 3 weeks — review with strength &amp; conditioning before Sat&apos;s fixture.</p>
+        <p className="text-[11px] text-gray-500 mt-2">Sprint distance shown in pink — Osei &amp; Walsh both clear 1 km of sprint volume in this MD-3 block.</p>
       </div>
 
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-        <h3 className="text-sm font-bold text-white mb-3">Integration Status</h3>
-        <div className="space-y-2">
-          {[
-            {system:'Lumio GPS GPS',status:'Connected',detail:'10 devices allocated, 9 active'},
-            {system:'Lumio Health',status:'Connected',detail:'ACL risk model synced'},
-            {system:'Second Spectrum',status:'Pending',detail:'Video analysis integration — Phase 2'},
-            {system:'FA Player Registration',status:'Connected',detail:'Squad list synced daily'},
-          ].map((s: {system:string;status:string;detail:string}) => (
-            <div key={s.system} className="flex items-center justify-between py-1.5 border-b border-gray-800">
-              <div>
-                <span className="text-xs text-gray-300">{s.system}</span>
-                <span className="text-[10px] text-gray-500 ml-2">{s.detail}</span>
+      {/* Sprint frequency line chart */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-1">Sprint Frequency Across Session</h3>
+        <p className="text-[11px] text-gray-500 mb-4">Squad sprint count per 10-minute block · 09:00–11:30 (MD-3 tactical)</p>
+        {(() => {
+          const blocks = ['09:00','09:10','09:20','09:30','09:40','09:50','10:00','10:10','10:20','10:30','10:40','10:50','11:00','11:10','11:20']
+          const sprints = [4, 8, 14, 22, 28, 34, 30, 24, 18, 26, 31, 38, 32, 18, 9]
+          const W = 600, H = 180, padL = 30, padR = 12, padT = 12, padB = 30
+          const innerW = W - padL - padR, innerH = H - padT - padB
+          const stepX = innerW / (blocks.length - 1)
+          const yMax = 45
+          const path = sprints.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / yMax) * innerH}`).join(' ')
+          const area = `${path} L ${padL + (blocks.length - 1) * stepX} ${padT + innerH} L ${padL} ${padT + innerH} Z`
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Sprint frequency across session">
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+                <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" />
+              ))}
+              {[0, 15, 30, 45].map((v, i) => (
+                <text key={i} x={padL - 6} y={padT + innerH - (v / yMax) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>
+              ))}
+              <path d={area} fill="rgba(236,72,153,0.12)" />
+              <path d={path} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {sprints.map((v, i) => <circle key={i} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#EC4899" />)}
+              {blocks.map((b, i) => i % 2 === 0 ? <text key={b} x={padL + i * stepX} y={H - 12} fontSize="9" fill="#6B7280" textAnchor="middle">{b}</text> : null)}
+              {/* SSG markers */}
+              <line x1={padL + 5 * stepX} x2={padL + 5 * stepX} y1={padT} y2={padT + innerH} stroke="rgba(167,139,250,0.4)" strokeDasharray="2 2" />
+              <text x={padL + 5 * stepX + 4} y={padT + 10} fontSize="9" fill="#A78BFA">Possession</text>
+              <line x1={padL + 11 * stepX} x2={padL + 11 * stepX} y1={padT} y2={padT + innerH} stroke="rgba(167,139,250,0.4)" strokeDasharray="2 2" />
+              <text x={padL + 11 * stepX + 4} y={padT + 10} fontSize="9" fill="#A78BFA">SSG 8v8</text>
+            </svg>
+          )
+        })()}
+      </div>
+
+      {/* AI Summary + Highlights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-pink-600/10 to-pink-900/5 border border-pink-600/30 rounded-xl p-5 lg:col-span-2">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">🤖</span>
+            <h3 className="text-sm font-bold text-white">AI Session Summary</h3>
+            <span className="text-[9px] uppercase tracking-wider text-pink-300 bg-pink-600/20 px-1.5 py-0.5 rounded">Lumio Brief</span>
+          </div>
+          <p className="text-xs text-gray-300 leading-relaxed mb-3">
+            Session output landed in the planned MD-3 envelope (avg load {Math.round(GPS_PLAYERS.filter(p=>p.distance>0).reduce((s,p)=>s+p.load,0)/9)} AU vs target 750–850). The 8v8 SSG drove peak sprint frequency at 11:00 — Osei and Walsh combined for 54 sprints across the block.
+          </p>
+          <p className="text-xs text-gray-300 leading-relaxed mb-3">
+            <strong className="text-amber-300">Watch list:</strong> Walsh's ACWR has crossed 1.4 — load needs tapering Wed/Thu. Brooks also trending high (1.38). Both flagged for S&amp;C review pre-MD-1.
+          </p>
+          <p className="text-xs text-gray-300 leading-relaxed">
+            <strong className="text-blue-300">RTP:</strong> Turner cleared for 60% volume MD-3 — completed planned 7.1 km without aggravation. Cleared to progress to 75% Thursday subject to medical sign-off.
+          </p>
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Session Highlights</h3>
+          <div className="space-y-2">
+            {[
+              { l: 'Top sprinter', v: 'Osei · 26 sprints', c: 'text-pink-400' },
+              { l: 'Top speed',    v: 'Osei · 31.2 km/h',  c: 'text-blue-400' },
+              { l: 'Most HSR',     v: 'Nair · 890 m',      c: 'text-purple-400' },
+              { l: 'Best ACWR',    v: 'Hughes · 1.01',     c: 'text-green-400' },
+              { l: 'Most accels',  v: 'Walsh · 49',        c: 'text-amber-400' },
+            ].map(h => (
+              <div key={h.l} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-800 last:border-0">
+                <span className="text-gray-400">{h.l}</span>
+                <span className={`font-bold ${h.c}`}>{h.v}</span>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${s.status === 'Connected' ? 'bg-green-600/20 text-green-400' : 'bg-amber-600/20 text-amber-400'}`}>{s.status}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── WELFARE & LOAD MONITORING ───────────────────────────────────────────────
+const GPSWelfareLoad = ({ players }: { players: GPSPlayer[] }) => {
+  // 28-day rolling load heatmap — generate deterministic-ish data
+  const days = Array.from({ length: 28 }, (_, i) => i + 1)
+  const cyclePhases: Record<string, Array<'M' | 'F' | 'O' | 'L' | ''>> = {
+    'Priya Nair':     Array(28).fill('').map((_, d) => (d % 28 < 5 ? 'M' : d % 28 < 13 ? 'F' : d % 28 < 16 ? 'O' : 'L')),
+    'Charlotte Reed': Array(28).fill('').map((_, d) => (d % 28 < 4 ? 'M' : d % 28 < 12 ? 'F' : d % 28 < 15 ? 'O' : 'L')),
+    'Jade Osei':      Array(28).fill('').map((_, d) => (d % 28 < 5 ? 'M' : d % 28 < 13 ? 'F' : d % 28 < 16 ? 'O' : 'L')),
+  }
+  const rng = (seed: number) => {
+    let x = seed
+    return () => { x = (x * 9301 + 49297) % 233280; return x / 233280 }
+  }
+  const buildLoad = (player: GPSPlayer, idx: number) => {
+    const r = rng(idx + 7)
+    return days.map(d => {
+      // every 7th day is rest day, every 6th is match
+      const restDay = d % 7 === 0
+      const matchDay = d % 7 === 6
+      if (player.status === 'On Leave') return { v: 0, rest: restDay, trainedOnRest: false, match: false, restMissed: false }
+      if (restDay) {
+        const trainedOnRest = r() < 0.08
+        return { v: trainedOnRest ? 320 + Math.floor(r() * 200) : 0, rest: true, trainedOnRest, match: false, restMissed: trainedOnRest }
+      }
+      if (matchDay) return { v: 1100 + Math.floor(r() * 200), rest: false, trainedOnRest: false, match: true, restMissed: false }
+      const base = player.status === 'Restricted' ? 360 : player.status === 'High' ? 880 : 700
+      return { v: Math.round(base + (r() - 0.5) * 360), rest: false, trainedOnRest: false, match: false, restMissed: false }
+    })
+  }
+  const heat = players.map((p, i) => ({ player: p, cells: buildLoad(p, i) }))
+  const colourFor = (v: number) => {
+    if (v === 0) return '#1F2937'
+    if (v < 500)  return '#14532D'
+    if (v < 750)  return '#15803D'
+    if (v < 950)  return '#CA8A04'
+    if (v < 1100) return '#D97706'
+    return '#B91C1C'
+  }
+  const phaseColour = (ph: 'M' | 'F' | 'O' | 'L' | '') =>
+    ph === 'M' ? '#EC4899' : ph === 'F' ? '#3B82F6' : ph === 'O' ? '#A78BFA' : ph === 'L' ? '#F59E0B' : 'transparent'
+
+  const restricted = players.filter(p => p.status === 'Restricted' || p.status === 'On Leave')
+  const safeSessions = 87 // %
+
+  return (
+    <div className="space-y-6">
+      {/* Karen Carney compliance banner */}
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 flex items-start gap-3">
+        <span className="text-base">🌸</span>
+        <div className="flex-1">
+          <div className="text-xs font-bold text-pink-300 mb-1">Karen Carney Review — Welfare Compliance</div>
+          <p className="text-[11px] text-pink-200/80">28-day rolling load monitoring with cycle-phase overlay, rest-day enforcement and RTP tracking. All metrics auditable against FA &amp; Carney recommendations on player welfare.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Sessions in safe band" value={`${safeSessions}%`} sub="All players within load threshold" color="green" />
+        <StatCard label="Rest-day breaches"     value="2"                   sub="Last 28 days · investigated"   color="amber" />
+        <StatCard label="Players in RTP"        value={String(restricted.length)} sub="Tracked daily"          color="red" />
+        <StatCard label="Cycle data opt-in"     value="3 / 9"               sub="Voluntary · medical role-gated" color="pink" />
+      </div>
+
+      {/* 28-day rolling load heatmap */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">28-Day Rolling Load Heatmap</h3>
+            <p className="text-[11px] text-gray-500">Rows = players · Columns = days · Hover any cell for daily detail</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{ background: '#14532D' }} />Low</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{ background: '#CA8A04' }} />Optimal</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{ background: '#D97706' }} />High</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm" style={{ background: '#B91C1C' }} />Over</span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="text-[10px] border-separate" style={{ borderSpacing: '2px' }}>
+            <thead>
+              <tr>
+                <th className="text-left pr-2 text-gray-500 font-normal">Player</th>
+                {days.map(d => <th key={d} className="text-gray-600 font-normal w-5">{d % 7 === 6 ? 'M' : d}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {heat.map(row => {
+                const cyc = cyclePhases[row.player.name]
+                return (
+                  <tr key={row.player.name}>
+                    <td className="pr-2 text-gray-300 whitespace-nowrap">{row.player.name}</td>
+                    {row.cells.map((c, di) => {
+                      const tooltip = c.rest
+                        ? (c.trainedOnRest ? `Day ${di+1} · Trained on rest day (${c.v} AU) — flagged` : `Day ${di+1} · Rest day (compliant)`)
+                        : c.match ? `Day ${di+1} · Match · ${c.v} AU`
+                        : `Day ${di+1} · Training · ${c.v} AU${c.v >= 950 ? ' — exceeds threshold' : ''}`
+                      return (
+                        <td key={di} className="relative" title={tooltip}>
+                          {c.rest && !c.trainedOnRest ? (
+                            <div className="w-5 h-5 rounded-sm flex items-center justify-center" style={{ background: '#0a0c14', border: '1px solid #1F2937' }}>
+                              <span className="block w-1.5 h-1.5 rounded-full bg-green-500" />
+                            </div>
+                          ) : c.trainedOnRest ? (
+                            <div className="w-5 h-5 rounded-sm flex items-center justify-center" style={{ background: '#7F1D1D' }}>
+                              <span className="block w-1.5 h-1.5 rounded-full bg-red-300" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-sm relative" style={{ background: colourFor(c.v) }}>
+                              {c.match && <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white">M</span>}
+                              {!c.match && c.v >= 950 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-amber-300 rounded-full border border-[#0D1117]" />}
+                              {cyc && cyc[di] && (
+                                <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: phaseColour(cyc[di]) }} />
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-800 text-[10px] text-gray-400 flex-wrap">
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Rest day (compliant)</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-300" /> Trained on rest day</span>
+          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-amber-300 rounded-full" /> Load threshold exceeded</span>
+          <span className="flex items-center gap-1.5 ml-auto">
+            <span>Cycle phase:</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-1 rounded-sm" style={{ background: '#EC4899' }} />Menstrual</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-1 rounded-sm" style={{ background: '#3B82F6' }} />Follicular</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-1 rounded-sm" style={{ background: '#A78BFA' }} />Ovulatory</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-1 rounded-sm" style={{ background: '#F59E0B' }} />Luteal</span>
+          </span>
+        </div>
+        <p className="text-[10px] text-gray-600 mt-2">Cycle-phase overlay shown only for players who have opted into Lumio Cycle. Data is role-gated to medical &amp; welfare staff. Phase markers do not affect tactical visibility.</p>
+      </div>
+
+      {/* Return to Play tracker */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Return-to-Play Tracker</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-left p-3">Stage</th>
+              <th className="text-left p-3">Issue</th>
+              <th className="text-right p-3">Days remaining</th>
+              <th className="text-left p-3">Clearance</th>
+            </tr></thead>
+            <tbody>
+              {[
+                { p: 'Sophie Turner', s: 'RTP Phase 3 — full training (60%)', i: 'Calf strain · grade 2',     d: '4',  c: 'Cleared 60% volume', cls: 'text-amber-400' },
+                { p: 'Sophie Lawson', s: 'On leave · maternity',              i: 'Maternity leave (private)', d: '—',  c: 'Welfare lead only',   cls: 'text-blue-400' },
+                { p: 'Emily Zhang',   s: 'RTP Phase 4 — return-to-match',     i: 'ACL post-op · 9 months',    d: '12', c: 'Match-fit decision',  cls: 'text-green-400' },
+              ].map((r, i) => (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-200 font-medium">{r.p}</td>
+                  <td className="p-3 text-gray-300 text-xs">{r.s}</td>
+                  <td className="p-3 text-gray-400 text-xs">{r.i}</td>
+                  <td className="p-3 text-right text-gray-300">{r.d}</td>
+                  <td className={`p-3 text-xs font-bold ${r.cls}`}>{r.c}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── LOAD TRENDS & ACWR ──────────────────────────────────────────────────────
+const GPSLoadTrends = ({ players }: { players: GPSPlayer[] }) => {
+  const teamLoad30 = [780, 820, 760, 740, 880, 1180, 410, 720, 760, 820, 800, 760, 1120, 380, 740, 800, 820, 840, 880, 1140, 400, 760, 820, 860, 880, 900, 1180, 380, 780, 820]
+  return (
+    <div className="space-y-6">
+      {/* 30-day team load */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">30-Day Team Load</h3>
+            <p className="text-[11px] text-gray-500">Squad average daily load (AU) · Match days marked</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block bg-pink-500" /><span className="text-gray-400">Daily load</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /><span className="text-gray-400">Match day</span></span>
+          </div>
+        </div>
+        {(() => {
+          const W = 700, H = 200, padL = 36, padR = 12, padT = 16, padB = 28
+          const innerW = W - padL - padR, innerH = H - padT - padB
+          const stepX = innerW / (teamLoad30.length - 1)
+          const yMax = 1300
+          const path = teamLoad30.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / yMax) * innerH}`).join(' ')
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="30-day team load">
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" />)}
+              {[0, 400, 800, 1200].map((v, i) => <text key={i} x={padL - 6} y={padT + innerH - (v / yMax) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>)}
+              <line x1={padL} x2={W - padR} y1={padT + innerH - (1000 / yMax) * innerH} y2={padT + innerH - (1000 / yMax) * innerH} stroke="rgba(245,158,11,0.4)" strokeDasharray="3 3" />
+              <text x={W - padR - 4} y={padT + innerH - (1000 / yMax) * innerH - 4} fontSize="9" fill="#F59E0B" textAnchor="end">High-load 1000 AU</text>
+              <path d={path} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {teamLoad30.map((v, i) => v > 1050 ? <circle key={i} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="3" fill="#F59E0B" /> : null)}
+              {[0, 7, 14, 21, 28].map(d => <text key={d} x={padL + d * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">D{d + 1}</text>)}
+            </svg>
+          )
+        })()}
+      </div>
+
+      {/* Full squad ACWR table */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white">Full Squad — ACWR</h3>
+          <span className="text-[10px] text-gray-500">7-day acute · 28-day chronic · Updated 06:30</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-right p-3">Acute (7d)</th>
+              <th className="text-right p-3">Chronic (28d)</th>
+              <th className="text-right p-3">Ratio</th>
+              <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Trend (4w)</th>
+            </tr></thead>
+            <tbody>
+              {players.filter(p => p.status !== 'On Leave').map((p, i) => {
+                const chronic = Math.max(450, Math.round(p.load * (0.85 + (i % 4) * 0.04)))
+                const acute = Math.round(chronic * p.acwr)
+                const status = p.acwr > 1.4 ? { l: 'Spike risk', cls: 'bg-red-600/20 text-red-400' }
+                  : p.acwr > 1.3 ? { l: 'High',         cls: 'bg-amber-600/20 text-amber-400' }
+                  : p.acwr < 0.8 ? { l: 'Under-loaded', cls: 'bg-blue-600/20 text-blue-400' }
+                  : { l: 'Optimal', cls: 'bg-green-600/20 text-green-400' }
+                // micro sparkline
+                const seed = (p.name.charCodeAt(0) + i) * 13
+                const pts = Array.from({ length: 8 }, (_, k) => 0.4 + ((seed + k * 7) % 50) / 100 + p.acwr * 0.2)
+                const sw = 80, sh = 20
+                const path = pts.map((v, k) => `${k === 0 ? 'M' : 'L'} ${(k / (pts.length - 1)) * sw} ${sh - v * sh}`).join(' ')
+                return (
+                  <tr key={i} className="border-b border-gray-800/50">
+                    <td className="p-3 text-gray-200 font-medium">{p.name} <span className="text-[10px] text-gray-500 ml-1">{p.pos}</span></td>
+                    <td className="p-3 text-right text-gray-300">{acute}</td>
+                    <td className="p-3 text-right text-gray-300">{chronic}</td>
+                    <td className="p-3 text-right"><span className={`text-xs font-bold ${p.acwr > 1.3 ? 'text-amber-400' : p.acwr < 0.8 ? 'text-blue-400' : 'text-green-400'}`}>{p.acwr.toFixed(2)}</span></td>
+                    <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${status.cls}`}>{status.l}</span></td>
+                    <td className="p-3"><svg viewBox={`0 0 ${sw} ${sh}`} width={sw} height={sh}><path d={path} fill="none" stroke={p.acwr > 1.3 ? '#F59E0B' : p.acwr < 0.8 ? '#3B82F6' : '#22C55E'} strokeWidth="1.5" /></svg></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 4-week ACWR chart for flagged players */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">4-Week ACWR — Flagged Players</h3>
+            <p className="text-[11px] text-gray-500">Weekly acute:chronic ratio · Sweet spot 0.8–1.3</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block bg-pink-500" /><span className="text-gray-400">Walsh</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block bg-amber-400" /><span className="text-gray-400">Brooks</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block bg-blue-400" /><span className="text-gray-400">Turner</span></span>
+          </div>
+        </div>
+        {(() => {
+          const wks = ['W-3','W-2','W-1','This wk']
+          const walsh  = [1.05, 1.18, 1.31, 1.42]
+          const brooks = [1.02, 1.14, 1.26, 1.38]
+          const turner = [0.42, 0.51, 0.58, 0.62]
+          const W = 600, H = 200, padL = 36, padR = 12, padT = 16, padB = 28
+          const innerW = W - padL - padR, innerH = H - padT - padB
+          const stepX = innerW / (wks.length - 1), yMax = 1.6
+          const buildPath = (d: number[]) => d.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / yMax) * innerH}`).join(' ')
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="4-week ACWR for flagged players">
+              {/* sweet spot band */}
+              <rect x={padL} y={padT + innerH - (1.3 / yMax) * innerH} width={innerW} height={(1.3 - 0.8) / yMax * innerH} fill="rgba(34,197,94,0.06)" />
+              <line x1={padL} x2={W - padR} y1={padT + innerH - (0.8 / yMax) * innerH} y2={padT + innerH - (0.8 / yMax) * innerH} stroke="rgba(34,197,94,0.3)" strokeDasharray="3 3" />
+              <line x1={padL} x2={W - padR} y1={padT + innerH - (1.3 / yMax) * innerH} y2={padT + innerH - (1.3 / yMax) * innerH} stroke="rgba(245,158,11,0.4)" strokeDasharray="3 3" />
+              {[0, 0.4, 0.8, 1.2, 1.6].map((v, i) => <text key={i} x={padL - 6} y={padT + innerH - (v / yMax) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v.toFixed(1)}</text>)}
+              {wks.map((w, i) => <text key={w} x={padL + i * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">{w}</text>)}
+              <path d={buildPath(walsh)} fill="none" stroke="#EC4899" strokeWidth="2" />
+              {walsh.map((v, i) => <circle key={`wa${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#EC4899" />)}
+              <path d={buildPath(brooks)} fill="none" stroke="#F59E0B" strokeWidth="2" />
+              {brooks.map((v, i) => <circle key={`br${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#F59E0B" />)}
+              <path d={buildPath(turner)} fill="none" stroke="#3B82F6" strokeWidth="2" strokeDasharray="3 3" />
+              {turner.map((v, i) => <circle key={`tu${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / yMax) * innerH} r="2.5" fill="#3B82F6" />)}
+            </svg>
+          )
+        })()}
+        <p className="text-[11px] text-gray-500 mt-2">Walsh and Brooks both crossed 1.3 this week — taper Wed/Thu before Sat fixture. Turner under-loaded by design (RTP phase 3).</p>
+      </div>
+
+      {/* Monotony score */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-1">Training Monotony Score</h3>
+        <p className="text-[11px] text-gray-500 mb-4">Daily load mean ÷ standard deviation across 7 days · &lt;1.5 healthy · &gt;2.0 elevated injury risk</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {players.filter(p => p.status !== 'On Leave').map((p, i) => {
+            const mono = +(0.9 + ((p.name.charCodeAt(1) + i) % 14) * 0.1).toFixed(2)
+            const cls = mono > 2.0 ? 'text-red-400' : mono > 1.5 ? 'text-amber-400' : 'text-green-400'
+            return (
+              <div key={p.name} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+                <div className="text-[10px] text-gray-500 truncate">{p.name}</div>
+                <div className={`text-xl font-black ${cls}`}>{mono.toFixed(2)}</div>
+                <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1.5">
+                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min(100, (mono / 2.5) * 100)}%`, background: mono > 2.0 ? '#EF4444' : mono > 1.5 ? '#F59E0B' : '#22C55E' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MATCH vs TRAINING ───────────────────────────────────────────────────────
+const GPSMatchVsTraining = () => {
+  const data = [
+    { name: 'Priya Nair',     mDist: 11.8, tDist: 9.4,  mHsr: 980,  tHsr: 720, mSpr: 28, tSpr: 18 },
+    { name: 'Jade Osei',      mDist: 11.2, tDist: 8.8,  mHsr: 920,  tHsr: 640, mSpr: 32, tSpr: 22 },
+    { name: 'Abbi Walsh',     mDist: 11.5, tDist: 9.2,  mHsr: 1020, tHsr: 740, mSpr: 34, tSpr: 24 },
+    { name: 'Charlotte Reed', mDist: 10.4, tDist: 8.6,  mHsr: 720,  tHsr: 540, mSpr: 16, tSpr: 12 },
+    { name: 'Fatima Al-Said', mDist: 11.2, tDist: 9.0,  mHsr: 920,  tHsr: 700, mSpr: 24, tSpr: 18 },
+    { name: 'Megan Hughes',   mDist: 11.6, tDist: 9.4,  mHsr: 820,  tHsr: 620, mSpr: 22, tSpr: 16 },
+    { name: 'Tilly Brooks',   mDist: 10.6, tDist: 8.4,  mHsr: 880,  tHsr: 660, mSpr: 28, tSpr: 20 },
+  ]
+  const Bars = ({ field1, field2, max, label }: { field1: keyof typeof data[0]; field2: keyof typeof data[0]; max: number; label: string }) => {
+    const W = 600, rowH = 30, padL = 110, padR = 30, padT = 8
+    const H = padT + data.length * rowH + 8
+    const innerW = W - padL - padR
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label={label}>
+        {data.map((d, i) => {
+          const y = padT + i * rowH
+          const m = d[field1] as number, t = d[field2] as number
+          const mw = (m / max) * innerW
+          const tw = (t / max) * innerW
+          return (
+            <g key={d.name}>
+              <text x={padL - 8} y={y + 14} fontSize="10" fill="#9CA3AF" textAnchor="end">{d.name}</text>
+              <rect x={padL} y={y + 2}  width={mw} height="10" fill="#EC4899" />
+              <text  x={padL + mw + 4}  y={y + 11} fontSize="9" fill="#EC4899">{typeof m === 'number' ? (m % 1 ? m.toFixed(1) : m) : m}</text>
+              <rect x={padL} y={y + 14} width={tw} height="10" fill="#0D9488" />
+              <text  x={padL + tw + 4}  y={y + 23} fontSize="9" fill="#0D9488">{typeof t === 'number' ? (t % 1 ? t.toFixed(1) : t) : t}</text>
+            </g>
+          )
+        })}
+      </svg>
+    )
+  }
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-3 text-xs text-blue-300">
+        ⚽ Comparing last <strong>WSL match output</strong> vs average <strong>training output</strong> for the same player. Helps surface players whose training under-prepares them for match intensity.
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-1">Distance — Match vs Training</h3>
+          <p className="text-[11px] text-gray-500 mb-3">Pink = match · Teal = training (km)</p>
+          <Bars field1="mDist" field2="tDist" max={13} label="Distance match vs training" />
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-1">HSR — Match vs Training</h3>
+          <p className="text-[11px] text-gray-500 mb-3">High-speed running (m, &gt;19.8 km/h)</p>
+          <Bars field1="mHsr" field2="tHsr" max={1100} label="HSR match vs training" />
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 lg:col-span-2">
+          <h3 className="text-sm font-bold text-white mb-1">Sprint Count — Match vs Training</h3>
+          <p className="text-[11px] text-gray-500 mb-3">Number of sprint actions (&gt;25 km/h)</p>
+          <Bars field1="mSpr" field2="tSpr" max={40} label="Sprint count match vs training" />
+        </div>
+      </div>
+
+      {/* Players with concerning gap */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Concerning Match-to-Training Gaps</h3>
+        <p className="text-[11px] text-gray-500 mb-4">Players whose training output sits &gt;25% below match output — indicates prep intensity may be insufficient.</p>
+        <div className="space-y-2">
+          {data.map(d => {
+            const gapPct = Math.round(((d.mHsr - d.tHsr) / d.mHsr) * 100)
+            const flagged = gapPct > 25
+            return flagged ? (
+              <div key={d.name} className="flex items-center justify-between p-3 bg-amber-900/10 border border-amber-600/30 rounded-lg text-xs">
+                <div>
+                  <span className="text-gray-200 font-medium">{d.name}</span>
+                  <span className="text-gray-500 ml-2">match HSR {d.mHsr}m · training HSR {d.tHsr}m</span>
+                </div>
+                <span className="text-amber-400 font-bold">−{gapPct}%</span>
+              </div>
+            ) : null
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SPRINT ANALYSIS ─────────────────────────────────────────────────────────
+const GPSSprintAnalysis = ({ players }: { players: GPSPlayer[] }) => {
+  const active = players.filter(p => p.distance > 0 && p.pos !== 'GK')
+  const sprintBands: Record<string, { b1: number; b2: number; b3: number; b4: number }> = {
+    'Emma Clarke':    { b1: 3, b2: 1, b3: 0, b4: 0 },
+    'Priya Nair':     { b1: 8, b2: 8, b3: 4, b4: 2 },
+    'Jade Osei':      { b1: 6, b2: 8, b3: 8, b4: 4 },
+    'Abbi Walsh':     { b1: 8, b2: 9, b3: 7, b4: 4 },
+    'Charlotte Reed': { b1: 5, b2: 5, b3: 3, b4: 1 },
+    'Sophie Turner':  { b1: 4, b2: 3, b3: 1, b4: 0 },
+    'Fatima Al-Said': { b1: 6, b2: 7, b3: 5, b4: 2 },
+    'Megan Hughes':   { b1: 6, b2: 6, b3: 4, b4: 2 },
+    'Tilly Brooks':   { b1: 7, b2: 8, b3: 6, b4: 3 },
+  }
+  const fatigue: Record<string, { h1: number; h2: number }> = {
+    'Priya Nair':     { h1: 13, h2: 9 },
+    'Jade Osei':      { h1: 16, h2: 10 },
+    'Abbi Walsh':     { h1: 18, h2: 10 },
+    'Charlotte Reed': { h1: 9,  h2: 5 },
+    'Fatima Al-Said': { h1: 13, h2: 7 },
+    'Megan Hughes':   { h1: 11, h2: 7 },
+    'Tilly Brooks':   { h1: 15, h2: 9 },
+  }
+  return (
+    <div className="space-y-6">
+      {/* Sprint count by distance band */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">Sprint Count by Distance Band</h3>
+            <p className="text-[11px] text-gray-500">Number of sprint actions per band (m)</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /><span className="text-gray-400">5–10 m</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-teal-500" /><span className="text-gray-400">10–20 m</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-purple-500" /><span className="text-gray-400">20–30 m</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-pink-500" /><span className="text-gray-400">30 m+</span></span>
+          </div>
+        </div>
+        {(() => {
+          const W = 600, rowH = 24, padL = 110, padR = 30, padT = 8
+          const H = padT + active.length * rowH + 8
+          const innerW = W - padL - padR
+          const maxSprints = Math.max(...active.map(p => {
+            const sb = sprintBands[p.name]
+            return (sb?.b1 || 0) + (sb?.b2 || 0) + (sb?.b3 || 0) + (sb?.b4 || 0)
+          })) + 2
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Sprint count by distance band">
+              {active.map((p, i) => {
+                const sb = sprintBands[p.name] || { b1: 0, b2: 0, b3: 0, b4: 0 }
+                const total = sb.b1 + sb.b2 + sb.b3 + sb.b4
+                const y = padT + i * rowH
+                const seg = (v: number) => (v / maxSprints) * innerW
+                const w1 = seg(sb.b1), w2 = seg(sb.b2), w3 = seg(sb.b3), w4 = seg(sb.b4)
+                return (
+                  <g key={p.name}>
+                    <text x={padL - 8} y={y + 14} fontSize="10" fill="#9CA3AF" textAnchor="end">{p.name}</text>
+                    <rect x={padL}                    y={y + 6} width={w1} height="14" fill="#3B82F6" />
+                    <rect x={padL + w1}               y={y + 6} width={w2} height="14" fill="#0D9488" />
+                    <rect x={padL + w1 + w2}          y={y + 6} width={w3} height="14" fill="#A78BFA" />
+                    <rect x={padL + w1 + w2 + w3}     y={y + 6} width={w4} height="14" fill="#EC4899" />
+                    <text x={padL + seg(total) + 6} y={y + 16} fontSize="10" fill="#D1D5DB">{total}</text>
+                  </g>
+                )
+              })}
+            </svg>
+          )
+        })()}
+      </div>
+
+      {/* Top speed leaderboard + Accel/decel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Top Speed Leaderboard</h3>
+          <div className="space-y-2">
+            {[...active].sort((a, b) => b.topSpeed - a.topSpeed).map((p, i) => (
+              <div key={p.name} className="flex items-center gap-3">
+                <span className={`w-6 text-center text-xs font-bold ${i === 0 ? 'text-pink-400' : i === 1 ? 'text-purple-400' : i === 2 ? 'text-blue-400' : 'text-gray-500'}`}>{i + 1}</span>
+                <span className="text-xs text-gray-300 w-32">{p.name}</span>
+                <div className="flex-1 bg-gray-800 rounded-full h-2">
+                  <div className="h-2 rounded-full bg-pink-500" style={{ width: `${(p.topSpeed / 32) * 100}%` }} />
+                </div>
+                <span className="text-xs font-bold text-white w-16 text-right">{p.topSpeed.toFixed(1)} km/h</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-600 mt-3">Squad benchmark · 30 km/h. WSL average · 28.5 km/h.</p>
+        </div>
+
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Acceleration / Deceleration Efforts</h3>
+          <p className="text-[11px] text-gray-500 mb-3">Efforts &gt;3 m/s² — high mechanical load.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-500 text-xs border-b border-gray-800">
+                <th className="text-left p-2">Player</th>
+                <th className="text-right p-2">Accels</th>
+                <th className="text-right p-2">Decels</th>
+                <th className="text-right p-2">Total</th>
+              </tr></thead>
+              <tbody>
+                {active.sort((a, b) => (b.accels + b.decels) - (a.accels + a.decels)).map((p, i) => (
+                  <tr key={i} className="border-b border-gray-800/50">
+                    <td className="p-2 text-gray-300">{p.name}</td>
+                    <td className="p-2 text-right text-gray-300">{p.accels}</td>
+                    <td className="p-2 text-right text-gray-300">{p.decels}</td>
+                    <td className="p-2 text-right text-pink-400 font-bold">{p.accels + p.decels}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Sprint fatigue index */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-1">Sprint Fatigue Index — H1 vs H2</h3>
+        <p className="text-[11px] text-gray-500 mb-4">Sprint count first half vs second half of session. Drop &gt;30% suggests undercooked conditioning.</p>
+        <div className="space-y-2">
+          {Object.entries(fatigue).map(([name, f]) => {
+            const drop = Math.round(((f.h1 - f.h2) / f.h1) * 100)
+            const concerning = drop > 30
+            return (
+              <div key={name} className="grid grid-cols-12 items-center gap-2 text-xs">
+                <span className="col-span-3 text-gray-300">{name}</span>
+                <div className="col-span-3 flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500 w-6">H1</span>
+                  <div className="flex-1 bg-gray-800 rounded h-2"><div className="h-2 rounded bg-pink-500" style={{ width: `${(f.h1 / 20) * 100}%` }} /></div>
+                  <span className="text-gray-300 w-6 text-right">{f.h1}</span>
+                </div>
+                <div className="col-span-3 flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500 w-6">H2</span>
+                  <div className="flex-1 bg-gray-800 rounded h-2"><div className="h-2 rounded bg-teal-500" style={{ width: `${(f.h2 / 20) * 100}%` }} /></div>
+                  <span className="text-gray-300 w-6 text-right">{f.h2}</span>
+                </div>
+                <span className={`col-span-3 text-right font-bold ${concerning ? 'text-amber-400' : 'text-gray-400'}`}>−{drop}% {concerning && '⚠'}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── CONNECT GPS ─────────────────────────────────────────────────────────────
+const GPSConnectTab = () => (
+  <div className="space-y-6">
+    {/* JOHAN Sports featured partner */}
+    <div className="bg-gradient-to-br from-pink-600/15 via-purple-600/10 to-blue-600/10 border border-pink-600/30 rounded-xl p-6">
+      <div className="flex items-start gap-4 flex-wrap">
+        <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl">📡</div>
+        <div className="flex-1 min-w-[280px]">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[9px] uppercase tracking-wider font-bold text-pink-300 bg-pink-600/20 px-1.5 py-0.5 rounded">Featured Partner</span>
+            <span className="text-[9px] uppercase tracking-wider text-gray-400">GPS Hardware</span>
+          </div>
+          <h3 className="text-base font-bold text-white">JOHAN Sports — Women's Football GPS</h3>
+          <p className="text-xs text-gray-300 mt-1 max-w-xl">
+            Lightweight chest-strap and vest GPS designed for women's football. 10 Hz GPS, IMU, heart rate, and live broadcast. Default integration for Women's FC across WSL, Championship and grassroots tiers.
+          </p>
+        </div>
+        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed self-start">+ Pair new device</button>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+        {[
+          { l: 'Devices allocated', v: '10' },
+          { l: 'Active today',      v: '9' },
+          { l: 'Charging dock',     v: '1 unit' },
+          { l: 'Firmware',          v: 'v4.12.1 ✓' },
+        ].map(s => (
+          <div key={s.l} className="bg-[#0a0c14]/70 border border-gray-800 rounded-lg p-3">
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">{s.l}</div>
+            <div className="text-sm font-bold text-white mt-0.5">{s.v}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Integration status panel */}
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+      <h3 className="text-sm font-bold text-white mb-3">Integration Status</h3>
+      <div className="space-y-2">
+        {[
+          { system: 'JOHAN Sports GPS',         status: 'Connected', detail: '10 vests allocated · 9 active · last sync 09:14',       hub: 'Hardware'    },
+          { system: 'Lumio Health (ACL model)', status: 'Connected', detail: 'ACL composite score syncing daily · 3 flagged players', hub: 'Risk model'  },
+          { system: 'FA Player Registration',   status: 'Connected', detail: 'Squad list synced daily 06:00 · last sync 06:02',       hub: 'Compliance'  },
+          { system: 'Lumio Cycle (opt-in)',     status: 'Connected', detail: '3 of 9 players opted in · medical role-gated',           hub: 'Welfare'     },
+          { system: 'Second Spectrum',          status: 'Pending',   detail: 'Video tracking integration scheduled for Phase 2',      hub: 'Tactical'    },
+          { system: 'PolarPro HRM bridge',      status: 'Available', detail: 'Heart-rate variability cross-check — not yet enabled',  hub: 'Optional'    },
+        ].map(s => (
+          <div key={s.system} className="flex items-center justify-between py-2.5 border-b border-gray-800 last:border-0 gap-3 flex-wrap">
+            <div className="flex-1 min-w-[260px]">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-200 font-medium">{s.system}</span>
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 bg-gray-800/60 px-1.5 py-0.5 rounded">{s.hub}</span>
+              </div>
+              <span className="text-[10px] text-gray-500">{s.detail}</span>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded ${s.status === 'Connected' ? 'bg-green-600/20 text-green-400' : s.status === 'Pending' ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-700/50 text-gray-400'}`}>{s.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* FA Player Registration sync + Last sync */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white">FA Player Registration Sync</h3>
+          <span className="text-xs px-2 py-0.5 rounded bg-green-600/20 text-green-400">Connected</span>
+        </div>
+        <div className="space-y-2 text-xs">
+          {[
+            { l: 'Last sync',         v: 'Today 06:02', c: 'text-gray-300' },
+            { l: 'Players in scope',  v: '24 (full squad)', c: 'text-gray-300' },
+            { l: 'Reg. mismatches',   v: '0', c: 'text-green-400' },
+            { l: 'Eligibility flags', v: '1 — Lawson (maternity, FA notified)', c: 'text-amber-400' },
+          ].map(r => (
+            <div key={r.l} className="flex justify-between py-1.5 border-b border-gray-800 last:border-0">
+              <span className="text-gray-500">{r.l}</span>
+              <span className={`font-medium ${r.c}`}>{r.v}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Connect Lumio Health</button>
-        <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">⌨ Manual data entry</button>
-        <span className="text-[10px] text-gray-500">Available in live portal</span>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white">Last Sync · Activity</h3>
+          <span className="text-[10px] text-gray-500">UTC+1</span>
+        </div>
+        <div className="space-y-2 text-xs">
+          {[
+            { t: '09:14', a: 'GPS upload from JOHAN bridge', d: '9 vests · MD-3 session' },
+            { t: '06:30', a: 'ACL composite score recompute', d: 'Lumio Health · 3 flags' },
+            { t: '06:02', a: 'FA registration pull',         d: '24 players · 0 mismatches' },
+            { t: '05:45', a: 'Cycle phase update',           d: 'Lumio Cycle · 3 opt-in players' },
+          ].map(r => (
+            <div key={r.t} className="flex items-start gap-3 py-1.5 border-b border-gray-800 last:border-0">
+              <span className="text-gray-500 font-mono w-12 flex-shrink-0">{r.t}</span>
+              <div className="flex-1">
+                <div className="text-gray-300">{r.a}</div>
+                <div className="text-[10px] text-gray-500">{r.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  )
-}
+
+    <div className="flex items-center gap-2">
+      <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">+ Connect new integration</button>
+      <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">⌨ Manual data entry</button>
+      <span className="text-[10px] text-gray-500">Available in live portal</span>
+    </div>
+  </div>
+)
 
 // ─── PLACEHOLDER VIEW ─────────────────────────────────────────────────────────
 
@@ -3473,7 +4381,7 @@ const BoardSuiteView = ({ club }: { club: WomensClub }) => (
 )
 
 // ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
-const FinancialPlanningView = ({ club }: { club: WomensClub }) => {
+const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
   const [planTab, setPlanTab] = useState<'1yr'|'3yr'|'5yr'|'10yr'>('1yr')
   const fmtC = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
   const permitted = club.relevantRevenue * 0.8
@@ -3569,11 +4477,15 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
 
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
-  director: { label: 'Director', icon: '⚽', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
-  head_coach: { label: 'Head Coach', icon: '📋', accent: '#22C55E', sidebar: 'all', hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
-  welfare: { label: 'Welfare Officer', icon: '🛡️', accent: '#EF4444', sidebar: 'all', hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
-  commercial: { label: 'Commercial', icon: '💼', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
-  sponsor: { label: 'Sponsor', icon: '🤝', accent: '#F59E0B', sidebar: 'all', hiddenTabs: ['quickwins','dailytasks','dontmiss','team'], message: null },
+  ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
+  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','tactics','match','transfers','analytics','scouting','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
+  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','tactics','match','halftime','analytics','scouting','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
+  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
+  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
+  community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
 }
 
 // ─── WOMENS SPONSOR DASHBOARD ────────────────────────────────────────────────
@@ -3685,12 +4597,15 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
 
 // ─── ROLES FOR DEMO GATE ─────────────────────────────────────────────────────
 const WOMENS_ROLES = [
-  { id: 'ceo', label: 'CEO / Chairman', icon: '🏛️' },
-  { id: 'dof', label: 'Director of Football', icon: '📋' },
-  { id: 'coach', label: 'Head Coach', icon: '🎽' },
-  { id: 'welfare', label: 'Welfare Lead', icon: '❤️' },
-  { id: 'medical', label: 'Club Doctor', icon: '🏥' },
-  { id: 'commercial', label: 'Commercial Director', icon: '💼' },
+  { id: 'ceo',         label: 'CEO / Chairman',         icon: '🏛️' },
+  { id: 'dof',         label: 'Director of Football',   icon: '📋' },
+  { id: 'coach',       label: 'Head Coach',             icon: '🎽' },
+  { id: 'performance', label: 'Head of Performance',    icon: '📊' },
+  { id: 'medical',     label: 'Club Doctor',            icon: '🏥' },
+  { id: 'welfare',     label: 'Welfare Lead',           icon: '❤️' },
+  { id: 'operations',  label: 'Head of Operations',     icon: '🛠️' },
+  { id: 'commercial',  label: 'Commercial Director',    icon: '💼' },
+  { id: 'community',   label: 'Head of Community',      icon: '🌍' },
 ]
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
@@ -4209,14 +5124,31 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   // Role config
   const [roleOverride, setRoleOverride] = useState<string | null>(null)
-  const currentRole = (roleOverride || session.role || 'director') as keyof typeof WOMENS_ROLE_CONFIG
-  const roleConfig = WOMENS_ROLE_CONFIG[currentRole] ?? WOMENS_ROLE_CONFIG.director
-  const isSponsor = currentRole === 'sponsor'
+  const currentRole = (roleOverride || session.role || 'ceo') as keyof typeof WOMENS_ROLE_CONFIG
+  const roleConfig = WOMENS_ROLE_CONFIG[currentRole] ?? WOMENS_ROLE_CONFIG.ceo
+  const isSponsor = false
 
   // Dashboard tabs
   const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
     try { return localStorage.getItem('womens_getting_started_seen') ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
   })
+
+  // ── v2 dashboard state (hero + overlays) ───────────────────────────
+  const v2T       = THEMES.dark
+  const v2Accent  = WOMENS_ACCENT
+  const v2Density = DENSITY.regular
+  const v2Greeting = v2GetGreeting('matchday')
+  const [v2OpenFixture, setV2OpenFixture] = useState<WfFixture | null>(null)
+  const [v2CmdOpen, setV2CmdOpen]         = useState(false)
+  const [v2AskOpen, setV2AskOpen]         = useState(false)
+  const [v2BriefOpen, setV2BriefOpen]     = useState(false)
+  const [v2DashToast, showV2DashToast]    = useV2Toast()
+  useV2Key('cmdk', () => setV2CmdOpen(o => !o))
+  // Map dashTab IDs to v2 Lucide icons for the restyled tab bar.
+  const v2TabIcon = (id: typeof dashTab): string => ({
+    gettingstarted: 'sparkles', today: 'home', quickwins: 'lightning',
+    dailytasks: 'check', insights: 'bars', dontmiss: 'flag', team: 'people',
+  } as const)[id]
 
   // Morning banner quotes
   const [quoteIdx, setQuoteIdx] = useState(0)
@@ -4305,9 +5237,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   // Team tab sub-tabs
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
-  const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'COMMERCIAL', 'OPERATIONS']
+  const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'GPS & LOAD', 'COMMERCIAL', 'OPERATIONS']
 
-  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps'])
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps'])
   const filteredItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
@@ -4337,14 +5269,19 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
-      case 'financial':   return <FinancialPlanningView club={club} />
+      case 'club-vision': return <WomensClubVisionView club={club} />
+      case 'financial':   return <WomensClubVisionView club={club} />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
       case 'social':      return <SocialMediaView club={club} />
       case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <StaffDirectoryView />
-      case 'gps':         return <GPSLoadView />
+      case 'gps-load':    return <GPSLoadView club={club} />
+      case 'gps-heatmaps': return <WomensGPSHeatmapsView club={club} />
       case 'medical':     return <MedicalRecordsView />
-      case 'preseason':   return <PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />
+      case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
+      case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
+      case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'settings':    return <SettingsViewFull club={club} />
       default:            return null
     }
@@ -4376,22 +5313,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     'Ready — let\'s make history ⚽',
   ]
 
-  // ── Quick actions ──
-  const quickActions = [
-    { id:'flights',    label:'Book Flight',      icon:'✈️', hot:true,  color:'#BE185D' },
-    { id:'matchprep',  label:'Match Prep AI',    icon:'🎯', hot:true,  color:'#22C55E' },
-    { id:'fsr',        label:'FSR Check',        icon:'📊', hot:false, color:'#6B7280' },
-    { id:'welfare',    label:'Welfare Alert',    icon:'🛡️', hot:false, color:'#EF4444' },
-    { id:'sponsor',    label:'Sponsor Post AI',  icon:'📱', hot:true,  color:'#F59E0B' },
-    { id:'ranking',    label:'Ranking Sim',      icon:'📈', hot:true,  color:'#BE185D' },
-    { id:'injury',     label:'Log Injury',       icon:'💊', hot:false, color:'#EF4444' },
-    { id:'expense',    label:'Add Expense',      icon:'🧾', hot:false, color:'#6B7280' },
-    { id:'dualreg',    label:'Dual Registration',icon:'🔄', hot:false, color:'#6B7280' },
-    { id:'ofsted',     label:'Ofsted Mode',      icon:'📋', hot:false, color:'#6B7280' },
-    { id:'preseason',  label:'Pre-Season',       icon:'🏕️', hot:false, color:'#6B7280' },
-    { id:'visa',       label:'Visa Check',       icon:'🌍', hot:true,  color:'#6B7280' },
-  ]
-
   // ── Quick Wins items ──
   const quickWinsItems = [
     { t: 'Review FSR headroom — £380k available before cap breach', p: 'High', c: '#EF4444' },
@@ -4420,13 +5341,26 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   ]
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07080F', color: '#F9FAFB' }}>
+    <div className="flex flex-col" style={{ background: '#07080F', color: '#F9FAFB', minHeight: '100vh', zoom: 0.9 }}>
+      {/* Body: sidebar + main content. */}
+      {/* SIDEBAR STICKY — matches football/cricket/rugby pattern.
+          position: sticky with top: 0 and full viewport height (zoom-
+          adjusted). Nav inside scrolls if content exceeds viewport.
+          minHeight on the body row MUST be calc(100vh / 0.9) (matching
+          the aside's zoom-adjusted height) — at the simpler '100vh'
+          setting, sticky breaks when main content is shorter than
+          ~11vh because the containing block ends up shorter than the
+          aside, and sticky stops applying when its containing block
+          can't fit the element. Football works at minHeight: '100vh'
+          only because its content is naturally tall enough to push
+          the row well past 100vh; women's needs the explicit floor. */}
+      <div className="flex flex-1" style={{ minHeight: 'calc(100vh / 0.9)' }}>
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12' }}>
+      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
-            : <span className="text-xl">⚽</span>}
+            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
           {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{session.clubName}</span>}
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
@@ -4438,16 +5372,19 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             return (
             <div key={group}>
               {!sidebarCollapsed && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
-              {items.map((item: { id: string; label: string; icon: string }) => (
+              {items.map((item: { id: string; label: string; icon: string }) => {
+                const NavIcon = NAV_ICON_MAP[item.id] ?? CircleDot
+                return (
                 <button key={item.id} onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center gap-2.5 px-4 py-2 text-xs transition-all ${
                     activeSection === item.id ? 'bg-pink-600/10 text-pink-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}>
-                  <span className="text-sm">{item.icon}</span>
+                  <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {!sidebarCollapsed && item.id === 'preseason' && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {!sidebarCollapsed && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
-              ))}
+                )
+              })}
             </div>
             )
           })}
@@ -4461,13 +5398,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             sidebarCollapsed={sidebarCollapsed}
           />
         </div>
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 text-gray-600 hover:text-gray-400 border-t border-gray-800 text-xs">
-          {sidebarCollapsed ? '→' : '← Collapse'}
-        </button>
+        {/* Collapse button removed — feature not present in other portals
+            (football, cricket, rugby, etc.). Sidebar is fixed-width sticky
+            matching canonical pattern across all portals. The
+            sidebarCollapsed state is retained because it is still
+            referenced by the sidebar's width / label / RoleSwitcher
+            conditionals; in this build it stays at its default (false). */}
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main className="flex-1 flex flex-col" style={{ minHeight: '100vh' }}>
         {/* Demo workspace banner */}
         <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
           <span>This is a demo · sample data</span>
@@ -4481,7 +5421,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               ? <img src={session.logoDataUrl} alt="" className="w-5 h-5 rounded object-cover" />
               : <span className="text-lg">⚽</span>}
             <div>
-              <h1 className="text-sm font-bold text-white">{session.clubName}</h1>
+              {/* Team name removed — already shown in sidebar header.
+                  Keep the substantive Sprint 3.5 compliance indicator. */}
               <p className="text-[10px] text-gray-500">
                 {club.tier === 'grassroots' ? `${club.league} Women's Football` : `${club.league} · FSR Compliant · Karen Carney Review Standards`}
               </p>
@@ -4508,103 +5449,82 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           </div>
         </div>
 
-        {/* Role banner */}
-        {currentRole !== 'director' && !isSponsor && roleConfig.message && (
-          <div className="flex items-center justify-between px-6 py-2 text-xs flex-shrink-0"
-            style={{ backgroundColor: `${roleConfig.accent}12`, borderBottom: `1px solid ${roleConfig.accent}25` }}>
-            <div className="flex items-center gap-2">
-              <span>{roleConfig.icon}</span>
-              <span style={{ color: roleConfig.accent }}>Viewing as <strong>{roleConfig.label}</strong> — {roleConfig.message}</span>
-            </div>
-          </div>
-        )}
+        {/* Role indicator strip removed — role context is shown via the
+            role selector dropdown in sidebar bottom (canonical pattern
+            across all portals). Removed here for portal consistency. */}
 
         {/* Sponsor dashboard override */}
         {isSponsor && activeSection === 'dashboard' ? (
-          <div className="p-6 max-w-6xl flex-1">
+          <div className="p-6 flex-1">
             <WomensSponsorDashboard club={club} session={session} />
           </div>
         ) : activeSection !== 'dashboard' ? (
-          <div className="p-6 max-w-6xl flex-1">
+          <div className="p-6 flex-1">
             {renderView()}
           </div>
         ) : (
           <div className="flex-1 flex flex-col">
-            {/* Morning banner */}
-            <div className="mx-6 mt-6 rounded-2xl p-5 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0D1117 0%, #131720 50%, #0D1117 100%)', border: '1px solid #1F2937' }}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h2 className="text-lg font-bold text-white">Good morning, {session.userName || club.director || 'Director'}. ⚽</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p className="text-xs italic mt-2 transition-all duration-500" style={{ color: '#BE185D' }}>{womenQuotes[quoteIdx]}</p>
-                </div>
-                <button onClick={handleTTS} className="p-2 rounded-lg hover:bg-white/5 transition-colors" title="Read aloud">
-                  <span className="text-lg">{speaking ? '🔊' : '🔈'}</span>
-                </button>
-              </div>
 
-              {/* Stat boxes */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                {[
-                  { label: 'FSR Status', value: 'SAFE', color: '#22C55E' },
-                  { label: 'Squad', value: '24', color: '#BE185D' },
-                  { label: 'Welfare Flags', value: '2', color: '#F59E0B' },
-                  { label: 'Next Match', value: 'Sat 12 Apr', color: '#3B82F6' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#111318', border: '1px solid #1F2937', minWidth: 0 }}>
-                    <div className="w-[72px] h-[72px] rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}15`, border: `1px solid ${s.color}30` }}>
-                      <span className="text-base font-black" style={{ color: s.color }}>{s.value}</span>
-                    </div>
-                    <span className="text-[11px] text-gray-400 leading-tight">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* World clock + Weather */}
-              <div className="flex items-center gap-4 flex-wrap text-[10px] text-gray-500">
-                {[
-                  { city: 'London', tz: 'Europe/London' },
-                  { city: 'New York', tz: 'America/New_York' },
-                  { city: 'Sydney', tz: 'Australia/Sydney' },
-                  { city: 'Madrid', tz: 'Europe/Madrid' },
-                ].map(c => (
-                  <span key={c.city} className="flex items-center gap-1">
-                    <span className="font-semibold text-gray-400">{c.city}</span> {getTime(c.tz)}
-                  </span>
-                ))}
-                {weather && (
-                  <span className="flex items-center gap-1 ml-auto">
-                    🌤️ London {weather.temp}°C · {weather.desc}
-                  </span>
-                )}
+            {/* Hero — match-day banner FIRST, persistent across tabs */}
+            {/* BANNER FULL WIDTH — Today schedule moved into the three-column
+                row alongside AI Morning Summary and Inbox; Squad Availability
+                moved to bottom of page as full-width strip. Layout reflow per
+                user spec.
+                align-items: start prevents sibling cards from stretching the
+                hero. Without this, sibling card row counts can drag the hero
+                card to match a taller sibling, leaving empty space below the
+                buttons. */}
+            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
+                <WfHeroToday
+                  T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
+                  onConfirm={() => showV2DashToast('Starting XI confirmed · squad notified')}
+                  onAsk={() => setV2AskOpen(true)}
+                  onMatchBrief={() => setV2BriefOpen(true)}
+                />
               </div>
             </div>
 
-            {/* Tab bar */}
-            <div className="flex items-center gap-2 px-6 mt-4 border-b border-gray-800 flex-shrink-0 overflow-x-auto">
-              {visibleTabs.map(t => (
-                <button key={t.id} onClick={() => setDashTab(t.id)}
-                  className="px-4 py-3 text-sm font-semibold transition-all relative whitespace-nowrap border-b-2 -mb-px"
-                  style={{ color: dashTab === t.id ? '#BE185D' : '#6B7280', borderBottomColor: dashTab === t.id ? '#BE185D' : 'transparent', backgroundColor: dashTab === t.id ? '#BE185D0d' : 'transparent' }}>
-                  <span className="mr-1">{t.icon}</span>{t.label}
-                </button>
-              ))}
+            {/* Tab bar — Lucide icons + accent underline (matches rugby v2) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${v2T.border}`, overflowX: 'auto', margin: '14px 24px 0' }}>
+              {visibleTabs.map(t => {
+                const active = dashTab === t.id
+                return (
+                  <button key={t.id} onClick={() => setDashTab(t.id)}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = v2T.text2 }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = v2T.text3 }}
+                    style={{
+                      appearance: 'none', border: 0, background: 'transparent',
+                      padding: '10px 14px',
+                      fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                      color: active ? '#fff' : v2T.text3,
+                      borderBottom: `2px solid ${active ? v2Accent.hex : 'transparent'}`,
+                      marginBottom: -1,
+                      cursor: 'pointer', whiteSpace: 'nowrap',
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      transition: 'color .12s, border-color .12s',
+                    }}>
+                    <V2Icon name={v2TabIcon(t.id)} size={12} stroke={1.6} />
+                    {t.label}
+                  </button>
+                )
+              })}
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2 px-6 py-3 overflow-x-auto flex-shrink-0">
-              {quickActions.map(a => (
-                <button key={a.id} onClick={() => { if (['fsr','welfare','dualreg','preseason'].includes(a.id)) setActiveSection(a.id); else if (a.id === 'matchprep') setActiveSection('match') }}
-                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap relative"
-                  style={{ background: a.hot ? `${a.color}18` : '#111318', border: a.hot ? `1px solid ${a.color}50` : '1px solid #1F2937', color: a.hot ? a.color : '#9CA3AF' }}>
-                  <span>{a.icon}</span>{a.label}
-                  {a.hot && <span className="absolute -top-1 -right-1 text-[8px] px-1 rounded-full font-black" style={{ backgroundColor: a.color, color: '#fff' }}>AI</span>}
-                </button>
-              ))}
+            {/* Quick Actions — role-aware (shared bar) */}
+            {/* QUICK ACTIONS row centered horizontally for breathing space
+                between left-aligned Tabs row above and KPI cards below. */}
+            <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
+              <RoleAwareQuickActionsBar
+                sport="womens"
+                role={currentRole as string}
+                onNavigate={(deptId) => setActiveSection(deptId)}
+                accentHex={v2Accent.hex}
+              />
             </div>
 
             {/* Tab content */}
-            <div className="p-6 max-w-6xl flex-1">
+            <div className="p-6 flex-1 w-full">
               {/* Getting Started tab */}
               {dashTab === 'gettingstarted' && (
                 <div className="space-y-4">
@@ -4629,26 +5549,37 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 </div>
               )}
 
-              {/* Today tab */}
+              {/* Today tab — v2 modular grid */}
               {dashTab === 'today' && (
-                <div className="space-y-6">
-                  <DashboardView club={club} />
-                  {/* AI Morning Summary */}
-                  <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm">🤖</span>
-                      <h3 className="text-sm font-bold text-white">AI Morning Summary</h3>
-                    </div>
-                    {aiLoading ? (
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <div className="w-4 h-4 border-2 border-pink-600/30 border-t-pink-600 rounded-full animate-spin" />
-                        Generating summary...
-                      </div>
-                    ) : aiSummary ? (
-                      <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
-                    ) : (
-                      <p className="text-xs text-gray-500">Summary will appear here.</p>
-                    )}
+                <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
+                  <WfStatTiles T={v2T} accent={v2Accent} density={v2Density} />
+
+                  {/* Three-column row — AI Morning Summary | Inbox | Today.
+                      Cards rendered as DIRECT grid children, matching cricket
+                      reference. WfAIBrief gridColumn '1/span 4',
+                      InteractiveWomensInbox '5/span 4', WfTodaySchedule
+                      '9/span 4' — totalling 12.
+                      CARD ROW GAP — gap: 8 (tighter than density.gap=14)
+                      so the three cards read as one unified row visual. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+                    <WfAIBrief T={v2T} accent={v2Accent} density={v2Density} onAsk={() => setV2AskOpen(true)} />
+                    <InteractiveWomensInbox T={v2T} accent={v2Accent} density={v2Density} />
+                    <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+                    <WfFixturesModule T={v2T} accent={v2Accent} density={v2Density} onPick={f => setV2OpenFixture(f)} />
+                    <WfPerf            T={v2T} accent={v2Accent} density={v2Density} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+                    <WfRecents T={v2T} accent={v2Accent} density={v2Density} />
+                    <WfSeason  T={v2T} accent={v2Accent} density={v2Density} />
+                  </div>
+
+                  {/* Squad Availability — full-width strip at bottom of page. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap }}>
+                    <WfSquadModule T={v2T} accent={v2Accent} density={v2Density} />
                   </div>
                 </div>
               )}
@@ -4818,6 +5749,186 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           </div>
         )}
       </main>
+      </div>
+
+      {/* v2 overlays — command palette, ask Lumio, fixture drawer, toast, match brief */}
+      <V2CommandPalette T={v2T} accent={v2Accent} open={v2CmdOpen} onClose={() => setV2CmdOpen(false)} onAskLumio={() => { setV2CmdOpen(false); setV2AskOpen(true) }} />
+      <V2AskLumio       T={v2T} accent={v2Accent} open={v2AskOpen} onClose={() => setV2AskOpen(false)} />
+      <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
+      <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
+      <WomensMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
+    </div>
+  )
+}
+
+// ─── Women's FC v2 dashboard helpers (interactive inbox + match brief) ──
+
+const WOMENS_INBOX_BODIES: Record<string, string> = {
+  'SMS · Coaches':     'Frost: confirm Sunday XI please. Carter cleared, Davies out 2-3 weeks. Need team sheet by 12:30 for league submission.',
+  'WhatsApp · Squad':  'Captain: morale really high after Tuesday session. Pitch walk done — surface firm, no concerns. Good vibe in group chat.',
+  'Email · Selectors': 'WSL Championship — Hartwell fixture amended to 14:00 KO due to broadcast schedule. League office confirmed 10:42 today.',
+  'Agent messages':    'Williams contract extension — agent wants 2-year deal at WSL Championship benchmark wage. Deadline end of month. Comparable offer on the table.',
+  'Board messages':    'Kate: quarterly review Thursday 14:00. Agenda — FSR position, sponsorship pipeline (Apex), commercial Q3 vs plan, welfare audit findings.',
+  'Medical Hub':       'Dr Patel: Davies MRI back — Grade 1 MCL. 2-3 weeks recovery, available cup match if managed. Okafor concussion protocol Day 3 going well.',
+  'Media & Press':     "Northbridge Sport requesting feature on women's game growth — manager + 2 senior players. Friday 14:00. Talking points coming through.",
+  'Player Welfare':    'Lisa: quarterly wellbeing survey at 87% completion. 2 players amber on sleep quality (Brennan, Tilley) — recommend 1-to-1s this week.',
+  'Sponsorship':       'Apex Performance content shoot Friday confirmed — 4 players needed (kit launch). Check training schedule. Activation worth £35k bonus.',
+}
+
+function wfBtnGhost(): React.CSSProperties {
+  return { fontSize: 11, padding: '5px 10px', background: 'transparent', color: '#9CA3AF', border: '1px solid #2d3139', borderRadius: 6, cursor: 'pointer', transition: 'border-color .12s, color .12s' }
+}
+function wfBtnPrimary(accentHex: string): React.CSSProperties {
+  return { fontSize: 11.5, padding: '5px 12px', background: accentHex, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }
+}
+
+function InteractiveWomensInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof WOMENS_ACCENT; density: typeof DENSITY.regular }) {
+  type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
+  const init = (): Record<string, RowState> => Object.fromEntries(WOMENS_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }]))
+  const [state, setState] = useState<Record<string, RowState>>(init)
+  const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
+  const items = WOMENS_INBOX.filter(c => !state[c.ch]?.dismissed)
+  return (
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
+        <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 420, overflow: 'auto' }}>
+        {items.map((c, i) => {
+          const s = state[c.ch] ?? { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }
+          const body = WOMENS_INBOX_BODIES[c.ch] ?? c.last
+          return (
+            <div key={c.ch} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <div onClick={() => update(c.ch, { expanded: !s.expanded, mode: 'idle' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.urgent ? T.bad : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{c.ch}</div>
+                  <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: 'monospace' }}>{c.time}</div>
+                <div className="tnum" style={{ minWidth: 22, height: 18, padding: '0 6px', borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 600, background: c.urgent ? 'rgba(199,90,90,0.12)' : T.hover, color: c.urgent ? T.bad : T.text2 }}>{c.count}</div>
+              </div>
+              {s.expanded && (
+                <div style={{ padding: '6px 6px 12px 22px' }}>
+                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, padding: 10, background: T.panel2, borderRadius: 6, border: `1px solid ${T.border}` }}>{body}</div>
+                  {s.sentLabel && <div style={{ marginTop: 6, fontSize: 11, color: T.good, fontFamily: 'monospace' }}>{s.sentLabel}</div>}
+                  {s.mode === 'idle' && !s.sentLabel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => update(c.ch, { mode: 'replying' })}   style={wfBtnGhost()}>Reply</button>
+                      <button onClick={() => update(c.ch, { mode: 'forwarding' })} style={wfBtnGhost()}>Forward</button>
+                      <button onClick={() => update(c.ch, { dismissed: true })}    style={wfBtnGhost()}>Dismiss</button>
+                    </div>
+                  )}
+                  {s.mode === 'replying' && (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={s.reply} onChange={e => update(c.ch, { reply: e.target.value })}
+                        placeholder="Type your reply…" rows={3}
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: 8, fontSize: 12, fontFamily: V2_FONT, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '', sentLabel: 'Sent ✓' })} style={wfBtnPrimary(accent.hex)}>Send</button>
+                        <button onClick={() => update(c.ch, { mode: 'idle', reply: '' })} style={wfBtnGhost()}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {s.mode === 'forwarding' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: T.text3 }}>Forward to:</span>
+                      <select value={s.forwardTo} onChange={e => update(c.ch, { forwardTo: e.target.value })}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontFamily: V2_FONT }}>
+                        <option>Head Coach</option><option>Assistant Manager</option><option>Director of Football</option>
+                        <option>Welfare Officer</option><option>Medical Lead</option><option>Commercial Director</option><option>CEO</option>
+                      </select>
+                      <button onClick={() => update(c.ch, { mode: 'idle', sentLabel: `Forwarded to ${s.forwardTo} ✓` })} style={wfBtnPrimary(accent.hex)}>Forward</button>
+                      <button onClick={() => update(c.ch, { mode: 'idle' })} style={wfBtnGhost()}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {items.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+      </div>
+    </div>
+  )
+}
+
+function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.dark; accent: typeof WOMENS_ACCENT; open: boolean; onClose: () => void }) {
+  if (!open) return null
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'monospace' }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  )
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 80, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto', backdropFilter: 'blur(2px)' }}>
+      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 28, fontFamily: V2_FONT, color: T.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
+            <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Oakridge Women FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Hartwell Women</h2>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>WSL Championship · MD-19</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sun 03 May 2026 · Oakridge Stadium · Kick-off 14:00</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
+        </div>
+
+        <Section title="01 · Conditions">
+          <div><strong style={{ color: T.text }}>Weather:</strong> 13°C light cloud, 9 mph SW wind.</div>
+          <div><strong style={{ color: T.text }}>Pitch:</strong> Natural grass, firm surface, well-drained — moulded studs.</div>
+          <div><strong style={{ color: T.text }}>Wind factor:</strong> Slight tailwind attacking the south end first half — favour direct running.</div>
+          <div><strong style={{ color: T.text }}>Referee:</strong> A. Sterling — average 22 fouls/match, strict on shirt-pulls in box. Two yellows trigger ban.</div>
+        </Section>
+
+        <Section title="02 · Opposition Analysis · Hartwell Women">
+          <div><strong style={{ color: T.text }}>Position:</strong> 9th in WSL Championship. <strong style={{ color: T.text }}>Last 5:</strong> L D W L D — slipping form.</div>
+          <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
+          <ul style={{ marginTop: 4, paddingLeft: 22 }}>
+            <li>Striker <strong>K. Bell</strong> — 11 league goals, deadly in the air, weak left foot.</li>
+            <li>Winger <strong>S. Idoko</strong> — 1v1 dangerous, takes corners short routine.</li>
+            <li>Midfielder <strong>R. Park</strong> — sets tempo, leads tackles + interceptions.</li>
+          </ul>
+          <div style={{ marginTop: 8 }}><strong style={{ color: T.text }}>Weakness:</strong> Sit deep in 5-4-1 block, GK weak on high balls. Wide overloads + early crosses to back post are the route in.</div>
+        </Section>
+
+        <Section title="03 · Our Team News">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li><strong style={{ color: T.text }}>Carter:</strong> cleared after scan — returns to starting XI. Decision: partner with Davies or Williams in midfield.</li>
+            <li><strong style={{ color: T.text }}>Davies:</strong> MCL Grade 1 — 2-3 weeks. Out Sunday, available cup match if managed.</li>
+            <li><strong style={{ color: T.text }}>Okafor:</strong> Concussion protocol Day 3 — likely available next week.</li>
+            <li><strong style={{ color: T.text }}>Welfare note:</strong> Brennan + Tilley flagged amber on sleep — monitor warm-up sharpness, prioritise rotation second half.</li>
+          </ul>
+        </Section>
+
+        <Section title="04 · Tactical Priorities">
+          <ol style={{ paddingLeft: 22, margin: 0, listStyle: 'decimal' }}>
+            <li>Wide overloads vs their 5-4-1 — fullbacks high, third-man runs from 8.</li>
+            <li>Early crosses, target back post and edge of area for second-ball.</li>
+            <li>Aerial discipline — Bell first contact, double up on second ball.</li>
+            <li>Press their CB on goal kicks — force long ball, win second ball through 6.</li>
+            <li>Set pieces target near post — three rehearsed routines.</li>
+          </ol>
+        </Section>
+
+        <Section title="05 · Logistics">
+          <ul style={{ paddingLeft: 22, margin: 0 }}>
+            <li>Kit van: confirmed 09:00, all GPS vests charged.</li>
+            <li>Warm-up: 13:15 on main pitch, set-piece runs 13:35.</li>
+            <li>Media: Northbridge Sport pitchside from 13:00, manager + captain post-match.</li>
+            <li>Sponsor activation: Apex Performance content shoot Friday — confirm 4 players Thursday.</li>
+            <li>Medical: Dr Patel pitchside, ambulance confirmed, away medics briefed.</li>
+            <li>Welfare: Lisa Okonkwo on call, supporter-relations rep at supporter forum 16:30.</li>
+          </ul>
+        </Section>
+
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 10, color: T.text3, fontFamily: 'monospace', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>
+          Generated by Lumio · Match intelligence · Confidential
+        </div>
+      </div>
     </div>
   )
 }
