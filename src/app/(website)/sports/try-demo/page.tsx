@@ -14,16 +14,16 @@ type Sport = {
 }
 
 const SPORTS: Sport[] = [
+  { id: 'football',   label: 'Football Pro', logo: '/football_logo.png',  href: '/football/oakridge-fc',                accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',          available: true  },
+  { id: 'womens',     label: "Women's FC",   logo: '/womens_fc_logo.png', href: '/womens/oakridge-women',               accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker', available: true  },
+  { id: 'cricket',    label: 'Cricket',      logo: '/cricket_logo.png',   href: '/cricket/cricket-demo',                accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode',    available: true  },
+  { id: 'rugby',      label: 'Rugby',        logo: '/rugby_logo.png',     href: '/rugby/hartfield',                     accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite',         available: true  },
+  { id: 'nonleague',  label: 'Non-League',   logo: '/football_logo.png',  href: '/nonleague/harfield-fc',               accent: '#f59e0b', desc: 'FA Ground Grading, wage bill, sponsorship, match day revenue',      available: true  },
+  { id: 'grassroots', label: 'Grassroots',   logo: '/football_logo.png',  href: '/grassroots/sunday-rovers-fc',         accent: '#84cc16', desc: 'AI team selection, subs collection, safeguarding, parent portal',   available: true  },
   { id: 'tennis',     label: 'Tennis',       logo: '/tennis_logo.png',    href: '/tennis/demo',                         accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps',            available: true  },
-  { id: 'darts',      label: 'Darts',        logo: '/darts_logo.png',     href: '/darts/demo',                          accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel',         available: true  },
-  { id: 'golf',       label: 'Golf',         logo: '/golf_logo.png',      href: '/golf/demo',                           accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub',              available: true  },
   { id: 'boxing',     label: 'Boxing',       logo: '/boxing_logo.png',    href: '/boxing/demo',                         accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator',       available: true  },
-  { id: 'cricket',    label: 'Cricket',      logo: '/cricket_logo.png',   href: '/cricket/cricket-demo',                accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode',    available: false },
-  { id: 'rugby',      label: 'Rugby',        logo: '/rugby_logo.png',     href: '/rugby/rugby-demo',                    accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite',         available: false },
-  { id: 'football',   label: 'Football Pro', logo: '/football_logo.png',  href: '/football/lumio-dev',                  accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',          available: false },
-  { id: 'nonleague',  label: 'Non-League',   logo: '/football_logo.png',  href: '/football/nonleague/harfield-fc',      accent: '#f59e0b', desc: 'FA Ground Grading, wage bill, sponsorship, match day revenue',      available: false },
-  { id: 'grassroots', label: 'Grassroots',   logo: '/football_logo.png',  href: '/football/grassroots/sunday-rovers-fc',accent: '#10b981', desc: 'AI team selection, subs collection, safeguarding, parent portal',   available: false },
-  { id: 'womens',     label: "Women's FC",   logo: '/womens_fc_logo.png', href: '/womens/oakridge-women-fc',            accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker', available: false },
+  { id: 'golf',       label: 'Golf',         logo: '/golf_logo.png',      href: '/golf/demo',                           accent: '#16a34a', desc: 'OWGR ranking, strokes gained, course fit, caddie hub',              available: true  },
+  { id: 'darts',      label: 'Darts',        logo: '/darts_logo.png',     href: '/darts/demo',                          accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel',         available: true  },
 ]
 
 const CARD_BASE_BG = '#0d1117'
