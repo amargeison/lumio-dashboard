@@ -19,7 +19,7 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
     url:'lumiosports.com/football/grassroots',href:'/football/grassroots'},
   {emoji:'⚽',name:"Women's Football",pill:'WSL · WSL2 · Standalone clubs',accent:'#EC4899',
     features:['Squad management with Lumio GPS — match & training load','Player Welfare Hub — maternity, ACL risk, mental health, medical','Pre-Season Camp mode — periodisation, fitness, friendlies','FSR Compliance Dashboard — real-time 80% salary cap vs Revenue','Standalone commercial pipeline + dual registration management','AI Club Director briefing — GPS, welfare, FSR, squad in one view'],
-    hook:'The first operating system built specifically for professional women\'s football. FSR compliance, maternity welfare, standalone commercial — none of it existed in any platform before this.',
+    hook:'The first club management platform built specifically for professional women\'s football. FSR compliance, maternity welfare, standalone commercial — none of it existed in any platform before this.',
     url:'lumiosports.com/womens-football',href:'/womens-football'},
   {emoji:'🏏',name:'Cricket',pill:'County · International · Franchise',accent:'#FBBF24',
     features:['Squad management with GPS load data — Lumio GPS for fielding & fitness','Contract tracker — county, central, franchise (IPL, Hundred, BBL, SA20)','Player welfare hub — injury log, workload monitoring, mental health','Batting & bowling analytics — Lumio Vision + Lumio Track for ball tracking','Sponsorship & commercial pipeline — live deals, matchday revenue','AI Cricket Briefing — fitness readiness, schedule conflicts, selection in one view'],
@@ -113,7 +113,7 @@ export default function SportsLandingPage() {
 
           {/* Headline */}
           <h1 className="font-black leading-[1.1] mb-6" style={{fontSize:'clamp(2.2rem, 5vw, 4rem)'}}>
-            The operating system<br/>
+            The club management platform<br/>
             <span style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
               professional sport
             </span><br/>
@@ -189,7 +189,7 @@ export default function SportsLandingPage() {
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PORTALS</p>
           <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Ten portals. Every sport covered.</h2>
-          <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each portal is a complete operating system for that sport — not a generic admin tool with a sports logo.</p>
+          <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each portal is a complete club management platform for that sport — not a generic admin tool with a sports logo.</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {PORTALS.map((p:{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string},i:number)=>(

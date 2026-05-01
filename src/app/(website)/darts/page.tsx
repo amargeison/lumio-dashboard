@@ -408,7 +408,7 @@ export default function DartsLandingPage() {
             LUMIO TOUR · DARTS
           </div>
           <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
-            The operating system for professional darts players.
+            The platform for professional darts players.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 820, margin: '0 auto 40px' }}>
             Order of Merit, match prep, travel, finance, sponsorship, team briefings — everything your team needs, in one place. Built for PDC Tour Card holders.

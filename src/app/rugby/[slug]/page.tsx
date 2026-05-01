@@ -454,17 +454,17 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
   // (individual-athlete actions; the club has logistics + ops staff). Each
   // button either opens an existing modal renderer (defined further down
   // in this file) or navigates to an existing sidebar section.
+  // Removed pitch-side tactical quick actions (Match Prep, Selection,
+  // Halftime Brief) — Hudl/Sportscode territory. Lumio focuses on the
+  // operational/business side of the club.
   const QUICK_ACTIONS: { icon: string; label: string; ai?: boolean; onClick: () => void }[] = [
-    { icon: '🎯', label: 'Match Prep',     ai: true, onClick: () => onOpenModal('matchprep') },
-    { icon: '🏉', label: 'Selection',                onClick: () => onNavigate?.('selection') },
     { icon: '📱', label: 'Sponsor Post',   ai: true, onClick: () => onOpenModal('sponsorpost') },
     { icon: '⚕️', label: 'Log Injury',               onClick: () => onOpenModal('injury') },
-    { icon: '🏋️', label: 'Log Training',             onClick: () => onNavigate?.('training-planner') },
+    { icon: '🏋️', label: 'Log Training',             onClick: () => onNavigate?.('gps-load') },
     { icon: '🏥', label: 'Medical Review',           onClick: () => onNavigate?.('medical') },
     { icon: '💰', label: 'Cap Check',                onClick: () => onNavigate?.('capdashboard') },
     { icon: '🔍', label: 'Scouting',                 onClick: () => onNavigate?.('scouting') },
     { icon: '🌅', label: 'AI Briefing',    ai: true, onClick: () => onNavigate?.('dorbriefing') },
-    { icon: '🤖', label: 'Halftime Brief', ai: true, onClick: () => onNavigate?.('halftime') },
     { icon: '🎬', label: 'Video',                    onClick: () => onOpenModal('video') },
     { icon: '📋', label: 'Contracts',                onClick: () => onOpenModal('contracts') },
     { icon: '💼', label: 'Agent Brief',    ai: true, onClick: () => onNavigate?.('agents') },
@@ -497,9 +497,9 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <RugbyHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
-            onConfirm={() => showDashToast('Starting XV confirmed · squad notified')}
+            onTodaysBriefing={() => onNavigate?.('dorbriefing')}
+            onMatchdayOps={() => onNavigate?.('matchday-ops')}
             onAsk={() => setAskOpen(true)}
-            onMatchBrief={() => setBriefOpen(true)}
           />
         </div>
       </div>
@@ -7552,6 +7552,17 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
+      case 'club-operations':
+      case 'matchday-ops':
+      case 'travel-logistics':
+      case 'kit-manager':
+      case 'pitch-grounds':
+        return (
+          <div style={{padding:32,borderRadius:12,border:`1px solid ${THEMES.dark.border}`,background:THEMES.dark.bg,textAlign:'center'}}>
+            <div style={{fontSize:14,fontWeight:700,color:THEMES.dark.text,marginBottom:6}}>Coming soon</div>
+            <div style={{fontSize:12,color:THEMES.dark.text3}}>This module is part of the Operations &amp; Facilities buildout.</div>
+          </div>
+        );
       default:                return <ClubDashboardView onOpenModal={setActiveModal}/>;
     }
   };

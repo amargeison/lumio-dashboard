@@ -60,13 +60,16 @@ export const WOMENS_ROLE_QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'loans',               label: 'Loan Watchlist',       icon: Briefcase,   targetDept: 'transfers' },
   ],
 
+  // Pitch-side tactical actions removed — Hudl/Sportscode territory.
+  // Coach quick actions now focus on welfare/medical signals (the operational
+  // side a head coach actually needs from a club-management platform).
   coach: [
-    { id: 'training-plan',  label: "Today's Training Plan", icon: ClipboardList, targetDept: 'tactics' },
-    { id: 'team-selection', label: 'Team Selection',         icon: UsersIcon,    targetDept: 'match' },
-    { id: 'set-pieces',     label: 'Set Pieces Library',     icon: Target,       targetDept: 'tactics' },
-    { id: 'opposition',     label: 'Opposition Analysis',    icon: Eye,          targetDept: 'scouting' },
-    { id: 'match-brief',    label: 'Match Brief',            icon: FileText,     targetDept: 'match' },
-    { id: 'welfare-check',  label: 'Player Welfare Check',   icon: Heart,        targetDept: 'player-welfare' },
+    { id: 'training-plan',  label: "Today's Training Plan", icon: ClipboardList, targetDept: 'gps-load' },
+    { id: 'welfare-check',  label: 'Player Welfare Check',  icon: Heart,         targetDept: 'player-welfare' },
+    { id: 'cycle-overlay',  label: 'Cycle Phase Overlay',   icon: Heart,         targetDept: 'cycle' },
+    { id: 'acl-monitor',    label: 'ACL Risk Monitor',      icon: Heart,         targetDept: 'acl' },
+    { id: 'gps-readiness',  label: 'GPS Readiness',         icon: Heart,         targetDept: 'gps-load' },
+    { id: 'medical-review', label: 'Medical Review',        icon: Heart,         targetDept: 'medical' },
   ],
 
   performance: [

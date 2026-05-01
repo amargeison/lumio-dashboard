@@ -66,10 +66,14 @@ export type NLDeptId =
   | 'nl-gps' | 'nl-gps-heatmaps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
   | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
   | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance' | 'nl-media'
-  | 'nl-morningroundup' | 'nl-aihalftime'
+  | 'nl-morningroundup' | 'nl-aihalftime' | 'nl-ground-hire'
 
-type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Club'
+type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Facilities' | 'Club'
 
+// Lumio = club management platform. Pitch-side tactical features
+// (AI Halftime Brief, Training drills, Tactics, Set Pieces) are
+// Hudl/Sportscode territory and are commented out here so the underlying
+// view code stays compilable.
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
   { id: 'nl-getting-started', label: 'Getting Started',         icon: Rocket,         section: null },
   { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
@@ -77,13 +81,17 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: null },
   { id: 'nl-club-vision',     label: 'Club Vision',             icon: Rocket,         section: null },
   { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: null },
+  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
   { id: 'nl-aihalftime',      label: 'AI Halftime Brief',       icon: Target,         section: 'Football' },
+  */
   { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
   { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
   { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'Football' },
+  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
   { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
   { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
   { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
+  */
   { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'GPS & Load' },
   { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'GPS & Load' },
   { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },
@@ -93,9 +101,10 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-matchfees',       label: 'Match Fee Tracker',       icon: DollarSign,     section: 'Operations' },
   { id: 'nl-kit',             label: 'Kit & Equipment',         icon: Shirt,          section: 'Operations' },
   { id: 'nl-finance',         label: 'Finance',                 icon: DollarSign,     section: 'Operations' },
-  { id: 'nl-ground',          label: 'Ground & Facilities',     icon: MapPin,         section: 'Operations' },
   { id: 'nl-safeguarding',    label: 'Safeguarding',            icon: Shield,         section: 'Operations' },
   { id: 'nl-matchday',        label: 'Matchday',                icon: Trophy,         section: 'Operations' },
+  { id: 'nl-ground',          label: 'Ground & Facilities',     icon: MapPin,         section: 'Facilities' },
+  { id: 'nl-ground-hire',     label: 'Ground Hire',             icon: MapPin,         section: 'Facilities' },
   { id: 'nl-sponsorship',     label: 'Sponsorship',             icon: Handshake,      section: 'Club' },
   { id: 'nl-fundraising',     label: 'Fundraising',             icon: Heart,          section: 'Club' },
   { id: 'nl-insurance',       label: 'Insurance',               icon: Shield,         section: 'Club' },
@@ -719,9 +728,9 @@ function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string)
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
           <NlHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
-            onConfirm={() => showDashToast('Team sheet confirmed · league notified')}
+            onTodaysBriefing={() => showDashToast("Today's briefing — see Morning Roundup")}
+            onMatchdayOps={() => showDashToast('Matchday ops — open Matchday from sidebar')}
             onAsk={() => setAskOpen(true)}
-            onMatchBrief={() => setBriefOpen(true)}
           />
           <NlTodaySchedule T={T} accent={accent} density={density} />
         </div>
@@ -4047,6 +4056,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-fundraising' && <NLPlaceholderView label="Fundraising" />}
       {activeDept === 'nl-insurance' && <NLPlaceholderView label="Insurance" />}
       {activeDept === 'nl-merchandise' && <NLPlaceholderView label="Merchandise" />}
+      {activeDept === 'nl-ground-hire' && <NLPlaceholderView label="Ground Hire" />}
     </div>
   )
 }

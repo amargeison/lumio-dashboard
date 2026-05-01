@@ -84,10 +84,11 @@ type DeptId =
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
   | 'commercial' | 'community'
+  | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'COMMUNITY' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'OPERATIONS' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'DISCOVER' | 'INTEGRATIONS'
+type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'COMMUNITY' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'OPERATIONS' | 'FACILITIES' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'DISCOVER' | 'INTEGRATIONS'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -119,22 +120,30 @@ const BG_GRADIENTS = [
   'from-blue-900 via-indigo-950 to-yellow-950/80',
 ]
 
+// Lumio = club management platform. Pitch-side tactical tools (formation
+// builder, opposition scout, set piece analysis, match centre, tactical
+// video) are Hudl/Sportscode territory. They are commented out below
+// rather than deleted so the underlying view code (renderView cases)
+// stays compilable and can be restored if needed. Quick-action buttons
+// targeting these IDs were removed in src/data/football/role-quick-actions.ts.
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',       label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
   { id: 'insights',       label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
   { id: 'board',          label: 'Board Suite',          icon: Crown,          section: 'BOARD' },
-  { id: 'facilities',     label: 'Stadium & Facilities', icon: MapPin,         section: 'BOARD' },
   { id: 'community',      label: 'Community',            icon: Heart,          section: 'COMMUNITY' },
+  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
   { id: 'matchday',       label: 'Match Centre',         icon: Trophy,         section: 'PERFORMANCE' },
   { id: 'lumio-vision',   label: 'Lumio Vision',         icon: Video,          section: 'PERFORMANCE' },
   { id: 'analytics',      label: 'Performance Stats',    icon: BarChart3,      section: 'PERFORMANCE' },
   { id: 'set-pieces',     label: 'Set Piece Analysis',   icon: Target,         section: 'PERFORMANCE' },
   { id: 'scouting',       label: 'Opposition Scout',     icon: Eye,            section: 'PERFORMANCE' },
+  */
   { id: 'squad',          label: 'Squad Manager',        icon: Shirt,          section: 'FIRST TEAM' },
+  /* REMOVED: Tactical — Hudl territory. Uncomment to restore.
   { id: 'squad-planner',  label: 'Team Selection',       icon: Clipboard,      section: 'FIRST TEAM' },
   { id: 'tactics',        label: 'Formation Builder',    icon: Clipboard,      section: 'FIRST TEAM' },
-  { id: 'training',       label: 'Training Planner',     icon: Activity,       section: 'FIRST TEAM' },
-  { id: 'tours-camps',    label: 'Tours & Camps',        icon: Plane,          section: 'FIRST TEAM' },
+  */
+  { id: 'training',       label: 'Training Schedule',    icon: Activity,       section: 'FIRST TEAM' },
   { id: 'staff',          label: 'Staff',                icon: Users,          section: 'FIRST TEAM' },
   { id: 'medical',        label: 'Medical Hub',          icon: Heart,          section: 'MEDICAL' },
   { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,         section: 'MEDICAL' },
@@ -144,8 +153,15 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'gps-heatmaps',   label: 'Heatmaps',             icon: Flame,          section: 'GPS & LOAD' },
   { id: 'gps-hardware',   label: 'GPS Hardware',         icon: Activity,       section: 'GPS & LOAD' },
   { id: 'club-operations', label: 'Club Operations',     icon: Building,       section: 'OPERATIONS' },
+  { id: 'matchday-ops',   label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
+  { id: 'travel-logistics', label: 'Travel & Logistics', icon: Plane,          section: 'OPERATIONS' },
+  { id: 'kit-manager',    label: 'Kit Manager',          icon: Shirt,          section: 'OPERATIONS' },
+  { id: 'facilities',     label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
+  { id: 'pitch-grounds',  label: 'Pitch & Grounds',      icon: MapPin,         section: 'FACILITIES' },
+  { id: 'training-ground', label: 'Training Ground',     icon: MapPin,         section: 'FACILITIES' },
   { id: 'transfers',      label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'RECRUITMENT' },
   { id: 'academy',        label: 'Academy',              icon: GraduationCap,  section: 'RECRUITMENT' },
+  { id: 'tours-camps',    label: 'Tours & Camps',        icon: Plane,          section: 'RECRUITMENT' },
   { id: 'commercial',     label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
   { id: 'media',          label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
   { id: 'social',         label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
@@ -544,6 +560,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
     { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL' && isAllowed(i.id)) },
     { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD' && isAllowed(i.id)) },
     { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
+    { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id)) },
     { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT' && isAllowed(i.id)) },
     { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
     { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
@@ -2042,9 +2059,9 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
           <div style={{ gridColumn: '1 / -1' }}>
             <FbHeroToday
               T={T} accent={accent} density={density} greeting={greeting}
-              onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
+              onTodaysBriefing={() => showDashToast("Today's briefing — see AI Brief on dashboard")}
+              onMatchdayOps={() => onNavigate?.('matchday-ops')}
               onAsk={() => setAskOpen(true)}
-              onMatchBrief={() => setBriefOpen(true)}
             />
           </div>
         </div>
@@ -7427,6 +7444,12 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
             {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="travel" title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />}
+            {(activeDept === 'matchday-ops' || activeDept === 'travel-logistics' || activeDept === 'kit-manager' || activeDept === 'pitch-grounds' || activeDept === 'training-ground') && (
+              <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
+                <h2 className="text-lg font-bold text-white mb-2">{deptLabel}</h2>
+                <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
+              </div>
+            )}
             {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
             {isFootballDemo && activeDept === 'community' && <CommunityView />}
           </main>

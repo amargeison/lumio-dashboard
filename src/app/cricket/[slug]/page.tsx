@@ -300,12 +300,22 @@ const NAV=[
 // Sidebar nav — icons are Lucide name strings (mapped via the v2 Icon
 // component imported below). IDs match the `pages` map keys so role
 // filtering and view switching keep working unchanged.
+//
+// Lumio = club management platform. Pitch-side tactical features
+// (Match Centre, Batting/Bowling Analytics, Video Analysis, Opposition
+// Scout, Declaration Planner, Net Session Planner, AI Innings Brief,
+// Match Report) are Hudl/Sportscode territory and are commented out
+// here so the underlying view code stays compilable. Quick-action
+// buttons targeting these IDs were updated in
+// src/data/cricket/role-quick-actions.ts.
 const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;badge?:string}[]}[]=[
   {section:'OVERVIEW',items:[
     {id:'dashboard',label:'Dashboard',icon:'home'},
     {id:'briefing',label:'Morning Briefing',icon:'sun'},
     {id:'insights',label:'Insights',icon:'bars'},
   ]},
+  /* REMOVED: PERFORMANCE — all pitch-side tactical, Hudl/Sportscode territory.
+     Uncomment to restore. Views remain wired in renderView for deep links.
   {section:'PERFORMANCE',items:[
     {id:'match-centre',label:'Match Centre',icon:'flag'},
     {id:'livescores',label:'Live Scores',icon:'dot'},
@@ -321,7 +331,9 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'performance-stats',label:'Performance Stats',icon:'lightning'},
     {id:'match-report',label:'Match Report',icon:'note'},
   ]},
-  {section:'WELFARE',items:[
+  */
+  {section:'MEDICAL',items:[
+    {id:'medical',label:'Medical Hub',icon:'medical'},
     {id:'mental-performance',label:'Mental Performance',icon:'sparkles',badge:'NEW'},
   ]},
   {section:'GPS & LOAD',items:[
@@ -331,7 +343,6 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
   ]},
   {section:'SQUAD',items:[
     {id:'squad',label:'Squad Manager',icon:'people'},
-    {id:'medical',label:'Medical Hub',icon:'medical'},
     {id:'pathway',label:'Player Pathway',icon:'arrow-up-right'},
     {id:'overseas',label:'Overseas Players',icon:'plane'},
     {id:'contract-hub',label:'Contract Hub',icon:'briefcase'},
@@ -346,20 +357,23 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'womens',label:"Women's Cricket",icon:'trophy'},
     {id:'academy',label:'Academy & Youth',icon:'arrow-up-right'},
   ]},
-  {section:'GROUNDS',items:[
-    {id:'grounds',label:'Grounds & Facilities',icon:'pin',badge:'NEW'},
-  ]},
-  {section:'COMMS',items:[
-    {id:'media-hub',label:'Media Hub',icon:'megaphone',badge:'NEW'},
-  ]},
   {section:'OPERATIONS',items:[
     {id:'operations',label:'Operations',icon:'wrench',badge:'NEW'},
+    {id:'matchday-ops',label:'Matchday Operations',icon:'ticket',badge:'NEW'},
     {id:'staff',label:'Staff & HR',icon:'people'},
-    {id:'facilities',label:'Facilities & Grounds',icon:'pin'},
     {id:'kit',label:'Kit & Equipment',icon:'briefcase'},
     {id:'travel',label:'Travel & Logistics',icon:'plane'},
     {id:'team-comms',label:'Team Comms',icon:'mic'},
     {id:'tours-camps',label:'Tours & Camps',icon:'calendar',badge:'NEW'},
+    {id:'pre-season',label:'Pre-Season Planning',icon:'calendar',badge:'NEW'},
+  ]},
+  {section:'FACILITIES',items:[
+    {id:'grounds',label:'Grounds & Facilities',icon:'pin',badge:'NEW'},
+    {id:'facilities',label:'Facilities & Grounds',icon:'pin'},
+    {id:'net-facilities',label:'Net Facilities',icon:'pin',badge:'NEW'},
+  ]},
+  {section:'COMMS',items:[
+    {id:'media-hub',label:'Media Hub',icon:'megaphone',badge:'NEW'},
   ]},
   {section:'COMMERCIAL',items:[
     {id:'commercial',label:'Commercial',icon:'briefcase'},
@@ -3862,7 +3876,8 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
           <HeroToday
             T={T} accent={accent} density={density} greeting={greeting}
-            onConfirm={() => showDashToast('Starting XI confirmed · squad notified')}
+            onTodaysBriefing={() => { setPage('briefing'); showDashToast("Today's briefing") }}
+            onMatchdayOps={() => setPage('matchday-ops')}
             onAsk={() => setAskOpen(true)}
           />
         </div>
@@ -7051,6 +7066,12 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     );
   };
 
+  const ComingSoonView = ({ title }: { title: string }) => (
+    <div style={{padding:32,borderRadius:12,border:`1px solid ${C.border}`,background:C.cardAlt,textAlign:'center'}}>
+      <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>{title}</div>
+      <div style={{fontSize:12,color:C.muted}}>Coming soon — part of the Operations &amp; Facilities buildout.</div>
+    </div>
+  )
   const pages={
     dashboard: isSponsor ? <CricketSponsorDashboard/> : <Dashboard/>,briefing:<Briefing/>,insights:<Insights/>,
     grounds:<Grounds/>,'media-hub':<MediaHub/>,operations:<Operations/>,
@@ -7064,6 +7085,9 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     commercial:<Commercial/>,sponsorship:<SponsorshipPipelineV2/>,media:<MediaContentModule sport="cricket" accentColor="#a855f7" existingContentLabel="Cricket — Press Briefing Generator & Broadcast log" existingContent={<MediaContent/>} isDemoShell={session?.isDemoShell !== false} />,'ticket-matchday':<TicketMatchDay/>,
     board:<Board/>,compliance:<Compliance/>,edi:<EDIDashboard/>,safeguarding:<SafeguardingView/>,finance:<FinanceView/>,settings:<SettingsView/>,
     'tours-camps':<CricketToursAndCampsView preSeasonContent={<CricketPreSeasonView session={session}/>} />,
+    'matchday-ops':<ComingSoonView title="Matchday Operations" />,
+    'net-facilities':<ComingSoonView title="Net Facilities" />,
+    'pre-season':<ComingSoonView title="Pre-Season Planning" />,
   };
 
   return(

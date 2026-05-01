@@ -169,15 +169,26 @@ export const RUGBY_INJURIES = [
 export type RugbyNavItem  = { id: string; label: string; icon: string; badge?: string }
 export type RugbyNavGroup = { g: string; items: RugbyNavItem[] }
 
+// Lumio = club management platform. Pitch-side tactical features
+// (Video Analysis, Match Stats, Set Piece Analytics, Carry Analytics,
+// Training Planner, Periodisation, Selection Planner, AI Halftime Brief,
+// Opposition Analysis, Match Day Centre) are Hudl/Sportscode territory
+// and are commented out here so the underlying renderView cases stay
+// compilable. Quick-action buttons targeting these IDs were updated in
+// the page's quick action wiring.
 export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
   { g: 'Overview', items: [
     { id: 'dashboard',     label: 'Club Dashboard',  icon: 'home' },
     { id: 'dorbriefing',   label: 'DoR Briefing',    icon: 'sun' },
     { id: 'insights',      label: 'Insights',        icon: 'bars' },
+    /* REMOVED: Match Day Centre — pitch-side tactical, Hudl territory.
     { id: 'matchday',      label: 'Match Day Centre',icon: 'flag' },
+    */
     { id: 'calendar',      label: 'Club Calendar',   icon: 'calendar' },
     { id: 'tours-camps',   label: 'Tours & Camps',   icon: 'calendar', badge: 'NEW' },
   ]},
+  /* REMOVED: Performance — all pitch-side tactical, Hudl/Sportscode territory.
+     Uncomment to restore. Views remain wired in renderView for deep links.
   { g: 'Performance', items: [
     { id: 'video-analysis',  label: 'Video Analysis',     icon: 'play' },
     { id: 'match-stats',     label: 'Match Stats',        icon: 'bars' },
@@ -186,6 +197,7 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
     { id: 'training-planner',label: 'Training Planner',   icon: 'note' },
     { id: 'periodisation',   label: 'Periodisation',      icon: 'bars' },
   ]},
+  */
   { g: 'Medical & Welfare', items: [
     { id: 'medical',         label: 'Medical Records',     icon: 'medical' },
     { id: 'concussion',      label: 'Concussion & HIA',    icon: 'shield', badge: 'NEW' },
@@ -199,7 +211,9 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
   ]},
   { g: 'Squad', items: [
     { id: 'availability',    label: 'Squad Availability',  icon: 'people' },
+    /* REMOVED: Selection Planner — pitch-side tactical, Hudl territory.
     { id: 'selection',       label: 'Selection Planner',   icon: 'note' },
+    */
     { id: 'playerprofile',   label: 'Player Profiles',     icon: 'people' },
     { id: 'international',   label: 'International Duty',  icon: 'globe' },
     { id: 'loans',           label: 'Loan Management',     icon: 'arrow-up-right' },
@@ -209,6 +223,16 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
     { id: 'contracts',       label: 'Player Contracts',    icon: 'briefcase' },
     { id: 'scenario',        label: 'Scenario Modeller',   icon: 'bars' },
     { id: 'audittrail',      label: 'Audit Trail',         icon: 'note' },
+  ]},
+  { g: 'Operations', items: [
+    { id: 'club-operations', label: 'Club Operations',     icon: 'wrench', badge: 'NEW' },
+    { id: 'matchday-ops',    label: 'Matchday Operations', icon: 'ticket', badge: 'NEW' },
+    { id: 'travel-logistics',label: 'Travel & Logistics',  icon: 'plane',  badge: 'NEW' },
+    { id: 'kit-manager',     label: 'Kit Manager',         icon: 'briefcase', badge: 'NEW' },
+  ]},
+  { g: 'Facilities', items: [
+    { id: 'stadium',         label: 'Stadium & Venue',     icon: 'pin' },
+    { id: 'pitch-grounds',   label: 'Pitch & Grounds',     icon: 'pin', badge: 'NEW' },
   ]},
   { g: 'Recruitment', items: [
     { id: 'scouting',        label: 'Scouting Pipeline',   icon: 'eye' },
@@ -225,7 +249,6 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
   { g: 'Commercial', items: [
     { id: 'sponsorship',     label: 'Sponsorship Pipeline',icon: 'briefcase' },
     { id: 'matchdayrev',     label: 'Matchday Revenue',    icon: 'pound' },
-    { id: 'stadium',         label: 'Stadium & Venue',     icon: 'pin' },
     { id: 'activation',      label: 'Partnership Activation',icon: 'crosshair' },
     { id: 'mediahr',         label: 'Media & Content',     icon: 'newspaper' },
     { id: 'fanhub',          label: 'Fan Hub',             icon: 'people' },
@@ -238,9 +261,11 @@ export const RUGBY_NAV_GROUPS: RugbyNavGroup[] = [
   ]},
   { g: 'Intelligence', items: [
     { id: 'aibriefing',      label: 'AI Morning Briefing', icon: 'sparkles' },
+    /* REMOVED: AI Halftime Brief / Opposition Analysis — pitch-side tactical, Hudl territory.
     { id: 'halftime',        label: 'AI Halftime Brief',   icon: 'sparkles' },
-    { id: 'clubtocountry',   label: 'Club-to-Country',     icon: 'globe' },
     { id: 'opposition',      label: 'Opposition Analysis', icon: 'eye' },
+    */
+    { id: 'clubtocountry',   label: 'Club-to-Country',     icon: 'globe' },
     { id: 'industrynews',    label: 'Industry News',       icon: 'newspaper' },
   ]},
 ]

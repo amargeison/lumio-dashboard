@@ -80,6 +80,11 @@ interface WomensClub {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+// Lumio = club management platform. Pitch-side tactical features
+// (Tactics & Set Pieces, Match Preparation, Analytics, Scouting, AI Halftime
+// Brief) are Hudl/Sportscode territory and are commented out here so the
+// underlying renderView cases stay compilable. Quick-action buttons that
+// targeted these IDs were updated in src/data/womens/role-quick-actions.ts.
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
   { id: 'briefing',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
@@ -95,15 +100,30 @@ const SIDEBAR_ITEMS = [
   { id: 'mental',       label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
   { id: 'player-welfare', label: 'Player Welfare Hub', icon: '🌍', group: 'WELFARE' },
   { id: 'club-operations', label: 'Club Operations',   icon: '🏟️', group: 'OPERATIONS' },
+  { id: 'matchday-ops',    label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
+  { id: 'travel-logistics', label: 'Travel & Logistics', icon: '✈️', group: 'OPERATIONS' },
+  { id: 'kit-manager',     label: 'Kit Manager',        icon: '🧦', group: 'OPERATIONS' },
+  { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
+  { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
+  { id: 'tours-camps',  label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
+  { id: 'facilities',     label: 'Stadium & Facilities', icon: '🏟️', group: 'FACILITIES' },
+  { id: 'pitch-grounds',  label: 'Pitch & Grounds',     icon: '🌱', group: 'FACILITIES' },
+  { id: 'training-ground', label: 'Training Ground',    icon: '📍', group: 'FACILITIES' },
   { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
+  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
   { id: 'match',        label: 'Match Preparation',   icon: '⚽', group: 'FOOTBALL' },
+  */
   { id: 'transfers',   label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
+  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
   { id: 'analytics',   label: 'Analytics',           icon: '📉', group: 'FOOTBALL' },
   { id: 'scouting',    label: 'Scouting',            icon: '🔭', group: 'FOOTBALL' },
+  */
   { id: 'academy',     label: 'Academy',             icon: '🎓', group: 'FOOTBALL' },
+  /* REMOVED: AI Halftime Brief — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'halftime',    label: 'AI Halftime Brief',   icon: '🤖', group: 'FOOTBALL' },
+  */
   { id: 'sponsorship',  label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
   { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
   { id: 'club-vision',  label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
@@ -112,11 +132,8 @@ const SIDEBAR_ITEMS = [
   { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
   { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
-  { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
   { id: 'gps-load',     label: 'GPS & Load',          icon: '📡', group: 'GPS & LOAD' },
   { id: 'gps-heatmaps', label: 'Heatmaps',            icon: '🔥', group: 'GPS & LOAD' },
-  { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
-  { id: 'tours-camps',  label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
   { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
 ]
 
@@ -4478,8 +4495,8 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
   ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
-  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','tactics','match','transfers','analytics','scouting','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
-  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','tactics','match','halftime','analytics','scouting','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','transfers','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
+  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
   medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
   welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
@@ -5237,7 +5254,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   // Team tab sub-tabs
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
-  const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'GPS & LOAD', 'COMMERCIAL', 'OPERATIONS']
+  const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'GPS & LOAD', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES']
 
   const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps'])
   const filteredItems = club.tier === 'grassroots'
@@ -5282,6 +5299,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
+      case 'matchday-ops':
+      case 'travel-logistics':
+      case 'kit-manager':
+      case 'pitch-grounds':
+      case 'training-ground':
+        return (
+          <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
+            <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
+          </div>
+        )
       case 'settings':    return <SettingsViewFull club={club} />
       default:            return null
     }
@@ -5478,9 +5505,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
-                  onConfirm={() => showV2DashToast('Starting XI confirmed · squad notified')}
+                  onTodaysBriefing={() => { setActiveSection('briefing'); showV2DashToast("Today's briefing") }}
+                  onMatchdayOps={() => setActiveSection('matchday-ops')}
                   onAsk={() => setV2AskOpen(true)}
-                  onMatchBrief={() => setV2BriefOpen(true)}
                 />
               </div>
             </div>

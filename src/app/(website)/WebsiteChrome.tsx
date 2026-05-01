@@ -375,7 +375,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
             <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
               style={{ width: '200px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
-              {isSports ? 'The operating system for professional sport.' : 'The AI operating system for sport, business and education.'}
+              {isSports ? 'The club management platform for professional sport.' : 'The AI operating system for sport, business and education.'}
             </p>
             <div className="flex items-center gap-3">
               {[Twitter, Linkedin, Github].map((Icon, i) => (

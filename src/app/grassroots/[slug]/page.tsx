@@ -34,7 +34,7 @@ const GRASSROOTS_ROLES = [
 
 type DeptId =
   | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
-  | 'finances' | 'welfare' | 'communications' | 'media' | 'referee' | 'pitch' | 'kit'
+  | 'finances' | 'welfare' | 'communications' | 'media' | 'referee' | 'pitch' | 'kit' | 'kit-lockup'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
   | 'morning-roundup' | 'fa-sunday-cup' | 'halftime-talk' | 'availability' | 'discipline'
   | 'dbs-tracker' | 'subs-tracker' | 'juniors' | 'referee-bookings' | 'preseason'
@@ -54,18 +54,27 @@ const BORDER = '#334155'
 const TEXT = '#F8FAFC'
 const TEXT_SEC = '#94A3B8'
 
+// Lumio = club management platform. Even at grassroots level, pitch-side
+// tactical features (Match Prep, Halftime Talk, Tactics, Set Pieces) are
+// commented out — they're not what a Sunday-league club needs from a
+// management platform.
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection; badge?: string }[] = [
   { id: 'overview',         label: 'Dashboard',          icon: Home,           section: null },
   { id: 'morning-roundup',  label: 'Morning Roundup',    icon: Bell,           section: null, badge: 'NEW' },
   { id: 'fixtures',         label: 'Fixtures',           icon: Calendar,       section: 'Match' },
+  /* REMOVED: Match Prep / Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'matchday',         label: 'Match Prep',         icon: Trophy,         section: 'Match' },
+  */
   { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match', badge: 'NEW' },
+  /* REMOVED: Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'halftime-talk',    label: 'Halftime Talk',      icon: Mic,            section: 'Match', badge: 'NEW' },
+  */
   { id: 'squad',            label: 'Squad List',         icon: Shirt,          section: 'Squad' },
   { id: 'availability',     label: 'Availability',       icon: CheckCircle2,   section: 'Squad' },
   { id: 'discipline',       label: 'Discipline',         icon: AlertCircle,    section: 'Squad' },
   { id: 'dbs-tracker',      label: 'DBS Tracker',        icon: Shield,         section: 'Squad', badge: 'NEW' },
   { id: 'kit',              label: 'Kit & Equipment',    icon: Shirt,          section: 'Club Ops' },
+  { id: 'kit-lockup',       label: 'Kit Lock-Up',        icon: Shirt,          section: 'Club Ops', badge: 'NEW' },
   { id: 'pitch',            label: 'Pitch Booking',      icon: MapPin,         section: 'Club Ops' },
   { id: 'subs-tracker',     label: 'Subs Tracker',       icon: DollarSign,     section: 'Club Ops', badge: 'NEW' },
   { id: 'finances',         label: 'Finances',           icon: DollarSign,     section: 'Club Ops' },
@@ -75,8 +84,10 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'league-reg',       label: 'League Registration',icon: FileText,       section: 'Admin' },
   { id: 'safeguarding',     label: 'Safeguarding',       icon: Shield,         section: 'Admin' },
   { id: 'juniors',          label: 'Junior Section',     icon: GraduationCap,  section: 'Juniors', badge: 'NEW' },
+  /* REMOVED: Tactics / Set Pieces — pitch-side tactical, Hudl territory.
   { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Club' },
   { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Club' },
+  */
   { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations' },
   { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
   { id: 'media',            label: 'Media & Content',    icon: Newspaper,      section: 'Operations' },
@@ -751,11 +762,10 @@ function SquadView() {
         <StatCard label="Avg Age" value={String(Math.round(SQUAD.reduce((s, p) => s + p.age, 0) / SQUAD.length))} icon={Users} color="#3B82F6" />
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setShowAI(!showAI)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: `${GOLD}1a`, border: `1px solid ${GOLD}`, color: GOLD }}>
-          <Sparkles size={12} className="inline mr-1" />AI Team Selection
-        </button>
-      </div>
+      {/* REMOVED: 'AI Team Selection' button — pitch-side tactical, Hudl
+          territory. Lumio focuses on club management, not picking the XI.
+          The AI suggested XI block below remains stub-rendered in case the
+          showAI state ever flips back on. */}
 
       {showAI && (
         <SectionCard title="AI Suggested XI — 4-4-2" action={<Badge color={PRIMARY}>Based on availability + form</Badge>}>
@@ -2733,6 +2743,7 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
               {activeDept === 'referee' && <RefereeView onToast={fireToast} />}
               {activeDept === 'pitch' && <PitchView onToast={fireToast} />}
               {activeDept === 'kit' && <KitView />}
+              {activeDept === 'kit-lockup' && <div className="rounded-xl p-6" style={{backgroundColor:CARD_BG,border:`1px solid ${BORDER}`}}><h2 className="text-lg font-bold mb-2" style={{color:TEXT}}>🧦 Kit Lock-Up</h2><p className="text-sm" style={{color:TEXT_SEC}}>Coming soon — track where the kit bag lives each week, who has it, and when it&apos;s due back.</p></div>}
               {activeDept === 'volunteers' && <VolunteersView onToast={fireToast} />}
               {activeDept === 'travel' && <TravelView onToast={fireToast} />}
               {activeDept === 'documents' && <DocumentsView />}
