@@ -1850,7 +1850,7 @@ function InteractiveFootballInbox({ T, accent, density }: { T: typeof THEMES.dar
   const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
   const items = FOOTBALL_INBOX.filter(c => !state[c.ch]?.dismissed)
   return (
-    <div style={{ gridColumn: '6 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
       <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
         <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
@@ -2092,29 +2092,23 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
             <FbStatTiles T={T} accent={accent} density={density} />
 
             {/* Three-column row — AI Morning Summary | Inbox | Today.
-                Wrapper divs with explicit gridColumn override each Card's
-                internal placement (FbAIBrief '1 / span 5',
-                InteractiveFootballInbox '6 / span 4', FbTodaySchedule
-                '9 / span 4'). Result: three equal 4-col cards.
-                AI and Inbox have density reductions (FootballDashboardModules
-                AIBrief, this file's InteractiveFootballInbox) so all three
-                converge on Today's compact natural height.
-                CARD ROW GAP — three-card row spacing matches cricket
-                reference. Wrappers use bare `display: grid` (NOT
-                gridTemplate: 1fr/1fr) because the latter makes cards
-                fill the cell width, which pushes visible whitespace
-                OUTWARD between cards. Cricket uses the simpler pattern
-                that lets cards sit tighter together. */}
+                Cards rendered as DIRECT grid children, matching cricket's
+                canonical three-card row pattern at
+                src/app/cricket/[slug]/page.tsx:3925. Each card sets its
+                own gridColumn internally (FbAIBrief '1/span 4',
+                InteractiveFootballInbox '5/span 4', FbTodaySchedule
+                '9/span 4' — totalling 12). No per-card wrapper divs.
+                AI and Inbox carry density reductions
+                (FootballDashboardModules AIBrief, this file's
+                InteractiveFootballInbox) so heights converge on Today's
+                compact natural look.
+                CARD ROW GAP — gap: 8 (tighter than the density.gap=14
+                cricket uses) so the three cards read as one unified
+                row visual. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
-              <div style={{ gridColumn: '1 / span 4', display: 'grid' }}>
-                <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
-              </div>
-              <div style={{ gridColumn: '5 / span 4', display: 'grid' }}>
-                <InteractiveFootballInbox T={T} accent={accent} density={density} />
-              </div>
-              <div style={{ gridColumn: '9 / span 4', display: 'grid' }}>
-                <FbTodaySchedule T={T} accent={accent} density={density} />
-              </div>
+              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              <InteractiveFootballInbox T={T} accent={accent} density={density} />
+              <FbTodaySchedule T={T} accent={accent} density={density} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>

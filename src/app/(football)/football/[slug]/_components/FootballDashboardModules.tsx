@@ -224,7 +224,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const hour = new Date().getHours()
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 5' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
       <SectionHead
         T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
