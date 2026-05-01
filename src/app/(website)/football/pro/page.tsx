@@ -262,7 +262,7 @@ function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
 export default function FootballProPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
-      <section style={{ padding: '96px 24px 64px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '128px 24px 64px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${NAVY}66, transparent 50%), radial-gradient(circle at 80% 60%, ${RED}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 24 }}>
