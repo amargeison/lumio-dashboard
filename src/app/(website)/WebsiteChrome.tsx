@@ -251,35 +251,14 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
             branch preserves the existing /football/** CTAs on lumiosports. */}
         {isSports ? (
           <div className="hidden md:flex items-center" style={{ gap: 8, flexShrink: 0 }}>
-            {isFootball ? (
-              <>
-                <Link href="/book-demo"
-                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
-                  style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0F766E' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0D9488' }}>
-                  Book a Demo
-                </Link>
-                <Link href="/book-demo"
-                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
-                  style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#7C3AED' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#6C3FC5' }}>
-                  Request Access
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/sports/try-demo"
-                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
-                  style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}>
-                  Try a demo
-                </Link>
-              </>
-            )}
-            <Link href={isFootball ? '/login?type=football' : '/sports-login'}
+            <Link href="/sports/try-demo"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}>
+              Try a demo
+            </Link>
+            <Link href="/sports-login"
               className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
               style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#374151' }}
@@ -348,26 +327,11 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
               point (Business / Schools waitlists, Sports external, About). */}
           {isSports && (
             <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: '#1F2937' }}>
-              {isFootball ? (
-                <>
-                  <Link href="/book-demo"
-                    className="text-sm font-semibold py-2 text-center rounded-lg"
-                    style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}
-                    onClick={() => setMobileOpen(false)}>Book a Demo</Link>
-                  <Link href="/book-demo"
-                    className="text-sm font-semibold py-2 text-center rounded-lg"
-                    style={{ backgroundColor: '#6C3FC5', color: '#F9FAFB' }}
-                    onClick={() => setMobileOpen(false)}>Request Access</Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/sports/try-demo"
-                    className="text-sm font-semibold py-2 text-center rounded-lg"
-                    style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
-                    onClick={() => setMobileOpen(false)}>Try a demo</Link>
-                </>
-              )}
-              <Link href={isFootball ? '/login?type=football' : '/sports-login'}
+              <Link href="/sports/try-demo"
+                className="text-sm font-semibold py-2 text-center rounded-lg"
+                style={{ backgroundColor: 'transparent', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.2)' }}
+                onClick={() => setMobileOpen(false)}>Try a demo</Link>
+              <Link href="/sports-login"
                 className="text-sm font-semibold py-2 text-center rounded-lg"
                 style={{ backgroundColor: '#1F2937', color: '#F9FAFB' }}
                 onClick={() => setMobileOpen(false)}>Sign In</Link>

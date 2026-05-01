@@ -45,11 +45,11 @@ export default function FootballGrassrootsPage() {
             For grassroots clubs, Sunday League sides, and youth / academy setups. Fixtures, RSVPs, subs, attendance, match-day sharing, tournaments — all in a phone-first app your coaches and parents actually open. Free for every club, forever.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
-              See live demo →
+            <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
+              Apply for founding access →
             </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Book a walkthrough
+            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Try the demo
             </Link>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -119,11 +119,11 @@ export default function FootballGrassrootsPage() {
             Try the Sunday Rovers FC live demo — a fictional U14s club running a full season on Lumio. Or sign up your own club and run it all day one, free.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
-              See live demo →
+            <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
+              Apply for founding access →
             </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Book a walkthrough →
+            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+              Try the demo →
             </Link>
           </div>
         </div>
