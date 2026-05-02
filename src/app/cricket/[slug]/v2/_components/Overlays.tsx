@@ -110,13 +110,15 @@ export function CommandPalette({
 // ─── Ask Lumio side sheet ─────────────────────────────────────────────
 
 type ChatMsg = { role: 'user' | 'lumio'; text: string; refs?: string[] }
-type Sport = 'cricket' | 'football'
+type Sport = 'cricket' | 'football' | 'womens' | 'rugby' | 'nonleague' | 'grassroots' | 'tennis' | 'darts'
 
 // Static demo replies. The Ask Lumio modal is presentation-only — replies
 // are hardcoded keyword matches with a 1.1s "thinking" delay. When this
 // is wired to a real AI route, the sport branch picks the API endpoint;
 // for now the sport branch picks the prompt set + reply content so each
-// portal renders its own context-relevant suggestions.
+// portal renders its own context-relevant suggestions. Each portal MUST
+// pass its own `sport` prop — the default is cricket, so an unset prop
+// will surface cricket replies on a football/rugby/etc dashboard.
 
 function generateReplyCricket(q: string): { text: string; refs: string[] } {
   const Q = q.toLowerCase()
@@ -194,8 +196,210 @@ function generateReplyFootball(q: string): { text: string; refs: string[] } {
   }
 }
 
+function generateReplyWomens(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('xi') || Q.includes('lineup') || Q.includes('zhang') || Q.includes('bristol')) {
+    return {
+      text: 'Recommended XI vs Bristol City: Clarke (gk); Osei, Reed, Whitmore (cb); Walsh, Nair, Turner, Maxwell (mid); Carter, Brennan, Iversen (fwd).\n\nReasoning: Zhang flagged red on ACL risk monitor — luteal phase + load cap 60%. Hold for Wed&apos;s rotation. Nair available despite ovulatory laxity flag, with strapping. Bristol press high up the pitch — work the wide channels.',
+      refs: ['ACL Risk Monitor', 'Cycle Tracking', 'Opposition Scout · Bristol'],
+    }
+  }
+  if (Q.includes('cycle') || Q.includes('acl') || Q.includes('welfare')) {
+    return {
+      text: 'Player welfare flags this week:\n• E. Zhang — luteal phase + ACL high risk; load cap 60%, no contact training Tue-Wed.\n• C. Reed — menstrual phase; load cap 65%.\n• P. Nair — ovulatory laxity flag; strap-and-go for Sat.\n• S. Turner — RTP P3, 4 weeks out.',
+      refs: ['ACL Risk Monitor', 'Cycle Tracking', 'Medical Hub'],
+    }
+  }
+  if (Q.includes('fsr') || Q.includes('compliance') || Q.includes('salary')) {
+    return {
+      text: 'WSL FSR position: 74% of relevant revenue committed to wages — within the 85% squad cost rule. £180k headroom. Game Standards: 6 of 8 areas green; physiotherapy hours and travel-day hotel standard flagged amber.',
+      refs: ['FSR Dashboard', 'Salary Compliance', 'Game Standards'],
+    }
+  }
+  if (Q.includes('contract') || Q.includes('expir')) {
+    return {
+      text: '3 contracts expire 30 Jun:\n• A. Walsh · captain · KEY — talks open at £85k/yr.\n• L. Brennan · 30 Jun · monitor (FSR impact tier 1).\n• J. Osei · 30 Jun · loan return; recall option exercised.',
+      refs: ['Contract Hub', 'FSR Dashboard'],
+    }
+  }
+  return {
+    text: 'I can pull from the squad, opposition, FSR, ACL/cycle/maternity welfare, medical, salary compliance, and Game Standards data. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
+function generateReplyRugby(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('xv') || Q.includes('lineup') || Q.includes('jersey') || Q.includes('henderson')) {
+    return {
+      text: 'Recommended XV vs Jersey Reds: Forwards — Patel, Williams, Cole, Henderson, Okonkwo, Reilly, Tate (capt), Hughes. Backs — Foster, Drake, Mitchell, Nwosu, Brennan, Carter, Reed.\n\nReasoning: Henderson cleared by physio (concussion HIA Day 6). Lineout success has been 68% — Williams returns to throwing, Cole back to lock to stabilise. Jersey breakdown speed 3.4s — slow our jackal target to 3.0s under pressure.',
+      refs: ['Medical · Henderson', 'Set Piece Analytics', 'GPS · 7 days'],
+    }
+  }
+  if (Q.includes('concussion') || Q.includes('hia') || Q.includes('rtp')) {
+    return {
+      text: 'Active HIA / concussion protocols:\n• Henderson — Day 6 of 6, cleared for contact this morning.\n• Brennan — Day 4 of 6, no contact training until Thursday.\n• Williams — RTP P2 (running), CRT5 in 48h before contact clearance.',
+      refs: ['Medical Hub', 'Concussion & HIA', 'Return to Play'],
+    }
+  }
+  if (Q.includes('cap') || Q.includes('salary')) {
+    return {
+      text: 'Cap position: £6.4M of £6.6M senior cap committed (97%). £200k headroom for Jun window. Patel renewal at £180k/yr (3 yrs) would breach — needs Brennan restructure first or use marquee allocation.',
+      refs: ['Cap Dashboard', 'Scenario Modeller'],
+    }
+  }
+  if (Q.includes('contract') || Q.includes('expir')) {
+    return {
+      text: '4 contracts expire 30 Jun:\n• Tate (capt) · 30 Jun · KEY — talks at £200k/yr, marquee discussion.\n• Foster · 30 Jun · monitor (England call-up bumps value).\n• Reed · 30 Jun · likely renew, +8%.\n• Hughes · 30 Jun · academy → senior, within budget.',
+      refs: ['Contract Hub', 'Cap Impact Modeller'],
+    }
+  }
+  return {
+    text: 'I can pull from the squad, medical, GPS load, cap dashboard, recruitment, and franchise readiness data. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
+function generateReplyNonLeague(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('xi') || Q.includes('lineup') || Q.includes('runcorn')) {
+    return {
+      text: 'Likely XI vs Runcorn (Sat): Calloway (gk); Morley, Prescott, Cartwright, Okonkwo (def); Brennan, Whitmore, Deakin (mid); Fletcher, Grady, Webb (fwd).\n\nReasoning: Platt out (calf, 12 Apr return). Mellor still suspended. Pearson on the bench — first start watch if Brennan flags. Runcorn press from goal kicks — work the long out-ball to Grady.',
+      refs: ['Squad · Availability', 'Match Fee Tracker', 'Discipline Log'],
+    }
+  }
+  if (Q.includes('match fee') || Q.includes('fee') || Q.includes('budget')) {
+    return {
+      text: 'Match fee budget this week: £695 across 18 in matchday squad + travel allowances. Season-to-date: 78% of £18k budget spent with 12 fixtures left. Trim Match-by-match contracts for the run-in — ~£140 saving across 4 fixtures.',
+      refs: ['Match Fee Tracker', 'Finance · Budget'],
+    }
+  }
+  if (Q.includes('registration') || Q.includes('fa') || Q.includes('compliance')) {
+    return {
+      text: 'FA registration check: 22 of 23 squad members registered. Pearson trial → registration form pending county FA approval (submitted 28 Mar, expect this week). Check loan stop-date for Bright (Bolton) — 31 May.',
+      refs: ['Player Registration', 'Discipline Log'],
+    }
+  }
+  if (Q.includes('sponsor') || Q.includes('fundraising') || Q.includes('insurance')) {
+    return {
+      text: 'Commercial summary: 3 sponsors renewing within 60 days (£8.4k combined). Two fundraising events booked (race night 12 Apr, golf day 4 May). Public liability insurance renewal due 1 Jun — quote being shopped now, current £1.6k.',
+      refs: ['Sponsorship', 'Fundraising', 'Insurance'],
+    }
+  }
+  return {
+    text: 'I can pull from the squad, match fees, registrations, finance, sponsorship, fundraising, and ground/operations data. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
+function generateReplyGrassroots(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('availability') || Q.includes('playing') || Q.includes('sunday')) {
+    return {
+      text: 'Sunday availability so far: 13 of 16 confirmed in WhatsApp, 2 declined (Tommo — work, Kev — wedding), 1 no reply (Daz — chase him). FA Sunday Cup R1 vs Millfield — bring boots and a jacket, forecast says light rain after 11.',
+      refs: ['Availability', 'Fixtures · FA Sunday Cup'],
+    }
+  }
+  if (Q.includes('subs') || Q.includes('fees') || Q.includes('money')) {
+    return {
+      text: 'Subs collection: £620 of £720 target collected. 4 outstanding — Tommo £50 (6 weeks behind 🔴), Andy £30, Pete £20, Lee £10. WhatsApp reminder ready to go — say the word.',
+      refs: ['Subs Tracker', 'Finances'],
+    }
+  }
+  if (Q.includes('dbs') || Q.includes('safeguarding') || Q.includes('welfare')) {
+    return {
+      text: 'DBS status: Dave Nolan (manager) and Bob Turner (treasurer) BOTH OVERDUE. They cannot have unsupervised access to juniors until renewed. Phil Rees and Sarah Nolan valid. Welfare officer (Sarah) up to date.',
+      refs: ['DBS Tracker', 'Safeguarding'],
+    }
+  }
+  if (Q.includes('pitch') || Q.includes('referee') || Q.includes('booking')) {
+    return {
+      text: 'Sunday matchday: pitch booked at Millfield Rec, ref Graham Foster confirmed (£35 cash on the day). 3G backup at Glenmoor not needed — forecast says pitch will pass. Programme printed, ball pumped, kit washed.',
+      refs: ['Pitch Booking', 'Referee Bookings'],
+    }
+  }
+  return {
+    text: 'I can help with availability, subs, DBS/safeguarding, pitch and ref bookings, kit, and FA admin. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
+function generateReplyTennis(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('opponent') || Q.includes('vega') || Q.includes('match')) {
+    return {
+      text: 'Today vs Vega (13:00 Court 4):\n• Serve — 62% first-serve, kicks T on deuce. Step in early on second serves to body.\n• Return — stands 2m behind baseline; chip-and-charge worth a try sets 1-2.\n• Backhand — flat down the line, cross-court has 18% more UE than yours.',
+      refs: ['Match Prep', 'H2H', 'Tagged clips'],
+    }
+  }
+  if (Q.includes('ranking') || Q.includes('points') || Q.includes('atp') || Q.includes('wta')) {
+    return {
+      text: 'Ranking position: ATP 84 (career high 79). Defending 90 points from this clay event last year — keep them with a R16 finish or better. Madrid quallies start in 12 days; flight Wed evening or Thu morning.',
+      refs: ['Ranking · ATP', 'Schedule'],
+    }
+  }
+  if (Q.includes('coach') || Q.includes('travel') || Q.includes('budget')) {
+    return {
+      text: 'Coaching block: Marco off-tour Mon-Wed, Sarah on practice court Tue-Fri. Travel costs YTD: £42k of £85k budget (49%). Hotel for Madrid quallies: 4-night premium room cleared with sponsor activation budget.',
+      refs: ['Team', 'Travel & Logistics', 'Sponsorship'],
+    }
+  }
+  if (Q.includes('sponsor') || Q.includes('appearance')) {
+    return {
+      text: 'Sponsor obligations this week: Vanta Sports renewal call Thu 14:00 (Marco joining). One social post owed for the racquet brand by Sunday. Appearance at junior clinic Sat 09:00 — pre-game routine starts 10:30 after.',
+      refs: ['Sponsorship', 'Calendar'],
+    }
+  }
+  return {
+    text: 'I can pull from match prep, ranking, sponsors, coaching team, travel, and tournament schedule. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
+function generateReplyDarts(q: string): { text: string; refs: string[] } {
+  const Q = q.toLowerCase()
+  if (Q.includes('opponent') || Q.includes('merrick') || Q.includes('match')) {
+    return {
+      text: 'Tonight vs D. Merrick (8pm, BO11):\n• H2H — Jake leads 8-3. Avg 99.4 vs Merrick (vs his 96.2 season).\n• Pattern — Merrick starts slow, averages 92 in first 3 legs vs 99 from leg 4 onwards. Punish early.\n• Doubles — favourite checkout D16, drops to D5 under pressure.',
+      refs: ['Match Prep', 'H2H', 'Checkout patterns'],
+    }
+  }
+  if (Q.includes('ranking') || Q.includes('order of merit') || Q.includes('points')) {
+    return {
+      text: 'PDC Order of Merit: 14th. Defending £11k from this Players Championship last year. Win tonight to push toward top 12 and the Premier League invitation conversation.',
+      refs: ['Ranking · OoM', 'Schedule'],
+    }
+  }
+  if (Q.includes('sponsor') || Q.includes('vanta') || Q.includes('appearance')) {
+    return {
+      text: 'Sponsor obligations: Vanta Sports renewal call Thu 14:00 (Marco + James). One Reel owed for the shirt sponsor by Friday. Q&A appearance at Sheffield darts academy Sat — confirm with Sarah.',
+      refs: ['Sponsorship', 'Social Media', 'Calendar'],
+    }
+  }
+  if (Q.includes('shoulder') || Q.includes('routine') || Q.includes('mental')) {
+    return {
+      text: 'Routines & welfare:\n• Shoulder — Dr. Singh treatment 08:30 tomorrow, mobility work daily.\n• Pre-match routine — updated by Sarah; new breathing anchor for pressure checkouts.\n• Sleep last 7 nights — 6.8h avg, push toward 7.5h with phone curfew at 22:00.',
+      refs: ['Medical', 'Mental Performance'],
+    }
+  }
+  return {
+    text: 'I can help with match prep, ranking, sponsors, mental performance, training, and travel. Try one of the suggestions on the left.',
+    refs: [],
+  }
+}
+
 function generateReply(q: string, sport: Sport): { text: string; refs: string[] } {
-  return sport === 'football' ? generateReplyFootball(q) : generateReplyCricket(q)
+  switch (sport) {
+    case 'football':   return generateReplyFootball(q)
+    case 'womens':     return generateReplyWomens(q)
+    case 'rugby':      return generateReplyRugby(q)
+    case 'nonleague':  return generateReplyNonLeague(q)
+    case 'grassroots': return generateReplyGrassroots(q)
+    case 'tennis':     return generateReplyTennis(q)
+    case 'darts':      return generateReplyDarts(q)
+    case 'cricket':
+    default:           return generateReplyCricket(q)
+  }
 }
 
 const SUGGESTED_BY_SPORT: Record<Sport, string[]> = {
@@ -212,6 +416,48 @@ const SUGGESTED_BY_SPORT: Record<Sport, string[]> = {
     'Why did we lose to Northgate City?',
     'Players nearing contract expiry',
     'Forecast effect on Saturday match',
+  ],
+  womens: [
+    'Best XI vs Bristol given Zhang’s ACL flag?',
+    'Cycle / ACL welfare risks this week',
+    'WSL FSR position and headroom',
+    'Players nearing contract expiry',
+    'Game Standards compliance gaps',
+  ],
+  rugby: [
+    'Best XV vs Jersey Reds given Henderson’s HIA?',
+    'Concussion / HIA / RTP status this week',
+    'Cap position and renewal headroom',
+    'Players nearing contract expiry',
+    'Lineout success trend last 5 matches',
+  ],
+  nonleague: [
+    'Likely XI vs Runcorn this Saturday?',
+    'Match fee budget — what can we trim?',
+    'FA registration and discipline status',
+    'Sponsor renewals and fundraising pipeline',
+    'Insurance renewal and ground hire revenue',
+  ],
+  grassroots: [
+    'Who’s playing on Sunday?',
+    'Who still owes subs?',
+    'DBS / safeguarding status',
+    'Pitch and referee booked for Sunday?',
+    'Cup draw and committee actions this week',
+  ],
+  tennis: [
+    'Match brief — opponent today?',
+    'Ranking position and points to defend',
+    'Coaching block and travel costs',
+    'Sponsor obligations this week',
+    'Mental performance and recovery flags',
+  ],
+  darts: [
+    'Match brief — opponent tonight?',
+    'PDC Order of Merit position',
+    'Sponsor obligations this week',
+    'Shoulder rehab and routine updates',
+    'Travel + practice plan for next event',
   ],
 }
 

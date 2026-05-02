@@ -733,7 +733,7 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
       </div>
 
       <V2CommandPalette T={T} accent={accent} open={cmdOpen} onClose={() => setCmdOpen(false)} onAskLumio={() => { setCmdOpen(false); setAskOpen(true) }} />
-      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
+      <V2AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} sport="rugby" />
       <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
       <V2Toast          T={T} accent={accent} msg={dashToast} />
       <RugbyMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />

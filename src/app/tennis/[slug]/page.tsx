@@ -1610,7 +1610,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* v2 overlays — command palette, ask Lumio, fixture drawer, toast, match brief */}
       {dashTab === 'today' && <>
         <V2CommandPalette T={v2T} accent={v2Accent} open={v2CmdOpen} onClose={() => setV2CmdOpen(false)} onAskLumio={() => { setV2CmdOpen(false); setV2AskOpen(true) }} />
-        <V2AskLumio       T={v2T} accent={v2Accent} open={v2AskOpen} onClose={() => setV2AskOpen(false)} />
+        <V2AskLumio       T={v2T} accent={v2Accent} open={v2AskOpen} onClose={() => setV2AskOpen(false)} sport="tennis" />
         <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
         <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
         <TennisMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
