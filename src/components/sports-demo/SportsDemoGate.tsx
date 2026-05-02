@@ -635,6 +635,12 @@ export default function SportsDemoGate({
   const clubNameRef = useRef<HTMLInputElement>(null)
   const userNameRef = useRef<HTMLInputElement>(null)
   const nicknameRef = useRef<HTMLInputElement>(null)
+  // PWA install token captured during verify-otp on a first-time visit.
+  // Returning users apply it inline (Path C reload below). First-time
+  // visitors enter the wizard and apply it at finaliseSession time.
+  // 5-min TTL — if the wizard isn't completed in time, the token expires
+  // silently and the worst-case is no iOS Add-to-Home-Screen capture.
+  const pendingInstallTokenRef = useRef<string | null>(null)
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
     const file = e.target.files?.[0]
@@ -692,10 +698,18 @@ export default function SportsDemoGate({
       // immediately restores to 'done' regardless of metadata timing.
       if (data.sessionMinted) {
         if (typeof window !== 'undefined') {
-          // Best-effort: pull the saved profile so the persisted session
-          // includes name/avatar/club without waiting for a follow-up
-          // mount fetch. Failure is non-fatal — we still write a minimal
-          // session below so the loop is broken either way.
+          // Capture the install token regardless of returning-vs-new branch.
+          // The returning branch applies it inline before reload; the
+          // first-time branch applies it inside finaliseSession after the
+          // wizard completes. Token TTL is 5 minutes — if the wizard
+          // isn't finished in time the worst case is no iOS Safari
+          // add-to-home-screen capture; the demo still works.
+          if (data.installToken) pendingInstallTokenRef.current = data.installToken
+
+          // Pull the saved profile to decide returning-user vs first-time.
+          // We only short-circuit to 'done' (skip wizard) if the server
+          // has a populated user_name. First-time visitors fall through
+          // to setStep('club') and let the wizard own persona capture.
           let profile: {
             user_name?: string; club_name?: string; role?: string
             avatar_url?: string | null; logo_url?: string | null; nickname?: string | null
@@ -706,51 +720,64 @@ export default function SportsDemoGate({
             )
             const profileData = await profileRes.json().catch(() => null)
             if (profileData?.profile?.user_name) profile = profileData.profile
-          } catch { /* network — fall through with minimal session */ }
+          } catch { /* network — treat as first-time visitor */ }
 
-          const savedPhoto = (() => {
-            try { return localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) } catch { return null }
-          })()
+          if (profile?.user_name) {
+            // RETURNING USER — server has a completed profile. Persist
+            // the rebuilt session and reload so the post-reload mount
+            // restores to 'done' and skips the wizard.
+            const savedPhoto = (() => {
+              try { return localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) } catch { return null }
+            })()
 
-          const persisted: SportsDemoSession = {
-            email,
-            userName: profile?.user_name || userName || '',
-            clubName: profile?.club_name || defaultClubName,
-            role: profile?.role || selectedRole || roles[0]?.id || 'player',
-            photoDataUrl: profile?.avatar_url ?? savedPhoto ?? null,
-            logoDataUrl: profile?.logo_url ?? null,
-            nickname: profile?.nickname ?? null,
-            sport,
-            verifiedAt: new Date().toISOString(),
-          }
-          try {
-            localStorage.setItem(sessionKey(sport), JSON.stringify(persisted))
-            localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
-            // Mark onboarded only when the server confirms a profile —
-            // otherwise the post-reload restore should still drop into
-            // the wizard for first-time users without a profile row.
-            if (profile?.user_name) localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
-            if (persisted.userName) localStorage.setItem(`lumio_${sport}_name`, persisted.userName)
-            if (persisted.nickname) localStorage.setItem(`lumio_${sport}_nickname`, persisted.nickname)
-            if (persisted.photoDataUrl) {
-              localStorage.setItem(`lumio_${sport}_profile_photo`, persisted.photoDataUrl)
-              localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, persisted.photoDataUrl)
+            const persisted: SportsDemoSession = {
+              email,
+              userName: profile.user_name,
+              clubName: profile.club_name || defaultClubName,
+              role: profile.role || selectedRole || roles[0]?.id || 'player',
+              photoDataUrl: profile.avatar_url ?? savedPhoto ?? null,
+              logoDataUrl: profile.logo_url ?? null,
+              nickname: profile.nickname ?? null,
+              sport,
+              verifiedAt: new Date().toISOString(),
             }
-            if (persisted.logoDataUrl) localStorage.setItem(`lumio_${sport}_brand_logo`, persisted.logoDataUrl)
-            touchDemoSessionTs(sport)
-          } catch { /* localStorage unavailable — Safari private mode etc */ }
+            try {
+              localStorage.setItem(sessionKey(sport), JSON.stringify(persisted))
+              localStorage.setItem(`lumio_${sport}_demo_active`, 'true')
+              localStorage.setItem(`lumio_${sport}_onboarded`, 'true')
+              if (persisted.userName) localStorage.setItem(`lumio_${sport}_name`, persisted.userName)
+              if (persisted.nickname) localStorage.setItem(`lumio_${sport}_nickname`, persisted.nickname)
+              if (persisted.photoDataUrl) {
+                localStorage.setItem(`lumio_${sport}_profile_photo`, persisted.photoDataUrl)
+                localStorage.setItem(`lumio_demo_photo_${email.toLowerCase()}`, persisted.photoDataUrl)
+              }
+              if (persisted.logoDataUrl) localStorage.setItem(`lumio_${sport}_brand_logo`, persisted.logoDataUrl)
+              touchDemoSessionTs(sport)
+            } catch { /* localStorage unavailable — Safari private mode etc */ }
 
-          if (data.installToken) {
-            const url = new URL(window.location.href)
-            url.searchParams.set('pwa_install', data.installToken)
-            console.log('[gate] redirecting to URL with pwa_install token')
-            window.location.href = url.toString()
-          } else {
-            // Bare-manifest fallback — full reload still re-runs
-            // generateMetadata so the legacy install_token-on-manifest
-            // path can pick up the session.
-            window.location.href = window.location.pathname
+            if (data.installToken) {
+              const url = new URL(window.location.href)
+              url.searchParams.set('pwa_install', data.installToken)
+              console.log('[gate] redirecting to URL with pwa_install token')
+              window.location.href = url.toString()
+            } else {
+              // Bare-manifest fallback — full reload still re-runs
+              // generateMetadata so the legacy install_token-on-manifest
+              // path can pick up the session.
+              window.location.href = window.location.pathname
+            }
+            return
           }
+
+          // FIRST-TIME VISITOR — Supabase auth cookie is set server-side,
+          // but no completed wizard exists for this (email, sport). Do
+          // NOT write the session blob; do NOT reload. Drop into the
+          // wizard ('club' step) so the user enters their name, club,
+          // and photo. finaliseSession() persists the session blob and
+          // the onboarded flag once Invite completes, and consumes
+          // pendingInstallTokenRef to apply the URL handoff.
+          setStep('club')
+          setLoading(false)
           return
         }
       }
@@ -905,6 +932,22 @@ export default function SportsDemoGate({
     }
     setSession(newSession)
     setStep('done')
+
+    // First-time wizard completion: apply the install token captured
+    // during verifyOtp. 5-min TTL — if expired this is a no-op since
+    // PwaInstallRedeemer just verifies and ignores. history.replaceState
+    // avoids a full reload — the session is already in state and
+    // localStorage; the URL update is enough for iOS add-to-home-screen
+    // capture and the redeemer's mount-time consumer.
+    const pendingTok = pendingInstallTokenRef.current
+    if (pendingTok && typeof window !== 'undefined') {
+      pendingInstallTokenRef.current = null
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.set('pwa_install', pendingTok)
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
+    }
   }
 
   const resetSession = () => {
