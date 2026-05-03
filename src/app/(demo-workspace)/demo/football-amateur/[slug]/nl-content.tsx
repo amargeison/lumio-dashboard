@@ -19,6 +19,7 @@ import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
+import PreSeasonCampMode from '@/components/sports/PreSeasonCampMode'
 // ─── NL v2 dashboard imports ─────────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -3901,6 +3902,40 @@ function NLAIHalftimeView() {
 
 function NLPreSeasonView() {
   return (
+    <PreSeasonCampMode
+      accent="#D97706"
+      storageKey="lumio_nl_preseason"
+      aiRoute="/api/ai/nonleague"
+      sportEmoji="⚽"
+      sportLabel="pre-season"
+      emptyTagline="Build the squad. Bond the lads. Fire into August."
+      defaultSquad="20"
+      defaultFormation="4-4-2"
+      readinessFactors={[
+        { label: 'Fitness Base',          score: 68 },
+        { label: 'Squad Bonding',         score: 81 },
+        { label: 'Tactical Familiarity',  score: 54 },
+        { label: 'Friendlies Played',     score: 20, sub: '1 of 5 planned' },
+      ]}
+      overallReadiness={68}
+      checklistItems={[
+        'Tuesday training session',
+        'Thursday training session',
+        'Saturday friendly',
+        'Squad WhatsApp updated',
+        'Subs collected',
+        'Kit checked',
+      ]}
+      gpsTarget={35}
+      defaultFriendlies={[
+        { opp: 'Glossop NE', score: '2-2', notes: 'Trialists impressed in first hour', result: 'D' },
+      ]}
+      friendliesTarget={5}
+      demoSummary={'Squad reporting back fitter than last summer — bleep test averages up 1.2 levels across the senior 18. Friendlies arranged for weeks 3-5 with Glossop and Stalybridge giving good early opposition. Two trialists in for Wednesday session — both midfielders, both need physicality test before being offered terms. Friday focus: set pieces and ID’ing penalty takers.'}
+      demoHighlights={'1. Tactical familiarity flagged amber (54/100) — bedding in the new 4-4-2 needs another full-squad session before the Glossop friendly.\n2. Squad bonding strong (81/100) — pre-season social Sun 6 Jul did its job.\n3. Two trialists pending registration — Connor Hughes (Nantwich Res) and Levi Barrett (Leek) both need terms agreed by week 3.\n4. Stalybridge Res friendly (22 Jul) is the right test for the new shape — full first XI minutes for the spine.\n5. Set-piece duties unconfirmed — penalty taker, free-kick taker, and corner delivery all to be locked this week.'}
+      aiSummaryPrompt={(camp, daysTo, phase) => `You are advising a Northern Premier League West (semi-pro) football manager on pre-season camp progress. Opening fixture vs ${camp.opposition} in ${daysTo} days, currently in ${phase}, squad of ${camp.squad}, target formation ${camp.formation}. Write a 4-sentence summary covering: returning squad fitness from break, friendlies arranged and how they're testing the system, trialists / new signings status, and focus areas this week. Tone: semi-pro, realistic, work-and-play. No intro.`}
+      aiHighlightsPrompt={(camp, daysTo, phase) => `Generate 5 numbered key highlights for a Northern Premier League semi-pro football manager's pre-season AI brief. Opening fixture vs ${camp.opposition} in ${daysTo} days, ${phase} phase, squad of ${camp.squad}, formation ${camp.formation}. Each line specific to the semi-pro context (match-fee budget, trialists, registration deadlines, friendlies build-up, set-piece duties). No intro.`}
+    >
     <div className="space-y-4">
       <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
         <StatCard label="Pre-Season Start" value="1 Jul" icon={Calendar} color={PRIMARY} />
@@ -3945,6 +3980,7 @@ function NLPreSeasonView() {
         </div>
       </SectionCard>
     </div>
+    </PreSeasonCampMode>
   )
 }
 
@@ -4013,17 +4049,12 @@ function NLGPSHeatmapsView() {
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function NonLeagueContent({ activeDept, onToast, userName }: { activeDept: NLDeptId; onToast: (m: string) => void; userName?: string }) {
-  const deptLabel = NL_SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
-
+  // Department header is owned by the parent shell
+  // (src/app/nonleague/[slug]/page.tsx) which renders <h1>{deptLabel}</h1>
+  // and uses session.clubName. Removed the duplicate render that was
+  // here so the same heading no longer appears twice on every dept page.
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-bold" style={{ color: TEXT }}>{deptLabel}</h1>
-          <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>Harfield FC · Northern Premier League West</p>
-        </div>
-      </div>
-
       {activeDept === 'nl-getting-started' && <NLGettingStartedView />}
       {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-morningroundup' && <NLOverviewView onToast={onToast} userName={userName} />}

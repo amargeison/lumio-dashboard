@@ -365,7 +365,12 @@ const SECTIONED_NAV:{section:string;items:{id:string;label:string;icon:string;ba
     {id:'travel',label:'Travel & Logistics',icon:'plane'},
     {id:'team-comms',label:'Team Comms',icon:'mic'},
     {id:'tours-camps',label:'Tours & Camps',icon:'calendar',badge:'NEW'},
-    {id:'pre-season',label:'Pre-Season Planning',icon:'calendar',badge:'NEW'},
+    // 'pre-season' sidebar entry removed — the working Pre-Season Camp Mode
+    // (Activate flow + AI summary + readiness scores + venue finder) lives
+    // under Tours & Camps → Pre-Season tab via CricketPreSeasonView. The
+    // duplicate entry showed only a "Coming soon" placeholder and confused
+    // users who expected the same flow as Women's FC. Pages-map entry
+    // retained below so deep links still resolve.
   ]},
   {section:'FACILITIES',items:[
     {id:'grounds',label:'Grounds & Facilities',icon:'pin',badge:'NEW'},
@@ -7087,7 +7092,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     'tours-camps':<CricketToursAndCampsView preSeasonContent={<CricketPreSeasonView session={session}/>} />,
     'matchday-ops':<ComingSoonView title="Matchday Operations" />,
     'net-facilities':<ComingSoonView title="Net Facilities" />,
-    'pre-season':<ComingSoonView title="Pre-Season Planning" />,
+    // 'pre-season' pages-map entry removed — sidebar entry was dropped in
+    // commit 6f612994; this orphan stub had no remaining nav trigger.
   };
 
   return(

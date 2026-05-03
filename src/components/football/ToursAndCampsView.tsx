@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plane, Activity, Calendar, DollarSign, Briefcase, Users } from 'lucide-react'
+import PreSeasonCampMode from '@/components/sports/PreSeasonCampMode'
 
 const C = {
   card: '#0D1017', cardAlt: '#111318', border: '#1F2937',
@@ -60,6 +61,58 @@ function PreSeasonTab() {
   ]
 
   return (
+    <PreSeasonCampMode
+      accent="#003DA5"
+      storageKey="lumio_football_preseason"
+      aiRoute="/api/ai/football"
+      sportEmoji="⚽"
+      sportLabel="pre-season"
+      emptyTagline="Build the foundation. Drill the system. Hit opening day flying."
+      defaultSquad="25"
+      defaultFormation="4-3-3"
+      readinessFactors={[
+        { label: 'Fitness Base',     score: 78 },
+        { label: 'Tactical Shape',   score: 71 },
+        { label: 'Set Pieces',       score: 64 },
+        { label: 'Squad Depth',      score: 76 },
+        { label: 'Match Sharpness',  score: 52 },
+        { label: 'Injury Status',    score: 84 },
+      ]}
+      overallReadiness={71}
+      checklistItems={[
+        'Morning fitness/GPS session',
+        'Technical drills',
+        'Tactical shape work',
+        'Set piece practice',
+        'Small-sided games',
+        'Recovery/cool down',
+        'Video analysis session',
+        'Nutrition & hydration logged',
+      ]}
+      gpsTarget={65}
+      fitnessTests={[
+        { label: 'Yo-Yo IR2',          target: '≥ 22.0 (st 6)' },
+        { label: '30-15 IFT',          target: '≥ 19.5 km/h' },
+        { label: 'Body fat (DEXA)',    target: '< 12% outfield' },
+        { label: 'Max HR (lab)',       target: 'Profiled day 1' },
+        { label: 'Lactate threshold',  target: '≥ 14 km/h @ 4 mmol' },
+      ]}
+      formationCheckItems={[
+        'Defensive shape drilled',
+        'Pressing triggers agreed',
+        'Attacking patterns rehearsed',
+        'Set piece routines locked',
+        'Transition play drilled',
+      ]}
+      defaultFriendlies={[
+        { opp: 'Ashbourne Athletic (Algarve)', score: '2-1', notes: 'Transitions tested in Algarve heat', result: 'W' },
+      ]}
+      friendliesTarget={5}
+      demoSummary={'Squad reporting back from break has shown strong baseline fitness — average Yo-Yo IR2 across the squad is 20.6, exceeding pre-season target. Tactical shape work in Algarve covered defensive triggers and pressing patterns; first friendly vs Ashbourne tested transitions. Focus shifts this week to set-piece drilling ahead of double-session block. Injury status: 2 minor flags (hamstring, soft tissue) — managed through reduced load, no major concerns.'}
+      demoHighlights={'1. Set piece readiness flagged amber (64/100) — drill defensive corners and free-kick routines this week.\n2. Match sharpness score 52/100 reflects only 1 friendly played — schedule double-session blocks before the Northgate fixture.\n3. Algarve camp completed clean — no injuries from contact load, GPS data clean across the squad.\n4. Crown Park Galaxy friendly (12 Jul) is the first real test of the 4-3-3 — expect press-resistance work to dominate the week before.\n5. Hartwell away (23 Jul) should be the dress rehearsal — full first XI minutes for the spine.'}
+      aiSummaryPrompt={(camp, daysTo, phase) => `You are advising a Championship football club Director of Football on pre-season camp progress. Opening fixture vs ${camp.opposition} in ${daysTo} days, currently in ${phase}, squad of ${camp.squad}, target formation ${camp.formation}. Write a 4-sentence summary covering: overall squad fitness from pre-season testing, tactical shape progress and friendly match observations, focus areas this week, and current injury concerns. Specific, coaching-focused, no intro.`}
+      aiHighlightsPrompt={(camp, daysTo, phase) => `Generate 5 numbered key highlights for a Championship football club's pre-season AI brief. Opening fixture vs ${camp.opposition} in ${daysTo} days, ${phase} phase, squad of ${camp.squad}, formation ${camp.formation}. Each line specific and coaching-focused. Cover: set piece readiness, match sharpness, fitness camp outcomes, friendly fixture build-up, dress-rehearsal plan. No intro.`}
+    >
     <div className="space-y-5">
       <Card>
         <SectionTitle>Pre-Season Friendlies</SectionTitle>
@@ -134,6 +187,7 @@ function PreSeasonTab() {
         <p className="text-[10px] mt-3" style={{ color: C.dim }}>See Tours sub-tab for any tour-style fixtures embedded in pre-season.</p>
       </Card>
     </div>
+    </PreSeasonCampMode>
   )
 }
 
