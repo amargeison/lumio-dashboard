@@ -7092,7 +7092,8 @@ h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.02em }
     'tours-camps':<CricketToursAndCampsView preSeasonContent={<CricketPreSeasonView session={session}/>} />,
     'matchday-ops':<ComingSoonView title="Matchday Operations" />,
     'net-facilities':<ComingSoonView title="Net Facilities" />,
-    'pre-season':<ComingSoonView title="Pre-Season Planning" />,
+    // 'pre-season' pages-map entry removed — sidebar entry was dropped in
+    // commit 6f612994; this orphan stub had no remaining nav trigger.
   };
 
   return(

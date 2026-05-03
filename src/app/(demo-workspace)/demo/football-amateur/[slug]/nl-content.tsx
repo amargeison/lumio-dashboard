@@ -19,7 +19,7 @@ import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
-import PreSeasonActivateGate from '@/components/sports/PreSeasonActivateGate'
+import PreSeasonCampMode from '@/components/sports/PreSeasonCampMode'
 // ─── NL v2 dashboard imports ─────────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -3902,7 +3902,7 @@ function NLAIHalftimeView() {
 
 function NLPreSeasonView() {
   return (
-    <PreSeasonActivateGate
+    <PreSeasonCampMode
       accent="#D97706"
       storageKey="lumio_nl_preseason"
       sportEmoji="⚽"
@@ -3954,7 +3954,7 @@ function NLPreSeasonView() {
         </div>
       </SectionCard>
     </div>
-    </PreSeasonActivateGate>
+    </PreSeasonCampMode>
   )
 }
 
