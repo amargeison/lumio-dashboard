@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plane, Activity, Calendar, DollarSign, Briefcase, Users } from 'lucide-react'
+import PreSeasonActivateGate from '@/components/sports/PreSeasonActivateGate'
 
 const C = {
   card: '#0D1017', cardAlt: '#111318', border: '#1F2937',
@@ -60,6 +61,14 @@ function PreSeasonTab() {
   ]
 
   return (
+    <PreSeasonActivateGate
+      accent="#003DA5"
+      storageKey="lumio_football_preseason"
+      sportEmoji="⚽"
+      sportLabel="pre-season"
+      defaultSquad="25"
+      defaultFormation="4-3-3"
+    >
     <div className="space-y-5">
       <Card>
         <SectionTitle>Pre-Season Friendlies</SectionTitle>
@@ -134,6 +143,7 @@ function PreSeasonTab() {
         <p className="text-[10px] mt-3" style={{ color: C.dim }}>See Tours sub-tab for any tour-style fixtures embedded in pre-season.</p>
       </Card>
     </div>
+    </PreSeasonActivateGate>
   )
 }
 
