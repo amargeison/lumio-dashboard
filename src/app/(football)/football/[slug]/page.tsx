@@ -7400,14 +7400,10 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
               width parity needs identical sidebar width + main padding to
               prevent "football looks bigger" perception. */}
           <main className="flex-1" style={{ padding: '24px 28px' }}>
-            {activeDept !== 'overview' && (
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-lg font-bold">{deptLabel}</h1>
-                  <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Club: <span style={{ color: '#F9FAFB' }}>{clubName}</span></p>
-                </div>
-              </div>
-            )}
+            {/* Parent-shell department header removed — each view component
+                renders its own (richer) heading, matching the Cricket and
+                Women's FC pattern. Dept context is also surfaced in the
+                sidebar (active item highlight + club badge). */}
 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}

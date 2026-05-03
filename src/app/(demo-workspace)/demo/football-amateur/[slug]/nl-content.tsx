@@ -4049,17 +4049,12 @@ function NLGPSHeatmapsView() {
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function NonLeagueContent({ activeDept, onToast, userName }: { activeDept: NLDeptId; onToast: (m: string) => void; userName?: string }) {
-  const deptLabel = NL_SIDEBAR_ITEMS.find(d => d.id === activeDept)?.label || 'Overview'
-
+  // Department header is owned by the parent shell
+  // (src/app/nonleague/[slug]/page.tsx) which renders <h1>{deptLabel}</h1>
+  // and uses session.clubName. Removed the duplicate render that was
+  // here so the same heading no longer appears twice on every dept page.
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-bold" style={{ color: TEXT }}>{deptLabel}</h1>
-          <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>Harfield FC · Northern Premier League West</p>
-        </div>
-      </div>
-
       {activeDept === 'nl-getting-started' && <NLGettingStartedView />}
       {activeDept === 'nl-overview' && <NLOverviewView onToast={onToast} userName={userName} />}
       {activeDept === 'nl-morningroundup' && <NLOverviewView onToast={onToast} userName={userName} />}
