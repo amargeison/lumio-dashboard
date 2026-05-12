@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Check, X } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 const CATEGORIES = [
   {
@@ -39,7 +39,7 @@ const CATEGORIES = [
   },
   {
     emoji: '📋', title: 'Ofsted Readiness', features: [
-      { name: 'Ofsted Inspection Mode', desc: 'The UK\'s only AI-powered Ofsted preparation tool. Activate inspection mode and Lumio surfaces every piece of evidence inspectors will ask for — attendance data, safeguarding records, curriculum intent, SEND provision — instantly. Readiness score, talking points generator, live observation log.' },
+      { name: 'Ofsted Inspection Mode', desc: 'An AI-powered Ofsted preparation tool. Activate inspection mode and Lumio surfaces the evidence inspectors typically ask for — attendance data, safeguarding records, curriculum intent, SEND provision. Readiness score, talking points generator, live observation log.' },
       { name: 'Evidence Pack', desc: 'One-click generation of attendance reports, safeguarding summaries, curriculum overviews, SEND reports and behaviour logs — all formatted for inspection.' },
       { name: 'Readiness Score', desc: 'Know your inspection readiness before the call comes. Real-time scoring across all 5 Ofsted judgement areas.' },
     ],
@@ -61,30 +61,12 @@ const CATEGORIES = [
   },
   {
     emoji: '🔐', title: 'SSO & Data', features: [
-      { name: 'Google Workspace SSO', desc: 'Sign in with Google — no new passwords for staff.' },
-      { name: 'Microsoft 365 SSO', desc: 'Sign in with Microsoft — works with every school\'s existing setup.' },
-      { name: 'MIS Sync', desc: 'Syncs with Arbor, SIMS and Bromcom — your existing data, no re-entry.' },
-      { name: 'UK Data Sovereignty', desc: 'All data stored in AWS eu-west-1 (London). GDPR compliant. DPA ready.' },
+      { name: 'Google Workspace SSO (roadmap)', desc: 'Sign in with Google — on the integration roadmap, planned for the first founding schools.' },
+      { name: 'Microsoft 365 SSO (roadmap)', desc: 'Sign in with Microsoft — on the integration roadmap, planned for the first founding schools.' },
+      { name: 'MIS Sync (roadmap)', desc: 'Arbor, SIMS and Bromcom rostering — on the roadmap, scoped with the first founding schools to use them.' },
+      { name: 'UK GDPR by design', desc: 'Lumio is built around UK GDPR. Data hosting and DPA terms confirmed with each founding school during onboarding.' },
     ],
   },
-]
-
-const COMPARISON = [
-  { feature: 'AI Voice Briefing', lumio: true, arbor: false, sims: false, bromcom: false },
-  { feature: 'Voice Commands', lumio: true, arbor: false, sims: false, bromcom: false },
-  { feature: 'Ofsted Inspection Mode', lumio: true, arbor: false, sims: false, bromcom: false },
-  { feature: 'SEND & EHCP Management', lumio: true, arbor: true, sims: true, bromcom: true },
-  { feature: 'Safeguarding & DSL', lumio: true, arbor: true, sims: true, bromcom: true },
-  { feature: 'Attendance Tracking', lumio: true, arbor: true, sims: true, bromcom: true },
-  { feature: 'Timetabling', lumio: true, arbor: 'partial', sims: true, bromcom: true },
-  { feature: 'Parent Portal', lumio: true, arbor: true, sims: true, bromcom: true },
-  { feature: 'MAT Dashboard', lumio: true, arbor: true, sims: false, bromcom: true },
-  { feature: 'Staff HR Management', lumio: true, arbor: false, sims: false, bromcom: false },
-  { feature: 'Finance Management', lumio: true, arbor: true, sims: false, bromcom: true },
-  { feature: 'MIS Sync', lumio: true, arbor: 'n/a', sims: 'n/a', bromcom: 'n/a' },
-  { feature: 'UK Data Sovereignty', lumio: true, arbor: true, sims: true, bromcom: true },
-  { feature: 'Flat pricing (not per user)', lumio: true, arbor: false, sims: false, bromcom: false },
-  { feature: '14-day free trial', lumio: true, arbor: false, sims: false, bromcom: false },
 ]
 
 const PLANS = [
@@ -92,13 +74,6 @@ const PLANS = [
   { name: 'Growth', price: '599', period: '/mo', desc: 'Up to 1,500 pupils', color: '#8B5CF6', featured: true },
   { name: 'Enterprise', price: '1,499', period: '/mo', desc: 'Unlimited pupils + MAT dashboard', color: '#F59E0B' },
 ]
-
-function CellIcon({ val }: { val: boolean | string }) {
-  if (val === true) return <Check size={14} style={{ color: '#0D9488' }} />
-  if (val === false) return <X size={14} style={{ color: '#EF4444' }} />
-  if (val === 'partial') return <span className="text-xs" style={{ color: '#F59E0B' }}>✱</span>
-  return <span className="text-xs" style={{ color: '#6B7280' }}>N/A</span>
-}
 
 export default function SchoolsFeaturesPage() {
   return (
@@ -114,7 +89,7 @@ export default function SchoolsFeaturesPage() {
             <span style={{ background: 'linear-gradient(135deg, #0D9488, #22D3EE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Nothing it doesn&apos;t.</span>
           </h1>
           <p className="text-lg mx-auto mb-10" style={{ color: '#9CA3AF', maxWidth: 640, lineHeight: 1.7 }}>
-            Lumio Schools replaces your MIS middleware, staff management tools, and morning admin — with one AI-powered platform built for UK schools.
+            One AI-powered platform built for UK schools — designed to replace middleware, staff management spreadsheets, and the morning admin shuffle.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={16} /></Link>
@@ -143,37 +118,6 @@ export default function SchoolsFeaturesPage() {
         </section>
       ))}
 
-      {/* Comparison Table */}
-      <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-3xl font-black text-center mb-4" style={{ color: '#F9FAFB' }}>How Lumio Compares</h2>
-          <p className="text-center text-base mb-12 mx-auto" style={{ color: '#9CA3AF', maxWidth: 500 }}>See how we stack up against the UK&apos;s most used school platforms.</p>
-          <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid #1F2937' }}>
-            <table className="w-full text-sm" style={{ minWidth: 600 }}>
-              <thead><tr style={{ borderBottom: '1px solid #1F2937' }}>
-                <th className="text-left px-4 py-3 font-semibold" style={{ color: '#9CA3AF', backgroundColor: '#111318' }}>Feature</th>
-                <th className="px-4 py-3 font-bold text-center" style={{ color: '#0D9488', backgroundColor: 'rgba(13,148,136,0.08)' }}>Lumio</th>
-                <th className="px-4 py-3 font-semibold text-center" style={{ color: '#6B7280', backgroundColor: '#111318' }}>Arbor</th>
-                <th className="px-4 py-3 font-semibold text-center" style={{ color: '#6B7280', backgroundColor: '#111318' }}>SIMS</th>
-                <th className="px-4 py-3 font-semibold text-center" style={{ color: '#6B7280', backgroundColor: '#111318' }}>Bromcom</th>
-              </tr></thead>
-              <tbody>
-                {COMPARISON.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: i < COMPARISON.length - 1 ? '1px solid #1F2937' : 'none' }}>
-                    <td className="px-4 py-3 font-medium" style={{ color: '#D1D5DB' }}>{r.feature}</td>
-                    <td className="px-4 py-3 text-center" style={{ backgroundColor: 'rgba(13,148,136,0.04)' }}><CellIcon val={r.lumio} /></td>
-                    <td className="px-4 py-3 text-center"><CellIcon val={r.arbor} /></td>
-                    <td className="px-4 py-3 text-center"><CellIcon val={r.sims} /></td>
-                    <td className="px-4 py-3 text-center"><CellIcon val={r.bromcom} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs mt-4 text-center" style={{ color: '#4B5563' }}>✱ Arbor timetabling requires TimeTabler add-on (third party)</p>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section style={{ borderTop: '1px solid #1F2937' }}>
         <div className="mx-auto max-w-5xl px-6 py-24">
@@ -197,7 +141,7 @@ export default function SchoolsFeaturesPage() {
       <section style={{ borderTop: '1px solid #1F2937' }}>
         <div className="mx-auto max-w-3xl px-6 py-24 text-center">
           <h2 className="text-3xl font-black mb-4" style={{ color: '#F9FAFB' }}>Ready to see Lumio in action?</h2>
-          <p className="text-base mb-10" style={{ color: '#9CA3AF' }}>Join schools across the UK who&apos;ve switched to Lumio.</p>
+          <p className="text-base mb-10" style={{ color: '#9CA3AF' }}>Be one of the first schools to use Lumio.</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/signup?portal=schools" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>Start free trial <ArrowRight size={18} /></Link>
             <Link href="https://calendly.com/lumiocms/lumio-schools" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold" style={{ color: '#F9FAFB', border: '1px solid #374151' }}>Book a demo</Link>

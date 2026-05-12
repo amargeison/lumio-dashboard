@@ -22,7 +22,7 @@ const MODULES = [
       { name: 'Governor Attendance Digest', detail: 'Termly summary formatted for governors — no manual compilation.' },
       { name: 'Year Group Trend Report',    detail: 'Monthly breakdown by year group with traffic light indicators.' },
     ],
-    integrations: ['SIMS', 'Arbor', 'Bromcom', 'iSAMS', 'ParentMail', 'Weduc'],
+    integrations: [],
   },
   {
     icon: Shield,
@@ -37,7 +37,7 @@ const MODULES = [
       { name: 'Ofsted Export Generator',         detail: 'Filtered audit trail in 30 seconds — ready for inspection.' },
       { name: 'Pattern Detection Alert',         detail: 'Flags repeated concern patterns for a pupil automatically.' },
     ],
-    integrations: ['MyConcern', 'CPOMS', 'Edukey', 'EHM / LCS', 'Microsoft 365', 'Google Workspace'],
+    integrations: [],
   },
   {
     icon: Activity,
@@ -52,7 +52,7 @@ const MODULES = [
       { name: 'Intervention Tracking',        detail: 'Logs and measures impact of every intervention.' },
       { name: 'SEN Register Summary',         detail: 'Live count and category breakdown, always up to date.' },
     ],
-    integrations: ['Provision Map', 'SIMS SEN', 'Arbor SEND', 'Edukey', 'EHM / LCS'],
+    integrations: [],
   },
   {
     icon: TrendingUp,
@@ -67,7 +67,7 @@ const MODULES = [
       { name: 'Ofsted Self-Evaluation Data',  detail: 'Pulls key data for SEF completion — attendance, outcomes, SEND, exclusions.' },
       { name: 'Pupil Premium Tracker',        detail: 'Monitors outcomes for PP cohort against non-PP peers.' },
     ],
-    integrations: ['FFT Aspire', 'SISRA', 'Target Tracker', 'SIMS Assessment', 'Microsoft 365'],
+    integrations: [],
   },
   {
     icon: Server,
@@ -82,7 +82,7 @@ const MODULES = [
       { name: 'Term Dates Calendar Sync',  detail: 'Auto-syncs key dates across all staff systems.' },
       { name: 'Premises Maintenance Log',  detail: 'Log and track facilities issues with escalation workflow.' },
     ],
-    integrations: ['Microsoft 365', 'Google Workspace', 'IRIS', 'PS Financials', 'Every'],
+    integrations: [],
   },
   {
     icon: Calendar,
@@ -97,25 +97,25 @@ const MODULES = [
       { name: 'Cover Spend Tracker',       detail: 'Running cost per agency, per term — SBM always has the number.' },
       { name: 'Agency Reliability Report', detail: 'Rates agencies by response time and fill rate over the year.' },
     ],
-    integrations: ['Supply Desk', 'Microsoft 365', 'SIMS', 'Every', 'Google Workspace'],
+    integrations: [],
   },
 ]
 
 const HOW_IT_WORKS = [
   {
     step: '01',
-    title: 'Connect your MIS',
-    desc: 'Authorise SIMS, Arbor, Bromcom, or iSAMS in a few clicks. Live two-way sync from day one. No developer, no spreadsheet export.',
+    title: 'Scope your MIS sync',
+    desc: 'Tell us which MIS you use — Arbor, SIMS, Bromcom or another. MIS sync is on the integration roadmap and we will build the connector that fits your school first.',
   },
   {
     step: '02',
     title: 'Activate your workflows',
-    desc: 'Browse 12 pre-built school workflows — from absence alerts to governor reports. Each one shows exactly what it does before you switch it on.',
+    desc: 'Browse 12 workflow categories — from absence alerts to governor reports. Each one shows exactly what it does before you switch it on.',
   },
   {
     step: '03',
-    title: 'Save hours every week',
-    desc: 'Lumio runs in the background. Your team stops chasing, compiling, and re-entering. You get the time back.',
+    title: 'Get hours back every week',
+    desc: 'Lumio is designed to run in the background — automating the chasing, compiling and re-entering that eats your team\'s time.',
   },
 ]
 
@@ -133,24 +133,6 @@ const AI_FEATURES = [
   { label: 'SLT Suite',               desc: 'Executive dashboard with attendance, safeguarding, SEND, staff, finance, school improvement, and governance — all in 8 tabs.' },
 ]
 
-const MIS_INTEGRATIONS = [
-  { name: 'SIMS',             category: 'MIS' },
-  { name: 'Arbor',            category: 'MIS' },
-  { name: 'Bromcom',          category: 'MIS' },
-  { name: 'iSAMS',            category: 'MIS' },
-  { name: 'ScholarPack',      category: 'MIS' },
-  { name: 'MyConcern',        category: 'Safeguarding' },
-  { name: 'CPOMS',            category: 'Safeguarding' },
-  { name: 'ParentMail',       category: 'Comms' },
-  { name: 'Weduc',            category: 'Comms' },
-  { name: 'Microsoft 365',    category: 'Productivity' },
-  { name: 'Google Workspace', category: 'Productivity' },
-  { name: 'IRIS',             category: 'HR / Finance' },
-  { name: 'PS Financials',    category: 'Finance' },
-  { name: 'Supply Desk',      category: 'Cover' },
-  { name: 'FFT Aspire',       category: 'Assessment' },
-  { name: 'SISRA',            category: 'Assessment' },
-]
 
 export default function SchoolsProductPage() {
   const [activeMod, setActiveMod] = useState(0)
@@ -278,16 +260,11 @@ export default function SchoolsProductPage() {
           <div className="flex flex-col gap-6">
             <div className="rounded-xl p-7" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
-                Key integrations for {mod.label}
+                Integrations for {mod.label}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {mod.integrations.map(int => (
-                  <span key={int} className="text-sm px-3 py-1.5 rounded-lg font-medium"
-                    style={{ backgroundColor: '#111318', color: '#9CA3AF', border: '1px solid #1F2937' }}>
-                    {int}
-                  </span>
-                ))}
-              </div>
+              <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
+                Integrations are on our roadmap — see <Link href="/schools/integrations" className="font-semibold" style={{ color: '#0D9488' }}>/schools/integrations</Link> for the first wave and what we are considering next.
+              </p>
             </div>
 
             <div className="rounded-xl p-7" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
@@ -345,20 +322,20 @@ export default function SchoolsProductPage() {
               {
                 icon: Activity,
                 color: '#0D9488',
-                title: 'Real-time MIS connection',
-                desc: 'Your dashboard pulls live data from SIMS, Arbor, or Bromcom — attendance, SEND register, exclusions, staffing. No exports. No manual updates. Always current.',
+                title: 'Live MIS connection (roadmap)',
+                desc: 'Designed to pull live data from Arbor, SIMS or Bromcom — attendance, SEND register, exclusions, staffing. MIS sync is on the integration roadmap and will ship with the first founding schools.',
               },
               {
                 icon: FileDown,
                 color: '#6C3FC5',
                 title: 'One-click Ofsted packs',
-                desc: 'Every dashboard has a built-in Export PDF button. The evidence pack that used to take three days to compile is generated in seconds — Ofsted-formatted, fully up to date.',
+                desc: 'Every dashboard has a built-in Export PDF button. The evidence pack that used to take days to compile is generated in seconds — Ofsted-formatted.',
               },
               {
                 icon: Shield,
                 color: '#0D9488',
                 title: 'Role-gated secure access',
-                desc: 'Governors see governance data. Trust executives see the MAT view. LA contacts see only what they need. Fully isolated, fully GDPR-compliant.',
+                desc: 'Governors see governance data. Trust executives see the MAT view. LA contacts see only what they need. Built around UK GDPR.',
               },
               {
                 icon: Sliders,
@@ -392,7 +369,7 @@ export default function SchoolsProductPage() {
               <ul className="space-y-3">
                 {[
                   'Custom design matched to your school or trust brand',
-                  'Live MIS data connections — SIMS, Arbor, Bromcom, iSAMS',
+                  'MIS data connections on the integration roadmap — Arbor, SIMS, Bromcom first',
                   'Tabbed navigation — Attendance, Safeguarding, SEND, Finance, Staffing',
                   'Interactive charts — attendance trends, cohort comparisons, term-by-term',
                   'AI-generated key highlights updated each reporting period',
@@ -533,7 +510,7 @@ export default function SchoolsProductPage() {
         <div className="text-center mb-16">
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Workflow Library</p>
           <h2 className="text-3xl md:text-5xl font-bold mb-5">
-            12 workflows. 6 modules.<br />
+            12 workflow categories. 50+ automations.<br />
             <span style={{ background: 'linear-gradient(135deg, #0D9488, #6C3FC5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Every part of your school, automated.
             </span>
@@ -544,8 +521,8 @@ export default function SchoolsProductPage() {
           <div className="inline-grid grid-cols-3 gap-px rounded-xl overflow-hidden"
             style={{ border: '1px solid rgba(13,148,136,0.3)', backgroundColor: 'rgba(13,148,136,0.15)' }}>
             {[
-              { value: '12', label: 'Workflows' },
-              { value: '6',  label: 'Modules' },
+              { value: '12', label: 'Workflow categories' },
+              { value: '50+', label: 'Pre-built automations' },
               { value: '∞',  label: 'Custom workflows' },
             ].map(s => (
               <div key={s.label} className="px-10 py-6 text-center" style={{ backgroundColor: '#0D0E16' }}>
@@ -574,7 +551,7 @@ export default function SchoolsProductPage() {
                 style={{ backgroundColor: '#0D0E16', border: `1px solid ${d.color}33` }}>
                 <div className="text-2xl mb-1.5">{d.emoji}</div>
                 <div className="text-xs font-semibold leading-snug mb-1" style={{ color: '#D1D5DB' }}>{d.name}</div>
-                <div className="text-xs font-bold" style={{ color: d.color }}>{d.count} workflows</div>
+                <div className="text-xs font-bold" style={{ color: d.color }}>{d.count} automations</div>
               </div>
             ))}
           </div>
@@ -591,31 +568,24 @@ export default function SchoolsProductPage() {
           <Link href="/schools/workflows"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-sm font-semibold"
             style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-            See all 12 workflows <ArrowRight size={15} />
+            See all 12 workflow categories <ArrowRight size={15} />
           </Link>
         </div>
       </section>
 
       {/* Integrations */}
       <section style={{ backgroundColor: '#0A0B12', borderTop: '1px solid #1F2937', borderBottom: '1px solid #1F2937' }}>
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Integrations</p>
-            <h2 className="text-3xl font-bold">Works with the tools your school already uses</h2>
-            <p className="mt-4 text-base" style={{ color: '#6B7280' }}>
-              Native integrations with every major MIS, safeguarding platform, and comms tool. Connects in minutes.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
-            {MIS_INTEGRATIONS.map(int => (
-              <div key={int.name} className="rounded-xl px-3 py-4 text-center"
-                style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
-                <p className="text-sm font-medium mb-1" style={{ color: '#D1D5DB' }}>{int.name}</p>
-                <p className="text-xs" style={{ color: '#4B5563' }}>{int.category}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-sm mt-6" style={{ color: '#4B5563' }}>+ more MIS and edtech integrations added monthly</p>
+        <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#4B5563' }}>Integrations</p>
+          <h2 className="text-3xl font-bold mb-4">Integration roadmap</h2>
+          <p className="mt-4 text-base mb-8" style={{ color: '#6B7280' }}>
+            Lumio Schools is pre-launch. The first integrations to ship are MIS sync (Arbor / SIMS / Bromcom), SSO (Google Workspace / Microsoft 365) and safeguarding (MyConcern / CPOMS). The full plan lives on the integrations page.
+          </p>
+          <Link href="/schools/integrations"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+            See the integration roadmap <ArrowRight size={15} />
+          </Link>
         </div>
       </section>
 
@@ -627,12 +597,12 @@ export default function SchoolsProductPage() {
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { emoji: '🔒', title: 'UK data centres',      desc: 'All pupil and staff data is processed and stored in the UK. GDPR-compliant by design. Data processing agreements provided.' },
-            { emoji: '🛡️', title: 'KCSiE aligned',        desc: 'Safeguarding workflows are built to align with Keeping Children Safe in Education. Updated annually with statutory guidance.' },
-            { emoji: '🏫', title: 'School data expertise', desc: 'We understand SIMS exports, SEND registers, safeguarding records, and governor reporting — built for schools, not adapted from business software.' },
-            { emoji: '📋', title: 'Full audit trail',      desc: 'Every workflow run, every AI action, every data access — logged and searchable. Ofsted-ready evidence at any time.' },
+            { emoji: '🔒', title: 'UK GDPR by design',     desc: 'Lumio is built around UK GDPR from day one. Data hosting and DPA terms are confirmed with each founding school during onboarding.' },
+            { emoji: '🛡️', title: 'KCSiE-informed',        desc: 'Safeguarding workflows are built around the latest Keeping Children Safe in Education guidance.' },
+            { emoji: '🏫', title: 'School data first',     desc: 'Built for schools — SEND registers, safeguarding records, governor reporting and MIS rostering — not adapted from business software.' },
+            { emoji: '📋', title: 'Full audit trail',      desc: 'Every workflow run, every AI action, every data access — logged and searchable. Designed to be Ofsted-ready.' },
             { emoji: '🔑', title: 'Role-based access',     desc: 'SENCO sees SEND data. DSL sees safeguarding. SBM sees finance. Every user sees only what they need.' },
-            { emoji: '⚡', title: '99.9% uptime SLA',      desc: 'School-hours reliability guaranteed. Status page publicly available. Critical workflows are monitored 24/7.' },
+            { emoji: '🤝', title: 'Direct from the founder', desc: 'Lumio is built solo today. Founding schools deal with the person making the decisions, not a sales funnel.' },
           ].map(item => (
             <div key={item.title} className="rounded-xl p-6" style={{ backgroundColor: '#0D0E16', border: '1px solid #1F2937' }}>
               <div className="text-2xl mb-3">{item.emoji}</div>

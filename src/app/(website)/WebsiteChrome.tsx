@@ -20,19 +20,17 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Darts',      href: '/darts' },
   { label: 'Pricing',    href: '/pricing-sports' },
   { label: 'About',      href: '/about' },
-  { label: 'Blog',       href: '/blog' },
 ]
 
-// Unified lumiocms.com nav while Business + Schools are behind coming-soon
-// waitlists. Lumio Business / Lumio Schools both point at their waitlist
-// pages; Lumio Sports opens the separate sports site in a new tab; About is
-// the company-story page. Blog and deeper product nav intentionally excluded
-// so there is a single path per product.
 const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: boolean }[] = [
-  { label: 'Lumio Business', href: '/coming-soon/business' },
-  { label: 'Lumio Schools',  href: '/coming-soon/schools'  },
-  { label: 'Lumio Sports',   href: 'https://lumiosports.com', external: true },
-  { label: 'About',          href: '/about' },
+  { label: 'Product',      href: '/product' },
+  { label: 'Workflows',    href: '/product#workflows' },
+  { label: 'Schools',      href: '/schools' },
+  { label: 'CRM',          href: '/lumio-crm' },
+  { label: 'Integrations', href: '/product#integrations' },
+  { label: 'Pricing',      href: '/pricing' },
+  { label: 'About',        href: '/about' },
+  { label: 'Lumio Sports', href: 'https://lumiosports.com', external: true },
 ]
 
 // `initial` seeds useState so the server render matches the actual host — no
@@ -48,11 +46,16 @@ function useIsSports(initial: boolean = false) {
   return isSports
 }
 
+const SCHOOLS_EXTRA_LINKS = [
+  { label: 'Features', href: '/schools/features' },
+  { label: 'SSO & Rostering', href: '/schools/sso' },
+  { label: 'Integrations', href: '/schools/integrations' },
+]
+
 const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
   { label: 'Pricing',  href: '/pricing'  },
   { label: 'About',    href: '/about'    },
-  { label: 'Blog',     href: '/blog'     },
   { label: 'Docs',     href: '#'         },
   { label: 'Status',   href: '#'         },
 ]
@@ -90,17 +93,34 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
     setBetaBannerVisible(false)
   }
 
-  // Lumio Business + Schools are behind coming-soon waitlists on lumiocms.com,
-  // so BUSINESS_NAV no longer contains Schools / CRM / Product / Pricing. The
-  // old schools sub-nav expansion and href-rewrite chain is now dead weight —
-  // SPORTS_NAV drives everything on lumiosports.com, and the isFootball filter
-  // below is kept as a guard even though the labels it targets are already
-  // gone from BUSINESS_NAV.
   const NAV_LINKS = isSports ? SPORTS_NAV : BUSINESS_NAV
-  const navLinks = NAV_LINKS.filter(l => {
-    if (isFootball && (l.label === 'Schools' || l.label === 'CRM' || l.label === 'SSO & Rostering')) return false
-    return true
-  })
+  const baseLinks = isSchools && NAV_LINKS.some(l => l.label === 'Schools')
+    ? [...NAV_LINKS.slice(0, NAV_LINKS.findIndex(l => l.label === 'Schools') + 1), ...SCHOOLS_EXTRA_LINKS, ...NAV_LINKS.slice(NAV_LINKS.findIndex(l => l.label === 'Schools') + 1)]
+    : NAV_LINKS
+  const navLinks = baseLinks
+    .filter(l => {
+      if (isSchools && (l.label === 'CRM' || l.label === 'Lumio Sports')) return false
+      // SCHOOLS NAV — Integrations entry deduplicated. Only one rendering
+      // path shows "Integrations" on schools pages.
+      if (isSchools && l.href === '/product#integrations') return false
+      if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
+      return true
+    })
+    .filter(l => {
+      // Remove SSO & Rostering from football pages (it's a schools-only feature)
+      if (isFootball && l.label === 'SSO & Rostering') return false
+      return true
+    })
+    .map(l => {
+      if (isSchools) {
+        if (l.label === 'Product')      return { ...l, href: '/schools/product' }
+        if (l.label === 'Pricing')      return { ...l, href: '/schools/pricing' }
+        if (l.label === 'Workflows')    return { ...l, href: '/schools/workflows' }
+        if (l.label === 'Integrations') return { ...l, href: '/schools/integrations' }
+        if (l.label === 'About')        return { ...l, href: '/schools/about' }
+      }
+      return l
+    })
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8)
@@ -357,7 +377,6 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
   // exactly as before.
   const BUSINESS_FOOTER_COL_A: { label: string; href: string; external?: boolean }[] = [
     { label: 'About',                href: '/about' },
-    { label: 'Blog',                 href: '/blog'  },
     { label: 'Lumio Sports',         href: 'https://lumiosports.com', external: true },
   ]
   const BUSINESS_FOOTER_COL_B: { label: string; href: string }[] = [

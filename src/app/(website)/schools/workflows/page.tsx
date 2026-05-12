@@ -1,10 +1,10 @@
-export const metadata = { title: 'Lumio Schools — 12 Workflows' }
+export const metadata = { title: 'Lumio Schools — Workflow Library' }
 
 const CATEGORIES = [
   {
     icon: '📵',
     title: 'Attendance & Absence',
-    count: 2,
+    count: 9,
     workflows: [
       { name: 'Morning register trigger',     desc: 'Fires the moment a pupil is marked absent' },
       { name: 'Automated parent SMS',          desc: 'Sent within 60 seconds of absence' },
@@ -20,7 +20,7 @@ const CATEGORIES = [
   {
     icon: '🛡',
     title: 'Safeguarding',
-    count: 1,
+    count: 9,
     workflows: [
       { name: 'Concern log submission',       desc: '45-second logging from any device' },
       { name: 'DSL instant notification',     desc: 'Push, email and in-app alert on every concern' },
@@ -36,7 +36,7 @@ const CATEGORIES = [
   {
     icon: '📋',
     title: 'Supply Cover',
-    count: 1,
+    count: 6,
     workflows: [
       { name: 'Staff absence trigger',       desc: 'Cover process starts the moment absence is logged' },
       { name: 'Agency contact sequence',     desc: 'Contacts preferred agencies in order' },
@@ -49,7 +49,7 @@ const CATEGORIES = [
   {
     icon: '📊',
     title: 'Reporting & Insights',
-    count: 2,
+    count: 9,
     workflows: [
       { name: 'AI Morning Briefing',          desc: 'Daily school summary at 7:00am' },
       { name: 'Weekly headteacher digest',    desc: 'Key metrics every Monday' },
@@ -65,7 +65,7 @@ const CATEGORIES = [
   {
     icon: '🎓',
     title: 'SEND & Pupil Support',
-    count: 1,
+    count: 6,
     workflows: [
       { name: 'SEND pupil profile',           desc: 'Centralised record for each SEND pupil' },
       { name: 'Graduated approach tracker',   desc: 'Assess, Plan, Do, Review cycle' },
@@ -78,7 +78,7 @@ const CATEGORIES = [
   {
     icon: '🏫',
     title: 'School Operations',
-    count: 5,
+    count: 6,
     workflows: [
       { name: 'Staff CPD tracker',            desc: 'Logs all training with expiry reminders' },
       { name: 'Policy review reminder',       desc: 'Alerts when a school policy is due for review' },
@@ -101,18 +101,18 @@ export default function SchoolsWorkflowsPage() {
             Platform Workflows
           </p>
           <h1 className="font-black mb-5" style={{ color: '#F9FAFB', fontSize: 'clamp(2rem, 4vw, 3.25rem)', lineHeight: 1.05 }}>
-            12 workflows.<br /><em style={{ color: '#C8960C' }}>One platform.</em>
+            12 workflow categories.<br /><em style={{ color: '#C8960C' }}>50+ pre-built automations.</em>
           </h1>
           <p className="text-lg mx-auto max-w-2xl leading-relaxed" style={{ color: '#9CA3AF' }}>
-            Every school process, automated. From attendance to safeguarding, supply cover to governor reports — Lumio Schools runs the workflows that used to eat your day.
+            Every school process, automated. From attendance to safeguarding, supply cover to governor reports — Lumio Schools runs the automations that used to eat your day.
           </p>
         </div>
 
         {/* Stats */}
         <div className="flex justify-center gap-16 mb-16">
           {[
-            { num: '12', label: 'Pre-built workflows' },
-            { num: '6',    label: 'Core modules' },
+            { num: '12', label: 'Workflow categories' },
+            { num: '50+', label: 'Pre-built automations' },
             { num: '∞',   label: 'Custom workflows' },
           ].map(s => (
             <div key={s.label} className="text-center">
@@ -134,7 +134,7 @@ export default function SchoolsWorkflowsPage() {
                 <h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{cat.title}</h2>
                 <span className="ml-auto text-xs font-bold px-3 py-1 rounded-full"
                   style={{ background: '#1B2E52', border: '1px solid #1F3460', color: '#C8960C', letterSpacing: '0.08em' }}>
-                  {cat.count} workflows
+                  {cat.count} automations
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

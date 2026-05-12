@@ -26,7 +26,7 @@ const FEATURES = [
   { icon: '📣', title: 'Parent & Governor Comms',          desc: 'Bulk messaging, newsletters, governor reports — done in minutes.' },
   { icon: '📚', title: 'Curriculum Planning',              desc: 'Long-term, medium-term and weekly planning, linked to assessment.' },
   { icon: '💷', title: 'Finance & Budgeting',              desc: 'Budget tracking, invoices, supplier payments, GAG reconciliation.' },
-  { icon: '🔄', title: 'MIS Integration',                   desc: 'Two-way sync with Arbor, SIMS and Bromcom. No double-entry.' },
+  { icon: '🔄', title: 'MIS Integration (roadmap)',          desc: 'Two-way sync with Arbor, SIMS and Bromcom is on the integration roadmap. Scoped with the first founding schools.' },
   { icon: '✅', title: 'Ofsted Readiness',                  desc: 'Live self-evaluation, evidence locker, deep-dive prep in one click.' },
   { icon: '🎙️', title: 'AI Morning Briefing',               desc: 'Voice-powered morning roundup for headteachers — 60 seconds flat.' },
 ]
@@ -107,7 +107,7 @@ export default function SchoolsAboutPage() {
               </div>
             ))}
           </div>
-          <p className="text-center text-xs mt-8" style={{ color: '#6B7280' }}>MIS integrations: Arbor · SIMS · Bromcom</p>
+          <p className="text-center text-xs mt-8" style={{ color: '#6B7280' }}>MIS integrations on the roadmap: Arbor · SIMS · Bromcom — see <Link href="/schools/integrations" className="underline">/schools/integrations</Link></p>
         </div>
       </section>
 
