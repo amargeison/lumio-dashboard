@@ -71,69 +71,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ── lumiocms.com takedown ───────────────────────────────────────────
-  // Business + schools sit behind coming-soon waitlists until launch.
-  // Gated purely on host: localhost and lumiosports.com are never affected
-  // because they never carry a `lumiocms.com` Host header. NODE_ENV is
-  // intentionally NOT checked here — Edge middleware env-var evaluation in
-  // Next 16 standalone proved unreliable for this guard, and the hostname
-  // check alone is tight enough (lumiocms.com only resolves in production).
-  // /demo/** is exempted above; /api, /about, /blog, /privacy, /cookies,
-  // /terms, /contact and /coming-soon remain live.
-  {
-    const cmsHost = (request.headers.get('host') || '').replace(/:\d+$/, '').toLowerCase()
-    const isLumioCms = cmsHost === 'lumiocms.com' || cmsHost === 'www.lumiocms.com'
-    if (isLumioCms) {
-      // Paths that render their real page on lumiocms.com. /home is the
-      // restored cleaned homepage; /coming-soon holds the waitlist pages;
-      // /demo keeps founder trial slugs reachable; the rest are factual /
-      // legal / blog pages.
-      const ALWAYS_LIVE_PATHS = [
-        '/home',
-        '/coming-soon',
-        '/about',
-        '/contact',
-        '/privacy',
-        '/cookies',
-        '/terms',
-        '/blog',
-        '/demo',
-        '/api',
-        '/_next',
-        '/favicon',
-        // Partner assets (standalone HTML download, e.g. RGR dashboard
-        // template served from /public/partners/). Without this, the
-        // coming-soon rewrite below swallows .html requests and Next
-        // returns the coming-soon page instead of the static asset.
-        '/partners',
-      ]
-      const STATIC_FILE_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|css|js|woff2?|ttf|map)$/i
-
-      // Root → cleaned homepage. Must intercept here before src/app/page.tsx
-      // redirects / to /home (which would also work, but rewriting keeps the
-      // URL as lumiocms.com/ for the visitor).
-      if (pathname === '/') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/home'
-        return NextResponse.rewrite(url)
-      }
-
-      const isAlwaysLive = ALWAYS_LIVE_PATHS.some(
-        p => pathname === p || pathname.startsWith(p + '/'),
-      )
-      if (!STATIC_FILE_REGEX.test(pathname) && !isAlwaysLive) {
-        // Everything still gated: /schools → schools coming-soon, everything
-        // else (/lumio-crm, /product, /pricing, /signup, …) → business
-        // coming-soon.
-        const isSchoolsPath = pathname.startsWith('/schools')
-        const target = isSchoolsPath ? '/coming-soon/schools' : '/coming-soon/business'
-        const url = request.nextUrl.clone()
-        url.pathname = target
-        return NextResponse.rewrite(url)
-      }
-    }
-  }
-
   // ── Dev PIN gate (non-production only) ────────────────────────────────
   const hostname = request.headers.get('host')?.replace(/:\d+$/, '') || ''
   const isProductionDomain =
