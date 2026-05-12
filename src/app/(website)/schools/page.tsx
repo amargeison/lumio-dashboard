@@ -311,7 +311,7 @@ function HeroSection() {
               className="font-black leading-tight mb-5"
               style={{ color: '#F9FAFB', fontSize: 'clamp(1.875rem, 4vw, 3rem)' }}
             >
-              The UK&apos;s first AI-native school platform
+              An AI-native school platform, built for the UK
             </h1>
 
             <p className="text-xl leading-relaxed mb-8" style={{ color: '#9CA3AF' }}>
@@ -338,11 +338,8 @@ function HeroSection() {
               </button>
             </div>
 
-            <p className="text-sm mb-2" style={{ color: '#6B7280' }}>
-              ✓ Sign in with Google Workspace &nbsp;&nbsp; ✓ Sign in with Microsoft 365
-            </p>
             <p className="text-sm" style={{ color: '#6B7280' }}>
-              ✓ 14-day free trial &nbsp;·&nbsp; ✓ No credit card &nbsp;·&nbsp; ✓ GDPR compliant &nbsp;·&nbsp; ✓ UK data centres
+              Pre-launch · Founding schools shape what we build · 14-day free trial · No credit card
             </p>
           </div>
 
@@ -474,14 +471,12 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mt-16 pt-12" style={{ borderTop: '1px solid #1F2937' }}>
+        {/* Stats row — designed-for, not measured. Pre-launch product. */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-12" style={{ borderTop: '1px solid #1F2937' }}>
           {[
-            { number: '8+ Hours', label: 'Saved per staff member, per week' },
             { number: '20 Roles', label: 'From admin to trust CEO, all covered' },
-            { number: '2 Platforms', label: 'Google Workspace & Microsoft 365 SSO' },
-            { number: '3 MIS Systems', label: 'Arbor, SIMS & Bromcom rostering' },
-            { number: '2026 Ready', label: 'SEND White Paper & Ofsted 2025 compliant' },
+            { number: 'SSO + MIS', label: 'Google, Microsoft and UK MIS sync on the roadmap' },
+            { number: '2026 Ready', label: 'Built around the SEND White Paper and Ofsted 2025' },
             { number: '8am–6pm', label: 'Full wraparound childcare management' },
           ].map(stat => (
             <div key={stat.label} className="text-center">
@@ -538,14 +533,11 @@ function FeaturesSection() {
             ))}
           </div>
 
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <p className="text-sm italic" style={{ color: '#6B7280' }}>
-              &ldquo;Headteachers report saving 3–4 hours per week on data gathering and report preparation alone.&rdquo;
-            </p>
+          <div className="flex items-center justify-end flex-wrap gap-4">
             <Link href="/demo/schools/oakridge-primary/insights"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm"
               style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-              See it live <ArrowRight size={14} />
+              See the demo <ArrowRight size={14} />
             </Link>
           </div>
         </div>
@@ -558,9 +550,9 @@ function FeaturesSection() {
             <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl mb-5" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
               <Heart size={20} style={{ color: '#EF4444' }} />
             </div>
-            <h3 className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>The Most Comprehensive SEND & Safeguarding Tool in Schools</h3>
+            <h3 className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>SEND & Safeguarding, built around the 2026 White Paper</h3>
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>
-              Built around the 2026 SEND White Paper and KCSIE 2024 — Lumio is the only schools platform that turns the most complex compliance obligations into simple, actionable dashboards. From the 20-week EHCP statutory deadline to online safety filtering compliance — nothing falls through the cracks.
+              Built around the 2026 SEND White Paper and KCSiE — turning complex compliance obligations into actionable dashboards. From the 20-week EHCP statutory deadline to online safety filtering — nothing falls through the cracks.
             </p>
             <div className="flex flex-col gap-2 mb-6 flex-1">
               {[
@@ -579,7 +571,7 @@ function FeaturesSection() {
             </div>
             <div className="rounded-xl p-4 mt-auto" style={{ backgroundColor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <p className="text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>
-                <span className="font-bold">1 in 5 pupils in England has SEND.</span> 74% of SENCOs say they don&apos;t have enough time. Lumio gives it back.
+                SEND provision is one of the highest-pressure jobs in a school. Lumio is designed to give SENCOs the structure and dashboards to manage it without losing evenings to spreadsheets.
               </p>
             </div>
           </div>
@@ -608,8 +600,8 @@ function FeaturesSection() {
                 </div>
               ))}
             </div>
-            <p className="text-xs italic mt-auto" style={{ color: '#6B7280' }}>
-              &ldquo;No more emailing the SENCO for a pupil&apos;s strategies before a lesson. No more searching three systems for emergency contacts.&rdquo;
+            <p className="text-xs mt-auto" style={{ color: '#6B7280' }}>
+              No more emailing the SENCO for a pupil&apos;s strategies before a lesson. No more searching three systems for emergency contacts.
             </p>
           </div>
 
@@ -649,9 +641,9 @@ function FeaturesSection() {
             <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl mb-5" style={{ backgroundColor: 'rgba(13,148,136,0.12)' }}>
               <Building2 size={20} style={{ color: '#0D9488' }} />
             </div>
-            <h3 className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>Cut Admin Time in Half. Give Your Office Team Their Day Back.</h3>
+            <h3 className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>Give your office team their day back.</h3>
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#9CA3AF' }}>
-              The average school office team spends 40% of their day on tasks that could be automated. Lumio handles the follow-up, the chasing, the letters and the data — so your team can focus on the people in front of them.
+              School office teams spend hours every day on follow-ups, chasing, letters and data entry. Lumio is designed to automate the routine admin so your team can focus on the people in front of them.
             </p>
             <div className="flex flex-col gap-2 flex-1">
               {[
@@ -760,7 +752,7 @@ function EarlyAccessSection() {
         >
           Apply for early access <ArrowRight size={18} />
         </Link>
-        <p className="text-xs mt-4" style={{ color: '#6B7280' }}>Only 5 school spots remaining</p>
+        <p className="text-xs mt-4" style={{ color: '#6B7280' }}>Pre-launch · Founding schools shape what we build</p>
       </div>
     </section>
   )
@@ -909,13 +901,12 @@ function OfstedSection() {
             <div>
               <p className="text-xl font-black mb-3" style={{ color: '#F9FAFB' }}>The Inspection Window Is 48 Hours</p>
               <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>
-                Ofsted gives schools just one working day&apos;s notice. That&apos;s not enough time to gather evidence, brief staff, pull attendance data, compile safeguarding records and prepare your SEF. Unless it&apos;s all already live in Lumio. Schools using Lumio report spending less than 2 hours preparing for inspection — because every piece of evidence inspectors ask for is already there, current, and a click away.
+                Ofsted gives schools just one working day&apos;s notice. That is not enough time to gather evidence, brief staff, pull attendance data, compile safeguarding records and prepare your SEF. Lumio is designed to keep the evidence inspectors typically ask for live and current, so the call doesn&apos;t trigger a scramble.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {[
                 { value: '47', label: 'Point inspection readiness checklist' },
-                { value: '2 hours', label: 'Average Lumio school prep time vs 2+ days' },
                 { value: '6/6', label: 'Evaluation areas covered by Lumio evidence tools' },
               ].map(s => (
                 <div key={s.label} className="text-center rounded-xl p-4" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
@@ -952,16 +943,16 @@ function FAQSection() {
       a: 'No — Lumio sits alongside your MIS as the workflow and automation layer. It automates the processes around your data, not the data itself.',
     },
     {
-      q: 'Is Lumio GDPR compliant?',
-      a: 'Yes. All data is stored in UK data centres, processed under GDPR, and we never share your data with third parties.',
+      q: 'How are you handling data and GDPR?',
+      a: 'Lumio is built around UK GDPR from day one. Data hosting, processing terms and DPA documentation will be confirmed as part of founding-school onboarding so the agreement matches the data each school is actually putting in.',
     },
     {
       q: 'How quickly are you updating for SEND White Paper and Ofsted 2025?',
-      a: 'We track every consultation and statutory change in real time. SEND White Paper Phase 1 features are already live. Ofsted 2025 report card readiness tools are in the app now.',
+      a: 'Both are part of the core design baseline — Lumio is being built around the 2026 SEND White Paper and the 2025 Ofsted inspection framework, not retrofitted to them.',
     },
     {
       q: 'How long does setup take?',
-      a: 'Most schools are up and running within a week. We provide guided onboarding and all workflows are pre-built — no technical knowledge needed.',
+      a: 'Onboarding is designed to take under a week with guided setup. Founding schools will be supported directly by the team that builds the product.',
     },
     {
       q: 'Can we add more staff users?',
@@ -1019,7 +1010,7 @@ function FinalCTASection() {
           Ready to See What Lumio Can Do for Your School?
         </h2>
         <p className="text-lg mb-4 max-w-2xl mx-auto" style={{ color: '#9CA3AF' }}>
-          Join schools across England using Lumio to save time, improve outcomes and stay ahead of compliance. Free 14-day trial. No credit card. Full demo data included — see every feature before you commit.
+          Be one of the first schools to use Lumio. Free 14-day trial. No credit card. Full demo data included — see every feature before you commit.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap mb-6">
           <Link
@@ -1039,11 +1030,8 @@ function FinalCTASection() {
             Book a Demo
           </a>
         </div>
-        <p className="text-sm mb-2" style={{ color: '#6B7280' }}>
-          ✓ Sign in with Google Workspace &nbsp;&nbsp; ✓ Sign in with Microsoft 365
-        </p>
         <p className="text-xs" style={{ color: '#4B5563' }}>
-          Used by primary schools, secondary schools and multi-academy trusts · GDPR compliant · UK-based support
+          Built for primary schools, secondary schools and multi-academy trusts · UK-based founder, UK-based support
         </p>
       </div>
     </section>
@@ -1054,21 +1042,20 @@ function FinalCTASection() {
 
 function SchoolsFooter() {
   const productLinks = [
-    { label: 'Features', href: '#' },
-    { label: 'Insights', href: '#' },
-    { label: 'SEND & DSL', href: '#' },
-    { label: 'Pricing', href: '/pricing' },
+    { label: 'Features', href: '/schools/features' },
+    { label: 'Workflows', href: '/schools/workflows' },
+    { label: 'Integrations', href: '/schools/integrations' },
+    { label: 'Pricing', href: '/schools/pricing' },
   ]
   const schoolLinks = [
-    { label: 'Primary Schools', href: '#' },
-    { label: 'Secondary Schools', href: '#' },
-    { label: 'MAT & Trusts', href: '#' },
-    { label: 'SEND', href: '#' },
+    { label: 'Product overview', href: '/schools/product' },
+    { label: 'SSO & MIS sync', href: '/schools/sso' },
+    { label: 'About', href: '/schools/about' },
+    { label: 'See the demo', href: '/demo/schools/oakridge-primary' },
   ]
   const legalLinks = [
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
-    { label: 'GDPR Statement', href: '/privacy' },
     { label: 'Cookie Policy', href: '/cookies' },
   ]
 
@@ -1139,8 +1126,8 @@ function SchoolsFooter() {
         </div>
 
         <div className="pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" style={{ borderTop: '1px solid #1F2937' }}>
-          <p className="text-xs" style={{ color: '#4B5563' }}>© Lumio 2025. All rights reserved. Lumio for Schools is a product of Lumio CMS Ltd.</p>
-          <p className="text-xs" style={{ color: '#4B5563' }}>UK data centres · GDPR compliant · ICO registered</p>
+          <p className="text-xs" style={{ color: '#4B5563' }}>© Lumio 2026. All rights reserved. Lumio for Schools is a product of Lumio CMS Ltd.</p>
+          <p className="text-xs" style={{ color: '#4B5563' }}>Pre-launch · Built in the UK</p>
         </div>
       </div>
     </footer>
@@ -1151,35 +1138,32 @@ function SchoolsFooter() {
 
 function SSOSyncSection() {
   const integrations = [
-    { name: 'Google Workspace', status: 'Connected' },
-    { name: 'Microsoft 365', status: 'Connected' },
-    { name: 'Arbor', status: 'Syncing' },
-    { name: 'SIMS', status: 'Syncing' },
-    { name: 'Bromcom', status: 'Syncing' },
+    { name: 'Google Workspace' },
+    { name: 'Microsoft 365' },
+    { name: 'Arbor' },
+    { name: 'SIMS' },
+    { name: 'Bromcom' },
   ]
   return (
     <section style={{ backgroundColor: '#07080F', borderTop: '1px solid #1F2937' }} className="py-24">
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#F9FAFB' }}>
-            Plug In. Switch On. Done.
+            SSO &amp; MIS sync — on the roadmap from day one.
           </h2>
           <p className="text-base md:text-lg mx-auto" style={{ color: '#9CA3AF', maxWidth: 680 }}>
-            Lumio is the only UK-first school management platform with built-in SSO and MIS sync. Your staff sign in with Google or Microsoft. Your pupil data flows in from your MIS automatically. No middleware. No extra cost.
+            Lumio Schools is pre-launch. Single sign-on with Google and Microsoft, plus rostering from Arbor, SIMS and Bromcom, are on the integration roadmap. We will scope and ship each one with the first founding schools who use them.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-          {/* Left — integration panel */}
+          {/* Left — roadmap panel */}
           <div className="rounded-xl p-6" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-5" style={{ color: '#6B7280' }}>Integrations</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-5" style={{ color: '#6B7280' }}>On the roadmap</p>
             <div className="space-y-3">
               {integrations.map(i => (
                 <div key={i.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937' }}>
                   <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{i.name}</span>
-                  <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#0D9488' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#0D9488', display: 'inline-block', animation: i.status === 'Syncing' ? 'pulse 2s ease-in-out infinite' : 'none' }} />
-                    ✓ {i.status}
-                  </span>
+                  <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>Coming soon</span>
                 </div>
               ))}
             </div>
@@ -1187,9 +1171,9 @@ function SSOSyncSection() {
           {/* Right — bullet points */}
           <div className="space-y-5 py-2">
             {[
-              'Staff login with existing Google or Microsoft accounts',
-              'Pupil rolls, class lists and staff sync from your MIS daily',
-              'Replaces MIS middleware costing £3,000–£8,000/year',
+              'Designed for staff to sign in with existing Google or Microsoft accounts',
+              'Pupil rolls, class lists and staff records syncing daily from the school MIS',
+              'No separate middleware subscription — built in to Lumio',
             ].map(text => (
               <div key={text} className="flex items-start gap-3">
                 <span className="flex items-center justify-center rounded-full shrink-0" style={{ width: 22, height: 22, backgroundColor: 'rgba(13,148,136,0.15)', color: '#0D9488', fontSize: 12 }}>✓</span>
@@ -1197,8 +1181,8 @@ function SSOSyncSection() {
               </div>
             ))}
             <div className="pt-4">
-              <Link href="/schools/product" className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
-                See how it works <ArrowRight size={15} />
+              <Link href="/schools/sso" className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>
+                See the SSO roadmap <ArrowRight size={15} />
               </Link>
             </div>
           </div>
@@ -1226,7 +1210,7 @@ export default function SchoolsPage() {
               { emoji: '🏛️', label: 'MAT Trust Dashboard' },
               { emoji: '👨‍👩‍👧', label: 'Parent Portal' },
               { emoji: '🔒', label: 'Safeguarding & DSL' },
-              { emoji: '🔄', label: 'MIS Sync (Arbor/SIMS/Bromcom)' },
+              { emoji: '🔄', label: 'MIS Sync — on roadmap' },
             ].map(f => (
               <div key={f.label} className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
                 <span className="text-2xl block mb-2">{f.emoji}</span>

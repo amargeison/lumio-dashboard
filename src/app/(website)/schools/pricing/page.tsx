@@ -49,8 +49,7 @@ const PLANS = [
       'Trust-wide dashboard',
       'Cross-school benchmarking',
       'MAT-level reporting',
-      'Unlimited schools',
-      'API access',
+      'Up to 10 schools included',
       'Dedicated account manager',
       'Custom onboarding & training',
     ],
@@ -75,8 +74,8 @@ const FAQ = [
     a: "Yes. You can upgrade to the Trust plan at any time. We'll pro-rate the difference for the remainder of your billing year.",
   },
   {
-    q: 'Is Lumio Schools GDPR compliant?',
-    a: 'Yes. All data is stored on UK servers, processed in line with UK GDPR, and we provide a Data Processing Agreement (DPA) as standard. We never share or sell school data.',
+    q: 'How is Lumio Schools handling data and GDPR?',
+    a: 'Lumio is built around UK GDPR from day one. Data hosting and Data Processing Agreement terms are confirmed with each founding school during onboarding, so the agreement matches the data the school is actually putting in. We will never share or sell school data.',
   },
 ]
 
@@ -147,10 +146,10 @@ export default function SchoolsPricingPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 rounded-xl p-8 mb-16 text-center"
           style={{ background: '#111E35', border: '1px solid #1F3460' }}>
           {[
-            { num: '150+', label: 'Pre-built workflows' },
-            { num: '14',   label: 'Day free trial' },
-            { num: 'KCSiE', label: '2024 compliant' },
-            { num: '99.9%', label: 'Uptime SLA' },
+            { num: '12', label: 'Workflow categories' },
+            { num: '50+', label: 'Pre-built automations' },
+            { num: '14',  label: 'Day free trial' },
+            { num: 'KCSiE', label: 'Designed around 2024 guidance' },
           ].map(s => (
             <div key={s.label}>
               <span className="block font-black leading-none mb-1" style={{ color: '#C8960C', fontSize: 36 }}>{s.num}</span>
