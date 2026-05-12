@@ -103,6 +103,9 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
   const navLinks = baseLinks
     .filter(l => {
       if (isSchools && (l.label === 'CRM' || l.label === 'Lumio Sports')) return false
+      // SCHOOLS NAV — Integrations entry deduplicated. Only one rendering
+      // path shows "Integrations" on schools pages.
+      if (isSchools && l.href === '/product#integrations') return false
       if (isFootball && (l.label === 'Schools' || l.label === 'CRM')) return false
       return true
     })
