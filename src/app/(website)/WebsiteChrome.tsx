@@ -20,7 +20,6 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Darts',      href: '/darts' },
   { label: 'Pricing',    href: '/pricing-sports' },
   { label: 'About',      href: '/about' },
-  { label: 'Blog',       href: '/blog' },
 ]
 
 const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: boolean }[] = [
@@ -31,7 +30,6 @@ const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: bo
   { label: 'Integrations', href: '/product#integrations' },
   { label: 'Pricing',      href: '/pricing' },
   { label: 'About',        href: '/about' },
-  { label: 'Blog',         href: '/blog' },
   { label: 'Lumio Sports', href: 'https://lumiosports.com', external: true },
 ]
 
@@ -58,7 +56,6 @@ const FOOTER_LINKS = [
   { label: 'Product',  href: '/product'  },
   { label: 'Pricing',  href: '/pricing'  },
   { label: 'About',    href: '/about'    },
-  { label: 'Blog',     href: '/blog'     },
   { label: 'Docs',     href: '#'         },
   { label: 'Status',   href: '#'         },
 ]
@@ -380,7 +377,6 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
   // exactly as before.
   const BUSINESS_FOOTER_COL_A: { label: string; href: string; external?: boolean }[] = [
     { label: 'About',                href: '/about' },
-    { label: 'Blog',                 href: '/blog'  },
     { label: 'Lumio Sports',         href: 'https://lumiosports.com', external: true },
   ]
   const BUSINESS_FOOTER_COL_B: { label: string; href: string }[] = [
