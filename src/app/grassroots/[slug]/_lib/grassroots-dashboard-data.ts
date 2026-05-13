@@ -179,11 +179,13 @@ export const GRASSROOTS_NAV_GROUPS: GrassrootsNavGroup[] = [
   { g: 'Ground', items: [
     { id: 'pitch',            label: 'Pitch Booking',      icon: 'pin' },
     { id: 'kit',              label: 'Kit & Equipment',    icon: 'briefcase' },
+    { id: 'kit-lockup',       label: 'Kit Lock-Up',        icon: 'briefcase', badge: 'NEW' },
     { id: 'referee-bookings', label: 'Referee Bookings',   icon: 'eye',    badge: 'NEW' },
   ]},
   { g: 'Admin', items: [
     { id: 'safeguarding',     label: 'Safeguarding',       icon: 'shield' },
     { id: 'volunteers',       label: 'Volunteers',         icon: 'people' },
+    { id: 'referee',          label: 'Referees',           icon: 'eye' },
     { id: 'documents',        label: 'Documents',          icon: 'note' },
     { id: 'travel',           label: 'Travel & Logistics', icon: 'plane' },
   ]},
