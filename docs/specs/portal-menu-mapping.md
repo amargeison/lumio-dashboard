@@ -20,7 +20,7 @@ The mapping uses the **Option C approach** (see Architectural Decisions below): 
 
 ---
 
-## Module catalogue (25 modules)
+## Module catalogue (25 modules — 26 after Phase 4a.6 deferred cleanup)
 
 The full set after Phase 4a.5 corrections. See `src/lib/sports/product-config.ts` for the authoritative tier matrix.
 
@@ -51,6 +51,18 @@ The full set after Phase 4a.5 corrections. See `src/lib/sports/product-config.ts
 | `ground_grading_fsr` | Ground Grading + FSR | — | full | — | — |
 | `wsl_handbook` | WSL Handbook + Carney | — | — | full | — |
 | `fa_charter` | FA Charter | — | — | — | full |
+
+**Phase 4a.6 deferred cleanup will change this catalogue to 26 modules.** See "Deferred decisions" below for the full Phase 4a.6 commit scope. Summary of changes:
+
+| Change | Detail |
+|---|---|
+| Remove `workflows_library` | Relocates to Settings sub-tab (admin configuration, not a department) |
+| Remove `integrations` | Relocates to Settings sub-tab (admin plumbing, not a department) |
+| Add `cup_manager` | Cup competitions module — all 4 products at tier `'full'` |
+| Add `fundraising` | Event-based community revenue module — all 4 products at tier `'full'` |
+| Split `medical_welfare` → `medical` + `player_welfare` | Clinical injury management vs welfare command center — separate operational disciplines |
+
+Net change: 25 → 26 modules. Apply as single commit before sidebar wiring sprint (Path B Day 3+).
 
 **Removed in Phase 4a.5:** `strategy` (now a sub-tab of `board_executive`).
 
@@ -145,6 +157,22 @@ Existing examples in the Pro portal:
 
 Pattern will be applied consistently when wiring portal sidebars to the MODULES catalogue (Path B Day 3+).
 
+### `medical` and `player_welfare` are separate modules (Phase 4a.6)
+
+Different operational shapes warrant separate modules:
+
+- **`medical`** = clinical injury management. Staffed by physios, doctors, sports scientists. Episodic (treat injury, manage rehab, return to play). Data shape: injury records, treatment plans, RTP timelines.
+- **`player_welfare`** = welfare command center. Staffed by welfare officers, mental health practitioners. Ongoing (continuous monitoring, prevention, support). Data shape: ACL risk scores, cycle tracking, mental health check-ins, foreign player integration progress.
+
+The two modules overlap (ACL Risk is welfare data that affects medical decisions; Medical Records cross-reference Maternity status) but they are not the same operational concern. Splitting them lets each product render the right balance:
+
+- Pro renders both with welfare nested under MEDICAL group (welfare-as-feature)
+- Women renders both with WELFARE as its own group (welfare-as-discipline, per Carney Review)
+- Club renders both at lower scale (one physio, simpler welfare)
+- Grassroots renders only `player_welfare` (no clinical infrastructure)
+
+Previously `medical_welfare` was a single module — Phase 4a.6 splits it to reflect this operational reality. Also fixes a Grassroots inconsistency where welfare items were mapped to `player_welfare` but the module was disabled for Grassroots.
+
 ---
 
 ## Per-product mapping
@@ -211,25 +239,163 @@ Compliance flagship: `psr_modeller` (Profitability & Sustainability Rules)
 
 ### Lumio Club — Harfield FC NPL West
 
-*Mapped during session, ~95% confidence.*
+*Mapped during session, 100% confidence.*
 
-Two outstanding items flagged for future sprints:
+Club's sidebar is a leaner version of Pro's, reflecting the non-league operational reality: smaller staff, fewer specialist roles (the Manager absorbs Director of Football, Head of Performance, Head of Medical, and Analyst responsibilities — see `role-templates.ts`), and a heavier emphasis on volunteer-driven and revenue-generating activities (fundraising, sponsorship, ground hire, cup runs). Compliance is anchored by `ground_grading_fsr`.
 
-- **Settings missing from Club sidebar.** Add Settings as the final item, matching the rule that applies to every portal. To be picked up in a future Club portal pass.
-- **`ground_grading_fsr` not surfaced as a top-level sidebar item.** Currently lives within the compliance flow. Decision: surface as a top-level item under a compliance group in the next Club portal sprint, matching how `psr_modeller` is surfaced in Pro.
+Club introduces two modules unique to lower-tier football operations: `cup_manager` (cup competitions are major revenue + identity moments at non-league) and `fundraising` (event-based community revenue, distinct from `commercial_marketing` sponsorship/B2B work). Both modules apply to all 4 products but Club's portal demonstrates the use case most clearly.
 
-Compliance flagship is `ground_grading_fsr` (Ground Grading + Financial Sustainability Regs).
+Club uses the same unified module/department landing page pattern as Pro and Lumio Business (KPI cards + Quick Actions + sub-tabs).
+
+| Sidebar group | Item | Spec module | Notes |
+|---|---|---|---|
+| OVERVIEW | Overview | `overview` | Portal home — already correctly labelled (no rename needed) |
+| | Morning Roundup *(rename → "Today's Briefing")* | *portal furniture* | Daily briefing — cross-portal rename for time-of-day neutrality |
+| | Insights | `insights` | **New build for Club.** Same module as Pro/Women but tailored for non-league owners (Point Predictor for league position is a flagship feature). |
+| BOARD | Board & Executive | `board_executive` | **New group for Club.** Sub-tabs: Overview, Strategy, **Club Vision** *(absorbed from top-level)*, Profile, Finance, **Committee** *(absorbed from CLUB group)*, Governance, Facilities |
+| COMMUNITY | Community | `community` | **New module for Club.** Community programmes, schools outreach. *Distinct from Fundraising — Community is non-revenue community work* |
+| FOOTBALL | Squad | `football_operations` | Sub-tab of `football_operations` landing page |
+| | Fixtures & Cups | `football_operations` | Sub-tab — league fixtures and cup fixture scheduling |
+| | Cup Manager | `cup_manager` | **Own module** *(new in Phase 4a.6)*. FA Cup, county cups, NPL Cup runs. Prize money modelling, TV income forecasting, ticketing surge management, replay scheduling. Major revenue + identity driver at non-league level. |
+| | Transfers & Recruitment | `recruitment_scouting` | Module landing page. Non-league recruitment (free transfers, trials, releases) |
+| | Academy | `youth_academy` | **New build for Club.** Most non-league clubs run youth academies (U18/U16/U14 feeding first team). Module is already tier `'full'` in catalogue — just needs surfacing in Club sidebar. |
+| GPS & LOAD | GPS & Performance | `performance_gps` | Module landing page |
+| | Heatmaps | `performance_gps` | Sub-tab |
+| MEDICAL | Medical | `medical` | Module landing page. Simpler than Pro's Medical Hub (typically one physio at non-league level). *Phase 4a.6 split: was `medical_welfare`* |
+| OPERATIONS | Player Registration | `football_operations` | County FA registration system — sub-tab |
+| | Discipline Log | `football_operations` | Cards, suspensions, FA discipline tracking — sub-tab |
+| | Match Fee Tracker | `finance_hr_admin` | Pay-to-play / match-by-match player payments at non-league level — sub-tab |
+| | Kit & Equipment | `facilities_grounds` | Sub-tab |
+| | Finance | `finance_hr_admin` | Module landing page |
+| | Safeguarding | `ground_grading_fsr` | Compliance-anchored |
+| | Matchday | `football_operations` | Sub-tab |
+| TOURS & CAMPS *(rename of Pre-Season)* | Tours & Camps | `tours_camps` | **Rename and re-scope.** Currently surfaced only as "Pre-Season" at top-level. Promote to its own sidebar item with sub-tabs: **Pre-Season** *(existing — Pre-Season Camp Mode)*, Mid-Season Camps, Summer Tours. Non-league clubs do tours (warm-weather camps, friendly tours abroad). |
+| FACILITIES | Ground & Facilities | `facilities_grounds` | Module landing page |
+| | Ground Hire | `facilities_grounds` | Non-league clubs rent ground out (weddings, training, junior football) — sub-tab. Real revenue line. |
+| CLUB | Sponsorship | `commercial_marketing` | Module landing page — B2B sponsorship contracts |
+| | Fundraising | `fundraising` | **Own module** *(new in Phase 4a.6)*. Event-based community revenue: 100 club, race nights, golf days, auctions, sponsor-a-ball, JustGiving campaigns. Distinct from `commercial_marketing` (B2B contracts) and `community` (non-revenue programmes). |
+| | Insurance | `ground_grading_fsr` | Public liability + players' insurance — Ground Grading compliance requirement |
+| | Comms | `media_comms` | Module landing page |
+| | Media & Content | `media_comms` | Sub-tab |
+| | ~~Committee~~ | *moved to BOARD group* | Absorbed into `board_executive` Committee sub-tab |
+| COMPLIANCE *(new group)* | Ground Grading + FSR | `ground_grading_fsr` | **New top-level surfacing.** Flagship compliance module for Club — currently nested, needs to be promoted under a new COMPLIANCE sidebar group. |
+| *(bottom)* | Settings | `settings` | **New build for Club** — currently missing entirely. Includes Workflows Library + Integrations sub-tabs (per Phase 4a.6). Final item in sidebar. |
+
+**To build for Club**
+
+These items don't currently exist in the Club portal and need building:
+
+- **Insights module** (`insights`) — landing page with Point Predictor (league table + form predictor), Squad analytics, Financial analytics. High-leverage feature for non-league owners.
+- **Board & Executive group** (`board_executive`) — promote Club Vision into a Board sub-tab; add Strategy / Profile / Governance / Facilities sub-tabs matching Pro's Board Suite structure
+- **Community module** (`community`) — new sidebar item + landing page. Community programmes, schools outreach (non-revenue community work).
+- **Cup Manager module** (`cup_manager`) — new module *(Phase 4a.6 addition)*. Landing page with prize money modelling, TV income forecasting, cup fixture tracking, opposition history.
+- **Fundraising module** (`fundraising`) — new module *(Phase 4a.6 addition)*. Landing page with event calendar, donation tracking, supporter club management, 100 club, fundraising target tracking.
+- **Academy module** (`youth_academy`) — already in catalogue at tier `'full'` for Club, but needs portal surfacing. Landing page covering U18/U16/U14 squads, parent comms, coach scheduling.
+- **Tours & Camps repositioning** — rename "Pre-Season" sidebar item to "Tours & Camps", add Mid-Season Camps and Summer Tours sub-tabs alongside existing Pre-Season Camp Mode.
+- **COMPLIANCE sidebar group** — new group containing `ground_grading_fsr` as a top-level item
+- **Settings module** (`settings`) — currently missing entirely. Build as final sidebar item, with Workflows Library + Integrations sub-tabs.
+- **`ticketing_crm_fans` module** — season ticket / fan revenue tracking for non-league
+- **`staff_directory` module** — unified people directory (staff + player admin records)
+
+**Removed from Club sidebar**
+
+- **Getting Started** — first-time user onboarding will be handled by a tabbed popup (existing pattern from Lumio Business / Schools), not a permanent sidebar item.
+- **INTEGRATIONS** — integrations move to Settings sub-tab (Phase 4a.6, applies to all portals).
+
+**Role correction needed**
+
+Current Club portal RoleSwitcher shows: Manager, Asst Manager, Club Secretary, Treasurer, Sponsor. This is grassroots-style and incorrect for the semi-pro Club tier.
+
+Per Phase 4b spec, Club should use the 6-role subset from `role-templates.ts`: `ceo`, `chairman`, `manager`, `commercial`, `head_operations`, `head_community`. More powerful roles for semi-pro clubs.
+
+Update RoleSwitcher to read from `getAvailableRoles('lumio_club')`.
+
+**Renames**
+
+| Current name | New name | Reason |
+|---|---|---|
+| Morning Roundup | Today's Briefing | Cross-portal rename — time-of-day neutral |
+| Pre-Season *(sidebar item)* | Tours & Camps | Surface the full `tours_camps` module; Pre-Season becomes a sub-tab |
+| ~~Committee~~ *(sidebar item)* | Move to Board & Executive sub-tab | Absorbed into `board_executive` per Pro pattern |
+
+No "Dashboard → Overview" rename needed (Club already labels correctly).
+
+Compliance flagship: `ground_grading_fsr` (Ground Grading + Financial Sustainability Regs)
 
 ### Lumio Women — Oakridge Women FC
 
-*Mapped during session, 100% confidence after clarifications.*
+*Mapped during session, 100% confidence.*
 
-Two items required clarification during the session, both resolved:
+Women's portal is the most architecturally mature of the four — already implementing the unified module/department landing page pattern (KPI cards + sub-tabs), with deeply-considered welfare features specific to women's football (ACL Risk, Cycle Tracking, Maternity, Mental Health) and a fully-built compliance group anchored by WSL Handbook + Carney Review.
 
-- **Standalone Identity Tracker** (COMMERCIAL group) → maps to `wsl_handbook` (Carney Review compliance). Tracks demerger readiness: separate legal entity, brand assets, banking, commercial deals. Revenue attributed directly to the women's team increases the permitted salary cap under FSR — direct Carney Review driver. Confirmed valuable and kept.
-- **Medical Records** (OPERATIONS group) → maps to `player_welfare` as a sub-feature. Distinct data from welfare touchpoints (clinical/admin records vs welfare check-ins). Confirmed kept.
+Women's portal already has built (ahead of Pro/Club): Insights, Staff Directory, Tours & Camps, dedicated Welfare group, dedicated Compliance group, Standalone Identity Tracker (Carney Review).
 
-Compliance flagship is `wsl_handbook` (WSL Handbook + Carney Review).
+| Sidebar group | Item | Spec module | Notes |
+|---|---|---|---|
+| OVERVIEW | Dashboard *(rename → "Overview")* | `overview` | Portal home — KPIs, alerts, today's schedule |
+| | Morning Briefing *(rename → "Today's Briefing")* | *portal furniture* | Cross-portal rename — works regardless of time of day |
+| | Insights | `insights` | Includes **Point Predictor** sub-tab (Phase 4a.6 addition) |
+| COMPLIANCE | FSR Dashboard | `wsl_handbook` | Module landing page — Carney Review FSR compliance overview |
+| | Salary Compliance | `wsl_handbook` | Sub-tab — squad salary cap monitoring |
+| | Revenue Attribution | `wsl_handbook` | Sub-tab — Carney Review demerger readiness, standalone revenue % (was "Standalone Tracker" — confirmed mapped per earlier session) |
+| | Game Standards | `wsl_handbook` | Sub-tab — WSL Handbook minimum standards compliance |
+| WELFARE | Player Welfare Hub *(merge with Player Welfare)* | `player_welfare` | Module landing page — comprehensive welfare command center. **Merge:** "Player Welfare" + "Player Welfare Hub" consolidated into single item per session decision |
+| | ACL Risk Monitor | `player_welfare` | Sub-tab — women's-specific ACL injury prevention tracking |
+| | Cycle Tracking | `player_welfare` | Sub-tab — menstrual cycle impact on training/performance |
+| | Maternity Tracker | `player_welfare` | Sub-tab — pregnancy, maternity leave, return-to-play protocols |
+| | Mental Health | `player_welfare` | Sub-tab — mental health support, welfare check-ins |
+| | Medical Records *(moved from OPERATIONS)* | `medical` | **Sub-tab of new `medical` module.** Clinical injury management, role-gated to Club Doctor + Welfare Lead. Cross-references ACL Risk + Maternity from `player_welfare` at top of page. |
+| FOOTBALL | Squad Management | `football_operations` | Sub-tab |
+| | Dual Registration | `recruitment_scouting` | Sub-tab — FA Women's dual registration agreements (lower-tier women players registered to 2 clubs simultaneously). Existing page kept as-is — mapping only |
+| | Transfers | `recruitment_scouting` | Module landing page |
+| | Academy | `youth_academy` | Module landing page |
+| GPS & LOAD | GPS & Load | `performance_gps` | Module landing page |
+| | Heatmaps | `performance_gps` | Sub-tab |
+| BOARD *(new group — pulled from COMMERCIAL)* | Board Suite *(rename → "Board & Executive")* | `board_executive` | Module landing page with Pro-pattern sub-tabs: Overview, Strategy, **Club Vision** *(absorbed from COMMERCIAL)*, Profile, Finance, Governance, Facilities |
+| COMMERCIAL *(restructured — revenue only)* | Sponsorship Pipeline | `commercial_marketing` | Module landing page — B2B sponsorship contracts |
+| | Financial Planning | `finance_hr_admin` | Module landing page |
+| | Fan Hub | `ticketing_crm_fans` | Module landing page — already built, ahead of Pro and Club |
+| MEDIA *(new group — pulled from COMMERCIAL)* | Media & Content | `media_comms` | Module landing page with existing sub-tabs: Social, Sponsors, Press, Interviews |
+| | Social Media *(consolidate as sub-tab of `media_comms`)* | `media_comms` | **Move:** Analytics dashboard becomes a sub-tab within Media & Content per session decision — not its own sidebar item |
+| OPERATIONS | Club Operations | *cross-cutting hub* | Operations Director's daily dashboard. Multi-module operational view. Same pattern as Pro's Club Operations |
+| | Matchday Operations | `football_operations` | Sub-tab |
+| | Travel & Logistics | `travel_logistics` | Module landing page |
+| | Kit Manager | `facilities_grounds` | Sub-tab |
+| | Staff Directory | `staff_directory` | **Already built in Women's portal** — ahead of Pro and Club. Unified people directory (staff + player admin records) |
+| | Tours & Camps | `tours_camps` | Module landing page — already built |
+| FACILITIES | Stadium & Facilities | `facilities_grounds` | Module landing page |
+| | Pitch & Grounds | `facilities_grounds` | Sub-tab |
+| | Training Ground | `facilities_grounds` | Sub-tab |
+| *(bottom)* | Settings | `settings` | **Move from mid-sidebar to bottom.** Currently sits under OPERATIONS group — needs relocating to final sidebar position. Includes Workflows Library + Integrations sub-tabs (Phase 4a.6) |
+
+**To build for Women**
+
+Women's portal is the most complete — fewer build items than Pro/Club:
+
+- **Insights — Point Predictor sub-tab** — same Phase 4a.6 build as Pro/Club
+- **BOARD group restructure** — pull Board Suite + Club Vision out of COMMERCIAL into dedicated BOARD group
+- **MEDIA group restructure** — pull Media & Content + Social Media out of COMMERCIAL into dedicated MEDIA group; consolidate Social Media as sub-tab of Media & Content
+- **WELFARE group additions** — surface Medical Records under WELFARE group as sub-tab of `medical` module (currently mid-sidebar under OPERATIONS)
+- **`medical` module** — new module from `medical_welfare` split (Phase 4a.6). Existing "Medical Records" page becomes its first sub-tab. Future Medical Hub / Concussion Tracker can be added if needed
+- **`cup_manager` module** — new module (Phase 4a.6). Continental Cup, FA WSL Cup, FA Cup operational management
+- **`fundraising` module** — new module (Phase 4a.6). Foundation events, community fundraising
+- **Settings relocation** — move to bottom of sidebar (currently mid-sidebar under OPERATIONS)
+- **Player Welfare consolidation** — merge "Player Welfare" + "Player Welfare Hub" into single item
+
+**Removed from Women's sidebar**
+
+- **Player Welfare** (the older item) — merged into "Player Welfare Hub"
+- **INTEGRATIONS** — relocate to Settings sub-tab (Phase 4a.6, applies to all portals)
+
+**Renames**
+
+| Current name | New name | Reason |
+|---|---|---|
+| Dashboard | Overview | Match canonical `MODULES.label` ("overview" module) and unified pattern |
+| Morning Briefing | Today's Briefing | Time-of-day neutral — works regardless of when user logs in. **Applies to all 4 portals** |
+| Board Suite | Board & Executive | Match canonical `MODULES.label` ("board_executive" module) |
+
+Compliance flagship: `wsl_handbook` (WSL Handbook + Carney Review)
 
 ### Lumio Grassroots — Sunday Rovers FC
 
@@ -281,6 +447,12 @@ Decisions parked for future sprints. Not blocking Phase 4a.5 / 4b completion.
 - **`workflows_library` relocation to `settings` sub-tab.** Currently a standalone module at `'full'` tier across all 4 products. Architectural decision: workflows library is admin-configuration, not a department. Should be moved under Settings as a sub-tab. Migration: remove `workflows_library` from `MODULE_IDS` in `product-config.ts`, update module count from 25 → 24, update mapping spec accordingly. Apply as a clean Phase 4a.6 commit before wiring portal sidebars to MODULES (Path B Day 3+).
 - **`ticketing_crm_fans` module build for Pro.** Module is defined in the catalogue but not built in the Pro portal yet. Build as part of Pro portal implementation sprint.
 - **`staff_directory` module build for Pro.** Unified people directory (staff + player admin records). Module is defined in the catalogue but not built in the Pro portal yet. Build as part of Pro portal implementation sprint.
+- **Phase 4a.6 — Module catalogue cleanup.** Single commit applying 5 changes: relocate `workflows_library` and `integrations` to Settings sub-tabs (remove from `MODULE_IDS`); add `cup_manager` and `fundraising` as own modules (tier `'full'` for all 4 products); split `medical_welfare` into `medical` (clinical) and `player_welfare` (welfare command center). Net change: 25 → 26 modules. Apply before sidebar wiring sprint (Path B Day 3+). Updates `product-config.ts`, `portal-menu-mapping.md`, and labels file.
+- **"Today's Briefing" rename — all 4 portals.** Cross-portal rename of "Morning Briefing" (Women) / "Morning Roundup" (Pro/Club/Grassroots) → "Today's Briefing". Time-of-day neutral label. Apply as part of portal sidebar wiring sprint.
+- **Club portal — missing modules to build.** Insights, Board & Executive group, Community, Cup Manager, Fundraising, Academy, Tours & Camps repositioning, COMPLIANCE group, Settings, `ticketing_crm_fans`, `staff_directory`. Most-impacted portal — significant build sprint when wiring portals.
+- **Club RoleSwitcher correction.** Current Club portal shows incorrect role set (grassroots pattern: Manager, Asst Manager, Club Secretary, Treasurer, Sponsor). Update to match Phase 4b spec by reading from `getAvailableRoles('lumio_club')` — 6-role subset of Pro/Women.
+- **Women's portal restructure** — BOARD and MEDIA groups pulled from COMMERCIAL; Settings moved to bottom; Social Media consolidated as sub-tab of Media & Content; Player Welfare items merged. Apply as part of Women portal implementation sprint.
+- **`cup_manager` and `fundraising` module builds — all products.** Modules defined in Phase 4a.6 but not surfaced in any portal yet. Build as part of each product's implementation sprint.
 
 ---
 
