@@ -119,19 +119,95 @@ For Grassroots, volunteer matchday duties (linesman, water bottles, kit, post-ma
 
 Safeguarding sidebar items map to the product's flagship compliance module, not to `medical_welfare`. The compliance regime defines the safeguarding requirements; the module owns the workflow.
 
+### Unified module/department landing page pattern
+
+Modules in Lumio Sports = Departments in Lumio Business. Both follow the same landing page template:
+
+```
+[Module Name]                          [Module description]
+─────────────────────────────────────────────────────────────
+Overview | Sub-tab 1 | Sub-tab 2 | Sub-tab 3 | ...
+─────────────────────────────────────────────────────────────
+[KPI Card 1] [KPI Card 2] [KPI Card 3] [KPI Card 4]
+
+QUICK ACTIONS
+[Action 1] [Action 2] [Action 3] [Action 4] [Action 5] ...
+
+[Module-specific content — boards, tables, workflows, etc.]
+```
+
+This unifies the navigation experience across Business and Sports — founders working across both products encounter the same UX language. Module landing pages always have KPI cards at the top and a Quick Actions grid; omit Quick Actions only when no useful actions exist (rare).
+
+Existing examples in the Pro portal:
+- Club Operations (Operations hub) — already follows the pattern
+- Board Suite — already follows the pattern
+- Insights — already follows the pattern
+
+Pattern will be applied consistently when wiring portal sidebars to the MODULES catalogue (Path B Day 3+).
+
 ---
 
 ## Per-product mapping
 
 ### Lumio Pro — Oakridge FC
 
-*Mapped during session, ~95% confidence.*
+*Mapped during session, 100% confidence.*
 
-Pro's sidebar resolves cleanly to spec modules with one structural decision:
+Pro's sidebar contains 9 groups plus cross-cutting top items. The portal uses the unified module/department pattern: clicking a top-level sidebar item opens a module landing page with sub-tabs across the top, KPI cards, and Quick Actions grid. This pattern is shared with Lumio Business.
 
-- The original sidebar had a duplicate "Staff" entry under FIRST TEAM group plus a Staff Directory entry under CLUB. Resolution: keep `staff_directory` as a single top-level module; the FIRST TEAM "Staff" was a navigation duplicate and is removed.
+| Sidebar group | Item | Spec module | Notes |
+|---|---|---|---|
+| OVERVIEW | Dashboard *(rename → "Overview")* | `overview` | Portal home — KPIs across club, alerts, today's schedule |
+| | Insights | `insights` | Includes **Point Predictor** sub-tab — league table predictor + form predictor + projected finishing position. New build. |
+| BOARD | Board Suite *(rename → "Board & Executive")* | `board_executive` | Existing sub-tabs: Overview, Strategy, Profile, Finance, Squad & Performance, Governance, Facilities. **Strategy is a sub-tab here, not a module** (per 4a.5 decision) |
+| COMMUNITY | Community | `community` | Foundation, programmes, schools outreach |
+| FIRST TEAM | Squad Manager | `football_operations` | Sub-tab of `football_operations` landing page |
+| | Training Schedule | `football_operations` | Sub-tab |
+| | ~~Staff~~ | *removed* | Duplicate of `staff_directory` — confirmed removed in Phase 4a.5 mapping |
+| MEDICAL | Medical Hub | `medical_welfare` | Module landing page |
+| | Concussion Tracker | `medical_welfare` | Sub-tab |
+| | Mental Performance | `medical_welfare` | Sub-tab |
+| | Player Welfare Hub | `medical_welfare` | Sub-tab |
+| GPS & LOAD | GPS Tracking | `performance_gps` | Module landing page |
+| | Heatmaps | `performance_gps` | Sub-tab |
+| | GPS Hardware | `performance_gps` | Sub-tab |
+| OPERATIONS | Club Operations | *cross-cutting hub* | Operations Director's daily dashboard. Hub page with sub-tabs: Overview, Foreign Player Integration, Travel & Logistics, Matchday Operations, Compliance & Insurance, Player Satisfaction. **Does not map to a single module** — it's a multi-module operational view. Treat as the landing page of the OPERATIONS sidebar group itself. |
+| | Matchday Operations | `football_operations` | Sub-tab of `football_operations`. Also surfaced inside Club Operations hub for convenience |
+| | Travel & Logistics | `travel_logistics` | Module landing page. Also surfaced inside Club Operations hub |
+| | Kit Manager | `facilities_grounds` | Sub-tab of `facilities_grounds` |
+| FACILITIES | Stadium & Facilities | `facilities_grounds` | Module landing page |
+| | Pitch & Grounds | `facilities_grounds` | Sub-tab |
+| | Training Ground | `facilities_grounds` | Sub-tab |
+| RECRUITMENT | Recruitment Hub | `recruitment_scouting` | Module landing page |
+| | Academy | `youth_academy` | Module landing page — own module, sidebar-grouped under RECRUITMENT for UX |
+| | Tours & Camps | `tours_camps` | Module landing page — own module, sidebar-grouped under RECRUITMENT for UX |
+| COMMERCIAL | Commercial | `commercial_marketing` | Module landing page |
+| | Media & PR | `media_comms` | Module landing page — own module, sidebar-grouped under COMMERCIAL for UX |
+| | Social Media | `media_comms` | Sub-tab of `media_comms` |
+| COMPLIANCE | Finance | `finance_hr_admin` | Module landing page — own module, sidebar-grouped under COMPLIANCE for UX (because financial reporting drives PSR compliance) |
+| | PSR / SCR Modeller | `psr_modeller` | Flagship compliance module — Pro |
+| INTEGRATIONS | *(various)* | `integrations` | Third-party data connections |
+| ~~DISCOVER~~ | ~~Discover~~ | *removed* | Removed during 4a.5 mapping. League info / comps will be served by integrations or per-module sub-features. Point Predictor moves to `insights`. |
+| *(bottom)* | Settings | `settings` | Includes Workflows Library sub-tab (per deferred decision) |
 
-All other items map 1:1 to the module catalogue. Compliance flagship is `psr_modeller` (PSR — Profitability & Sustainability Rules).
+**To build for Pro**
+
+These modules don't currently exist in the Pro portal and need building:
+
+- `ticketing_crm_fans` — Pro flagship for fan/season ticket/CRM revenue. Module landing page with KPIs (season ticket holders, matchday attendance, revenue), Quick Actions (sell ticket, add fan record, run renewal campaign), and sub-tabs for ticketing / CRM / fan engagement
+- `staff_directory` — unified people directory covering all humans connected to the club:
+  - **Staff side**: CEO, manager, coaches, physios, commercial team, ground staff, volunteers (full org-chart view, contracts, DBS, emergency contacts)
+  - **Player side (admin records)**: contracts, agents, emergency contacts, NI numbers, addresses, family info, DBS — *distinct from Squad Manager which handles players as footballers (selection, training availability, suspensions, form)*
+  - Org chart view as a sub-tab
+
+**Renames**
+
+| Current name | New name | Reason |
+|---|---|---|
+| Dashboard | Overview | Match canonical `MODULES.label` ("overview" module) and Lumio Business sidebar |
+| Board Suite | Board & Executive | Match canonical `MODULES.label` ("board_executive" module) |
+
+Compliance flagship: `psr_modeller` (Profitability & Sustainability Rules)
 
 ### Lumio Club — Harfield FC NPL West
 
@@ -202,6 +278,9 @@ Decisions parked for future sprints. Not blocking Phase 4a.5 / 4b completion.
 - **Settings position in Club sidebar.** Currently missing entirely. Add as final item in the next Club portal sprint.
 - **`getModuleTier(product, moduleId)` helper.** Not yet added to `product-config.ts`. Add when the first component needs to render lite-vs-full conditionally (likely `tours_camps` Grassroots component).
 - **RoleSwitcher consolidation.** `src/components/sports-demo/RoleSwitcher.tsx` currently has its own role list. Wire it to read from `getAvailableRoles(product)` in `role-templates.ts` when next touched.
+- **`workflows_library` relocation to `settings` sub-tab.** Currently a standalone module at `'full'` tier across all 4 products. Architectural decision: workflows library is admin-configuration, not a department. Should be moved under Settings as a sub-tab. Migration: remove `workflows_library` from `MODULE_IDS` in `product-config.ts`, update module count from 25 → 24, update mapping spec accordingly. Apply as a clean Phase 4a.6 commit before wiring portal sidebars to MODULES (Path B Day 3+).
+- **`ticketing_crm_fans` module build for Pro.** Module is defined in the catalogue but not built in the Pro portal yet. Build as part of Pro portal implementation sprint.
+- **`staff_directory` module build for Pro.** Unified people directory (staff + player admin records). Module is defined in the catalogue but not built in the Pro portal yet. Build as part of Pro portal implementation sprint.
 
 ---
 
