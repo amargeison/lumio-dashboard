@@ -173,7 +173,11 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
   board_executive: {
     label: 'Board & Executive',
     description: 'Board meetings, executive reports, and strategy planning',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    // Grassroots 'disabled' — a Sunday League club has no board or
+    // executive. Phase 4a.5 inherited 'full' from the higher product
+    // tiers in error; corrected during Phase 4c reconciliation after
+    // live-portal review.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
   },
   football_operations: {
     label: 'Football Operations',
@@ -183,10 +187,12 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
   cup_manager: {
     label: 'Cup Manager',
     description: 'Cup competitions, prize money modelling, TV income forecasting, ticketing surge management',
-    // Grassroots 'lite' — basic cup fixture tracking only; prize money
-    // and TV income modelling are not relevant at Sunday League scale.
-    // Pattern matches tours_camps Grassroots tier.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'lite' },
+    // Grassroots 'disabled' — cup competitions at Sunday League level
+    // are additional fixtures, not a commercial discipline; handled
+    // within football_operations (Fixtures view has a Cups tab).
+    // Phase 4a.6 'lite' tier reconsidered after live-portal review
+    // (Phase 4c reconciliation).
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
   },
   tours_camps: {
     label: 'Tours & Camps',
