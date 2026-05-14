@@ -55,14 +55,17 @@ export const MODULE_IDS = [
   'insights',
   'board_executive',
   'football_operations',
+  'cup_manager',
   'tours_camps',
   'performance_gps',
-  'medical_welfare',
+  'medical',
+  'player_welfare',
   'recruitment_scouting',
   'youth_academy',
   'junior_section',
   'travel_logistics',
   'commercial_marketing',
+  'fundraising',
   'ticketing_crm_fans',
   'media_comms',
   'facilities_grounds',
@@ -70,8 +73,6 @@ export const MODULE_IDS = [
   'staff_directory',
   'community',
   'settings',
-  'workflows_library',
-  'integrations',
   // Compliance variants — one per product, label set on the module
   'psr_modeller',         // Lumio Pro
   'ground_grading_fsr',   // Lumio Club
@@ -179,6 +180,14 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     description: 'Squad, fixtures, training, matchday operations',
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
   },
+  cup_manager: {
+    label: 'Cup Manager',
+    description: 'Cup competitions, prize money modelling, TV income forecasting, ticketing surge management',
+    // Grassroots 'lite' — basic cup fixture tracking only; prize money
+    // and TV income modelling are not relevant at Sunday League scale.
+    // Pattern matches tours_camps Grassroots tier.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'lite' },
+  },
   tours_camps: {
     label: 'Tours & Camps',
     description: 'Pre-season and mid-season camps, blocks, and commercial activation',
@@ -192,10 +201,19 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     description: 'Performance data, GPS load, ACWR, training response',
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'optional' },
   },
-  medical_welfare: {
-    label: 'Medical & Welfare',
-    description: 'Injuries, treatment, return-to-play, player welfare',
+  medical: {
+    label: 'Medical',
+    description: 'Clinical injury management — physios, treatment, return-to-play protocols, injury records',
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+  },
+  player_welfare: {
+    label: 'Player Welfare',
+    description: 'Welfare command center — ACL risk monitoring, mental health, foreign player integration, women-specific welfare (cycle, maternity)',
+    // Grassroots tier corrected to 'full' as part of the Phase 4a.6
+    // medical_welfare split — welfare is community-relevant at all
+    // tiers, only the clinical 'medical' module is disabled for
+    // Grassroots (no physio infrastructure).
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
   },
   recruitment_scouting: {
     label: 'Recruitment & Scouting',
@@ -226,6 +244,15 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
   commercial_marketing: {
     label: 'Commercial & Marketing',
     description: 'Sponsorship, partnerships, brand activations',
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+  },
+  fundraising: {
+    label: 'Fundraising',
+    description: 'Event-based community revenue: 100 club, race nights, golf days, auctions, donation campaigns',
+    // Distinct from commercial_marketing (B2B sponsorship) and
+    // community (non-revenue programmes). Tier 'full' for all 4
+    // products — fundraising is especially material at non-league /
+    // grassroots scale.
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
   },
   ticketing_crm_fans: {
@@ -262,16 +289,6 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     label: 'Settings',
     description: 'Club configuration and admin',
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
-  },
-  workflows_library: {
-    label: 'Workflows Library',
-    description: 'Pre-built automations and workflow templates',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
-  },
-  integrations: {
-    label: 'Integrations',
-    description: 'Third-party data connections (MIS, GPS, video, etc.)',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'optional' },
   },
   psr_modeller: {
     label: 'PSR Modeller',

@@ -157,8 +157,13 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       community: 'edit',
       overview: 'view',
       insights: 'view',
-      integrations: 'view',
-      workflows_library: 'view',
+      // Phase 4a.6: migrated from integrations + workflows_library
+      // grants when those modules moved to Settings sub-tabs.
+      // `settings` is broader than the original grant (includes
+      // billing, role assignment) — TIGHTEN in Phase 4c when
+      // Settings sub-tab permissions are designed. See
+      // docs/specs/portal-menu-mapping.md.
+      settings: 'view',
       psr_modeller: 'edit',
       ground_grading_fsr: 'edit',
       wsl_handbook: 'edit',
@@ -198,7 +203,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     permissions: {
       football_operations: 'admin',
       performance_gps: 'edit',
-      medical_welfare: 'view',
+      medical: 'view',
+      player_welfare: 'view',
       recruitment_scouting: 'edit',
       youth_academy: 'view',
       tours_camps: 'edit',
@@ -221,7 +227,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       football_operations: 'edit',
       finance_hr_admin: 'edit', // transfer budgets
       youth_academy: 'edit',
-      medical_welfare: 'view',
+      medical: 'view',
+      player_welfare: 'view',
       performance_gps: 'view',
       travel_logistics: 'view',
       tours_camps: 'view',
@@ -239,9 +246,15 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     products: ['lumio_pro', 'lumio_women'],
     permissions: {
       performance_gps: 'admin',
-      medical_welfare: 'edit',
+      medical: 'view',
+      player_welfare: 'edit',
       football_operations: 'view',
-      integrations: 'edit',
+      // Phase 4a.6: migrated from integrations grant when that
+      // module moved to a Settings sub-tab. `settings` is broader
+      // than the original grant (includes billing, role assignment)
+      // — TIGHTEN in Phase 4c when Settings sub-tab permissions
+      // are designed. See docs/specs/portal-menu-mapping.md.
+      settings: 'edit',
       tours_camps: 'view',
       overview: 'view',
       insights: 'view',
@@ -255,7 +268,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     description: 'Medical staff, injuries, return-to-play, player welfare.',
     products: ['lumio_pro', 'lumio_women'],
     permissions: {
-      medical_welfare: 'admin',
+      medical: 'admin',
+      player_welfare: 'view',
       performance_gps: 'view',
       football_operations: 'view',
       travel_logistics: 'view',
@@ -273,7 +287,13 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     products: ['lumio_pro', 'lumio_women'],
     permissions: {
       performance_gps: 'edit',
-      integrations: 'admin',
+      // Phase 4a.6: migrated from integrations: 'admin' grant when
+      // that module moved to a Settings sub-tab. `settings: 'admin'`
+      // is broader than the original grant (includes billing, role
+      // assignment) — analyst is temporarily over-granted. TIGHTEN
+      // in Phase 4c when Settings sub-tab permissions are designed.
+      // See docs/specs/portal-menu-mapping.md.
+      settings: 'admin',
       recruitment_scouting: 'view',
       football_operations: 'view',
       insights: 'edit',
@@ -311,7 +331,12 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       finance_hr_admin: 'edit',
       football_operations: 'view',
       staff_directory: 'admin',
-      workflows_library: 'edit',
+      // Phase 4a.6: migrated from workflows_library grant when that
+      // module moved to a Settings sub-tab. `settings` is broader
+      // than the original grant (includes billing, role assignment)
+      // — TIGHTEN in Phase 4c when Settings sub-tab permissions
+      // are designed. See docs/specs/portal-menu-mapping.md.
+      settings: 'edit',
       overview: 'view',
       insights: 'view',
     },
@@ -352,6 +377,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       insights: 'view',
       tours_camps: 'edit',
       staff_directory: 'edit',
+      player_welfare: 'view',
     },
   },
 
@@ -368,6 +394,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       overview: 'view',
       insights: 'view',
       staff_directory: 'view',
+      player_welfare: 'view',
     },
   },
 
@@ -382,6 +409,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       media_comms: 'view',
       travel_logistics: 'view',
       overview: 'view',
+      player_welfare: 'view',
     },
   },
 
