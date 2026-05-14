@@ -453,6 +453,7 @@ Decisions parked for future sprints. Not blocking Phase 4a.5 / 4b completion.
 - **Club RoleSwitcher correction.** Current Club portal shows incorrect role set (grassroots pattern: Manager, Asst Manager, Club Secretary, Treasurer, Sponsor). Update to match Phase 4b spec by reading from `getAvailableRoles('lumio_club')` — 6-role subset of Pro/Women.
 - **Women's portal restructure** — BOARD and MEDIA groups pulled from COMMERCIAL; Settings moved to bottom; Social Media consolidated as sub-tab of Media & Content; Player Welfare items merged. Apply as part of Women portal implementation sprint.
 - **`cup_manager` and `fundraising` module builds — all products.** Modules defined in Phase 4a.6 but not surfaced in any portal yet. Build as part of each product's implementation sprint.
+- **Phase 4c — Settings sub-tab permission granularity.** Phase 4a.6 migrated 4 roles (`ceo`, `head_performance`, `analyst`, `head_operations`) from `integrations` / `workflows_library` grants to a broad `settings` grant because those modules became Settings sub-tabs. `settings` is monolithic and includes billing + role assignment — these 4 roles are temporarily over-granted. When Settings sub-tab structure is built in Phase 4c, design per-sub-tab permissions and tighten these 4 roles back to integrations / workflows-only scope.
 
 ---
 
