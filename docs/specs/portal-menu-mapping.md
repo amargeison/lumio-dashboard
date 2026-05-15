@@ -20,7 +20,11 @@ The mapping uses the **Option C approach** (see Architectural Decisions below): 
 
 ---
 
-## Module catalogue (25 modules — 26 after Phase 4a.6 deferred cleanup)
+## Module catalogue
+
+> **Header count out of sync with code.** Phase 4a.6 + V&A Phase 1 took the catalogue to **27 modules** (`MODULE_IDS` in `src/lib/sports/product-config.ts`). The table below is the pre-Phase-4a.6 snapshot and is **stale** — `workflows_library` / `integrations` are gone (now Settings sub-tabs); `medical_welfare` is split into `medical` + `player_welfare`; `cup_manager`, `fundraising`, and `video_analysis` are added. The per-portal mapping tables further down are kept current — they're the authoritative surface-level mapping. Refresh this catalogue table in a follow-up commit.
+
+## Module catalogue (25 modules — 26 after Phase 4a.6 deferred cleanup) — STALE, see note above
 
 The full set after Phase 4a.5 corrections. See `src/lib/sports/product-config.ts` for the authoritative tier matrix.
 
@@ -193,6 +197,7 @@ Pro's sidebar contains 9 groups plus cross-cutting top items. The portal uses th
 | | Training Schedule | `football_operations` | Sub-tab |
 | | ~~Staff~~ | *removed* | Duplicate of `staff_directory` — confirmed removed in Phase 4a.5 mapping |
 | PERFORMANCE | Set Piece Analysis | `football_operations` | Restored Phase 4c — ~80 authored set-piece routines in `ProSetPiecesView`. Sub-tab of `football_operations`. (Pro Tactics nav stays deferred — `TacticsView` is currently a `PlaceholderView` stub at `src/app/(football)/football/[slug]/page.tsx:~2970`; restore when real implementation ships.) |
+| PERFORMANCE | Video & Analysis | `video_analysis` | **New module Phase 1** — Lumio-native video module (no third-party attribution per brand rules). Replaces the deprecated `lumio-vision` nav slot — full 6-touchpoint deletion: DeptId union, SIDEBAR_ITEMS commented block, analyst-role whitelist, render branch, v2 nav data (`football-dashboard-data.ts`), voice commands. Phase 1 ships nav-and-shell only (`ProVideoAnalysisView` stub); 7 sub-tabs land in Phase 1 commit 2. |
 | MEDICAL | Medical Hub | `medical_welfare` | Module landing page |
 | | Concussion Tracker | `medical_welfare` | Sub-tab |
 | | Mental Performance | `medical_welfare` | Sub-tab |
@@ -259,6 +264,7 @@ Club uses the same unified module/department landing page pattern as Pro and Lum
 | | Fixtures & Cups | `football_operations` | Sub-tab — league fixtures and cup fixture scheduling |
 | | Tactics | `football_operations` | Restored Phase 4c — uses inline `NLTacticsView` in `nl-content.tsx`. Sub-tab of `football_operations` |
 | | Set Pieces | `football_operations` | Restored Phase 4c — `NLSetPiecesView` component (~3338 lines). Sub-tab of `football_operations` |
+| | Video & Analysis | `video_analysis` | **New module Phase 1** — same 7-sub-tab structure as Pro. `NLVideoAnalysisView` lives in its own component file (convention break vs. inline NLTacticsView etc. — nl-content.tsx approaching 5000 lines). Set-Piece Studio sub-tab inside V&A is hardcoded demo, NOT wired to NLSetPiecesView (Phase 2 hook). |
 | | Cup Manager | `cup_manager` | **Own module** *(new in Phase 4a.6)*. FA Cup, county cups, NPL Cup runs. Prize money modelling, TV income forecasting, ticketing surge management, replay scheduling. Major revenue + identity driver at non-league level. |
 | | Transfers & Recruitment | `recruitment_scouting` | Module landing page. Non-league recruitment (free transfers, trials, releases) |
 | | Academy | `youth_academy` | **New build for Club.** Most non-league clubs run youth academies (U18/U16/U14 feeding first team). Module is already tier `'full'` in catalogue — just needs surfacing in Club sidebar. |
@@ -351,6 +357,7 @@ Women's portal already has built (ahead of Pro/Club): Insights, Staff Directory,
 | FOOTBALL | Squad Management | `football_operations` | Sub-tab |
 | | Dual Registration | `recruitment_scouting` | Sub-tab — FA Women's dual registration agreements (lower-tier women players registered to 2 clubs simultaneously). Existing page kept as-is — mapping only |
 | | Tactics & Set Pieces | `football_operations` | Restored Phase 4c — single combined sidebar item, uses inline `TacticsSetPiecesView`. Sub-tab of `football_operations` |
+| | Video & Analysis | `video_analysis` | **New module Phase 1** — same 7-sub-tab structure as Pro/Club. Combined Tactics & Set Pieces sidebar item remains separate. Sidebar icon: 🎬 (matches portal's emoji-icon convention). |
 | | Transfers | `recruitment_scouting` | Module landing page |
 | | Academy | `youth_academy` | Module landing page |
 | GPS & LOAD | GPS & Load | `performance_gps` | Module landing page |
@@ -412,6 +419,7 @@ Compliance flagship: `wsl_handbook` (WSL Handbook + Carney Review)
 | | FA Sunday Cup | `fa_charter` |
 | | Tactics | `football_operations` *(Phase 4c restoration — uses `GrassrootsTacticsView`)* |
 | | Set Pieces | `football_operations` *(Phase 4c restoration — uses `GrassrootsSetPiecesView`, ~80 routines)* |
+| | Video & Analysis | `video_analysis` *(new Phase 1 — catalogue overrides spec's COACH-only constraint; full tier for all Grassroots clubs)* |
 | SQUAD | Squad List, Availability, Development Notes | `football_operations` |
 | | Discipline (cards / suspensions) | `football_operations` |
 | | Discipline (conduct) | `player_welfare` *(welfare-side, distinct from cards)* |

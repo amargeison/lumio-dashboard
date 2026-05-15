@@ -12,16 +12,17 @@ import {
   ExternalLink, Car, Wrench, FolderOpen, History, Send, Zap,
   ChevronDown, ChevronUp, Hash, Loader2, Printer, Upload, Link,
   CloudRain, Sun, Wind, Thermometer, Droplets, AlertTriangle,
-  Mail, Globe, Info, CircleDot, Circle,
+  Mail, Globe, Info, CircleDot, Circle, Video,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import GrassrootsTacticsView from '@/components/football/GrassrootsTacticsView'
 import GrassrootsSetPiecesView from '@/components/football/GrassrootsSetPiecesView'
+import GrassrootsVideoAnalysisView from '@/components/football/GrassrootsVideoAnalysisView'
 
 // ─── Types ────────────────────────────────────────────��──────────────────────
 
 type DeptId =
-  | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
+  | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces' | 'video-analysis'
   | 'finances' | 'welfare' | 'communications' | 'referee' | 'pitch' | 'kit'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
 
@@ -47,6 +48,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'fixtures',        label: 'Fixtures & Results', icon: Calendar,       section: 'Club' },
   { id: 'tactics',         label: 'Tactics',            icon: Clipboard,      section: 'Club' },
   { id: 'set-pieces',      label: 'Set Pieces',         icon: Target,         section: 'Club' },
+  { id: 'video-analysis',  label: 'Video & Analysis',   icon: Video,          section: 'Club' },
   { id: 'finances',        label: 'Finances',           icon: DollarSign,     section: 'Operations' },
   { id: 'welfare',         label: 'Welfare',            icon: Shield,         section: 'Operations' },
   { id: 'communications',  label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
@@ -2447,6 +2449,7 @@ export default function GrassrootsPortal({ params }: { params: Promise<{ slug: s
             {activeDept === 'fixtures' && <FixturesView />}
             {activeDept === 'tactics' && <GrassrootsTacticsView />}
             {activeDept === 'set-pieces' && <GrassrootsSetPiecesView />}
+            {activeDept === 'video-analysis' && <GrassrootsVideoAnalysisView />}
             {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
             {activeDept === 'welfare' && <WelfareView />}
             {activeDept === 'communications' && <CommsView onToast={fireToast} />}

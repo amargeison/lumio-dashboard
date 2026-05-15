@@ -23,13 +23,14 @@ import AIInsightsReport from '@/components/AIInsightsReport'
 import FootballStaffView from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
+import ProVideoAnalysisView from '@/components/football/ProVideoAnalysisView'
 import { EmailActions } from '@/components/overview/MessageActions'
 import { EmailComposeModal, MeetingBookModal } from '@/components/overview/ComposeModals'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptId =
-  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'transfers'
+  | 'overview' | 'insights' | 'board' | 'squad' | 'tactics' | 'set-pieces' | 'video-analysis' | 'transfers'
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr' | 'squad-planner' | 'club-profile'
@@ -76,6 +77,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'squad',       label: 'Squad',          icon: Shirt,          section: 'Departments' },
   { id: 'tactics',     label: 'Tactics',        icon: Clipboard,      section: 'Departments' },
   { id: 'set-pieces',  label: 'Set Pieces',     icon: Target,         section: 'Departments' },
+  { id: 'video-analysis', label: 'Video & Analysis', icon: Video,     section: 'Departments' },
   { id: 'transfers',   label: 'Transfers',      icon: ArrowUpDown,    section: 'Departments' },
   { id: 'medical',     label: 'Medical',        icon: Heart,          section: 'Departments' },
   { id: 'scouting',    label: 'Scouting',       icon: Eye,            section: 'Departments' },
@@ -442,8 +444,8 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName }: {
   // group items by section — filter sidebar based on impersonated role level
   const impRole = typeof window !== 'undefined' ? localStorage.getItem('lumio_football_impersonated_role') : null
   const impLevel = FOOTBALL_ROLE_OPTIONS.find(r => r.key === impRole)?.level ?? 1
-  const HEAD_COACH_DEPTS: DeptId[] = ['overview', 'insights', 'squad', 'tactics', 'medical', 'training', 'analytics', 'dynamics', 'matchday', 'squad-planner', 'staff', 'settings']
-  const DEPT_HEAD_DEPTS: DeptId[] = ['overview', 'insights', 'staff', 'settings']
+  const HEAD_COACH_DEPTS: DeptId[] = ['overview', 'insights', 'squad', 'tactics', 'video-analysis', 'medical', 'training', 'analytics', 'dynamics', 'matchday', 'squad-planner', 'staff', 'settings']
+  const DEPT_HEAD_DEPTS: DeptId[] = ['overview', 'insights', 'video-analysis', 'staff', 'settings']
   const SUPPORT_DEPTS: DeptId[] = ['overview', 'staff', 'settings']
   const visibleItems = SIDEBAR_ITEMS.filter(i => {
     if (impLevel <= 1) {
@@ -4409,6 +4411,7 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
             {activeDept === 'squad' && <SquadView />}
             {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
             {activeDept === 'set-pieces' && <ProSetPiecesView />}
+            {activeDept === 'video-analysis' && <ProVideoAnalysisView />}
             {activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {activeDept === 'medical' && <MedicalView />}
             {activeDept === 'scouting' && <ScoutingView />}

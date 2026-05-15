@@ -13,11 +13,12 @@ import {
   ExternalLink, Car, Wrench, FolderOpen, History, Send, Zap,
   ChevronDown, ChevronUp, Hash, Loader2, Printer, Upload, Link,
   CloudRain, Sun, Wind, Thermometer, Droplets, AlertTriangle,
-  Mail, Globe, Info, CircleDot, Circle,
+  Mail, Globe, Info, CircleDot, Circle, Video,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import GrassrootsTacticsView from '@/components/football/GrassrootsTacticsView'
 import GrassrootsSetPiecesView from '@/components/football/GrassrootsSetPiecesView'
+import GrassrootsVideoAnalysisView from '@/components/football/GrassrootsVideoAnalysisView'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -34,7 +35,7 @@ const GRASSROOTS_ROLES = [
 // ─── Types ────────────────────────────────────────────��──────────────────────
 
 type DeptId =
-  | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces'
+  | 'overview' | 'club-profile' | 'squad' | 'matchday' | 'fixtures' | 'tactics' | 'set-pieces' | 'video-analysis'
   | 'finances' | 'welfare' | 'communications' | 'media' | 'referee' | 'pitch' | 'kit' | 'kit-lockup'
   | 'volunteers' | 'travel' | 'documents' | 'history' | 'settings'
   | 'morning-roundup' | 'fa-sunday-cup' | 'halftime-talk' | 'availability' | 'discipline'
@@ -70,6 +71,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match',      badge: 'NEW', moduleId: 'fa_charter' },
   { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Match',      moduleId: 'football_operations' },
   { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Match',      moduleId: 'football_operations' },
+  { id: 'video-analysis',   label: 'Video & Analysis',   icon: Video,          section: 'Match',      badge: 'NEW', moduleId: 'video_analysis' },
   /* REMOVED: Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'halftime-talk',    label: 'Halftime Talk',      icon: Mic,            section: 'Match', badge: 'NEW' },
   */
@@ -2746,6 +2748,7 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
               {activeDept === 'fixtures' && <FixturesView />}
               {activeDept === 'tactics' && <GrassrootsTacticsView />}
               {activeDept === 'set-pieces' && <GrassrootsSetPiecesView />}
+              {activeDept === 'video-analysis' && <GrassrootsVideoAnalysisView />}
               {activeDept === 'finances' && <FinancesView onToast={fireToast} />}
               {activeDept === 'welfare' && <WelfareView />}
               {activeDept === 'communications' && <CommsView onToast={fireToast} />}

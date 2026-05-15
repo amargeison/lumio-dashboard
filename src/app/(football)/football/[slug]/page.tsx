@@ -67,6 +67,7 @@ import VoiceSettings from '@/components/dashboard/VoiceSettings'
 import { FootballScoutIntegrationView, ScoutingDBView, GPSHardwareView, FootballEventDataView } from '@/components/football/IntegrationViews'
 import { FootballLeagueDataView } from '@/components/football/LeagueViews'
 import ProSetPiecesView from '@/components/football/ProSetPiecesView'
+import ProVideoAnalysisView from '@/components/football/ProVideoAnalysisView'
 import FootballBodyMap, { DEMO_INJURIES } from '@/components/football/FootballBodyMap'
 import AvatarDropdown from '@/components/dashboard/AvatarDropdown'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -79,7 +80,7 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
   | 'staff' | 'facilities' | 'settings'
-  | 'lumio-vision' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
+  | 'video-analysis' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
   | 'discover' | 'lumio-data-pro'
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
@@ -121,16 +122,16 @@ const BG_GRADIENTS = [
 ]
 
 // Lumio = club management platform. Most pitch-side tactical tools
-// (formation builder, opposition scout, match centre) were trimmed as
-// Hudl/Sportscode territory on 2 May 2026. Set Piece Analysis is back
-// as a flagship feature — uses real authored content in ProSetPiecesView.
-// Tactics (Formation Builder) stays deferred for a different reason: its
-// view is a PlaceholderView stub at L~2970, not a real feature. Restore
-// the nav entry when a real Tactics view ships. Lumio Vision intentionally
-// stays trimmed — that slot is reserved for the upcoming Match Video &
-// Analysis module. Quick-action buttons in
-// src/data/football/role-quick-actions.ts will need re-adding for the
-// restored IDs (separate follow-up).
+// (Match Centre, Performance Stats, Opposition Scout, Team Selection)
+// were trimmed as Hudl/Sportscode territory on 2 May 2026. Set Piece
+// Analysis was restored Phase 4c — uses real authored content in
+// ProSetPiecesView. Video & Analysis is the Lumio-native video module
+// (Phase 1: nav-and-shell with hardcoded demo content next commit);
+// it replaces the deprecated 'lumio-vision' nav slot. Tactics
+// (Formation Builder) stays deferred — TacticsView at L~2970 is a
+// PlaceholderView stub, not a real feature. Quick-action buttons in
+// src/data/football/role-quick-actions.ts may need updating to point
+// at video-analysis where they previously targeted scrapped IDs.
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',       label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
   { id: 'insights',       label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
@@ -139,10 +140,8 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   /* REMOVED: Match Centre — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'matchday',       label: 'Match Centre',         icon: Trophy,         section: 'PERFORMANCE' },
   */
-  /* DEFERRED: Lumio Vision slot reserved for the upcoming Match Video &
-     Analysis module — keep commented until that ships.
-  { id: 'lumio-vision',   label: 'Lumio Vision',         icon: Video,          section: 'PERFORMANCE' },
-  */
+  // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
+  { id: 'video-analysis', label: 'Video & Analysis',     icon: Video,          section: 'PERFORMANCE' },
   /* REMOVED: Performance Stats — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'analytics',      label: 'Performance Stats',    icon: BarChart3,      section: 'PERFORMANCE' },
   */
@@ -7178,14 +7177,19 @@ const FOOTBALL_ROLES = [
   { id: 'head_community',     label: 'Head of Community',         icon: '❤️' },
 ]
 
+// NOTE: this per-role `sidebar` whitelist is the ACTIVE sidebar gate today
+// (wired into the Sidebar component via the `allowedIds` prop further down).
+// role-templates.ts permissions are forward-looking hygiene only — no UI
+// reads them yet. When editing sidebar visibility for a role, change the
+// array here, not role-templates.ts.
 const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
   ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
   chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr-scr-modeller','commercial','community','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
-  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
-  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
-  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
+  manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','video-analysis','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
+  director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','video-analysis','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
+  head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','video-analysis','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
   head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','concussion-tracker','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
-  analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','lumio-vision','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
+  analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','video-analysis','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
   commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr-scr-modeller','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
   head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
   head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
@@ -7450,7 +7454,11 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'psr-scr-modeller' && <PSRScenarioModellerView />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'tours-camps' && <ToursAndCampsView />}
-            {activeDept === 'lumio-vision' && <FootballScoutIntegrationView />}
+            {activeDept === 'video-analysis' && <ProVideoAnalysisView />}
+            {/* TODO: FootballScoutIntegrationView is now orphaned in this file (the
+                old 'lumio-vision' render branch routed here was deleted as part of
+                the V&A rename). Re-route it under a different DeptId or remove the
+                import in a follow-up cleanup commit. */}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
             {activeDept === 'opta' && <FootballEventDataView />}
