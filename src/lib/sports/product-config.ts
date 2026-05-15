@@ -68,6 +68,7 @@ export const MODULE_IDS = [
   'fundraising',
   'ticketing_crm_fans',
   'media_comms',
+  'video_analysis',
   'facilities_grounds',
   'finance_hr_admin',
   'staff_directory',
@@ -269,6 +270,17 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
   media_comms: {
     label: 'Media & Comms',
     description: 'Press, social media, media obligations',
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+  },
+  video_analysis: {
+    label: 'Video & Analysis',
+    description: 'Match video recording, tactical clips, player performance analysis, set-piece studio, live match analysis, opposition video reports',
+    // All 4 football products at 'full'. Spec originally constrained
+    // Grassroots to COACH-only — overridden here: some Saturday-league
+    // clubs have budget and want the full kit. Sport-portal scope is
+    // football only at Phase 1; cricket/rugby/tennis/etc. not in
+    // catalogue. When this module is enabled for non-football products
+    // in future, extend the tier matrix.
     tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
   },
   facilities_grounds: {

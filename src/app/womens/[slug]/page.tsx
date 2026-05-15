@@ -32,6 +32,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
+import WomensVideoAnalysisView from '@/components/football/WomensVideoAnalysisView'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
@@ -114,6 +115,8 @@ const SIDEBAR_ITEMS = [
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
   // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
+  // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
+  { id: 'video-analysis', label: 'Video & Analysis',   icon: '🎬', group: 'FOOTBALL' },
   /* REMOVED: Match Preparation — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'match',        label: 'Match Preparation',   icon: '⚽', group: 'FOOTBALL' },
   */
@@ -5279,6 +5282,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
       case 'tactics':     return <TacticsSetPiecesView />
+      case 'video-analysis': return <WomensVideoAnalysisView />
       case 'match':       return <MatchPreparationView />
       case 'transfers':   return <TransfersView club={club} />
       case 'analytics':   return <AnalyticsView club={club} />

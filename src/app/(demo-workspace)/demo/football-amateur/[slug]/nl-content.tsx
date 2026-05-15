@@ -13,10 +13,11 @@ import {
   AlertTriangle, CloudRain, Sun,
   CircleDot, Hash, Printer,
   Handshake, Search, Copy, Zap, BarChart3, Radio, Flame,
-  Rocket,
+  Rocket, Video,
 } from 'lucide-react'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
 import NLSetPiecesView from '@/components/football/NLSetPiecesView'
+import NLVideoAnalysisView from '@/components/football/NLVideoAnalysisView'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 import PreSeasonCampMode from '@/components/sports/PreSeasonCampMode'
@@ -62,7 +63,7 @@ const TEXT_SEC = '#94A3B8'
 export type NLDeptId =
   | 'nl-getting-started'
   | 'nl-overview' | 'nl-club-profile' | 'nl-club-vision' | 'nl-squad' | 'nl-fixtures' | 'nl-training' | 'nl-tactics'
-  | 'nl-set-pieces' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
+  | 'nl-set-pieces' | 'nl-video-analysis' | 'nl-medical' | 'nl-transfers' | 'nl-finance' | 'nl-ground'
   | 'nl-safeguarding' | 'nl-matchday' | 'nl-comms' | 'nl-committee'
   | 'nl-gps' | 'nl-gps-heatmaps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
   | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
@@ -98,6 +99,8 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
   // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
   { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
+  // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
+  { id: 'nl-video-analysis',  label: 'Video & Analysis',        icon: Video,          section: 'Football' },
   { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'GPS & Load' },
   { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'GPS & Load' },
   { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },
@@ -4070,6 +4073,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-training' && <NLTrainingView />}
       {activeDept === 'nl-tactics' && <NLTacticsView />}
       {activeDept === 'nl-set-pieces' && <NLSetPiecesView />}
+      {activeDept === 'nl-video-analysis' && <NLVideoAnalysisView />}
       {activeDept === 'nl-medical' && <NLMedicalView />}
       {activeDept === 'nl-transfers' && <NLTransfersView />}
       {activeDept === 'nl-finance' && <NLFinanceView />}

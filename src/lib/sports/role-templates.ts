@@ -154,6 +154,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       tours_camps: 'edit',
       staff_directory: 'admin',
       media_comms: 'edit',
+      video_analysis: 'view',
       community: 'edit',
       overview: 'view',
       insights: 'view',
@@ -203,6 +204,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     permissions: {
       football_operations: 'admin',
       performance_gps: 'edit',
+      video_analysis: 'view',
       medical: 'view',
       player_welfare: 'view',
       recruitment_scouting: 'edit',
@@ -225,6 +227,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     permissions: {
       recruitment_scouting: 'admin',
       football_operations: 'edit',
+      video_analysis: 'view',
       finance_hr_admin: 'edit', // transfer budgets
       youth_academy: 'edit',
       medical: 'view',
@@ -246,6 +249,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     products: ['lumio_pro', 'lumio_women'],
     permissions: {
       performance_gps: 'admin',
+      video_analysis: 'view',
       medical: 'view',
       player_welfare: 'edit',
       football_operations: 'view',
@@ -287,6 +291,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     products: ['lumio_pro', 'lumio_women'],
     permissions: {
       performance_gps: 'edit',
+      video_analysis: 'view',
       // Phase 4a.6: migrated from integrations: 'admin' grant when
       // that module moved to a Settings sub-tab. `settings: 'admin'`
       // is broader than the original grant (includes billing, role
@@ -388,6 +393,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
     products: ['lumio_grassroots'],
     permissions: {
       football_operations: 'edit',
+      video_analysis: 'view',
       tours_camps: 'edit',
       media_comms: 'view',
       travel_logistics: 'view',
