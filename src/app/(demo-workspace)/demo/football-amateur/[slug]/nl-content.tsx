@@ -71,10 +71,13 @@ export type NLDeptId =
 
 type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Facilities' | 'Club'
 
-// Lumio = club management platform. Pitch-side tactical features
-// (AI Halftime Brief, Training drills, Tactics, Set Pieces) are
-// Hudl/Sportscode territory and are commented out here so the underlying
-// view code stays compilable.
+// Lumio = club management platform. Some pitch-side tactical features
+// (AI Halftime Brief, Training drills) remain Hudl/Sportscode territory
+// and are commented out below. Tactics + Set Pieces ARE in scope —
+// flagship features for non-league clubs whose tactical tooling
+// otherwise runs on paper / WhatsApp. NB: this file is the shared
+// source for BOTH the live non-league route (src/app/nonleague/[slug])
+// and the demo-workspace non-league route. Edits here affect both.
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
   { id: 'nl-getting-started', label: 'Getting Started',         icon: Rocket,         section: null },
   { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
@@ -88,11 +91,13 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
   { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
   { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'Football' },
-  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
+  /* REMOVED: Training — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
-  { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
-  { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
   */
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
+  { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
+  { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
   { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'GPS & Load' },
   { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'GPS & Load' },
   { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },

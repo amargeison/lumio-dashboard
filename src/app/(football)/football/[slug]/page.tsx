@@ -120,27 +120,45 @@ const BG_GRADIENTS = [
   'from-blue-900 via-indigo-950 to-yellow-950/80',
 ]
 
-// Lumio = club management platform. Pitch-side tactical tools (formation
-// builder, opposition scout, set piece analysis, match centre, tactical
-// video) are Hudl/Sportscode territory. They are commented out below
-// rather than deleted so the underlying view code (renderView cases)
-// stays compilable and can be restored if needed. Quick-action buttons
-// targeting these IDs were removed in src/data/football/role-quick-actions.ts.
+// Lumio = club management platform. Most pitch-side tactical tools
+// (formation builder, opposition scout, match centre) were trimmed as
+// Hudl/Sportscode territory on 2 May 2026. Set Piece Analysis is back
+// as a flagship feature — uses real authored content in ProSetPiecesView.
+// Tactics (Formation Builder) stays deferred for a different reason: its
+// view is a PlaceholderView stub at L~2970, not a real feature. Restore
+// the nav entry when a real Tactics view ships. Lumio Vision intentionally
+// stays trimmed — that slot is reserved for the upcoming Match Video &
+// Analysis module. Quick-action buttons in
+// src/data/football/role-quick-actions.ts will need re-adding for the
+// restored IDs (separate follow-up).
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
   { id: 'overview',       label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
   { id: 'insights',       label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
   { id: 'board',          label: 'Board Suite',          icon: Crown,          section: 'BOARD' },
   { id: 'community',      label: 'Community',            icon: Heart,          section: 'COMMUNITY' },
-  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
+  /* REMOVED: Match Centre — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'matchday',       label: 'Match Centre',         icon: Trophy,         section: 'PERFORMANCE' },
+  */
+  /* DEFERRED: Lumio Vision slot reserved for the upcoming Match Video &
+     Analysis module — keep commented until that ships.
   { id: 'lumio-vision',   label: 'Lumio Vision',         icon: Video,          section: 'PERFORMANCE' },
+  */
+  /* REMOVED: Performance Stats — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'analytics',      label: 'Performance Stats',    icon: BarChart3,      section: 'PERFORMANCE' },
+  */
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
   { id: 'set-pieces',     label: 'Set Piece Analysis',   icon: Target,         section: 'PERFORMANCE' },
+  /* REMOVED: Opposition Scout — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'scouting',       label: 'Opposition Scout',     icon: Eye,            section: 'PERFORMANCE' },
   */
   { id: 'squad',          label: 'Squad Manager',        icon: Shirt,          section: 'FIRST TEAM' },
-  /* REMOVED: Tactical — Hudl territory. Uncomment to restore.
+  /* REMOVED: Team Selection — Hudl territory. Uncomment to restore.
   { id: 'squad-planner',  label: 'Team Selection',       icon: Clipboard,      section: 'FIRST TEAM' },
+  */
+  // NOTE: Pro Tactics nav intentionally deferred — TacticsView at L~2970 is a
+  // PlaceholderView stub, not a real feature. Uncomment when real implementation
+  // ships. When uncommented, add moduleId: 'football_operations' (Phase 4c).
+  /*
   { id: 'tactics',        label: 'Formation Builder',    icon: Clipboard,      section: 'FIRST TEAM' },
   */
   { id: 'training',       label: 'Training Schedule',    icon: Activity,       section: 'FIRST TEAM' },
@@ -2966,7 +2984,8 @@ function SquadView() {
 }
 
 // ─── Tactics View ───────────────────────────────────────────────────────────
-
+// STUB: PlaceholderView wrapper, not a real tactics view. Nav entry in
+// SIDEBAR_ITEMS deliberately stays commented until this is built out.
 function TacticsView({ onActionClick }: { onActionClick?: (label: string) => void }) {
   return (
     <PlaceholderView
@@ -7407,10 +7426,10 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
 
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
-            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
+            {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && activeDept !== 'set-pieces' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
             {isFootballDemo && activeDept === 'squad' && <SquadView />}
-            {isFootballDemo && activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
-            {isFootballDemo && activeDept === 'set-pieces' && <ProSetPiecesView />}
+            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {activeDept === 'set-pieces' && <ProSetPiecesView />}
             {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
             {isFootballDemo && activeDept === 'medical' && <MedicalView />}

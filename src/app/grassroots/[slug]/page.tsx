@@ -56,9 +56,10 @@ const TEXT = '#F8FAFC'
 const TEXT_SEC = '#94A3B8'
 
 // Lumio = club management platform. Even at grassroots level, pitch-side
-// tactical features (Match Prep, Halftime Talk, Tactics, Set Pieces) are
-// commented out — they're not what a Sunday-league club needs from a
-// management platform.
+// in-match tools (Match Prep, Halftime Talk) are commented out — those
+// are Hudl/Sportscode territory. Tactics + Set Pieces ARE in scope:
+// they're a flagship feature for Sunday-league clubs whose tactical
+// tooling otherwise runs on paper / WhatsApp.
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection; badge?: string; moduleId: ModuleId }[] = [
   { id: 'overview',         label: 'Dashboard',          icon: Home,           section: null,         moduleId: 'overview' },
   { id: 'morning-roundup',  label: 'Morning Roundup',    icon: Bell,           section: null,         badge: 'NEW', moduleId: 'overview' },
@@ -67,6 +68,8 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'matchday',         label: 'Match Prep',         icon: Trophy,         section: 'Match' },
   */
   { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match',      badge: 'NEW', moduleId: 'fa_charter' },
+  { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Match',      moduleId: 'football_operations' },
+  { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Match',      moduleId: 'football_operations' },
   /* REMOVED: Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'halftime-talk',    label: 'Halftime Talk',      icon: Mic,            section: 'Match', badge: 'NEW' },
   */
@@ -85,10 +88,6 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'league-reg',       label: 'League Registration',icon: FileText,       section: 'Admin',      moduleId: 'fa_charter' },
   { id: 'safeguarding',     label: 'Safeguarding',       icon: Shield,         section: 'Admin',      moduleId: 'fa_charter' },
   { id: 'juniors',          label: 'Junior Section',     icon: GraduationCap,  section: 'Juniors',    badge: 'NEW', moduleId: 'junior_section' },
-  /* REMOVED: Tactics / Set Pieces — pitch-side tactical, Hudl territory.
-  { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Club' },
-  { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Club' },
-  */
   { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations', moduleId: 'player_welfare' },
   { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations', moduleId: 'media_comms' },
   { id: 'media',            label: 'Media & Content',    icon: Newspaper,      section: 'Operations', moduleId: 'media_comms' },
