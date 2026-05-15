@@ -80,9 +80,9 @@ Sidebar groupings and module IDs are independently meaningful. The sidebar is a 
 
 Separate concerns. `staff_directory` is people management — staff records, org chart, club info documents, player records as people. The squad-side concerns of `football_operations` are football management — selection, tactical decisions, training availability. A player exists in both: as a person (`staff_directory`) and as a footballer (`football_operations`).
 
-### Tactical formations are not Lumio's fight (for Pro)
+### Tactical formations — partial reversal (Phase 4c)
 
-Tactical formation tools (4-2-3-1 boards, opposition analysis, set-piece libraries) sit in the Wyscout / ProZone / Hudl space. Lumio Pro does not compete here. May revisit for non-league / Grassroots later, where the incumbent tools are absent or too expensive.
+Original May 2026 decision was to leave tactics + set-pieces to Wyscout / ProZone / Hudl across all four products. Reversed at Phase 4c after live-portal review: at Grassroots, Women's, and Non-League the incumbent tools are absent or too expensive, so Tactics + Set Pieces ARE flagship features there. **Pro Set Pieces** is also restored — uses real authored content in `src/components/football/ProSetPiecesView.tsx`. **Pro Tactics nav stays deferred** for a separate reason: the `TacticsView` function at `src/app/(football)/football/[slug]/page.tsx:~2970` is currently a `PlaceholderView` stub, not a real feature. Revisit Pro Tactics nav when a real implementation ships. Lumio Vision stays trimmed — that slot is reserved for the upcoming Match Video & Analysis module.
 
 ### Strategy is a sub-tab of Board & Executive
 
@@ -192,6 +192,7 @@ Pro's sidebar contains 9 groups plus cross-cutting top items. The portal uses th
 | FIRST TEAM | Squad Manager | `football_operations` | Sub-tab of `football_operations` landing page |
 | | Training Schedule | `football_operations` | Sub-tab |
 | | ~~Staff~~ | *removed* | Duplicate of `staff_directory` — confirmed removed in Phase 4a.5 mapping |
+| PERFORMANCE | Set Piece Analysis | `football_operations` | Restored Phase 4c — ~80 authored set-piece routines in `ProSetPiecesView`. Sub-tab of `football_operations`. (Pro Tactics nav stays deferred — `TacticsView` is currently a `PlaceholderView` stub at `src/app/(football)/football/[slug]/page.tsx:~2970`; restore when real implementation ships.) |
 | MEDICAL | Medical Hub | `medical_welfare` | Module landing page |
 | | Concussion Tracker | `medical_welfare` | Sub-tab |
 | | Mental Performance | `medical_welfare` | Sub-tab |
@@ -256,6 +257,8 @@ Club uses the same unified module/department landing page pattern as Pro and Lum
 | COMMUNITY | Community | `community` | **New module for Club.** Community programmes, schools outreach. *Distinct from Fundraising — Community is non-revenue community work* |
 | FOOTBALL | Squad | `football_operations` | Sub-tab of `football_operations` landing page |
 | | Fixtures & Cups | `football_operations` | Sub-tab — league fixtures and cup fixture scheduling |
+| | Tactics | `football_operations` | Restored Phase 4c — uses inline `NLTacticsView` in `nl-content.tsx`. Sub-tab of `football_operations` |
+| | Set Pieces | `football_operations` | Restored Phase 4c — `NLSetPiecesView` component (~3338 lines). Sub-tab of `football_operations` |
 | | Cup Manager | `cup_manager` | **Own module** *(new in Phase 4a.6)*. FA Cup, county cups, NPL Cup runs. Prize money modelling, TV income forecasting, ticketing surge management, replay scheduling. Major revenue + identity driver at non-league level. |
 | | Transfers & Recruitment | `recruitment_scouting` | Module landing page. Non-league recruitment (free transfers, trials, releases) |
 | | Academy | `youth_academy` | **New build for Club.** Most non-league clubs run youth academies (U18/U16/U14 feeding first team). Module is already tier `'full'` in catalogue — just needs surfacing in Club sidebar. |
@@ -347,6 +350,7 @@ Women's portal already has built (ahead of Pro/Club): Insights, Staff Directory,
 | | Medical Records *(moved from OPERATIONS)* | `medical` | **Sub-tab of new `medical` module.** Clinical injury management, role-gated to Club Doctor + Welfare Lead. Cross-references ACL Risk + Maternity from `player_welfare` at top of page. |
 | FOOTBALL | Squad Management | `football_operations` | Sub-tab |
 | | Dual Registration | `recruitment_scouting` | Sub-tab — FA Women's dual registration agreements (lower-tier women players registered to 2 clubs simultaneously). Existing page kept as-is — mapping only |
+| | Tactics & Set Pieces | `football_operations` | Restored Phase 4c — single combined sidebar item, uses inline `TacticsSetPiecesView`. Sub-tab of `football_operations` |
 | | Transfers | `recruitment_scouting` | Module landing page |
 | | Academy | `youth_academy` | Module landing page |
 | GPS & LOAD | GPS & Load | `performance_gps` | Module landing page |
@@ -406,6 +410,8 @@ Compliance flagship: `wsl_handbook` (WSL Handbook + Carney Review)
 | OVERVIEW | Dashboard, Morning Roundup | *(portal furniture, not a module)* |
 | MATCH DAY | Fixtures | `football_operations` |
 | | FA Sunday Cup | `fa_charter` |
+| | Tactics | `football_operations` *(Phase 4c restoration — uses `GrassrootsTacticsView`)* |
+| | Set Pieces | `football_operations` *(Phase 4c restoration — uses `GrassrootsSetPiecesView`, ~80 routines)* |
 | SQUAD | Squad List, Availability, Development Notes | `football_operations` |
 | | Discipline (cards / suspensions) | `football_operations` |
 | | Discipline (conduct) | `player_welfare` *(welfare-side, distinct from cards)* |
@@ -438,7 +444,7 @@ Compliance flagship is `fa_charter` (FA Charter Standard).
 
 Decisions parked for future sprints. Not blocking Phase 4a.5 / 4b completion.
 
-- **Tactical formations module.** Out of scope for Pro/Club/Women (incumbent tools own the space). Revisit for non-league or Grassroots later, where the market is unserved.
+- **Tactical formations module.** ~~Out of scope for Pro/Club/Women.~~ Partially reversed Phase 4c — restored for Grassroots, Women, Non-League, and Pro Set Pieces. **Pro Tactics nav stays deferred**: `TacticsView` at `src/app/(football)/football/[slug]/page.tsx:~2970` is a `PlaceholderView` stub, not a real feature; restore the nav entry when a real Tactics view ships. Lumio Vision intentionally stays trimmed at Pro — that slot is reserved for the upcoming Match Video & Analysis module.
 - **`junior_section` for Club.** Currently disabled for Club. If Harfield-equivalent clubs run a meaningful community youth operation alongside their NPL first team, enabling `junior_section` for Club is a one-line tier-matrix change.
 - **`ground_grading_fsr` top-level surfacing in Club sidebar.** Currently nested. Surface as a top-level compliance item in the next Club portal sprint.
 - **Settings position in Club sidebar.** Currently missing entirely. Add as final item in the next Club portal sprint.

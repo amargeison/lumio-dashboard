@@ -23,6 +23,7 @@ import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { GrassrootsDashboardView, GR_THEME, GR_ACCENT } from './_components/GrassrootsDashboardModules'
 import { GrassrootsSidebarNav } from './_components/GrassrootsShell'
+import { isModuleEnabled, type ModuleId } from '@/lib/sports/product-config'
 
 // ─── GRASSROOTS ROLES ─────────────────────────────────────────────────────────
 const GRASSROOTS_ROLES = [
@@ -55,50 +56,49 @@ const TEXT = '#F8FAFC'
 const TEXT_SEC = '#94A3B8'
 
 // Lumio = club management platform. Even at grassroots level, pitch-side
-// tactical features (Match Prep, Halftime Talk, Tactics, Set Pieces) are
-// commented out — they're not what a Sunday-league club needs from a
-// management platform.
-const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection; badge?: string }[] = [
-  { id: 'overview',         label: 'Dashboard',          icon: Home,           section: null },
-  { id: 'morning-roundup',  label: 'Morning Roundup',    icon: Bell,           section: null, badge: 'NEW' },
-  { id: 'fixtures',         label: 'Fixtures',           icon: Calendar,       section: 'Match' },
+// in-match tools (Match Prep, Halftime Talk) are commented out — those
+// are Hudl/Sportscode territory. Tactics + Set Pieces ARE in scope:
+// they're a flagship feature for Sunday-league clubs whose tactical
+// tooling otherwise runs on paper / WhatsApp.
+const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection; badge?: string; moduleId: ModuleId }[] = [
+  { id: 'overview',         label: 'Dashboard',          icon: Home,           section: null,         moduleId: 'overview' },
+  { id: 'morning-roundup',  label: 'Morning Roundup',    icon: Bell,           section: null,         badge: 'NEW', moduleId: 'overview' },
+  { id: 'fixtures',         label: 'Fixtures',           icon: Calendar,       section: 'Match',      moduleId: 'football_operations' },
   /* REMOVED: Match Prep / Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'matchday',         label: 'Match Prep',         icon: Trophy,         section: 'Match' },
   */
-  { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match', badge: 'NEW' },
+  { id: 'fa-sunday-cup',    label: 'FA Sunday Cup',      icon: Trophy,         section: 'Match',      badge: 'NEW', moduleId: 'fa_charter' },
+  { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Match',      moduleId: 'football_operations' },
+  { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Match',      moduleId: 'football_operations' },
   /* REMOVED: Halftime Talk — pitch-side tactical, Hudl territory.
   { id: 'halftime-talk',    label: 'Halftime Talk',      icon: Mic,            section: 'Match', badge: 'NEW' },
   */
-  { id: 'squad',            label: 'Squad List',         icon: Shirt,          section: 'Squad' },
-  { id: 'availability',     label: 'Availability',       icon: CheckCircle2,   section: 'Squad' },
-  { id: 'discipline',       label: 'Discipline',         icon: AlertCircle,    section: 'Squad' },
-  { id: 'dbs-tracker',      label: 'DBS Tracker',        icon: Shield,         section: 'Squad', badge: 'NEW' },
-  { id: 'kit',              label: 'Kit & Equipment',    icon: Shirt,          section: 'Club Ops' },
-  { id: 'kit-lockup',       label: 'Kit Lock-Up',        icon: Shirt,          section: 'Club Ops', badge: 'NEW' },
-  { id: 'pitch',            label: 'Pitch Booking',      icon: MapPin,         section: 'Club Ops' },
-  { id: 'subs-tracker',     label: 'Subs Tracker',       icon: DollarSign,     section: 'Club Ops', badge: 'NEW' },
-  { id: 'finances',         label: 'Finances',           icon: DollarSign,     section: 'Club Ops' },
-  { id: 'player-profiles',  label: 'Player Profiles',    icon: Users,          section: 'Players' },
-  { id: 'development',      label: 'Development Notes',  icon: TrendingUp,     section: 'Players' },
-  { id: 'referee-bookings', label: 'Referee Bookings',   icon: Eye,            section: 'Admin', badge: 'NEW' },
-  { id: 'league-reg',       label: 'League Registration',icon: FileText,       section: 'Admin' },
-  { id: 'safeguarding',     label: 'Safeguarding',       icon: Shield,         section: 'Admin' },
-  { id: 'juniors',          label: 'Junior Section',     icon: GraduationCap,  section: 'Juniors', badge: 'NEW' },
-  /* REMOVED: Tactics / Set Pieces — pitch-side tactical, Hudl territory.
-  { id: 'tactics',          label: 'Tactics',            icon: Clipboard,      section: 'Club' },
-  { id: 'set-pieces',       label: 'Set Pieces',         icon: Target,         section: 'Club' },
-  */
-  { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations' },
-  { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations' },
-  { id: 'media',            label: 'Media & Content',    icon: Newspaper,      section: 'Operations' },
-  { id: 'referee',          label: 'Referees',           icon: Eye,            section: 'Operations' },
-  { id: 'volunteers',       label: 'Volunteers',         icon: Users,          section: 'Resources' },
-  { id: 'travel',           label: 'Travel',             icon: Car,            section: 'Resources' },
-  { id: 'documents',        label: 'Documents',          icon: FolderOpen,     section: 'Resources' },
-  { id: 'club-profile',     label: 'Club Profile',       icon: MapPin,         section: 'Club Info' },
-  { id: 'history',          label: 'Club History',       icon: History,        section: 'Club Info' },
-  { id: 'preseason',        label: 'Pre-Season',         icon: Activity,       section: 'Club Info', badge: 'NEW' },
-  { id: 'settings',         label: 'Settings',           icon: Settings,       section: 'Club Info' },
+  { id: 'squad',            label: 'Squad List',         icon: Shirt,          section: 'Squad',      moduleId: 'football_operations' },
+  { id: 'availability',     label: 'Availability',       icon: CheckCircle2,   section: 'Squad',      moduleId: 'football_operations' },
+  { id: 'discipline',       label: 'Discipline',         icon: AlertCircle,    section: 'Squad',      moduleId: 'football_operations' },
+  { id: 'dbs-tracker',      label: 'DBS Tracker',        icon: Shield,         section: 'Squad',      badge: 'NEW', moduleId: 'fa_charter' },
+  { id: 'kit',              label: 'Kit & Equipment',    icon: Shirt,          section: 'Club Ops',   moduleId: 'facilities_grounds' },
+  { id: 'kit-lockup',       label: 'Kit Lock-Up',        icon: Shirt,          section: 'Club Ops',   badge: 'NEW', moduleId: 'facilities_grounds' },
+  { id: 'pitch',            label: 'Pitch Booking',      icon: MapPin,         section: 'Club Ops',   moduleId: 'facilities_grounds' },
+  { id: 'subs-tracker',     label: 'Subs Tracker',       icon: DollarSign,     section: 'Club Ops',   badge: 'NEW', moduleId: 'finance_hr_admin' },
+  { id: 'finances',         label: 'Finances',           icon: DollarSign,     section: 'Club Ops',   moduleId: 'finance_hr_admin' },
+  { id: 'player-profiles',  label: 'Player Profiles',    icon: Users,          section: 'Players',    moduleId: 'staff_directory' },
+  { id: 'development',      label: 'Development Notes',  icon: TrendingUp,     section: 'Players',    moduleId: 'football_operations' },
+  { id: 'referee-bookings', label: 'Referee Bookings',   icon: Eye,            section: 'Admin',      badge: 'NEW', moduleId: 'football_operations' },
+  { id: 'league-reg',       label: 'League Registration',icon: FileText,       section: 'Admin',      moduleId: 'fa_charter' },
+  { id: 'safeguarding',     label: 'Safeguarding',       icon: Shield,         section: 'Admin',      moduleId: 'fa_charter' },
+  { id: 'juniors',          label: 'Junior Section',     icon: GraduationCap,  section: 'Juniors',    badge: 'NEW', moduleId: 'junior_section' },
+  { id: 'welfare',          label: 'Welfare',            icon: Shield,         section: 'Operations', moduleId: 'player_welfare' },
+  { id: 'communications',   label: 'Comms',              icon: MessageSquare,  section: 'Operations', moduleId: 'media_comms' },
+  { id: 'media',            label: 'Media & Content',    icon: Newspaper,      section: 'Operations', moduleId: 'media_comms' },
+  { id: 'referee',          label: 'Referees',           icon: Eye,            section: 'Operations', moduleId: 'football_operations' },
+  { id: 'volunteers',       label: 'Volunteers',         icon: Users,          section: 'Resources',  moduleId: 'football_operations' },
+  { id: 'travel',           label: 'Travel',             icon: Car,            section: 'Resources',  moduleId: 'travel_logistics' },
+  { id: 'documents',        label: 'Documents',          icon: FolderOpen,     section: 'Resources',  moduleId: 'staff_directory' },
+  { id: 'club-profile',     label: 'Club Profile',       icon: MapPin,         section: 'Club Info',  moduleId: 'staff_directory' },
+  { id: 'history',          label: 'Club History',       icon: History,        section: 'Club Info',  moduleId: 'staff_directory' },
+  { id: 'preseason',        label: 'Pre-Season',         icon: Activity,       section: 'Club Info',  badge: 'NEW', moduleId: 'tours_camps' },
+  { id: 'settings',         label: 'Settings',           icon: Settings,       section: 'Club Info',  moduleId: 'settings' },
 ]
 
 // ─── Squad Data ───────────��──────────────────────────────────────────────────
@@ -440,7 +440,17 @@ function WFStatusBadge({ status }: { status: string }) {
 
 function Sidebar({ activeDept, onSelect, open, onClose, session, onPinChange }: { activeDept: string; onSelect: (d: string) => void; open: boolean; onClose: () => void; session?: SportsDemoSession; onPinChange?: (pinned: boolean) => void }) {
   const tierColor = '#16A34A'
-  const items = SIDEBAR_ITEMS
+  // Phase 4c Part A: filter sidebar items by the MODULES catalogue in
+  // product-config.ts — the catalogue is now the source of truth for
+  // which items are visible at the Grassroots product tier. Items whose
+  // module is 'disabled' or 'optional' for lumio_grassroots are hidden;
+  // 'full' and 'lite' pass through. Single filter call here so BOTH the
+  // desktop sidebar (GrassrootsSidebarNav below) and the mobile drawer
+  // (further down in this component) consume the same filtered list —
+  // guarantees the two views stay in sync. Hardcoded 'lumio_grassroots'
+  // is correct: this is the Grassroots portal page; Pro/Club/Women
+  // pages will follow the same pattern with their own product literal.
+  const items = SIDEBAR_ITEMS.filter(i => isModuleEnabled('lumio_grassroots', i.moduleId))
   const sectionLabels = [...new Set(items.map(i => i.section))]
 
   const [pinned, setPinned] = useState(false)

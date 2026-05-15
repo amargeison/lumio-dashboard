@@ -80,11 +80,12 @@ interface WomensClub {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-// Lumio = club management platform. Pitch-side tactical features
-// (Tactics & Set Pieces, Match Preparation, Analytics, Scouting, AI Halftime
-// Brief) are Hudl/Sportscode territory and are commented out here so the
-// underlying renderView cases stay compilable. Quick-action buttons that
-// targeted these IDs were updated in src/data/womens/role-quick-actions.ts.
+// Lumio = club management platform. Some pitch-side tactical features
+// (Match Preparation, Analytics, Scouting, AI Halftime Brief) remain
+// Hudl/Sportscode territory and are commented out below. Tactics & Set
+// Pieces ARE in scope — restored after Phase 4c reconciliation; uses the
+// inline TacticsSetPiecesView. Quick-action buttons targeting the still-
+// trimmed IDs were updated in src/data/womens/role-quick-actions.ts.
 const SIDEBAR_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
   { id: 'briefing',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
@@ -111,8 +112,9 @@ const SIDEBAR_ITEMS = [
   { id: 'training-ground', label: 'Training Ground',    icon: '📍', group: 'FACILITIES' },
   { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
-  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
   { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
+  /* REMOVED: Match Preparation — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'match',        label: 'Match Preparation',   icon: '⚽', group: 'FOOTBALL' },
   */
   { id: 'transfers',   label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
