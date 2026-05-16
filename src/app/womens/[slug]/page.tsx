@@ -5416,9 +5416,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const isSponsor = false
 
   // Dashboard tabs
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { return localStorage.getItem('womens_getting_started_seen') ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'dontmiss'|'team'>('today')
 
   // ── v2 dashboard state (hero + overlays) ───────────────────────────
   const v2T       = THEMES.dark
@@ -5433,8 +5431,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   useV2Key('cmdk', () => setV2CmdOpen(o => !o))
   // Map dashTab IDs to v2 Lucide icons for the restyled tab bar.
   const v2TabIcon = (id: typeof dashTab): string => ({
-    gettingstarted: 'sparkles', today: 'home', quickwins: 'lightning',
-    dailytasks: 'check', insights: 'bars', dontmiss: 'flag', team: 'people',
+    today: 'home', quickwins: 'lightning',
+    dailytasks: 'check', dontmiss: 'flag', team: 'people',
   } as const)[id]
 
   // Morning banner quotes
@@ -5494,15 +5492,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     const iv = setInterval(() => setClockTick(p => p + 1), 60000)
     return () => clearInterval(iv)
   }, [])
-
-  // Getting started
-  const [onboarding, setOnboarding] = useState<boolean[]>(() => {
-    try { const s = localStorage.getItem('lumio_womens_onboarding'); return s ? JSON.parse(s) : Array(10).fill(false) } catch { return Array(10).fill(false) }
-  })
-  const toggleOnboarding = (idx: number) => {
-    const next = [...onboarding]; next[idx] = !next[idx]; setOnboarding(next)
-    try { localStorage.setItem('lumio_womens_onboarding', JSON.stringify(next)); if (next.every(Boolean)) localStorage.setItem('womens_getting_started_seen', '1') } catch {}
-  }
 
   // AI morning summary
   const [aiSummary, setAiSummary] = useState<string | null>(null)
@@ -5597,29 +5586,13 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   // ── Tab definitions ──
   const allTabs = [
-    { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
     { id: 'today' as const, label: 'Today', icon: '🏠' },
     { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
     { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
-    { id: 'insights' as const, label: 'Insights', icon: '📊' },
     { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
-    { id: 'team' as const, label: 'Team', icon: '👥' },
+    { id: 'team' as const, label: 'Staff', icon: '👥' },
   ]
   const visibleTabs = allTabs.filter(t => !roleConfig.hiddenTabs.includes(t.id))
-
-  // ── Getting Started items ──
-  const onboardingItems = [
-    'Connect WSL/WSL 2 profile',
-    'Set up FSR compliance dashboard',
-    'Add squad (24 players)',
-    'Configure welfare monitoring',
-    'Upload sponsor agreements',
-    'Set dual registration agreements',
-    'Add coaching and medical team',
-    'Configure Karen Carney Review compliance',
-    'Set fixture schedule',
-    'Ready — let\'s make history ⚽',
-  ]
 
   // ── Quick Wins items ──
   const quickWinsItems = [
@@ -5722,44 +5695,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
         </div>
 
-        {/* FSR button bar */}
-        <div className="border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0A0B12' }}>
-          <div className="flex items-center gap-3">
-            {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-5 h-5 rounded object-cover" />
-              : <span className="text-lg">⚽</span>}
-            <div>
-              {/* Team name removed — already shown in sidebar header.
-                  Keep the substantive Sprint 3.5 compliance indicator. */}
-              <p className="text-[10px] text-gray-500">
-                {club.tier === 'grassroots' ? `${club.league} Women's Football` : `${club.league} · FSR Compliant · Karen Carney Review Standards`}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {session.photoDataUrl && (
-              <img src={session.photoDataUrl} alt="" className="w-6 h-6 rounded-full object-cover border border-pink-600/40" />
-            )}
-            {club.tier !== 'grassroots' && (
-              <span className={`text-xs px-2 py-1 rounded ${
-                club.salarySpend !== null && club.salarySpend > 80 ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
-                club.salarySpend !== null && club.salarySpend > 70 ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
-                'bg-green-600/20 text-green-400 border border-green-600/30'
-              }`}>
-                FSR: {club.salarySpend !== null && club.salarySpend > 80 ? 'AT RISK' : club.salarySpend !== null && club.salarySpend > 70 ? 'REVIEW' : 'SAFE'}
-              </span>
-            )}
-            <span className={`text-xs px-2 py-1 rounded ${
-              club.tier === 'pro' ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' :
-              club.tier === 'championship' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
-              'bg-green-600/20 text-green-400 border border-green-600/30'
-            }`}>{club.league}</span>
-          </div>
-        </div>
-
-        {/* Role indicator strip removed — role context is shown via the
-            role selector dropdown in sidebar bottom (canonical pattern
-            across all portals). Removed here for portal consistency. */}
+        {/* FSR / status strip removed — header chrome now ends at the
+            demo workspace banner above. Avatar dropdown + notification
+            bell will be added to the top-right corner in a follow-up. */}
 
         {/* Sponsor dashboard override */}
         {isSponsor && activeSection === 'dashboard' ? (
@@ -5819,44 +5757,23 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               })}
             </div>
 
-            {/* Quick Actions — role-aware (shared bar) */}
-            {/* QUICK ACTIONS row centered horizontally for breathing space
-                between left-aligned Tabs row above and KPI cards below. */}
-            <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
-              <RoleAwareQuickActionsBar
-                sport="womens"
-                role={currentRole as string}
-                onNavigate={(deptId) => setActiveSection(deptId)}
-                accentHex={v2Accent.hex}
-              />
-            </div>
+            {/* Quick Actions — role-aware (shared bar), Today tab only.
+                Restricted to Today: Quick Wins and Daily Tasks tabs are
+                lists of their own action items, so the Quick Actions row
+                duplicated context. */}
+            {dashTab === 'today' && (
+              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
+                <RoleAwareQuickActionsBar
+                  sport="womens"
+                  role={currentRole as string}
+                  onNavigate={(deptId) => setActiveSection(deptId)}
+                  accentHex={v2Accent.hex}
+                />
+              </div>
+            )}
 
             {/* Tab content */}
             <div className="p-6 flex-1 w-full">
-              {/* Getting Started tab */}
-              {dashTab === 'gettingstarted' && (
-                <div className="space-y-4">
-                  <SectionHeader title="Getting Started" subtitle="Complete these 10 steps to set up your club" icon="🚀" />
-                  <div className="space-y-2">
-                    {onboardingItems.map((item, idx) => (
-                      <button key={idx} onClick={() => toggleOnboarding(idx)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
-                        style={{ backgroundColor: onboarding[idx] ? '#111318' : '#0D1117', border: onboarding[idx] ? '1px solid #22C55E30' : '1px solid #1F2937' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: onboarding[idx] ? '#22C55E20' : '#1F2937', border: onboarding[idx] ? '1px solid #22C55E50' : '1px solid #374151' }}>
-                          {onboarding[idx] ? <span className="text-green-400 text-xs">✓</span> : <span className="text-gray-500 text-xs">{idx + 1}</span>}
-                        </div>
-                        <span className={`text-xs ${onboarding[idx] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{item}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-4 p-3 rounded-xl text-xs" style={{ backgroundColor: '#BE185D15', border: '1px solid #BE185D30' }}>
-                    <span style={{ color: '#BE185D' }} className="font-semibold">{onboarding.filter(Boolean).length}/10 complete</span>
-                    <span className="text-gray-500 ml-2">— {onboarding.every(Boolean) ? 'All done! Switch to Today tab.' : 'Keep going, you\'re doing great!'}</span>
-                  </div>
-                </div>
-              )}
-
               {/* Today tab — v2 modular grid */}
               {dashTab === 'today' && (
                 <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
@@ -5947,11 +5864,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 </div>
               )}
 
-              {/* Insights tab */}
-              {dashTab === 'insights' && (
-                <InsightsView club={club} defaultRole={activeRole} />
-              )}
-
               {/* Don't Miss tab */}
               {dashTab === 'dontmiss' && (
                 <div className="space-y-4">
@@ -5968,10 +5880,10 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 </div>
               )}
 
-              {/* Team tab */}
+              {/* Staff tab (id 'team' preserved for state continuity) */}
               {dashTab === 'team' && (
                 <div className="space-y-4">
-                  <SectionHeader title="Team" subtitle="Staff, structure, and club information" icon="👥" />
+                  <SectionHeader title="Staff" subtitle="Staff, structure, and club information" icon="👥" />
                   <div className="flex gap-1 border-b border-gray-800 mb-4">
                     {[
                       { id: 'today' as const, label: 'Today' },
