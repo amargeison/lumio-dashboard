@@ -910,6 +910,41 @@ const ACLRiskMonitorView = () => {
     {name:'Tilly Brooks',    pos:'LW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
   ]
   const overdueCount = aclPlayers.filter(p => p.overdue).length
+
+  // ── ACL PREVENTION PROGRAMME ───────────────────────────────────────────────
+  // Research consensus: FIFA 11+ / prehab is the primary modifiable lever
+  // for ACL-injury risk in women's football. The bottleneck is consistent
+  // delivery, not awareness. This tracker is the accountability layer.
+  // Block = 12 sessions (6 weeks × 2). Sophie Lawson excluded — on maternity.
+  type RAG = 'green' | 'amber' | 'red'
+  const prevention: Array<{name:string;pos:string;weekDone:number;weekTarget:number;blockDone:number;blockTarget:number;notes:string}> = [
+    {name:'Emily Zhang',    pos:'CM', weekDone:0, weekTarget:2, blockDone:5,  blockTarget:12, notes:'Missed Mon + Wed prehab. Flagged with Head Physio — drives current red composite.'},
+    {name:'Priya Nair',     pos:'FW', weekDone:1, weekTarget:2, blockDone:9,  blockTarget:12, notes:'Single miss — luteal-phase fatigue logged with player.'},
+    {name:'Sophie Turner',  pos:'CB', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'Modified prehab — integrated with RTP Phase 3 progressive load.'},
+    {name:'Emma Clarke',    pos:'GK', weekDone:2, weekTarget:2, blockDone:12, blockTarget:12, notes:'Full adherence — GK-modified protocol.'},
+    {name:'Charlotte Reed', pos:'CB', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'One travel-related miss earlier in block.'},
+    {name:'Jade Osei',      pos:'LB', weekDone:2, weekTarget:2, blockDone:10, blockTarget:12, notes:'Two misses across block; on track this week.'},
+    {name:'Abbi Walsh',     pos:'RW', weekDone:1, weekTarget:2, blockDone:10, blockTarget:12, notes:'Wed session missed — illness, GP note on file.'},
+    {name:'Fatima Al-Said', pos:'AM', weekDone:2, weekTarget:2, blockDone:12, blockTarget:12, notes:'Full adherence.'},
+    {name:'Megan Hughes',   pos:'DM', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'One miss for international duty.'},
+    {name:'Tilly Brooks',   pos:'LW', weekDone:2, weekTarget:2, blockDone:10, blockTarget:12, notes:'Two misses — concussion clearance gap.'},
+  ]
+  const pct = (done:number, target:number) => Math.round((done / target) * 100)
+  const rag = (p:number): RAG => p < 60 ? 'red' : p < 80 ? 'amber' : 'green'
+  const ragCls = (r:RAG) =>
+    r === 'red'   ? 'bg-red-600/20 text-red-400 border border-red-600/30'
+  : r === 'amber' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30'
+                  : 'bg-green-600/20 text-green-400 border border-green-600/30'
+  const ragLabel = (r:RAG) => r === 'red' ? 'Behind' : r === 'amber' ? 'Catch up' : 'On track'
+
+  const blockDoneTotal   = prevention.reduce((s,p)=>s+p.blockDone, 0)
+  const blockTargetTotal = prevention.reduce((s,p)=>s+p.blockTarget, 0)
+  const weekDoneTotal    = prevention.reduce((s,p)=>s+p.weekDone, 0)
+  const weekTargetTotal  = prevention.reduce((s,p)=>s+p.weekTarget, 0)
+  const squadAdherence   = pct(blockDoneTotal, blockTargetTotal)
+  const flaggedRed       = prevention.filter(p => rag(pct(p.blockDone, p.blockTarget)) === 'red')
+  const flaggedAmber     = prevention.filter(p => rag(pct(p.blockDone, p.blockTarget)) === 'amber')
+
   // Demo screening scheduler — next 6 weeks
   const scheduler: Array<{date:string;day:string;player:string;type:string}> = [
     {date:'10 Apr',day:'Wed',player:'Emma Clarke',  type:'Catch-up screening'},
@@ -984,6 +1019,85 @@ const ACLRiskMonitorView = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ── ACL Prevention Programme ─────────────────────────────────────── */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="flex items-start justify-between mb-3 gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">ACL Prevention Programme</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">FIFA 11+ &middot; prehab &middot; matchday-minus warm-up routines</p>
+          </div>
+          <span className="text-[10px] text-pink-300 bg-pink-600/10 border border-pink-600/30 rounded px-2 py-1 text-right max-w-xs leading-relaxed">
+            Consensus is that consistent delivery — not awareness — is the primary modifiable ACL-risk lever in women&apos;s football. This is the accountability layer.
+          </span>
+        </div>
+
+        {/* Squad summary tiles */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${rag(squadAdherence) === 'red' ? 'text-red-400' : rag(squadAdherence) === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>{squadAdherence}%</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Squad adherence — this block</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{blockDoneTotal} of {blockTargetTotal} sessions</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="text-xl font-bold text-pink-400">{weekDoneTotal}/{weekTargetTotal}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Sessions this week</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{pct(weekDoneTotal, weekTargetTotal)}% complete</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${flaggedRed.length > 0 ? 'text-red-400' : 'text-gray-500'}`}>{flaggedRed.length}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Behind ({'<'}60%)</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{flaggedRed.map(p => p.name.split(' ')[0]).join(', ') || '—'}</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${flaggedAmber.length > 0 ? 'text-amber-400' : 'text-gray-500'}`}>{flaggedAmber.length}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Catch up (60–79%)</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{flaggedAmber.map(p => p.name.split(' ')[0]).join(', ') || '—'}</div>
+          </div>
+        </div>
+
+        {/* Behind banner */}
+        {flaggedRed.length > 0 && (
+          <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-3 mb-4 text-xs text-red-400">
+            ⚠ {flaggedRed.length} player{flaggedRed.length === 1 ? '' : 's'} flagged as behind on prevention sessions — Head Physio and Welfare Lead notified. Prevention shortfall is the largest single contributor to current red composite risk scores.
+          </div>
+        )}
+
+        {/* Per-player table */}
+        <div className="border border-gray-800 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-left p-3">Pos</th>
+              <th className="text-left p-3">This week</th>
+              <th className="text-left p-3">This block</th>
+              <th className="text-left p-3">Adherence</th>
+              <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Notes</th>
+            </tr></thead>
+            <tbody>
+              {prevention.map(p => {
+                const adherence = pct(p.blockDone, p.blockTarget)
+                const r = rag(adherence)
+                return (
+                  <tr key={p.name} className="border-b border-gray-800/50 last:border-0">
+                    <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                    <td className="p-3 text-gray-500 text-xs">{p.pos}</td>
+                    <td className="p-3 text-xs text-gray-300">{p.weekDone}/{p.weekTarget}</td>
+                    <td className="p-3 text-xs text-gray-300">{p.blockDone}/{p.blockTarget}</td>
+                    <td className="p-3 text-xs">
+                      <span className={r === 'red' ? 'text-red-400 font-bold' : r === 'amber' ? 'text-amber-400 font-bold' : 'text-green-400 font-bold'}>{adherence}%</span>
+                    </td>
+                    <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded font-medium ${ragCls(r)}`}>{ragLabel(r)}</span></td>
+                    <td className="p-3 text-[11px] text-gray-500 leading-snug">{p.notes}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="text-[10px] text-gray-600 mt-3">Block = 12 sessions (6 weeks × 2). Sophie Lawson excluded — on maternity. Modified protocols (Sophie Turner RTP, Emma Clarke GK) tracked against player-specific session counts.</div>
       </div>
 
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
