@@ -361,7 +361,7 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | WELFARE | Player Welfare | `player_welfare` | |
 | | ACL Risk Monitor | `player_welfare` | Women's-specific ACL injury prevention |
 | | Cycle Tracking | `player_welfare` | Menstrual cycle impact on training/performance |
-| | Maternity Tracker | `player_welfare` | Pregnancy, maternity leave, return-to-play |
+| | Pregnancy & Return-to-Play | `player_welfare` | **New port to standalone `WomensPregnancyRtpView`.** Replaces inline MaternityTrackerView stub. 10-stage pregnancy/postpartum pathway, postpartum clinical checkpoints (pelvic floor / MSK / cardio / mental health), per-player pathway cards, WSL policy + FIFA Art. 18quater visibility, contract & policy visibility matrix. Sidebar id remains `'maternity'` |
 | | Mental Health | `player_welfare` | Mental health support, welfare check-ins |
 | | Player Welfare Hub | `player_welfare` | Welfare command center |
 | | Medical Hub | `medical` | **New port from Pro's inline MedicalView** — `WomensMedicalHubView`. Clinical injury management, ACWR monitoring, GPS load risk alerts. Distinct from Medical Records (OPERATIONS group) which is the admin records side |

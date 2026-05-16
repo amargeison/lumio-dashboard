@@ -42,6 +42,7 @@ import WomensConcussionTrackerView from '@/components/football/WomensConcussionT
 import WomensFinanceView from '@/components/football/WomensFinanceView'
 import WomensCommercialView from '@/components/football/WomensCommercialView'
 import WomensCommunityView from '@/components/football/WomensCommunityView'
+import WomensPregnancyRtpView from '@/components/football/WomensPregnancyRtpView'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
@@ -131,7 +132,7 @@ const SIDEBAR_ITEMS = [
   { id: 'welfare',          label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
   { id: 'acl',              label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',             label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
-  { id: 'maternity',        label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
+  { id: 'maternity',        label: 'Pregnancy & Return-to-Play', icon: '👶', group: 'WELFARE' },
   { id: 'mental',           label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
   { id: 'player-welfare',   label: 'Player Welfare Hub',  icon: '🌍', group: 'WELFARE' },
   { id: 'medical-hub',      label: 'Medical Hub',         icon: '🏥', group: 'WELFARE' },
@@ -1175,50 +1176,6 @@ const ACLRiskMonitorView = () => {
 }
 
 // ─── MATERNITY TRACKER VIEW ───────────────────────────────────────────────────
-const MaternityTrackerView = () => (
-  <div>
-    <SectionHeader title="Maternity Tracker" subtitle="Karen Carney Review Compliance" icon="👶" />
-    <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6">
-      <p className="text-xs text-pink-300"><strong>WSL Policy:</strong> 26 weeks full pay, statutory rights protected, dedicated return-to-play programme, no selection pressure during recovery.</p>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
-      <table className="w-full text-sm">
-        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-          <th className="text-left p-3">Player</th><th className="text-left p-3">Leave Start</th><th className="text-left p-3">Expected Return</th><th className="text-left p-3">Weeks Remaining</th><th className="text-left p-3">Status</th>
-        </tr></thead>
-        <tbody>
-          <tr className="border-b border-gray-800/50">
-            <td className="p-3 text-gray-200 font-medium">Sophie Lawson</td>
-            <td className="p-3 text-gray-400 text-xs">14 Jan 2025</td>
-            <td className="p-3 text-gray-400 text-xs">Sep 2025</td>
-            <td className="p-3 text-gray-400 text-xs">22</td>
-            <td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-pink-600/20 text-pink-400">On Leave</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Return-to-Play Protocol (Post-Maternity)</h3>
-      <div className="space-y-2">
-        {['1. Medical clearance','2. Fitness baseline assessment','3. Light training (non-contact)','4. Full training','5. Match selection available','6. Fully returned'].map((phase: string, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs"><span className="text-gray-600">○</span><span className="text-gray-300">{phase}</span></div>
-        ))}
-      </div>
-      <div className="text-xs text-gray-500 mt-2">Sophie Lawson — not yet started (on leave)</div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Contractual Rights Log</h3>
-      <div className="space-y-2">
-        {[{right:'Full pay maintained (26 weeks)',actioned:true},{right:'Role protection on return',actioned:true},{right:'Training access on return',actioned:true},{right:'No selection pressure during recovery',actioned:true},{right:'PFA support offered',actioned:true}].map((r: {right:string;actioned:boolean}, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs"><span className={r.actioned ? 'text-green-400' : 'text-red-400'}>{r.actioned ? '✓' : '✗'}</span><span className="text-gray-300">{r.right}</span></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-4 text-xs text-amber-400">🔒 This record is restricted to Welfare Lead, Club Doctor, and Club Director only.</div>
-    <button className="px-4 py-2 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">PFA Referral Workflow →</button>
-  </div>
-)
-
 // ─── MENTAL HEALTH VIEW ───────────────────────────────────────────────────────
 const MentalHealthView = () => (
   <div>
@@ -5582,7 +5539,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
       case 'cycle':       return <CycleTrackingView />
-      case 'maternity':   return <MaternityTrackerView />
+      case 'maternity':   return <WomensPregnancyRtpView />
       case 'mental':      return <MentalHealthView />
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
