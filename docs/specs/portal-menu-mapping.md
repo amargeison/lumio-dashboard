@@ -333,70 +333,72 @@ Compliance flagship: `ground_grading_fsr` (Ground Grading + Financial Sustainabi
 
 ### Lumio Women — Oakridge Women FC
 
-*Mapped during session, 100% confidence.*
+*Restructured 2026-05-16: group order rewritten, FOOTBALL group expanded to 12 items, Board Suite moved to OVERVIEW, Medical Hub + Concussion Tracker + Finance + Commercial + Community items ported from Pro, Settings relocated to its own bottom group. Morning Briefing sidebar item removed (briefing widget on dashboard untouched).*
 
 Women's portal is the most architecturally mature of the four — already implementing the unified module/department landing page pattern (KPI cards + sub-tabs), with deeply-considered welfare features specific to women's football (ACL Risk, Cycle Tracking, Maternity, Mental Health) and a fully-built compliance group anchored by WSL Handbook + Carney Review.
 
 Women's portal already has built (ahead of Pro/Club): Insights, Staff Directory, Tours & Camps, dedicated Welfare group, dedicated Compliance group, Standalone Identity Tracker (Carney Review).
 
+Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE → COMMERCIAL → OPERATIONS → FACILITIES → SETTINGS**
+
 | Sidebar group | Item | Spec module | Notes |
 |---|---|---|---|
-| OVERVIEW | Dashboard *(rename → "Overview")* | `overview` | Portal home — KPIs, alerts, today's schedule |
-| | Morning Briefing *(rename → "Today's Briefing")* | *portal furniture* | Cross-portal rename — works regardless of time of day |
-| | Insights | `insights` | Includes **Point Predictor** sub-tab (Phase 4a.6 addition) |
-| COMPLIANCE | FSR Dashboard | `wsl_handbook` | Module landing page — Carney Review FSR compliance overview |
-| | Salary Compliance | `wsl_handbook` | Sub-tab — squad salary cap monitoring |
-| | Revenue Attribution | `wsl_handbook` | Sub-tab — Carney Review demerger readiness, standalone revenue % (was "Standalone Tracker" — confirmed mapped per earlier session) |
-| | Game Standards | `wsl_handbook` | Sub-tab — WSL Handbook minimum standards compliance |
-| WELFARE | Player Welfare Hub *(merge with Player Welfare)* | `player_welfare` | Module landing page — comprehensive welfare command center. **Merge:** "Player Welfare" + "Player Welfare Hub" consolidated into single item per session decision |
-| | ACL Risk Monitor | `player_welfare` | Sub-tab — women's-specific ACL injury prevention tracking |
-| | Cycle Tracking | `player_welfare` | Sub-tab — menstrual cycle impact on training/performance |
-| | Maternity Tracker | `player_welfare` | Sub-tab — pregnancy, maternity leave, return-to-play protocols |
-| | Mental Health | `player_welfare` | Sub-tab — mental health support, welfare check-ins |
-| | Medical Records *(moved from OPERATIONS)* | `medical` | **Sub-tab of new `medical` module.** Clinical injury management, role-gated to Club Doctor + Welfare Lead. Cross-references ACL Risk + Maternity from `player_welfare` at top of page. |
-| FOOTBALL | Squad Management | `football_operations` | Sub-tab |
-| | Dual Registration | `recruitment_scouting` | Sub-tab — FA Women's dual registration agreements (lower-tier women players registered to 2 clubs simultaneously). Existing page kept as-is — mapping only |
-| | Tactics & Set Pieces | `football_operations` | Restored Phase 4c — single combined sidebar item, uses inline `TacticsSetPiecesView`. Sub-tab of `football_operations` |
-| | Video & Analysis | `video_analysis` | **New module Phase 1** — same 7-sub-tab structure as Pro/Club. Combined Tactics & Set Pieces sidebar item remains separate. Sidebar icon: 🎬 (matches portal's emoji-icon convention). |
-| | Transfers | `recruitment_scouting` | Module landing page |
-| | Academy | `youth_academy` | Module landing page |
-| GPS & LOAD | GPS & Load | `performance_gps` | Module landing page |
-| | Heatmaps | `performance_gps` | Sub-tab |
-| BOARD *(new group — pulled from COMMERCIAL)* | Board Suite *(rename → "Board & Executive")* | `board_executive` | Module landing page with Pro-pattern sub-tabs: Overview, Strategy, **Club Vision** *(absorbed from COMMERCIAL)*, Profile, Finance, Governance, Facilities |
-| COMMERCIAL *(restructured — revenue only)* | Sponsorship Pipeline | `commercial_marketing` | Module landing page — B2B sponsorship contracts |
-| | Financial Planning | `finance_hr_admin` | Module landing page |
-| | Fan Hub | `ticketing_crm_fans` | Module landing page — already built, ahead of Pro and Club |
-| MEDIA *(new group — pulled from COMMERCIAL)* | Media & Content | `media_comms` | Module landing page with existing sub-tabs: Social, Sponsors, Press, Interviews |
-| | Social Media *(consolidate as sub-tab of `media_comms`)* | `media_comms` | **Move:** Analytics dashboard becomes a sub-tab within Media & Content per session decision — not its own sidebar item |
-| OPERATIONS | Club Operations | *cross-cutting hub* | Operations Director's daily dashboard. Multi-module operational view. Same pattern as Pro's Club Operations |
-| | Matchday Operations | `football_operations` | Sub-tab |
-| | Travel & Logistics | `travel_logistics` | Module landing page |
-| | Kit Manager | `facilities_grounds` | Sub-tab |
-| | Staff Directory | `staff_directory` | **Already built in Women's portal** — ahead of Pro and Club. Unified people directory (staff + player admin records) |
-| | Tours & Camps | `tours_camps` | Module landing page — already built |
-| FACILITIES | Stadium & Facilities | `facilities_grounds` | Module landing page |
-| | Pitch & Grounds | `facilities_grounds` | Sub-tab |
-| | Training Ground | `facilities_grounds` | Sub-tab |
-| *(bottom)* | Settings | `settings` | **Move from mid-sidebar to bottom.** Currently sits under OPERATIONS group — needs relocating to final sidebar position. Includes Workflows Library + Integrations sub-tabs (Phase 4a.6) |
+| OVERVIEW | Dashboard | `overview` | Portal home — KPIs, alerts, today's schedule. Morning Briefing widget on this page navigates to the briefing route via dashboard button (sidebar item itself removed) |
+| | Insights | `insights` | Includes Point Predictor sub-tab |
+| | Board Suite | `board_executive` | **Moved from COMMERCIAL.** Sub-tabs: Overview, Strategy, Club Vision, Profile, Finance, Governance, Facilities |
+| FOOTBALL | Squad Management | `football_operations` | |
+| | Tactics | `football_operations` | **Split from former combined "Tactics & Set Pieces".** Tactical half kept inline as `WomensTacticsView` — formation diagram, team talk, Last Match summary, Opposition Notes |
+| | Training | `football_operations` | **New build** — `WomensTrainingView`, WSL Sunday-matchday cadence, weekly plan + GPS load |
+| | Set Pieces | `football_operations` | **Port of `ProSetPiecesView`** — `WomensSetPiecesView` (5,643 LOC ~80-routine library, pink-themed, Pro opponent references swapped to Women's). Independent of `WomensTacticsView` |
+| | Video & Analysis | `video_analysis` | Same 7-sub-tab structure as Pro/Club |
+| | GPS & Performance | `performance_gps` | **Relabelled from "GPS & Load", moved from GPS & LOAD group.** Id `gps-load` preserved |
+| | Heatmaps | `performance_gps` | **Moved from GPS & LOAD group.** Id `gps-heatmaps` preserved |
+| | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL Championship + Women's FA Cup + WSL Cup, season form strip |
+| | Cup Manager | `cup_manager` | **New build** — `WomensCupManagerView`, Women's FA Cup bracket (R2→Wembley Final, real WFA Cup prize tiers) + WSL Cup, TV fee modelling, ticketing surge forecast |
+| | Transfers | `recruitment_scouting` | |
+| | Dual Registration | `recruitment_scouting` | **Repositioned** between Transfers and Academy. FA Women's dual registration agreements |
+| | Academy | `youth_academy` | |
+| WELFARE | Player Welfare | `player_welfare` | |
+| | ACL Risk Monitor | `player_welfare` | Women's-specific ACL injury prevention |
+| | Cycle Tracking | `player_welfare` | Menstrual cycle impact on training/performance |
+| | Maternity Tracker | `player_welfare` | Pregnancy, maternity leave, return-to-play |
+| | Mental Health | `player_welfare` | Mental health support, welfare check-ins |
+| | Player Welfare Hub | `player_welfare` | Welfare command center |
+| | Medical Hub | `medical` | **New port from Pro's inline MedicalView** — `WomensMedicalHubView`. Clinical injury management, ACWR monitoring, GPS load risk alerts. Distinct from Medical Records (OPERATIONS group) which is the admin records side |
+| | Concussion Tracker | `medical` | **New port of `ConcussionTrackerView`** — `WomensConcussionTrackerView` (622 LOC, 6 tabs: Active Cases / Player History / GRTP Protocol / Baseline Testing / Compliance & Audit / Education) |
+| COMPLIANCE | Finance | `finance_hr_admin` | **New port from Pro's inline FinanceView** — `WomensFinanceView`. Current-season operational view (transfer budget, wage bill, revenue YTD, contract tracker, revenue breakdown). WSL Championship-scale figures. Distinct from Financial Planning (COMMERCIAL) which is the multi-horizon FSR-constrained Club Planner |
+| | FSR Dashboard | `wsl_handbook` | Carney Review FSR compliance overview |
+| | Salary Compliance | `wsl_handbook` | Squad salary cap monitoring |
+| | Revenue Attribution | `wsl_handbook` | Carney Review demerger readiness, standalone revenue % |
+| | Game Standards | `wsl_handbook` | WSL Handbook minimum standards compliance |
+| COMMERCIAL | Commercial | `commercial_marketing` | **New port of `CommercialView`** — `WomensCommercialView` (4 tabs: sponsorship / hospitality / matchday / partnerships) |
+| | Sponsorship Pipeline | `commercial_marketing` | B2B sponsorship contracts |
+| | Standalone Tracker | `wsl_handbook` | Carney Review standalone identity tracker |
+| | Club Vision | `board_executive` | Currently shares component with Financial Planning — see "Pre-existing oddity" note below |
+| | Financial Planning | `finance_hr_admin` | Multi-horizon FSR-constrained Club Planner (1yr / 3yr / 5yr / 10yr). Distinct from Finance (COMPLIANCE) which is current-season only |
+| | Media & Content | `media_comms` | Existing sub-tabs: Social, Sponsors, Press, Interviews |
+| | Social Media | `media_comms` | Analytics dashboard |
+| | Fan Hub | `ticketing_crm_fans` | Already built — ahead of Pro and Club |
+| | Community | `community` | **New port of `CommunityView`** — `WomensCommunityView` (6 tabs: Foundation Programmes / Schools & Grassroots / Fan Engagement / Community Events / Local Partnerships / Impact Dashboard) |
+| OPERATIONS | Club Operations | *cross-cutting hub* | Operations Director's daily dashboard |
+| | Matchday Operations | `football_operations` | |
+| | Travel & Logistics | `travel_logistics` | |
+| | Kit Manager | `facilities_grounds` | |
+| | Staff Directory | `staff_directory` | Already built — ahead of Pro and Club |
+| | Medical Records | `medical` | Player admin records (NIs, addresses, agents, emergency contacts) — distinct from Medical Hub (WELFARE) clinical view |
+| | Tours & Camps | `tours_camps` | Already built |
+| FACILITIES | Stadium & Facilities | `facilities_grounds` | |
+| | Pitch & Grounds | `facilities_grounds` | |
+| | Training Ground | `facilities_grounds` | |
+| SETTINGS | Settings | `settings` | **Moved to its own bottom group** — was previously in OPERATIONS |
 
-**To build for Women**
+**Pre-existing oddity (not addressed in this restructure)**
 
-Women's portal is the most complete — fewer build items than Pro/Club:
-
-- **Insights — Point Predictor sub-tab** — same Phase 4a.6 build as Pro/Club
-- **BOARD group restructure** — pull Board Suite + Club Vision out of COMMERCIAL into dedicated BOARD group
-- **MEDIA group restructure** — pull Media & Content + Social Media out of COMMERCIAL into dedicated MEDIA group; consolidate Social Media as sub-tab of Media & Content
-- **WELFARE group additions** — surface Medical Records under WELFARE group as sub-tab of `medical` module (currently mid-sidebar under OPERATIONS)
-- **`medical` module** — new module from `medical_welfare` split (Phase 4a.6). Existing "Medical Records" page becomes its first sub-tab. Future Medical Hub / Concussion Tracker can be added if needed
-- **`cup_manager` module** — new module (Phase 4a.6). Continental Cup, FA WSL Cup, FA Cup operational management
-- **`fundraising` module** — new module (Phase 4a.6). Foundation events, community fundraising
-- **Settings relocation** — move to bottom of sidebar (currently mid-sidebar under OPERATIONS)
-- **Player Welfare consolidation** — merge "Player Welfare" + "Player Welfare Hub" into single item
+The renderView switch routes both `club-vision` and `financial` to the same `WomensClubVisionView` component. The component is internally a Club Planner — Financial Planning is the more accurate label. Club Vision currently shows the same Club Planner content. Cleanup is deferred: either (i) rename the component to `WomensClubPlannerView` for clarity, or (ii) build a separate Club Vision view and unfork the routes.
 
 **Removed from Women's sidebar**
 
-- **Player Welfare** (the older item) — merged into "Player Welfare Hub"
-- **INTEGRATIONS** — relocate to Settings sub-tab (Phase 4a.6, applies to all portals)
+- **Morning Briefing** — sidebar item only. Briefing widget on the Dashboard tab still navigates to the briefing full-page view via the renderView case (kept intact)
 
 **Renames**
 
