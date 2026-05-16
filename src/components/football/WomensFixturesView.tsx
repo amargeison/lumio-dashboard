@@ -5,7 +5,7 @@ import {
   Calendar, Trophy, MapPin, Flag, Filter,
 } from 'lucide-react'
 
-// Women's Fixtures & Results — WSL Championship + cup competitions.
+// Women's Fixtures & Results — WSL 2 + cup competitions.
 // Pink-themed, demo data inline. Mirrors WOMENS_FIXTURES / WOMENS_RECENTS
 // shape from womens-dashboard-data.ts but extended for the dedicated
 // Fixtures view (next 5 + last 8).
@@ -31,22 +31,22 @@ type Upcoming = { day: string; date: string; opp: string; comp: string; venue: s
 type Played   = { date: string; opp: string; comp: string; ha: 'H' | 'A'; result: Result; score: string; scorers: string; motm: string }
 
 const UPCOMING: Upcoming[] = [
-  { day: 'Sun', date: '17 May', opp: 'Hartwell Women',          comp: 'WSL Championship',   venue: 'Home · Oakridge Stadium',     time: '14:00', competitionTone: 'league' },
+  { day: 'Sun', date: '17 May', opp: 'Hartwell Women',          comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',     time: '14:00', competitionTone: 'league' },
   { day: 'Wed', date: '20 May', opp: 'Ridgefield Athletic Women', comp: 'WSL Cup Semi-final', venue: 'Neutral · The Hive',          time: '19:45', competitionTone: 'cup' },
-  { day: 'Sun', date: '24 May', opp: 'Thornvale Ladies',         comp: 'WSL Championship',   venue: 'Away · Thornvale Stadium',    time: '14:00', competitionTone: 'league' },
-  { day: 'Sun', date: '31 May', opp: 'Kingsmere City Women',     comp: 'WSL Championship',   venue: 'Home · Oakridge Stadium',     time: '14:00', competitionTone: 'league' },
-  { day: 'Sun', date: '07 Jun', opp: 'Ashbourne Women FC',       comp: 'WSL Championship',   venue: 'Away · Riverside Park',       time: '14:00', competitionTone: 'league' },
+  { day: 'Sun', date: '24 May', opp: 'Thornvale Ladies',         comp: 'WSL 2',   venue: 'Away · Thornvale Stadium',    time: '14:00', competitionTone: 'league' },
+  { day: 'Sun', date: '31 May', opp: 'Kingsmere City Women',     comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',     time: '14:00', competitionTone: 'league' },
+  { day: 'Sun', date: '07 Jun', opp: 'Ashbourne Women FC',       comp: 'WSL 2',   venue: 'Away · Riverside Park',       time: '14:00', competitionTone: 'league' },
 ]
 
 const RECENT: Played[] = [
-  { date: 'Sun 10 May', opp: 'Hartwell Women',         comp: 'WSL Championship',     ha: 'H', result: 'D', score: '1-1', scorers: 'Morris (58)',                 motm: 'L. Barker' },
-  { date: 'Sun 03 May', opp: 'Hartwell Women',         comp: 'WSL Championship',     ha: 'A', result: 'W', score: '2-1', scorers: 'Williams (41), Morris (78)',  motm: 'D. Morris' },
-  { date: 'Sun 26 Apr', opp: 'Northgate Women',        comp: 'WSL Championship',     ha: 'A', result: 'W', score: '3-0', scorers: 'Williams, Morris, Porter',    motm: 'Z. Williams' },
-  { date: 'Sun 19 Apr', opp: 'Plymouth Marine Women',  comp: 'WSL Championship',     ha: 'H', result: 'W', score: '2-1', scorers: 'Carter, Barker',              motm: 'N. Carter' },
-  { date: 'Sun 12 Apr', opp: 'Fernbrook Women',        comp: 'WSL Championship',     ha: 'A', result: 'D', score: '0-0', scorers: '—',                            motm: 'L. Brennan' },
+  { date: 'Sun 10 May', opp: 'Hartwell Women',         comp: 'WSL 2',     ha: 'H', result: 'D', score: '1-1', scorers: 'Morris (58)',                 motm: 'L. Barker' },
+  { date: 'Sun 03 May', opp: 'Hartwell Women',         comp: 'WSL 2',     ha: 'A', result: 'W', score: '2-1', scorers: 'Williams (41), Morris (78)',  motm: 'D. Morris' },
+  { date: 'Sun 26 Apr', opp: 'Northgate Women',        comp: 'WSL 2',     ha: 'A', result: 'W', score: '3-0', scorers: 'Williams, Morris, Porter',    motm: 'Z. Williams' },
+  { date: 'Sun 19 Apr', opp: 'Plymouth Marine Women',  comp: 'WSL 2',     ha: 'H', result: 'W', score: '2-1', scorers: 'Carter, Barker',              motm: 'N. Carter' },
+  { date: 'Sun 12 Apr', opp: 'Fernbrook Women',        comp: 'WSL 2',     ha: 'A', result: 'D', score: '0-0', scorers: '—',                            motm: 'L. Brennan' },
   { date: 'Sun 05 Apr', opp: 'Castleton Women',        comp: "Women's FA Cup R2",    ha: 'A', result: 'W', score: '4-1', scorers: 'Williams 2, Morris, Porter',  motm: 'Z. Williams' },
-  { date: 'Sun 29 Mar', opp: 'Glenmoor Wanderers W',   comp: 'WSL Championship',     ha: 'H', result: 'L', score: '1-2', scorers: 'Carter',                       motm: 'E. Hayes' },
-  { date: 'Sun 22 Mar', opp: 'Kingsmere City Women',   comp: 'WSL Championship',     ha: 'A', result: 'W', score: '2-0', scorers: 'Morris, Tilley',               motm: 'D. Morris' },
+  { date: 'Sun 29 Mar', opp: 'Glenmoor Wanderers W',   comp: 'WSL 2',     ha: 'H', result: 'L', score: '1-2', scorers: 'Carter',                       motm: 'E. Hayes' },
+  { date: 'Sun 22 Mar', opp: 'Kingsmere City Women',   comp: 'WSL 2',     ha: 'A', result: 'W', score: '2-0', scorers: 'Morris, Tilley',               motm: 'D. Morris' },
 ]
 
 const SEASON_FORM: Result[] = ['W','D','W','W','L','W','D','W','W','L','D','W','W','L','W','W','D','W']
@@ -63,7 +63,7 @@ export default function WomensFixturesView() {
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold" style={{ color: C.text }}>Fixtures & Results</h2>
-        <p className="text-sm mt-1" style={{ color: C.textSec }}>WSL Championship · Women&apos;s FA Cup · WSL Cup — full season schedule and form.</p>
+        <p className="text-sm mt-1" style={{ color: C.textSec }}>WSL 2 · Women&apos;s FA Cup · WSL Cup — full season schedule and form.</p>
       </div>
 
       {/* Season form summary */}

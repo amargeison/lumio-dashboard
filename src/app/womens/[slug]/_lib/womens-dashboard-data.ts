@@ -1,6 +1,6 @@
 // Women's FC dashboard demo data. Mirrors the cricket / rugby / football v2
 // shape so the womens dashboard modules can read it the same way.
-// Tier: WSL Championship · Club: Oakridge Women FC.
+// Tier: WSL 2 · Club: Oakridge Women FC.
 
 export const WOMENS_ORG = {
   product:        'Lumio Women',
@@ -12,7 +12,7 @@ export const WOMENS_ORG = {
   date:           'Sun, 03 May 2026',
   formation:      '4-3-3',
   weather:        { tempC: 13, cond: 'Light cloud', wind: '9 mph SW', kickoff: '14:00' },
-  season:         { played: 18, won: 11, drawn: 3, lost: 4, position: 3, league: 'WSL Championship', points: 36, gd: '+18' },
+  season:         { played: 18, won: 11, drawn: 3, lost: 4, position: 3, league: 'WSL 2', points: 36, gd: '+18' },
 } as const
 
 // ─── StatTiles — includes FSR Score (the differentiator) ────────────────
@@ -40,7 +40,7 @@ export type WfInboxChannel = {
 export const WOMENS_INBOX: WfInboxChannel[] = [
   { ch: 'SMS · Coaches',         count: 2, tone: 'red',    urgent: true,  last: 'Carter cleared to play, scan negative',                 time: '07:14' },
   { ch: 'WhatsApp · Squad',      count: 5, tone: 'green',  urgent: false, last: 'Captain: morale high, good session today',              time: '07:42' },
-  { ch: 'Email · Selectors',     count: 4, tone: 'red',    urgent: false, last: "WSL Championship — fixture amendment confirmed",       time: '06:58' },
+  { ch: 'Email · Selectors',     count: 4, tone: 'red',    urgent: false, last: "WSL 2 — fixture amendment confirmed",       time: '06:58' },
   { ch: 'Agent messages',        count: 3, tone: 'navy',   urgent: false, last: 'Williams contract extension — deadline end of month',  time: '06:45' },
   { ch: 'Board messages',        count: 2, tone: 'navy',   urgent: false, last: 'Quarterly review Thursday',                              time: 'Yesterday' },
   { ch: 'Medical Hub',           count: 2, tone: 'red',    urgent: true,  last: 'Davies knee assessment — MRI results back',             time: '07:02' },
@@ -57,10 +57,10 @@ export type WfFixture = {
 }
 
 export const WOMENS_FIXTURES: WfFixture[] = [
-  { day: 'Sun', date: '03 May', opp: 'Hartwell Women',         comp: 'WSL Championship',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'today',    side: '1st team', competitionTone: 'league' },
+  { day: 'Sun', date: '03 May', opp: 'Hartwell Women',         comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'today',    side: '1st team', competitionTone: 'league' },
   { day: 'Wed', date: '06 May', opp: 'Ashbourne Women FC',     comp: "Women's FA Cup R3",   venue: 'Away · Riverside Park',    time: '19:30', state: 'upcoming', side: '1st team', competitionTone: 'cup' },
-  { day: 'Sun', date: '10 May', opp: 'Thornvale Ladies',       comp: 'WSL Championship',   venue: 'Away · Thornvale Stadium', time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
-  { day: 'Sun', date: '17 May', opp: 'Kingsmere City Women',   comp: 'WSL Championship',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
+  { day: 'Sun', date: '10 May', opp: 'Thornvale Ladies',       comp: 'WSL 2',   venue: 'Away · Thornvale Stadium', time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
+  { day: 'Sun', date: '17 May', opp: 'Kingsmere City Women',   comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
   { day: 'Wed', date: '20 May', opp: 'Ridgefield Athletic Women', comp: 'WSL Cup Semi-final', venue: 'Neutral · The Hive',     time: '19:45', state: 'upcoming', side: '1st team', competitionTone: 'cup' },
 ]
 
@@ -106,11 +106,11 @@ export const WOMENS_PERF_INTEL: WfPerfItem[] = [
 export type WfResult = { vs: string; res: 'W' | 'L' | 'D'; score: string; date: string; comp: string }
 
 export const WOMENS_RECENTS: WfResult[] = [
-  { vs: 'Northgate Women',       res: 'W', score: '3 – 0', date: 'Sun 26 Apr', comp: 'WSL Champ' },
-  { vs: 'Plymouth Argyle Women', res: 'W', score: '2 – 1', date: 'Sun 19 Apr', comp: 'WSL Champ' },
-  { vs: 'Fernbrook Women',       res: 'D', score: '0 – 0', date: 'Sun 12 Apr', comp: 'WSL Champ' },
+  { vs: 'Northgate Women',       res: 'W', score: '3 – 0', date: 'Sun 26 Apr', comp: 'WSL 2' },
+  { vs: 'Plymouth Marine Women', res: 'W', score: '2 – 1', date: 'Sun 19 Apr', comp: 'WSL 2' },
+  { vs: 'Fernbrook Women',       res: 'D', score: '0 – 0', date: 'Sun 12 Apr', comp: 'WSL 2' },
   { vs: 'Castleton Women',       res: 'W', score: '4 – 1', date: 'Sun 05 Apr', comp: "Women's FA Cup R2" },
-  { vs: 'Glenmoor Wanderers W',  res: 'L', score: '1 – 2', date: 'Sun 29 Mar', comp: 'WSL Champ' },
+  { vs: 'Glenmoor Wanderers W',  res: 'L', score: '1 – 2', date: 'Sun 29 Mar', comp: 'WSL 2' },
 ]
 
 export const WOMENS_SEASON_FORM: ('W' | 'L' | 'D')[] = ['W','D','W','W','L','W','D','W','W','L','D','W','W','L','W','W','D','W']

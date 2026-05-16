@@ -5402,10 +5402,10 @@ function StatsTab() {
             <text x="100" y={150 - (21.4 / 30) * 120 - 5} textAnchor="middle" fill={C.text} fontSize="11" fontWeight="bold" fontFamily="system-ui">21.4%</text>
             <text x="100" y="170" textAnchor="middle" fill={C.text} fontSize="10" fontFamily="system-ui">Oakridge FC</text>
 
-            {/* Bar 2: Championship avg 23% */}
+            {/* Bar 2: WSL 2 avg 23% */}
             <rect x="155" y={150 - (23 / 30) * 120} width="60" height={(23 / 30) * 120} fill={C.gold} rx="3" />
             <text x="185" y={150 - (23 / 30) * 120 - 5} textAnchor="middle" fill={C.text} fontSize="11" fontWeight="bold" fontFamily="system-ui">23%</text>
-            <text x="185" y="170" textAnchor="middle" fill={C.text} fontSize="10" fontFamily="system-ui">Champ. Avg</text>
+            <text x="185" y="170" textAnchor="middle" fill={C.text} fontSize="10" fontFamily="system-ui">WSL 2 Avg</text>
 
             {/* Bar 3: PL avg 21% */}
             <rect x="240" y={150 - (21 / 30) * 120} width="60" height={(21 / 30) * 120} fill={C.textSec} rx="3" />
@@ -5588,7 +5588,7 @@ export default function WomensSetPiecesView() {
               letterSpacing: 1,
             }}
           >
-            Oakridge FC &middot; Championship
+            Oakridge Women FC &middot; WSL 2
           </span>
         </div>
         <h1 style={{ color: C.text, fontSize: 24, fontWeight: 700, margin: '0 0 20px' }}>

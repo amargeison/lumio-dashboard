@@ -9,8 +9,8 @@ import {
 // DISTINCT from Financial Planning (multi-horizon FSR-constrained
 // planner — lives at sidebar 'financial' route).
 //
-// Pink-themed, Women's demo data. Contract values scaled to WSL
-// Championship realities (lower wages than Pro), revenue mix
+// Pink-themed, Women's demo data. Contract values scaled to WSL 2
+// realities (lower wages than Pro), revenue mix
 // weighted toward broadcasting + sponsorship vs Pro's matchday-heavy.
 
 const C = {

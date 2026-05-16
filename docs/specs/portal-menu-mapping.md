@@ -353,7 +353,7 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | | Video & Analysis | `video_analysis` | Same 7-sub-tab structure as Pro/Club |
 | | GPS & Performance | `performance_gps` | **Relabelled from "GPS & Load", moved from GPS & LOAD group.** Id `gps-load` preserved |
 | | Heatmaps | `performance_gps` | **Moved from GPS & LOAD group.** Id `gps-heatmaps` preserved |
-| | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL Championship + Women's FA Cup + WSL Cup, season form strip |
+| | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL 2 + Women's FA Cup + WSL Cup, season form strip |
 | | Cup Manager | `cup_manager` | **New build** — `WomensCupManagerView`, Women's FA Cup bracket (R2→Wembley Final, real WFA Cup prize tiers) + WSL Cup, TV fee modelling, ticketing surge forecast |
 | | Transfers | `recruitment_scouting` | |
 | | Dual Registration | `recruitment_scouting` | **Repositioned** between Transfers and Academy. FA Women's dual registration agreements |
@@ -366,7 +366,7 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | | Player Welfare Hub | `player_welfare` | Welfare command center |
 | | Medical Hub | `medical` | **New port from Pro's inline MedicalView** — `WomensMedicalHubView`. Clinical injury management, ACWR monitoring, GPS load risk alerts. Distinct from Medical Records (OPERATIONS group) which is the admin records side |
 | | Concussion Tracker | `medical` | **New port of `ConcussionTrackerView`** — `WomensConcussionTrackerView` (622 LOC, 6 tabs: Active Cases / Player History / GRTP Protocol / Baseline Testing / Compliance & Audit / Education) |
-| COMPLIANCE | Finance | `finance_hr_admin` | **New port from Pro's inline FinanceView** — `WomensFinanceView`. Current-season operational view (transfer budget, wage bill, revenue YTD, contract tracker, revenue breakdown). WSL Championship-scale figures. Distinct from Financial Planning (COMMERCIAL) which is the multi-horizon FSR-constrained Club Planner |
+| COMPLIANCE | Finance | `finance_hr_admin` | **New port from Pro's inline FinanceView** — `WomensFinanceView`. Current-season operational view (transfer budget, wage bill, revenue YTD, contract tracker, revenue breakdown). WSL 2-scale figures. Distinct from Financial Planning (COMMERCIAL) which is the multi-horizon FSR-constrained Club Planner |
 | | FSR Dashboard | `wsl_handbook` | Carney Review FSR compliance overview |
 | | Salary Compliance | `wsl_handbook` | Squad salary cap monitoring |
 | | Revenue Attribution | `wsl_handbook` | Carney Review demerger readiness, standalone revenue % |

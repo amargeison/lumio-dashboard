@@ -1937,7 +1937,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 4,  name: 'Becca Lane',      age: 15, pos: 'GK',  gpsAvg: 55, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 11, goals: 0,  assists: 0,  notes: 'Strong shot-stopper. Distribution improving. Youngest GK in U18s.' },
     { id: 5,  name: 'Simone Ashby',    age: 17, pos: 'LB',  gpsAvg: 62, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 13, goals: 0,  assists: 6,  notes: 'Best delivery from wide areas in academy. CoE licence player.' },
     { id: 6,  name: 'Raya Obi',        age: 16, pos: 'DM',  gpsAvg: 60, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 8,  goals: 0,  assists: 1,  notes: 'Reads the game well. Physical development needed before first-team consideration.' },
-    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Lumio Scout flagged as one of top U18 wingers in Women's Champ region." },
+    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Lumio Scout flagged as one of top U18 wingers in WSL 2 region." },
     { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
     { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
     { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
@@ -1946,7 +1946,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
   const u21Players = [
     { id: 11, name: 'Dani Cross',      age: 20, pos: 'CM',  gpsAvg: 78, devRating: 4, potential: 'High',   contract: 'Scholar → Pro offer pending', appearances: 18, goals: 3,  assists: 9,  firstTeamSessions: 12, notes: 'Training with first team regularly. DoF view: ready for dual reg next window.' },
     { id: 12, name: 'Priya Sadhu',     age: 19, pos: 'LB',  gpsAvg: 74, devRating: 4, potential: 'High',   contract: 'Scholar — Year 2',            appearances: 16, goals: 1,  assists: 8,  firstTeamSessions: 6,  notes: "Technically outstanding. Overlapping full-back — fits Frost's system perfectly." },
-    { id: 13, name: 'Ellie Moran',     age: 21, pos: 'GK',  gpsAvg: 70, devRating: 3, potential: 'Medium', contract: 'Pro contract — Year 1',        appearances: 20, goals: 0,  assists: 0,  firstTeamSessions: 4,  notes: "3rd-choice GK. Loan move to Women's Champ club recommended for regular minutes." },
+    { id: 13, name: 'Ellie Moran',     age: 21, pos: 'GK',  gpsAvg: 70, devRating: 3, potential: 'Medium', contract: 'Pro contract — Year 1',        appearances: 20, goals: 0,  assists: 0,  firstTeamSessions: 4,  notes: "3rd-choice GK. Loan move to WSL 2 club recommended for regular minutes." },
     { id: 14, name: 'Sasha Kone',      age: 20, pos: 'FW',  gpsAvg: 82, devRating: 5, potential: 'Elite',  contract: 'Scholar → Pro contract offer',  appearances: 17, goals: 14, assists: 4,  firstTeamSessions: 18, notes: 'Top scorer in U21 WSL. First-team debut made Feb 2026. Elite potential — protect from external interest.' },
     { id: 15, name: 'Abby Thornton',   age: 19, pos: 'CB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 15, goals: 1,  assists: 2,  firstTeamSessions: 2,  notes: 'Solid defensively. Aerial strength above average for age. Needs more first-team exposure.' },
     { id: 16, name: 'Meg Farr',        age: 21, pos: 'RW',  gpsAvg: 76, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 19, goals: 6,  assists: 10, firstTeamSessions: 8,  notes: 'Winger with excellent delivery. Pushing for first-team squad place next season.' },
@@ -2265,7 +2265,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
             <h3 className="text-sm font-bold text-white mb-3">FA Dual Registration Rules — Women&apos;s Football</h3>
             <div className="space-y-2">
               {[
-                "Players can be dual registered between WSL and Women's Championship clubs only",
+                "Players can be dual registered between WSL and WSL 2 clubs only",
                 'Maximum of 5 dual-registered players per club per registration window',
                 "Player must be eligible for both clubs' league (age, nationality, contract)",
                 'Dual registration period: minimum 28 days, maximum end of season',
@@ -2284,8 +2284,8 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
             <h3 className="text-sm font-bold text-white mb-4">Current Dual Reg Candidates</h3>
             <div className="space-y-3">
               {[
-                { name: "Niamh O'Brien", squad: 'U18 → U21/Dual reg', status: 'Nominated', detail: "CB · Age 17 · GPS 71 AU · Elite potential. Dual reg to Women's Champ club recommended from May 2026.", action: 'DoF approval needed', color: 'pink' },
-                { name: 'Ellie Moran', squad: 'U21 → Loan', status: 'Recommended', detail: "GK · Age 21 · 3rd-choice. Loan to Women's Champ recommended for 2026/27 for regular minutes.", action: 'Summer window — target clubs identified', color: 'blue' },
+                { name: "Niamh O'Brien", squad: 'U18 → U21/Dual reg', status: 'Nominated', detail: "CB · Age 17 · GPS 71 AU · Elite potential. Dual reg to WSL 2 club recommended from May 2026.", action: 'DoF approval needed', color: 'pink' },
+                { name: 'Ellie Moran', squad: 'U21 → Loan', status: 'Recommended', detail: "GK · Age 21 · 3rd-choice. Loan to WSL 2 recommended for 2026/27 for regular minutes.", action: 'Summer window — target clubs identified', color: 'blue' },
                 { name: 'Tara Flynn', squad: 'U21 → Loan', status: 'Under review', detail: 'DM · Age 20 · Lacks top-end pace for WSL but technically sound. Loan candidate Summer 2026.', action: 'Review post-season', color: 'amber' },
               ].map((c, i) => (
                 <div key={i} className={`rounded-xl p-4 border ${c.color === 'pink' ? 'border-pink-600/30 bg-pink-600/5' : c.color === 'blue' ? 'border-blue-600/30 bg-blue-600/5' : 'border-amber-600/30 bg-amber-600/5'}`}>
@@ -2330,15 +2330,15 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
     {id:8,name:'Yuki Tanaka',age:21,nat:'🇯🇵',pos:'AM',league:'NWSL',club:'San Diego Wave',salary:46000,avail:'Loan available',wyscout:7.3,xG:0.22,xA:0.38,progPasses:48,aerials:29,tackles:2.1,rating:'A',tags:['Creative','Final third','Technical']},
     {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Aston Villa W',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
     {id:10,name:'Marta Sousa',age:24,nat:'🇵🇹',pos:'LW',league:'D1 Arkema',club:'PSG Féminines',salary:72000,avail:'Scouting only',wyscout:7.9,xG:0.28,xA:0.41,progPasses:36,aerials:33,tackles:2.8,rating:'A',tags:['Pace','Delivery','Creative','Dribbling']},
-    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"Women's Champ",club:'Crystal Palace W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
+    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"WSL 2",club:'Crystal Palace W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
     {id:12,name:'Sofía Reyes',age:26,nat:'🇲🇽',pos:'GK',league:'NWSL',club:'Kansas City',salary:55000,avail:'Contract expires Dec 2026',wyscout:7.4,xG:null,xA:null,progPasses:null,aerials:null,tackles:null,rating:'A',tags:['Shot-stopping','Distribution','Leadership'],saves:4.2,savePct:74},
     {id:13,name:'Hana Novak',age:25,nat:'🇨🇿',pos:'CM',league:'Frauen-Bundesliga',club:'Bayern Munich W',salary:68000,avail:'Scouting only',wyscout:7.7,xG:0.11,xA:0.29,progPasses:44,aerials:48,tackles:4.1,rating:'A',tags:['Box-to-box','High press','Technical']},
-    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"Women's Champ",club:'Sheffield Utd W',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
+    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"WSL 2",club:'Sheffield Utd W',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
     {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Liverpool W',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
   ];
 
   const positions = ['All','GK','CB','LB','RB','DM','CM','AM','LW','RW','FW'];
-  const leagues = ['All','WSL',"Women's Champ",'NWSL','D1 Arkema','Frauen-Bundesliga'];
+  const leagues = ['All','WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga'];
   const availOpts = ['All','Free agent','Contract expires Jun 2026','Loan available','Fee required'];
 
   const filtered = players.filter(p => {
@@ -2355,7 +2355,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
 
   return (
     <div>
-      <SectionHeader title="Scouting" subtitle="Lumio Scout · WSL · Women's Championship · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
+      <SectionHeader title="Scouting" subtitle="Lumio Scout · WSL · WSL 2 · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
       <div className="flex gap-1 mb-6 border-b border-gray-800">
         {[{id:'database',label:'Player Database',icon:'🔍'},{id:'watchlist',label:'Watchlist',icon:'⭐'},{id:'reports',label:'Scout Reports',icon:'📝'}].map(t=>(
           <button key={t.id} onClick={()=>{setScoutTab(t.id as typeof scoutTab);setSelectedPlayer(null)}}
@@ -2918,7 +2918,7 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
               <h3 className="text-sm font-bold text-white mb-1">Step 2 — Budget &amp; League</h3><p className="text-xs text-gray-500 mb-4">FSR headroom: {fmt2(FSR_HEADROOM)}</p>
               <div className="space-y-4">
                 <div><label className="text-xs text-gray-400 mb-1 block">Max annual salary (£)</label><input type="number" value={maxSalary} onChange={e=>setMaxSalary(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"/>{maxSalary&&Number(maxSalary)>FSR_HEADROOM&&<p className="text-xs text-red-400 mt-1">⚠ Exceeds FSR headroom</p>}</div>
-                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL',"Women's Championship",'NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
+                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
               </div>
               <div className="flex gap-2 mt-5"><button onClick={()=>setStep(1)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={()=>{if(maxSalary&&league)setStep(3)}} disabled={!maxSalary||!league} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button></div>
             </div>
@@ -3322,7 +3322,7 @@ const WOMENS_HEATMAP_PLAYERS: HMPlayer[] = [
 const WOMENS_HEATMAP_MATCHES = [
   'Manchester City Women (H) — WSL, 2-2 D',
   'Tottenham Hotspur Women (A) — WSL, 1-0 W',
-  'Manchester United Women (H) — FA Cup R5, 0-1 L',
+  'Northgate United Women (H) — FA Cup R5, 0-1 L',
   'Brighton Women (A) — WSL, 3-1 W',
   'Chelsea Women (H) — WSL, 1-3 L',
 ]
@@ -3387,7 +3387,7 @@ const GPSLoadView = ({ club }: { club: WomensClub }) => {
   const phaseBadge = club.tier === 'pro'
     ? { label: club.league || 'WSL', cls: 'bg-pink-600/20 text-pink-300 border-pink-600/30' }
     : club.tier === 'championship'
-    ? { label: 'Championship', cls: 'bg-amber-600/20 text-amber-300 border-amber-600/30' }
+    ? { label: 'WSL 2', cls: 'bg-amber-600/20 text-amber-300 border-amber-600/30' }
     : { label: 'Grassroots', cls: 'bg-green-600/20 text-green-300 border-green-600/30' }
 
   const active = GPS_PLAYERS.filter(p => p.status !== 'On Leave')
@@ -4186,7 +4186,7 @@ const GPSConnectTab = () => (
           </div>
           <h3 className="text-base font-bold text-white">JOHAN Sports — Women's Football GPS</h3>
           <p className="text-xs text-gray-300 mt-1 max-w-xl">
-            Lightweight chest-strap and vest GPS designed for women's football. 10 Hz GPS, IMU, heart rate, and live broadcast. Default integration for Women's FC across WSL, Championship and grassroots tiers.
+            Lightweight chest-strap and vest GPS designed for women's football. 10 Hz GPS, IMU, heart rate, and live broadcast. Default integration for Women's FC across WSL, WSL 2 and grassroots tiers.
           </p>
         </div>
         <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed self-start">+ Pair new device</button>
@@ -5379,7 +5379,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   // ── Getting Started items ──
   const onboardingItems = [
-    'Connect WSL/Championship profile',
+    'Connect WSL/WSL 2 profile',
     'Set up FSR compliance dashboard',
     'Add squad (24 players)',
     'Configure welfare monitoring',
@@ -5844,8 +5844,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 const WOMENS_INBOX_BODIES: Record<string, string> = {
   'SMS · Coaches':     'Frost: confirm Sunday XI please. Carter cleared, Davies out 2-3 weeks. Need team sheet by 12:30 for league submission.',
   'WhatsApp · Squad':  'Captain: morale really high after Tuesday session. Pitch walk done — surface firm, no concerns. Good vibe in group chat.',
-  'Email · Selectors': 'WSL Championship — Hartwell fixture amended to 14:00 KO due to broadcast schedule. League office confirmed 10:42 today.',
-  'Agent messages':    'Williams contract extension — agent wants 2-year deal at WSL Championship benchmark wage. Deadline end of month. Comparable offer on the table.',
+  'Email · Selectors': 'WSL 2 — Hartwell fixture amended to 14:00 KO due to broadcast schedule. League office confirmed 10:42 today.',
+  'Agent messages':    'Williams contract extension — agent wants 2-year deal at WSL 2 benchmark wage. Deadline end of month. Comparable offer on the table.',
   'Board messages':    'Kate: quarterly review Thursday 14:00. Agenda — FSR position, sponsorship pipeline (Apex), commercial Q3 vs plan, welfare audit findings.',
   'Medical Hub':       'Dr Patel: Davies MRI back — Grade 1 MCL. 2-3 weeks recovery, available cup match if managed. Okafor concussion protocol Day 3 going well.',
   'Media & Press':     "Northbridge Sport requesting feature on women's game growth — manager + 2 senior players. Friday 14:00. Talking points coming through.",
@@ -5949,7 +5949,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
           <div>
             <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
             <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Oakridge Women FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Hartwell Women</h2>
-            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>WSL Championship · MD-19</div>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>WSL 2 · MD-19</div>
             <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sun 03 May 2026 · Oakridge Stadium · Kick-off 14:00</div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
@@ -5963,7 +5963,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
         </Section>
 
         <Section title="02 · Opposition Analysis · Hartwell Women">
-          <div><strong style={{ color: T.text }}>Position:</strong> 9th in WSL Championship. <strong style={{ color: T.text }}>Last 5:</strong> L D W L D — slipping form.</div>
+          <div><strong style={{ color: T.text }}>Position:</strong> 9th in WSL 2. <strong style={{ color: T.text }}>Last 5:</strong> L D W L D — slipping form.</div>
           <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
           <ul style={{ marginTop: 4, paddingLeft: 22 }}>
             <li>Striker <strong>K. Bell</strong> — 11 league goals, deadly in the air, weak left foot.</li>
