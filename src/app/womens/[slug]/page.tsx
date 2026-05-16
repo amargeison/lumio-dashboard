@@ -759,15 +759,40 @@ const MorningBriefingView = ({ club }: { club: WomensClub }) => {
 
 // ─── CYCLE TRACKING VIEW ─────────────────────────────────────────────────────
 const CycleTrackingView = () => {
-  const squad = [
-    { name: 'Emma Clarke', phase: 'Follicular', day: 8, loadTarget: 100, aclFlag: '', gpsLoad: 82, adjustment: 'None' },
-    { name: 'Priya Nair', phase: 'Ovulatory', day: 14, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 77, adjustment: '-5% intensity' },
-    { name: 'Emily Zhang', phase: 'Luteal', day: 21, loadTarget: 75, aclFlag: '🔴 ACL elevated (prev ACL + luteal)', gpsLoad: 91, adjustment: '-25% load cap' },
-    { name: 'Charlotte Reed', phase: 'Menstrual', day: 2, loadTarget: 60, aclFlag: '', gpsLoad: 68, adjustment: 'Rest day recommended' },
-    { name: 'Jade Osei', phase: 'Follicular', day: 10, loadTarget: 100, aclFlag: '', gpsLoad: 88, adjustment: 'None' },
-    { name: 'Abbi Walsh', phase: 'Luteal', day: 19, loadTarget: 80, aclFlag: '⚠ Luteal phase', gpsLoad: 84, adjustment: '-20% intensity' },
-    { name: 'Lucy Whitmore', phase: 'Ovulatory', day: 13, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 79, adjustment: '-5% intensity' },
-    { name: 'Megan Hughes', phase: 'Follicular', day: 6, loadTarget: 100, aclFlag: '', gpsLoad: 71, adjustment: 'None' },
+  // Squad of 22 — reconciles to the existing 14/22 opt-in KPI.
+  // Names are drawn from existing rosters: ACL/welfare side first (where
+  // welfare engagement makes consent more likely), then canonical
+  // WOMENS_SQUAD for the not-opted-in tail. No invented names.
+  // Non-opted-in players have no cycle data held — cycle cells em-dash.
+  // Sophie Lawson's consent is on file but cycle data is not tracked while
+  // on maternity (same em-dash treatment).
+  type Consent = { state: 'consented'; date: string } | { state: 'not_opted_in' };
+  type CycleRow = { name: string; phase: string; day: number; loadTarget: number; aclFlag: string; gpsLoad: number; adjustment: string; consent: Consent };
+  const squad: CycleRow[] = [
+    // Consented — welfare-engaged players (existing cycle roster + ACL roster overlap)
+    { name: 'Emma Clarke',     phase: 'Follicular', day: 8,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 82, adjustment: 'None',                  consent: { state: 'consented', date: '14 Mar 2026' } },
+    { name: 'Priya Nair',      phase: 'Ovulatory',  day: 14, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 77, adjustment: '-5% intensity',         consent: { state: 'consented', date: '02 Sep 2025' } },
+    { name: 'Emily Zhang',     phase: 'Luteal',     day: 21, loadTarget: 75,  aclFlag: '🔴 ACL elevated (prev ACL + luteal)',   gpsLoad: 91, adjustment: '-25% load cap',         consent: { state: 'consented', date: '09 Jul 2025' } },
+    { name: 'Charlotte Reed',  phase: 'Menstrual',  day: 2,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 68, adjustment: 'Rest day recommended',   consent: { state: 'consented', date: '21 Nov 2025' } },
+    { name: 'Jade Osei',       phase: 'Follicular', day: 10, loadTarget: 100, aclFlag: '',                                       gpsLoad: 88, adjustment: 'None',                  consent: { state: 'consented', date: '04 Jan 2026' } },
+    { name: 'Abbi Walsh',      phase: 'Luteal',     day: 19, loadTarget: 80,  aclFlag: '⚠ Luteal phase',                        gpsLoad: 84, adjustment: '-20% intensity',        consent: { state: 'consented', date: '18 Aug 2025' } },
+    { name: 'Lucy Whitmore',   phase: 'Ovulatory',  day: 13, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 79, adjustment: '-5% intensity',         consent: { state: 'consented', date: '12 Feb 2026' } },
+    { name: 'Megan Hughes',    phase: 'Follicular', day: 6,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 71, adjustment: 'None',                  consent: { state: 'consented', date: '27 Oct 2025' } },
+    { name: 'Sophie Turner',   phase: 'Follicular', day: 9,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 52, adjustment: 'RTP Phase 3 cap',       consent: { state: 'consented', date: '06 Dec 2025' } },
+    { name: 'Fatima Al-Said',  phase: 'Ovulatory',  day: 14, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 81, adjustment: '-5% intensity',         consent: { state: 'consented', date: '23 Mar 2026' } },
+    { name: 'Sophie Lawson',   phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'consented', date: '15 May 2025' } },
+    { name: 'Tilly Brooks',    phase: 'Luteal',     day: 22, loadTarget: 80,  aclFlag: '⚠ Luteal phase',                        gpsLoad: 73, adjustment: '-15% intensity',        consent: { state: 'consented', date: '30 Jan 2026' } },
+    { name: 'Sasha Davies',    phase: 'Menstrual',  day: 4,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 0,  adjustment: 'Rehab — non-load',       consent: { state: 'consented', date: '08 Apr 2026' } },
+    { name: 'Bea Chen',        phase: 'Follicular', day: 11, loadTarget: 100, aclFlag: '',                                       gpsLoad: 78, adjustment: 'None',                  consent: { state: 'consented', date: '19 Apr 2026' } },
+    // Not opted in — cycle data not held; cells em-dash in the table
+    { name: 'Ellie Hayes',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Tessa Foley',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Lucy Brennan',    phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Maya Reid',       phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Jess Tilley',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Zara Williams',   phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Dani Morris',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Aria Rowe',       phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
   ];
   const loadColor = (t: number) => t <= 75 ? 'text-red-400' : t <= 85 ? 'text-amber-400' : 'text-green-400';
   const flagBadge = (f: string) => {
@@ -775,6 +800,10 @@ const CycleTrackingView = () => {
     if (f.startsWith('⚠')) return <span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium">{f}</span>;
     return <span className="text-gray-600">—</span>;
   };
+  const consentBadge = (c: Consent) => c.state === 'consented'
+    ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-300 border border-pink-600/30 font-medium">🔒 Consented · {c.date}</span>
+    : <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 font-medium">Not opted in</span>;
+  const dash = <span className="text-gray-700">—</span>;
   const phases = [
     { name: 'Menstrual', days: 'Days 1–5', desc: 'Low energy. Prioritise recovery, flexibility, technique. Reduced intensity.', color: 'border-red-600/30 bg-red-900/10' },
     { name: 'Follicular', days: 'Days 6–13', desc: 'Rising oestrogen. Peak strength and power window. Full load appropriate.', color: 'border-green-600/30 bg-green-900/10' },
@@ -792,13 +821,13 @@ const CycleTrackingView = () => {
   return (
     <div>
       <SectionHeader title="Cycle Tracking & GPS Integration" subtitle="Opt-in · Private · Role-gated to Medical and Welfare Lead only" icon="🌸" />
-      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-300">
-        🔒 All cycle data is opt-in, encrypted, and accessible only to the player, Club Doctor, and Welfare Lead. Never visible to coaching staff without player consent.
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-300 leading-relaxed">
+        🔒 All cycle data is opt-in, encrypted, and accessible only to the player, Club Doctor, and Welfare Lead. Never visible to coaching staff without player consent. Players may revoke consent at any time via the Lumio Cycle app — data is purged from this view immediately.
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Opt-in Rate', value: '14/22', sub: '64% of eligible squad', color: 'text-pink-400' },
+          { label: 'Opt-in Rate', value: '14/22', sub: '14 consented · 8 not opted in', color: 'text-pink-400' },
           { label: 'High-Risk Phase Today', value: '3 players', sub: 'Luteal — reduced load', color: 'text-amber-400' },
           { label: 'ACL Flags Today', value: '2', sub: 'Cycle × GPS composite', color: 'text-red-400' },
           { label: 'Training Adjustments', value: '7', sub: 'Auto-applied today', color: 'text-teal-400' },
@@ -814,20 +843,24 @@ const CycleTrackingView = () => {
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-            <th className="text-left p-3">Player</th><th className="text-left p-3">Phase</th><th className="text-left p-3">Day</th><th className="text-left p-3">Load Target</th><th className="text-left p-3">ACL Flag</th><th className="text-left p-3">GPS Load</th><th className="text-left p-3">Adjustment</th>
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Consent</th><th className="text-left p-3">Phase</th><th className="text-left p-3">Day</th><th className="text-left p-3">Load Target</th><th className="text-left p-3">ACL Flag</th><th className="text-left p-3">GPS Load</th><th className="text-left p-3">Adjustment</th>
           </tr></thead>
           <tbody>
-            {squad.map((p, i) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.phase}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.day}</td>
-                <td className="p-3"><span className={`text-sm font-bold ${loadColor(p.loadTarget)}`}>{p.loadTarget}%</span></td>
-                <td className="p-3">{flagBadge(p.aclFlag)}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.gpsLoad} AU</td>
-                <td className="p-3 text-xs text-gray-300">{p.adjustment}</td>
-              </tr>
-            ))}
+            {squad.map((p, i) => {
+              const noData = p.consent.state === 'not_opted_in' || p.phase === '—';
+              return (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                  <td className="p-3">{consentBadge(p.consent)}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : p.phase}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : p.day}</td>
+                  <td className="p-3">{noData ? dash : <span className={`text-sm font-bold ${loadColor(p.loadTarget)}`}>{p.loadTarget}%</span>}</td>
+                  <td className="p-3">{noData ? dash : flagBadge(p.aclFlag)}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : `${p.gpsLoad} AU`}</td>
+                  <td className="p-3 text-xs text-gray-300">{noData ? dash : p.adjustment}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
