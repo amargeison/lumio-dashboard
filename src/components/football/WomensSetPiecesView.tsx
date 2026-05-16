@@ -3806,7 +3806,7 @@ function PenaltiesTab() {
         <div style={{ background: C.bg, borderRadius: 8, padding: 14, marginBottom: 14 }}>
           <div style={{ color: C.textSec, fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Opposition Intel</div>
           <div style={{ color: C.text, fontSize: 13 }}>
-            <strong>Riverside United</strong> — last 5 penalties: 4/5 scored, 3 to GK&apos;s right
+            <strong>Hartwell Women</strong> — last 5 penalties: 4/5 scored, 3 to GK&apos;s right
           </div>
         </div>
         <CoachAttribution />
@@ -3841,11 +3841,11 @@ function PenaltiesTab() {
             </thead>
             <tbody>
               {[
-                { opp: 'Riverside United', taker: 'J. Kane', side: 'Right', gk: 'Stayed central', outcome: 'Saved' },
-                { opp: 'Northgate City', taker: 'R. Alvarez', side: 'Left', gk: 'Dived left', outcome: 'Goal (right)' },
-                { opp: 'Borough Town', taker: 'M. Hussain', side: 'Centre', gk: 'Dived right', outcome: 'Goal (centre)' },
-                { opp: 'Hartfield Rovers', taker: 'P. Dixon', side: 'Right', gk: 'Stayed central', outcome: 'Hit post' },
-                { opp: 'Crestwood AFC', taker: 'S. Oduya', side: 'Left', gk: 'Dived left', outcome: 'Saved' },
+                { opp: 'Hartwell Women', taker: 'J. Kane', side: 'Right', gk: 'Stayed central', outcome: 'Saved' },
+                { opp: 'Northgate Women', taker: 'R. Alvarez', side: 'Left', gk: 'Dived left', outcome: 'Goal (right)' },
+                { opp: 'Castleton Women', taker: 'M. Hussain', side: 'Centre', gk: 'Dived right', outcome: 'Goal (centre)' },
+                { opp: 'Glenmoor Wanderers W', taker: 'P. Dixon', side: 'Right', gk: 'Stayed central', outcome: 'Hit post' },
+                { opp: 'Thornvale Ladies', taker: 'S. Oduya', side: 'Left', gk: 'Dived left', outcome: 'Saved' },
               ].map((row, i) => (
                 <tr key={i}>
                   <td style={{ padding: '8px 10px', color: C.text, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{row.opp}</td>
@@ -5520,10 +5520,10 @@ function SetPieceCoachTab() {
           }}
         >
           <div style={{ color: C.text, fontSize: 14, lineHeight: 1.8 }}>
-            <strong style={{ color: C.gold }}>Pre-match preparation vs Riverside United:</strong><br />
+            <strong style={{ color: C.gold }}>Pre-match preparation vs Hartwell Women:</strong><br />
             &bull; Practise &ldquo;Far Post Overload&rdquo; corner routine — 3 goals this season<br />
             &bull; Review opposition corner defending — they are weak at the near post<br />
-            &bull; Penalty prep: study Riverside&apos;s GK (dives right 65% of the time)<br />
+            &bull; Penalty prep: study Hartwell&apos;s GK (dives right 65% of the time)<br />
             &bull; Introduce new short corner variation for right side
           </div>
         </div>

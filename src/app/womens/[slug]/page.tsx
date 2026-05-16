@@ -33,6 +33,15 @@ import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefi
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
 import WomensVideoAnalysisView from '@/components/football/WomensVideoAnalysisView'
+import WomensSetPiecesView from '@/components/football/WomensSetPiecesView'
+import WomensTrainingView from '@/components/football/WomensTrainingView'
+import WomensFixturesView from '@/components/football/WomensFixturesView'
+import WomensCupManagerView from '@/components/football/WomensCupManagerView'
+import WomensMedicalHubView from '@/components/football/WomensMedicalHubView'
+import WomensConcussionTrackerView from '@/components/football/WomensConcussionTrackerView'
+import WomensFinanceView from '@/components/football/WomensFinanceView'
+import WomensCommercialView from '@/components/football/WomensCommercialView'
+import WomensCommunityView from '@/components/football/WomensCommunityView'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
@@ -88,58 +97,82 @@ interface WomensClub {
 // inline TacticsSetPiecesView. Quick-action buttons targeting the still-
 // trimmed IDs were updated in src/data/womens/role-quick-actions.ts.
 const SIDEBAR_ITEMS = [
-  { id: 'dashboard',    label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
-  { id: 'briefing',     label: 'Morning Briefing',    icon: '🌅', group: 'OVERVIEW' },
-  { id: 'insights',     label: 'Insights',            icon: '📊', group: 'OVERVIEW' },
-  { id: 'fsr',          label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
-  { id: 'salary',       label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
-  { id: 'revenue',      label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
-  { id: 'game-standards', label: 'Game Standards',    icon: '🛡️', group: 'COMPLIANCE' },
-  { id: 'welfare',      label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
-  { id: 'acl',          label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
-  { id: 'cycle',        label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
-  { id: 'maternity',    label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
-  { id: 'mental',       label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
-  { id: 'player-welfare', label: 'Player Welfare Hub', icon: '🌍', group: 'WELFARE' },
-  { id: 'club-operations', label: 'Club Operations',   icon: '🏟️', group: 'OPERATIONS' },
-  { id: 'matchday-ops',    label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
-  { id: 'travel-logistics', label: 'Travel & Logistics', icon: '✈️', group: 'OPERATIONS' },
-  { id: 'kit-manager',     label: 'Kit Manager',        icon: '🧦', group: 'OPERATIONS' },
-  { id: 'team',         label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
-  { id: 'medical',      label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
-  { id: 'tours-camps',  label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
-  { id: 'facilities',     label: 'Stadium & Facilities', icon: '🏟️', group: 'FACILITIES' },
-  { id: 'pitch-grounds',  label: 'Pitch & Grounds',     icon: '🌱', group: 'FACILITIES' },
-  { id: 'training-ground', label: 'Training Ground',    icon: '📍', group: 'FACILITIES' },
-  { id: 'squad',        label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
-  { id: 'dualreg',      label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
+  // OVERVIEW — 'briefing' sidebar item removed; briefing widget on dashboard
+  // keeps navigating to that route via the renderView 'briefing' case.
+  // Board Suite moved here from COMMERCIAL, immediately after Insights.
+  { id: 'dashboard',        label: 'Dashboard',           icon: '🏠', group: 'OVERVIEW' },
+  { id: 'insights',         label: 'Insights',            icon: '📊', group: 'OVERVIEW' },
+  { id: 'board',            label: 'Board Suite',         icon: '🏛️', group: 'OVERVIEW' },
+
+  // FOOTBALL — 12 items in exact order per restructure spec.
+  // 'gps-load' kept its id, label changed to "GPS & Performance".
+  // 'tactics' label changed from "Tactics & Set Pieces" → "Tactics" (split).
+  // 'set-pieces' / 'training' / 'fixtures' / 'cup-manager' are new.
+  { id: 'squad',            label: 'Squad Management',    icon: '👥', group: 'FOOTBALL' },
   // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
-  { id: 'tactics',      label: 'Tactics & Set Pieces', icon: '🎯', group: 'FOOTBALL' },
+  { id: 'tactics',          label: 'Tactics',             icon: '🎯', group: 'FOOTBALL' },
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
+  { id: 'training',         label: 'Training',            icon: '🏃‍♀️', group: 'FOOTBALL' },
+  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
+  { id: 'set-pieces',       label: 'Set Pieces',          icon: '🎯', group: 'FOOTBALL' },
   // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
-  { id: 'video-analysis', label: 'Video & Analysis',   icon: '🎬', group: 'FOOTBALL' },
-  /* REMOVED: Match Preparation — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'match',        label: 'Match Preparation',   icon: '⚽', group: 'FOOTBALL' },
-  */
-  { id: 'transfers',   label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
-  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
-  { id: 'analytics',   label: 'Analytics',           icon: '📉', group: 'FOOTBALL' },
-  { id: 'scouting',    label: 'Scouting',            icon: '🔭', group: 'FOOTBALL' },
-  */
-  { id: 'academy',     label: 'Academy',             icon: '🎓', group: 'FOOTBALL' },
-  /* REMOVED: AI Halftime Brief — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'halftime',    label: 'AI Halftime Brief',   icon: '🤖', group: 'FOOTBALL' },
-  */
-  { id: 'sponsorship',  label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
-  { id: 'standalone',   label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
-  { id: 'club-vision',  label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
-  { id: 'board',        label: 'Board Suite',         icon: '🏛️', group: 'COMMERCIAL' },
-  { id: 'financial',    label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
-  { id: 'media',        label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
-  { id: 'social',       label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
-  { id: 'fanhub',       label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
-  { id: 'gps-load',     label: 'GPS & Load',          icon: '📡', group: 'GPS & LOAD' },
-  { id: 'gps-heatmaps', label: 'Heatmaps',            icon: '🔥', group: 'GPS & LOAD' },
-  { id: 'settings',     label: 'Settings',            icon: '⚙️', group: 'OPERATIONS' },
+  { id: 'video-analysis',   label: 'Video & Analysis',    icon: '🎬', group: 'FOOTBALL' },
+  { id: 'gps-load',         label: 'GPS & Performance',   icon: '📡', group: 'FOOTBALL' },
+  { id: 'gps-heatmaps',     label: 'Heatmaps',            icon: '🔥', group: 'FOOTBALL' },
+  { id: 'fixtures',         label: 'Fixtures & Results',  icon: '📅', group: 'FOOTBALL' },
+  { id: 'cup-manager',      label: 'Cup Manager',         icon: '🏆', group: 'FOOTBALL' },
+  { id: 'transfers',        label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
+  { id: 'dualreg',          label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
+  { id: 'academy',          label: 'Academy',             icon: '🎓', group: 'FOOTBALL' },
+
+  // WELFARE — existing 6 + Medical Hub + Concussion Tracker (new).
+  // NB: Medical Records ('medical' id) stays in OPERATIONS — Medical Hub here is the
+  // injury/ACWR/return-to-play clinical view, Medical Records there is the admin records side.
+  { id: 'welfare',          label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
+  { id: 'acl',              label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
+  { id: 'cycle',             label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
+  { id: 'maternity',        label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
+  { id: 'mental',           label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
+  { id: 'player-welfare',   label: 'Player Welfare Hub',  icon: '🌍', group: 'WELFARE' },
+  { id: 'medical-hub',      label: 'Medical Hub',         icon: '🏥', group: 'WELFARE' },
+  { id: 'concussion',       label: 'Concussion Tracker',  icon: '🧠', group: 'WELFARE' },
+
+  // COMPLIANCE — Finance NEW at top (ported from Pro current-season view).
+  // Distinct from 'financial' (Financial Planning) which remains in COMMERCIAL — the multi-horizon FSR-constrained Club Planner.
+  { id: 'finance',          label: 'Finance',             icon: '💷', group: 'COMPLIANCE' },
+  { id: 'fsr',              label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
+  { id: 'salary',           label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
+  { id: 'revenue',          label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
+  { id: 'game-standards',   label: 'Game Standards',      icon: '🛡️', group: 'COMPLIANCE' },
+
+  // COMMERCIAL — Commercial + Community NEW. Board Suite moved out to OVERVIEW.
+  // Financial Planning ('financial') stays here — it's the multi-horizon planner, not current-season.
+  { id: 'commercial',       label: 'Commercial',          icon: '💼', group: 'COMMERCIAL' },
+  { id: 'sponsorship',      label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
+  { id: 'standalone',       label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
+  { id: 'club-vision',      label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
+  { id: 'financial',        label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
+  { id: 'media',            label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
+  { id: 'social',           label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
+  { id: 'fanhub',           label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
+  { id: 'community',        label: 'Community',           icon: '🌍', group: 'COMMERCIAL' },
+
+  // OPERATIONS — unchanged.
+  { id: 'club-operations',  label: 'Club Operations',     icon: '🏟️', group: 'OPERATIONS' },
+  { id: 'matchday-ops',     label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
+  { id: 'travel-logistics', label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
+  { id: 'kit-manager',      label: 'Kit Manager',         icon: '🧦', group: 'OPERATIONS' },
+  { id: 'team',             label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
+  { id: 'medical',          label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
+  { id: 'tours-camps',      label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
+
+  // FACILITIES — unchanged.
+  { id: 'facilities',       label: 'Stadium & Facilities', icon: '🏟️', group: 'FACILITIES' },
+  { id: 'pitch-grounds',    label: 'Pitch & Grounds',     icon: '🌱', group: 'FACILITIES' },
+  { id: 'training-ground',  label: 'Training Ground',     icon: '📍', group: 'FACILITIES' },
+
+  // SETTINGS — its own group, very bottom.
+  { id: 'settings',         label: 'Settings',            icon: '⚙️', group: 'SETTINGS' },
 ]
 
 // ─── DEMO CLUBS ───────────────────────────────────────────────────────────────
@@ -1647,62 +1680,65 @@ const DualRegistrationView = () => {
   )
 }
 
-// ─── TACTICS & SET PIECES VIEW ───────────────────────────────────────────────
-const TacticsSetPiecesView = () => (
+// ─── TACTICS VIEW ────────────────────────────────────────────────────────────
+// Tactical half of the former combined TacticsSetPiecesView. Set-piece content
+// moved to WomensSetPiecesView (its own sidebar item). Added Last Match summary
+// and Opposition Notes cards for standalone substance.
+const WomensTacticsView = () => (
   <div>
-    <SectionHeader title="Tactics & Set Pieces" subtitle="Match preparation — tactical overview" icon="🎯" />
+    <SectionHeader title="Tactics" subtitle="Formation, team talk, opposition notes" icon="🎯" />
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <StatCard label="Formation" value="4-3-3" sub="Primary system" color="pink" />
-      <StatCard label="Set Pieces" value="4" sub="Trained routines" color="blue" />
       <StatCard label="Possession %" value="58%" sub="Season average" color="teal" />
-      <StatCard label="Goals from Set Pieces" value="7" sub="28% of total goals" color="green" />
+      <StatCard label="PPDA" value="8.4" sub="2nd in division" color="green" />
+      <StatCard label="xG Diff / match" value="+0.6" sub="Best in division" color="blue" />
     </div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
       <h3 className="text-sm font-bold text-white mb-4">Formation — 4-3-3</h3>
       <div className="flex flex-col items-center gap-3 py-4">
         <div className="flex gap-8">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">LW</div><div className="text-[10px] text-gray-500 mt-1">Brooks</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">ST</div><div className="text-[10px] text-gray-500 mt-1">Osei</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">RW</div><div className="text-[10px] text-gray-500 mt-1">Walsh</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">LW</div><div className="text-[10px] text-gray-500 mt-1">Morris</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">ST</div><div className="text-[10px] text-gray-500 mt-1">Williams</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">RW</div><div className="text-[10px] text-gray-500 mt-1">Tilley</div></div>
         </div>
         <div className="flex gap-6">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CM</div><div className="text-[10px] text-gray-500 mt-1">Nair</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">DM</div><div className="text-[10px] text-gray-500 mt-1">Hughes</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">AM</div><div className="text-[10px] text-gray-500 mt-1">Al-Said</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CM</div><div className="text-[10px] text-gray-500 mt-1">Barker</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CDM</div><div className="text-[10px] text-gray-500 mt-1">Granger</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CAM</div><div className="text-[10px] text-gray-500 mt-1">Carter</div></div>
         </div>
         <div className="flex gap-4">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">LB</div><div className="text-[10px] text-gray-500 mt-1">Turner</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Clarke</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">TBC</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">RB</div><div className="text-[10px] text-gray-500 mt-1">Lawson</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">LB</div><div className="text-[10px] text-gray-500 mt-1">Foley</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Brennan</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Reid</div></div>
+          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">RB</div><div className="text-[10px] text-gray-500 mt-1">Okonkwo</div></div>
         </div>
-        <div className="text-center"><div className="w-8 h-8 rounded-full bg-green-600/30 border border-green-500/50 flex items-center justify-center text-[10px] text-white font-bold">GK</div><div className="text-[10px] text-gray-500 mt-1">Reed</div></div>
+        <div className="text-center"><div className="w-8 h-8 rounded-full bg-green-600/30 border border-green-500/50 flex items-center justify-center text-[10px] text-white font-bold">GK</div><div className="text-[10px] text-gray-500 mt-1">Hayes</div></div>
       </div>
     </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Set Piece Routines</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {[
-          {name:'Corner — Near Post Flick',type:'Attacking',success:'42%',description:'Short corner to Nair, flick-on by Osei at near post. Clarke/Hughes as secondary targets.'},
-          {name:'Free Kick — Direct Strike',type:'Attacking',success:'18%',description:'Direct attempt from Walsh when within 25 yards. Decoy run from Brooks.'},
-          {name:'Throw-in — Long to Target',type:'Attacking',success:'35%',description:'Long throw from Turner to Osei in channel. Second ball runners: Walsh, Brooks.'},
-          {name:'Goal Kick — Build Out',type:'Defensive',success:'72% retention',description:'Reed plays short to Clarke or Hughes. Triangle build through Nair, full-backs push wide. Long option to Osei if pressed.'},
-        ].map((r: {name:string;type:string;success:string;description:string}) => (
-          <div key={r.name} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-white">{r.name}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.type === 'Attacking' ? 'bg-pink-600/20 text-pink-400' : 'bg-blue-600/20 text-blue-400'}`}>{r.type}</span>
-            </div>
-            <p className="text-[11px] text-gray-400 mb-1">{r.description}</p>
-            <span className="text-[10px] text-gray-500">Success rate: {r.success}</span>
-          </div>
-        ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Last Match — Oakridge Women 1-1 Hartwell Women</h3>
+        <div className="text-xs text-gray-400 space-y-1.5">
+          <p>• <span className="text-pink-400 font-semibold">Possession 58%</span> · Hartwell pressed high in 25-minute spells but couldn&apos;t sustain it.</p>
+          <p>• <span className="text-pink-400 font-semibold">Shots 14 (5 on target)</span> · Williams missed two presentable chances pre-equaliser.</p>
+          <p>• <span className="text-pink-400 font-semibold">PPDA 7.9</span> · Counter-pressing won 11 high-zone turnovers; one led to the goal.</p>
+          <p>• Morris equaliser at 58&apos; from Tilley cutback — third route-one chance from that pattern this month.</p>
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Next: Hartwell Women (away)</h3>
+        <div className="text-xs text-gray-400 space-y-1.5">
+          <p>• High line vulnerable to in-behind balls — isolate Tilley on Hartwell&apos;s LB (struggles in 1v1).</p>
+          <p>• Set-piece threat: A. Reece, 14 goals — back-post runs from corners. (Detailed routines: see Set Pieces sidebar item.)</p>
+          <p>• Doyle on the left dribbles direct — double up with Foley + Granger when shifting across.</p>
+          <p>• Keeper distribution short under pressure — high press triggers should produce turnovers.</p>
+        </div>
       </div>
     </div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
       <h3 className="text-sm font-bold text-white mb-3">Team Talk — Coach Notes</h3>
       <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
-        <p className="text-sm text-gray-300 italic">&ldquo;We press high from the front three. Nair dictates tempo. Full-backs push up — we want width. Set pieces are our edge — we&apos;ve drilled them all week. Trust the system, trust each other.&rdquo;</p>
+        <p className="text-sm text-gray-300 italic">&ldquo;We press high from the front three. Carter dictates tempo. Full-backs push up — we want width. Trust the system, trust each other. Set pieces are our edge — drills in the Set Pieces module this week.&rdquo;</p>
         <p className="text-xs text-gray-500 mt-2">— Sarah Frost, Head Coach</p>
       </div>
     </div>
@@ -4500,8 +4536,8 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
   ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
-  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','briefing','insights','squad','dualreg','transfers','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
-  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','briefing','insights','squad','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','insights','squad','dualreg','transfers','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
+  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','insights','squad','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
   medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
   welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
@@ -5259,9 +5295,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   // Team tab sub-tabs
   const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
-  const groups = ['OVERVIEW', 'COMPLIANCE', 'WELFARE', 'FOOTBALL', 'GPS & LOAD', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES']
+  const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
-  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps'])
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces'])
   const filteredItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
@@ -5281,7 +5317,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'mental':      return <MentalHealthView />
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
-      case 'tactics':     return <TacticsSetPiecesView />
+      case 'tactics':     return <WomensTacticsView />
+      case 'set-pieces':  return <WomensSetPiecesView />
+      case 'training':    return <WomensTrainingView />
+      case 'fixtures':    return <WomensFixturesView />
+      case 'cup-manager': return <WomensCupManagerView />
+      case 'medical-hub': return <WomensMedicalHubView />
+      case 'concussion':  return <WomensConcussionTrackerView />
+      case 'finance':     return <WomensFinanceView />
+      case 'commercial':  return <WomensCommercialView />
+      case 'community':   return <WomensCommunityView />
       case 'video-analysis': return <WomensVideoAnalysisView />
       case 'match':       return <MatchPreparationView />
       case 'transfers':   return <TransfersView club={club} />
