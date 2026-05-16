@@ -28,6 +28,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   medical: Cross, 'tours-camps': Calendar, settings: Settings,
   'game-standards': Shield,
   'player-welfare': Heart, 'club-operations': Landmark,
+  licensing: Landmark,
 }
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
@@ -45,6 +46,7 @@ import WomensCommunityView from '@/components/football/WomensCommunityView'
 import WomensPregnancyRtpView from '@/components/football/WomensPregnancyRtpView'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
+import ClubLicensingView from '@/components/womens/ClubLicensingView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -145,6 +147,7 @@ const SIDEBAR_ITEMS = [
   { id: 'salary',           label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',          label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
   { id: 'game-standards',   label: 'Game Standards',      icon: '🛡️', group: 'COMPLIANCE' },
+  { id: 'licensing',        label: 'Club Licensing',      icon: '🏛️', group: 'COMPLIANCE' },
 
   // COMMERCIAL — Commercial + Community NEW. Board Suite moved out to OVERVIEW.
   // Financial Planning ('financial') stays here — it's the multi-horizon planner, not current-season.
@@ -5523,7 +5526,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
   const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
-  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces'])
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces', 'licensing'])
   const filteredItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
@@ -5574,6 +5577,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'medical':     return <MedicalRecordsView />
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
+      case 'licensing':   return <ClubLicensingView />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'kit-manager':  return <WomensKitManagerView />

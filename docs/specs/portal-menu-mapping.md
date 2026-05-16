@@ -371,6 +371,7 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | | Salary Compliance | `wsl_handbook` | Squad salary cap monitoring |
 | | Revenue Attribution | `wsl_handbook` | Carney Review demerger readiness, standalone revenue % |
 | | Game Standards | `wsl_handbook` | WSL Handbook minimum standards compliance |
+| | Club Licensing | `wsl_handbook` | **New flagship** — `ClubLicensingView` (~600 LOC, pink theme). 5 tabs (Overview / Criteria / Risk Register / Action Plan / Audit), 6 categories (facilities, staffing, academy, contact hours, welfare, medical), ~30 criteria. Demo posture: PROVISIONAL, 4 green / 2 amber. Bottom of COMPLIANCE group (flagship-at-bottom, mirrors Pro PSR Modeller). Hidden for grassroots tier. **Brand-safety:** all thresholds / percentages / deadlines / document numbers are invented demo values; visible disclaimer on every tab. No new catalogue entry (nests under `wsl_handbook`) |
 | COMMERCIAL | Commercial | `commercial_marketing` | **New port of `CommercialView`** — `WomensCommercialView` (4 tabs: sponsorship / hospitality / matchday / partnerships) |
 | | Sponsorship Pipeline | `commercial_marketing` | B2B sponsorship contracts |
 | | Standalone Tracker | `wsl_handbook` | Carney Review standalone identity tracker |
