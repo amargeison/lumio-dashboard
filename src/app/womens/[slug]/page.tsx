@@ -4533,6 +4533,128 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   </div>
 )
 
+// ─── KIT MANAGER VIEW (Women's) ──────────────────────────────────────────────
+// Women's-specific kit operations: short-colour policy with period-proofing
+// flag, and per-location period product provision tracker. WSL/WSL 2 player
+// research has consistently identified fear of menstrual leakage on white
+// shorts as the single most common cycle-related performance barrier;
+// Stoke City Women and West Brom Women both switched home shorts away from
+// white in 2023 for this reason.
+const WomensKitManagerView = () => {
+  type Kit = { label: string; season: string; shirt: string; shorts: string; socks: string; switched?: string }
+  const kits: Kit[] = [
+    { label: 'Home',  season: '2025/26', shirt: '#EC4899', shorts: '#0F172A', socks: '#F9FAFB',
+      switched: 'Switched from white → navy (Aug 2025). Decision led by Welfare Coord and supported by player feedback; aligns with WSL/WSL 2 precedent (Stoke City Women, West Brom Women).' },
+    { label: 'Away',  season: '2025/26', shirt: '#F9FAFB', shorts: '#111827', socks: '#111827' },
+    { label: 'Third', season: '2025/26', shirt: '#0F172A', shorts: '#0F172A', socks: '#EC4899' },
+  ]
+  const isWhite = (c: string) => {
+    const u = c.toUpperCase()
+    return u === '#F9FAFB' || u === '#FFFFFF' || u === '#FFF'
+  }
+  const colourName = (c: string) => {
+    const map: Record<string, string> = { '#EC4899': 'Pink', '#0F172A': 'Navy', '#F9FAFB': 'White', '#111827': 'Black' }
+    return map[c.toUpperCase()] ?? c
+  }
+
+  type Stock = { location: string; products: string; lastRestock: string; responsible: string; status: 'Stocked' | 'Low' | 'Restock due' }
+  const stock: Stock[] = [
+    { location: 'Home changing room',       products: 'Tampons · Pads · Liners · Painkillers', lastRestock: '12 May 2026', responsible: 'Nina Walsh (Welfare Coord)', status: 'Stocked' },
+    { location: 'Away changing room',       products: 'Pads · Liners · Painkillers',            lastRestock: '09 May 2026', responsible: 'Nina Walsh (Welfare Coord)', status: 'Stocked' },
+    { location: 'Matchday kit bags',        products: 'Pads · Liners',                           lastRestock: '10 May 2026', responsible: 'Mel Hooper (Head Physio)',   status: 'Low' },
+    { location: 'Training-ground med room', products: 'Tampons · Pads · Painkillers',            lastRestock: '02 Apr 2026', responsible: 'Mel Hooper (Head Physio)',   status: 'Restock due' },
+  ]
+  const statusCls = (s: Stock['status']) =>
+    s === 'Stocked' ? 'bg-green-600/20 text-green-400 border border-green-600/30'
+      : s === 'Low' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30'
+                    : 'bg-red-600/20 text-red-400 border border-red-600/30'
+  const statusDot = (s: Stock['status']) =>
+    s === 'Stocked' ? 'bg-green-500' : s === 'Low' ? 'bg-amber-500' : 'bg-red-500'
+
+  return (
+    <div>
+      <SectionHeader title="Kit Manager" subtitle="Short-colour policy · period product provision · matchday kit bags" icon="🧦" />
+
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-200 leading-relaxed">
+        <strong className="text-pink-300">Why this matters.</strong> WSL/WSL 2 player research has consistently identified fear of menstrual leakage on white shorts as the most common cycle-related performance barrier. Stoke City Women and West Brom Women switched home shorts away from white in 2023 specifically to address this; further WSL clubs have since followed. Treated here as a welfare decision, not a marketing one.
+      </div>
+
+      <h3 className="text-sm font-bold text-white mb-3">Short Colour Policy</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {kits.map(k => {
+          const white = isWhite(k.shorts)
+          return (
+            <div key={k.label} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-sm font-bold text-white">{k.label} Kit</div>
+                  <div className="text-[10px] text-gray-500">{k.season}</div>
+                </div>
+                <span className={white
+                  ? 'text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 border border-amber-600/30 font-medium'
+                  : 'text-[10px] px-2 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30 font-medium'}>
+                  {white ? '⚠ White shorts' : 'Period-proofed ✓'}
+                </span>
+              </div>
+              <div className="space-y-2 mb-3">
+                {([['Shirt', k.shirt], ['Shorts', k.shorts], ['Socks', k.socks]] as const).map(([l, c]) => (
+                  <div key={l} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded border border-gray-700 flex-shrink-0" style={{ background: c }} />
+                    <span className="text-xs text-gray-400 w-14">{l}</span>
+                    <span className="text-xs text-gray-200">{colourName(c)}</span>
+                  </div>
+                ))}
+              </div>
+              {k.switched && (
+                <div className="text-[10px] text-pink-300 leading-relaxed pt-3 border-t border-gray-800">
+                  {k.switched}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-white">Period Product Provision</h3>
+        <div className="text-[10px] text-gray-500">Last reviewed by Welfare Coord · 14 May 2026</div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Location</th>
+            <th className="text-left p-3">Products stocked</th>
+            <th className="text-left p-3">Last restock</th>
+            <th className="text-left p-3">Responsible</th>
+            <th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {stock.map(r => (
+              <tr key={r.location} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{r.location}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.products}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.lastRestock}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.responsible}</td>
+                <td className="p-3">
+                  <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded ${statusCls(r.status)}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot(r.status)}`} />
+                    {r.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex gap-3">
+        <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30 cursor-not-allowed">Log restock — Demo</button>
+        <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Update colour policy — Demo</button>
+      </div>
+    </div>
+  )
+}
+
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
   ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
@@ -5350,9 +5472,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
+      case 'kit-manager':  return <WomensKitManagerView />
       case 'matchday-ops':
       case 'travel-logistics':
-      case 'kit-manager':
       case 'pitch-grounds':
       case 'training-ground':
         return (
