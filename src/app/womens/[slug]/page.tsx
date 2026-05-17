@@ -263,8 +263,8 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Squad Available" value="19/24" sub="5 unavailable (injury/cycle load cap)" color="pink" />
         <StatCard label="Today's ACL Flags" value="2" sub="Emily Zhang · Priya Nair" color="red" />
-        <StatCard label="xG Last Match" value="0.31" sub="vs Brighton (L 0–1)" color="amber" />
-        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Bristol City (A)" color="blue" />
+        <StatCard label="xG Last Match" value="0.31" sub="vs Hartwell Women (L 0–1)" color="amber" />
+        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Castleton Women (A)" color="blue" />
       </div>
       <ICard>
         <IH3>Squad Readiness — Cycle Phase Overlay</IH3>
@@ -303,7 +303,7 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         </svg>
       </ICard>
       <ICard>
-        <IH3>Tactical Notes — Next Opponent (Bristol City Women)</IH3>
+        <IH3>Tactical Notes — Next Opponent (Castleton Women)</IH3>
         <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Cycle consideration: 3 players in high-load-cap phases. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
       </ICard>
     </div>
@@ -426,8 +426,8 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         <StatCard label="Fan Hub Members" value="1,240" sub="Launched Jan 2026" color="blue" />
       </div>
       <ICard><IH3>Social Media Performance</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Platform</th><th className="text-left p-3">Followers</th><th className="text-left p-3">Growth</th><th className="text-left p-3">Best Post</th><th className="text-left p-3">Eng.</th></tr></thead><tbody>{[{p:'Instagram',f:'18.4k',g:'+22%',b:'48k (WSL goal)',e:'6.8%'},{p:'TikTok',f:'14.2k',g:'+41%',b:'112k (BTS reel)',e:'9.2%'},{p:'X',f:'7.6k',g:'+8%',b:'22k (match thread)',e:'3.1%'},{p:'YouTube',f:'2.6k',g:'+14%',b:'8.4k (profile)',e:'4.7%'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.f}</td><td className="p-3 text-green-400 text-xs">{r.g}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.e}</td></tr>)}</tbody></table></div></ICard>
-      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Bristol City) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
-      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Northbridge Sport — matchday access vs Bristol City (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
+      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Castleton Women) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
+      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Northbridge Sport — matchday access vs Castleton Women (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
       <ICard><IH3>Fan Hub Highlights</IH3><div className="grid grid-cols-3 gap-3">{[{l:'Members',v:'1,240'},{l:'Match Overlap',v:'68%'},{l:'Top Topic',v:'Player welfare'}].map(s=><div key={s.l} className="text-center p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-lg font-bold text-pink-400">{s.v}</div><div className="text-[10px] text-gray-500 mt-0.5">{s.l}</div></div>)}</div></ICard>
     </div>
   );
@@ -472,7 +472,7 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
       <StatCard label="FSR Status" value="SAFE" sub="Salary 68% of Relevant Revenue" color="green" />
       <StatCard label="Squad" value="24" sub={`${club.league} registered`} color="pink" />
       <StatCard label="Welfare Flags" value="2" sub="1 ACL monitoring, 1 mental health" color="amber" />
-      <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Brighton Women (H)" color="blue" />
+      <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Hartwell Women (H)" color="blue" />
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -534,8 +534,8 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
         <h3 className="text-sm font-bold text-white mb-3">Dual Registration</h3>
         <div className="space-y-2">
           {[
-            { player: 'Lucy Whitmore', from: 'Oakridge W', to: 'Bristol City W', expires: '30 Apr' },
-            { player: 'Jade Hopkins', from: 'Oakridge W', to: 'Crystal Palace W', expires: '15 May' },
+            { player: 'Lucy Whitmore', from: 'Oakridge W', to: 'Castleton Women', expires: '30 Apr' },
+            { player: 'Jade Hopkins', from: 'Oakridge W', to: 'Glenmoor Wanderers W', expires: '15 May' },
           ].map(d => (
             <div key={d.player} className="flex items-center justify-between py-1.5 border-b border-gray-800">
               <div><span className="text-xs text-white">{d.player}</span><span className="text-[10px] text-gray-500 ml-2">→ {d.to}</span></div>
@@ -548,7 +548,7 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
         <h3 className="text-sm font-bold text-white mb-3">Upcoming</h3>
         <div className="space-y-2">
           {[
-            { item: 'Brighton Women (H)', date: 'Sat 12 Apr', type: 'WSL' },
+            { item: 'Hartwell Women (H)', date: 'Sat 12 Apr', type: 'WSL 2' },
             { item: 'Board meeting', date: 'Mon 14 Apr', type: 'Internal' },
             { item: 'Apex Performance kit review', date: 'Wed 16 Apr', type: 'Commercial' },
             { item: 'Registration window closes', date: '30 Apr', type: 'FA' },
@@ -1861,14 +1861,14 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
   const requests = [
     {id:1,outlet:"Crown Broadcasting Women's Football",type:'Feature',contact:'Sarah Davies',subject:'Lumio Cycle — welfare integration in women\'s football',deadline:'15 Apr 2026',urgency:'high',status:'Pending approval',notes:'National exposure. Welfare Lead and Head Coach required. Opportunity to position Oakridge as welfare-leading club.',recommended:'Accept — high-profile welfare story aligns with Karen Carney mission.'},
     {id:2,outlet:'The Chronicle',type:'Interview',contact:'James Pearce',subject:'Sarah Frost — mid-season manager interview',deadline:'18 Apr 2026',urgency:'medium',status:'Pending approval',notes:'Subscriber-only piece. Positive profile opportunity ahead of final-third push.',recommended:'Accept — strong readership among WSL audience.'},
-    {id:3,outlet:'Northbridge Sport',type:'Matchday Access',contact:'Emma Holt (Production)',subject:'Broadcast access — Bristol City W (Sat 12 Apr)',deadline:'Thu 10 Apr',urgency:'urgent',status:'Confirm by Thu',notes:'Pre-match tunnel access, post-match mixed zone, manager interview. Live WSL broadcast.',recommended:'Accept immediately — live broadcast reaches 400k+ viewers.'},
+    {id:3,outlet:'Northbridge Sport',type:'Matchday Access',contact:'Emma Holt (Production)',subject:'Broadcast access — Castleton Women (Sat 12 Apr)',deadline:'Thu 10 Apr',urgency:'urgent',status:'Confirm by Thu',notes:'Pre-match tunnel access, post-match mixed zone, manager interview. Live WSL broadcast.',recommended:'Accept immediately — live broadcast reaches 400k+ viewers.'},
     {id:4,outlet:"Women's Football Weekly (Podcast)",type:'Podcast',contact:'Chloe Grant',subject:'Player guest — Emma Clarke',deadline:'25 Apr 2026',urgency:'low',status:'Under review',notes:'45-minute episode. Emma Clarke proposed. Good platform for player brand-building.',recommended:'Accept — low commitment, high player welfare value.'},
     {id:5,outlet:'The Chronicle Sport',type:'Comment piece',contact:'Anya Singh',subject:'FSR impact on WSL clubs — DoF comment requested',deadline:'20 Apr 2026',urgency:'medium',status:'Declined — refer to FA',notes:'Sensitive regulatory topic. Referred to FA communications team.',recommended:'Already declined — correct decision.'},
   ];
   const coverage = [
     {date:'5 Apr',outlet:'Crown Broadcasting',headline:'Oakridge Women climb to 5th with Nair brace',reach:'1.2M',sentiment:'positive'},
     {date:'2 Apr',outlet:'The Chronicle',headline:'How Oakridge are redefining welfare in women\'s football',reach:'85k',sentiment:'positive'},
-    {date:'29 Mar',outlet:'Northbridge Sport',headline:'Oakridge Women vs Arsenal: Match Report',reach:'420k',sentiment:'neutral'},
+    {date:'29 Mar',outlet:'Northbridge Sport',headline:'Oakridge Women vs Northgate Women: Match Report',reach:'420k',sentiment:'neutral'},
     {date:'22 Mar',outlet:"Women's Football Wkly",headline:'Player profile: Priya Nair — the WSL\'s in-form striker',reach:'32k',sentiment:'positive'},
     {date:'15 Mar',outlet:'The Dispatch Sport',headline:'Oakridge Women in transfer talks over NWSL forward',reach:'2.1M',sentiment:'neutral'},
     {date:'8 Mar',outlet:'The Chronicle Sport',headline:'IWD: Oakridge Women on cycle-tracking welfare pilot',reach:'340k',sentiment:'positive'},
@@ -1893,7 +1893,7 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
         <StatCard label="Open Requests" value="3" sub="1 urgent · 2 pending" color="amber"/>
         <StatCard label="Coverage (month)" value="6" sub="5 positive · 1 neutral" color="green"/>
         <StatCard label="Total Reach" value="4.2M" sub="Cumulative this month" color="pink"/>
-        <StatCard label="Next Press Day" value="Sat" sub="Northbridge Sport — Bristol City (H)" color="blue"/>
+        <StatCard label="Next Press Day" value="Sat" sub="Northbridge Sport — Castleton Women (H)" color="blue"/>
       </div>
       <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
         {[{id:'requests',label:'Media Requests',icon:'📬'},{id:'calendar',label:'PR Calendar',icon:'📅'},{id:'coverage',label:'Coverage Log',icon:'📰'},{id:'guidelines',label:'PR Guidelines',icon:'📋'}].map(t=>(
@@ -1911,7 +1911,7 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
         </div>
       ))}</div>}
       {activeTab==='calendar'&&<div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">PR & Media Calendar — April / May 2026</h3></div><div className="divide-y divide-gray-800">
-        {[{date:'Thu 10 Apr',items:[{time:'10:00',type:'Press conf',label:'Pre-match presser — Bristol City W',urgency:'high'},{time:'14:00',type:'Deadline',label:'Northbridge Sport access confirmation',urgency:'urgent'}]},{date:'Fri 11 Apr',items:[{time:'11:00',type:'Content',label:'Player spotlight: Emma Clarke — TikTok',urgency:'low'}]},{date:'Sat 12 Apr',items:[{time:'12:00',type:'Matchday',label:'Northbridge Sport tunnel access',urgency:'high'},{time:'14:30',type:'Matchday',label:'KO vs Bristol City W',urgency:'high'},{time:'16:30',type:'Post-match',label:'Mixed zone + manager interview',urgency:'high'}]},{date:'Mon 14 Apr',items:[{time:'09:00',type:'Internal',label:'Weekly comms meeting',urgency:'low'},{time:'15:00',type:'Interview',label:'Crown Broadcasting — welfare feature filming',urgency:'high'}]},{date:'Wed 16 Apr',items:[{time:'11:00',type:'Deadline',label:'Crown Broadcasting feature deadline',urgency:'medium'}]},{date:'Fri 18 Apr',items:[{time:'13:00',type:'Interview',label:'The Chronicle — Sarah Frost',urgency:'medium'}]},{date:'25 Apr',items:[{time:'10:00',type:'Podcast',label:"Women's Football Weekly — Emma Clarke",urgency:'low'}]}].map((day,i)=>(
+        {[{date:'Thu 10 Apr',items:[{time:'10:00',type:'Press conf',label:'Pre-match presser — Castleton Women',urgency:'high'},{time:'14:00',type:'Deadline',label:'Northbridge Sport access confirmation',urgency:'urgent'}]},{date:'Fri 11 Apr',items:[{time:'11:00',type:'Content',label:'Player spotlight: Emma Clarke — TikTok',urgency:'low'}]},{date:'Sat 12 Apr',items:[{time:'12:00',type:'Matchday',label:'Northbridge Sport tunnel access',urgency:'high'},{time:'14:30',type:'Matchday',label:'KO vs Castleton Women',urgency:'high'},{time:'16:30',type:'Post-match',label:'Mixed zone + manager interview',urgency:'high'}]},{date:'Mon 14 Apr',items:[{time:'09:00',type:'Internal',label:'Weekly comms meeting',urgency:'low'},{time:'15:00',type:'Interview',label:'Crown Broadcasting — welfare feature filming',urgency:'high'}]},{date:'Wed 16 Apr',items:[{time:'11:00',type:'Deadline',label:'Crown Broadcasting feature deadline',urgency:'medium'}]},{date:'Fri 18 Apr',items:[{time:'13:00',type:'Interview',label:'The Chronicle — Sarah Frost',urgency:'medium'}]},{date:'25 Apr',items:[{time:'10:00',type:'Podcast',label:"Women's Football Weekly — Emma Clarke",urgency:'low'}]}].map((day,i)=>(
           <div key={i} className="flex gap-4 p-4"><div className="w-20 flex-shrink-0"><div className="text-xs font-bold text-white">{day.date.split(' ').slice(-2).join(' ')}</div><div className="text-[10px] text-gray-600">{day.date.split(' ')[0]}</div></div><div className="flex-1 space-y-2">{day.items.map((item,j)=><div key={j} className={`flex items-center gap-3 py-1.5 px-3 rounded-lg ${item.urgency==='urgent'?'bg-red-600/10 border border-red-600/20':item.urgency==='high'?'bg-amber-600/5 border border-amber-600/10':'bg-gray-900/50 border border-gray-800/50'}`}><span className="text-[10px] text-gray-600 w-10 flex-shrink-0">{item.time}</span><span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${item.type==='Matchday'?'bg-pink-600/20 text-pink-400':item.type==='Press conf'?'bg-purple-600/20 text-purple-400':item.type==='Interview'?'bg-blue-600/20 text-blue-400':item.type==='Deadline'?'bg-red-600/20 text-red-400':item.type==='Podcast'?'bg-teal-600/20 text-teal-400':item.type==='Content'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500'}`}>{item.type}</span><span className="text-xs text-gray-300">{item.label}</span></div>)}</div></div>
         ))}
       </div></div>}
@@ -1927,13 +1927,13 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
 const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'dashboard'|'calendar'|'posts'|'performance'>('dashboard');
   const platforms = [
-    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL goal vs Chelsea'},
+    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL 2 goal vs Glenmoor Wanderers W'},
     {name:'TikTok',icon:'🎵',followers:14200,growth:41,engRate:9.2,bestReach:112000,bestPost:'Behind scenes reel'},
     {name:'X',icon:'𝕏',followers:7600,growth:8,engRate:3.1,bestReach:22000,bestPost:'Matchday thread'},
     {name:'YouTube',icon:'▶️',followers:2600,growth:14,engRate:4.7,bestReach:8400,bestPost:'Player profile ep4'},
   ];
   const scheduledPosts = [
-    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Bristol City. 🏟️ #WSL',status:'Scheduled',reach:'~12k'},
+    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Castleton. 🏟️ #WSL2',status:'Scheduled',reach:'~12k'},
     {date:'Thu 10 Apr',time:'18:30',platform:'X',type:'Match preview',caption:'Three points on the line. 💪',status:'Scheduled',reach:'~3k'},
     {date:'Fri 11 Apr',time:'12:00',platform:'TikTok',type:'Player spotlight',caption:'Meet our GK Emma Clarke 🧤',status:'Draft',reach:'~18k'},
     {date:'Sat 12 Apr',time:'11:30',platform:'Instagram',type:'Matchday hype',caption:'Game day. 🌸 Come on Oakridge!',status:'Scheduled',reach:'~20k'},
@@ -1963,7 +1963,7 @@ const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
       {activeTab==='dashboard'&&<div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{platforms.map(p=><div key={p.name} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><span className="text-lg">{p.icon}</span><span className="text-[10px] text-green-400 font-bold">+{p.growth}%</span></div><div className="text-xl font-bold text-white mb-0.5">{(p.followers/1000).toFixed(1)}k</div><div className="text-[10px] text-gray-500 mb-2">{p.name}</div><div className="w-full bg-gray-800 rounded-full h-1 mb-2"><div className="h-1 rounded-full" style={{width:`${Math.min((p.followers/20000)*100,100)}%`,backgroundColor:'#EC4899'}}/></div><div className="text-[10px] text-gray-500">{p.engRate}% eng</div></div>)}</div>
         {(()=>{const W=600,H=160,pL=48,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=30000,mx=44000,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.followers.map((f,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((f-mn)/(mx-mn))*iH}`).join(' ');const area=`${path} L ${pL+(monthlyData.labels.length-1)*sX} ${pT+iH} L ${pL} ${pT+iH} Z`;return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Total Follower Growth</h3><p className="text-xs text-gray-500 mb-4">31.2k Aug → 42.8k Apr (+37%)</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={area} fill="#EC4899" opacity="0.07"/><path d={path} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.followers.map((f,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((f-mn)/(mx-mn))*iH} r="3" fill="#EC4899"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Chelsea — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Tottenham W (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Glenmoor Wanderers W — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Ridgefield Athletic Women (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
       </div>}
       {activeTab==='calendar'&&<div className="space-y-4">
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Weekly Pillars</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{day:'Mon',theme:'Training insights',icon:'⚽',pl:'TikTok · Stories'},{day:'Wed',theme:'Player spotlight',icon:'⭐',pl:'TikTok · IG'},{day:'Fri',theme:'Match preview',icon:'🎯',pl:'All platforms'},{day:'Sat',theme:'Match day',icon:'🔴',pl:'Live — all'}].map(c=><div key={c.day} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold text-pink-400">{c.day}</span><span>{c.icon}</span></div><div className="text-xs font-semibold text-white mb-1">{c.theme}</div><div className="text-[10px] text-gray-500">{c.pl}</div></div>)}</div></div>
@@ -1982,10 +1982,10 @@ const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
 const FanHubView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'overview'|'forum'|'events'|'memberships'>('overview');
   const forumTopics = [
-    {id:1,category:'Match Discussion',title:'Brighton W (H) — Post match thread 🟢',posts:84,views:1240,lastActive:'2h ago',hot:true},
+    {id:1,category:'Match Discussion',title:'Hartwell Women (H) — Post match thread 🟢',posts:84,views:1240,lastActive:'2h ago',hot:true},
     {id:2,category:'Player Welfare',title:'Lumio Cycle tracking — what do you think?',posts:67,views:890,lastActive:'4h ago',hot:true},
     {id:3,category:'Transfers',title:'Summer window wishlist — who should we sign?',posts:112,views:2100,lastActive:'1h ago',hot:true},
-    {id:4,category:'Match Discussion',title:'Bristol City W (A) — Preview thread',posts:31,views:540,lastActive:'6h ago',hot:false},
+    {id:4,category:'Match Discussion',title:'Castleton Women (A) — Preview thread',posts:31,views:540,lastActive:'6h ago',hot:false},
     {id:5,category:'General',title:'Season tickets 2026/27 — thoughts on pricing?',posts:48,views:710,lastActive:'12h ago',hot:false},
     {id:6,category:'Academy',title:'U18 talent watch — who to look out for?',posts:29,views:480,lastActive:'1d ago',hot:false},
     {id:7,category:'Commercial',title:'New kit launch reaction — love it or leave it?',posts:95,views:1680,lastActive:'3h ago',hot:true},
@@ -1998,7 +1998,7 @@ const FanHubView = ({ club: _club }: { club: WomensClub }) => {
     {name:'Club Member',price:'£60/yr',color:'border-purple-600/40',badge:'bg-purple-600/20 text-purple-300',features:['Everything in Supporter','Training session guest pass','Annual meet-the-manager event','Priority season ticket','Member kit discount (15%)','Welfare newsletter'],members:86},
   ];
   const upcomingEvents = [
-    {date:'Sat 12 Apr',event:'Fan Zone — Bristol City W (H)',location:'Oakridge Stadium',type:'Matchday',tickets:'Free entry'},
+    {date:'Sat 12 Apr',event:'Fan Zone — Castleton Women (H)',location:'Oakridge Stadium',type:'Matchday',tickets:'Free entry'},
     {date:'Sun 20 Apr',event:'Player Q&A — Supporter exclusive',location:'Club Lounge',type:'Supporter',tickets:'Members only'},
     {date:'Sat 3 May',event:'Season Finale Fan Day',location:'Oakridge Stadium',type:'All fans',tickets:'RSVP required'},
     {date:'Sun 11 May',event:'End of Season Awards Night',location:'Oakridge Conference',type:'Club Mbr',tickets:'Club members only'},
@@ -2430,21 +2430,21 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
   const fmtS = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
 
   const players = [
-    {id:1,name:'Freya Johansson',age:24,nat:'🇸🇪',pos:'CM',league:'WSL',club:'Leicester W',salary:52000,avail:'Contract expires Jun 2026',wyscout:7.8,xG:0.14,xA:0.31,progPasses:42,aerials:58,tackles:3.2,rating:'A',tags:['Ball-playing','High press','Technical']},
+    {id:1,name:'Freya Johansson',age:24,nat:'🇸🇪',pos:'CM',league:'WSL',club:'Castleton Women',salary:52000,avail:'Contract expires Jun 2026',wyscout:7.8,xG:0.14,xA:0.31,progPasses:42,aerials:58,tackles:3.2,rating:'A',tags:['Ball-playing','High press','Technical']},
     {id:2,name:'Amara Diallo',age:22,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Bordeaux W',salary:44000,avail:'Free agent',wyscout:7.4,xG:0.38,xA:0.12,progPasses:18,aerials:62,tackles:1.1,rating:'A',tags:['Pace','In behind','Clinical']},
     {id:3,name:'Lena Müller',age:26,nat:'🇩🇪',pos:'LB',league:'Frauen-Bundesliga',club:'Hoffenheim W',salary:62000,avail:'Approach made',wyscout:7.6,xG:0.06,xA:0.28,progPasses:38,aerials:44,tackles:4.8,rating:'A',tags:['Overlapping','Delivery','Defensive']},
-    {id:4,name:'Niamh Gallagher',age:28,nat:'🇮🇪',pos:'CB',league:'WSL',club:'Everton W',salary:58000,avail:'Contract expires Jun 2026',wyscout:7.2,xG:0.04,xA:0.08,progPasses:22,aerials:78,tackles:5.1,rating:'B',tags:['Aerial','Leadership','Positional']},
+    {id:4,name:'Niamh Gallagher',age:28,nat:'🇮🇪',pos:'CB',league:'WSL',club:'Plymouth Marine Women',salary:58000,avail:'Contract expires Jun 2026',wyscout:7.2,xG:0.04,xA:0.08,progPasses:22,aerials:78,tackles:5.1,rating:'B',tags:['Aerial','Leadership','Positional']},
     {id:5,name:'Chloe Dubois',age:23,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Montpellier W',salary:48000,avail:'Scouting only',wyscout:7.5,xG:0.44,xA:0.19,progPasses:14,aerials:51,tackles:0.9,rating:'A',tags:['Pace','Dribbling','Pressing']},
-    {id:6,name:'Rosa Lindqvist',age:25,nat:'🇸🇪',pos:'CB',league:'WSL',club:'Brighton W',salary:54000,avail:'Watchlist',wyscout:6.9,xG:0.03,xA:0.06,progPasses:19,aerials:82,tackles:4.4,rating:'B',tags:['Positional','Ball-playing']},
+    {id:6,name:'Rosa Lindqvist',age:25,nat:'🇸🇪',pos:'CB',league:'WSL',club:'Hartwell Women',salary:54000,avail:'Watchlist',wyscout:6.9,xG:0.03,xA:0.06,progPasses:19,aerials:82,tackles:4.4,rating:'B',tags:['Positional','Ball-playing']},
     {id:7,name:'Kezia Okafor',age:27,nat:'🇳🇬',pos:'FW',league:'NWSL',club:'Portland Thorns',salary:88000,avail:'Fee required (est. £45k)',wyscout:8.1,xG:0.51,xA:0.22,progPasses:20,aerials:66,tackles:1.4,rating:'A+',tags:['Physical','Aerial','Clinical','Leadership']},
     {id:8,name:'Yuki Tanaka',age:21,nat:'🇯🇵',pos:'AM',league:'NWSL',club:'San Diego Wave',salary:46000,avail:'Loan available',wyscout:7.3,xG:0.22,xA:0.38,progPasses:48,aerials:29,tackles:2.1,rating:'A',tags:['Creative','Final third','Technical']},
-    {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Aston Villa W',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
+    {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Fernbrook Women',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
     {id:10,name:'Marta Sousa',age:24,nat:'🇵🇹',pos:'LW',league:'D1 Arkema',club:'PSG Féminines',salary:72000,avail:'Scouting only',wyscout:7.9,xG:0.28,xA:0.41,progPasses:36,aerials:33,tackles:2.8,rating:'A',tags:['Pace','Delivery','Creative','Dribbling']},
-    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"WSL 2",club:'Crystal Palace W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
+    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"WSL 2",club:'Glenmoor Wanderers W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
     {id:12,name:'Sofía Reyes',age:26,nat:'🇲🇽',pos:'GK',league:'NWSL',club:'Kansas City',salary:55000,avail:'Contract expires Dec 2026',wyscout:7.4,xG:null,xA:null,progPasses:null,aerials:null,tackles:null,rating:'A',tags:['Shot-stopping','Distribution','Leadership'],saves:4.2,savePct:74},
     {id:13,name:'Hana Novak',age:25,nat:'🇨🇿',pos:'CM',league:'Frauen-Bundesliga',club:'Bayern Munich W',salary:68000,avail:'Scouting only',wyscout:7.7,xG:0.11,xA:0.29,progPasses:44,aerials:48,tackles:4.1,rating:'A',tags:['Box-to-box','High press','Technical']},
-    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"WSL 2",club:'Sheffield Utd W',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
-    {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Liverpool W',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
+    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"WSL 2",club:'Ashbourne Women FC',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
+    {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Thornvale Ladies',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
   ];
 
   const positions = ['All','GK','CB','LB','RB','DM','CM','AM','LW','RW','FW'];
@@ -2571,7 +2571,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
           <div className="flex items-center justify-between"><p className="text-xs text-gray-500">3 scout reports filed</p><button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">+ New Report</button></div>
           {[
             {player:'Kezia Okafor',pos:'FW',club:'Portland Thorns (NWSL)',nat:'🇳🇬',scout:'Mark Hendry',date:'4 Apr 2026',match:'Portland vs San Diego',rating:'A+',rec:'Sign — priority target',summary:'Dominant aerial presence. Clinical finish — brace. Showed leadership organising front line.',strengths:['Aerial dominance — 7/9 duels won','Clinical finishing (2 goals)','High press — 8 defensive actions','Leadership — directed press triggers'],concerns:['Salary est. £88k — near FSR ceiling','Transfer fee likely £40–50k','NWSL contract runs to Dec 2026'],score:{technique:8,athleticism:9,pressing:9,finishing:8,leadership:9}},
-            {player:'Freya Johansson',pos:'CM',club:'Leicester W (WSL)',nat:'🇸🇪',scout:'Lisa Park',date:'29 Mar 2026',match:'Leicester W vs Bristol City W',rating:'A',rec:'Approach — contract expiring',summary:'Composed in possession. Dictated tempo. 11 forward passes into final third. Defensively disciplined.',strengths:['Progressive passing — 11 into final third','Positional discipline','Comfortable both feet','Technical under press'],concerns:['Not aerial threat','Recovery pace vs physical FW','May attract WSL top-6 interest'],score:{technique:9,athleticism:7,pressing:8,finishing:6,leadership:7}},
+            {player:'Freya Johansson',pos:'CM',club:'Castleton Women (WSL)',nat:'🇸🇪',scout:'Lisa Park',date:'29 Mar 2026',match:'Castleton Women vs Fernbrook Women',rating:'A',rec:'Approach — contract expiring',summary:'Composed in possession. Dictated tempo. 11 forward passes into final third. Defensively disciplined.',strengths:['Progressive passing — 11 into final third','Positional discipline','Comfortable both feet','Technical under press'],concerns:['Not aerial threat','Recovery pace vs physical FW','May attract WSL top-6 interest'],score:{technique:9,athleticism:7,pressing:8,finishing:6,leadership:7}},
             {player:'Amara Diallo',pos:'FW',club:'Bordeaux W (D1 Arkema)',nat:'🇫🇷',scout:'Mark Hendry',date:'22 Mar 2026',match:'Bordeaux vs Montpellier',rating:'A',rec:'Sign immediately — free agent',summary:'Electric pace on the left. Ran in behind 6 times. Pressing from front effective. Free agent — exceptional value.',strengths:['Blistering pace — consistent threat','Pressing from front (3 ball recoveries)','Free agent — no fee, £44k salary','Young (22) with significant upside'],concerns:['Decision-making inconsistent','Aerial minimal — 2/8 duels','D1→WSL adaptation 3–4 months'],score:{technique:7,athleticism:9,pressing:8,finishing:7,leadership:6}},
           ].map((r,i)=>(
             <div key={i} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -2600,16 +2600,16 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
   const WSL_AVG_PPDA = 9.8
 
   const matchData = [
-    { match: 'Man City W',    venue: 'H', result: 'L', score: '1–2', xG: 0.98, xGA: 1.87, ppda: 12.1, progPasses: 28 },
-    { match: 'Chelsea W',     venue: 'A', result: 'L', score: '0–3', xG: 0.22, xGA: 2.94, ppda: 16.4, progPasses: 14 },
-    { match: 'Arsenal W',     venue: 'H', result: 'D', score: '1–1', xG: 0.91, xGA: 0.88, ppda: 11.2, progPasses: 22 },
-    { match: 'Liverpool W',   venue: 'A', result: 'W', score: '2–1', xG: 1.62, xGA: 0.74, ppda: 7.8,  progPasses: 36 },
-    { match: 'Brighton W',    venue: 'H', result: 'L', score: '0–1', xG: 0.31, xGA: 0.87, ppda: 14.2, progPasses: 18 },
-    { match: 'Aston Villa W', venue: 'A', result: 'W', score: '3–1', xG: 2.14, xGA: 0.62, ppda: 6.9,  progPasses: 41 },
-    { match: 'Everton W',     venue: 'H', result: 'W', score: '2–0', xG: 1.74, xGA: 0.28, ppda: 8.1,  progPasses: 38 },
-    { match: 'Leicester W',   venue: 'A', result: 'D', score: '2–2', xG: 1.38, xGA: 1.41, ppda: 9.4,  progPasses: 31 },
-    { match: 'Tottenham W',   venue: 'H', result: 'W', score: '4–0', xG: 2.88, xGA: 0.14, ppda: 5.2,  progPasses: 52 },
-    { match: 'West Ham W',    venue: 'A', result: 'W', score: '1–0', xG: 1.12, xGA: 0.44, ppda: 8.8,  progPasses: 33 },
+    { match: 'Kingsmere City Women', venue: 'H', result: 'L', score: '1–2', xG: 0.98, xGA: 1.87, ppda: 12.1, progPasses: 28 },
+    { match: 'Glenmoor Wanderers W',   venue: 'A', result: 'L', score: '0–3', xG: 0.22, xGA: 2.94, ppda: 16.4, progPasses: 14 },
+    { match: 'Northgate Women',         venue: 'H', result: 'D', score: '1–1', xG: 0.91, xGA: 0.88, ppda: 11.2, progPasses: 22 },
+    { match: 'Thornvale Ladies',        venue: 'A', result: 'W', score: '2–1', xG: 1.62, xGA: 0.74, ppda: 7.8,  progPasses: 36 },
+    { match: 'Hartwell Women',          venue: 'H', result: 'L', score: '0–1', xG: 0.31, xGA: 0.87, ppda: 14.2, progPasses: 18 },
+    { match: 'Fernbrook Women',         venue: 'A', result: 'W', score: '3–1', xG: 2.14, xGA: 0.62, ppda: 6.9,  progPasses: 41 },
+    { match: 'Plymouth Marine Women',   venue: 'H', result: 'W', score: '2–0', xG: 1.74, xGA: 0.28, ppda: 8.1,  progPasses: 38 },
+    { match: 'Castleton Women',         venue: 'A', result: 'D', score: '2–2', xG: 1.38, xGA: 1.41, ppda: 9.4,  progPasses: 31 },
+    { match: 'Ridgefield Athletic Women', venue: 'H', result: 'W', score: '4–0', xG: 2.88, xGA: 0.14, ppda: 5.2,  progPasses: 52 },
+    { match: 'Ashbourne Women FC',      venue: 'A', result: 'W', score: '1–0', xG: 1.12, xGA: 0.44, ppda: 8.8,  progPasses: 33 },
   ]
 
   const avgXG  = matchData.reduce((s, m) => s + m.xG,  0) / matchData.length
@@ -2716,7 +2716,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
               {[
                 { label: 'Oakridge (season avg)', value: avgPPDA.toFixed(1), color: '#EC4899', note: avgPPDA < WSL_AVG_PPDA ? '↑ More pressing than avg' : '↓ Less pressing than avg' },
                 { label: 'WSL Average', value: String(WSL_AVG_PPDA), color: '#0D9488', note: 'Benchmark' },
-                { label: 'WSL Top 3 avg', value: '7.2', color: '#8B5CF6', note: 'Chelsea, Arsenal, Man City' },
+                { label: 'WSL Top 3 avg', value: '7.2', color: '#8B5CF6', note: '' },
               ].map(c => (
                 <div key={c.label} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
                   <div className="text-xl font-bold mb-0.5" style={{ color: c.color }}>{c.value}</div>
@@ -2747,11 +2747,11 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-3">
                 <div className="text-xs font-bold text-green-400 mb-1">Best pressing performances</div>
-                <div className="text-xs text-gray-400">Tottenham W (PPDA 5.2) and Aston Villa W (6.9) — both resulted in wins with high xG.</div>
+                <div className="text-xs text-gray-400">Ridgefield Athletic Women (PPDA 5.2) and Fernbrook Women (6.9) — both resulted in wins with high xG.</div>
               </div>
               <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-3">
                 <div className="text-xs font-bold text-red-400 mb-1">Worst pressing performances</div>
-                <div className="text-xs text-gray-400">Chelsea A (PPDA 16.4) and Brighton H (14.2) — both losses. Low press allowed opposition to build freely.</div>
+                <div className="text-xs text-gray-400">Glenmoor Wanderers W (A, PPDA 16.4) and Hartwell Women (H, 14.2) — both losses. Low press allowed opposition to build freely.</div>
               </div>
             </div>
             <div className="mt-3 text-[10px] text-gray-600">Color: 🟢 Elite (&lt;8) · 🩷 Good (8–11) · 🟡 Average (11–14) · 🔴 Low (&gt;14)</div>
@@ -3061,7 +3061,7 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
 const AIHalftimeBriefView = () => {
   const [brief, setBrief] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const matchContext = { opponent: 'Brighton Women', score: '0–1', minute: 45, venue: 'Home', formation: '4-3-3' }
+  const matchContext = { opponent: 'Hartwell Women', score: '0–1', minute: 45, venue: 'Home', formation: '4-3-3' }
 
   const generateBrief = async () => {
     setLoading(true)
@@ -3153,7 +3153,7 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
       <SectionHeader title="AI Halftime Brief" subtitle="GPS + Lumio Data xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <StatCard label="Opponent" value="Brighton W" color="blue" />
+        <StatCard label="Opponent" value="Hartwell Women" color="blue" />
         <StatCard label="Score" value="0 – 1" sub="Trailing" color="red" />
         <StatCard label="xG" value="0.31 – 0.87" sub="Us vs Them" color="amber" />
         <StatCard label="ACL Events" value="3" sub="Emily Zhang" color="red" />
@@ -3260,7 +3260,7 @@ const MatchPreparationView = () => {
       <SectionHeader title="Match Preparation" subtitle="Next fixture planning and readiness" icon="⚽" />
       <div className="bg-gradient-to-br from-pink-600/20 to-purple-900/10 border border-pink-600/20 rounded-xl p-5 mb-6">
         <div className="text-xs text-pink-400 font-semibold uppercase tracking-wider mb-2">Next Match</div>
-        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Manchester City Women</div>
+        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Kingsmere City Women</div>
         <div className="flex items-center gap-4 text-sm text-gray-400">
           <span>Saturday 12 April 2026</span>
           <span>KO 14:00</span>
@@ -3305,7 +3305,7 @@ const MatchPreparationView = () => {
           </div>
         </div>
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Manchester City Women</h3>
+          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Kingsmere City Women</h3>
           <div className="space-y-3">
             {[
               {label:'Formation',value:'4-3-3 (high line)'},
@@ -3430,11 +3430,11 @@ const WOMENS_HEATMAP_PLAYERS: HMPlayer[] = [
 ]
 
 const WOMENS_HEATMAP_MATCHES = [
-  'Manchester City Women (H) — WSL, 2-2 D',
-  'Tottenham Hotspur Women (A) — WSL, 1-0 W',
+  'Kingsmere City Women (H) — WSL 2, 2-2 D',
+  'Ridgefield Athletic Women (A) — WSL 2, 1-0 W',
   'Northgate United Women (H) — FA Cup R5, 0-1 L',
-  'Brighton Women (A) — WSL, 3-1 W',
-  'Chelsea Women (H) — WSL, 1-3 L',
+  'Hartwell Women (A) — WSL 2, 3-1 W',
+  'Glenmoor Wanderers W (H) — WSL 2, 1-3 L',
 ]
 
 const WOMENS_HEATMAP_TRAINING = [
@@ -4810,7 +4810,7 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
       )}
       {tab === 'content' && (
         <div className="space-y-3">
-          {['Matchday graphic — vs Brighton (scheduled Fri)', 'Player interview — Emma Clarke (filmed, pending edit)', 'Kit reveal teaser — Summer 2026 (concept stage)', 'Training ground BTS — Monthly series (next: 15 Apr)'].map((c, i) => (
+          {['Matchday graphic — vs Hartwell Women (scheduled Fri)', 'Player interview — Emma Clarke (filmed, pending edit)', 'Kit reveal teaser — Summer 2026 (concept stage)', 'Training ground BTS — Monthly series (next: 15 Apr)'].map((c, i) => (
             <div key={i} className="p-3 bg-[#0D1117] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>
           ))}
         </div>
@@ -4818,7 +4818,7 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
       {tab === 'events' && (
         <div className="space-y-3">
           {[
-            { e: 'Matchday Hospitality — vs Brighton', d: 'Sat 12 Apr', s: '12 of 20 seats' },
+            { e: 'Matchday Hospitality — vs Hartwell Women', d: 'Sat 12 Apr', s: '12 of 20 seats' },
             { e: 'End of Season Awards', d: 'Sun 25 May', s: 'Table confirmed' },
             { e: 'Pre-Season Launch Event', d: 'Jul 2026', s: 'Planning' },
           ].map((ev, i) => (
@@ -5043,7 +5043,7 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
             <h3 className="text-lg font-bold text-white">Activate Pre-Season</h3>
             <div><label className="text-xs text-gray-500 mb-1 block">Season opener date</label><input type="date" value={form.opener} onChange={e=>setForm(f=>({...f,opener:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
-            <div><label className="text-xs text-gray-500 mb-1 block">Opposition (opening fixture)</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Manchester City" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Opposition (opening fixture)</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Hartwell Women" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
             {form.opener && <div className="text-xs" style={{ color: '#6B7280' }}>Camp length: {Math.max(0,Math.ceil((new Date(form.opener).getTime()-Date.now())/86400000))} days</div>}
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs text-gray-500 mb-1 block">Squad size</label><input type="number" value={form.squad} onChange={e=>setForm(f=>({...f,squad:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
@@ -5475,7 +5475,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       fetch('/api/ai/womens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Generate a brief morning summary for ${club.name} director. Include: FSR status (68% salary ratio, safe), 2 welfare flags, next match Sat 12 Apr vs Brighton, and one actionable insight. Keep it under 100 words.` })
+        body: JSON.stringify({ prompt: `Generate a brief morning summary for ${club.name} director. Include: FSR status (68% salary ratio, safe), 2 welfare flags, next match Sat 12 Apr vs Hartwell Women, and one actionable insight. Keep it under 100 words.` })
       }).then(r => r.json()).then(d => { setAiSummary(d.response || d.text || 'AI summary unavailable.'); setAiLoading(false) })
         .catch(() => { setAiSummary('AI summary could not be loaded.'); setAiLoading(false) })
     }
@@ -5702,7 +5702,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   // ── Daily Tasks items ──
   const dailyTaskItems = [
     { t: 'Morning welfare check-in — 2 flags active', p: 'Urgent', cat: 'Welfare', c: '#EF4444' },
-    { t: 'Confirm squad list for Brighton (Sat 12 Apr)', p: 'High', cat: 'Football', c: '#BE185D' },
+    { t: 'Confirm squad list for Hartwell Women (Sat 12 Apr)', p: 'High', cat: 'Football', c: '#BE185D' },
     { t: 'Review GPS load data — training session analysis', p: 'Medium', cat: 'Performance', c: '#F59E0B' },
     { t: 'Approve social media matchday content', p: 'Medium', cat: 'Commercial', c: '#F59E0B' },
     { t: 'Board meeting prep — financial summary pack', p: 'Low', cat: 'Operations', c: '#22C55E' },
