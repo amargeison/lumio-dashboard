@@ -11,7 +11,7 @@
 
 import { useState } from 'react'
 import {
-  Crown, TrendingDown, Users, DollarSign, Trophy,
+  Crown, TrendingDown, Users, DollarSign, Trophy, AlertCircle,
 } from 'lucide-react'
 
 interface WomensClub {
@@ -417,6 +417,244 @@ function ProfileTab({ club }: { club: WomensClub }) {
   )
 }
 
+// ─── Finance Tab ──────────────────────────────────────────────────────────────
+// All figures at WSL 2 well-run scale. Annual relevant revenue £3.25M, wage
+// bill £2.34M (72% wage-to-revenue), £260k headroom against the 80% FSR cap.
+// Revenue mix reflects WSL 2 reality — commercial-led, modest broadcasting,
+// material WSL/FA central distributions, small matchday share.
+
+function FinanceTab() {
+  // Q2 monthly slice (Mar–May 2026) in £k for the revenue bar chart.
+  const months = [
+    { month: 'Mar', commercial: 115, central: 58, matchday: 40, broadcast: 25 },
+    { month: 'Apr', commercial: 122, central: 58, matchday: 44, broadcast: 25 },
+    { month: 'May', commercial: 120, central: 58, matchday: 42, broadcast: 25 },
+  ]
+  const allVals = months.flatMap(m => [m.commercial, m.central, m.matchday, m.broadcast])
+  const maxVal = Math.max(...allVals)
+
+  // Cost categories — YTD vs budget at WSL 2 scale (£k).
+  const costs = [
+    { cat: 'Wages',           budget: 1170, actual: 1170, ok: true  },
+    { cat: 'Operations',      budget:  175, actual:  188, ok: false },
+    { cat: 'Academy',         budget:  105, actual:  102, ok: true  },
+    { cat: 'Medical/Welfare', budget:   65, actual:   62, ok: true  },
+    { cat: 'Marketing',       budget:   42, actual:   38, ok: true  },
+    { cat: 'Travel',          budget:   48, actual:   54, ok: false },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* FSR headroom banner — board-relevant top-line at WSL 2 scale */}
+      <div className="rounded-xl p-4 grid grid-cols-1 md:grid-cols-4 gap-4"
+        style={{ backgroundColor: C.pinkDim, border: `1px solid ${C.pinkBorder}` }}>
+        {[
+          { l: 'Relevant Revenue (forecast)', v: '£3.25M', c: C.text },
+          { l: 'Wage Bill (forecast)',        v: '£2.34M', c: C.text },
+          { l: 'Wage-to-Revenue',             v: '72%',    c: C.warn },
+          { l: 'FSR Headroom (vs 80% cap)',   v: '£260k',  c: C.good },
+        ].map(s => (
+          <div key={s.l}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: C.muted }}>{s.l}</p>
+            <p className="text-lg font-black mt-0.5" style={{ color: s.c }}>{s.v}</p>
+          </div>
+        ))}
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Revenue Breakdown (Q2)</p>
+        <div className="flex items-end justify-center gap-8" style={{ height: 200 }}>
+          {months.map(m => {
+            const bars = [
+              { val: m.commercial, c: C.pink   },
+              { val: m.central,    c: C.purple },
+              { val: m.matchday,   c: C.teal   },
+              { val: m.broadcast,  c: C.warn   },
+            ]
+            const total = m.commercial + m.central + m.matchday + m.broadcast
+            return (
+              <div key={m.month} className="flex flex-col items-center">
+                <div className="flex items-end gap-1" style={{ height: 160 }}>
+                  {bars.map((b, i) => (
+                    <div key={i} className="rounded-t"
+                      style={{ width: 24, height: Math.max(4, (b.val / maxVal) * 150), backgroundColor: b.c, transition: 'height 0.4s ease' }} />
+                  ))}
+                </div>
+                <span className="text-xs mt-2 font-bold" style={{ color: C.muted }}>{m.month}</span>
+                <span className="text-[10px]" style={{ color: C.muted }}>£{total}k</span>
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex gap-4 mt-4 flex-wrap">
+          {[
+            { l: 'Commercial / Sponsorship', c: C.pink   },
+            { l: 'WSL / FA central',         c: C.purple },
+            { l: 'Matchday',                 c: C.teal   },
+            { l: 'Broadcasting',             c: C.warn   },
+          ].map(x => (
+            <div key={x.l} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: x.c }} />
+              <span className="text-[10px]" style={{ color: C.muted }}>{x.l}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Cost Analysis (YTD)</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {['Category', 'Budget', 'Actual', 'Variance'].map(h => (
+                <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {costs.map(c => (
+                <tr key={c.cat} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td className="py-2.5 px-3 font-medium" style={{ color: C.text }}>{c.cat}</td>
+                  <td className="py-2.5 px-3" style={{ color: C.muted }}>£{c.budget}k</td>
+                  <td className="py-2.5 px-3" style={{ color: C.text }}>£{c.actual}k</td>
+                  <td className="py-2.5 px-3 font-bold" style={{ color: c.ok ? C.good : C.warn }}>
+                    {c.actual <= c.budget ? '+' : '−'}£{Math.abs(c.budget - c.actual)}k {c.ok ? '✅' : '⚠️'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Wage-to-Revenue Tracker</p>
+          <div className="flex items-center gap-2">
+            {[
+              { q: 'Q1',        v: 70 },
+              { q: 'Q2',        v: 72 },
+              { q: 'Q3 (fcst)', v: 73 },
+            ].map(q => (
+              <div key={q.q} className="flex-1 text-center">
+                <div className="h-2 rounded-full mb-1" style={{ backgroundColor: C.border }}>
+                  <div className="h-full rounded-full"
+                    style={{ width: `${q.v}%`, backgroundColor: q.v >= 78 ? C.bad : q.v >= 70 ? C.warn : C.good }} />
+                </div>
+                <span className="text-[10px] font-bold" style={{ color: C.muted }}>{q.q}: {q.v}%</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] mt-2" style={{ color: C.muted }}>Internal target: 70% · FSR cap: 80% · headroom £260k</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Cash Flow Summary (YTD)</p>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { l: 'Opening', v: '£620k',  c: C.text },
+              { l: 'In',      v: '+£1.8M', c: C.good },
+              { l: 'Out',     v: '−£1.7M', c: C.bad  },
+              { l: 'Closing', v: '£720k',  c: C.good },
+            ].map(x => (
+              <div key={x.l} className="rounded-lg p-3 text-center"
+                style={{
+                  backgroundColor: x.l === 'Closing' ? 'rgba(34,197,94,0.08)' : '#0A0B10',
+                  border: `1px solid ${x.l === 'Closing' ? 'rgba(34,197,94,0.3)' : C.border}`,
+                }}>
+                <p className="text-xs" style={{ color: C.muted }}>{x.l}</p>
+                <p className="text-sm font-black" style={{ color: x.c }}>{x.v}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Monthly P&L — small surpluses with a Jan dip, WSL 2 cadence */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Monthly P&amp;L (Last 6 Months)</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Month', 'Revenue', 'Costs', 'Net'].map(h => (
+              <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[
+              { m: 'Dec 2025', r: '£298k', c: '£276k', n: '+£22k', ok: true  },
+              { m: 'Jan 2026', r: '£242k', c: '£268k', n: '−£26k', ok: false },
+              { m: 'Feb 2026', r: '£260k', c: '£272k', n: '−£12k', ok: false },
+              { m: 'Mar 2026', r: '£305k', c: '£280k', n: '+£25k', ok: true  },
+              { m: 'Apr 2026', r: '£318k', c: '£282k', n: '+£36k', ok: true  },
+              { m: 'May 2026', r: '£290k', c: '£270k', n: '+£20k', ok: true  },
+            ].map(row => (
+              <tr key={row.m} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3" style={{ color: C.text }}>{row.m}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.r}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.c}</td>
+                <td className="py-2 px-3 font-bold" style={{ color: row.ok ? C.good : C.warn }}>
+                  {row.n} {row.ok ? '✅' : '⚠️'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-[10px] mt-2" style={{ color: C.text4 }}>Jan / Feb dip = season-ticket renewal lull + winter break matchday gap; covered by reserves.</p>
+      </Card>
+
+      {/* Transfer Budget Tracker — WSL 2 scale, modest */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Transfer Budget Tracker (2025/26)</p>
+        <div className="flex justify-between text-xs mb-2">
+          <span style={{ color: C.muted }}>£75k spent</span>
+          <span style={{ color: C.muted }}>£45k remaining</span>
+        </div>
+        <div className="h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: C.border }}>
+          <div style={{ width: '62.5%', backgroundColor: C.pink }} />
+          <div style={{ width: '37.5%', backgroundColor: `${C.pinkDeep}55` }} />
+        </div>
+        <div className="flex justify-between mt-2">
+          <span className="text-[10px]" style={{ color: C.pinkSoft }}>Spent: L. Fowler from a Tier 3 side (£75k incl. add-ons)</span>
+          <span className="text-[10px]" style={{ color: C.muted }}>Summer window opens: 1 Jun 2026</span>
+        </div>
+      </Card>
+
+      {/* Top Revenue Sources — annual mix at WSL 2 reality */}
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Top Revenue Sources (annual)</p>
+        <div className="space-y-2">
+          {[
+            { l: 'Commercial / Sponsorship', v: 1400, pct: 43 },
+            { l: 'WSL / FA central distributions', v: 700, pct: 22 },
+            { l: 'Matchday (gate)',                v: 480, pct: 15 },
+            { l: 'Broadcasting',                   v: 300, pct:  9 },
+            { l: 'Hospitality',                    v: 180, pct:  6 },
+            { l: 'Academy & community',            v: 120, pct:  4 },
+            { l: 'Merchandising / other',          v:  70, pct:  2 },
+          ].map(s => (
+            <div key={s.l} className="flex items-center gap-3">
+              <span className="text-xs w-44 shrink-0" style={{ color: C.muted }}>{s.l}</span>
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.border }}>
+                <div className="h-full rounded-full" style={{ width: `${s.pct}%`, backgroundColor: C.pink }} />
+              </div>
+              <span className="text-xs w-16 text-right font-bold" style={{ color: C.text }}>£{s.v}k</span>
+              <span className="text-[10px] w-8 text-right" style={{ color: C.muted }}>{s.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Outstanding Invoices — small, plausible WSL 2 figures */}
+      <div className="rounded-xl p-4 flex items-start gap-3"
+        style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+        <AlertCircle size={16} style={{ color: C.warn, marginTop: 2 }} />
+        <div>
+          <p className="text-xs font-bold" style={{ color: C.warn }}>2 invoices overdue &gt;30 days — total £3,800</p>
+          <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>Oldest: matchday merchandise supplier — £1,600 — 38 days overdue</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Stub tabs (filled in subsequent commits) ─────────────────────────────────
 
 function StubTab({ label, nextCommit }: { label: string; nextCommit: string }) {
@@ -474,7 +712,7 @@ export default function WomensBoardSuiteView({ club }: { club: WomensClub }) {
       {/* Content */}
       {tab === 'overview'   && <OverviewTab />}
       {tab === 'profile'    && <ProfileTab club={club} />}
-      {tab === 'finance'    && <StubTab label="Finance"            nextCommit="C2 of 5" />}
+      {tab === 'finance'    && <FinanceTab />}
       {tab === 'welfare'    && <StubTab label="Welfare (board lens)" nextCommit="C3 of 5" />}
       {tab === 'squad'      && <StubTab label="Squad & Performance" nextCommit="C4 of 5" />}
       {tab === 'governance' && <StubTab label="Governance"          nextCommit="C5 of 5" />}
