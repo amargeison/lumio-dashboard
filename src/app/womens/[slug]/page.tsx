@@ -51,6 +51,7 @@ import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/W
 import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
+import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -5561,6 +5562,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [v2CmdOpen, setV2CmdOpen]         = useState(false)
   const [v2AskOpen, setV2AskOpen]         = useState(false)
   const [v2BriefOpen, setV2BriefOpen]     = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [v2DashToast, showV2DashToast]    = useV2Toast()
   useV2Key('cmdk', () => setV2CmdOpen(o => !o))
   // Map dashTab IDs to v2 Lucide icons for the restyled tab bar.
@@ -6057,18 +6059,30 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               })}
             </div>
 
-            {/* Quick Actions — role-aware (shared bar), Today tab only.
+            {/* Quick Actions — role-aware (shared bar) + Women's Send
+                Message button, Today tab only. Send Message is a Women's-
+                only extra that sits alongside the shared bar — the shared
+                bar is NOT modified (it's used by Football and Cricket too).
                 Restricted to Today: Quick Wins and Daily Tasks tabs are
                 lists of their own action items, so the Quick Actions row
                 duplicated context. */}
             {dashTab === 'today' && (
-              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <RoleAwareQuickActionsBar
                   sport="womens"
                   role={currentRole as string}
                   onNavigate={(deptId) => setActiveSection(deptId)}
                   accentHex={v2Accent.hex}
                 />
+                <button
+                  onClick={() => setSendMessageOpen(true)}
+                  className="text-xs font-semibold transition-colors"
+                  style={{ padding: '8px 14px', borderRadius: 10, backgroundColor: 'rgba(190,24,93,0.12)', color: '#F472B6', border: '1px solid rgba(190,24,93,0.4)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.22)' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.12)' }}
+                >
+                  📨 Send Message
+                </button>
               </div>
             )}
 
@@ -6199,6 +6213,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
       <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
       <WomensMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
+      {sendMessageOpen && <WomensSendMessageModal onClose={() => setSendMessageOpen(false)} />}
     </div>
   )
 }
