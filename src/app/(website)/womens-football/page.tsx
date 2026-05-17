@@ -19,7 +19,7 @@ const STAT_PILLS = [
   'Karen Carney standards',
   'AI powered',
   'Lumio Health ready',
-  '30 sections',
+  'Complete Club OS',
 ]
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
@@ -29,25 +29,29 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📊', title: 'Revenue Attribution', desc: 'Women-only Relevant Revenue tracked separately. Bundled deal attribution, YoY growth, permitted spend calculator. Know your number.' },
   { icon: '🪙', title: 'Salary Compliance', desc: 'Every player\u2019s salary tracked against FSR cap. New signing modeller shows headroom impact before you sign.' },
   { icon: '🏗️', title: 'Standalone Identity Tracker', desc: 'Building your commercial independence? Track demerger readiness, standalone revenue %, indicative valuation and dependency score.' },
-  { icon: '🗓️', title: 'Morning Briefing', desc: 'Every morning, Lumio briefs your CEO in plain English. FSR status, welfare flags, sponsorship renewals, board pack deadline — all in one place.' },
   { icon: '📋', title: 'Dual Registration', desc: 'Track dual-reg players, expiry dates, parent club agreements. Never miss a registration window.' },
   { icon: '🤖', title: 'AI Department Intelligence', desc: 'Every department has its own AI layer. Insights Report generated fresh daily — performance, compliance, welfare, commercial, all departments.' },
-  { icon: '🌸', title: 'Cycle Tracking + GPS Integration', desc: 'Opt-in menstrual cycle phase tracking linked to GPS load management. Training targets auto-adjust per phase. ACL composite risk scored daily.' },
+  { icon: '🌸', title: 'Cycle Tracking + GPS Integration', desc: 'Opt-in menstrual cycle phase tracking linked to GPS load. Per-player consent column with dated audit trail (14 of 22 squad opt-in in demo). Training targets auto-adjust per phase; ACL composite risk scored daily. Role-gated to Club Doctor + Welfare Lead only.' },
   { icon: '🤖', title: 'AI Halftime Brief (Claude API)', desc: 'GPS + Lumio Data xG + ACL detection + cycle phase welfare flags → structured coaching brief in seconds. Physical, tactical, AND welfare in one document.' },
-  { icon: '📊', title: 'Insights — 8 Role Dashboards', desc: 'CEO, DoF, Head Coach, Physio, Commercial, Academy, Welfare, Board — each role gets a tailored AI-generated insights report every morning.' },
-  { icon: '🔁', title: 'Transfers + AI Researcher', desc: 'Transfer tracker, shortlist management, and AI-powered transfer researcher that scouts WSL, NWSL, D1 Arkema and Liga F databases.' },
-  { icon: '📉', title: 'Analytics & Performance Data', desc: 'AI-powered match analytics and player insights, ready to integrate with StatsBomb, Opta, and club-supplied data feeds.' },
-  { icon: '🔭', title: 'Scouting (WSL · NWSL · D1 Arkema)', desc: 'Database of 2,000+ players across 4 leagues. Filter by position, age, contract status, salary. AI scouting reports on any player.' },
+  { icon: '🦵', title: 'ACL Prevention Programme', desc: 'FIFA 11+ / prehab adherence tracker inside ACL Risk Monitor. Per-player session counts (week + 12-session block), squad adherence %, and RAG status flagging players falling behind. The intervention layer alongside the existing risk-score model.' },
+  { icon: '🤰', title: 'Pregnancy & Return-to-Play', desc: 'A care pathway, not surveillance. 10-stage antenatal → leave → postpartum pathway, postpartum clinical checkpoints (pelvic floor, MSK, cardio, mental health), per-player pathway cards, WSL 26-week policy + FIFA Art. 18quater visibility, and a who-sees-what matrix that keeps clinical detail with the player by default.' },
+  { icon: '🏛️', title: 'Club Licensing', desc: 'Flagship compliance workspace. 5 tabs (Overview / Criteria / Risk Register / Action Plan / Audit), 6 categories (facilities, staffing, academy, contact hours, welfare, medical), ~30 criteria. Demo status: PROVISIONAL — 4 of 6 categories green. Club-side preparation tool — Lumio does not issue licences; visible disclaimer on every tab.' },
+  { icon: '🧦', title: 'Kit Manager — period-proofing', desc: 'Treats short-colour decisions as a welfare decision, not a marketing one. Home / away / third kit colour cards with period-proofed-vs-white-shorts badges (referencing the Stoke City / West Brom Women 2023 precedent), plus a Period Product Provision tracker showing stock status across changing rooms, matchday kit bags and the training-ground med room.' },
+  { icon: '🎬', title: 'Video & Analysis', desc: '7 sub-tabs: Library, Detail, Training, Performance, Set-Pieces, Live, Opposition. Match-clip library, training-session capture, live-match feed, opposition scouting profile. Operates on the data your analyst captures — no third-party video stack required.' },
+  { icon: '📊', title: 'Insights for every role', desc: 'CEO / Chairman, Director of Football, Head Coach, Head of Performance, Club Doctor, Welfare Lead, Head of Operations, Commercial Director, Head of Community — each role gets a tailored AI-generated insights report. Sponsor view available separately.' },
+  { icon: '🔁', title: 'Transfers + AI Researcher', desc: 'Track contracts, manage shortlists, and run AI-powered research on the players your scouts have added. Outputs a structured comparison and readiness assessment over the data your team enters — no external player database supplied, no vendor lock-in.' },
+  { icon: '📉', title: 'Analytics & Performance Data', desc: 'Match analytics and player insights computed over the data your club records — GPS feeds, match events, fitness inputs, video tags. AI-summarised. Designed to plug into whichever data feeds you already use; no named third-party stack required.' },
+  { icon: '🔭', title: 'Scouting', desc: 'Build and manage a club-owned scouting watchlist. Structured player profiles with position / age / contract / salary filters, plus AI-generated scouting reports over the data your scouts capture. Lumio does not ship a player database — you control what is in your watchlist.' },
   { icon: '🎓', title: 'Academy / Player Pathway', desc: 'U18 and U21 squads, CoE compliance, GPS profiling, development ratings, dual registration management, and first-team bridge tracking.' },
   { icon: '📣', title: 'Media & PR', desc: 'Press release generator, media obligations tracker, journalist database, and matchday media accreditation management.' },
   { icon: '📱', title: 'Social Media Manager', desc: 'Content calendar, post scheduling, engagement analytics, and AI caption generator across Twitter/X, Instagram, TikTok and Facebook.' },
   { icon: '💜', title: 'Fan Hub', desc: 'Season ticket tracker, membership management, NPS surveys, fan engagement analytics and matchday experience scoring.' },
 ]
 
-const INTEGRATIONS = [
+const INTEGRATIONS: Array<{ icon: string; name: string; desc: string; status?: 'partner' }> = [
   { icon: '💗', name: 'Lumio Health', desc: 'Player welfare and GPS monitoring' },
   { icon: '📡', name: 'The FA', desc: 'Registration and FSR compliance reporting' },
-  { icon: '🏃', name: 'Johan Sports', desc: 'Player load and injury prevention' },
+  { icon: '🏃', name: 'Johan Sports', desc: 'GPS load and injury prevention — partner integration in build, name used with permission.', status: 'partner' },
   { icon: '⚽', name: 'Lumio Data', desc: 'Match data and analytics' },
   { icon: '📹', name: 'Lumio Scout', desc: 'Video and scouting' },
   { icon: '🩺', name: 'PFA', desc: 'Player welfare referral pathway' },
@@ -59,8 +63,8 @@ const INTEGRATIONS = [
 ]
 
 const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'Pro', price: '£499/mo', desc: 'Full 30-section portal. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite — the complete Club OS.' },
-  { name: "Women's Championship", price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For Championship-level women's clubs meeting professionalisation standards" },
+  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite.' },
+  { name: 'WSL 2', price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For WSL 2 women's clubs meeting professionalisation standards" },
   { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
 ]
 
@@ -128,7 +132,7 @@ function ClubDashboardMockup() {
         <KPI value="SAFE" label="FSR Status" sub="Salary 68% of Revenue" color="#10B981" />
         <KPI value="24" label="Squad" sub="WSL registered" color={PURPLE} />
         <KPI value="2" label="Welfare Flags" sub="1 ACL · 1 mental health" color="#F59E0B" />
-        <KPI value="Sat 12 Apr" label="Next Match" sub="vs Brighton Women H" color="#3B82F6" />
+        <KPI value="Sat 12 Apr" label="Next Match" sub="vs Hartwell Women H" color="#3B82F6" />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 12 }}>
@@ -163,7 +167,7 @@ function ClubDashboardMockup() {
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Sponsorship Pipeline</div>
           <div style={{ fontSize: 9, color: MUTED }}>Apex Performance <span style={{ color: PINK }}>£420k</span> · Active</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Barclays <span style={{ color: PINK }}>£85k</span> · Active</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Crown Capital <span style={{ color: PINK }}>£85k</span> · Active</div>
           <div style={{ fontSize: 9, color: MUTED }}>Local Energy · Renewal due</div>
         </div>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
@@ -173,7 +177,7 @@ function ClubDashboardMockup() {
         </div>
         <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Upcoming</div>
-          <div style={{ fontSize: 9, color: MUTED }}>Brighton Women WSL</div>
+          <div style={{ fontSize: 9, color: MUTED }}>Hartwell Women WSL</div>
           <div style={{ fontSize: 9, color: MUTED }}>Board meeting · Apex Performance review</div>
           <div style={{ fontSize: 9, color: MUTED }}>Registration closes</div>
         </div>
@@ -384,7 +388,7 @@ function BoardSuiteMockup() {
     <MockupFrame>
       <MockupHeader emoji="🏛️" title="Board Suite — Oakridge Women FC" subtitle="Executive dashboard for board and investors" />
       <div style={{ background: `linear-gradient(135deg, ${PINK}, ${PURPLE})`, borderRadius: 10, padding: 10, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
-        <div style={{ fontSize: 10, fontWeight: 800 }}>Next board meeting: 15 Apr 2025 · Pack due in 11 days</div>
+        <div style={{ fontSize: 10, fontWeight: 800 }}>Next board meeting: 15 Apr 2026 · Pack due in 11 days</div>
         <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.5)' }}>Generate Pack — Phase 2</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 }}>
@@ -465,7 +469,7 @@ export default function WomensLandingPage() {
             The most complete women&apos;s football Club OS ever built.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 40px' }}>
-            30 purpose-built sections. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy pathway — built for WSL and Women&apos;s Championship clubs.
+            Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy pathway — built for WSL and WSL 2 clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
@@ -545,10 +549,10 @@ export default function WomensLandingPage() {
       />
 
       <Spotlight
-        eyebrow="SPOTLIGHT · MORNING BRIEFING"
-        title="Briefed before breakfast."
-        body="Every morning, Lumio reads your club's data and surfaces what matters today. FSR headroom, welfare flags, sponsorship renewals, board pack deadline — in plain English, personalised to your role."
-        bullets={['Personalised by role (CEO, DoF, Head Coach)', 'FSR status and headroom front and centre', "Today's priorities auto-generated", 'Board pack deadline tracking']}
+        eyebrow="SPOTLIGHT · TODAY DASHBOARD"
+        title="Briefed before breakfast — on the Today tab."
+        body="Every morning, the Today tab surfaces what matters: FSR headroom, welfare flags, sponsorship renewals, the board pack deadline — written in plain English, personalised to your role. No separate inbox, no separate briefing page — it lives where you already start your day."
+        bullets={['Lives on the Today tab — no extra page to open', 'Personalised by role (CEO, DoF, Head Coach, …)', 'FSR status and headroom front and centre', "Today's priorities auto-generated each morning"]}
         mockup={<BriefingMockup />}
       />
 
@@ -573,7 +577,7 @@ export default function WomensLandingPage() {
             {[
               { icon: '🌸', title: "World's First Cycle + GPS + ACL Integration", body: 'Opt-in menstrual cycle tracking linked directly to GPS load management. Training targets auto-adjust per phase. Daily ACL composite risk score per player. No competitor has this.' },
               { icon: '🤖', title: 'AI Halftime Brief with Welfare Flags', body: 'GPS + Lumio Data xG + ACL detection + cycle phase → structured Claude-powered coaching brief in seconds. Physical, tactical, AND welfare section in one document. Unique to Lumio Women\u2019s FC.' },
-              { icon: '🏟️', title: 'Complete Club OS — 30 Sections', body: 'FSR compliance, Karen Carney tracking, Scouting, Academy, Analytics, Transfers, Media, Fan Hub — purpose-built for professional women\u2019s football. Not a men\u2019s platform with a badge change.' },
+              { icon: '🏟️', title: 'Complete Club OS — built for women’s football', body: 'FSR compliance, Karen Carney tracking, Scouting, Academy, Analytics, Transfers, Media, Fan Hub — purpose-built for professional women\u2019s football. Not a men\u2019s platform with a badge change.' },
             ].map(c => (
               <div key={c.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 28 }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>{c.icon}</div>
@@ -595,8 +599,15 @@ export default function WomensLandingPage() {
             {INTEGRATIONS.map(i => (
               <div key={i.name} style={{ display: 'flex', alignItems: 'center', gap: 14, backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
                 <div style={{ fontSize: 26 }}>{i.icon}</div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{i.name}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{i.name}</div>
+                    {i.status === 'partner' && (
+                      <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, color: PINK, backgroundColor: 'rgba(236,72,153,0.12)', border: `1px solid ${PINK}55`, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                        Partner · Coming soon
+                      </span>
+                    )}
+                  </div>
                   <div style={{ fontSize: 12, color: MUTED }}>{i.desc}</div>
                 </div>
               </div>
