@@ -5827,8 +5827,23 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 hero. Without this, sibling card row counts can drag the hero
                 card to match a taller sibling, leaving empty space below the
                 buttons. */}
-            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
+            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12, position: 'relative', overflow: 'hidden' }}>
+              {/* Ghost crest watermark — Pro-pattern port. Lives in the
+                  wrapper (not the inner HeroToday Card) because the
+                  wrapper is ~28px taller than the Card and is the only
+                  container that fits Pro's 180px crest centred without
+                  clipping. The HeroToday Card's background is overridden
+                  to transparent in WomensDashboardModules so this ghost
+                  shows through. saturate(0.2) brightness(3) washes the
+                  dark SVG to near-white. rotate(-8deg) is a stated-intent
+                  addition — Pro's literal transform is just translateY
+                  (-50%), no rotate. */}
+              <img
+                src="/badges/oakridge_fc_crest.svg"
+                alt=""
+                style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start', position: 'relative', zIndex: 1 }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
                   onTodaysBriefing={() => { setActiveSection('briefing'); showV2DashToast("Today's briefing") }}

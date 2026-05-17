@@ -76,9 +76,15 @@ export function HeroToday({
   // RIGHT COLUMN HIERARCHY — countdown is the largest visual
   // element (it's the match-day stat that matters); date and
   // weather are scaled appropriately as supporting context.
+  // Card background overridden to transparent so the banner-wrapper
+  // ghost crest (page.tsx hero wrapper at ~line 5830) shows through.
+  // The wrapper is the only container tall enough to host a Pro-sized
+  // 180×180 crest without clipping (the Card itself is ~180–210px tall
+  // — too short to centre a 180px crest with margin). Card border still
+  // draws so the hero retains a defined edge.
   const quote = getDailyQuote(WOMENS_QUOTES)
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="wf-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -88,19 +94,6 @@ export function HeroToday({
         <rect width="100%" height="100%" fill="url(#wf-hero-ptn)" />
       </svg>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
-      {/* Ghost crest watermark — Pro-pattern port. Sized to fit the
-          HeroToday Card (~180–210px tall) without clipping; Pro's
-          180px is on a similarly short container. Horizontally
-          centred to sit behind the centred quote element. Rotation
-          is a stated-intent addition — Pro's literal transform is
-          just translateY(-50%) with no rotate. saturate(0.2)
-          brightness(3) washes the dark SVG to near-white. Opacity
-          matches Pro's 0.07. */}
-      <img
-        src="/badges/oakridge_fc_crest.svg"
-        alt=""
-        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 200, height: 200, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
-      />
       {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
           without conflicting with women's pink brand accent. Italic, single
           line, bottom-center of banner. Truncates visually if too long. */}
