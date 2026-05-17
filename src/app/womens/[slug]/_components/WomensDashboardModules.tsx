@@ -88,16 +88,18 @@ export function HeroToday({
         <rect width="100%" height="100%" fill="url(#wf-hero-ptn)" />
       </svg>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
-      {/* Ghost crest watermark — Pro-pattern port. saturate(0.2)
-          brightness(3) washes the dark SVG to near-white so it ghosts
-          cleanly on the dark Card panel. Lives inside the Card (same
-          layer group as the stripe SVG and radial gradient above);
-          the earlier wrapper-level version was occluded by the Card's
-          opaque panel fill — see fix commit for diagnosis. */}
+      {/* Ghost crest watermark — Pro-pattern port, sized/positioned to
+          match Pro's visual intent (large, centre-ish, vertically
+          centred, slight angle). Pro's literal transform is just
+          translateY(-50%) with no rotate; the slight angle here is a
+          stated-intent interpretation. Card has overflow:hidden so the
+          280px crest is clipped at edges if it overhangs — fine for a
+          watermark at 7% opacity. saturate(0.2) brightness(3) washes
+          the dark SVG to near-white. */}
       <img
         src="/badges/oakridge_fc_crest.svg"
         alt=""
-        style={{ position: 'absolute', right: 80, top: '50%', transform: 'translateY(-50%)', width: 220, height: 220, objectFit: 'contain', opacity: 0.08, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
+        style={{ position: 'absolute', left: '40%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 280, height: 280, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
       />
       {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
           without conflicting with women's pink brand accent. Italic, single
