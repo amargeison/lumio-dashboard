@@ -47,6 +47,7 @@ import WomensPregnancyRtpView from '@/components/football/WomensPregnancyRtpView
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
 import ClubLicensingView from '@/components/womens/ClubLicensingView'
+import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/WomensAvatarDropdown'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -5689,10 +5690,22 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
       {/* Main content */}
       <main className="flex-1 flex flex-col" style={{ minHeight: '100vh' }}>
-        {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
+        {/* Demo workspace banner — paddingRight reserves space for the
+            fixed top-right avatar + notification controls below. */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff', paddingRight: 110 }}>
           <span>This is a demo · sample data</span>
           <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
+        </div>
+
+        {/* Top-right header controls — bell + avatar.
+            Demo-safe avatar (no /api/workspace/* calls). Mirrors Pro
+            portal placement (fixed, top:8, right:16, hidden on mobile). */}
+        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 6, right: 16, zIndex: 60 }}>
+          <WomensNotifications />
+          <WomensAvatarDropdown
+            initials={(session.clubName || 'OW').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            onSettings={() => setActiveSection('settings')}
+          />
         </div>
 
         {/* FSR / status strip removed — header chrome now ends at the
