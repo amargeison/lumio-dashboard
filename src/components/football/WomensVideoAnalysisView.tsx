@@ -10,7 +10,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 
-// Video & Analysis — Women's portal (Oakridge Women FC, WSL Championship).
+// Video & Analysis — Women's portal (Oakridge Women FC, WSL 2).
 // Phase 1: hardcoded demo content. Squad + opponent names align with
 // WOMENS_FIXTURES and WOMENS_SQUAD where possible.
 //
@@ -186,14 +186,14 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
 
 const MATCHES: Match[] = [
   // 8 matches — opponents drawn from WOMENS_FIXTURES and WOMENS_RECENTS.
-  { id: 'm-01', date: 'Sun 26 Apr', opp: 'Northgate Women',       ha: 'H', comp: 'WSL Champ',          result: 'W', score: '3-0', clipsCount: 18, processed: true  },
-  { id: 'm-02', date: 'Sun 19 Apr', opp: 'Fernbrook Women',       ha: 'A', comp: 'WSL Champ',          result: 'D', score: '0-0', clipsCount: 14, processed: true  },
+  { id: 'm-01', date: 'Sun 26 Apr', opp: 'Northgate Women',       ha: 'H', comp: 'WSL 2',          result: 'W', score: '3-0', clipsCount: 18, processed: true  },
+  { id: 'm-02', date: 'Sun 19 Apr', opp: 'Fernbrook Women',       ha: 'A', comp: 'WSL 2',          result: 'D', score: '0-0', clipsCount: 14, processed: true  },
   { id: 'm-03', date: 'Sun 12 Apr', opp: 'Castleton Women',       ha: 'A', comp: "FA Cup R2",          result: 'W', score: '4-1', clipsCount: 18, processed: true  },
-  { id: 'm-04', date: 'Sun 05 Apr', opp: 'Glenmoor Wanderers W',  ha: 'H', comp: 'WSL Champ',          result: 'L', score: '1-2', clipsCount: 15, processed: true  },
-  { id: 'm-05', date: 'Sun 29 Mar', opp: 'Thornvale Ladies',      ha: 'A', comp: 'WSL Champ',          result: 'W', score: '2-1', clipsCount: 14, processed: true  },
+  { id: 'm-04', date: 'Sun 05 Apr', opp: 'Glenmoor Wanderers W',  ha: 'H', comp: 'WSL 2',          result: 'L', score: '1-2', clipsCount: 15, processed: true  },
+  { id: 'm-05', date: 'Sun 29 Mar', opp: 'Thornvale Ladies',      ha: 'A', comp: 'WSL 2',          result: 'W', score: '2-1', clipsCount: 14, processed: true  },
   { id: 'm-06', date: 'Wed 25 Mar', opp: 'Ashbourne Women FC',    ha: 'H', comp: "FA Cup R1",          result: 'W', score: '3-1', clipsCount: 15, processed: true  },
-  { id: 'm-07', date: 'Sun 22 Mar', opp: 'Kingsmere City Women',  ha: 'A', comp: 'WSL Champ',          result: 'W', score: '2-0', clipsCount: 13, processed: true  },
-  { id: 'm-08', date: 'Sun 15 Mar', opp: 'Ridgefield Women',      ha: 'H', comp: 'WSL Champ',          result: 'D', score: '1-1', clipsCount: 13, processed: false },
+  { id: 'm-07', date: 'Sun 22 Mar', opp: 'Kingsmere City Women',  ha: 'A', comp: 'WSL 2',          result: 'W', score: '2-0', clipsCount: 13, processed: true  },
+  { id: 'm-08', date: 'Sun 15 Mar', opp: 'Ridgefield Women',      ha: 'H', comp: 'WSL 2',          result: 'D', score: '1-1', clipsCount: 13, processed: false },
 ]
 
 const ACTIVE_MATCH_ID = 'm-01'
@@ -260,7 +260,7 @@ const SET_PIECE_ROUTINES: Routine[] = [
 
 const LIVE_STATE = {
   status: 'LIVE NOW' as const,
-  competition: 'WSL Championship',
+  competition: 'WSL 2',
   homeTeam: 'Oakridge Women',
   awayTeam: 'Hartwell Women',
   score: '1-1',
@@ -695,7 +695,7 @@ function OppositionAnalysisTab() {
             </div>
             <div>
               <p className="text-xl font-black" style={{ color: C.text }}>{OPPOSITION.name}</p>
-              <p className="text-xs" style={{ color: C.muted }}>WSL Championship · Position {OPPOSITION.position}th</p>
+              <p className="text-xs" style={{ color: C.muted }}>WSL 2 · Position {OPPOSITION.position}th</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -771,7 +771,7 @@ export default function WomensVideoAnalysisView() {
         </div>
         <div>
           <h2 className="text-lg font-bold" style={{ color: C.text }}>Video & Analysis</h2>
-          <p className="text-xs" style={{ color: C.muted }}>Tactical clips, performance data, and opposition intelligence — WSL Championship</p>
+          <p className="text-xs" style={{ color: C.muted }}>Tactical clips, performance data, and opposition intelligence — WSL 2</p>
         </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

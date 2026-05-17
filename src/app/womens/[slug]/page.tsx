@@ -21,13 +21,14 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   welfare: Heart, acl: Activity, cycle: Flower2, maternity: Baby, mental: Brain,
   squad: Users, dualreg: RefreshCw, tactics: Target, match: CircleDot,
   transfers: ArrowLeftRight, analytics: TrendingDown, scouting: Telescope,
-  academy: GraduationCap, halftime: Bot,
+  academy: GraduationCap, 'performance-brief': Bot,
   sponsorship: Handshake, standalone: Construction, board: Landmark,
   financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
   medical: Cross, 'tours-camps': Calendar, settings: Settings,
   'game-standards': Shield,
   'player-welfare': Heart, 'club-operations': Landmark,
+  licensing: Landmark,
 }
 import { generateSmartBriefing, getUserTimezone } from '@/lib/sports/smartBriefing'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
@@ -42,8 +43,14 @@ import WomensConcussionTrackerView from '@/components/football/WomensConcussionT
 import WomensFinanceView from '@/components/football/WomensFinanceView'
 import WomensCommercialView from '@/components/football/WomensCommercialView'
 import WomensCommunityView from '@/components/football/WomensCommunityView'
+import WomensPregnancyRtpView from '@/components/football/WomensPregnancyRtpView'
 import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
+import ClubLicensingView from '@/components/womens/ClubLicensingView'
+import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/WomensAvatarDropdown'
+import SportsSettings from '@/components/sports/SportsSettings'
+import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
+import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -91,7 +98,7 @@ interface WomensClub {
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Lumio = club management platform. Some pitch-side tactical features
-// (Match Preparation, Analytics, Scouting, AI Halftime Brief) remain
+// (Match Preparation, Analytics, Scouting, AI Performance Brief) remain
 // Hudl/Sportscode territory and are commented out below. Tactics & Set
 // Pieces ARE in scope — restored after Phase 4c reconciliation; uses the
 // inline TacticsSetPiecesView. Quick-action buttons targeting the still-
@@ -119,6 +126,7 @@ const SIDEBAR_ITEMS = [
   { id: 'video-analysis',   label: 'Video & Analysis',    icon: '🎬', group: 'FOOTBALL' },
   { id: 'gps-load',         label: 'GPS & Performance',   icon: '📡', group: 'FOOTBALL' },
   { id: 'gps-heatmaps',     label: 'Heatmaps',            icon: '🔥', group: 'FOOTBALL' },
+  { id: 'performance-brief',label: 'AI Performance Brief',icon: '🤖', group: 'FOOTBALL' },
   { id: 'fixtures',         label: 'Fixtures & Results',  icon: '📅', group: 'FOOTBALL' },
   { id: 'cup-manager',      label: 'Cup Manager',         icon: '🏆', group: 'FOOTBALL' },
   { id: 'transfers',        label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
@@ -131,7 +139,7 @@ const SIDEBAR_ITEMS = [
   { id: 'welfare',          label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
   { id: 'acl',              label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',             label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
-  { id: 'maternity',        label: 'Maternity Tracker',   icon: '👶', group: 'WELFARE' },
+  { id: 'maternity',        label: 'Pregnancy & Return-to-Play', icon: '👶', group: 'WELFARE' },
   { id: 'mental',           label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
   { id: 'player-welfare',   label: 'Player Welfare Hub',  icon: '🌍', group: 'WELFARE' },
   { id: 'medical-hub',      label: 'Medical Hub',         icon: '🏥', group: 'WELFARE' },
@@ -144,6 +152,7 @@ const SIDEBAR_ITEMS = [
   { id: 'salary',           label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',          label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
   { id: 'game-standards',   label: 'Game Standards',      icon: '🛡️', group: 'COMPLIANCE' },
+  { id: 'licensing',        label: 'Club Licensing',      icon: '🏛️', group: 'COMPLIANCE' },
 
   // COMMERCIAL — Commercial + Community NEW. Board Suite moved out to OVERVIEW.
   // Financial Planning ('financial') stays here — it's the multi-horizon planner, not current-season.
@@ -256,8 +265,8 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Squad Available" value="19/24" sub="5 unavailable (injury/cycle load cap)" color="pink" />
         <StatCard label="Today's ACL Flags" value="2" sub="Emily Zhang · Priya Nair" color="red" />
-        <StatCard label="xG Last Match" value="0.31" sub="vs Brighton (L 0–1)" color="amber" />
-        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Bristol City (A)" color="blue" />
+        <StatCard label="xG Last Match" value="0.31" sub="vs Hartwell Women (L 0–1)" color="amber" />
+        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Castleton Women (A)" color="blue" />
       </div>
       <ICard>
         <IH3>Squad Readiness — Cycle Phase Overlay</IH3>
@@ -296,7 +305,7 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         </svg>
       </ICard>
       <ICard>
-        <IH3>Tactical Notes — Next Opponent (Bristol City Women)</IH3>
+        <IH3>Tactical Notes — Next Opponent (Castleton Women)</IH3>
         <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Cycle consideration: 3 players in high-load-cap phases. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
       </ICard>
     </div>
@@ -419,8 +428,8 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         <StatCard label="Fan Hub Members" value="1,240" sub="Launched Jan 2026" color="blue" />
       </div>
       <ICard><IH3>Social Media Performance</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Platform</th><th className="text-left p-3">Followers</th><th className="text-left p-3">Growth</th><th className="text-left p-3">Best Post</th><th className="text-left p-3">Eng.</th></tr></thead><tbody>{[{p:'Instagram',f:'18.4k',g:'+22%',b:'48k (WSL goal)',e:'6.8%'},{p:'TikTok',f:'14.2k',g:'+41%',b:'112k (BTS reel)',e:'9.2%'},{p:'X',f:'7.6k',g:'+8%',b:'22k (match thread)',e:'3.1%'},{p:'YouTube',f:'2.6k',g:'+14%',b:'8.4k (profile)',e:'4.7%'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.f}</td><td className="p-3 text-green-400 text-xs">{r.g}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.e}</td></tr>)}</tbody></table></div></ICard>
-      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Bristol City) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
-      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Northbridge Sport — matchday access vs Bristol City (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
+      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Castleton Women) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
+      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Northbridge Sport — matchday access vs Castleton Women (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
       <ICard><IH3>Fan Hub Highlights</IH3><div className="grid grid-cols-3 gap-3">{[{l:'Members',v:'1,240'},{l:'Match Overlap',v:'68%'},{l:'Top Topic',v:'Player welfare'}].map(s=><div key={s.l} className="text-center p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-lg font-bold text-pink-400">{s.v}</div><div className="text-[10px] text-gray-500 mt-0.5">{s.l}</div></div>)}</div></ICard>
     </div>
   );
@@ -465,7 +474,7 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
       <StatCard label="FSR Status" value="SAFE" sub="Salary 68% of Relevant Revenue" color="green" />
       <StatCard label="Squad" value="24" sub={`${club.league} registered`} color="pink" />
       <StatCard label="Welfare Flags" value="2" sub="1 ACL monitoring, 1 mental health" color="amber" />
-      <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Brighton Women (H)" color="blue" />
+      <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Hartwell Women (H)" color="blue" />
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -527,8 +536,8 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
         <h3 className="text-sm font-bold text-white mb-3">Dual Registration</h3>
         <div className="space-y-2">
           {[
-            { player: 'Lucy Whitmore', from: 'Oakridge W', to: 'Bristol City W', expires: '30 Apr' },
-            { player: 'Jade Hopkins', from: 'Oakridge W', to: 'Crystal Palace W', expires: '15 May' },
+            { player: 'Lucy Whitmore', from: 'Oakridge W', to: 'Castleton Women', expires: '30 Apr' },
+            { player: 'Jade Hopkins', from: 'Oakridge W', to: 'Glenmoor Wanderers W', expires: '15 May' },
           ].map(d => (
             <div key={d.player} className="flex items-center justify-between py-1.5 border-b border-gray-800">
               <div><span className="text-xs text-white">{d.player}</span><span className="text-[10px] text-gray-500 ml-2">→ {d.to}</span></div>
@@ -541,7 +550,7 @@ const DashboardView = ({ club }: { club: WomensClub }) => (
         <h3 className="text-sm font-bold text-white mb-3">Upcoming</h3>
         <div className="space-y-2">
           {[
-            { item: 'Brighton Women (H)', date: 'Sat 12 Apr', type: 'WSL' },
+            { item: 'Hartwell Women (H)', date: 'Sat 12 Apr', type: 'WSL 2' },
             { item: 'Board meeting', date: 'Mon 14 Apr', type: 'Internal' },
             { item: 'Apex Performance kit review', date: 'Wed 16 Apr', type: 'Commercial' },
             { item: 'Registration window closes', date: '30 Apr', type: 'FA' },
@@ -759,15 +768,40 @@ const MorningBriefingView = ({ club }: { club: WomensClub }) => {
 
 // ─── CYCLE TRACKING VIEW ─────────────────────────────────────────────────────
 const CycleTrackingView = () => {
-  const squad = [
-    { name: 'Emma Clarke', phase: 'Follicular', day: 8, loadTarget: 100, aclFlag: '', gpsLoad: 82, adjustment: 'None' },
-    { name: 'Priya Nair', phase: 'Ovulatory', day: 14, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 77, adjustment: '-5% intensity' },
-    { name: 'Emily Zhang', phase: 'Luteal', day: 21, loadTarget: 75, aclFlag: '🔴 ACL elevated (prev ACL + luteal)', gpsLoad: 91, adjustment: '-25% load cap' },
-    { name: 'Charlotte Reed', phase: 'Menstrual', day: 2, loadTarget: 60, aclFlag: '', gpsLoad: 68, adjustment: 'Rest day recommended' },
-    { name: 'Jade Osei', phase: 'Follicular', day: 10, loadTarget: 100, aclFlag: '', gpsLoad: 88, adjustment: 'None' },
-    { name: 'Abbi Walsh', phase: 'Luteal', day: 19, loadTarget: 80, aclFlag: '⚠ Luteal phase', gpsLoad: 84, adjustment: '-20% intensity' },
-    { name: 'Lucy Whitmore', phase: 'Ovulatory', day: 13, loadTarget: 95, aclFlag: '⚠ Ligament laxity peak', gpsLoad: 79, adjustment: '-5% intensity' },
-    { name: 'Megan Hughes', phase: 'Follicular', day: 6, loadTarget: 100, aclFlag: '', gpsLoad: 71, adjustment: 'None' },
+  // Squad of 22 — reconciles to the existing 14/22 opt-in KPI.
+  // Names are drawn from existing rosters: ACL/welfare side first (where
+  // welfare engagement makes consent more likely), then canonical
+  // WOMENS_SQUAD for the not-opted-in tail. No invented names.
+  // Non-opted-in players have no cycle data held — cycle cells em-dash.
+  // Sophie Lawson's consent is on file but cycle data is not tracked while
+  // on maternity (same em-dash treatment).
+  type Consent = { state: 'consented'; date: string } | { state: 'not_opted_in' };
+  type CycleRow = { name: string; phase: string; day: number; loadTarget: number; aclFlag: string; gpsLoad: number; adjustment: string; consent: Consent };
+  const squad: CycleRow[] = [
+    // Consented — welfare-engaged players (existing cycle roster + ACL roster overlap)
+    { name: 'Emma Clarke',     phase: 'Follicular', day: 8,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 82, adjustment: 'None',                  consent: { state: 'consented', date: '14 Mar 2026' } },
+    { name: 'Priya Nair',      phase: 'Ovulatory',  day: 14, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 77, adjustment: '-5% intensity',         consent: { state: 'consented', date: '02 Sep 2025' } },
+    { name: 'Emily Zhang',     phase: 'Luteal',     day: 21, loadTarget: 75,  aclFlag: '🔴 ACL elevated (prev ACL + luteal)',   gpsLoad: 91, adjustment: '-25% load cap',         consent: { state: 'consented', date: '09 Jul 2025' } },
+    { name: 'Charlotte Reed',  phase: 'Menstrual',  day: 2,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 68, adjustment: 'Rest day recommended',   consent: { state: 'consented', date: '21 Nov 2025' } },
+    { name: 'Jade Osei',       phase: 'Follicular', day: 10, loadTarget: 100, aclFlag: '',                                       gpsLoad: 88, adjustment: 'None',                  consent: { state: 'consented', date: '04 Jan 2026' } },
+    { name: 'Abbi Walsh',      phase: 'Luteal',     day: 19, loadTarget: 80,  aclFlag: '⚠ Luteal phase',                        gpsLoad: 84, adjustment: '-20% intensity',        consent: { state: 'consented', date: '18 Aug 2025' } },
+    { name: 'Lucy Whitmore',   phase: 'Ovulatory',  day: 13, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 79, adjustment: '-5% intensity',         consent: { state: 'consented', date: '12 Feb 2026' } },
+    { name: 'Megan Hughes',    phase: 'Follicular', day: 6,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 71, adjustment: 'None',                  consent: { state: 'consented', date: '27 Oct 2025' } },
+    { name: 'Sophie Turner',   phase: 'Follicular', day: 9,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 52, adjustment: 'RTP Phase 3 cap',       consent: { state: 'consented', date: '06 Dec 2025' } },
+    { name: 'Fatima Al-Said',  phase: 'Ovulatory',  day: 14, loadTarget: 95,  aclFlag: '⚠ Ligament laxity peak',                gpsLoad: 81, adjustment: '-5% intensity',         consent: { state: 'consented', date: '23 Mar 2026' } },
+    { name: 'Sophie Lawson',   phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'consented', date: '15 May 2025' } },
+    { name: 'Tilly Brooks',    phase: 'Luteal',     day: 22, loadTarget: 80,  aclFlag: '⚠ Luteal phase',                        gpsLoad: 73, adjustment: '-15% intensity',        consent: { state: 'consented', date: '30 Jan 2026' } },
+    { name: 'Sasha Davies',    phase: 'Menstrual',  day: 4,  loadTarget: 60,  aclFlag: '',                                       gpsLoad: 0,  adjustment: 'Rehab — non-load',       consent: { state: 'consented', date: '08 Apr 2026' } },
+    { name: 'Bea Chen',        phase: 'Follicular', day: 11, loadTarget: 100, aclFlag: '',                                       gpsLoad: 78, adjustment: 'None',                  consent: { state: 'consented', date: '19 Apr 2026' } },
+    // Not opted in — cycle data not held; cells em-dash in the table
+    { name: 'Ellie Hayes',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Tessa Foley',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Lucy Brennan',    phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Maya Reid',       phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Jess Tilley',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Zara Williams',   phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Dani Morris',     phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
+    { name: 'Aria Rowe',       phase: '—',          day: 0,  loadTarget: 100, aclFlag: '',                                       gpsLoad: 0,  adjustment: 'None',                  consent: { state: 'not_opted_in' } },
   ];
   const loadColor = (t: number) => t <= 75 ? 'text-red-400' : t <= 85 ? 'text-amber-400' : 'text-green-400';
   const flagBadge = (f: string) => {
@@ -775,6 +809,10 @@ const CycleTrackingView = () => {
     if (f.startsWith('⚠')) return <span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium">{f}</span>;
     return <span className="text-gray-600">—</span>;
   };
+  const consentBadge = (c: Consent) => c.state === 'consented'
+    ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-300 border border-pink-600/30 font-medium">🔒 Consented · {c.date}</span>
+    : <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-500 font-medium">Not opted in</span>;
+  const dash = <span className="text-gray-700">—</span>;
   const phases = [
     { name: 'Menstrual', days: 'Days 1–5', desc: 'Low energy. Prioritise recovery, flexibility, technique. Reduced intensity.', color: 'border-red-600/30 bg-red-900/10' },
     { name: 'Follicular', days: 'Days 6–13', desc: 'Rising oestrogen. Peak strength and power window. Full load appropriate.', color: 'border-green-600/30 bg-green-900/10' },
@@ -792,13 +830,13 @@ const CycleTrackingView = () => {
   return (
     <div>
       <SectionHeader title="Cycle Tracking & GPS Integration" subtitle="Opt-in · Private · Role-gated to Medical and Welfare Lead only" icon="🌸" />
-      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-300">
-        🔒 All cycle data is opt-in, encrypted, and accessible only to the player, Club Doctor, and Welfare Lead. Never visible to coaching staff without player consent.
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-300 leading-relaxed">
+        🔒 All cycle data is opt-in, encrypted, and accessible only to the player, Club Doctor, and Welfare Lead. Never visible to coaching staff without player consent. Players may revoke consent at any time via the Lumio Cycle app — data is purged from this view immediately.
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Opt-in Rate', value: '14/22', sub: '64% of eligible squad', color: 'text-pink-400' },
+          { label: 'Opt-in Rate', value: '14/22', sub: '14 consented · 8 not opted in', color: 'text-pink-400' },
           { label: 'High-Risk Phase Today', value: '3 players', sub: 'Luteal — reduced load', color: 'text-amber-400' },
           { label: 'ACL Flags Today', value: '2', sub: 'Cycle × GPS composite', color: 'text-red-400' },
           { label: 'Training Adjustments', value: '7', sub: 'Auto-applied today', color: 'text-teal-400' },
@@ -814,20 +852,24 @@ const CycleTrackingView = () => {
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-            <th className="text-left p-3">Player</th><th className="text-left p-3">Phase</th><th className="text-left p-3">Day</th><th className="text-left p-3">Load Target</th><th className="text-left p-3">ACL Flag</th><th className="text-left p-3">GPS Load</th><th className="text-left p-3">Adjustment</th>
+            <th className="text-left p-3">Player</th><th className="text-left p-3">Consent</th><th className="text-left p-3">Phase</th><th className="text-left p-3">Day</th><th className="text-left p-3">Load Target</th><th className="text-left p-3">ACL Flag</th><th className="text-left p-3">GPS Load</th><th className="text-left p-3">Adjustment</th>
           </tr></thead>
           <tbody>
-            {squad.map((p, i) => (
-              <tr key={i} className="border-b border-gray-800/50">
-                <td className="p-3 text-gray-200 font-medium">{p.name}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.phase}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.day}</td>
-                <td className="p-3"><span className={`text-sm font-bold ${loadColor(p.loadTarget)}`}>{p.loadTarget}%</span></td>
-                <td className="p-3">{flagBadge(p.aclFlag)}</td>
-                <td className="p-3 text-gray-400 text-xs">{p.gpsLoad} AU</td>
-                <td className="p-3 text-xs text-gray-300">{p.adjustment}</td>
-              </tr>
-            ))}
+            {squad.map((p, i) => {
+              const noData = p.consent.state === 'not_opted_in' || p.phase === '—';
+              return (
+                <tr key={i} className="border-b border-gray-800/50">
+                  <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                  <td className="p-3">{consentBadge(p.consent)}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : p.phase}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : p.day}</td>
+                  <td className="p-3">{noData ? dash : <span className={`text-sm font-bold ${loadColor(p.loadTarget)}`}>{p.loadTarget}%</span>}</td>
+                  <td className="p-3">{noData ? dash : flagBadge(p.aclFlag)}</td>
+                  <td className="p-3 text-gray-400 text-xs">{noData ? dash : `${p.gpsLoad} AU`}</td>
+                  <td className="p-3 text-xs text-gray-300">{noData ? dash : p.adjustment}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -910,6 +952,41 @@ const ACLRiskMonitorView = () => {
     {name:'Tilly Brooks',    pos:'LW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
   ]
   const overdueCount = aclPlayers.filter(p => p.overdue).length
+
+  // ── ACL PREVENTION PROGRAMME ───────────────────────────────────────────────
+  // Research consensus: FIFA 11+ / prehab is the primary modifiable lever
+  // for ACL-injury risk in women's football. The bottleneck is consistent
+  // delivery, not awareness. This tracker is the accountability layer.
+  // Block = 12 sessions (6 weeks × 2). Sophie Lawson excluded — on maternity.
+  type RAG = 'green' | 'amber' | 'red'
+  const prevention: Array<{name:string;pos:string;weekDone:number;weekTarget:number;blockDone:number;blockTarget:number;notes:string}> = [
+    {name:'Emily Zhang',    pos:'CM', weekDone:0, weekTarget:2, blockDone:5,  blockTarget:12, notes:'Missed Mon + Wed prehab. Flagged with Head Physio — drives current red composite.'},
+    {name:'Priya Nair',     pos:'FW', weekDone:1, weekTarget:2, blockDone:9,  blockTarget:12, notes:'Single miss — luteal-phase fatigue logged with player.'},
+    {name:'Sophie Turner',  pos:'CB', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'Modified prehab — integrated with RTP Phase 3 progressive load.'},
+    {name:'Emma Clarke',    pos:'GK', weekDone:2, weekTarget:2, blockDone:12, blockTarget:12, notes:'Full adherence — GK-modified protocol.'},
+    {name:'Charlotte Reed', pos:'CB', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'One travel-related miss earlier in block.'},
+    {name:'Jade Osei',      pos:'LB', weekDone:2, weekTarget:2, blockDone:10, blockTarget:12, notes:'Two misses across block; on track this week.'},
+    {name:'Abbi Walsh',     pos:'RW', weekDone:1, weekTarget:2, blockDone:10, blockTarget:12, notes:'Wed session missed — illness, GP note on file.'},
+    {name:'Fatima Al-Said', pos:'AM', weekDone:2, weekTarget:2, blockDone:12, blockTarget:12, notes:'Full adherence.'},
+    {name:'Megan Hughes',   pos:'DM', weekDone:2, weekTarget:2, blockDone:11, blockTarget:12, notes:'One miss for international duty.'},
+    {name:'Tilly Brooks',   pos:'LW', weekDone:2, weekTarget:2, blockDone:10, blockTarget:12, notes:'Two misses — concussion clearance gap.'},
+  ]
+  const pct = (done:number, target:number) => Math.round((done / target) * 100)
+  const rag = (p:number): RAG => p < 60 ? 'red' : p < 80 ? 'amber' : 'green'
+  const ragCls = (r:RAG) =>
+    r === 'red'   ? 'bg-red-600/20 text-red-400 border border-red-600/30'
+  : r === 'amber' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30'
+                  : 'bg-green-600/20 text-green-400 border border-green-600/30'
+  const ragLabel = (r:RAG) => r === 'red' ? 'Behind' : r === 'amber' ? 'Catch up' : 'On track'
+
+  const blockDoneTotal   = prevention.reduce((s,p)=>s+p.blockDone, 0)
+  const blockTargetTotal = prevention.reduce((s,p)=>s+p.blockTarget, 0)
+  const weekDoneTotal    = prevention.reduce((s,p)=>s+p.weekDone, 0)
+  const weekTargetTotal  = prevention.reduce((s,p)=>s+p.weekTarget, 0)
+  const squadAdherence   = pct(blockDoneTotal, blockTargetTotal)
+  const flaggedRed       = prevention.filter(p => rag(pct(p.blockDone, p.blockTarget)) === 'red')
+  const flaggedAmber     = prevention.filter(p => rag(pct(p.blockDone, p.blockTarget)) === 'amber')
+
   // Demo screening scheduler — next 6 weeks
   const scheduler: Array<{date:string;day:string;player:string;type:string}> = [
     {date:'10 Apr',day:'Wed',player:'Emma Clarke',  type:'Catch-up screening'},
@@ -986,6 +1063,85 @@ const ACLRiskMonitorView = () => {
         </table>
       </div>
 
+      {/* ── ACL Prevention Programme ─────────────────────────────────────── */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <div className="flex items-start justify-between mb-3 gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-white">ACL Prevention Programme</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">FIFA 11+ &middot; prehab &middot; matchday-minus warm-up routines</p>
+          </div>
+          <span className="text-[10px] text-pink-300 bg-pink-600/10 border border-pink-600/30 rounded px-2 py-1 text-right max-w-xs leading-relaxed">
+            Consensus is that consistent delivery — not awareness — is the primary modifiable ACL-risk lever in women&apos;s football. This is the accountability layer.
+          </span>
+        </div>
+
+        {/* Squad summary tiles */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${rag(squadAdherence) === 'red' ? 'text-red-400' : rag(squadAdherence) === 'amber' ? 'text-amber-400' : 'text-green-400'}`}>{squadAdherence}%</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Squad adherence — this block</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{blockDoneTotal} of {blockTargetTotal} sessions</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className="text-xl font-bold text-pink-400">{weekDoneTotal}/{weekTargetTotal}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Sessions this week</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{pct(weekDoneTotal, weekTargetTotal)}% complete</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${flaggedRed.length > 0 ? 'text-red-400' : 'text-gray-500'}`}>{flaggedRed.length}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Behind ({'<'}60%)</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{flaggedRed.map(p => p.name.split(' ')[0]).join(', ') || '—'}</div>
+          </div>
+          <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
+            <div className={`text-xl font-bold ${flaggedAmber.length > 0 ? 'text-amber-400' : 'text-gray-500'}`}>{flaggedAmber.length}</div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Catch up (60–79%)</div>
+            <div className="text-[10px] text-gray-600 mt-0.5">{flaggedAmber.map(p => p.name.split(' ')[0]).join(', ') || '—'}</div>
+          </div>
+        </div>
+
+        {/* Behind banner */}
+        {flaggedRed.length > 0 && (
+          <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-3 mb-4 text-xs text-red-400">
+            ⚠ {flaggedRed.length} player{flaggedRed.length === 1 ? '' : 's'} flagged as behind on prevention sessions — Head Physio and Welfare Lead notified. Prevention shortfall is the largest single contributor to current red composite risk scores.
+          </div>
+        )}
+
+        {/* Per-player table */}
+        <div className="border border-gray-800 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+              <th className="text-left p-3">Player</th>
+              <th className="text-left p-3">Pos</th>
+              <th className="text-left p-3">This week</th>
+              <th className="text-left p-3">This block</th>
+              <th className="text-left p-3">Adherence</th>
+              <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Notes</th>
+            </tr></thead>
+            <tbody>
+              {prevention.map(p => {
+                const adherence = pct(p.blockDone, p.blockTarget)
+                const r = rag(adherence)
+                return (
+                  <tr key={p.name} className="border-b border-gray-800/50 last:border-0">
+                    <td className="p-3 text-gray-200 font-medium">{p.name}</td>
+                    <td className="p-3 text-gray-500 text-xs">{p.pos}</td>
+                    <td className="p-3 text-xs text-gray-300">{p.weekDone}/{p.weekTarget}</td>
+                    <td className="p-3 text-xs text-gray-300">{p.blockDone}/{p.blockTarget}</td>
+                    <td className="p-3 text-xs">
+                      <span className={r === 'red' ? 'text-red-400 font-bold' : r === 'amber' ? 'text-amber-400 font-bold' : 'text-green-400 font-bold'}>{adherence}%</span>
+                    </td>
+                    <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded font-medium ${ragCls(r)}`}>{ragLabel(r)}</span></td>
+                    <td className="p-3 text-[11px] text-gray-500 leading-snug">{p.notes}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="text-[10px] text-gray-600 mt-3">Block = 12 sessions (6 weeks × 2). Sophie Lawson excluded — on maternity. Modified protocols (Sophie Turner RTP, Emma Clarke GK) tracked against player-specific session counts.</div>
+      </div>
+
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">Return-to-Play Tracker</h3>
         <div className="space-y-2">
@@ -1028,50 +1184,6 @@ const ACLRiskMonitorView = () => {
 }
 
 // ─── MATERNITY TRACKER VIEW ───────────────────────────────────────────────────
-const MaternityTrackerView = () => (
-  <div>
-    <SectionHeader title="Maternity Tracker" subtitle="Karen Carney Review Compliance" icon="👶" />
-    <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6">
-      <p className="text-xs text-pink-300"><strong>WSL Policy:</strong> 26 weeks full pay, statutory rights protected, dedicated return-to-play programme, no selection pressure during recovery.</p>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
-      <table className="w-full text-sm">
-        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-          <th className="text-left p-3">Player</th><th className="text-left p-3">Leave Start</th><th className="text-left p-3">Expected Return</th><th className="text-left p-3">Weeks Remaining</th><th className="text-left p-3">Status</th>
-        </tr></thead>
-        <tbody>
-          <tr className="border-b border-gray-800/50">
-            <td className="p-3 text-gray-200 font-medium">Sophie Lawson</td>
-            <td className="p-3 text-gray-400 text-xs">14 Jan 2025</td>
-            <td className="p-3 text-gray-400 text-xs">Sep 2025</td>
-            <td className="p-3 text-gray-400 text-xs">22</td>
-            <td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-pink-600/20 text-pink-400">On Leave</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Return-to-Play Protocol (Post-Maternity)</h3>
-      <div className="space-y-2">
-        {['1. Medical clearance','2. Fitness baseline assessment','3. Light training (non-contact)','4. Full training','5. Match selection available','6. Fully returned'].map((phase: string, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs"><span className="text-gray-600">○</span><span className="text-gray-300">{phase}</span></div>
-        ))}
-      </div>
-      <div className="text-xs text-gray-500 mt-2">Sophie Lawson — not yet started (on leave)</div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Contractual Rights Log</h3>
-      <div className="space-y-2">
-        {[{right:'Full pay maintained (26 weeks)',actioned:true},{right:'Role protection on return',actioned:true},{right:'Training access on return',actioned:true},{right:'No selection pressure during recovery',actioned:true},{right:'PFA support offered',actioned:true}].map((r: {right:string;actioned:boolean}, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs"><span className={r.actioned ? 'text-green-400' : 'text-red-400'}>{r.actioned ? '✓' : '✗'}</span><span className="text-gray-300">{r.right}</span></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-4 text-xs text-amber-400">🔒 This record is restricted to Welfare Lead, Club Doctor, and Club Director only.</div>
-    <button className="px-4 py-2 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">PFA Referral Workflow →</button>
-  </div>
-)
-
 // ─── MENTAL HEALTH VIEW ───────────────────────────────────────────────────────
 const MentalHealthView = () => (
   <div>
@@ -1751,14 +1863,14 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
   const requests = [
     {id:1,outlet:"Crown Broadcasting Women's Football",type:'Feature',contact:'Sarah Davies',subject:'Lumio Cycle — welfare integration in women\'s football',deadline:'15 Apr 2026',urgency:'high',status:'Pending approval',notes:'National exposure. Welfare Lead and Head Coach required. Opportunity to position Oakridge as welfare-leading club.',recommended:'Accept — high-profile welfare story aligns with Karen Carney mission.'},
     {id:2,outlet:'The Chronicle',type:'Interview',contact:'James Pearce',subject:'Sarah Frost — mid-season manager interview',deadline:'18 Apr 2026',urgency:'medium',status:'Pending approval',notes:'Subscriber-only piece. Positive profile opportunity ahead of final-third push.',recommended:'Accept — strong readership among WSL audience.'},
-    {id:3,outlet:'Northbridge Sport',type:'Matchday Access',contact:'Emma Holt (Production)',subject:'Broadcast access — Bristol City W (Sat 12 Apr)',deadline:'Thu 10 Apr',urgency:'urgent',status:'Confirm by Thu',notes:'Pre-match tunnel access, post-match mixed zone, manager interview. Live WSL broadcast.',recommended:'Accept immediately — live broadcast reaches 400k+ viewers.'},
+    {id:3,outlet:'Northbridge Sport',type:'Matchday Access',contact:'Emma Holt (Production)',subject:'Broadcast access — Castleton Women (Sat 12 Apr)',deadline:'Thu 10 Apr',urgency:'urgent',status:'Confirm by Thu',notes:'Pre-match tunnel access, post-match mixed zone, manager interview. Live WSL broadcast.',recommended:'Accept immediately — live broadcast reaches 400k+ viewers.'},
     {id:4,outlet:"Women's Football Weekly (Podcast)",type:'Podcast',contact:'Chloe Grant',subject:'Player guest — Emma Clarke',deadline:'25 Apr 2026',urgency:'low',status:'Under review',notes:'45-minute episode. Emma Clarke proposed. Good platform for player brand-building.',recommended:'Accept — low commitment, high player welfare value.'},
     {id:5,outlet:'The Chronicle Sport',type:'Comment piece',contact:'Anya Singh',subject:'FSR impact on WSL clubs — DoF comment requested',deadline:'20 Apr 2026',urgency:'medium',status:'Declined — refer to FA',notes:'Sensitive regulatory topic. Referred to FA communications team.',recommended:'Already declined — correct decision.'},
   ];
   const coverage = [
     {date:'5 Apr',outlet:'Crown Broadcasting',headline:'Oakridge Women climb to 5th with Nair brace',reach:'1.2M',sentiment:'positive'},
     {date:'2 Apr',outlet:'The Chronicle',headline:'How Oakridge are redefining welfare in women\'s football',reach:'85k',sentiment:'positive'},
-    {date:'29 Mar',outlet:'Northbridge Sport',headline:'Oakridge Women vs Arsenal: Match Report',reach:'420k',sentiment:'neutral'},
+    {date:'29 Mar',outlet:'Northbridge Sport',headline:'Oakridge Women vs Northgate Women: Match Report',reach:'420k',sentiment:'neutral'},
     {date:'22 Mar',outlet:"Women's Football Wkly",headline:'Player profile: Priya Nair — the WSL\'s in-form striker',reach:'32k',sentiment:'positive'},
     {date:'15 Mar',outlet:'The Dispatch Sport',headline:'Oakridge Women in transfer talks over NWSL forward',reach:'2.1M',sentiment:'neutral'},
     {date:'8 Mar',outlet:'The Chronicle Sport',headline:'IWD: Oakridge Women on cycle-tracking welfare pilot',reach:'340k',sentiment:'positive'},
@@ -1783,7 +1895,7 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
         <StatCard label="Open Requests" value="3" sub="1 urgent · 2 pending" color="amber"/>
         <StatCard label="Coverage (month)" value="6" sub="5 positive · 1 neutral" color="green"/>
         <StatCard label="Total Reach" value="4.2M" sub="Cumulative this month" color="pink"/>
-        <StatCard label="Next Press Day" value="Sat" sub="Northbridge Sport — Bristol City (H)" color="blue"/>
+        <StatCard label="Next Press Day" value="Sat" sub="Northbridge Sport — Castleton Women (H)" color="blue"/>
       </div>
       <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
         {[{id:'requests',label:'Media Requests',icon:'📬'},{id:'calendar',label:'PR Calendar',icon:'📅'},{id:'coverage',label:'Coverage Log',icon:'📰'},{id:'guidelines',label:'PR Guidelines',icon:'📋'}].map(t=>(
@@ -1801,7 +1913,7 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
         </div>
       ))}</div>}
       {activeTab==='calendar'&&<div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">PR & Media Calendar — April / May 2026</h3></div><div className="divide-y divide-gray-800">
-        {[{date:'Thu 10 Apr',items:[{time:'10:00',type:'Press conf',label:'Pre-match presser — Bristol City W',urgency:'high'},{time:'14:00',type:'Deadline',label:'Northbridge Sport access confirmation',urgency:'urgent'}]},{date:'Fri 11 Apr',items:[{time:'11:00',type:'Content',label:'Player spotlight: Emma Clarke — TikTok',urgency:'low'}]},{date:'Sat 12 Apr',items:[{time:'12:00',type:'Matchday',label:'Northbridge Sport tunnel access',urgency:'high'},{time:'14:30',type:'Matchday',label:'KO vs Bristol City W',urgency:'high'},{time:'16:30',type:'Post-match',label:'Mixed zone + manager interview',urgency:'high'}]},{date:'Mon 14 Apr',items:[{time:'09:00',type:'Internal',label:'Weekly comms meeting',urgency:'low'},{time:'15:00',type:'Interview',label:'Crown Broadcasting — welfare feature filming',urgency:'high'}]},{date:'Wed 16 Apr',items:[{time:'11:00',type:'Deadline',label:'Crown Broadcasting feature deadline',urgency:'medium'}]},{date:'Fri 18 Apr',items:[{time:'13:00',type:'Interview',label:'The Chronicle — Sarah Frost',urgency:'medium'}]},{date:'25 Apr',items:[{time:'10:00',type:'Podcast',label:"Women's Football Weekly — Emma Clarke",urgency:'low'}]}].map((day,i)=>(
+        {[{date:'Thu 10 Apr',items:[{time:'10:00',type:'Press conf',label:'Pre-match presser — Castleton Women',urgency:'high'},{time:'14:00',type:'Deadline',label:'Northbridge Sport access confirmation',urgency:'urgent'}]},{date:'Fri 11 Apr',items:[{time:'11:00',type:'Content',label:'Player spotlight: Emma Clarke — TikTok',urgency:'low'}]},{date:'Sat 12 Apr',items:[{time:'12:00',type:'Matchday',label:'Northbridge Sport tunnel access',urgency:'high'},{time:'14:30',type:'Matchday',label:'KO vs Castleton Women',urgency:'high'},{time:'16:30',type:'Post-match',label:'Mixed zone + manager interview',urgency:'high'}]},{date:'Mon 14 Apr',items:[{time:'09:00',type:'Internal',label:'Weekly comms meeting',urgency:'low'},{time:'15:00',type:'Interview',label:'Crown Broadcasting — welfare feature filming',urgency:'high'}]},{date:'Wed 16 Apr',items:[{time:'11:00',type:'Deadline',label:'Crown Broadcasting feature deadline',urgency:'medium'}]},{date:'Fri 18 Apr',items:[{time:'13:00',type:'Interview',label:'The Chronicle — Sarah Frost',urgency:'medium'}]},{date:'25 Apr',items:[{time:'10:00',type:'Podcast',label:"Women's Football Weekly — Emma Clarke",urgency:'low'}]}].map((day,i)=>(
           <div key={i} className="flex gap-4 p-4"><div className="w-20 flex-shrink-0"><div className="text-xs font-bold text-white">{day.date.split(' ').slice(-2).join(' ')}</div><div className="text-[10px] text-gray-600">{day.date.split(' ')[0]}</div></div><div className="flex-1 space-y-2">{day.items.map((item,j)=><div key={j} className={`flex items-center gap-3 py-1.5 px-3 rounded-lg ${item.urgency==='urgent'?'bg-red-600/10 border border-red-600/20':item.urgency==='high'?'bg-amber-600/5 border border-amber-600/10':'bg-gray-900/50 border border-gray-800/50'}`}><span className="text-[10px] text-gray-600 w-10 flex-shrink-0">{item.time}</span><span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${item.type==='Matchday'?'bg-pink-600/20 text-pink-400':item.type==='Press conf'?'bg-purple-600/20 text-purple-400':item.type==='Interview'?'bg-blue-600/20 text-blue-400':item.type==='Deadline'?'bg-red-600/20 text-red-400':item.type==='Podcast'?'bg-teal-600/20 text-teal-400':item.type==='Content'?'bg-green-600/20 text-green-400':'bg-gray-800 text-gray-500'}`}>{item.type}</span><span className="text-xs text-gray-300">{item.label}</span></div>)}</div></div>
         ))}
       </div></div>}
@@ -1817,13 +1929,13 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
 const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'dashboard'|'calendar'|'posts'|'performance'>('dashboard');
   const platforms = [
-    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL goal vs Chelsea'},
+    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL 2 goal vs Glenmoor Wanderers W'},
     {name:'TikTok',icon:'🎵',followers:14200,growth:41,engRate:9.2,bestReach:112000,bestPost:'Behind scenes reel'},
     {name:'X',icon:'𝕏',followers:7600,growth:8,engRate:3.1,bestReach:22000,bestPost:'Matchday thread'},
     {name:'YouTube',icon:'▶️',followers:2600,growth:14,engRate:4.7,bestReach:8400,bestPost:'Player profile ep4'},
   ];
   const scheduledPosts = [
-    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Bristol City. 🏟️ #WSL',status:'Scheduled',reach:'~12k'},
+    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Castleton. 🏟️ #WSL2',status:'Scheduled',reach:'~12k'},
     {date:'Thu 10 Apr',time:'18:30',platform:'X',type:'Match preview',caption:'Three points on the line. 💪',status:'Scheduled',reach:'~3k'},
     {date:'Fri 11 Apr',time:'12:00',platform:'TikTok',type:'Player spotlight',caption:'Meet our GK Emma Clarke 🧤',status:'Draft',reach:'~18k'},
     {date:'Sat 12 Apr',time:'11:30',platform:'Instagram',type:'Matchday hype',caption:'Game day. 🌸 Come on Oakridge!',status:'Scheduled',reach:'~20k'},
@@ -1853,7 +1965,7 @@ const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
       {activeTab==='dashboard'&&<div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{platforms.map(p=><div key={p.name} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><span className="text-lg">{p.icon}</span><span className="text-[10px] text-green-400 font-bold">+{p.growth}%</span></div><div className="text-xl font-bold text-white mb-0.5">{(p.followers/1000).toFixed(1)}k</div><div className="text-[10px] text-gray-500 mb-2">{p.name}</div><div className="w-full bg-gray-800 rounded-full h-1 mb-2"><div className="h-1 rounded-full" style={{width:`${Math.min((p.followers/20000)*100,100)}%`,backgroundColor:'#EC4899'}}/></div><div className="text-[10px] text-gray-500">{p.engRate}% eng</div></div>)}</div>
         {(()=>{const W=600,H=160,pL=48,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=30000,mx=44000,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.followers.map((f,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((f-mn)/(mx-mn))*iH}`).join(' ');const area=`${path} L ${pL+(monthlyData.labels.length-1)*sX} ${pT+iH} L ${pL} ${pT+iH} Z`;return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Total Follower Growth</h3><p className="text-xs text-gray-500 mb-4">31.2k Aug → 42.8k Apr (+37%)</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={area} fill="#EC4899" opacity="0.07"/><path d={path} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.followers.map((f,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((f-mn)/(mx-mn))*iH} r="3" fill="#EC4899"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Chelsea — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Tottenham W (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Glenmoor Wanderers W — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Ridgefield Athletic Women (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
       </div>}
       {activeTab==='calendar'&&<div className="space-y-4">
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Weekly Pillars</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{day:'Mon',theme:'Training insights',icon:'⚽',pl:'TikTok · Stories'},{day:'Wed',theme:'Player spotlight',icon:'⭐',pl:'TikTok · IG'},{day:'Fri',theme:'Match preview',icon:'🎯',pl:'All platforms'},{day:'Sat',theme:'Match day',icon:'🔴',pl:'Live — all'}].map(c=><div key={c.day} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold text-pink-400">{c.day}</span><span>{c.icon}</span></div><div className="text-xs font-semibold text-white mb-1">{c.theme}</div><div className="text-[10px] text-gray-500">{c.pl}</div></div>)}</div></div>
@@ -1872,10 +1984,10 @@ const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
 const FanHubView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'overview'|'forum'|'events'|'memberships'>('overview');
   const forumTopics = [
-    {id:1,category:'Match Discussion',title:'Brighton W (H) — Post match thread 🟢',posts:84,views:1240,lastActive:'2h ago',hot:true},
+    {id:1,category:'Match Discussion',title:'Hartwell Women (H) — Post match thread 🟢',posts:84,views:1240,lastActive:'2h ago',hot:true},
     {id:2,category:'Player Welfare',title:'Lumio Cycle tracking — what do you think?',posts:67,views:890,lastActive:'4h ago',hot:true},
     {id:3,category:'Transfers',title:'Summer window wishlist — who should we sign?',posts:112,views:2100,lastActive:'1h ago',hot:true},
-    {id:4,category:'Match Discussion',title:'Bristol City W (A) — Preview thread',posts:31,views:540,lastActive:'6h ago',hot:false},
+    {id:4,category:'Match Discussion',title:'Castleton Women (A) — Preview thread',posts:31,views:540,lastActive:'6h ago',hot:false},
     {id:5,category:'General',title:'Season tickets 2026/27 — thoughts on pricing?',posts:48,views:710,lastActive:'12h ago',hot:false},
     {id:6,category:'Academy',title:'U18 talent watch — who to look out for?',posts:29,views:480,lastActive:'1d ago',hot:false},
     {id:7,category:'Commercial',title:'New kit launch reaction — love it or leave it?',posts:95,views:1680,lastActive:'3h ago',hot:true},
@@ -1888,7 +2000,7 @@ const FanHubView = ({ club: _club }: { club: WomensClub }) => {
     {name:'Club Member',price:'£60/yr',color:'border-purple-600/40',badge:'bg-purple-600/20 text-purple-300',features:['Everything in Supporter','Training session guest pass','Annual meet-the-manager event','Priority season ticket','Member kit discount (15%)','Welfare newsletter'],members:86},
   ];
   const upcomingEvents = [
-    {date:'Sat 12 Apr',event:'Fan Zone — Bristol City W (H)',location:'Oakridge Stadium',type:'Matchday',tickets:'Free entry'},
+    {date:'Sat 12 Apr',event:'Fan Zone — Castleton Women (H)',location:'Oakridge Stadium',type:'Matchday',tickets:'Free entry'},
     {date:'Sun 20 Apr',event:'Player Q&A — Supporter exclusive',location:'Club Lounge',type:'Supporter',tickets:'Members only'},
     {date:'Sat 3 May',event:'Season Finale Fan Day',location:'Oakridge Stadium',type:'All fans',tickets:'RSVP required'},
     {date:'Sun 11 May',event:'End of Season Awards Night',location:'Oakridge Conference',type:'Club Mbr',tickets:'Club members only'},
@@ -1937,7 +2049,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 4,  name: 'Becca Lane',      age: 15, pos: 'GK',  gpsAvg: 55, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 11, goals: 0,  assists: 0,  notes: 'Strong shot-stopper. Distribution improving. Youngest GK in U18s.' },
     { id: 5,  name: 'Simone Ashby',    age: 17, pos: 'LB',  gpsAvg: 62, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 13, goals: 0,  assists: 6,  notes: 'Best delivery from wide areas in academy. CoE licence player.' },
     { id: 6,  name: 'Raya Obi',        age: 16, pos: 'DM',  gpsAvg: 60, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 8,  goals: 0,  assists: 1,  notes: 'Reads the game well. Physical development needed before first-team consideration.' },
-    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Lumio Scout flagged as one of top U18 wingers in Women's Champ region." },
+    { id: 7,  name: 'Caitlin Duff',    age: 17, pos: 'RW',  gpsAvg: 67, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 10, goals: 4,  assists: 5,  notes: "Explosive in transition. Lumio Scout flagged as one of top U18 wingers in WSL 2 region." },
     { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
     { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
     { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
@@ -1946,7 +2058,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
   const u21Players = [
     { id: 11, name: 'Dani Cross',      age: 20, pos: 'CM',  gpsAvg: 78, devRating: 4, potential: 'High',   contract: 'Scholar → Pro offer pending', appearances: 18, goals: 3,  assists: 9,  firstTeamSessions: 12, notes: 'Training with first team regularly. DoF view: ready for dual reg next window.' },
     { id: 12, name: 'Priya Sadhu',     age: 19, pos: 'LB',  gpsAvg: 74, devRating: 4, potential: 'High',   contract: 'Scholar — Year 2',            appearances: 16, goals: 1,  assists: 8,  firstTeamSessions: 6,  notes: "Technically outstanding. Overlapping full-back — fits Frost's system perfectly." },
-    { id: 13, name: 'Ellie Moran',     age: 21, pos: 'GK',  gpsAvg: 70, devRating: 3, potential: 'Medium', contract: 'Pro contract — Year 1',        appearances: 20, goals: 0,  assists: 0,  firstTeamSessions: 4,  notes: "3rd-choice GK. Loan move to Women's Champ club recommended for regular minutes." },
+    { id: 13, name: 'Ellie Moran',     age: 21, pos: 'GK',  gpsAvg: 70, devRating: 3, potential: 'Medium', contract: 'Pro contract — Year 1',        appearances: 20, goals: 0,  assists: 0,  firstTeamSessions: 4,  notes: "3rd-choice GK. Loan move to WSL 2 club recommended for regular minutes." },
     { id: 14, name: 'Sasha Kone',      age: 20, pos: 'FW',  gpsAvg: 82, devRating: 5, potential: 'Elite',  contract: 'Scholar → Pro contract offer',  appearances: 17, goals: 14, assists: 4,  firstTeamSessions: 18, notes: 'Top scorer in U21 WSL. First-team debut made Feb 2026. Elite potential — protect from external interest.' },
     { id: 15, name: 'Abby Thornton',   age: 19, pos: 'CB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 15, goals: 1,  assists: 2,  firstTeamSessions: 2,  notes: 'Solid defensively. Aerial strength above average for age. Needs more first-team exposure.' },
     { id: 16, name: 'Meg Farr',        age: 21, pos: 'RW',  gpsAvg: 76, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 19, goals: 6,  assists: 10, firstTeamSessions: 8,  notes: 'Winger with excellent delivery. Pushing for first-team squad place next season.' },
@@ -2265,7 +2377,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
             <h3 className="text-sm font-bold text-white mb-3">FA Dual Registration Rules — Women&apos;s Football</h3>
             <div className="space-y-2">
               {[
-                "Players can be dual registered between WSL and Women's Championship clubs only",
+                "Players can be dual registered between WSL and WSL 2 clubs only",
                 'Maximum of 5 dual-registered players per club per registration window',
                 "Player must be eligible for both clubs' league (age, nationality, contract)",
                 'Dual registration period: minimum 28 days, maximum end of season',
@@ -2284,8 +2396,8 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
             <h3 className="text-sm font-bold text-white mb-4">Current Dual Reg Candidates</h3>
             <div className="space-y-3">
               {[
-                { name: "Niamh O'Brien", squad: 'U18 → U21/Dual reg', status: 'Nominated', detail: "CB · Age 17 · GPS 71 AU · Elite potential. Dual reg to Women's Champ club recommended from May 2026.", action: 'DoF approval needed', color: 'pink' },
-                { name: 'Ellie Moran', squad: 'U21 → Loan', status: 'Recommended', detail: "GK · Age 21 · 3rd-choice. Loan to Women's Champ recommended for 2026/27 for regular minutes.", action: 'Summer window — target clubs identified', color: 'blue' },
+                { name: "Niamh O'Brien", squad: 'U18 → U21/Dual reg', status: 'Nominated', detail: "CB · Age 17 · GPS 71 AU · Elite potential. Dual reg to WSL 2 club recommended from May 2026.", action: 'DoF approval needed', color: 'pink' },
+                { name: 'Ellie Moran', squad: 'U21 → Loan', status: 'Recommended', detail: "GK · Age 21 · 3rd-choice. Loan to WSL 2 recommended for 2026/27 for regular minutes.", action: 'Summer window — target clubs identified', color: 'blue' },
                 { name: 'Tara Flynn', squad: 'U21 → Loan', status: 'Under review', detail: 'DM · Age 20 · Lacks top-end pace for WSL but technically sound. Loan candidate Summer 2026.', action: 'Review post-season', color: 'amber' },
               ].map((c, i) => (
                 <div key={i} className={`rounded-xl p-4 border ${c.color === 'pink' ? 'border-pink-600/30 bg-pink-600/5' : c.color === 'blue' ? 'border-blue-600/30 bg-blue-600/5' : 'border-amber-600/30 bg-amber-600/5'}`}>
@@ -2320,25 +2432,25 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
   const fmtS = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
 
   const players = [
-    {id:1,name:'Freya Johansson',age:24,nat:'🇸🇪',pos:'CM',league:'WSL',club:'Leicester W',salary:52000,avail:'Contract expires Jun 2026',wyscout:7.8,xG:0.14,xA:0.31,progPasses:42,aerials:58,tackles:3.2,rating:'A',tags:['Ball-playing','High press','Technical']},
+    {id:1,name:'Freya Johansson',age:24,nat:'🇸🇪',pos:'CM',league:'WSL',club:'Castleton Women',salary:52000,avail:'Contract expires Jun 2026',wyscout:7.8,xG:0.14,xA:0.31,progPasses:42,aerials:58,tackles:3.2,rating:'A',tags:['Ball-playing','High press','Technical']},
     {id:2,name:'Amara Diallo',age:22,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Bordeaux W',salary:44000,avail:'Free agent',wyscout:7.4,xG:0.38,xA:0.12,progPasses:18,aerials:62,tackles:1.1,rating:'A',tags:['Pace','In behind','Clinical']},
     {id:3,name:'Lena Müller',age:26,nat:'🇩🇪',pos:'LB',league:'Frauen-Bundesliga',club:'Hoffenheim W',salary:62000,avail:'Approach made',wyscout:7.6,xG:0.06,xA:0.28,progPasses:38,aerials:44,tackles:4.8,rating:'A',tags:['Overlapping','Delivery','Defensive']},
-    {id:4,name:'Niamh Gallagher',age:28,nat:'🇮🇪',pos:'CB',league:'WSL',club:'Everton W',salary:58000,avail:'Contract expires Jun 2026',wyscout:7.2,xG:0.04,xA:0.08,progPasses:22,aerials:78,tackles:5.1,rating:'B',tags:['Aerial','Leadership','Positional']},
+    {id:4,name:'Niamh Gallagher',age:28,nat:'🇮🇪',pos:'CB',league:'WSL',club:'Plymouth Marine Women',salary:58000,avail:'Contract expires Jun 2026',wyscout:7.2,xG:0.04,xA:0.08,progPasses:22,aerials:78,tackles:5.1,rating:'B',tags:['Aerial','Leadership','Positional']},
     {id:5,name:'Chloe Dubois',age:23,nat:'🇫🇷',pos:'FW',league:'D1 Arkema',club:'Montpellier W',salary:48000,avail:'Scouting only',wyscout:7.5,xG:0.44,xA:0.19,progPasses:14,aerials:51,tackles:0.9,rating:'A',tags:['Pace','Dribbling','Pressing']},
-    {id:6,name:'Rosa Lindqvist',age:25,nat:'🇸🇪',pos:'CB',league:'WSL',club:'Brighton W',salary:54000,avail:'Watchlist',wyscout:6.9,xG:0.03,xA:0.06,progPasses:19,aerials:82,tackles:4.4,rating:'B',tags:['Positional','Ball-playing']},
+    {id:6,name:'Rosa Lindqvist',age:25,nat:'🇸🇪',pos:'CB',league:'WSL',club:'Hartwell Women',salary:54000,avail:'Watchlist',wyscout:6.9,xG:0.03,xA:0.06,progPasses:19,aerials:82,tackles:4.4,rating:'B',tags:['Positional','Ball-playing']},
     {id:7,name:'Kezia Okafor',age:27,nat:'🇳🇬',pos:'FW',league:'NWSL',club:'Portland Thorns',salary:88000,avail:'Fee required (est. £45k)',wyscout:8.1,xG:0.51,xA:0.22,progPasses:20,aerials:66,tackles:1.4,rating:'A+',tags:['Physical','Aerial','Clinical','Leadership']},
     {id:8,name:'Yuki Tanaka',age:21,nat:'🇯🇵',pos:'AM',league:'NWSL',club:'San Diego Wave',salary:46000,avail:'Loan available',wyscout:7.3,xG:0.22,xA:0.38,progPasses:48,aerials:29,tackles:2.1,rating:'A',tags:['Creative','Final third','Technical']},
-    {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Aston Villa W',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
+    {id:9,name:'Isla Brennan',age:30,nat:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pos:'DM',league:'WSL',club:'Fernbrook Women',salary:61000,avail:'Watchlist',wyscout:7.1,xG:0.05,xA:0.14,progPasses:31,aerials:55,tackles:6.2,rating:'B',tags:['Defensive','Positional','Leadership']},
     {id:10,name:'Marta Sousa',age:24,nat:'🇵🇹',pos:'LW',league:'D1 Arkema',club:'PSG Féminines',salary:72000,avail:'Scouting only',wyscout:7.9,xG:0.28,xA:0.41,progPasses:36,aerials:33,tackles:2.8,rating:'A',tags:['Pace','Delivery','Creative','Dribbling']},
-    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"Women's Champ",club:'Crystal Palace W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
+    {id:11,name:'Bex Calder',age:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pos:'RB',league:"WSL 2",club:'Glenmoor Wanderers W',salary:32000,avail:'Free agent',wyscout:6.8,xG:0.04,xA:0.18,progPasses:28,aerials:41,tackles:3.9,rating:'B',tags:['Overlapping','Energy','High press']},
     {id:12,name:'Sofía Reyes',age:26,nat:'🇲🇽',pos:'GK',league:'NWSL',club:'Kansas City',salary:55000,avail:'Contract expires Dec 2026',wyscout:7.4,xG:null,xA:null,progPasses:null,aerials:null,tackles:null,rating:'A',tags:['Shot-stopping','Distribution','Leadership'],saves:4.2,savePct:74},
     {id:13,name:'Hana Novak',age:25,nat:'🇨🇿',pos:'CM',league:'Frauen-Bundesliga',club:'Bayern Munich W',salary:68000,avail:'Scouting only',wyscout:7.7,xG:0.11,xA:0.29,progPasses:44,aerials:48,tackles:4.1,rating:'A',tags:['Box-to-box','High press','Technical']},
-    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"Women's Champ",club:'Sheffield Utd W',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
-    {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Liverpool W',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
+    {id:14,name:'Precious Nwosu',age:20,nat:'🇳🇬',pos:'FW',league:"WSL 2",club:'Ashbourne Women FC',salary:28000,avail:'Fee required (est. £12k)',wyscout:7.0,xG:0.41,xA:0.08,progPasses:12,aerials:58,tackles:1.2,rating:'B',tags:['Pace','Physical','Potential']},
+    {id:15,name:'Elin Ström',age:27,nat:'🇸🇪',pos:'RW',league:'WSL',club:'Thornvale Ladies',salary:74000,avail:'Watchlist',wyscout:7.8,xG:0.32,xA:0.44,progPasses:34,aerials:38,tackles:2.6,rating:'A',tags:['Delivery','Dribbling','Set piece']},
   ];
 
   const positions = ['All','GK','CB','LB','RB','DM','CM','AM','LW','RW','FW'];
-  const leagues = ['All','WSL',"Women's Champ",'NWSL','D1 Arkema','Frauen-Bundesliga'];
+  const leagues = ['All','WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga'];
   const availOpts = ['All','Free agent','Contract expires Jun 2026','Loan available','Fee required'];
 
   const filtered = players.filter(p => {
@@ -2355,7 +2467,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
 
   return (
     <div>
-      <SectionHeader title="Scouting" subtitle="Lumio Scout · WSL · Women's Championship · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
+      <SectionHeader title="Scouting" subtitle="Lumio Scout · WSL · WSL 2 · NWSL · D1 Arkema · Frauen-Bundesliga" icon="🔭"/>
       <div className="flex gap-1 mb-6 border-b border-gray-800">
         {[{id:'database',label:'Player Database',icon:'🔍'},{id:'watchlist',label:'Watchlist',icon:'⭐'},{id:'reports',label:'Scout Reports',icon:'📝'}].map(t=>(
           <button key={t.id} onClick={()=>{setScoutTab(t.id as typeof scoutTab);setSelectedPlayer(null)}}
@@ -2461,7 +2573,7 @@ const ScoutingView = ({ club }: { club: WomensClub }) => {
           <div className="flex items-center justify-between"><p className="text-xs text-gray-500">3 scout reports filed</p><button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">+ New Report</button></div>
           {[
             {player:'Kezia Okafor',pos:'FW',club:'Portland Thorns (NWSL)',nat:'🇳🇬',scout:'Mark Hendry',date:'4 Apr 2026',match:'Portland vs San Diego',rating:'A+',rec:'Sign — priority target',summary:'Dominant aerial presence. Clinical finish — brace. Showed leadership organising front line.',strengths:['Aerial dominance — 7/9 duels won','Clinical finishing (2 goals)','High press — 8 defensive actions','Leadership — directed press triggers'],concerns:['Salary est. £88k — near FSR ceiling','Transfer fee likely £40–50k','NWSL contract runs to Dec 2026'],score:{technique:8,athleticism:9,pressing:9,finishing:8,leadership:9}},
-            {player:'Freya Johansson',pos:'CM',club:'Leicester W (WSL)',nat:'🇸🇪',scout:'Lisa Park',date:'29 Mar 2026',match:'Leicester W vs Bristol City W',rating:'A',rec:'Approach — contract expiring',summary:'Composed in possession. Dictated tempo. 11 forward passes into final third. Defensively disciplined.',strengths:['Progressive passing — 11 into final third','Positional discipline','Comfortable both feet','Technical under press'],concerns:['Not aerial threat','Recovery pace vs physical FW','May attract WSL top-6 interest'],score:{technique:9,athleticism:7,pressing:8,finishing:6,leadership:7}},
+            {player:'Freya Johansson',pos:'CM',club:'Castleton Women (WSL)',nat:'🇸🇪',scout:'Lisa Park',date:'29 Mar 2026',match:'Castleton Women vs Fernbrook Women',rating:'A',rec:'Approach — contract expiring',summary:'Composed in possession. Dictated tempo. 11 forward passes into final third. Defensively disciplined.',strengths:['Progressive passing — 11 into final third','Positional discipline','Comfortable both feet','Technical under press'],concerns:['Not aerial threat','Recovery pace vs physical FW','May attract WSL top-6 interest'],score:{technique:9,athleticism:7,pressing:8,finishing:6,leadership:7}},
             {player:'Amara Diallo',pos:'FW',club:'Bordeaux W (D1 Arkema)',nat:'🇫🇷',scout:'Mark Hendry',date:'22 Mar 2026',match:'Bordeaux vs Montpellier',rating:'A',rec:'Sign immediately — free agent',summary:'Electric pace on the left. Ran in behind 6 times. Pressing from front effective. Free agent — exceptional value.',strengths:['Blistering pace — consistent threat','Pressing from front (3 ball recoveries)','Free agent — no fee, £44k salary','Young (22) with significant upside'],concerns:['Decision-making inconsistent','Aerial minimal — 2/8 duels','D1→WSL adaptation 3–4 months'],score:{technique:7,athleticism:9,pressing:8,finishing:7,leadership:6}},
           ].map((r,i)=>(
             <div key={i} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
@@ -2490,16 +2602,16 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
   const WSL_AVG_PPDA = 9.8
 
   const matchData = [
-    { match: 'Man City W',    venue: 'H', result: 'L', score: '1–2', xG: 0.98, xGA: 1.87, ppda: 12.1, progPasses: 28 },
-    { match: 'Chelsea W',     venue: 'A', result: 'L', score: '0–3', xG: 0.22, xGA: 2.94, ppda: 16.4, progPasses: 14 },
-    { match: 'Arsenal W',     venue: 'H', result: 'D', score: '1–1', xG: 0.91, xGA: 0.88, ppda: 11.2, progPasses: 22 },
-    { match: 'Liverpool W',   venue: 'A', result: 'W', score: '2–1', xG: 1.62, xGA: 0.74, ppda: 7.8,  progPasses: 36 },
-    { match: 'Brighton W',    venue: 'H', result: 'L', score: '0–1', xG: 0.31, xGA: 0.87, ppda: 14.2, progPasses: 18 },
-    { match: 'Aston Villa W', venue: 'A', result: 'W', score: '3–1', xG: 2.14, xGA: 0.62, ppda: 6.9,  progPasses: 41 },
-    { match: 'Everton W',     venue: 'H', result: 'W', score: '2–0', xG: 1.74, xGA: 0.28, ppda: 8.1,  progPasses: 38 },
-    { match: 'Leicester W',   venue: 'A', result: 'D', score: '2–2', xG: 1.38, xGA: 1.41, ppda: 9.4,  progPasses: 31 },
-    { match: 'Tottenham W',   venue: 'H', result: 'W', score: '4–0', xG: 2.88, xGA: 0.14, ppda: 5.2,  progPasses: 52 },
-    { match: 'West Ham W',    venue: 'A', result: 'W', score: '1–0', xG: 1.12, xGA: 0.44, ppda: 8.8,  progPasses: 33 },
+    { match: 'Kingsmere City Women', venue: 'H', result: 'L', score: '1–2', xG: 0.98, xGA: 1.87, ppda: 12.1, progPasses: 28 },
+    { match: 'Glenmoor Wanderers W',   venue: 'A', result: 'L', score: '0–3', xG: 0.22, xGA: 2.94, ppda: 16.4, progPasses: 14 },
+    { match: 'Northgate Women',         venue: 'H', result: 'D', score: '1–1', xG: 0.91, xGA: 0.88, ppda: 11.2, progPasses: 22 },
+    { match: 'Thornvale Ladies',        venue: 'A', result: 'W', score: '2–1', xG: 1.62, xGA: 0.74, ppda: 7.8,  progPasses: 36 },
+    { match: 'Hartwell Women',          venue: 'H', result: 'L', score: '0–1', xG: 0.31, xGA: 0.87, ppda: 14.2, progPasses: 18 },
+    { match: 'Fernbrook Women',         venue: 'A', result: 'W', score: '3–1', xG: 2.14, xGA: 0.62, ppda: 6.9,  progPasses: 41 },
+    { match: 'Plymouth Marine Women',   venue: 'H', result: 'W', score: '2–0', xG: 1.74, xGA: 0.28, ppda: 8.1,  progPasses: 38 },
+    { match: 'Castleton Women',         venue: 'A', result: 'D', score: '2–2', xG: 1.38, xGA: 1.41, ppda: 9.4,  progPasses: 31 },
+    { match: 'Ridgefield Athletic Women', venue: 'H', result: 'W', score: '4–0', xG: 2.88, xGA: 0.14, ppda: 5.2,  progPasses: 52 },
+    { match: 'Ashbourne Women FC',      venue: 'A', result: 'W', score: '1–0', xG: 1.12, xGA: 0.44, ppda: 8.8,  progPasses: 33 },
   ]
 
   const avgXG  = matchData.reduce((s, m) => s + m.xG,  0) / matchData.length
@@ -2606,7 +2718,7 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
               {[
                 { label: 'Oakridge (season avg)', value: avgPPDA.toFixed(1), color: '#EC4899', note: avgPPDA < WSL_AVG_PPDA ? '↑ More pressing than avg' : '↓ Less pressing than avg' },
                 { label: 'WSL Average', value: String(WSL_AVG_PPDA), color: '#0D9488', note: 'Benchmark' },
-                { label: 'WSL Top 3 avg', value: '7.2', color: '#8B5CF6', note: 'Chelsea, Arsenal, Man City' },
+                { label: 'WSL Top 3 avg', value: '7.2', color: '#8B5CF6', note: '' },
               ].map(c => (
                 <div key={c.label} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3 text-center">
                   <div className="text-xl font-bold mb-0.5" style={{ color: c.color }}>{c.value}</div>
@@ -2637,11 +2749,11 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-3">
                 <div className="text-xs font-bold text-green-400 mb-1">Best pressing performances</div>
-                <div className="text-xs text-gray-400">Tottenham W (PPDA 5.2) and Aston Villa W (6.9) — both resulted in wins with high xG.</div>
+                <div className="text-xs text-gray-400">Ridgefield Athletic Women (PPDA 5.2) and Fernbrook Women (6.9) — both resulted in wins with high xG.</div>
               </div>
               <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-3">
                 <div className="text-xs font-bold text-red-400 mb-1">Worst pressing performances</div>
-                <div className="text-xs text-gray-400">Chelsea A (PPDA 16.4) and Brighton H (14.2) — both losses. Low press allowed opposition to build freely.</div>
+                <div className="text-xs text-gray-400">Glenmoor Wanderers W (A, PPDA 16.4) and Hartwell Women (H, 14.2) — both losses. Low press allowed opposition to build freely.</div>
               </div>
             </div>
             <div className="mt-3 text-[10px] text-gray-600">Color: 🟢 Elite (&lt;8) · 🩷 Good (8–11) · 🟡 Average (11–14) · 🔴 Low (&gt;14)</div>
@@ -2918,7 +3030,7 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
               <h3 className="text-sm font-bold text-white mb-1">Step 2 — Budget &amp; League</h3><p className="text-xs text-gray-500 mb-4">FSR headroom: {fmt2(FSR_HEADROOM)}</p>
               <div className="space-y-4">
                 <div><label className="text-xs text-gray-400 mb-1 block">Max annual salary (£)</label><input type="number" value={maxSalary} onChange={e=>setMaxSalary(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"/>{maxSalary&&Number(maxSalary)>FSR_HEADROOM&&<p className="text-xs text-red-400 mt-1">⚠ Exceeds FSR headroom</p>}</div>
-                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL',"Women's Championship",'NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
+                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
               </div>
               <div className="flex gap-2 mt-5"><button onClick={()=>setStep(1)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={()=>{if(maxSalary&&league)setStep(3)}} disabled={!maxSalary||!league} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button></div>
             </div>
@@ -2947,144 +3059,292 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
   );
 };
 
-// ─── AI HALFTIME BRIEF VIEW ─────────────────────────────────────────────────
-const AIHalftimeBriefView = () => {
-  const [brief, setBrief] = useState<string | null>(null)
+// ─── AI PERFORMANCE BRIEF VIEW ──────────────────────────────────────────────
+// 3-mode AI performance brief — Half-Time / Full-Time / Training. Each mode
+// has its own prompt template + JSON schema, and welfare is a FIRST-CLASS
+// field in every mode (cycle phase, ACL deceleration accumulation, mental-
+// health flags, postpartum RTP watch). Women's portal is welfare-led —
+// welfare cannot drop or thin out in any mode.
+//
+// DEMO BEHAVIOUR: this view serves CANNED responses (instant, free) — the
+// live /api/ai/womens fetch path is preserved as a commented reference below
+// each generate call for re-enabling in a signed-client portal. Canned
+// content is intentionally high-quality — it's what prospects see.
+
+type PerfMode = 'halftime' | 'fulltime' | 'training'
+interface WelfareFlag { player: string; flag: string; recommendation: string }
+interface HalfTimeBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  fatigue_alerts: { player: string; stat: string; flag: string }[]
+  tactical_insight: string
+  substitution_rec: string
+  second_half_instruction: string
+}
+interface FullTimeBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  red_zone_players: { player: string; stat: string; concern: string }[]
+  recovery_priorities: string
+  next_session_flags: string
+  rtp_watch: string
+}
+interface TrainingBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  load_vs_plan: string
+  manage_tomorrow: { player: string; stat: string; action: string }[]
+  session_target_assessment: string
+}
+
+const CANNED_HALFTIME: HalfTimeBrief = {
+  headline: "We're trailing 0–1 to Hartwell Women at half-time despite 58% possession — final-third execution and Hartwell's high press are the two stories of the first 45.",
+  welfare_flags: [
+    { player: 'Emily Zhang', flag: 'Luteal phase + 3 high-decel events (>3.5 m/s²) in 1st half', recommendation: 'Withdraw at 60′ regardless of score — load cap exceeded for cycle phase.' },
+    { player: 'Priya Nair',  flag: 'Ovulatory phase — ligament laxity peak, ACL caution',           recommendation: 'Avoid forced cutting drills; switch any wide-channel work inside.' },
+    { player: 'Charlotte Reed', flag: 'Pre-match anxiety flag — Welfare Lead notified',            recommendation: 'Direct verbal check-in at 45′ from coach; keep instructions concise.' },
+  ],
+  fatigue_alerts: [
+    { player: 'Emily Zhang', stat: '9.4 km distance, 91 AU load (luteal cap 75%)', flag: 'Withdraw at 60′' },
+    { player: 'Priya Nair',  stat: '77 AU, 5 high-intensity runs',                   flag: 'Modify role to centre channel' },
+    { player: 'Jade Osei',   stat: '8.2 km, 14 sprints',                              flag: 'Hold position, monitor 2nd half' },
+  ],
+  tactical_insight: "Hartwell's PPDA of 8.1 vs our 14.2 means they're pressing far higher than we are — we're giving them time on the ball and they're punishing us in transition. Progressive passes 18 vs their 31 — we're stuck in our own half too often.",
+  substitution_rec: 'Bring Lucy Whitmore on for Emily Zhang at 60′ — cycle-load reasons override tactical. If we need a goal earlier, swap Tilly Brooks in for Charlotte Reed at the same point to ease the anxiety pressure and add a direct runner.',
+  second_half_instruction: 'Raise PPDA by 5 points — press from Reed and Williams when their CB receives. Get the ball wide to Tilley early; their right-back has been struggling with her recovery pace all half.',
+}
+
+const CANNED_FULLTIME: FullTimeBrief = {
+  headline: '0–2 loss to Hartwell Women. Squad output adequate (89.4 AU avg load) but red-zone accumulation in 3 cycle-flagged players needs same-day management — recovery starts tonight, not Monday.',
+  welfare_flags: [
+    { player: 'Emily Zhang',  flag: 'Luteal phase + 4 high-decel events across 90′ (composite ACL risk 98 still red)', recommendation: 'Full pool recovery tonight. No training Monday. Re-screen Tuesday before any contact.' },
+    { player: 'Priya Nair',   flag: 'Ovulatory ligament-laxity window concluded — re-baseline tomorrow',                recommendation: 'Standard recovery. Cycle phase shifts to luteal Thursday — flag for Thursday session planning.' },
+    { player: 'Sophie Lawson', flag: 'Postpartum RTP Stage 9 — first 75′ completed',                                    recommendation: 'Welfare check-in Sunday AM with Nina Walsh. Player-led on Monday participation.' },
+  ],
+  red_zone_players: [
+    { player: 'Emily Zhang',    stat: '10.4 km, 198 AU full match, ACWR 1.42', concern: 'Cycle × load × prior ACL — highest risk profile in the squad' },
+    { player: 'Tilly Brooks',   stat: '11.2 km, 32 sprints',                    concern: 'Workload above 4-week rolling average by 18%' },
+    { player: 'Charlotte Reed', stat: '9.8 km, mental-health flag still active', concern: 'Welfare check-in priority before Monday session' },
+  ],
+  recovery_priorities: 'Pool + ice for the 3 red-zone players tonight (Zhang, Brooks, Reed) — Zhang is non-negotiable. Standard active recovery for the rest, with cycle-aware adjustment for any luteal-phase players. Sleep tracking on for all match starters.',
+  next_session_flags: 'Manage Zhang OFF Monday — full rest. Pull Brooks from any high-speed work Monday — reactive sessions only. Reed: welfare-led decision via Nina Walsh, default to optional attendance.',
+  rtp_watch: 'Sophie Lawson — postpartum RTP Stage 9. Pelvic-floor and MSK scan due Wednesday before further competitive minutes. Sophie Turner — RTP Phase 3 progressing well; consider Phase 4 sign-off after Tuesday\'s screening.',
+}
+
+const CANNED_TRAINING: TrainingBrief = {
+  headline: 'Tuesday tactical session hit 87% of target load — solid intensity through the high-press block, dropped 13% below target in the possession drill, three players flagged for tomorrow management.',
+  welfare_flags: [
+    { player: 'Priya Nair',     flag: 'Ovulatory phase mid-week — ligament laxity peak',                                      recommendation: 'Modify Wednesday cutting drills to centre-channel only. No 1v1 wide work tomorrow.' },
+    { player: 'Emily Zhang',    flag: 'Luteal phase, 60% load cap active',                                                    recommendation: 'Reduce Wednesday session to 65% volume. No max-decel drills.' },
+    { player: 'Bea Chen',       flag: 'Newly opted in to cycle tracking — first session under cycle-aware programming',       recommendation: 'Standard load today. Monitor for any RPE divergence next session.' },
+  ],
+  load_vs_plan: 'Whole-squad average 78 AU vs 90 AU target — 13% under. Driver: possession-block intensity slipped after minute 35, likely fatigue from Sunday\'s match. High-press block hit target at 95 AU.',
+  manage_tomorrow: [
+    { player: 'Emily Zhang',    stat: 'Load cap exceeded by 8 AU (luteal phase)', action: 'Rest tomorrow OR pool-only session — Welfare Lead\'s call.' },
+    { player: 'Tilly Brooks',   stat: 'ACWR 1.31 — entering caution zone',         action: 'Skip Wednesday high-speed block. Tactical walkthrough only.' },
+    { player: 'Charlotte Reed', stat: 'GPS load fine but RPE 8/10 (vs squad avg 6/10)', action: 'Check-in with Welfare before Wednesday — perceived effort divergence is the welfare signal here, not the GPS number.' },
+  ],
+  session_target_assessment: 'Intended physical stimulus (anaerobic capacity + decision-making under fatigue) was partially achieved — high-press block hit it, possession block didn\'t. Consider shortening the possession block by 5 minutes next time, or moving it ahead of the high-press block while the squad is fresher.',
+}
+
+const AIPerformanceBriefView = () => {
+  const [mode, setMode] = useState<PerfMode>('halftime')
   const [loading, setLoading] = useState(false)
-  const matchContext = { opponent: 'Brighton Women', score: '0–1', minute: 45, venue: 'Home', formation: '4-3-3' }
+  // Per-mode brief cache so switching tabs preserves a generated brief.
+  const [briefs, setBriefs] = useState<{ halftime?: HalfTimeBrief; fulltime?: FullTimeBrief; training?: TrainingBrief }>({})
 
   const generateBrief = async () => {
     setLoading(true)
-    setBrief(null)
+    // Demo: canned response with ~800ms artificial latency for tactile feel.
+    // To enable live Claude API calls in a signed-client (non-demo) portal,
+    // remove the canned path below and uncomment the fetch block at the end
+    // of this function. The /api/ai/womens route already enforces per-IP
+    // rate limits + a daily spend cap via @/lib/ai/guards, so live calls
+    // are safe but cost money per click — keep canned for demo.
+    await new Promise(r => setTimeout(r, 800))
+    if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: CANNED_HALFTIME }))
+    else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: CANNED_FULLTIME }))
+    else setBriefs(b => ({ ...b, training: CANNED_TRAINING }))
+    setLoading(false)
+    return
+    /* LIVE API PATH — uncomment for non-demo deployments:
     try {
-      const prompt = `You are the AI performance analyst for Oakridge Women FC women's football club. Generate a structured halftime brief for the coaching staff.
-
-Match context:
-- Opponent: ${matchContext.opponent}
-- Score: ${matchContext.score} (we are trailing)
-- Venue: ${matchContext.venue}
-- Formation: ${matchContext.formation}
-
-GPS Data (first half):
-- High intensity runs: Us 38 vs Them 52
-- Avg speed: Us 6.8 km/h vs Them 7.2 km/h
-- Distance covered: Us 42.1km vs Them 45.3km
-- Sprint count: Us 14 vs Them 22
-
-Lumio Data xG:
-- xG: Us 0.31 vs Them 0.87
-- Shots: Us 2 vs Them 6
-- Progressive passes: Us 18 vs Them 31
-- PPDA (pressing intensity): Us 14.2 vs Them 8.1 (lower = more pressing)
-
-WELFARE FLAGS (confidential — coaching staff only):
-- Cycle flags: Emily Zhang (Luteal, load cap 60%), Priya Nair (Ovulatory, ligament laxity)
-- ACL event detection: Emily Zhang exceeded high-deceleration threshold 3 times
-- Mental health: Charlotte Reed flagged pre-match anxiety
-
-Available substitutes: Lucy Whitmore, Jade Osei, Abbi Walsh, Tilly Brooks, Mia Ford
-Yellow cards: Priya Nair
-
-Generate the brief in exactly this structure:
-
-## 🔴 SITUATION
-One paragraph summary of match state and urgency.
-
-## ⚡ PHYSICAL
-Bullet points on GPS findings and what they mean tactically. Flag Emily Zhang's ACL deceleration events clearly.
-
-## 🎯 TACTICAL
-3–4 specific adjustments based on xG and pressing data. Be direct and actionable.
-
-## ❤️ WELFARE (Confidential)
-List the cycle and mental health flags with specific recommended actions. Be clinical and respectful.
-
-## 🔄 SUBSTITUTION RECOMMENDATIONS
-Recommend 1–2 substitutions with reasoning, factoring in welfare flags and yellow cards.
-
-## 💬 TEAM TALK
-One short, direct motivational paragraph for the manager to adapt.
-
-Keep the tone professional, concise, and match-ready. This will be read in a 15-minute halftime window.`
-
+      const prompt = buildPromptForMode(mode)
       const response = await fetch('/api/ai/womens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
+          max_tokens: 1200,
           messages: [{ role: 'user', content: prompt }],
         }),
       })
       const data = await response.json()
       const text = data.content?.map((b: { type: string; text?: string }) => b.type === 'text' ? b.text : '').join('') || ''
-      setBrief(text)
-    } catch {
-      setBrief('Error generating brief. Check API connection.')
-    }
-    setLoading(false)
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}')
+      if (s !== -1 && e !== -1) {
+        const parsed = JSON.parse(text.slice(s, e + 1))
+        if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: parsed as HalfTimeBrief }))
+        else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: parsed as FullTimeBrief }))
+        else setBriefs(b => ({ ...b, training: parsed as TrainingBrief }))
+      }
+    } catch { /* surface error in UI here */ /*
+    } finally { setLoading(false) }
+    */
   }
 
-  const renderBrief = (text: string) => {
-    return text.split('\n').map((line, i) => {
-      if (line.startsWith('## ')) {
-        return <h3 key={i} className="text-sm font-bold text-white mt-5 mb-2 flex items-center gap-2">{line.replace('## ', '')}</h3>
-      }
-      if (line.startsWith('- ')) {
-        return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ', '')}</span></div>
-      }
-      if (line.trim() === '') return <div key={i} className="h-1" />
-      return <p key={i} className="text-xs text-gray-300 mb-2 leading-relaxed">{line}</p>
-    })
-  }
+  const modeTabs: { id: PerfMode; label: string; sub: string }[] = [
+    { id: 'halftime', label: 'Half-Time',  sub: 'First-half → 2nd-half adjustments' },
+    { id: 'fulltime', label: 'Full-Time', sub: 'Full match → recovery + next session' },
+    { id: 'training', label: 'Training',  sub: 'Session load → tomorrow management' },
+  ]
+
+  // Reusable welfare-flags renderer — first-class field in every mode.
+  const WelfareFlagsCard = ({ flags }: { flags: WelfareFlag[] }) => (
+    <div className="bg-[#0D1117] border border-pink-600/40 rounded-xl p-5 mb-4">
+      <h3 className="text-sm font-bold text-pink-300 mb-3 flex items-center gap-2">❤️ Welfare Flags — Confidential</h3>
+      <div className="space-y-2">
+        {flags.map((f, i) => (
+          <div key={i} className="rounded p-3 bg-pink-600/10 border border-pink-600/25">
+            <div className="text-xs font-bold text-white">{f.player}</div>
+            <div className="text-[11px] text-pink-300 mt-0.5">{f.flag}</div>
+            <div className="text-[11px] text-gray-300 mt-1"><span className="text-gray-500">→</span> {f.recommendation}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const HeadlineCard = ({ headline }: { headline: string }) => (
+    <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-4 mb-4">
+      <div className="text-[10px] text-pink-400 font-bold uppercase tracking-wider mb-1">Headline</div>
+      <p className="text-sm text-white leading-relaxed">{headline}</p>
+    </div>
+  )
+
+  const SubCard = ({ title, body }: { title: string; body: string }) => (
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4 mb-4">
+      <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{title}</div>
+      <p className="text-xs text-gray-200 leading-relaxed">{body}</p>
+    </div>
+  )
+
+  const renderHalfTime = (b: HalfTimeBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">⚡ Fatigue Alerts</h3>
+        <div className="space-y-2">
+          {b.fatigue_alerts.map((a, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{a.player}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium whitespace-nowrap">{a.flag}</span>
+              </div>
+              <div className="text-[11px] text-gray-400">{a.stat}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🎯 Tactical Insight" body={b.tactical_insight} />
+      <SubCard title="🔄 Substitution Recommendation" body={b.substitution_rec} />
+      <SubCard title="💬 Second-Half Instruction" body={b.second_half_instruction} />
+    </>
+  )
+
+  const renderFullTime = (b: FullTimeBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">🚨 Red-Zone Players</h3>
+        <div className="space-y-2">
+          {b.red_zone_players.map((p, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-red-600/20">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{p.player}</span>
+                <span className="text-[10px] text-red-400">{p.stat}</span>
+              </div>
+              <div className="text-[11px] text-gray-300">{p.concern}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🛁 Recovery Priorities" body={b.recovery_priorities} />
+      <SubCard title="📋 Next Session — Management Flags" body={b.next_session_flags} />
+      <SubCard title="🩺 Return-to-Play Watch" body={b.rtp_watch} />
+    </>
+  )
+
+  const renderTraining = (b: TrainingBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <SubCard title="📊 Load vs Plan" body={b.load_vs_plan} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">🛌 Manage Tomorrow</h3>
+        <div className="space-y-2">
+          {b.manage_tomorrow.map((m, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{m.player}</span>
+                <span className="text-[10px] text-amber-400">{m.stat}</span>
+              </div>
+              <div className="text-[11px] text-gray-300">{m.action}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🎯 Session Target Assessment" body={b.session_target_assessment} />
+    </>
+  )
+
+  // Mode-specific context tiles row (replaces the original single-mode tile row).
+  const contextTiles = mode === 'halftime' ? [
+    { label: 'Opponent', value: 'Hartwell Women', color: 'blue' as const },
+    { label: 'Score', value: '0 – 1', sub: 'Trailing', color: 'red' as const },
+    { label: 'xG', value: '0.31 – 0.87', sub: 'Us vs Them', color: 'amber' as const },
+    { label: 'ACL Events', value: '3', sub: 'Emily Zhang', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Cycle + MH', color: 'pink' as const },
+  ] : mode === 'fulltime' ? [
+    { label: 'Opponent', value: 'Hartwell Women', color: 'blue' as const },
+    { label: 'Final Score', value: '0 – 2', sub: 'Loss', color: 'red' as const },
+    { label: 'Squad Avg Load', value: '89.4 AU', sub: 'Across 14 players', color: 'amber' as const },
+    { label: 'Red Zone', value: '3', sub: 'Players flagged', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Inc. RTP watch', color: 'pink' as const },
+  ] : [
+    { label: 'Session', value: 'Tactical', sub: 'Tuesday PM', color: 'blue' as const },
+    { label: 'Date', value: '14 May 2026', color: 'amber' as const },
+    { label: 'Load vs Target', value: '87%', sub: '78 / 90 AU', color: 'amber' as const },
+    { label: 'Manage Tomorrow', value: '3', sub: 'Players flagged', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Cycle-aware', color: 'pink' as const },
+  ]
+
+  const currentBrief: HalfTimeBrief | FullTimeBrief | TrainingBrief | undefined =
+    mode === 'halftime' ? briefs.halftime : mode === 'fulltime' ? briefs.fulltime : briefs.training
 
   return (
     <div>
-      <SectionHeader title="AI Halftime Brief" subtitle="GPS + Lumio Data xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
+      <SectionHeader title="AI Performance Brief" subtitle="3 modes — Half-Time · Full-Time · Training. Welfare is first-class in every mode (cycle phase · ACL · postpartum RTP · mental health). Unique to Lumio Women's FC." icon="🤖" />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <StatCard label="Opponent" value="Brighton W" color="blue" />
-        <StatCard label="Score" value="0 – 1" sub="Trailing" color="red" />
-        <StatCard label="xG" value="0.31 – 0.87" sub="Us vs Them" color="amber" />
-        <StatCard label="ACL Events" value="3" sub="Emily Zhang" color="red" />
-        <StatCard label="Welfare Flags" value="3" sub="Cycle + MH" color="pink" />
+      {/* Mode tabs */}
+      <div className="flex gap-1 bg-[#0D1117] border border-gray-800 rounded-lg p-1 w-fit mb-6">
+        {modeTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setMode(t.id)}
+            className={`px-4 py-2 rounded-md text-xs font-medium transition-colors text-left ${mode === t.id ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+            style={{ minWidth: 180 }}
+          >
+            <div className="font-bold">{t.label}</div>
+            <div className="text-[10px] opacity-70 mt-0.5">{t.sub}</div>
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">GPS — First Half</h3>
-          {[
-            { label: 'High intensity runs', us: 38, them: 52 },
-            { label: 'Sprint count', us: 14, them: 22 },
-            { label: 'Distance (km)', us: 42.1, them: 45.3 },
-          ].map(r => (
-            <div key={r.label} className="mb-2">
-              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
-              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-pink-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Lumio Data xG</h3>
-          {[
-            { label: 'xG', us: 0.31, them: 0.87 },
-            { label: 'Shots', us: 2, them: 6 },
-            { label: 'Prog. passes', us: 18, them: 31 },
-          ].map(r => (
-            <div key={r.label} className="mb-2">
-              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
-              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-purple-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-[#0D1117] border border-red-600/30 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-red-400 mb-3 uppercase tracking-wider">🔴 Welfare Flags</h3>
-          <div className="space-y-2">
-            <div className="rounded p-2 bg-red-600/10 border border-red-600/20"><div className="text-[10px] font-bold text-red-400">ACL EVENT DETECTED</div><div className="text-[10px] text-gray-400 mt-0.5">Emily Zhang — 3× high-decel threshold exceeded</div></div>
-            <div className="rounded p-2 bg-amber-600/10 border border-amber-600/20"><div className="text-[10px] font-bold text-amber-400">CYCLE FLAG</div><div className="text-[10px] text-gray-400 mt-0.5">Luteal (Zhang) + Ovulatory (Nair)</div></div>
-            <div className="rounded p-2 bg-blue-600/10 border border-blue-600/20"><div className="text-[10px] font-bold text-blue-400">MENTAL HEALTH</div><div className="text-[10px] text-gray-400 mt-0.5">Charlotte Reed — pre-match anxiety</div></div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        {contextTiles.map(t => <StatCard key={t.label} {...t} />)}
       </div>
 
       <div className="mb-6">
@@ -3094,37 +3354,41 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
           className="px-6 py-3 rounded-xl text-sm font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-pink-900/40 disabled:text-pink-800 text-white transition-all flex items-center gap-2"
         >
           {loading ? (
-            <><span className="animate-spin">⟳</span> Generating Halftime Brief...</>
+            <><span className="animate-spin">⟳</span> Generating {modeTabs.find(t => t.id === mode)?.label} Brief…</>
           ) : (
-            <><span>🤖</span> Generate AI Halftime Brief</>
+            <><span>🤖</span> Generate {modeTabs.find(t => t.id === mode)?.label} Brief</>
           )}
         </button>
-        {!brief && !loading && (
-          <p className="text-xs text-gray-500 mt-2">Combines GPS + xG + ACL events + cycle welfare flags → structured coaching brief in seconds.</p>
+        {!currentBrief && !loading && (
+          <p className="text-xs text-gray-500 mt-2">
+            {mode === 'halftime' && 'First-half GPS + xG + ACL events + cycle welfare flags → structured 2nd-half brief.'}
+            {mode === 'fulltime' && 'Full-match load + welfare overlay → recovery priorities, next-session flags, RTP watch.'}
+            {mode === 'training' && 'Session load vs plan + cycle-aware welfare → tomorrow-management decisions.'}
+          </p>
         )}
       </div>
 
-      {brief && (
+      {currentBrief && (
         <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-pink-400 font-bold text-sm">🤖 Lumio AI Brief</span>
+              <span className="text-pink-400 font-bold text-sm">🤖 Lumio AI Brief — {modeTabs.find(t => t.id === mode)?.label}</span>
               <span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">CONFIDENTIAL — Coaching Staff Only</span>
             </div>
             <button onClick={generateBrief} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button>
           </div>
-          <div className="divide-y divide-gray-800/50">
-            {renderBrief(brief)}
-          </div>
+          {mode === 'halftime' && renderHalfTime(currentBrief as HalfTimeBrief)}
+          {mode === 'fulltime' && renderFullTime(currentBrief as FullTimeBrief)}
+          {mode === 'training' && renderTraining(currentBrief as TrainingBrief)}
           <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
-            <span className="text-[10px] text-gray-600">Generated by Claude · Lumio Women&apos;s FC · Halftime {matchContext.minute}&apos;</span>
+            <span className="text-[10px] text-gray-600">Demo response · Lumio Women&apos;s FC · {modeTabs.find(t => t.id === mode)?.label} mode</span>
             <button className="text-xs text-pink-400 hover:text-pink-300">Print for dressing room →</button>
           </div>
         </div>
       )}
 
       <div className="mt-6 bg-pink-600/10 border border-pink-600/30 rounded-xl p-4">
-        <p className="text-xs text-pink-300"><strong>Why this is world-leading:</strong> No other women&apos;s football platform combines GPS load data, Lumio Data xG, real-time ACL deceleration event detection, and menstrual cycle phase welfare flags into a single AI-generated coaching brief. This is unique to Lumio Women&apos;s FC.</p>
+        <p className="text-xs text-pink-300"><strong>Welfare-led by design.</strong> No other women&apos;s football platform combines GPS load, xG, ACL deceleration detection, menstrual cycle phase + postpartum RTP into a single AI-generated coaching brief across half-time, full-time, AND training modes. Welfare is a first-class field in every brief — never an afterthought.</p>
       </div>
     </div>
   )
@@ -3150,7 +3414,7 @@ const MatchPreparationView = () => {
       <SectionHeader title="Match Preparation" subtitle="Next fixture planning and readiness" icon="⚽" />
       <div className="bg-gradient-to-br from-pink-600/20 to-purple-900/10 border border-pink-600/20 rounded-xl p-5 mb-6">
         <div className="text-xs text-pink-400 font-semibold uppercase tracking-wider mb-2">Next Match</div>
-        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Manchester City Women</div>
+        <div className="text-2xl font-bold text-white mb-1">Oakridge Women vs Kingsmere City Women</div>
         <div className="flex items-center gap-4 text-sm text-gray-400">
           <span>Saturday 12 April 2026</span>
           <span>KO 14:00</span>
@@ -3195,7 +3459,7 @@ const MatchPreparationView = () => {
           </div>
         </div>
         <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Manchester City Women</h3>
+          <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Kingsmere City Women</h3>
           <div className="space-y-3">
             {[
               {label:'Formation',value:'4-3-3 (high line)'},
@@ -3320,11 +3584,11 @@ const WOMENS_HEATMAP_PLAYERS: HMPlayer[] = [
 ]
 
 const WOMENS_HEATMAP_MATCHES = [
-  'Manchester City Women (H) — WSL, 2-2 D',
-  'Tottenham Hotspur Women (A) — WSL, 1-0 W',
-  'Manchester United Women (H) — FA Cup R5, 0-1 L',
-  'Brighton Women (A) — WSL, 3-1 W',
-  'Chelsea Women (H) — WSL, 1-3 L',
+  'Kingsmere City Women (H) — WSL 2, 2-2 D',
+  'Ridgefield Athletic Women (A) — WSL 2, 1-0 W',
+  'Northgate United Women (H) — FA Cup R5, 0-1 L',
+  'Hartwell Women (A) — WSL 2, 3-1 W',
+  'Glenmoor Wanderers W (H) — WSL 2, 1-3 L',
 ]
 
 const WOMENS_HEATMAP_TRAINING = [
@@ -3387,7 +3651,7 @@ const GPSLoadView = ({ club }: { club: WomensClub }) => {
   const phaseBadge = club.tier === 'pro'
     ? { label: club.league || 'WSL', cls: 'bg-pink-600/20 text-pink-300 border-pink-600/30' }
     : club.tier === 'championship'
-    ? { label: 'Championship', cls: 'bg-amber-600/20 text-amber-300 border-amber-600/30' }
+    ? { label: 'WSL 2', cls: 'bg-amber-600/20 text-amber-300 border-amber-600/30' }
     : { label: 'Grassroots', cls: 'bg-green-600/20 text-green-300 border-green-600/30' }
 
   const active = GPS_PLAYERS.filter(p => p.status !== 'On Leave')
@@ -4186,7 +4450,7 @@ const GPSConnectTab = () => (
           </div>
           <h3 className="text-base font-bold text-white">JOHAN Sports — Women's Football GPS</h3>
           <p className="text-xs text-gray-300 mt-1 max-w-xl">
-            Lightweight chest-strap and vest GPS designed for women's football. 10 Hz GPS, IMU, heart rate, and live broadcast. Default integration for Women's FC across WSL, Championship and grassroots tiers.
+            Lightweight chest-strap and vest GPS designed for women's football. 10 Hz GPS, IMU, heart rate, and live broadcast. Default integration for Women's FC across WSL, WSL 2 and grassroots tiers.
           </p>
         </div>
         <button disabled className="px-4 py-2 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed self-start">+ Pair new device</button>
@@ -4492,38 +4756,6 @@ const StaffDirectoryView = () => (
 )
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-const SettingsViewFull = ({ club }: { club: WomensClub }) => (
-  <div>
-    <SectionHeader title="Settings" subtitle="Club profile, notifications, integrations" icon="⚙️" />
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Club Profile</h3>
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        {[{l:'Club',v:club.name},{l:'League',v:club.league},{l:'Stadium',v:club.stadium},{l:'Accent',v:club.accent},{l:'Founded',v:String(club.founded)},{l:'Director',v:club.director}].map((f: {l:string;v:string}, i: number) => (
-          <div key={i} className="py-2 border-b border-gray-800/50"><div className="text-gray-500 text-[10px] uppercase">{f.l}</div><div className="text-gray-200 mt-0.5">{f.v}</div></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Notifications</h3>
-      <div className="space-y-3">
-        {['FSR compliance alerts','Welfare flags','Sponsorship renewals','Dual reg expiries','Board meetings'].map((n: string, i: number) => (
-          <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{n}</span><div className="w-10 h-5 bg-pink-600/30 rounded-full relative"><div className="w-4 h-4 bg-pink-400 rounded-full absolute top-0.5 right-0.5" /></div></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Integrations</h3>
-      {['Lumio Health','FA Registration System'].map((ig: string, i: number) => (
-        <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{ig}</span><button className="px-3 py-1 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Connect</button></div>
-      ))}
-    </div>
-    <div className="flex gap-3">
-      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Roles & Permissions — Demo</button>
-      <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Export Data (GDPR)</button>
-    </div>
-  </div>
-)
-
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   <div>
     <SectionHeader title={title} icon={icon} />
@@ -4532,6 +4764,128 @@ const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
     </div>
   </div>
 )
+
+// ─── KIT MANAGER VIEW (Women's) ──────────────────────────────────────────────
+// Women's-specific kit operations: short-colour policy with period-proofing
+// flag, and per-location period product provision tracker. WSL/WSL 2 player
+// research has consistently identified fear of menstrual leakage on white
+// shorts as the single most common cycle-related performance barrier;
+// Stoke City Women and West Brom Women both switched home shorts away from
+// white in 2023 for this reason.
+const WomensKitManagerView = () => {
+  type Kit = { label: string; season: string; shirt: string; shorts: string; socks: string; switched?: string }
+  const kits: Kit[] = [
+    { label: 'Home',  season: '2025/26', shirt: '#EC4899', shorts: '#0F172A', socks: '#F9FAFB',
+      switched: 'Switched from white → navy (Aug 2025). Decision led by Welfare Coord and supported by player feedback; aligns with WSL/WSL 2 precedent (Stoke City Women, West Brom Women).' },
+    { label: 'Away',  season: '2025/26', shirt: '#F9FAFB', shorts: '#111827', socks: '#111827' },
+    { label: 'Third', season: '2025/26', shirt: '#0F172A', shorts: '#0F172A', socks: '#EC4899' },
+  ]
+  const isWhite = (c: string) => {
+    const u = c.toUpperCase()
+    return u === '#F9FAFB' || u === '#FFFFFF' || u === '#FFF'
+  }
+  const colourName = (c: string) => {
+    const map: Record<string, string> = { '#EC4899': 'Pink', '#0F172A': 'Navy', '#F9FAFB': 'White', '#111827': 'Black' }
+    return map[c.toUpperCase()] ?? c
+  }
+
+  type Stock = { location: string; products: string; lastRestock: string; responsible: string; status: 'Stocked' | 'Low' | 'Restock due' }
+  const stock: Stock[] = [
+    { location: 'Home changing room',       products: 'Tampons · Pads · Liners · Painkillers', lastRestock: '12 May 2026', responsible: 'Nina Walsh (Welfare Coord)', status: 'Stocked' },
+    { location: 'Away changing room',       products: 'Pads · Liners · Painkillers',            lastRestock: '09 May 2026', responsible: 'Nina Walsh (Welfare Coord)', status: 'Stocked' },
+    { location: 'Matchday kit bags',        products: 'Pads · Liners',                           lastRestock: '10 May 2026', responsible: 'Mel Hooper (Head Physio)',   status: 'Low' },
+    { location: 'Training-ground med room', products: 'Tampons · Pads · Painkillers',            lastRestock: '02 Apr 2026', responsible: 'Mel Hooper (Head Physio)',   status: 'Restock due' },
+  ]
+  const statusCls = (s: Stock['status']) =>
+    s === 'Stocked' ? 'bg-green-600/20 text-green-400 border border-green-600/30'
+      : s === 'Low' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30'
+                    : 'bg-red-600/20 text-red-400 border border-red-600/30'
+  const statusDot = (s: Stock['status']) =>
+    s === 'Stocked' ? 'bg-green-500' : s === 'Low' ? 'bg-amber-500' : 'bg-red-500'
+
+  return (
+    <div>
+      <SectionHeader title="Kit Manager" subtitle="Short-colour policy · period product provision · matchday kit bags" icon="🧦" />
+
+      <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 text-xs text-pink-200 leading-relaxed">
+        <strong className="text-pink-300">Why this matters.</strong> WSL/WSL 2 player research has consistently identified fear of menstrual leakage on white shorts as the most common cycle-related performance barrier. Stoke City Women and West Brom Women switched home shorts away from white in 2023 specifically to address this; further WSL clubs have since followed. Treated here as a welfare decision, not a marketing one.
+      </div>
+
+      <h3 className="text-sm font-bold text-white mb-3">Short Colour Policy</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {kits.map(k => {
+          const white = isWhite(k.shorts)
+          return (
+            <div key={k.label} className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-sm font-bold text-white">{k.label} Kit</div>
+                  <div className="text-[10px] text-gray-500">{k.season}</div>
+                </div>
+                <span className={white
+                  ? 'text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 border border-amber-600/30 font-medium'
+                  : 'text-[10px] px-2 py-0.5 rounded bg-green-600/20 text-green-400 border border-green-600/30 font-medium'}>
+                  {white ? '⚠ White shorts' : 'Period-proofed ✓'}
+                </span>
+              </div>
+              <div className="space-y-2 mb-3">
+                {([['Shirt', k.shirt], ['Shorts', k.shorts], ['Socks', k.socks]] as const).map(([l, c]) => (
+                  <div key={l} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded border border-gray-700 flex-shrink-0" style={{ background: c }} />
+                    <span className="text-xs text-gray-400 w-14">{l}</span>
+                    <span className="text-xs text-gray-200">{colourName(c)}</span>
+                  </div>
+                ))}
+              </div>
+              {k.switched && (
+                <div className="text-[10px] text-pink-300 leading-relaxed pt-3 border-t border-gray-800">
+                  {k.switched}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-white">Period Product Provision</h3>
+        <div className="text-[10px] text-gray-500">Last reviewed by Welfare Coord · 14 May 2026</div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Location</th>
+            <th className="text-left p-3">Products stocked</th>
+            <th className="text-left p-3">Last restock</th>
+            <th className="text-left p-3">Responsible</th>
+            <th className="text-left p-3">Status</th>
+          </tr></thead>
+          <tbody>
+            {stock.map(r => (
+              <tr key={r.location} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{r.location}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.products}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.lastRestock}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.responsible}</td>
+                <td className="p-3">
+                  <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded ${statusCls(r.status)}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot(r.status)}`} />
+                    {r.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex gap-3">
+        <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30 cursor-not-allowed">Log restock — Demo</button>
+        <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Update colour policy — Demo</button>
+      </div>
+    </div>
+  )
+}
 
 // ─── WOMENS ROLE CONFIG ──────────────────────────────────────────────────────
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
@@ -4610,7 +4964,7 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
       )}
       {tab === 'content' && (
         <div className="space-y-3">
-          {['Matchday graphic — vs Brighton (scheduled Fri)', 'Player interview — Emma Clarke (filmed, pending edit)', 'Kit reveal teaser — Summer 2026 (concept stage)', 'Training ground BTS — Monthly series (next: 15 Apr)'].map((c, i) => (
+          {['Matchday graphic — vs Hartwell Women (scheduled Fri)', 'Player interview — Emma Clarke (filmed, pending edit)', 'Kit reveal teaser — Summer 2026 (concept stage)', 'Training ground BTS — Monthly series (next: 15 Apr)'].map((c, i) => (
             <div key={i} className="p-3 bg-[#0D1117] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>
           ))}
         </div>
@@ -4618,7 +4972,7 @@ const WomensSponsorDashboard = ({ club, session }: { club: WomensClub; session: 
       {tab === 'events' && (
         <div className="space-y-3">
           {[
-            { e: 'Matchday Hospitality — vs Brighton', d: 'Sat 12 Apr', s: '12 of 20 seats' },
+            { e: 'Matchday Hospitality — vs Hartwell Women', d: 'Sat 12 Apr', s: '12 of 20 seats' },
             { e: 'End of Season Awards', d: 'Sun 25 May', s: 'Table confirmed' },
             { e: 'Pre-Season Launch Event', d: 'Jul 2026', s: 'Planning' },
           ].map((ev, i) => (
@@ -4843,7 +5197,7 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ backgroundColor: '#0d1117', border: '1px solid #1F2937' }}>
             <h3 className="text-lg font-bold text-white">Activate Pre-Season</h3>
             <div><label className="text-xs text-gray-500 mb-1 block">Season opener date</label><input type="date" value={form.opener} onChange={e=>setForm(f=>({...f,opener:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
-            <div><label className="text-xs text-gray-500 mb-1 block">Opposition (opening fixture)</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Manchester City" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
+            <div><label className="text-xs text-gray-500 mb-1 block">Opposition (opening fixture)</label><input value={form.opposition} onChange={e=>setForm(f=>({...f,opposition:e.target.value}))} placeholder="e.g. Hartwell Women" className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
             {form.opener && <div className="text-xs" style={{ color: '#6B7280' }}>Camp length: {Math.max(0,Math.ceil((new Date(form.opener).getTime()-Date.now())/86400000))} days</div>}
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs text-gray-500 mb-1 block">Squad size</label><input type="number" value={form.squad} onChange={e=>setForm(f=>({...f,squad:e.target.value}))} className="w-full px-3 py-2.5 rounded-xl text-sm text-white" style={{ backgroundColor:'#111318', border:'1px solid #374151' }} /></div>
@@ -5187,9 +5541,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const isSponsor = false
 
   // Dashboard tabs
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { return localStorage.getItem('womens_getting_started_seen') ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'today'|'quickwins'|'dailytasks'|'dontmiss'|'team'>('today')
 
   // ── v2 dashboard state (hero + overlays) ───────────────────────────
   const v2T       = THEMES.dark
@@ -5204,8 +5556,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   useV2Key('cmdk', () => setV2CmdOpen(o => !o))
   // Map dashTab IDs to v2 Lucide icons for the restyled tab bar.
   const v2TabIcon = (id: typeof dashTab): string => ({
-    gettingstarted: 'sparkles', today: 'home', quickwins: 'lightning',
-    dailytasks: 'check', insights: 'bars', dontmiss: 'flag', team: 'people',
+    today: 'home', quickwins: 'lightning',
+    dailytasks: 'check', dontmiss: 'flag', team: 'people',
   } as const)[id]
 
   // Morning banner quotes
@@ -5266,15 +5618,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     return () => clearInterval(iv)
   }, [])
 
-  // Getting started
-  const [onboarding, setOnboarding] = useState<boolean[]>(() => {
-    try { const s = localStorage.getItem('lumio_womens_onboarding'); return s ? JSON.parse(s) : Array(10).fill(false) } catch { return Array(10).fill(false) }
-  })
-  const toggleOnboarding = (idx: number) => {
-    const next = [...onboarding]; next[idx] = !next[idx]; setOnboarding(next)
-    try { localStorage.setItem('lumio_womens_onboarding', JSON.stringify(next)); if (next.every(Boolean)) localStorage.setItem('womens_getting_started_seen', '1') } catch {}
-  }
-
   // AI morning summary
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -5286,21 +5629,144 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       fetch('/api/ai/womens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Generate a brief morning summary for ${club.name} director. Include: FSR status (68% salary ratio, safe), 2 welfare flags, next match Sat 12 Apr vs Brighton, and one actionable insight. Keep it under 100 words.` })
+        body: JSON.stringify({ prompt: `Generate a brief morning summary for ${club.name} director. Include: FSR status (68% salary ratio, safe), 2 welfare flags, next match Sat 12 Apr vs Hartwell Women, and one actionable insight. Keep it under 100 words.` })
       }).then(r => r.json()).then(d => { setAiSummary(d.response || d.text || 'AI summary unavailable.'); setAiLoading(false) })
         .catch(() => { setAiSummary('AI summary could not be loaded.'); setAiLoading(false) })
     }
   }, [dashTab])
 
-  // Team tab sub-tabs
-  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
   const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
-  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces'])
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces', 'licensing'])
   const filteredItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
+
+  // ── Settings — shared SportsSettings + Women's-specific augmentations ──
+  // SportsSettings is the shared chrome used by Tennis / Cricket / Darts /
+  // Golf / Boxing. Do NOT modify it; pass all Women's-specific content via
+  // configFields / integrationGroups / extraSections.
+  const womensStaffRoles = ['CEO / Chairman','Director of Football','Head Coach','Head of Performance','Club Doctor','Welfare Lead','Head of Operations','Commercial Director','Head of Community','Sponsor']
+  const SettingsView = () => (
+    <SportsSettings
+      sport="womens"
+      slug={club.slug}
+      sportLabel="Women's Football Club"
+      entity="club"
+      accentColour="#EC4899"
+      accentLight="#F472B6"
+      session={{
+        userName: session?.userName,
+        photoDataUrl: session?.photoDataUrl,
+        email: session?.email,
+        nickname: session?.nickname,
+        clubName: session?.clubName || club.name,
+        logoDataUrl: session?.logoDataUrl,
+        isDemoShell: session?.isDemoShell,
+      }}
+      storagePrefix="lumio_womens_"
+      profile={{
+        name: 'Director Name',
+        tour: 'Competition',
+        tourValue: club.league === 'WSL' ? 'WSL' : club.league === 'WSL2' ? 'WSL 2' : club.league,
+        ranking: 'League Position',
+        rankingValue: '3rd · WSL 2',
+        coach: 'Head Coach',
+        coachValue: club.manager,
+        agent: 'Director of Football',
+        agentValue: club.director,
+        homeVenue: 'Home Stadium',
+        homeVenueValue: club.stadium,
+        playerIdLabel: 'FA Club ID (demo)',
+        staffInviteRoles: womensStaffRoles,
+      }}
+      configFields={[
+        { id: 'faClubId',    label: 'FA Club ID (demo)',            description: 'Issued by the FA for affiliated women\'s clubs', kind: 'text',   placeholder: 'e.g. FA-OAKR-2025', defaultValue: 'FA-OAKR-2025' },
+        { id: 'wgsRef',      label: 'Whole Game System reference (demo)', description: 'FA Whole Game System club reference', kind: 'text', placeholder: 'e.g. WGS-OAKR-718', defaultValue: 'WGS-OAKR-718' },
+        { id: 'tier',        label: 'Tier',                         description: 'Drives sidebar gating — read-only', kind: 'select', options: ['WSL','WSL 2','Grassroots'], defaultValue: club.tier === 'pro' ? 'WSL' : club.tier === 'championship' ? 'WSL 2' : 'Grassroots' },
+        { id: 'competition', label: 'Primary competition',          description: 'Senior league competition', kind: 'select', options: ['WSL','WSL 2','National League','Women\'s FA Cup focus'], defaultValue: club.tier === 'pro' ? 'WSL' : club.tier === 'championship' ? 'WSL 2' : 'National League' },
+        { id: 'homeStadium', label: 'Home stadium',                 description: 'Primary match-day venue', kind: 'text',   placeholder: 'e.g. Oakridge Stadium', defaultValue: club.stadium },
+        { id: 'founded',     label: 'Founded',                      description: 'Year of formation', kind: 'number', defaultValue: String(club.founded) },
+        { id: 'kitSupplier', label: 'Kit supplier',                 description: 'Current kit-supply partner', kind: 'text', placeholder: 'e.g. Apex Performance', defaultValue: 'Apex Performance' },
+        { id: 'gpsProvider', label: 'GPS hardware provider',        description: 'Player tracking / load monitoring', kind: 'select', options: ['None','Lumio Health (recommended)','Lumio Health Pro (with live data)','CSV Upload (manual)'], defaultValue: 'Lumio Health (recommended)' },
+        { id: 'accentColor', label: 'Accent colour',                description: 'Drives in-portal accent', kind: 'color', defaultValue: club.accent },
+      ]}
+      integrationGroups={[
+        {
+          title: "WOMEN'S DATA",
+          items: [
+            { name: 'Lumio Cycle',           desc: 'Opt-in menstrual cycle tracking + load auto-adjustments', connected: true },
+            { name: 'Lumio Wear',            desc: 'Recovery / sleep monitoring' },
+            { name: 'FA Registration System', desc: 'Squad registrations + dual-reg agreements',              connected: true },
+          ],
+        },
+        {
+          title: 'PERFORMANCE',
+          items: [
+            { name: 'Lumio Health',  desc: 'GPS + load monitoring (matchday + training)', connected: true },
+            { name: 'Lumio Vision',  desc: 'Video tagging + AI clip review' },
+            { name: 'JOHAN Sports',  desc: 'GPS vest hardware · load and high-speed-run data' },
+            { name: 'CSV Upload',    desc: 'Generic GPS export · drop a file from any vendor' },
+          ],
+        },
+        {
+          title: 'COMMUNICATION',
+          items: [
+            { name: 'Slack',             desc: 'Squad + staff messaging' },
+            { name: 'Microsoft Teams',   desc: 'Board reviews + video conferencing' },
+            { name: 'Google Workspace',  desc: 'Calendar, Drive & email' },
+            { name: 'WhatsApp Business', desc: 'Match-day broadcast channel for squad + staff' },
+          ],
+        },
+      ]}
+      voiceOptions={[
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah',     desc: 'Warm, confident British female — ideal for morning briefings' },
+        { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — steady matchday narration' },
+        { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George',    desc: 'Professional British male — composed and match-report ready' },
+      ]}
+      notificationPreferences={[
+        'FSR compliance alerts',
+        'Welfare flags',
+        'ACL composite risk red flags',
+        'Cycle-phase load adjustments (auto-applied)',
+        'Pregnancy & RTP milestone reminders',
+        'Sponsorship renewals',
+        'Dual reg expiries',
+        'Board meeting reminders',
+        'AI morning briefing email',
+      ]}
+      teamInvite={{
+        enabled: true,
+        staffCount: 10,
+        pendingInvites: 0,
+        roleOptions: womensStaffRoles,
+      }}
+      navItems={SIDEBAR_ITEMS.map(item => ({ key: item.id, label: item.label, emoji: item.icon }))}
+      featureItems={[
+        { key: 'morning-briefing', label: 'Morning Briefing',           emoji: '🌅', description: 'AI summary at top of dashboard' },
+        { key: 'quick-actions',    label: 'Quick Actions bar',          emoji: '⚡', description: 'Action buttons below tab bar (Today only)' },
+        { key: 'ai-section',       label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+        { key: 'world-clock',      label: 'World Clock',                emoji: '🕐', description: 'Multi-timezone clock in banner' },
+        { key: 'weather',          label: 'Weather widget',             emoji: '🌤️', description: 'Matchday weather + forecast' },
+        { key: 'stat-tiles',       label: 'KPI stat tiles',             emoji: '📊', description: 'Squad / FSR / form tiles on Today' },
+      ]}
+      showWorldClock
+      showAppearance
+      showDeveloperTools
+      devApiRouteOptions={['/api/ai/womens']}
+      extraSections={
+        <WomensSettingsAdditions
+          onNavigate={(sectionId) => setActiveSection(sectionId)}
+          roleConfig={WOMENS_ROLE_CONFIG}
+          cycleOptInRate="14 of 22"
+          fsrStatus={{ label: 'SAFE', rag: 'green', sub: `${club.salarySpend ?? 78}% spend · £${club.fsrHeadroom ? (club.fsrHeadroom / 1000).toFixed(0) : '380'}k headroom` }}
+          gameStandardsStatus={{ label: 'On track', rag: 'amber', sub: '4 of 5 sub-recommendations compliant' }}
+          clubLicensingStatus={{ label: 'PROVISIONAL', rag: 'amber', sub: '4 of 6 categories green · 2 amber' }}
+        />
+      }
+    />
+  )
 
   const renderView = () => {
     switch (activeSection) {
@@ -5313,7 +5779,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
       case 'cycle':       return <CycleTrackingView />
-      case 'maternity':   return <MaternityTrackerView />
+      case 'maternity':   return <WomensPregnancyRtpView />
       case 'mental':      return <MentalHealthView />
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
@@ -5333,7 +5799,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'analytics':   return <AnalyticsView club={club} />
       case 'scouting':    return <ScoutingView club={club} />
       case 'academy':     return <AcademyView club={club} />
-      case 'halftime':    return <AIHalftimeBriefView />
+      case 'performance-brief': return <AIPerformanceBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />
@@ -5348,11 +5814,12 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'medical':     return <MedicalRecordsView />
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
+      case 'licensing':   return <ClubLicensingView />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
+      case 'kit-manager':  return <WomensKitManagerView />
       case 'matchday-ops':
       case 'travel-logistics':
-      case 'kit-manager':
       case 'pitch-grounds':
       case 'training-ground':
         return (
@@ -5360,36 +5827,20 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
           </div>
         )
-      case 'settings':    return <SettingsViewFull club={club} />
+      case 'settings':    return <SettingsView />
       default:            return null
     }
   }
 
   // ── Tab definitions ──
   const allTabs = [
-    { id: 'gettingstarted' as const, label: 'Getting Started', icon: '🚀' },
     { id: 'today' as const, label: 'Today', icon: '🏠' },
     { id: 'quickwins' as const, label: 'Quick Wins', icon: '⚡' },
     { id: 'dailytasks' as const, label: 'Daily Tasks', icon: '✅' },
-    { id: 'insights' as const, label: 'Insights', icon: '📊' },
     { id: 'dontmiss' as const, label: "Don't Miss", icon: '🔴' },
-    { id: 'team' as const, label: 'Team', icon: '👥' },
+    { id: 'team' as const, label: 'Staff', icon: '👥' },
   ]
   const visibleTabs = allTabs.filter(t => !roleConfig.hiddenTabs.includes(t.id))
-
-  // ── Getting Started items ──
-  const onboardingItems = [
-    'Connect WSL/Championship profile',
-    'Set up FSR compliance dashboard',
-    'Add squad (24 players)',
-    'Configure welfare monitoring',
-    'Upload sponsor agreements',
-    'Set dual registration agreements',
-    'Add coaching and medical team',
-    'Configure Karen Carney Review compliance',
-    'Set fixture schedule',
-    'Ready — let\'s make history ⚽',
-  ]
 
   // ── Quick Wins items ──
   const quickWinsItems = [
@@ -5403,7 +5854,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   // ── Daily Tasks items ──
   const dailyTaskItems = [
     { t: 'Morning welfare check-in — 2 flags active', p: 'Urgent', cat: 'Welfare', c: '#EF4444' },
-    { t: 'Confirm squad list for Brighton (Sat 12 Apr)', p: 'High', cat: 'Football', c: '#BE185D' },
+    { t: 'Confirm squad list for Hartwell Women (Sat 12 Apr)', p: 'High', cat: 'Football', c: '#BE185D' },
     { t: 'Review GPS load data — training session analysis', p: 'Medium', cat: 'Performance', c: '#F59E0B' },
     { t: 'Approve social media matchday content', p: 'Medium', cat: 'Commercial', c: '#F59E0B' },
     { t: 'Board meeting prep — financial summary pack', p: 'Low', cat: 'Operations', c: '#22C55E' },
@@ -5486,50 +5937,27 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 
       {/* Main content */}
       <main className="flex-1 flex flex-col" style={{ minHeight: '100vh' }}>
-        {/* Demo workspace banner */}
-        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff' }}>
+        {/* Demo workspace banner — paddingRight reserves space for the
+            fixed top-right avatar + notification controls below. */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#BE185D', color: '#ffffff', paddingRight: 110 }}>
           <span>This is a demo · sample data</span>
           <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
         </div>
 
-        {/* FSR button bar */}
-        <div className="border-b border-gray-800 px-6 py-3 flex items-center justify-between" style={{ background: '#0A0B12' }}>
-          <div className="flex items-center gap-3">
-            {session.logoDataUrl
-              ? <img src={session.logoDataUrl} alt="" className="w-5 h-5 rounded object-cover" />
-              : <span className="text-lg">⚽</span>}
-            <div>
-              {/* Team name removed — already shown in sidebar header.
-                  Keep the substantive Sprint 3.5 compliance indicator. */}
-              <p className="text-[10px] text-gray-500">
-                {club.tier === 'grassroots' ? `${club.league} Women's Football` : `${club.league} · FSR Compliant · Karen Carney Review Standards`}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {session.photoDataUrl && (
-              <img src={session.photoDataUrl} alt="" className="w-6 h-6 rounded-full object-cover border border-pink-600/40" />
-            )}
-            {club.tier !== 'grassroots' && (
-              <span className={`text-xs px-2 py-1 rounded ${
-                club.salarySpend !== null && club.salarySpend > 80 ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
-                club.salarySpend !== null && club.salarySpend > 70 ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
-                'bg-green-600/20 text-green-400 border border-green-600/30'
-              }`}>
-                FSR: {club.salarySpend !== null && club.salarySpend > 80 ? 'AT RISK' : club.salarySpend !== null && club.salarySpend > 70 ? 'REVIEW' : 'SAFE'}
-              </span>
-            )}
-            <span className={`text-xs px-2 py-1 rounded ${
-              club.tier === 'pro' ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' :
-              club.tier === 'championship' ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
-              'bg-green-600/20 text-green-400 border border-green-600/30'
-            }`}>{club.league}</span>
-          </div>
+        {/* Top-right header controls — bell + avatar.
+            Demo-safe avatar (no /api/workspace/* calls). Mirrors Pro
+            portal placement (fixed, top:8, right:16, hidden on mobile). */}
+        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 6, right: 16, zIndex: 60 }}>
+          <WomensNotifications />
+          <WomensAvatarDropdown
+            initials={(session.clubName || 'OW').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            onSettings={() => setActiveSection('settings')}
+          />
         </div>
 
-        {/* Role indicator strip removed — role context is shown via the
-            role selector dropdown in sidebar bottom (canonical pattern
-            across all portals). Removed here for portal consistency. */}
+        {/* FSR / status strip removed — header chrome now ends at the
+            demo workspace banner above. Avatar dropdown + notification
+            bell will be added to the top-right corner in a follow-up. */}
 
         {/* Sponsor dashboard override */}
         {isSponsor && activeSection === 'dashboard' ? (
@@ -5552,8 +5980,23 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 hero. Without this, sibling card row counts can drag the hero
                 card to match a taller sibling, leaving empty space below the
                 buttons. */}
-            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
+            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12, position: 'relative', overflow: 'hidden' }}>
+              {/* Ghost crest watermark — Pro-pattern port. Lives in the
+                  wrapper (not the inner HeroToday Card) because the
+                  wrapper is ~28px taller than the Card and is the only
+                  container that fits Pro's 180px crest centred without
+                  clipping. The HeroToday Card's background is overridden
+                  to transparent in WomensDashboardModules so this ghost
+                  shows through. saturate(0.2) brightness(3) washes the
+                  dark SVG to near-white. rotate(-8deg) is a stated-intent
+                  addition — Pro's literal transform is just translateY
+                  (-50%), no rotate. */}
+              <img
+                src="/badges/oakridge_fc_crest.svg"
+                alt=""
+                style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start', position: 'relative', zIndex: 1 }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
                   onTodaysBriefing={() => { setActiveSection('briefing'); showV2DashToast("Today's briefing") }}
@@ -5589,44 +6032,23 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               })}
             </div>
 
-            {/* Quick Actions — role-aware (shared bar) */}
-            {/* QUICK ACTIONS row centered horizontally for breathing space
-                between left-aligned Tabs row above and KPI cards below. */}
-            <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
-              <RoleAwareQuickActionsBar
-                sport="womens"
-                role={currentRole as string}
-                onNavigate={(deptId) => setActiveSection(deptId)}
-                accentHex={v2Accent.hex}
-              />
-            </div>
+            {/* Quick Actions — role-aware (shared bar), Today tab only.
+                Restricted to Today: Quick Wins and Daily Tasks tabs are
+                lists of their own action items, so the Quick Actions row
+                duplicated context. */}
+            {dashTab === 'today' && (
+              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
+                <RoleAwareQuickActionsBar
+                  sport="womens"
+                  role={currentRole as string}
+                  onNavigate={(deptId) => setActiveSection(deptId)}
+                  accentHex={v2Accent.hex}
+                />
+              </div>
+            )}
 
             {/* Tab content */}
             <div className="p-6 flex-1 w-full">
-              {/* Getting Started tab */}
-              {dashTab === 'gettingstarted' && (
-                <div className="space-y-4">
-                  <SectionHeader title="Getting Started" subtitle="Complete these 10 steps to set up your club" icon="🚀" />
-                  <div className="space-y-2">
-                    {onboardingItems.map((item, idx) => (
-                      <button key={idx} onClick={() => toggleOnboarding(idx)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
-                        style={{ backgroundColor: onboarding[idx] ? '#111318' : '#0D1117', border: onboarding[idx] ? '1px solid #22C55E30' : '1px solid #1F2937' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: onboarding[idx] ? '#22C55E20' : '#1F2937', border: onboarding[idx] ? '1px solid #22C55E50' : '1px solid #374151' }}>
-                          {onboarding[idx] ? <span className="text-green-400 text-xs">✓</span> : <span className="text-gray-500 text-xs">{idx + 1}</span>}
-                        </div>
-                        <span className={`text-xs ${onboarding[idx] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{item}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-4 p-3 rounded-xl text-xs" style={{ backgroundColor: '#BE185D15', border: '1px solid #BE185D30' }}>
-                    <span style={{ color: '#BE185D' }} className="font-semibold">{onboarding.filter(Boolean).length}/10 complete</span>
-                    <span className="text-gray-500 ml-2">— {onboarding.every(Boolean) ? 'All done! Switch to Today tab.' : 'Keep going, you\'re doing great!'}</span>
-                  </div>
-                </div>
-              )}
-
               {/* Today tab — v2 modular grid */}
               {dashTab === 'today' && (
                 <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
@@ -5717,11 +6139,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 </div>
               )}
 
-              {/* Insights tab */}
-              {dashTab === 'insights' && (
-                <InsightsView club={club} defaultRole={activeRole} />
-              )}
-
               {/* Don't Miss tab */}
               {dashTab === 'dontmiss' && (
                 <div className="space-y-4">
@@ -5738,89 +6155,11 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 </div>
               )}
 
-              {/* Team tab */}
+              {/* Staff tab (id 'team' preserved for state continuity) */}
               {dashTab === 'team' && (
                 <div className="space-y-4">
-                  <SectionHeader title="Team" subtitle="Staff, structure, and club information" icon="👥" />
-                  <div className="flex gap-1 border-b border-gray-800 mb-4">
-                    {[
-                      { id: 'today' as const, label: 'Today' },
-                      { id: 'org' as const, label: 'Org Chart' },
-                      { id: 'info' as const, label: 'Team Info' },
-                      { id: 'club' as const, label: 'Club Info' },
-                    ].map(t => (
-                      <button key={t.id} onClick={() => setTeamSubTab(t.id)}
-                        className="px-4 py-2 text-xs font-semibold transition-all"
-                        style={{ color: teamSubTab === t.id ? '#BE185D' : '#6B7280', borderBottom: teamSubTab === t.id ? '2px solid #BE185D' : '2px solid transparent' }}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  {teamSubTab === 'today' && (
-                    <div className="space-y-2">
-                      {[
-                        { name: club.manager, role: 'Head Coach', status: 'In office', icon: '🎽' },
-                        { name: 'Dr Sarah Patel', role: 'Club Doctor', status: 'Matchday prep', icon: '🏥' },
-                        { name: 'James Kerr', role: 'Performance Analyst', status: 'GPS review', icon: '📡' },
-                        { name: 'Lisa Okonkwo', role: 'Welfare Officer', status: '2 check-ins today', icon: '❤️' },
-                      ].map((s, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-[#0D1117] border border-gray-800 rounded-xl">
-                          <span className="text-lg">{s.icon}</span>
-                          <div className="flex-1"><div className="text-xs font-semibold text-white">{s.name}</div><div className="text-[10px] text-gray-500">{s.role}</div></div>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-green-600/20 text-green-400">{s.status}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {teamSubTab === 'org' && (
-                    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-                      <h3 className="text-sm font-bold text-white mb-4">Organisation Chart</h3>
-                      <div className="space-y-3 text-xs">
-                        <div className="text-center p-2 rounded-lg" style={{ backgroundColor: '#BE185D20', border: '1px solid #BE185D40' }}>
-                          <div className="font-bold text-white">{club.director}</div><div className="text-gray-400">Director</div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[{ n: club.manager, r: 'Head Coach' }, { n: 'Commercial Dir.', r: 'Commercial' }, { n: 'Lisa Okonkwo', r: 'Welfare' }].map((p, i) => (
-                            <div key={i} className="text-center p-2 rounded-lg bg-gray-800/50 border border-gray-700">
-                              <div className="font-semibold text-white">{p.n}</div><div className="text-gray-500">{p.r}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {teamSubTab === 'info' && (
-                    <div className="space-y-2">
-                      {[
-                        { l: 'Squad size', v: '24 registered' },
-                        { l: 'Coaching staff', v: '6 (Head Coach + 5)' },
-                        { l: 'Medical team', v: '3 (Doctor, Physio, S&C)' },
-                        { l: 'Welfare', v: '1 Welfare Officer' },
-                        { l: 'Analytics', v: '2 (Performance + Scout)' },
-                      ].map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
-                          <span className="text-xs text-gray-400">{r.l}</span>
-                          <span className="text-xs text-gray-200">{r.v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {teamSubTab === 'club' && (
-                    <div className="space-y-2">
-                      {[
-                        { l: 'Club', v: club.name },
-                        { l: 'League', v: club.league },
-                        { l: 'Stadium', v: `${club.stadium} (${club.capacity.toLocaleString()})` },
-                        { l: 'Founded', v: String(club.founded) },
-                        { l: 'Kit Sponsor', v: club.kitSponsor || 'None' },
-                      ].map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
-                          <span className="text-xs text-gray-400">{r.l}</span>
-                          <span className="text-xs text-gray-200">{r.v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <SectionHeader title="Staff" subtitle="Staff, structure, and club information" icon="👥" />
+                  <WomensStaffTabs club={club} />
                 </div>
               )}
             </div>
@@ -5844,8 +6183,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
 const WOMENS_INBOX_BODIES: Record<string, string> = {
   'SMS · Coaches':     'Frost: confirm Sunday XI please. Carter cleared, Davies out 2-3 weeks. Need team sheet by 12:30 for league submission.',
   'WhatsApp · Squad':  'Captain: morale really high after Tuesday session. Pitch walk done — surface firm, no concerns. Good vibe in group chat.',
-  'Email · Selectors': 'WSL Championship — Hartwell fixture amended to 14:00 KO due to broadcast schedule. League office confirmed 10:42 today.',
-  'Agent messages':    'Williams contract extension — agent wants 2-year deal at WSL Championship benchmark wage. Deadline end of month. Comparable offer on the table.',
+  'Email · Selectors': 'WSL 2 — Hartwell fixture amended to 14:00 KO due to broadcast schedule. League office confirmed 10:42 today.',
+  'Agent messages':    'Williams contract extension — agent wants 2-year deal at WSL 2 benchmark wage. Deadline end of month. Comparable offer on the table.',
   'Board messages':    'Kate: quarterly review Thursday 14:00. Agenda — FSR position, sponsorship pipeline (Apex), commercial Q3 vs plan, welfare audit findings.',
   'Medical Hub':       'Dr Patel: Davies MRI back — Grade 1 MCL. 2-3 weeks recovery, available cup match if managed. Okafor concussion protocol Day 3 going well.',
   'Media & Press':     "Northbridge Sport requesting feature on women's game growth — manager + 2 senior players. Friday 14:00. Talking points coming through.",
@@ -5949,7 +6288,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
           <div>
             <div style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'monospace', marginBottom: 4 }}>Match Brief</div>
             <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: T.text }}>Oakridge Women FC <span style={{ color: T.text3, fontWeight: 400 }}>vs</span> Hartwell Women</h2>
-            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>WSL Championship · MD-19</div>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 4 }}>WSL 2 · MD-19</div>
             <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>Sun 03 May 2026 · Oakridge Stadium · Kick-off 14:00</div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 11 }}>Close</button>
@@ -5963,7 +6302,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
         </Section>
 
         <Section title="02 · Opposition Analysis · Hartwell Women">
-          <div><strong style={{ color: T.text }}>Position:</strong> 9th in WSL Championship. <strong style={{ color: T.text }}>Last 5:</strong> L D W L D — slipping form.</div>
+          <div><strong style={{ color: T.text }}>Position:</strong> 9th in WSL 2. <strong style={{ color: T.text }}>Last 5:</strong> L D W L D — slipping form.</div>
           <div style={{ marginTop: 8, color: T.text }}>Key threats:</div>
           <ul style={{ marginTop: 4, paddingLeft: 22 }}>
             <li>Striker <strong>K. Bell</strong> — 11 league goals, deadly in the air, weak left foot.</li>

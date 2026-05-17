@@ -6,7 +6,7 @@ import {
 
 // Women's Training — session planning, weekly schedule, GPS load monitoring.
 // Pink-themed. Demo data inline, Women's-specific (Oakridge Women FC,
-// Hartwell Women opponent, WSL Championship cadence).
+// Hartwell Women opponent, WSL 2 cadence).
 
 const C = {
   bg: '#0F172A',

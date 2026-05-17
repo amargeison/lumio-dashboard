@@ -353,7 +353,8 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | | Video & Analysis | `video_analysis` | Same 7-sub-tab structure as Pro/Club |
 | | GPS & Performance | `performance_gps` | **Relabelled from "GPS & Load", moved from GPS & LOAD group.** Id `gps-load` preserved |
 | | Heatmaps | `performance_gps` | **Moved from GPS & LOAD group.** Id `gps-heatmaps` preserved |
-| | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL Championship + Women's FA Cup + WSL Cup, season form strip |
+| | AI Performance Brief | `performance_gps` | **Rebuilt from orphaned `AIHalftimeBriefView`.** Inline `AIPerformanceBriefView` (id `performance-brief`, icon 🤖). 3 mode tabs: Half-Time / Full-Time / Training. JSON-structured per-mode output with **welfare_flags as a first-class field in every mode** (cycle phase, ACL deceleration, mental health, postpartum RTP). **Demo behaviour:** canned responses for all 3 modes (instant, free, no API spend). Live `/api/ai/womens` Claude call preserved as a commented reference for signed-client portals. Restored sidebar entry directly under Heatmaps in FOOTBALL group |
+| | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL 2 + Women's FA Cup + WSL Cup, season form strip |
 | | Cup Manager | `cup_manager` | **New build** — `WomensCupManagerView`, Women's FA Cup bracket (R2→Wembley Final, real WFA Cup prize tiers) + WSL Cup, TV fee modelling, ticketing surge forecast |
 | | Transfers | `recruitment_scouting` | |
 | | Dual Registration | `recruitment_scouting` | **Repositioned** between Transfers and Academy. FA Women's dual registration agreements |
@@ -361,16 +362,18 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | WELFARE | Player Welfare | `player_welfare` | |
 | | ACL Risk Monitor | `player_welfare` | Women's-specific ACL injury prevention |
 | | Cycle Tracking | `player_welfare` | Menstrual cycle impact on training/performance |
-| | Maternity Tracker | `player_welfare` | Pregnancy, maternity leave, return-to-play |
+| | Pregnancy & Return-to-Play | `player_welfare` | **New port to standalone `WomensPregnancyRtpView`.** Replaces inline MaternityTrackerView stub. 10-stage pregnancy/postpartum pathway, postpartum clinical checkpoints (pelvic floor / MSK / cardio / mental health), per-player pathway cards, WSL policy + FIFA Art. 18quater visibility, contract & policy visibility matrix. Sidebar id remains `'maternity'` |
 | | Mental Health | `player_welfare` | Mental health support, welfare check-ins |
 | | Player Welfare Hub | `player_welfare` | Welfare command center |
 | | Medical Hub | `medical` | **New port from Pro's inline MedicalView** — `WomensMedicalHubView`. Clinical injury management, ACWR monitoring, GPS load risk alerts. Distinct from Medical Records (OPERATIONS group) which is the admin records side |
 | | Concussion Tracker | `medical` | **New port of `ConcussionTrackerView`** — `WomensConcussionTrackerView` (622 LOC, 6 tabs: Active Cases / Player History / GRTP Protocol / Baseline Testing / Compliance & Audit / Education) |
-| COMPLIANCE | Finance | `finance_hr_admin` | **New port from Pro's inline FinanceView** — `WomensFinanceView`. Current-season operational view (transfer budget, wage bill, revenue YTD, contract tracker, revenue breakdown). WSL Championship-scale figures. Distinct from Financial Planning (COMMERCIAL) which is the multi-horizon FSR-constrained Club Planner |
+| COMPLIANCE | Finance | `finance_hr_admin` | **New port from Pro's inline FinanceView** — `WomensFinanceView`. Current-season operational view (transfer budget, wage bill, revenue YTD, contract tracker, revenue breakdown). WSL 2-scale figures. Distinct from Financial Planning (COMMERCIAL) which is the multi-horizon FSR-constrained Club Planner |
 | | FSR Dashboard | `wsl_handbook` | Carney Review FSR compliance overview |
 | | Salary Compliance | `wsl_handbook` | Squad salary cap monitoring |
 | | Revenue Attribution | `wsl_handbook` | Carney Review demerger readiness, standalone revenue % |
 | | Game Standards | `wsl_handbook` | WSL Handbook minimum standards compliance |
+| | Club Licensing | `wsl_handbook` | **New flagship** — `ClubLicensingView` (~600 LOC, pink theme). 5 tabs (Overview / Criteria / Risk Register / Action Plan / Audit), 6 categories (facilities, staffing, academy, contact hours, welfare, medical), ~30 criteria. Demo posture: PROVISIONAL, 4 green / 2 amber. Bottom of COMPLIANCE group (flagship-at-bottom, mirrors Pro PSR Modeller). Hidden for grassroots tier. **Brand-safety:** all thresholds / percentages / deadlines / document numbers are invented demo values; visible disclaimer on every tab. No new catalogue entry (nests under `wsl_handbook`) |
+| SETTINGS | Settings | `finance_hr_admin` | **Rebuilt on shared `SportsSettings`** (`src/components/sports/SportsSettings.tsx`). Sections: Profile, Women's Football Club Configuration (FA Club ID (demo), WGS reference (demo), tier, competition, stadium, founded, kit supplier, GPS provider, accent), Integrations (Women's Data / Performance / Communication groups), Team & Staff (Women's-specific roles including Sponsor), Voice Assistant, World Clock, Appearance, Customise Portal, Developer Tools. Plus `extraSections` → `WomensSettingsAdditions` (~200 LOC): Compliance Summary (FSR / Game Standards / Club Licensing — read-only cross-links, no editable licensing field), Privacy & Welfare Visibility (cycle opt-in, pregnancy & RTP visibility scope matrix, GDPR export functional + demo purge stub), Roles & Permissions (read-only display of WOMENS_ROLE_CONFIG) |
 | COMMERCIAL | Commercial | `commercial_marketing` | **New port of `CommercialView`** — `WomensCommercialView` (4 tabs: sponsorship / hospitality / matchday / partnerships) |
 | | Sponsorship Pipeline | `commercial_marketing` | B2B sponsorship contracts |
 | | Standalone Tracker | `wsl_handbook` | Carney Review standalone identity tracker |

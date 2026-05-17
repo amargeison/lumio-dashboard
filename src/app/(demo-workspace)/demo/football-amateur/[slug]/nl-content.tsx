@@ -68,7 +68,7 @@ export type NLDeptId =
   | 'nl-gps' | 'nl-gps-heatmaps' | 'nl-matchfees' | 'nl-cupmanager' | 'nl-preseason'
   | 'nl-registration' | 'nl-discipline' | 'nl-kit' | 'nl-sponsorship'
   | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance' | 'nl-media'
-  | 'nl-morningroundup' | 'nl-aihalftime' | 'nl-ground-hire'
+  | 'nl-morningroundup' | 'nl-performance-brief' | 'nl-ground-hire'
 
 type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Facilities' | 'Club'
 
@@ -86,15 +86,13 @@ export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.Elemen
   { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: null },
   { id: 'nl-club-vision',     label: 'Club Vision',             icon: Rocket,         section: null },
   { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: null },
-  /* REMOVED: Pitch-side tactical features — Hudl territory. Uncomment to restore.
-  { id: 'nl-aihalftime',      label: 'AI Halftime Brief',       icon: Target,         section: 'Football' },
-  */
   { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
   { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
   { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'Football' },
   /* REMOVED: Training — pitch-side tactical, Hudl territory. Uncomment to restore.
   { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
   */
+  { id: 'nl-performance-brief', label: 'AI Performance Brief',  icon: Sparkles,       section: 'Football' },
   // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
   { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
   // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
@@ -3014,32 +3012,6 @@ function NLMatchFeeModal({ onToast }: { onToast: (m: string) => void }) {
   )
 }
 
-function NLHalftimeModal({ onToast }: { onToast: (m: string) => void }) {
-  const [loading, setLoading] = useState(false)
-  const [brief, setBrief] = useState('')
-  return (
-    <div className="space-y-3">
-      <p className="text-xs" style={{ color: TEXT_SEC }}>Enter first-half details and AI will generate a tactical halftime brief.</p>
-      <div className="space-y-2">
-        <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Score at HT (e.g. 1-0 up)" />
-        <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Key observations: possession, chances, injuries, cards..." />
-      </div>
-      <button onClick={async () => {
-        setLoading(true)
-        try {
-          const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Generate a halftime tactical brief for a non-league manager. Score is 1-0 up. We are dominating possession but they are dangerous on the break. Suggest substitutions and tactical tweaks.', type: 'halftime' }) })
-          const data = await res.json()
-          setBrief(data.result || data.text || 'AI brief generated — keep shape, press high, bring on Rooney for Fletcher at 60 mins if tiring.')
-        } catch { setBrief('Keep shape, don\'t sit back. Press their centre-backs — they panic. Bring Rooney on at 60 if we need more creativity. Prescott to stay tight on their 9.') }
-        setLoading(false)
-      }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
-        {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate AI Brief</>}
-      </button>
-      {brief && <div className="p-3 rounded-lg text-xs" style={{ backgroundColor: BG, color: TEXT }}>{brief}</div>}
-    </div>
-  )
-}
-
 function NLMatchReportModal({ onToast }: { onToast: (m: string) => void }) {
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState('')
@@ -3856,53 +3828,292 @@ function NLDisciplineView() {
   )
 }
 
-function NLAIHalftimeView() {
-  const [phase, setPhase] = useState<'prematch' | 'halftime'>('prematch')
+// ─── AI PERFORMANCE BRIEF VIEW (Non-League) ─────────────────────────────────
+// 3-mode AI performance brief — Half-Time / Full-Time / Training. NL schemas
+// are physical/tactical only (no welfare_flags — Women's-specific). Inputs
+// are manual-prose only (no GPS table — non-league reality: most clubs
+// don't run GPS hardware; this is the manager's pen-and-paper observation
+// translated into a structured brief).
+//
+// DEMO BEHAVIOUR: canned responses for all 3 modes (instant, free, no
+// Claude spend). Hand-written content tied to the existing Harfield FC /
+// Redbourne Town demo context. Live /api/ai/football fetch path preserved
+// as a commented reference inside generateBrief() for signed-client
+// deployments.
+
+interface NLHalfTimeBrief {
+  headline: string
+  fatigue_alerts: { player: string; stat: string; flag: string }[]
+  tactical_insight: string
+  substitution_rec: string
+  second_half_instruction: string
+}
+interface NLFullTimeBrief {
+  headline: string
+  red_zone_players: { player: string; stat: string; concern: string }[]
+  recovery_priorities: string
+  next_session_flags: string
+  rtp_watch: string
+}
+interface NLTrainingBrief {
+  headline: string
+  load_vs_plan: string
+  manage_tomorrow: { player: string; stat: string; action: string }[]
+  session_target_assessment: string
+}
+
+const NL_CANNED_HALFTIME: NLHalfTimeBrief = {
+  headline: "1-0 up at Redbourne Town and we're worth it — Grady's early goal settled us, but they look dangerous on the counter through Ellis. Tighten the midfield shape for the next 45 and we win this.",
+  fatigue_alerts: [
+    { player: 'Fletcher', stat: 'Looked tired after 35 — covered a lot on the right', flag: 'Manage in 2nd half' },
+    { player: 'Brennan',  stat: 'Tracked Ellis well but late challenges creeping in',   flag: 'Watch for second yellow' },
+  ],
+  tactical_insight: "We're winning the midfield duels and Grady's pressing is forcing Redbourne's CBs into long balls — exactly the plan. Their right-back is struggling against Webb's pace, but we haven't doubled up there yet.",
+  substitution_rec: "If Fletcher tires after 60', Rooney comes on — fresh legs and a better outlet wide. Hold him back until you see Fletcher's intensity drop.",
+  second_half_instruction: 'Same shape, same intensity. Webb stays wide right, force them to defend our pace. Brennan stays tight on Ellis — no risks. If we go 2-0, we shut up shop.',
+}
+
+const NL_CANNED_FULLTIME: NLFullTimeBrief = {
+  headline: '2-0 win at Redbourne — Grady and Simcox sealed it, clean sheet through proper game management. Everyone gave it.',
+  red_zone_players: [
+    { player: 'Fletcher', stat: 'Played the full 90, looked heavy in last 15', concern: "Won't be sharp Tuesday — rest him or modify training." },
+    { player: 'Brennan',  stat: 'Carried a tight calf since minute 60',         concern: 'Get him assessed midweek before any contact training.' },
+  ],
+  recovery_priorities: 'Players home, food, sleep. No formal recovery facility this week — non-league reality. Encourage stretches and hydration overnight. Anyone with a knock messages me by Sunday lunchtime.',
+  next_session_flags: 'Tuesday training: Fletcher out or modified, Brennan assessed before any contact. Everyone else — standard Tuesday. Keep it light if the legs are still in it.',
+  rtp_watch: "Watson — first 30 minutes back from the hamstring strain, no recurrence. He's available for next weekend if Tuesday training looks clean.",
+}
+
+const NL_CANNED_TRAINING: NLTrainingBrief = {
+  headline: 'Tuesday session — sharp, focused, decent intensity. Squad responded well to the press-triggers work; possession block dropped off in the last 15 minutes (Sunday legs).',
+  load_vs_plan: "Hit the intensity targets in the first half of the session. Last 15 minutes possession work was below tempo — players still feeling Sunday. Acceptable; don't push it on Tuesdays after weekend games.",
+  manage_tomorrow: [
+    { player: 'Fletcher', stat: 'Looked heavy in the possession block',          action: 'Wednesday: optional attendance, recovery only if he comes in.' },
+    { player: 'Brennan',  stat: 'Calf tight from Sunday — held out of contact',  action: 'Wednesday: no contact, individual stretching only.' },
+  ],
+  session_target_assessment: "Press-triggers achieved what we needed — players read the cues and executed. Possession block under-delivered because of Sunday fatigue, not a session-design failure. Same drills Thursday with fresher legs should land.",
+}
+
+type NLPerfMode = 'halftime' | 'fulltime' | 'training'
+
+function NLAIPerformanceBriefView() {
+  const [mode, setMode] = useState<NLPerfMode>('halftime')
   const [loading, setLoading] = useState(false)
-  const [brief, setBrief] = useState('')
+  const [briefs, setBriefs] = useState<{ halftime?: NLHalfTimeBrief; fulltime?: NLFullTimeBrief; training?: NLTrainingBrief }>({})
+  // Manual-prose inputs per mode (kept from the previous NLAIHalftimeView pattern —
+  // non-league reality: the manager types what happened, no GPS feed).
+  const [htScore, setHtScore] = useState('')
+  const [htNotes, setHtNotes] = useState('')
+  const [ftScore, setFtScore] = useState('')
+  const [ftNotes, setFtNotes] = useState('')
+  const [trSession, setTrSession] = useState('')
+  const [trNotes, setTrNotes] = useState('')
+
+  const generateBrief = async () => {
+    setLoading(true)
+    // Demo: canned response with 800ms artificial latency. Live
+    // /api/ai/football fetch preserved as a commented reference below; route
+    // already enforces per-IP rate limits + daily spend cap via lib/ai/guards.
+    await new Promise(r => setTimeout(r, 800))
+    if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: NL_CANNED_HALFTIME }))
+    else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: NL_CANNED_FULLTIME }))
+    else setBriefs(b => ({ ...b, training: NL_CANNED_TRAINING }))
+    setLoading(false)
+    return
+    /* LIVE API PATH — uncomment for non-demo deployments:
+    try {
+      const prompt = buildNLPromptForMode(mode, { htScore, htNotes, ftScore, ftNotes, trSession, trNotes })
+      const res = await fetch('/api/ai/football', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, type: mode }),
+      })
+      const data = await res.json()
+      // parse JSON from data.result / data.text per response shape; setBriefs accordingly
+    } catch (err) { console.error('NL performance brief failed:', err) }
+    finally { setLoading(false) }
+    */
+  }
+
+  const modeTabs: { id: NLPerfMode; label: string; sub: string }[] = [
+    { id: 'halftime', label: 'Half-Time', sub: 'Mid-game tactical adjustments' },
+    { id: 'fulltime', label: 'Full-Time', sub: 'Full match → next-session flags' },
+    { id: 'training', label: 'Training',  sub: 'Session review → tomorrow' },
+  ]
+
+  const Headline = ({ text }: { text: string }) => (
+    <div className="p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${PRIMARY}` }}>
+      <p className="text-sm font-bold" style={{ color: ACCENT }}>{text}</p>
+    </div>
+  )
+
+  const Sub = ({ label, body }: { label: string; body: string }) => (
+    <div className="p-3 rounded-lg" style={{ backgroundColor: BG, border: `1px solid ${BORDER}` }}>
+      <p className="text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>{label}</p>
+      <p className="text-xs leading-relaxed" style={{ color: TEXT }}>{body}</p>
+    </div>
+  )
+
+  const RowCard = <T extends { player: string }>({ title, rows, render }: { title: string; rows: T[]; render: (r: T) => React.ReactNode }) => (
+    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+      <div className="px-3 py-2" style={{ backgroundColor: BG, borderBottom: `1px solid ${BORDER}` }}>
+        <p className="text-xs font-semibold" style={{ color: PRIMARY }}>{title}</p>
+      </div>
+      {rows.map((r, i) => (
+        <div key={i} className="px-3 py-2.5" style={{ borderBottom: i < rows.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+          {render(r)}
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderHalfTime = (b: NLHalfTimeBrief) => (
+    <div className="space-y-3">
+      <Headline text={b.headline} />
+      {b.fatigue_alerts.length > 0 && (
+        <RowCard<{ player: string; stat: string; flag: string }>
+          title="⚠ Fatigue Alerts"
+          rows={b.fatigue_alerts}
+          render={a => (
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-xs font-bold" style={{ color: TEXT }}>{a.player}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${PRIMARY}30`, color: ACCENT }}>{a.flag}</span>
+              </div>
+              <div className="text-[11px]" style={{ color: TEXT_SEC }}>{a.stat}</div>
+            </div>
+          )}
+        />
+      )}
+      <Sub label="📊 Tactical Insight"             body={b.tactical_insight} />
+      <Sub label="🔄 Substitution Recommendation"  body={b.substitution_rec} />
+      <Sub label="▶ Second Half Instruction"       body={b.second_half_instruction} />
+    </div>
+  )
+
+  const renderFullTime = (b: NLFullTimeBrief) => (
+    <div className="space-y-3">
+      <Headline text={b.headline} />
+      {b.red_zone_players.length > 0 && (
+        <RowCard<{ player: string; stat: string; concern: string }>
+          title="🚨 Players to Watch"
+          rows={b.red_zone_players}
+          render={p => (
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-xs font-bold" style={{ color: TEXT }}>{p.player}</span>
+                <span className="text-[10px]" style={{ color: ACCENT }}>{p.stat}</span>
+              </div>
+              <div className="text-[11px]" style={{ color: TEXT_SEC }}>{p.concern}</div>
+            </div>
+          )}
+        />
+      )}
+      <Sub label="🛁 Recovery Priorities"             body={b.recovery_priorities} />
+      <Sub label="📋 Next Session — Management Flags" body={b.next_session_flags} />
+      <Sub label="🩺 Return-to-Play Watch"             body={b.rtp_watch} />
+    </div>
+  )
+
+  const renderTraining = (b: NLTrainingBrief) => (
+    <div className="space-y-3">
+      <Headline text={b.headline} />
+      <Sub label="📊 Load vs Plan" body={b.load_vs_plan} />
+      {b.manage_tomorrow.length > 0 && (
+        <RowCard<{ player: string; stat: string; action: string }>
+          title="🛌 Manage Tomorrow"
+          rows={b.manage_tomorrow}
+          render={m => (
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-xs font-bold" style={{ color: TEXT }}>{m.player}</span>
+                <span className="text-[10px]" style={{ color: ACCENT }}>{m.stat}</span>
+              </div>
+              <div className="text-[11px]" style={{ color: TEXT_SEC }}>{m.action}</div>
+            </div>
+          )}
+        />
+      )}
+      <Sub label="🎯 Session Target Assessment" body={b.session_target_assessment} />
+    </div>
+  )
+
+  const currentBrief: NLHalfTimeBrief | NLFullTimeBrief | NLTrainingBrief | undefined =
+    mode === 'halftime' ? briefs.halftime : mode === 'fulltime' ? briefs.fulltime : briefs.training
+
   return (
     <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-bold flex items-center gap-2" style={{ color: TEXT }}>
+          <Sparkles size={16} style={{ color: PRIMARY }} /> AI Performance Brief
+        </h2>
+        <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>Three modes — Half-Time · Full-Time · Training. Manager types what happened; AI returns a structured brief.</p>
+      </div>
+
+      {/* Mode tabs */}
       <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: CARD_BG }}>
-        {(['prematch', 'halftime'] as const).map(t => (
-          <button key={t} onClick={() => setPhase(t)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-            style={{ backgroundColor: phase === t ? PRIMARY : 'transparent', color: phase === t ? '#fff' : TEXT_SEC }}>
-            {t === 'prematch' ? 'Pre-Match Setup' : 'Halftime Input'}
+        {modeTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setMode(t.id)}
+            className="flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all text-left"
+            style={{ backgroundColor: mode === t.id ? PRIMARY : 'transparent', color: mode === t.id ? '#fff' : TEXT_SEC, minWidth: 0 }}
+          >
+            <div className="font-bold">{t.label}</div>
+            <div className="text-[10px] opacity-80 mt-0.5">{t.sub}</div>
           </button>
         ))}
       </div>
 
-      {phase === 'prematch' && (
-        <SectionCard title="Pre-Match Setup">
-          <div className="space-y-3">
-            <div className="text-xs" style={{ color: TEXT_SEC }}>
-              <p>Opponent: <span style={{ color: TEXT }}>Redbourne Town</span></p>
-              <p>Formation: <span style={{ color: TEXT }}>4-4-2</span></p>
-              <p>Key threat: <span style={{ color: TEXT }}>Jordan Ellis (ST, 10 goals)</span></p>
-            </div>
-            <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Pre-match notes: tactical plan, specific instructions..." />
-          </div>
-        </SectionCard>
-      )}
+      {/* Per-mode manual input — non-league reality: prose, not GPS */}
+      <SectionCard title={`${modeTabs.find(t => t.id === mode)?.label} Input`}>
+        <div className="space-y-2">
+          {mode === 'halftime' && (
+            <>
+              <input value={htScore} onChange={e => setHtScore(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Score at HT (e.g. 1-0 up vs Redbourne Town)" />
+              <textarea value={htNotes} onChange={e => setHtNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="What happened? Possession, chances, problems, injuries, cards…" />
+            </>
+          )}
+          {mode === 'fulltime' && (
+            <>
+              <input value={ftScore} onChange={e => setFtScore(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Final score + opponent (e.g. 2-0 vs Redbourne Town)" />
+              <textarea value={ftNotes} onChange={e => setFtNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Match summary: scorers, knocks, who looked heavy, who you'd rest…" />
+            </>
+          )}
+          {mode === 'training' && (
+            <>
+              <input value={trSession} onChange={e => setTrSession(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Session focus (e.g. Tuesday pressing + possession)" />
+              <textarea value={trNotes} onChange={e => setTrNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs" rows={3} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="How did the squad respond? Anyone heavy from the weekend? Drills that hit, drills that didn't…" />
+            </>
+          )}
+          <button
+            onClick={generateBrief}
+            disabled={loading}
+            className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2"
+            style={{ backgroundColor: loading ? '#1F2937' : PRIMARY, color: '#fff', opacity: loading ? 0.6 : 1 }}
+          >
+            {loading
+              ? <><Loader2 size={12} className="animate-spin" />Generating {modeTabs.find(t => t.id === mode)?.label} brief…</>
+              : <><Sparkles size={12} />Generate {modeTabs.find(t => t.id === mode)?.label} Brief</>}
+          </button>
+        </div>
+      </SectionCard>
 
-      {phase === 'halftime' && (
-        <SectionCard title="Halftime Input">
-          <div className="space-y-3">
-            <input className="w-full px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="Score at HT (e.g. 1-0)" />
-            <textarea className="w-full px-3 py-2 rounded-lg text-xs" rows={4} style={{ backgroundColor: BG, border: `1px solid ${BORDER}`, color: TEXT }} placeholder="What happened? Possession, chances, problems, injuries, cards..." />
-            <button onClick={async () => {
-              setLoading(true)
-              try {
-                const res = await fetch('/api/ai/football', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'Generate a halftime tactical brief for a Step 4 non-league manager. We are 1-0 up against Redbourne Town. We dominated possession but they look dangerous on the counter through Ellis. Suggest changes.', type: 'halftime' }) })
-                const data = await res.json()
-                setBrief(data.result || data.text || 'Keep shape. Press their CBs — they panic. Consider Rooney for Fletcher at 60 if tiring. Prescott to stay tight on Ellis.')
-              } catch { setBrief('Keep your shape lads, don\'t sit back. We\'re on top but one lapse and Ellis will punish us. Brennan, stay tight to their 10. Webb, keep getting at their right-back — he\'s struggling. If Fletcher tires, Rooney comes on at 60. Set pieces: keep attacking them, Prescott was dominant first half. Let\'s finish this off.') }
-              setLoading(false)
-            }} disabled={loading} className="w-full px-4 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: PRIMARY, color: '#fff' }}>
-              {loading ? <><Loader2 size={12} className="animate-spin" />Generating...</> : <><Sparkles size={12} />Generate Halftime Brief</>}
-            </button>
-            {brief && <div className="p-3 rounded-lg text-xs leading-relaxed" style={{ backgroundColor: BG, color: TEXT }}>{brief}</div>}
+      {currentBrief && (
+        <div className="rounded-lg p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${PRIMARY}55` }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold" style={{ color: ACCENT }}>🤖 AI Brief — {modeTabs.find(t => t.id === mode)?.label}</span>
+            </div>
+            <button onClick={generateBrief} className="text-[10px]" style={{ color: TEXT_SEC }}>↺ Regenerate</button>
           </div>
-        </SectionCard>
+          {mode === 'halftime' && renderHalfTime(currentBrief as NLHalfTimeBrief)}
+          {mode === 'fulltime' && renderFullTime(currentBrief as NLFullTimeBrief)}
+          {mode === 'training' && renderTraining(currentBrief as NLTrainingBrief)}
+          <div className="mt-3 pt-2 border-t flex items-center justify-between" style={{ borderColor: BORDER }}>
+            <span className="text-[10px]" style={{ color: TEXT_SEC }}>Demo response · Harfield FC · {modeTabs.find(t => t.id === mode)?.label} mode</span>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -4089,7 +4300,7 @@ export default function NonLeagueContent({ activeDept, onToast, userName }: { ac
       {activeDept === 'nl-cupmanager' && <NLCupManagerView />}
       {activeDept === 'nl-registration' && <NLRegistrationView />}
       {activeDept === 'nl-discipline' && <NLDisciplineView />}
-      {activeDept === 'nl-aihalftime' && <NLAIHalftimeView />}
+      {activeDept === 'nl-performance-brief' && <NLAIPerformanceBriefView />}
       {activeDept === 'nl-preseason' && <NLPreSeasonView />}
       {activeDept === 'nl-kit' && <NLPlaceholderView label="Kit & Equipment" />}
       {activeDept === 'nl-sponsorship' && <NLPlaceholderView label="Sponsorship" />}
