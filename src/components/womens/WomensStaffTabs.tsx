@@ -2,6 +2,21 @@
 
 import { useState } from 'react'
 
+// ─── Avatar helper ──────────────────────────────────────────────────────────
+// CC0-licensed avatars via DiceBear "notionists" style by Bohdan Trotsenko
+// (https://www.dicebear.com/styles/notionists/ — explicitly CC0 1.0 per
+// dicebear.com/licenses). Hand-illustrated humanoid portraits, not GAN
+// faces, not photographs. Deterministic per seed: same name → same SVG
+// every render, every reload, every device. Served from DiceBear's CDN.
+//
+// Each staff record carries an `avatar` field (string seed, typically the
+// staff member's full name). The helper produces a stable URL from that
+// seed. Initials are kept on each record as a graceful fallback if the
+// SVG fails to load.
+function avatarUrl(seed: string): string {
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`
+}
+
 // Women's portal — Staff dashboard tab (4 sub-tabs).
 //
 // Today      → ported from the Pro portal Staff Today layout (filter pills,
@@ -173,86 +188,138 @@ function TodayTab() {
 
 // ─── Org Chart ──────────────────────────────────────────────────────────────
 
+// Org chart — data-driven from reportsTo relationships.
+// Each entry names the person they report to (by name); the chart layout
+// is derived from those edges, not hardcoded. Top of chart has
+// reportsTo: null. Change a `reportsTo` value here and the rendered
+// hierarchy + connector lines update automatically — no layout edits.
+type StaffNode = {
+  name: string
+  role: string
+  dept: Dept | 'Board'
+  avatar: string
+  reportsTo: string | null
+}
+
+// Reporting structure rationale:
+// - Director Kate Brennan oversees the business side (Operations,
+//   Commercial, Community).
+// - Director of Football Helen Voss oversees the football+performance
+//   side (Performance, Medical, Welfare). Putting Medical and Welfare
+//   under DoF reflects a common WSL/WSL 2 setup; some clubs use
+//   independent reporting lines (especially Carney-standards welfare)
+//   but for a single-line org chart, DoF stewardship is the cleanest
+//   single representation.
+// - Head Coach Sarah Frost reports directly to the Board and runs the
+//   first-team coaching staff (not modelled at this level of detail).
+function staffRoster(club: ClubProps): StaffNode[] {
+  const board = `${club.name} Board`
+  return [
+    { name: board,           role: 'Owner / Board',        dept: 'Board',       avatar: board,           reportsTo: null },
+    { name: club.director,   role: 'Club Director',        dept: 'Operations',  avatar: club.director,   reportsTo: board },
+    { name: club.manager,    role: 'Head Coach',           dept: 'Coaching',    avatar: club.manager,    reportsTo: board },
+    { name: 'Helen Voss',    role: 'Director of Football', dept: 'DoF',         avatar: 'Helen Voss',    reportsTo: board },
+    { name: 'Mark Walker',   role: 'Head of Operations',   dept: 'Operations',  avatar: 'Mark Walker',   reportsTo: club.director },
+    { name: 'Jordan Clarke', role: 'Commercial Director',  dept: 'Commercial',  avatar: 'Jordan Clarke', reportsTo: club.director },
+    { name: 'Sasha Lin',     role: 'Head of Community',    dept: 'Community',   avatar: 'Sasha Lin',     reportsTo: club.director },
+    { name: 'Marcus Chen',   role: 'Head of Performance',  dept: 'Performance', avatar: 'Marcus Chen',   reportsTo: 'Helen Voss' },
+    { name: 'Dr Anna Reid',  role: 'Club Doctor',          dept: 'Medical',     avatar: 'Dr Anna Reid',  reportsTo: 'Helen Voss' },
+    { name: 'Nina Walsh',    role: 'Welfare Lead',         dept: 'Welfare',     avatar: 'Nina Walsh',    reportsTo: 'Helen Voss' },
+  ]
+}
+
 function OrgChartTab({ club }: { club: ClubProps }) {
-  const owner = { name: `${club.name} Board`, role: 'Owner / Board' }
-  const level2: Array<{ name: string; role: string; dept: Dept }> = [
-    { name: club.director, role: 'Club Director',         dept: 'Operations' },
-    { name: club.manager,  role: 'Head Coach',            dept: 'Coaching' },
-    { name: 'Helen Voss',  role: 'Director of Football',  dept: 'DoF' },
-  ]
-  const level3: Array<{ name: string; role: string; dept: Dept }> = [
-    { name: 'Marcus Chen',     role: 'Head of Performance', dept: 'Performance' },
-    { name: 'Dr Anna Reid',    role: 'Club Doctor',         dept: 'Medical' },
-    { name: 'Nina Walsh',      role: 'Welfare Lead',        dept: 'Welfare' },
-    { name: 'Mark Walker',     role: 'Head of Operations',  dept: 'Operations' },
-    { name: 'Jordan Clarke',   role: 'Commercial Director', dept: 'Commercial' },
-    { name: 'Sasha Lin',       role: 'Head of Community',   dept: 'Community' },
-  ]
+  const staff = staffRoster(club)
+  const root = staff.find(s => s.reportsTo === null)
+  if (!root) return null
+  const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
+  const level1 = directReports(root.name)
+
+  const PersonCard = ({ node, size }: { node: StaffNode; size: 'mid' | 'leaf' }) => {
+    const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
+    const isMid = size === 'mid'
+    const avatarPx = isMid ? 40 : 32
+    return (
+      <div
+        className="rounded-xl text-center"
+        style={{
+          backgroundColor: isMid ? C.panelAlt : C.panelDeep,
+          border: `1px solid ${colour}${isMid ? '' : '40'}`,
+          padding: isMid ? 12 : 10,
+          width: isMid ? 168 : 132,
+        }}
+      >
+        <img
+          src={avatarUrl(node.avatar)}
+          alt=""
+          className="rounded-full mx-auto mb-1 object-cover"
+          style={{ width: avatarPx, height: avatarPx, backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
+        />
+        <p className={isMid ? 'text-xs font-bold truncate' : 'text-xs font-medium truncate'} style={{ color: isMid ? C.text : C.text2 }}>{node.name}</p>
+        <p className="text-[10px] truncate" style={{ color: colour }}>{node.role}</p>
+      </div>
+    )
+  }
 
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
 
-      {/* Owner / Board */}
-      <div className="flex justify-center mb-8">
+      {/* Root — Owner / Board */}
+      <div className="flex justify-center mb-2">
         <div className="rounded-xl p-4 text-center w-56" style={{ backgroundColor: C.panelAlt, border: `2px solid ${C.text5}` }}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(75,85,99,0.2)', color: C.text5 }}>
-            {owner.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
+            {root.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
           </div>
-          <p className="text-sm font-bold" style={{ color: C.text }}>{owner.name}</p>
-          <p className="text-[10px]" style={{ color: C.text5 }}>{owner.role}</p>
+          <p className="text-sm font-bold" style={{ color: C.text }}>{root.name}</p>
+          <p className="text-[10px]" style={{ color: C.text5 }}>{root.role}</p>
         </div>
       </div>
 
-      <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
-      <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '50%' }} /></div>
+      {/* Connector from root down */}
+      <div className="flex justify-center mb-1"><div className="w-px h-6" style={{ backgroundColor: '#374151' }} /></div>
 
-      {/* Level 2 — Director / Head Coach / DoF */}
-      <div className="flex justify-center gap-6 mb-8 flex-wrap">
-        {level2.map(m => {
-          const colour = DEPT_COLOR[m.dept]
+      {/* Level 1 columns — each top-of-tree person gets their own column
+          containing their card + their direct reports below. Reports are
+          derived from the staff[].reportsTo edges, so changing a
+          reportsTo here re-routes the lines automatically. */}
+      <div className="flex justify-center gap-6 items-start flex-wrap">
+        {level1.map(person => {
+          const myReports = directReports(person.name)
           return (
-            <div key={m.name} className="flex flex-col items-center">
-              <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
-              <div className="rounded-xl p-3 text-center w-48" style={{ backgroundColor: C.panelAlt, border: `1px solid ${colour}` }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${colour}20`, color: colour }}>
-                  {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                </div>
-                <p className="text-xs font-bold truncate" style={{ color: C.text }}>{m.name}</p>
-                <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
-              </div>
+            <div key={person.name} className="flex flex-col items-center gap-3">
+              {/* Vertical connector from the root's horizontal bus down to this person */}
+              <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+              <PersonCard node={person} size="mid" />
+              {myReports.length > 0 && (
+                <>
+                  <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+                  {myReports.length > 1 && (
+                    <div className="h-px" style={{ backgroundColor: '#374151', width: `${Math.min(100, myReports.length * 60)}%` }} />
+                  )}
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    {myReports.map(rep => (
+                      <div key={rep.name} className="flex flex-col items-center gap-1">
+                        <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
+                        <PersonCard node={rep} size="leaf" />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* Level 3 — dept heads */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {level3.map(m => {
-          const colour = DEPT_COLOR[m.dept]
-          return (
-            <div key={m.name} className="rounded-xl p-3 text-center" style={{ backgroundColor: C.panelDeep, border: `1px solid ${colour}40` }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${colour}15`, color: colour }}>
-                {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-              </div>
-              <p className="text-xs font-medium truncate" style={{ color: C.text2 }}>{m.name}</p>
-              <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Legend */}
+      {/* Legend — dept colours present in the rendered roster */}
       <div className="flex gap-3 justify-center mt-8 flex-wrap">
-        {(Object.entries(DEPT_COLOR) as Array<[Dept, string]>)
-          .filter(([d]) => d !== 'DoF' && d !== 'Community')
-          .concat([['Community', DEPT_COLOR.Community]])
-          .map(([label, colour]) => (
-            <div key={label} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colour }} />
-              {label}
-            </div>
-          ))}
+        {Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept))).map(dept => (
+          <div key={dept} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DEPT_COLOR[dept as Dept] }} />
+            {dept === 'DoF' ? 'Football' : dept}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -262,6 +329,7 @@ function OrgChartTab({ club }: { club: ClubProps }) {
 
 type StaffCard = {
   initials: string
+  avatar: string  // seed for avatarUrl() — defaults to staff name; deterministic per person
   name: string
   role: string
   dept: Dept
@@ -275,37 +343,37 @@ type StaffCard = {
 
 const TEAM_INFO_CARDS: StaffCard[] = [
   {
-    initials: 'SF', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
+    initials: 'SF', avatar: 'Sarah Frost', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
     ref: 'WOM-001',
     stats: { TAC: 92, MOT: 95, STR: 88, EXP: 91, COM: 90, PRE: 89 },
     speciality: 'Tactical structure · matchday motivation', location: 'Oakridge Training Centre', available: true,
   },
   {
-    initials: 'HV', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
+    initials: 'HV', avatar: 'Helen Voss', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
     ref: 'WOM-002',
     stats: { STR: 91, NEG: 88, NET: 90, VIS: 89, DEC: 86, COM: 87 },
     speciality: 'Recruitment strategy · WSL 2 squad model', location: 'Oakridge HQ', available: true,
   },
   {
-    initials: 'MC', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
+    initials: 'MC', avatar: 'Marcus Chen', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
     ref: 'WOM-003',
     stats: { STR: 89, COND: 92, REC: 88, GPS: 91, PRE: 87, SPT: 90 },
     speciality: 'Cycle-aware load · ACL prehab integration', location: 'Oakridge Training Centre', available: true,
   },
   {
-    initials: 'AR', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
+    initials: 'AR', avatar: 'Dr Anna Reid', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
     ref: 'WOM-004',
     stats: { DIA: 94, TRT: 93, REC: 90, WMN: 95, CON: 92, SPT: 88 },
     speciality: 'Women’s clinical care · postpartum RTP', location: 'Oakridge Medical Centre', available: true,
   },
   {
-    initials: 'JK', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
+    initials: 'JK', avatar: 'James Kerr', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
     ref: 'WOM-005',
     stats: { LOA: 90, GPS: 92, ACL: 87, CYC: 86, CON: 88, COM: 85 },
     speciality: 'GPS load + cycle-aware modelling', location: 'Oakridge Analysis Suite', available: true,
   },
   {
-    initials: 'NW', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
+    initials: 'NW', avatar: 'Nina Walsh', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
     ref: 'WOM-006',
     stats: { SAF: 93, PSY: 88, CYC: 92, RTP: 90, COM: 91, CON: 89 },
     speciality: 'Carney-standards safeguarding · player-led support', location: 'Oakridge HQ', available: true,
@@ -342,9 +410,12 @@ function TeamInfoTab() {
               </div>
 
               <div className="flex justify-center pb-1">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black" style={{ backgroundColor: `${colour}20`, color: colour, border: `1px solid ${colour}60` }}>
-                  {m.initials}
-                </div>
+                <img
+                  src={avatarUrl(m.avatar)}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover"
+                  style={{ backgroundColor: `${colour}20`, border: `1px solid ${colour}60` }}
+                />
               </div>
 
               <div className="text-center px-3 pb-2">
@@ -388,18 +459,98 @@ function TeamInfoTab() {
 
 // ─── Club Info ──────────────────────────────────────────────────────────────
 
-const CLUB_DOCS = [
-  { icon: '📋', title: 'Staff Code of Conduct',          desc: 'Professional standards and disciplinary procedures' },
-  { icon: '🛡️', title: 'Karen Carney Compliance',         desc: 'Annual Carney-standards self-assessment (demo template)' },
-  { icon: '📊', title: 'FSR Submission Pack',            desc: 'Quarterly FSR submission template + supporting evidence' },
-  { icon: '🌸', title: 'Cycle-Tracking Privacy Policy',  desc: 'Opt-in policy + consent/revoke workflow — player-controlled' },
-  { icon: '🤰', title: 'Pregnancy & Return-to-Play Pathway', desc: '10-stage pathway + WSL 26-week + FIFA Art. 18quater notes' },
-  { icon: '🏛️', title: 'Club Licensing Evidence Vault',  desc: 'Index to the licensing evidence library (demo)' },
-  { icon: '🔒', title: 'Data & GDPR',                    desc: 'Welfare, cycle and medical data handling scope' },
-  { icon: '🎓', title: 'Coaching & CPD',                 desc: 'UEFA licence requirements and CPD policy' },
+// Each doc card opens an illustrative demo modal — see the modal disclaimer
+// inside ClubInfoTab. Bodies are intentionally short placeholders, not real
+// regulatory artefacts. Cycle-Tracking + Pregnancy & RTP entries use the
+// wellbeing-led, player-controlled framing the dedicated modules ship.
+type ClubDoc = { icon: string; title: string; desc: string; body: string[] }
+const CLUB_DOCS: ClubDoc[] = [
+  {
+    icon: '📋', title: 'Staff Code of Conduct',
+    desc: 'Professional standards and disciplinary procedures',
+    body: [
+      'Sets the professional standards expected of every member of staff at the club — coaches, medical, welfare, performance, operations, commercial and community.',
+      'Covers: conflicts of interest, gifts and hospitality, social media use, anti-discrimination and inclusion, safeguarding obligations, confidentiality of player data.',
+      'Disciplinary process is graduated (informal → formal → review) with PFA liaison available at every stage. Welfare Lead has independent reporting line for any concerns raised about staff conduct.',
+      'Reviewed annually by the Club Director and Welfare Lead. Last reviewed: March 2026.',
+    ],
+  },
+  {
+    icon: '🛡️', title: 'Karen Carney Compliance',
+    desc: 'Annual Carney-standards self-assessment (demo template)',
+    body: [
+      'Self-assessment template aligned to the Karen Carney Review recommendations for professional women’s football — welfare, mental-health provision, parental rights, environmental standards, transition support.',
+      'Sections cover: independent Welfare Lead in post, mandatory cycle-aware training adaptation, postpartum return-to-play pathway, mental-health pathway, player transition / retirement support, equality monitoring.',
+      'Annual return is signed by the Club Director and Welfare Lead. Outstanding items flagged on the FSR Dashboard so the board sees them every meeting.',
+      'Next return due: September 2026.',
+    ],
+  },
+  {
+    icon: '📊', title: 'FSR Submission Pack',
+    desc: 'Quarterly FSR submission template + supporting evidence',
+    body: [
+      'Template for the quarterly Financial Sustainability Regulation submission. Filed by the Club Director with the Finance & Welfare oversight committee.',
+      'Submission includes: relevant-revenue calculation (broadcast + matchday + commercial + sponsorship + central distributions), squad-cost calculation, wage-to-revenue ratio, headroom against the 80% cap, projections for the next four quarters.',
+      'Supporting evidence: signed sponsorship contracts (redacted), broadcast revenue confirmation, matchday receipts summary, wage bill snapshot, transfer-window forecast.',
+      'Q1 2026 submission accepted. Next submission window: Q2, due July 2026.',
+    ],
+  },
+  {
+    icon: '🌸', title: 'Cycle-Tracking Privacy Policy',
+    desc: 'Opt-in policy + consent/revoke workflow — player-controlled',
+    body: [
+      'Cycle tracking at this club is opt-in only. No player is ever required, encouraged in performance reviews, or chased on the matter. Choice and timing are entirely the player’s.',
+      'Consent is recorded in writing in the Lumio Cycle app at the moment the player opts in. Players can revoke consent at any time, from the same app, with no notice required and no questions asked.',
+      'Access is role-gated to the Club Doctor and the Welfare Lead only. Coaching staff see availability flags only (e.g. modified-load recommendation) — never the underlying phase data.',
+      'On revocation, data is purged from the active view immediately and from backup snapshots within the standard 30-day backup window. Welfare Lead is the data steward.',
+    ],
+  },
+  {
+    icon: '🤰', title: 'Pregnancy & Return-to-Play Pathway',
+    desc: '10-stage pathway + WSL 26-week + FIFA Art. 18quater notes',
+    body: [
+      'Pregnancy is treated as a phase of a player’s career the club has a duty to support, not a risk to monitor. The pathway is player-led at every stage.',
+      'Ten stages: notification & confirmation → clinical handover → adapted training (T1, T2) → cessation of contact → maternity leave → postpartum medical clearance → pelvic floor & MSK screening → graduated RTP (non-contact → contact) → match selection cleared.',
+      'Policy backstop: WSL 26 weeks full pay (UK domestic minimum); FIFA Regulations Art. 18quater 14 weeks paid maternity globally (8 weeks post-birth minimum, anti-termination, mandatory reintegration). Whichever is more favourable applies.',
+      'Visibility scope: clinical detail stays with the player and Club Doctor; the Welfare Lead sees pathway stage and contract obligations; the Director and Coach see availability status only. PFA support is offered and accessible at every stage.',
+    ],
+  },
+  {
+    icon: '🏛️', title: 'Club Licensing Evidence Vault',
+    desc: 'Index to the licensing evidence library (demo)',
+    body: [
+      'Index to evidence files maintained against the six licensing categories: facilities, staffing, academy, contact hours, welfare, medical.',
+      'Each criterion has its own evidence record: threshold, current status, evidence-on-file reference, last-reviewed date, next-review date, and (where applicable) the action-plan workstream addressing it.',
+      'Vault is the working document; the Club Licensing module surfaces a live read of the same data. Evidence is curated by the Operations Manager with sign-off from the Welfare Lead and Club Doctor for their sections.',
+      'Brand-safety reminder: figures and document numbers in the licensing module are illustrative demo values. The club does not issue its own licences.',
+    ],
+  },
+  {
+    icon: '🔒', title: 'Data & GDPR',
+    desc: 'Welfare, cycle and medical data handling scope',
+    body: [
+      'Player welfare data, cycle-tracking data and medical records are each held under separate consent. Players grant or revoke each consent independently.',
+      'Lawful basis: explicit consent for cycle and welfare data; legitimate interest with overriding consent for occupational medical records during employment.',
+      'Retention: cycle data purged on revocation (immediate from active view, 30 days from backups). Medical records retained for the statutory period after employment ends, then purged.',
+      'Subject Access Requests: handled by the Welfare Lead within 30 days. Right to erasure honoured for cycle and welfare data while contractual obligations allow.',
+    ],
+  },
+  {
+    icon: '🎓', title: 'Coaching & CPD',
+    desc: 'UEFA licence requirements and CPD policy',
+    body: [
+      'Coaching staff licence requirements: Head Coach UEFA Pro or recognised equivalent; Assistant Head Coach UEFA A; goalkeeper coach UEFA GK B; academy coaches UEFA B minimum.',
+      'CPD: each coach completes a minimum of 20 hours of recognised CPD per season, recorded in the coaches’ CPD log. Reimbursement for course fees is available — see Operations.',
+      'Mentor scheme: pairs newer coaching staff with senior coaches for a 12-month structured exchange. Optional but encouraged for academy and assistant coaches.',
+      'Equality, diversity and inclusion training is mandatory for all coaching staff annually and is included in the CPD hours total.',
+    ],
+  },
 ]
 
 function ClubInfoTab({ club }: { club: ClubProps }) {
+  const [openDoc, setOpenDoc] = useState<string | null>(null)
+  const openedDoc = openDoc ? CLUB_DOCS.find(d => d.title === openDoc) : null
+
   const details: Array<[string, string]> = [
     ['Club',           club.name],
     ['Founded',        String(club.founded)],
@@ -434,9 +585,10 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
         <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Document categories shown are illustrative demo placeholders — no real regulatory artefacts attached.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {CLUB_DOCS.map(p => (
-            <div
+            <button
               key={p.title}
-              className="rounded-xl p-4 transition-colors"
+              onClick={() => setOpenDoc(p.title)}
+              className="rounded-xl p-4 text-left transition-colors"
               style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}`, cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.pinkDeep }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border }}
@@ -444,10 +596,51 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
               <span className="text-2xl block mb-2">{p.icon}</span>
               <p className="text-xs font-bold" style={{ color: C.text }}>{p.title}</p>
               <p className="text-[10px] mt-0.5" style={{ color: C.text4 }}>{p.desc}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Doc viewer — illustrative demo content, opens on card click.
+          Backdrop + centred panel. Visible "demo placeholder" banner at top
+          honours the existing disclaimer immediately above the doc grid. */}
+      {openedDoc && (
+        <>
+          <div className="fixed inset-0 z-[100]" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setOpenDoc(null)} />
+          <div
+            className="fixed left-1/2 top-1/2 z-[101] -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col"
+            style={{ width: 'min(640px, 92vw)', maxHeight: '85vh', backgroundColor: C.panel, border: `1px solid ${C.border}`, boxShadow: '0 24px 60px rgba(0,0,0,0.55)' }}
+          >
+            <div className="flex items-start justify-between gap-3 px-6 py-4 shrink-0" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="text-2xl shrink-0">{openedDoc.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-base font-bold truncate" style={{ color: C.text }}>{openedDoc.title}</div>
+                  <div className="text-[11px]" style={{ color: C.text4 }}>{openedDoc.desc}</div>
+                </div>
+              </div>
+              <button onClick={() => setOpenDoc(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ color: C.text4 }} aria-label="Close">✕</button>
+            </div>
+
+            <div className="px-6 py-3 shrink-0" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
+              <p className="text-[11px] font-semibold" style={{ color: '#F472B6' }}>
+                ⚠ Illustrative demo placeholder. Not a real regulatory artefact, downloadable document, or signed policy. Shows what this document category would contain.
+              </p>
+            </div>
+
+            <div className="px-6 py-5 overflow-y-auto flex-1 space-y-3">
+              {openedDoc.body.map((para, i) => (
+                <p key={i} className="text-sm leading-relaxed" style={{ color: C.text2 }}>{para}</p>
+              ))}
+            </div>
+
+            <div className="px-6 py-3 shrink-0 flex items-center justify-between" style={{ borderTop: `1px solid ${C.border}` }}>
+              <span className="text-[10px]" style={{ color: C.text5 }}>Demo content · Oakridge Women FC · placeholder text</span>
+              <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Club Details + Key Contacts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -51,6 +51,8 @@ import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/W
 import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
+import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
+import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -4662,45 +4664,10 @@ const StandaloneTrackerView = ({ club }: { club: WomensClub }) => (
   </div>
 )
 
-// ─── BOARD SUITE VIEW ─────────────────────────────────────────────────────────
-const BoardSuiteView = ({ club }: { club: WomensClub }) => (
-  <div>
-    <SectionHeader title={`Board Suite — ${club.name}`} subtitle="Executive dashboard for board and investors" icon="🏛️" />
-    <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 flex items-center justify-between">
-      <div><div className="text-sm text-pink-300 font-medium">Next board meeting: 15 Apr 2025</div><div className="text-xs text-gray-400">Pack due in 11 days</div></div>
-      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Generate Pack — Phase 2</button>
-    </div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="FSR Status" value={`Safe (${club.salarySpend ?? 0}%)`} color="green" />
-      <StatCard label="Headroom" value={club.fsrHeadroom ? `£${(club.fsrHeadroom/1000).toFixed(0)}k` : 'N/A'} color="teal" />
-      <StatCard label="Revenue vs Budget" value="87%" color="blue" />
-      <StatCard label="Pipeline" value="£238k" color="pink" />
-    </div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Squad" value="20" color="purple" />
-      <StatCard label="Welfare Flags" value="2" color="amber" />
-      <StatCard label="Attendance" value="2,847" color="blue" />
-      <StatCard label="Points" value="34" color="green" />
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Commercial Growth (Season-on-Season)</h3>
-      <svg viewBox="0 0 400 140" className="w-full">
-        {[{year:'22-23',md:180,com:120,bc:80},{year:'23-24',md:220,com:180,bc:120},{year:'24-25',md:280,com:240,bc:160},{year:'25-26',md:320,com:310,bc:200}].map((y: {year:string;md:number;com:number;bc:number}, i: number) => {
-          const x = 40 + i * 90; const scale = 100 / 350;
-          return (<g key={i}><rect x={x} y={120 - y.md * scale} width={20} height={y.md * scale} rx={2} fill="#EC4899" opacity={0.7} /><rect x={x + 22} y={120 - y.com * scale} width={20} height={y.com * scale} rx={2} fill="#8B5CF6" opacity={0.7} /><rect x={x + 44} y={120 - y.bc * scale} width={20} height={y.bc * scale} rx={2} fill="#38BDF8" opacity={0.7} /><text x={x + 32} y={135} textAnchor="middle" fill="#6b7280" fontSize="9">{y.year}</text></g>)
-        })}
-      </svg>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-      <h3 className="text-sm font-bold text-white mb-3">WSL Compliance</h3>
-      <div className="space-y-2">
-        {[{item:'FSR salary cap',ok:true},{item:'Age-band minimums',ok:false,note:'1 player'},{item:'Welfare standards',ok:true},{item:'Registration',ok:true},{item:'Dual reg records',ok:true}].map((c: {item:string;ok:boolean;note?:string}, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-gray-800/50"><span className={c.ok ? 'text-green-400' : 'text-red-400'}>{c.ok ? '✓' : '✗'}</span><span className="text-gray-300">{c.item}</span>{c.note && <span className="text-amber-400 ml-auto">{c.note}</span>}</div>
-        ))}
-      </div>
-    </div>
-  </div>
-)
+// Board Suite — extracted to src/components/womens/WomensBoardSuiteView.tsx
+// (port-by-copying from Pro's BoardSuiteView, pink-themed, WSL 2 scale).
+// Built sequentially over 5 commits: scaffolding + Overview + Profile shipped
+// first; Finance / Welfare / Squad+Facilities / Governance follow.
 
 // ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
 const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
@@ -5531,7 +5498,16 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
 
 function WomensFootballPortalInner({ club, session }: { club: WomensClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Sidebar collapse / hover-expand — matches Pro behaviour. Pinned state
+  // persists across sessions in localStorage; hovered state is ephemeral
+  // with a 400ms leave timer to prevent flicker on quick mouse-outs.
+  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_womens_sidebar_pinned') === 'true')
+  const [hovered, setHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = pinned || hovered
+  const togglePin = () => setPinned(p => { const next = !p; try { localStorage.setItem('lumio_womens_sidebar_pinned', String(next)) } catch { /* SSR */ }; return next })
+  const handleSidebarEnter = () => { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null } setHovered(true) }
+  const handleSidebarLeave = () => { sidebarLeaveTimer.current = setTimeout(() => setHovered(false), 400) }
   const [activeRole, setActiveRole] = useState(session.role)
 
   // Role config
@@ -5552,6 +5528,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [v2CmdOpen, setV2CmdOpen]         = useState(false)
   const [v2AskOpen, setV2AskOpen]         = useState(false)
   const [v2BriefOpen, setV2BriefOpen]     = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [v2DashToast, showV2DashToast]    = useV2Toast()
   useV2Key('cmdk', () => setV2CmdOpen(o => !o))
   // Map dashTab IDs to v2 Lucide icons for the restyled tab bar.
@@ -5802,7 +5779,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'performance-brief': return <AIPerformanceBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
-      case 'board':       return <BoardSuiteView club={club} />
+      case 'board':       return <WomensBoardSuiteView club={club} onNavigate={setActiveSection} />
       case 'club-vision': return <WomensClubVisionView club={club} />
       case 'financial':   return <WomensClubVisionView club={club} />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
@@ -5885,12 +5862,29 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           the row well past 100vh; women's needs the explicit floor. */}
       <div className="flex flex-1" style={{ minHeight: 'calc(100vh / 0.9)' }}>
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
+      <aside
+        className="hidden md:flex flex-col border-r border-gray-800 shrink-0 overflow-hidden"
+        style={{ width: expanded ? 220 : 72, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start', transition: 'width 250ms ease' }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
+      >
+        <div className="flex items-center gap-2 border-b border-gray-800" style={{ padding: expanded ? '16px' : '16px 0', justifyContent: expanded ? 'flex-start' : 'center' }}>
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
             : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
-          {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{session.clubName}</span>}
+          {expanded && (
+            <>
+              <span className="text-sm font-bold text-white truncate flex-1">{session.clubName}</span>
+              <button
+                onClick={togglePin}
+                className="shrink-0 p-1 rounded"
+                style={{ color: pinned ? '#EC4899' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 150ms ease, color 150ms ease' }}
+                title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+              </button>
+            </>
+          )}
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           {groups.map((group: string) => {
@@ -5900,17 +5894,22 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             if (items.length === 0) return null
             return (
             <div key={group}>
-              {!sidebarCollapsed && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
+              {expanded && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
               {items.map((item: { id: string; label: string; icon: string }) => {
                 const NavIcon = NAV_ICON_MAP[item.id] ?? CircleDot
                 return (
-                <button key={item.id} onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-xs transition-all ${
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveSection(item.id); if (!pinned) setHovered(false) }}
+                  className={`w-full flex items-center gap-2.5 py-2 text-xs transition-all ${
                     activeSection === item.id ? 'bg-pink-600/10 text-pink-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}>
+                  }`}
+                  style={{ paddingLeft: expanded ? 16 : 0, paddingRight: expanded ? 16 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}
+                  title={expanded ? undefined : item.label}
+                >
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
-                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {!sidebarCollapsed && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {expanded && <span className="truncate">{item.label}</span>}
+                  {expanded && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}
@@ -5924,15 +5923,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             roles={WOMENS_ROLES}
             accentColor="#EC4899"
             onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('insights') }}
-            sidebarCollapsed={sidebarCollapsed}
+            sidebarCollapsed={!expanded}
           />
         </div>
-        {/* Collapse button removed — feature not present in other portals
-            (football, cricket, rugby, etc.). Sidebar is fixed-width sticky
-            matching canonical pattern across all portals. The
-            sidebarCollapsed state is retained because it is still
-            referenced by the sidebar's width / label / RoleSwitcher
-            conditionals; in this build it stays at its default (false). */}
       </aside>
 
       {/* Main content */}
@@ -6032,18 +6025,30 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               })}
             </div>
 
-            {/* Quick Actions — role-aware (shared bar), Today tab only.
+            {/* Quick Actions — role-aware (shared bar) + Women's Send
+                Message button, Today tab only. Send Message is a Women's-
+                only extra that sits alongside the shared bar — the shared
+                bar is NOT modified (it's used by Football and Cricket too).
                 Restricted to Today: Quick Wins and Daily Tasks tabs are
                 lists of their own action items, so the Quick Actions row
                 duplicated context. */}
             {dashTab === 'today' && (
-              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <RoleAwareQuickActionsBar
                   sport="womens"
                   role={currentRole as string}
                   onNavigate={(deptId) => setActiveSection(deptId)}
                   accentHex={v2Accent.hex}
                 />
+                <button
+                  onClick={() => setSendMessageOpen(true)}
+                  className="text-xs font-semibold transition-colors"
+                  style={{ padding: '8px 14px', borderRadius: 10, backgroundColor: 'rgba(190,24,93,0.12)', color: '#F472B6', border: '1px solid rgba(190,24,93,0.4)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.22)' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.12)' }}
+                >
+                  📨 Send Message
+                </button>
               </div>
             )}
 
@@ -6174,6 +6179,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       <V2FixtureDrawer  T={v2T} accent={v2Accent} fixture={v2OpenFixture as unknown as never} onClose={() => setV2OpenFixture(null)} />
       <V2Toast          T={v2T} accent={v2Accent} msg={v2DashToast} />
       <WomensMatchBriefPanel T={v2T} accent={v2Accent} open={v2BriefOpen} onClose={() => setV2BriefOpen(false)} />
+      {sendMessageOpen && <WomensSendMessageModal onClose={() => setSendMessageOpen(false)} />}
     </div>
   )
 }
