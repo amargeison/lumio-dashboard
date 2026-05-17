@@ -88,18 +88,18 @@ export function HeroToday({
         <rect width="100%" height="100%" fill="url(#wf-hero-ptn)" />
       </svg>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
-      {/* Ghost crest watermark — Pro-pattern port, sized/positioned to
-          match Pro's visual intent (large, centre-ish, vertically
-          centred, slight angle). Pro's literal transform is just
-          translateY(-50%) with no rotate; the slight angle here is a
-          stated-intent interpretation. Card has overflow:hidden so the
-          280px crest is clipped at edges if it overhangs — fine for a
-          watermark at 7% opacity. saturate(0.2) brightness(3) washes
-          the dark SVG to near-white. */}
+      {/* Ghost crest watermark — Pro-pattern port. Sized to fit the
+          HeroToday Card (~180–210px tall) without clipping; Pro's
+          180px is on a similarly short container. Horizontally
+          centred to sit behind the centred quote element. Rotation
+          is a stated-intent addition — Pro's literal transform is
+          just translateY(-50%) with no rotate. saturate(0.2)
+          brightness(3) washes the dark SVG to near-white. Opacity
+          matches Pro's 0.07. */}
       <img
         src="/badges/oakridge_fc_crest.svg"
         alt=""
-        style={{ position: 'absolute', left: '40%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 280, height: 280, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
+        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 200, height: 200, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
       />
       {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
           without conflicting with women's pink brand accent. Italic, single
