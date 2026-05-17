@@ -188,94 +188,138 @@ function TodayTab() {
 
 // ─── Org Chart ──────────────────────────────────────────────────────────────
 
+// Org chart — data-driven from reportsTo relationships.
+// Each entry names the person they report to (by name); the chart layout
+// is derived from those edges, not hardcoded. Top of chart has
+// reportsTo: null. Change a `reportsTo` value here and the rendered
+// hierarchy + connector lines update automatically — no layout edits.
+type StaffNode = {
+  name: string
+  role: string
+  dept: Dept | 'Board'
+  avatar: string
+  reportsTo: string | null
+}
+
+// Reporting structure rationale:
+// - Director Kate Brennan oversees the business side (Operations,
+//   Commercial, Community).
+// - Director of Football Helen Voss oversees the football+performance
+//   side (Performance, Medical, Welfare). Putting Medical and Welfare
+//   under DoF reflects a common WSL/WSL 2 setup; some clubs use
+//   independent reporting lines (especially Carney-standards welfare)
+//   but for a single-line org chart, DoF stewardship is the cleanest
+//   single representation.
+// - Head Coach Sarah Frost reports directly to the Board and runs the
+//   first-team coaching staff (not modelled at this level of detail).
+function staffRoster(club: ClubProps): StaffNode[] {
+  const board = `${club.name} Board`
+  return [
+    { name: board,           role: 'Owner / Board',        dept: 'Board',       avatar: board,           reportsTo: null },
+    { name: club.director,   role: 'Club Director',        dept: 'Operations',  avatar: club.director,   reportsTo: board },
+    { name: club.manager,    role: 'Head Coach',           dept: 'Coaching',    avatar: club.manager,    reportsTo: board },
+    { name: 'Helen Voss',    role: 'Director of Football', dept: 'DoF',         avatar: 'Helen Voss',    reportsTo: board },
+    { name: 'Mark Walker',   role: 'Head of Operations',   dept: 'Operations',  avatar: 'Mark Walker',   reportsTo: club.director },
+    { name: 'Jordan Clarke', role: 'Commercial Director',  dept: 'Commercial',  avatar: 'Jordan Clarke', reportsTo: club.director },
+    { name: 'Sasha Lin',     role: 'Head of Community',    dept: 'Community',   avatar: 'Sasha Lin',     reportsTo: club.director },
+    { name: 'Marcus Chen',   role: 'Head of Performance',  dept: 'Performance', avatar: 'Marcus Chen',   reportsTo: 'Helen Voss' },
+    { name: 'Dr Anna Reid',  role: 'Club Doctor',          dept: 'Medical',     avatar: 'Dr Anna Reid',  reportsTo: 'Helen Voss' },
+    { name: 'Nina Walsh',    role: 'Welfare Lead',         dept: 'Welfare',     avatar: 'Nina Walsh',    reportsTo: 'Helen Voss' },
+  ]
+}
+
 function OrgChartTab({ club }: { club: ClubProps }) {
-  // Owner is a group entity (the club board) — no per-person avatar.
-  const owner = { name: `${club.name} Board`, role: 'Owner / Board' }
-  // Avatar seeds default to each person's name (deterministic per individual).
-  const level2: Array<{ name: string; role: string; dept: Dept; avatar: string }> = [
-    { name: club.director, role: 'Club Director',         dept: 'Operations', avatar: club.director },
-    { name: club.manager,  role: 'Head Coach',            dept: 'Coaching',   avatar: club.manager },
-    { name: 'Helen Voss',  role: 'Director of Football',  dept: 'DoF',        avatar: 'Helen Voss' },
-  ]
-  const level3: Array<{ name: string; role: string; dept: Dept; avatar: string }> = [
-    { name: 'Marcus Chen',   role: 'Head of Performance', dept: 'Performance', avatar: 'Marcus Chen' },
-    { name: 'Dr Anna Reid',  role: 'Club Doctor',         dept: 'Medical',     avatar: 'Dr Anna Reid' },
-    { name: 'Nina Walsh',    role: 'Welfare Lead',        dept: 'Welfare',     avatar: 'Nina Walsh' },
-    { name: 'Mark Walker',   role: 'Head of Operations',  dept: 'Operations',  avatar: 'Mark Walker' },
-    { name: 'Jordan Clarke', role: 'Commercial Director', dept: 'Commercial',  avatar: 'Jordan Clarke' },
-    { name: 'Sasha Lin',     role: 'Head of Community',   dept: 'Community',   avatar: 'Sasha Lin' },
-  ]
+  const staff = staffRoster(club)
+  const root = staff.find(s => s.reportsTo === null)
+  if (!root) return null
+  const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
+  const level1 = directReports(root.name)
+
+  const PersonCard = ({ node, size }: { node: StaffNode; size: 'mid' | 'leaf' }) => {
+    const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
+    const isMid = size === 'mid'
+    const avatarPx = isMid ? 40 : 32
+    return (
+      <div
+        className="rounded-xl text-center"
+        style={{
+          backgroundColor: isMid ? C.panelAlt : C.panelDeep,
+          border: `1px solid ${colour}${isMid ? '' : '40'}`,
+          padding: isMid ? 12 : 10,
+          width: isMid ? 168 : 132,
+        }}
+      >
+        <img
+          src={avatarUrl(node.avatar)}
+          alt=""
+          className="rounded-full mx-auto mb-1 object-cover"
+          style={{ width: avatarPx, height: avatarPx, backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
+        />
+        <p className={isMid ? 'text-xs font-bold truncate' : 'text-xs font-medium truncate'} style={{ color: isMid ? C.text : C.text2 }}>{node.name}</p>
+        <p className="text-[10px] truncate" style={{ color: colour }}>{node.role}</p>
+      </div>
+    )
+  }
 
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
 
-      {/* Owner / Board */}
-      <div className="flex justify-center mb-8">
+      {/* Root — Owner / Board */}
+      <div className="flex justify-center mb-2">
         <div className="rounded-xl p-4 text-center w-56" style={{ backgroundColor: C.panelAlt, border: `2px solid ${C.text5}` }}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(75,85,99,0.2)', color: C.text5 }}>
-            {owner.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
+            {root.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
           </div>
-          <p className="text-sm font-bold" style={{ color: C.text }}>{owner.name}</p>
-          <p className="text-[10px]" style={{ color: C.text5 }}>{owner.role}</p>
+          <p className="text-sm font-bold" style={{ color: C.text }}>{root.name}</p>
+          <p className="text-[10px]" style={{ color: C.text5 }}>{root.role}</p>
         </div>
       </div>
 
-      <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
-      <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '50%' }} /></div>
+      {/* Connector from root down */}
+      <div className="flex justify-center mb-1"><div className="w-px h-6" style={{ backgroundColor: '#374151' }} /></div>
 
-      {/* Level 2 — Director / Head Coach / DoF */}
-      <div className="flex justify-center gap-6 mb-8 flex-wrap">
-        {level2.map(m => {
-          const colour = DEPT_COLOR[m.dept]
+      {/* Level 1 columns — each top-of-tree person gets their own column
+          containing their card + their direct reports below. Reports are
+          derived from the staff[].reportsTo edges, so changing a
+          reportsTo here re-routes the lines automatically. */}
+      <div className="flex justify-center gap-6 items-start flex-wrap">
+        {level1.map(person => {
+          const myReports = directReports(person.name)
           return (
-            <div key={m.name} className="flex flex-col items-center">
-              <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
-              <div className="rounded-xl p-3 text-center w-48" style={{ backgroundColor: C.panelAlt, border: `1px solid ${colour}` }}>
-                <img
-                  src={avatarUrl(m.avatar)}
-                  alt=""
-                  className="w-10 h-10 rounded-full mx-auto mb-1 object-cover"
-                  style={{ backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
-                />
-                <p className="text-xs font-bold truncate" style={{ color: C.text }}>{m.name}</p>
-                <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
-              </div>
+            <div key={person.name} className="flex flex-col items-center gap-3">
+              {/* Vertical connector from the root's horizontal bus down to this person */}
+              <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+              <PersonCard node={person} size="mid" />
+              {myReports.length > 0 && (
+                <>
+                  <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+                  {myReports.length > 1 && (
+                    <div className="h-px" style={{ backgroundColor: '#374151', width: `${Math.min(100, myReports.length * 60)}%` }} />
+                  )}
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    {myReports.map(rep => (
+                      <div key={rep.name} className="flex flex-col items-center gap-1">
+                        <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
+                        <PersonCard node={rep} size="leaf" />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* Level 3 — dept heads */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {level3.map(m => {
-          const colour = DEPT_COLOR[m.dept]
-          return (
-            <div key={m.name} className="rounded-xl p-3 text-center" style={{ backgroundColor: C.panelDeep, border: `1px solid ${colour}40` }}>
-              <img
-                src={avatarUrl(m.avatar)}
-                alt=""
-                className="w-8 h-8 rounded-full mx-auto mb-1 object-cover"
-                style={{ backgroundColor: `${colour}15`, border: `1px solid ${colour}30` }}
-              />
-              <p className="text-xs font-medium truncate" style={{ color: C.text2 }}>{m.name}</p>
-              <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Legend */}
+      {/* Legend — dept colours present in the rendered roster */}
       <div className="flex gap-3 justify-center mt-8 flex-wrap">
-        {(Object.entries(DEPT_COLOR) as Array<[Dept, string]>)
-          .filter(([d]) => d !== 'DoF' && d !== 'Community')
-          .concat([['Community', DEPT_COLOR.Community]])
-          .map(([label, colour]) => (
-            <div key={label} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colour }} />
-              {label}
-            </div>
-          ))}
+        {Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept))).map(dept => (
+          <div key={dept} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DEPT_COLOR[dept as Dept] }} />
+            {dept === 'DoF' ? 'Football' : dept}
+          </div>
+        ))}
       </div>
     </div>
   )
