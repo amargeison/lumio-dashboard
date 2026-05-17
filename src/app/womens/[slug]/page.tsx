@@ -5827,8 +5827,17 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 hero. Without this, sibling card row counts can drag the hero
                 card to match a taller sibling, leaving empty space below the
                 buttons. */}
-            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start' }}>
+            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12, position: 'relative', overflow: 'hidden' }}>
+              {/* Ghost crest watermark — Pro-pattern port. saturate(0.2)
+                  brightness(3) washes the dark SVG to near-white so it
+                  ghosts cleanly on the dark hero. zIndex 0 keeps it
+                  behind the grid, which is lifted to zIndex 1. */}
+              <img
+                src="/badges/oakridge_fc_crest.svg"
+                alt=""
+                style={{ position: 'absolute', right: 80, top: '50%', transform: 'translateY(-50%)', width: 220, height: 220, objectFit: 'contain', opacity: 0.06, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none', zIndex: 0 }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start', position: 'relative', zIndex: 1 }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
                   onTodaysBriefing={() => { setActiveSection('briefing'); showV2DashToast("Today's briefing") }}
