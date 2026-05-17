@@ -531,9 +531,9 @@ function FinanceTab() {
           <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Wage-to-Revenue Tracker</p>
           <div className="flex items-center gap-2">
             {[
-              { q: 'Q1',        v: 70 },
-              { q: 'Q2',        v: 72 },
-              { q: 'Q3 (fcst)', v: 73 },
+              { q: 'Q4 24/25',         v: 70 },
+              { q: 'Q1 25/26',         v: 74 },
+              { q: 'Q2 25/26 (curr)',  v: 72 },
             ].map(q => (
               <div key={q.q} className="flex-1 text-center">
                 <div className="h-2 rounded-full mb-1" style={{ backgroundColor: C.border }}>
@@ -655,6 +655,205 @@ function FinanceTab() {
   )
 }
 
+// ─── Welfare Tab (board lens) ─────────────────────────────────────────────────
+// Light rollup of the dedicated welfare modules. Numbers shown at board level
+// are aggregate and anonymised — clinical detail stays in the modules and
+// with the Welfare Lead and Club Doctor. Cycle and Pregnancy & RTP framing is
+// wellbeing-led and player-controlled. Cross-links open the corresponding
+// modules via the page-level activeSection setter (passed in as onNavigate).
+
+function WelfareTab({ onNavigate }: { onNavigate?: (id: string) => void }) {
+  const go = (id: string) => () => onNavigate?.(id)
+
+  return (
+    <div className="space-y-4">
+      {/* Headline KPIs — board-relevant, all aggregate / anonymised */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { l: 'Open welfare flags',         v: '4',   sub: '2 amber · 2 yellow · 0 red', c: C.warn },
+          { l: 'Players on modified-load',   v: '3',   sub: 'all within standard pathway', c: C.text },
+          { l: 'Cycle module opt-in rate',   v: '64%', sub: '14 of 22 — opt-in only',      c: C.pinkSoft },
+          { l: 'Active pregnancy / RTP',     v: '1',   sub: 'Stage 4 of 10 (adapted training)', c: C.pinkSoft },
+        ].map(s => (
+          <Card key={s.l}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: C.muted }}>{s.l}</p>
+            <p className="text-2xl font-black mt-1" style={{ color: s.c }}>{s.v}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: C.text4 }}>{s.sub}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Three board-lens summary cards, each with a cross-link to its module */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold" style={{ color: C.text }}>ACL Risk Prevention</p>
+            <button onClick={go('acl')} className="text-[10px] font-bold px-2 py-1 rounded-md"
+              style={{ backgroundColor: C.pinkDim, color: C.pinkSoft, border: `1px solid ${C.pinkBorder}` }}>
+              Open module →
+            </button>
+          </div>
+          <div className="space-y-2">
+            {[
+              { l: 'Low risk',      v: 15, c: C.good },
+              { l: 'Moderate risk', v:  5, c: C.warn },
+              { l: 'Elevated risk', v:  2, c: C.bad  },
+            ].map(r => (
+              <div key={r.l}>
+                <div className="flex justify-between mb-0.5">
+                  <span className="text-[11px]" style={{ color: C.muted }}>{r.l}</span>
+                  <span className="text-[11px] font-bold" style={{ color: r.c }}>{r.v}</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.border }}>
+                  <div className="h-full rounded-full" style={{ width: `${(r.v / 22) * 100}%`, backgroundColor: r.c }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: C.text4 }}>
+            Aggregate squad screen. Individual ACL detail sits with the Club Doctor in the ACL module.
+          </p>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold" style={{ color: C.text }}>Cycle Tracking</p>
+            <button onClick={go('cycle')} className="text-[10px] font-bold px-2 py-1 rounded-md"
+              style={{ backgroundColor: C.pinkDim, color: C.pinkSoft, border: `1px solid ${C.pinkBorder}` }}>
+              Open module →
+            </button>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Opt-in players</span><span className="font-bold" style={{ color: C.text }}>14 / 22</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Consent revoked YTD</span><span className="font-bold" style={{ color: C.text }}>1 (purged 30d backups)</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Visible to coaching</span><span className="font-bold" style={{ color: C.good }}>availability flags only</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Phase data access</span><span className="font-bold" style={{ color: C.text }}>Doctor + Welfare Lead</span></div>
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: C.text4 }}>
+            Opt-in only. Players control consent and can revoke at any time, no questions asked.
+          </p>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold" style={{ color: C.text }}>Mental Health</p>
+            <button onClick={go('mental')} className="text-[10px] font-bold px-2 py-1 rounded-md"
+              style={{ backgroundColor: C.pinkDim, color: C.pinkSoft, border: `1px solid ${C.pinkBorder}` }}>
+              Open module →
+            </button>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Sessions delivered (YTD)</span><span className="font-bold" style={{ color: C.text }}>62</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>% squad accessing</span><span className="font-bold" style={{ color: C.text }}>~55%</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>PFA referrals open</span><span className="font-bold" style={{ color: C.text }}>2</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Avg wait to first session</span><span className="font-bold" style={{ color: C.good }}>3 days</span></div>
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: C.text4 }}>
+            Confidential by default. Board sees utilisation only — no clinical content.
+          </p>
+        </Card>
+      </div>
+
+      {/* Pregnancy & RTP — 10-stage pathway with anonymised active case */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold" style={{ color: C.text }}>Pregnancy & Return-to-Play</p>
+          <button onClick={go('maternity')} className="text-[10px] font-bold px-2 py-1 rounded-md"
+            style={{ backgroundColor: C.pinkDim, color: C.pinkSoft, border: `1px solid ${C.pinkBorder}` }}>
+            Open module →
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div className="flex gap-1">
+            {[
+              { s: 1, label: 'Notification' },
+              { s: 2, label: 'Clinical handover' },
+              { s: 3, label: 'Adapted training (T1)' },
+              { s: 4, label: 'Adapted training (T2)' },
+              { s: 5, label: 'Cessation of contact' },
+              { s: 6, label: 'Maternity leave' },
+              { s: 7, label: 'Postpartum clearance' },
+              { s: 8, label: 'Pelvic floor / MSK' },
+              { s: 9, label: 'Graduated RTP' },
+              { s: 10, label: 'Match selection' },
+            ].map((st) => (
+              <div key={st.s} className="flex-1 text-center" title={st.label}>
+                <div className="h-2 rounded" style={{ backgroundColor: st.s <= 4 ? C.pink : st.s === 5 ? C.pinkDim : C.border }} />
+                <p className="text-[9px] mt-1 font-bold" style={{ color: st.s === 4 ? C.pinkSoft : C.text4 }}>{st.s}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div><span style={{ color: C.muted }}>Active cases: </span><span className="font-bold" style={{ color: C.text }}>1 player (Stage 4)</span></div>
+            <div><span style={{ color: C.muted }}>Pay backstop: </span><span className="font-bold" style={{ color: C.good }}>WSL 26 wks · FIFA Art. 18quater</span></div>
+            <div><span style={{ color: C.muted }}>Board visibility: </span><span className="font-bold" style={{ color: C.text }}>stage + contract only</span></div>
+          </div>
+        </div>
+        <p className="text-[10px] mt-3" style={{ color: C.text4 }}>
+          Care-not-surveillance. Clinical detail stays with player + Club Doctor; Welfare Lead sees pathway stage and contract obligations.
+        </p>
+      </Card>
+
+      {/* Compliance + recruitment rollup */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Karen Carney Standards</p>
+          <div className="space-y-2 text-xs">
+            {[
+              { l: 'Independent Welfare Lead in post',         ok: false, note: 'interim cover (perm hire in flight)' },
+              { l: 'Cycle-aware training adaptation',          ok: true  },
+              { l: 'Postpartum return-to-play pathway',        ok: true  },
+              { l: 'Mental-health pathway with PFA liaison',   ok: true  },
+              { l: 'Player transition / retirement support',   ok: true  },
+              { l: 'Annual Carney self-assessment return',     ok: true, note: 'submitted Mar 2026' },
+            ].map((c, i) => (
+              <div key={i} className="flex items-center gap-2 py-1" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ color: c.ok ? C.good : C.bad }}>{c.ok ? '✓' : '✗'}</span>
+                <span style={{ color: C.text2 }} className="flex-1">{c.l}</span>
+                {c.note && <span className="text-[10px]" style={{ color: C.warn }}>{c.note}</span>}
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Welfare Lead Recruitment</p>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Status</span><span className="font-bold" style={{ color: C.warn }}>Interim cover · permanent hire in flight</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Shortlist</span><span className="font-bold" style={{ color: C.text }}>3 candidates</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Final interviews</span><span className="font-bold" style={{ color: C.text }}>w/c 26 May 2026</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Expected start</span><span className="font-bold" style={{ color: C.text }}>1 Jul 2026</span></div>
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: C.text4 }}>
+            Welfare Lead has independent reporting line to the Club Director and direct access to the board.
+          </p>
+        </Card>
+      </div>
+
+      {/* Cross-link strip — quick jump into the full welfare modules */}
+      <Card>
+        <p className="text-[10px] uppercase tracking-wider font-semibold mb-3" style={{ color: C.muted }}>Open full welfare modules</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'welfare',   label: 'Player Welfare Hub' },
+            { id: 'cycle',     label: 'Cycle Tracking' },
+            { id: 'maternity', label: 'Pregnancy & RTP' },
+            { id: 'acl',       label: 'ACL Prevention' },
+            { id: 'mental',    label: 'Mental Health' },
+            { id: 'medical',   label: 'Medical Records' },
+          ].map(l => (
+            <button key={l.id} onClick={go(l.id)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: C.cardAlt, color: C.text2, border: `1px solid ${C.border}` }}>
+              {l.label} →
+            </button>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 // ─── Stub tabs (filled in subsequent commits) ─────────────────────────────────
 
 function StubTab({ label, nextCommit }: { label: string; nextCommit: string }) {
@@ -668,7 +867,7 @@ function StubTab({ label, nextCommit }: { label: string; nextCommit: string }) {
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export default function WomensBoardSuiteView({ club }: { club: WomensClub }) {
+export default function WomensBoardSuiteView({ club, onNavigate }: { club: WomensClub; onNavigate?: (id: string) => void }) {
   const [tab, setTab] = useState<Tab>('overview')
 
   return (
@@ -713,7 +912,7 @@ export default function WomensBoardSuiteView({ club }: { club: WomensClub }) {
       {tab === 'overview'   && <OverviewTab />}
       {tab === 'profile'    && <ProfileTab club={club} />}
       {tab === 'finance'    && <FinanceTab />}
-      {tab === 'welfare'    && <StubTab label="Welfare (board lens)" nextCommit="C3 of 5" />}
+      {tab === 'welfare'    && <WelfareTab onNavigate={onNavigate} />}
       {tab === 'squad'      && <StubTab label="Squad & Performance" nextCommit="C4 of 5" />}
       {tab === 'governance' && <StubTab label="Governance"          nextCommit="C5 of 5" />}
       {tab === 'facilities' && <StubTab label="Facilities"          nextCommit="C4 of 5" />}

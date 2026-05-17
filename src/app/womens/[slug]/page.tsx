@@ -5779,7 +5779,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'performance-brief': return <AIPerformanceBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
-      case 'board':       return <WomensBoardSuiteView club={club} />
+      case 'board':       return <WomensBoardSuiteView club={club} onNavigate={setActiveSection} />
       case 'club-vision': return <WomensClubVisionView club={club} />
       case 'financial':   return <WomensClubVisionView club={club} />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
