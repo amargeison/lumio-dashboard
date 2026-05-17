@@ -21,7 +21,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   welfare: Heart, acl: Activity, cycle: Flower2, maternity: Baby, mental: Brain,
   squad: Users, dualreg: RefreshCw, tactics: Target, match: CircleDot,
   transfers: ArrowLeftRight, analytics: TrendingDown, scouting: Telescope,
-  academy: GraduationCap, halftime: Bot,
+  academy: GraduationCap, 'performance-brief': Bot,
   sponsorship: Handshake, standalone: Construction, board: Landmark,
   financial: DollarSign, media: Smartphone, social: Share2, fanhub: HeartHandshake,
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
@@ -98,7 +98,7 @@ interface WomensClub {
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Lumio = club management platform. Some pitch-side tactical features
-// (Match Preparation, Analytics, Scouting, AI Halftime Brief) remain
+// (Match Preparation, Analytics, Scouting, AI Performance Brief) remain
 // Hudl/Sportscode territory and are commented out below. Tactics & Set
 // Pieces ARE in scope — restored after Phase 4c reconciliation; uses the
 // inline TacticsSetPiecesView. Quick-action buttons targeting the still-
@@ -126,6 +126,7 @@ const SIDEBAR_ITEMS = [
   { id: 'video-analysis',   label: 'Video & Analysis',    icon: '🎬', group: 'FOOTBALL' },
   { id: 'gps-load',         label: 'GPS & Performance',   icon: '📡', group: 'FOOTBALL' },
   { id: 'gps-heatmaps',     label: 'Heatmaps',            icon: '🔥', group: 'FOOTBALL' },
+  { id: 'performance-brief',label: 'AI Performance Brief',icon: '🤖', group: 'FOOTBALL' },
   { id: 'fixtures',         label: 'Fixtures & Results',  icon: '📅', group: 'FOOTBALL' },
   { id: 'cup-manager',      label: 'Cup Manager',         icon: '🏆', group: 'FOOTBALL' },
   { id: 'transfers',        label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
@@ -3058,144 +3059,292 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
   );
 };
 
-// ─── AI HALFTIME BRIEF VIEW ─────────────────────────────────────────────────
-const AIHalftimeBriefView = () => {
-  const [brief, setBrief] = useState<string | null>(null)
+// ─── AI PERFORMANCE BRIEF VIEW ──────────────────────────────────────────────
+// 3-mode AI performance brief — Half-Time / Full-Time / Training. Each mode
+// has its own prompt template + JSON schema, and welfare is a FIRST-CLASS
+// field in every mode (cycle phase, ACL deceleration accumulation, mental-
+// health flags, postpartum RTP watch). Women's portal is welfare-led —
+// welfare cannot drop or thin out in any mode.
+//
+// DEMO BEHAVIOUR: this view serves CANNED responses (instant, free) — the
+// live /api/ai/womens fetch path is preserved as a commented reference below
+// each generate call for re-enabling in a signed-client portal. Canned
+// content is intentionally high-quality — it's what prospects see.
+
+type PerfMode = 'halftime' | 'fulltime' | 'training'
+interface WelfareFlag { player: string; flag: string; recommendation: string }
+interface HalfTimeBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  fatigue_alerts: { player: string; stat: string; flag: string }[]
+  tactical_insight: string
+  substitution_rec: string
+  second_half_instruction: string
+}
+interface FullTimeBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  red_zone_players: { player: string; stat: string; concern: string }[]
+  recovery_priorities: string
+  next_session_flags: string
+  rtp_watch: string
+}
+interface TrainingBrief {
+  headline: string
+  welfare_flags: WelfareFlag[]
+  load_vs_plan: string
+  manage_tomorrow: { player: string; stat: string; action: string }[]
+  session_target_assessment: string
+}
+
+const CANNED_HALFTIME: HalfTimeBrief = {
+  headline: "We're trailing 0–1 to Hartwell Women at half-time despite 58% possession — final-third execution and Hartwell's high press are the two stories of the first 45.",
+  welfare_flags: [
+    { player: 'Emily Zhang', flag: 'Luteal phase + 3 high-decel events (>3.5 m/s²) in 1st half', recommendation: 'Withdraw at 60′ regardless of score — load cap exceeded for cycle phase.' },
+    { player: 'Priya Nair',  flag: 'Ovulatory phase — ligament laxity peak, ACL caution',           recommendation: 'Avoid forced cutting drills; switch any wide-channel work inside.' },
+    { player: 'Charlotte Reed', flag: 'Pre-match anxiety flag — Welfare Lead notified',            recommendation: 'Direct verbal check-in at 45′ from coach; keep instructions concise.' },
+  ],
+  fatigue_alerts: [
+    { player: 'Emily Zhang', stat: '9.4 km distance, 91 AU load (luteal cap 75%)', flag: 'Withdraw at 60′' },
+    { player: 'Priya Nair',  stat: '77 AU, 5 high-intensity runs',                   flag: 'Modify role to centre channel' },
+    { player: 'Jade Osei',   stat: '8.2 km, 14 sprints',                              flag: 'Hold position, monitor 2nd half' },
+  ],
+  tactical_insight: "Hartwell's PPDA of 8.1 vs our 14.2 means they're pressing far higher than we are — we're giving them time on the ball and they're punishing us in transition. Progressive passes 18 vs their 31 — we're stuck in our own half too often.",
+  substitution_rec: 'Bring Lucy Whitmore on for Emily Zhang at 60′ — cycle-load reasons override tactical. If we need a goal earlier, swap Tilly Brooks in for Charlotte Reed at the same point to ease the anxiety pressure and add a direct runner.',
+  second_half_instruction: 'Raise PPDA by 5 points — press from Reed and Williams when their CB receives. Get the ball wide to Tilley early; their right-back has been struggling with her recovery pace all half.',
+}
+
+const CANNED_FULLTIME: FullTimeBrief = {
+  headline: '0–2 loss to Hartwell Women. Squad output adequate (89.4 AU avg load) but red-zone accumulation in 3 cycle-flagged players needs same-day management — recovery starts tonight, not Monday.',
+  welfare_flags: [
+    { player: 'Emily Zhang',  flag: 'Luteal phase + 4 high-decel events across 90′ (composite ACL risk 98 still red)', recommendation: 'Full pool recovery tonight. No training Monday. Re-screen Tuesday before any contact.' },
+    { player: 'Priya Nair',   flag: 'Ovulatory ligament-laxity window concluded — re-baseline tomorrow',                recommendation: 'Standard recovery. Cycle phase shifts to luteal Thursday — flag for Thursday session planning.' },
+    { player: 'Sophie Lawson', flag: 'Postpartum RTP Stage 9 — first 75′ completed',                                    recommendation: 'Welfare check-in Sunday AM with Nina Walsh. Player-led on Monday participation.' },
+  ],
+  red_zone_players: [
+    { player: 'Emily Zhang',    stat: '10.4 km, 198 AU full match, ACWR 1.42', concern: 'Cycle × load × prior ACL — highest risk profile in the squad' },
+    { player: 'Tilly Brooks',   stat: '11.2 km, 32 sprints',                    concern: 'Workload above 4-week rolling average by 18%' },
+    { player: 'Charlotte Reed', stat: '9.8 km, mental-health flag still active', concern: 'Welfare check-in priority before Monday session' },
+  ],
+  recovery_priorities: 'Pool + ice for the 3 red-zone players tonight (Zhang, Brooks, Reed) — Zhang is non-negotiable. Standard active recovery for the rest, with cycle-aware adjustment for any luteal-phase players. Sleep tracking on for all match starters.',
+  next_session_flags: 'Manage Zhang OFF Monday — full rest. Pull Brooks from any high-speed work Monday — reactive sessions only. Reed: welfare-led decision via Nina Walsh, default to optional attendance.',
+  rtp_watch: 'Sophie Lawson — postpartum RTP Stage 9. Pelvic-floor and MSK scan due Wednesday before further competitive minutes. Sophie Turner — RTP Phase 3 progressing well; consider Phase 4 sign-off after Tuesday\'s screening.',
+}
+
+const CANNED_TRAINING: TrainingBrief = {
+  headline: 'Tuesday tactical session hit 87% of target load — solid intensity through the high-press block, dropped 13% below target in the possession drill, three players flagged for tomorrow management.',
+  welfare_flags: [
+    { player: 'Priya Nair',     flag: 'Ovulatory phase mid-week — ligament laxity peak',                                      recommendation: 'Modify Wednesday cutting drills to centre-channel only. No 1v1 wide work tomorrow.' },
+    { player: 'Emily Zhang',    flag: 'Luteal phase, 60% load cap active',                                                    recommendation: 'Reduce Wednesday session to 65% volume. No max-decel drills.' },
+    { player: 'Bea Chen',       flag: 'Newly opted in to cycle tracking — first session under cycle-aware programming',       recommendation: 'Standard load today. Monitor for any RPE divergence next session.' },
+  ],
+  load_vs_plan: 'Whole-squad average 78 AU vs 90 AU target — 13% under. Driver: possession-block intensity slipped after minute 35, likely fatigue from Sunday\'s match. High-press block hit target at 95 AU.',
+  manage_tomorrow: [
+    { player: 'Emily Zhang',    stat: 'Load cap exceeded by 8 AU (luteal phase)', action: 'Rest tomorrow OR pool-only session — Welfare Lead\'s call.' },
+    { player: 'Tilly Brooks',   stat: 'ACWR 1.31 — entering caution zone',         action: 'Skip Wednesday high-speed block. Tactical walkthrough only.' },
+    { player: 'Charlotte Reed', stat: 'GPS load fine but RPE 8/10 (vs squad avg 6/10)', action: 'Check-in with Welfare before Wednesday — perceived effort divergence is the welfare signal here, not the GPS number.' },
+  ],
+  session_target_assessment: 'Intended physical stimulus (anaerobic capacity + decision-making under fatigue) was partially achieved — high-press block hit it, possession block didn\'t. Consider shortening the possession block by 5 minutes next time, or moving it ahead of the high-press block while the squad is fresher.',
+}
+
+const AIPerformanceBriefView = () => {
+  const [mode, setMode] = useState<PerfMode>('halftime')
   const [loading, setLoading] = useState(false)
-  const matchContext = { opponent: 'Hartwell Women', score: '0–1', minute: 45, venue: 'Home', formation: '4-3-3' }
+  // Per-mode brief cache so switching tabs preserves a generated brief.
+  const [briefs, setBriefs] = useState<{ halftime?: HalfTimeBrief; fulltime?: FullTimeBrief; training?: TrainingBrief }>({})
 
   const generateBrief = async () => {
     setLoading(true)
-    setBrief(null)
+    // Demo: canned response with ~800ms artificial latency for tactile feel.
+    // To enable live Claude API calls in a signed-client (non-demo) portal,
+    // remove the canned path below and uncomment the fetch block at the end
+    // of this function. The /api/ai/womens route already enforces per-IP
+    // rate limits + a daily spend cap via @/lib/ai/guards, so live calls
+    // are safe but cost money per click — keep canned for demo.
+    await new Promise(r => setTimeout(r, 800))
+    if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: CANNED_HALFTIME }))
+    else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: CANNED_FULLTIME }))
+    else setBriefs(b => ({ ...b, training: CANNED_TRAINING }))
+    setLoading(false)
+    return
+    /* LIVE API PATH — uncomment for non-demo deployments:
     try {
-      const prompt = `You are the AI performance analyst for Oakridge Women FC women's football club. Generate a structured halftime brief for the coaching staff.
-
-Match context:
-- Opponent: ${matchContext.opponent}
-- Score: ${matchContext.score} (we are trailing)
-- Venue: ${matchContext.venue}
-- Formation: ${matchContext.formation}
-
-GPS Data (first half):
-- High intensity runs: Us 38 vs Them 52
-- Avg speed: Us 6.8 km/h vs Them 7.2 km/h
-- Distance covered: Us 42.1km vs Them 45.3km
-- Sprint count: Us 14 vs Them 22
-
-Lumio Data xG:
-- xG: Us 0.31 vs Them 0.87
-- Shots: Us 2 vs Them 6
-- Progressive passes: Us 18 vs Them 31
-- PPDA (pressing intensity): Us 14.2 vs Them 8.1 (lower = more pressing)
-
-WELFARE FLAGS (confidential — coaching staff only):
-- Cycle flags: Emily Zhang (Luteal, load cap 60%), Priya Nair (Ovulatory, ligament laxity)
-- ACL event detection: Emily Zhang exceeded high-deceleration threshold 3 times
-- Mental health: Charlotte Reed flagged pre-match anxiety
-
-Available substitutes: Lucy Whitmore, Jade Osei, Abbi Walsh, Tilly Brooks, Mia Ford
-Yellow cards: Priya Nair
-
-Generate the brief in exactly this structure:
-
-## 🔴 SITUATION
-One paragraph summary of match state and urgency.
-
-## ⚡ PHYSICAL
-Bullet points on GPS findings and what they mean tactically. Flag Emily Zhang's ACL deceleration events clearly.
-
-## 🎯 TACTICAL
-3–4 specific adjustments based on xG and pressing data. Be direct and actionable.
-
-## ❤️ WELFARE (Confidential)
-List the cycle and mental health flags with specific recommended actions. Be clinical and respectful.
-
-## 🔄 SUBSTITUTION RECOMMENDATIONS
-Recommend 1–2 substitutions with reasoning, factoring in welfare flags and yellow cards.
-
-## 💬 TEAM TALK
-One short, direct motivational paragraph for the manager to adapt.
-
-Keep the tone professional, concise, and match-ready. This will be read in a 15-minute halftime window.`
-
+      const prompt = buildPromptForMode(mode)
       const response = await fetch('/api/ai/womens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
+          max_tokens: 1200,
           messages: [{ role: 'user', content: prompt }],
         }),
       })
       const data = await response.json()
       const text = data.content?.map((b: { type: string; text?: string }) => b.type === 'text' ? b.text : '').join('') || ''
-      setBrief(text)
-    } catch {
-      setBrief('Error generating brief. Check API connection.')
-    }
-    setLoading(false)
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}')
+      if (s !== -1 && e !== -1) {
+        const parsed = JSON.parse(text.slice(s, e + 1))
+        if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: parsed as HalfTimeBrief }))
+        else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: parsed as FullTimeBrief }))
+        else setBriefs(b => ({ ...b, training: parsed as TrainingBrief }))
+      }
+    } catch { /* surface error in UI here */ /*
+    } finally { setLoading(false) }
+    */
   }
 
-  const renderBrief = (text: string) => {
-    return text.split('\n').map((line, i) => {
-      if (line.startsWith('## ')) {
-        return <h3 key={i} className="text-sm font-bold text-white mt-5 mb-2 flex items-center gap-2">{line.replace('## ', '')}</h3>
-      }
-      if (line.startsWith('- ')) {
-        return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ', '')}</span></div>
-      }
-      if (line.trim() === '') return <div key={i} className="h-1" />
-      return <p key={i} className="text-xs text-gray-300 mb-2 leading-relaxed">{line}</p>
-    })
-  }
+  const modeTabs: { id: PerfMode; label: string; sub: string }[] = [
+    { id: 'halftime', label: 'Half-Time',  sub: 'First-half → 2nd-half adjustments' },
+    { id: 'fulltime', label: 'Full-Time', sub: 'Full match → recovery + next session' },
+    { id: 'training', label: 'Training',  sub: 'Session load → tomorrow management' },
+  ]
+
+  // Reusable welfare-flags renderer — first-class field in every mode.
+  const WelfareFlagsCard = ({ flags }: { flags: WelfareFlag[] }) => (
+    <div className="bg-[#0D1117] border border-pink-600/40 rounded-xl p-5 mb-4">
+      <h3 className="text-sm font-bold text-pink-300 mb-3 flex items-center gap-2">❤️ Welfare Flags — Confidential</h3>
+      <div className="space-y-2">
+        {flags.map((f, i) => (
+          <div key={i} className="rounded p-3 bg-pink-600/10 border border-pink-600/25">
+            <div className="text-xs font-bold text-white">{f.player}</div>
+            <div className="text-[11px] text-pink-300 mt-0.5">{f.flag}</div>
+            <div className="text-[11px] text-gray-300 mt-1"><span className="text-gray-500">→</span> {f.recommendation}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const HeadlineCard = ({ headline }: { headline: string }) => (
+    <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-4 mb-4">
+      <div className="text-[10px] text-pink-400 font-bold uppercase tracking-wider mb-1">Headline</div>
+      <p className="text-sm text-white leading-relaxed">{headline}</p>
+    </div>
+  )
+
+  const SubCard = ({ title, body }: { title: string; body: string }) => (
+    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4 mb-4">
+      <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{title}</div>
+      <p className="text-xs text-gray-200 leading-relaxed">{body}</p>
+    </div>
+  )
+
+  const renderHalfTime = (b: HalfTimeBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">⚡ Fatigue Alerts</h3>
+        <div className="space-y-2">
+          {b.fatigue_alerts.map((a, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{a.player}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium whitespace-nowrap">{a.flag}</span>
+              </div>
+              <div className="text-[11px] text-gray-400">{a.stat}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🎯 Tactical Insight" body={b.tactical_insight} />
+      <SubCard title="🔄 Substitution Recommendation" body={b.substitution_rec} />
+      <SubCard title="💬 Second-Half Instruction" body={b.second_half_instruction} />
+    </>
+  )
+
+  const renderFullTime = (b: FullTimeBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">🚨 Red-Zone Players</h3>
+        <div className="space-y-2">
+          {b.red_zone_players.map((p, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-red-600/20">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{p.player}</span>
+                <span className="text-[10px] text-red-400">{p.stat}</span>
+              </div>
+              <div className="text-[11px] text-gray-300">{p.concern}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🛁 Recovery Priorities" body={b.recovery_priorities} />
+      <SubCard title="📋 Next Session — Management Flags" body={b.next_session_flags} />
+      <SubCard title="🩺 Return-to-Play Watch" body={b.rtp_watch} />
+    </>
+  )
+
+  const renderTraining = (b: TrainingBrief) => (
+    <>
+      <HeadlineCard headline={b.headline} />
+      <WelfareFlagsCard flags={b.welfare_flags} />
+      <SubCard title="📊 Load vs Plan" body={b.load_vs_plan} />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-4">
+        <h3 className="text-sm font-bold text-white mb-3">🛌 Manage Tomorrow</h3>
+        <div className="space-y-2">
+          {b.manage_tomorrow.map((m, i) => (
+            <div key={i} className="rounded p-3 bg-[#0a0c14] border border-gray-800">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-xs font-bold text-white">{m.player}</span>
+                <span className="text-[10px] text-amber-400">{m.stat}</span>
+              </div>
+              <div className="text-[11px] text-gray-300">{m.action}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <SubCard title="🎯 Session Target Assessment" body={b.session_target_assessment} />
+    </>
+  )
+
+  // Mode-specific context tiles row (replaces the original single-mode tile row).
+  const contextTiles = mode === 'halftime' ? [
+    { label: 'Opponent', value: 'Hartwell Women', color: 'blue' as const },
+    { label: 'Score', value: '0 – 1', sub: 'Trailing', color: 'red' as const },
+    { label: 'xG', value: '0.31 – 0.87', sub: 'Us vs Them', color: 'amber' as const },
+    { label: 'ACL Events', value: '3', sub: 'Emily Zhang', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Cycle + MH', color: 'pink' as const },
+  ] : mode === 'fulltime' ? [
+    { label: 'Opponent', value: 'Hartwell Women', color: 'blue' as const },
+    { label: 'Final Score', value: '0 – 2', sub: 'Loss', color: 'red' as const },
+    { label: 'Squad Avg Load', value: '89.4 AU', sub: 'Across 14 players', color: 'amber' as const },
+    { label: 'Red Zone', value: '3', sub: 'Players flagged', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Inc. RTP watch', color: 'pink' as const },
+  ] : [
+    { label: 'Session', value: 'Tactical', sub: 'Tuesday PM', color: 'blue' as const },
+    { label: 'Date', value: '14 May 2026', color: 'amber' as const },
+    { label: 'Load vs Target', value: '87%', sub: '78 / 90 AU', color: 'amber' as const },
+    { label: 'Manage Tomorrow', value: '3', sub: 'Players flagged', color: 'red' as const },
+    { label: 'Welfare Flags', value: '3', sub: 'Cycle-aware', color: 'pink' as const },
+  ]
+
+  const currentBrief: HalfTimeBrief | FullTimeBrief | TrainingBrief | undefined =
+    mode === 'halftime' ? briefs.halftime : mode === 'fulltime' ? briefs.fulltime : briefs.training
 
   return (
     <div>
-      <SectionHeader title="AI Halftime Brief" subtitle="GPS + Lumio Data xG + ACL Detection + Cycle Welfare — Unique to Lumio Women's FC" icon="🤖" />
+      <SectionHeader title="AI Performance Brief" subtitle="3 modes — Half-Time · Full-Time · Training. Welfare is first-class in every mode (cycle phase · ACL · postpartum RTP · mental health). Unique to Lumio Women's FC." icon="🤖" />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <StatCard label="Opponent" value="Hartwell Women" color="blue" />
-        <StatCard label="Score" value="0 – 1" sub="Trailing" color="red" />
-        <StatCard label="xG" value="0.31 – 0.87" sub="Us vs Them" color="amber" />
-        <StatCard label="ACL Events" value="3" sub="Emily Zhang" color="red" />
-        <StatCard label="Welfare Flags" value="3" sub="Cycle + MH" color="pink" />
+      {/* Mode tabs */}
+      <div className="flex gap-1 bg-[#0D1117] border border-gray-800 rounded-lg p-1 w-fit mb-6">
+        {modeTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setMode(t.id)}
+            className={`px-4 py-2 rounded-md text-xs font-medium transition-colors text-left ${mode === t.id ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+            style={{ minWidth: 180 }}
+          >
+            <div className="font-bold">{t.label}</div>
+            <div className="text-[10px] opacity-70 mt-0.5">{t.sub}</div>
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">GPS — First Half</h3>
-          {[
-            { label: 'High intensity runs', us: 38, them: 52 },
-            { label: 'Sprint count', us: 14, them: 22 },
-            { label: 'Distance (km)', us: 42.1, them: 45.3 },
-          ].map(r => (
-            <div key={r.label} className="mb-2">
-              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
-              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-pink-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Lumio Data xG</h3>
-          {[
-            { label: 'xG', us: 0.31, them: 0.87 },
-            { label: 'Shots', us: 2, them: 6 },
-            { label: 'Prog. passes', us: 18, them: 31 },
-          ].map(r => (
-            <div key={r.label} className="mb-2">
-              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>{r.label}</span><span className={r.us < r.them ? 'text-red-400' : 'text-green-400'}>{r.us} vs {r.them}</span></div>
-              <div className="w-full bg-gray-800 rounded-full h-1"><div className="h-1 rounded-full bg-purple-500" style={{ width: `${(r.us / (r.us + r.them)) * 100}%` }} /></div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-[#0D1117] border border-red-600/30 rounded-xl p-4">
-          <h3 className="text-xs font-bold text-red-400 mb-3 uppercase tracking-wider">🔴 Welfare Flags</h3>
-          <div className="space-y-2">
-            <div className="rounded p-2 bg-red-600/10 border border-red-600/20"><div className="text-[10px] font-bold text-red-400">ACL EVENT DETECTED</div><div className="text-[10px] text-gray-400 mt-0.5">Emily Zhang — 3× high-decel threshold exceeded</div></div>
-            <div className="rounded p-2 bg-amber-600/10 border border-amber-600/20"><div className="text-[10px] font-bold text-amber-400">CYCLE FLAG</div><div className="text-[10px] text-gray-400 mt-0.5">Luteal (Zhang) + Ovulatory (Nair)</div></div>
-            <div className="rounded p-2 bg-blue-600/10 border border-blue-600/20"><div className="text-[10px] font-bold text-blue-400">MENTAL HEALTH</div><div className="text-[10px] text-gray-400 mt-0.5">Charlotte Reed — pre-match anxiety</div></div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        {contextTiles.map(t => <StatCard key={t.label} {...t} />)}
       </div>
 
       <div className="mb-6">
@@ -3205,37 +3354,41 @@ Keep the tone professional, concise, and match-ready. This will be read in a 15-
           className="px-6 py-3 rounded-xl text-sm font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-pink-900/40 disabled:text-pink-800 text-white transition-all flex items-center gap-2"
         >
           {loading ? (
-            <><span className="animate-spin">⟳</span> Generating Halftime Brief...</>
+            <><span className="animate-spin">⟳</span> Generating {modeTabs.find(t => t.id === mode)?.label} Brief…</>
           ) : (
-            <><span>🤖</span> Generate AI Halftime Brief</>
+            <><span>🤖</span> Generate {modeTabs.find(t => t.id === mode)?.label} Brief</>
           )}
         </button>
-        {!brief && !loading && (
-          <p className="text-xs text-gray-500 mt-2">Combines GPS + xG + ACL events + cycle welfare flags → structured coaching brief in seconds.</p>
+        {!currentBrief && !loading && (
+          <p className="text-xs text-gray-500 mt-2">
+            {mode === 'halftime' && 'First-half GPS + xG + ACL events + cycle welfare flags → structured 2nd-half brief.'}
+            {mode === 'fulltime' && 'Full-match load + welfare overlay → recovery priorities, next-session flags, RTP watch.'}
+            {mode === 'training' && 'Session load vs plan + cycle-aware welfare → tomorrow-management decisions.'}
+          </p>
         )}
       </div>
 
-      {brief && (
+      {currentBrief && (
         <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-pink-400 font-bold text-sm">🤖 Lumio AI Brief</span>
+              <span className="text-pink-400 font-bold text-sm">🤖 Lumio AI Brief — {modeTabs.find(t => t.id === mode)?.label}</span>
               <span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">CONFIDENTIAL — Coaching Staff Only</span>
             </div>
             <button onClick={generateBrief} className="text-xs text-gray-500 hover:text-gray-300">↺ Regenerate</button>
           </div>
-          <div className="divide-y divide-gray-800/50">
-            {renderBrief(brief)}
-          </div>
+          {mode === 'halftime' && renderHalfTime(currentBrief as HalfTimeBrief)}
+          {mode === 'fulltime' && renderFullTime(currentBrief as FullTimeBrief)}
+          {mode === 'training' && renderTraining(currentBrief as TrainingBrief)}
           <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
-            <span className="text-[10px] text-gray-600">Generated by Claude · Lumio Women&apos;s FC · Halftime {matchContext.minute}&apos;</span>
+            <span className="text-[10px] text-gray-600">Demo response · Lumio Women&apos;s FC · {modeTabs.find(t => t.id === mode)?.label} mode</span>
             <button className="text-xs text-pink-400 hover:text-pink-300">Print for dressing room →</button>
           </div>
         </div>
       )}
 
       <div className="mt-6 bg-pink-600/10 border border-pink-600/30 rounded-xl p-4">
-        <p className="text-xs text-pink-300"><strong>Why this is world-leading:</strong> No other women&apos;s football platform combines GPS load data, Lumio Data xG, real-time ACL deceleration event detection, and menstrual cycle phase welfare flags into a single AI-generated coaching brief. This is unique to Lumio Women&apos;s FC.</p>
+        <p className="text-xs text-pink-300"><strong>Welfare-led by design.</strong> No other women&apos;s football platform combines GPS load, xG, ACL deceleration detection, menstrual cycle phase + postpartum RTP into a single AI-generated coaching brief across half-time, full-time, AND training modes. Welfare is a first-class field in every brief — never an afterthought.</p>
       </div>
     </div>
   )
@@ -5646,7 +5799,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'analytics':   return <AnalyticsView club={club} />
       case 'scouting':    return <ScoutingView club={club} />
       case 'academy':     return <AcademyView club={club} />
-      case 'halftime':    return <AIHalftimeBriefView />
+      case 'performance-brief': return <AIPerformanceBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <BoardSuiteView club={club} />

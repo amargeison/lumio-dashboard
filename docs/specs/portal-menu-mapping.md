@@ -353,6 +353,7 @@ Group order (top to bottom): **OVERVIEW → FOOTBALL → WELFARE → COMPLIANCE 
 | | Video & Analysis | `video_analysis` | Same 7-sub-tab structure as Pro/Club |
 | | GPS & Performance | `performance_gps` | **Relabelled from "GPS & Load", moved from GPS & LOAD group.** Id `gps-load` preserved |
 | | Heatmaps | `performance_gps` | **Moved from GPS & LOAD group.** Id `gps-heatmaps` preserved |
+| | AI Performance Brief | `performance_gps` | **Rebuilt from orphaned `AIHalftimeBriefView`.** Inline `AIPerformanceBriefView` (id `performance-brief`, icon 🤖). 3 mode tabs: Half-Time / Full-Time / Training. JSON-structured per-mode output with **welfare_flags as a first-class field in every mode** (cycle phase, ACL deceleration, mental health, postpartum RTP). **Demo behaviour:** canned responses for all 3 modes (instant, free, no API spend). Live `/api/ai/womens` Claude call preserved as a commented reference for signed-client portals. Restored sidebar entry directly under Heatmaps in FOOTBALL group |
 | | Fixtures & Results | `football_operations` | **New build** — `WomensFixturesView`, WSL 2 + Women's FA Cup + WSL Cup, season form strip |
 | | Cup Manager | `cup_manager` | **New build** — `WomensCupManagerView`, Women's FA Cup bracket (R2→Wembley Final, real WFA Cup prize tiers) + WSL Cup, TV fee modelling, ticketing surge forecast |
 | | Transfers | `recruitment_scouting` | |
