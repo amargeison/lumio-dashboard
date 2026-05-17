@@ -32,7 +32,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📋', title: 'Dual Registration', desc: 'Track dual-reg players, expiry dates, parent club agreements. Never miss a registration window.' },
   { icon: '🤖', title: 'AI Department Intelligence', desc: 'Every department has its own AI layer. Insights Report generated fresh daily — performance, compliance, welfare, commercial, all departments.' },
   { icon: '🌸', title: 'Cycle Tracking + GPS Integration', desc: 'Opt-in menstrual cycle phase tracking linked to GPS load. Per-player consent column with dated audit trail (14 of 22 squad opt-in in demo). Training targets auto-adjust per phase; ACL composite risk scored daily. Role-gated to Club Doctor + Welfare Lead only.' },
-  { icon: '🤖', title: 'AI Halftime Brief (Claude API)', desc: 'GPS + Lumio Data xG + ACL detection + cycle phase welfare flags → structured coaching brief in seconds. Physical, tactical, AND welfare in one document.' },
+  { icon: '🤖', title: 'AI Performance Brief', desc: 'Three modes — Half-Time, Full-Time, and Training. Each brief leads with a confidential Welfare Flags card (cycle phase, ACL deceleration accumulation, postpartum return-to-play, mental health) before tactics, fatigue, substitutions or recovery. Welfare is the first thing the coach reads, not a footnote — the women’s-game differentiator built in by default.' },
   { icon: '🦵', title: 'ACL Prevention Programme', desc: 'FIFA 11+ / prehab adherence tracker inside ACL Risk Monitor. Per-player session counts (week + 12-session block), squad adherence %, and RAG status flagging players falling behind. The intervention layer alongside the existing risk-score model.' },
   { icon: '🤰', title: 'Pregnancy & Return-to-Play', desc: 'A care pathway, not surveillance. 10-stage antenatal → leave → postpartum pathway, postpartum clinical checkpoints (pelvic floor, MSK, cardio, mental health), per-player pathway cards, WSL 26-week policy + FIFA Art. 18quater visibility, and a who-sees-what matrix that keeps clinical detail with the player by default.' },
   { icon: '🏛️', title: 'Club Licensing', desc: 'Flagship compliance workspace. 5 tabs (Overview / Criteria / Risk Register / Action Plan / Audit), 6 categories (facilities, staffing, academy, contact hours, welfare, medical), ~30 criteria. Demo status: PROVISIONAL — 4 of 6 categories green. Club-side preparation tool — Lumio does not issue licences; visible disclaimer on every tab.' },
@@ -63,7 +63,7 @@ const INTEGRATIONS: Array<{ icon: string; name: string; desc: string; status?: '
 ]
 
 const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy, transfers, board suite.' },
+  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, scouting, academy, transfers, board suite.' },
   { name: 'WSL 2', price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For WSL 2 women's clubs meeting professionalisation standards" },
   { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
 ]
@@ -469,7 +469,7 @@ export default function WomensLandingPage() {
             The most complete women&apos;s football Club OS ever built.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 40px' }}>
-            Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI halftime briefs, Lumio Data analytics, scouting, academy pathway — built for WSL and WSL 2 clubs.
+            Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, scouting, academy pathway — built for WSL and WSL 2 clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
@@ -575,8 +575,8 @@ export default function WomensLandingPage() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
             {[
-              { icon: '🌸', title: "World's First Cycle + GPS + ACL Integration", body: 'Opt-in menstrual cycle tracking linked directly to GPS load management. Training targets auto-adjust per phase. Daily ACL composite risk score per player. No competitor has this.' },
-              { icon: '🤖', title: 'AI Halftime Brief with Welfare Flags', body: 'GPS + Lumio Data xG + ACL detection + cycle phase → structured Claude-powered coaching brief in seconds. Physical, tactical, AND welfare section in one document. Unique to Lumio Women\u2019s FC.' },
+              { icon: '🌸', title: 'Cycle + GPS + ACL — one integrated risk view', body: 'Opt-in menstrual cycle phase, GPS load and ACL composite risk surfaced together in a single per-player view. Training targets auto-adjust by phase; ACL composite risk re-scored daily. Built into the platform from day one as a women’s-football primitive, not a bolt-on.' },
+              { icon: '🤖', title: 'AI Performance Brief — welfare leads, always', body: 'Three modes — Half-Time, Full-Time, Training — and welfare is the first card in every one. Cycle phase, ACL deceleration accumulation, postpartum return-to-play, mental health: confidential coaching intelligence surfaced before tactics or substitutions. Built into a women\u2019s-football platform from day one, not retrofitted.' },
               { icon: '🏟️', title: 'Complete Club OS — built for women’s football', body: 'FSR compliance, Karen Carney tracking, Scouting, Academy, Analytics, Transfers, Media, Fan Hub — purpose-built for professional women\u2019s football. Not a men\u2019s platform with a badge change.' },
             ].map(c => (
               <div key={c.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 28 }}>
