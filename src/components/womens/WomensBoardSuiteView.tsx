@@ -91,6 +91,18 @@ function TabBtn({ active, label, onClick }: { active: boolean; label: string; on
   )
 }
 
+// Shared between the Overview tab's top-N snapshot and the Governance tab's
+// fuller register. Both surfaces render from this single source so any
+// risk appearing in both (FSR breach, Welfare Lead vacancy, contracts,
+// east terrace, sponsorship) has guaranteed-identical wording and RAG.
+const RISK_OVERVIEW_SNAPSHOT = [
+  { risk: 'FSR breach if wage bill exceeds 80% cap',                level: 'Medium', color: '#F59E0B', mitigation: 'Currently 72% (£260k headroom) — monthly CFO review' },
+  { risk: 'Two senior player contracts expire summer 2026',          level: 'High',   color: '#EF4444', mitigation: 'Renewal talks open — board approval required Jun' },
+  { risk: 'Welfare Lead post unfilled — interim cover only',         level: 'High',   color: '#EF4444', mitigation: 'Shortlist of 3, final interviews w/c 26 May' },
+  { risk: 'East terrace safety re-inspection due',                   level: 'Medium', color: '#F59E0B', mitigation: 'Inspection booked 7 Jun, contractor briefed' },
+  { risk: 'Sponsorship pipeline thinner than budget for 26/27',      level: 'Medium', color: '#F59E0B', mitigation: 'Commercial Lead opening 4 new conversations Q2' },
+] as const
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab() {
@@ -267,17 +279,17 @@ function OverviewTab() {
         </div>
       </Card>
 
-      {/* Risk Register — board-level snapshot, FSR-framed */}
+      {/* Risk Register — top-N snapshot rendered from the shared constant
+          (RISK_OVERVIEW_SNAPSHOT). The Governance tab's Risk Register
+          sub-tab renders the same constant + extras, guaranteeing identical
+          wording and RAG for any risk shown in both surfaces. */}
       <Card>
-        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Risk Register (board snapshot)</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold" style={{ color: C.text }}>Risk Register (board snapshot)</p>
+          <span className="text-[10px]" style={{ color: C.text4 }}>Full register: Governance → Risk Register</span>
+        </div>
         <div className="space-y-2">
-          {[
-            { risk: 'FSR breach if wage bill exceeds 80% cap',                level: 'Medium', color: C.warn, mitigation: 'Currently 72% (£260k headroom) — monthly CFO review' },
-            { risk: 'Two senior player contracts expire summer 2026',          level: 'High',   color: C.bad,  mitigation: 'Renewal talks open — board approval required Jun' },
-            { risk: 'Welfare Lead post unfilled — interim cover only',         level: 'High',   color: C.bad,  mitigation: 'Shortlist of 3, final interviews w/c 26 May' },
-            { risk: 'East terrace safety re-inspection due',                   level: 'Medium', color: C.warn, mitigation: 'Inspection booked 7 Jun, contractor briefed' },
-            { risk: 'Sponsorship pipeline thinner than budget for 26/27',      level: 'Medium', color: C.warn, mitigation: 'Commercial Lead opening 4 new conversations Q2' },
-          ].map((r, i) => (
+          {RISK_OVERVIEW_SNAPSHOT.map((r, i) => (
             <div key={i} className="flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: `${r.color}15`, color: r.color }}>{r.level}</span>
               <div className="flex-1 min-w-0">
@@ -1172,6 +1184,281 @@ function FacilitiesTab() {
   )
 }
 
+// ─── Governance Tab (5 sub-tabs) ──────────────────────────────────────────────
+// Compliance / Risk Register / Board Minutes / Conflicts of Interest /
+// Policies — preserved per user correction. The Risk Register sub-tab is the
+// fuller register; the Overview tab's "Risk Register (board snapshot)" is the
+// top-N snapshot of the same data. Risks appearing in both surfaces use
+// IDENTICAL wording and IDENTICAL RAG rating. The FSR-breach risk uses the
+// locked 72% wage-to-revenue figure and £260k headroom.
+
+type GovSub = 'compliance' | 'risk' | 'minutes' | 'conflicts' | 'policies'
+
+const RISK_FULL_EXTRAS = [
+  { risk: 'Squad over-reliance on top scorer (S. Reyes)',            level: 'Medium', color: '#F59E0B', mitigation: 'Renewal priority 1; scouting back-up ST profile' },
+  { risk: 'Match-day stewarding capacity at derby fixtures',         level: 'Low',    color: '#22C55E', mitigation: 'Post-Mar-derby review actioned; increased booking for 26/27' },
+  { risk: 'GDPR / data subject access response time',                level: 'Low',    color: '#22C55E', mitigation: 'All SARs YTD answered within 14d (vs 30d statutory)' },
+  { risk: 'Stadium capacity ceiling vs WSL 1 promotion criteria',    level: 'Low',    color: '#22C55E', mitigation: 'Board-approved hospitality-expansion scoping, target 2027/28' },
+  { risk: 'Cycle module opt-in below WSL guidance floor',            level: 'Low',    color: '#22C55E', mitigation: '64% opt-in — voluntary expansion only, player-led' },
+] as const
+
+function GovComplianceTab() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>WSL / FA Licensing</p>
+        <div className="space-y-2 text-xs">
+          {[
+            { item: 'FSR salary cap',            ok: true,  note: 'WTR 72% · £260k headroom' },
+            { item: 'Age-band squad minimums',   ok: false, note: '1 player short — interim signing under review' },
+            { item: 'Welfare standards (Carney)',ok: true                                 },
+            { item: 'First-team registration',   ok: true                                 },
+            { item: 'Dual-registration records', ok: true                                 },
+            { item: 'Stadium licensing',         ok: false, note: 'east terrace re-inspection 7 Jun' },
+            { item: 'Safeguarding (FA mandatory)', ok: true                              },
+          ].map((c, i) => (
+            <div key={i} className="flex items-center gap-2 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ color: c.ok ? C.good : C.bad }}>{c.ok ? '✓' : '✗'}</span>
+              <span style={{ color: C.text2 }} className="flex-1">{c.item}</span>
+              {c.note && <span className="text-[10px]" style={{ color: c.ok ? C.muted : C.warn }}>{c.note}</span>}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>FSR Status</p>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Relevant Revenue (annual)</span><span className="font-bold" style={{ color: C.text }}>£3.25M</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Wage Bill (annual)</span><span className="font-bold" style={{ color: C.text }}>£2.34M</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Wage-to-Revenue</span><span className="font-bold" style={{ color: C.warn }}>72%</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>FSR Cap</span><span className="font-bold" style={{ color: C.text }}>80%</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Headroom</span><span className="font-bold" style={{ color: C.good }}>£260k · SAFE</span></div>
+            <div className="flex justify-between pt-2" style={{ borderTop: `1px solid ${C.border}` }}><span style={{ color: C.muted }}>Q1 submission</span><span className="font-bold" style={{ color: C.good }}>Accepted</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Q2 submission window</span><span className="font-bold" style={{ color: C.text }}>opens 1 Jul 2026</span></div>
+          </div>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Karen Carney Standards (recap)</p>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Annual return</span><span className="font-bold" style={{ color: C.good }}>Submitted Mar 2026</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Welfare Lead (perm)</span><span className="font-bold" style={{ color: C.warn }}>Hire in flight</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Cycle-aware adaptation</span><span className="font-bold" style={{ color: C.good }}>In place</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Pregnancy / RTP pathway</span><span className="font-bold" style={{ color: C.good }}>In place</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Mental-health pathway</span><span className="font-bold" style={{ color: C.good }}>In place</span></div>
+            <div className="flex justify-between"><span style={{ color: C.muted }}>Transition / retirement</span><span className="font-bold" style={{ color: C.good }}>In place</span></div>
+          </div>
+          <p className="text-[10px] mt-3" style={{ color: C.text4 }}>Full detail in the Welfare tab and the Karen Carney Compliance doc (Staff → Club Info).</p>
+        </Card>
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Data & GDPR</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          {[
+            { l: 'SARs YTD',           v: '4',         c: C.text },
+            { l: 'Avg response time',  v: '14 days',   c: C.good },
+            { l: 'Cycle consents revoked YTD', v: '1', c: C.text },
+            { l: 'Data steward',       v: 'Welfare Lead', c: C.text },
+          ].map(d => (
+            <div key={d.l} className="rounded-lg p-3" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: C.muted }}>{d.l}</p>
+              <p className="text-sm font-bold mt-0.5" style={{ color: d.c }}>{d.v}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function GovRiskTab() {
+  const all = [...RISK_OVERVIEW_SNAPSHOT, ...RISK_FULL_EXTRAS]
+  return (
+    <div className="space-y-4">
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold" style={{ color: C.text }}>Risk Register (full — {all.length} entries)</p>
+          <span className="text-[10px]" style={{ color: C.text4 }}>Top-5 snapshot mirrored on the Overview tab</span>
+        </div>
+        <div className="space-y-2">
+          {all.map((r, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: `${r.color}15`, color: r.color }}>{r.level}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold" style={{ color: C.text }}>{r.risk}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>Mitigation: {r.mitigation}</p>
+              </div>
+              {i < RISK_OVERVIEW_SNAPSHOT.length && (
+                <span className="text-[9px] uppercase tracking-wider shrink-0 mt-1 px-1.5 py-0.5 rounded-full" style={{ color: C.pinkSoft, backgroundColor: C.pinkDim }}>On Overview</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>By Severity</p>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          {[
+            { l: 'High',   v: all.filter(r => r.level === 'High').length,   c: C.bad  },
+            { l: 'Medium', v: all.filter(r => r.level === 'Medium').length, c: C.warn },
+            { l: 'Low',    v: all.filter(r => r.level === 'Low').length,    c: C.good },
+          ].map(s => (
+            <div key={s.l} className="rounded-lg p-3" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: C.muted }}>{s.l}</p>
+              <p className="text-2xl font-black mt-0.5" style={{ color: s.c }}>{s.v}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function GovMinutesTab() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Recent Board Meetings</p>
+        <div className="space-y-3">
+          {[
+            { date: '12 Mar 2026', items: ['Approved 25/26 mid-season budget review', 'Cleared FSR Q1 submission', 'Ratified Welfare Lead job description'] },
+            { date: '15 Jan 2026', items: ['Endorsed January-window approach (£75k Fowler signing)', 'Reviewed Q4 24/25 financials', 'Carney annual-return scope agreed'] },
+            { date: '13 Nov 2025', items: ['Approved 25/26 first-half budget', 'East-terrace inspection scheduling', 'Sponsorship pipeline review'] },
+            { date: '11 Sep 2025', items: ['Season opening: confirmed squad budget', 'FSR projections sign-off', 'Reviewed pre-season medical & welfare audit'] },
+          ].map((m, i) => (
+            <div key={i} className="rounded-lg p-3" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+              <p className="text-xs font-bold mb-1" style={{ color: C.pinkSoft }}>{m.date}</p>
+              <ul className="text-[11px] space-y-0.5" style={{ color: C.text2 }}>
+                {m.items.map((it, j) => <li key={j}>· {it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-2" style={{ color: C.text }}>Next Meeting</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-lg font-black" style={{ color: C.text }}>12 Jun 2026</p>
+            <p className="text-xs" style={{ color: C.muted }}>Agenda in drafting · pack due 18 days from now</p>
+          </div>
+          <span className="text-[10px] px-2 py-1 rounded-full" style={{ color: C.pinkSoft, backgroundColor: C.pinkDim, border: `1px solid ${C.pinkBorder}` }}>Mirrored on Overview banner</span>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function GovConflictsTab() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Conflicts of Interest Register</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Board Member', 'Role', 'Declared Interest', 'Status'].map(h => (
+              <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[
+              { n: 'M. Latham',  r: 'Chair',            i: 'Director — Latham Partners (no club exposure)', s: 'Declared · no recusal required' },
+              { n: 'A. Daley',   r: 'Club Director',    i: 'None',                                          s: 'Nil return' },
+              { n: 'P. Sutcliffe', r: 'Treasurer',      i: 'Trustee — Oakridge Community Trust',            s: 'Declared · recusal on community-grant items' },
+              { n: 'R. Mensah',  r: 'Welfare Trustee',  i: 'PFA member',                                    s: 'Declared · no recusal required' },
+              { n: 'F. Akingbade', r: 'Commercial Lead', i: 'Director — local hospitality firm (not a current sponsor)', s: 'Declared · recusal on hospitality-sponsor items' },
+              { n: 'J. Whitmore', r: 'Independent NED', i: 'None',                                          s: 'Nil return' },
+            ].map(row => (
+              <tr key={row.n} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3 font-medium" style={{ color: C.text }}>{row.n}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.r}</td>
+                <td className="py-2 px-3" style={{ color: C.text2 }}>{row.i}</td>
+                <td className="py-2 px-3 text-[11px]" style={{ color: C.pinkSoft }}>{row.s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-[10px] mt-3" style={{ color: C.text4 }}>Register reviewed annually and on appointment of new board members. Last review: Mar 2026.</p>
+      </Card>
+    </div>
+  )
+}
+
+function GovPoliciesTab() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Policy Index</p>
+        <p className="text-[11px] mb-3" style={{ color: C.text4 }}>Full policy documents live under Staff → Club Info (illustrative demo placeholders).</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Policy', 'Owner', 'Last reviewed', 'Next review'].map(h => (
+              <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[
+              { p: 'Staff Code of Conduct',        o: 'Club Director',  l: 'Mar 2026', n: 'Mar 2027' },
+              { p: 'Karen Carney compliance',      o: 'Welfare Lead',   l: 'Mar 2026', n: 'Mar 2027' },
+              { p: 'FSR submission policy',        o: 'Treasurer',      l: 'Feb 2026', n: 'Aug 2026' },
+              { p: 'Cycle-tracking privacy',       o: 'Welfare Lead',   l: 'Jan 2026', n: 'Jan 2027' },
+              { p: 'Pregnancy & RTP pathway',      o: 'Club Doctor',    l: 'Jan 2026', n: 'Jan 2027' },
+              { p: 'Data protection / GDPR',       o: 'Welfare Lead',   l: 'Oct 2025', n: 'Oct 2026' },
+              { p: 'Safeguarding (FA mandatory)',  o: 'Safeguarding Lead', l: 'Sep 2025', n: 'Sep 2026' },
+              { p: 'Coaching & CPD',               o: 'Head Coach',     l: 'Aug 2025', n: 'Aug 2026' },
+              { p: 'Anti-discrimination',          o: 'Club Director',  l: 'Aug 2025', n: 'Aug 2026' },
+            ].map(row => (
+              <tr key={row.p} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3 font-medium" style={{ color: C.text }}>{row.p}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{row.o}</td>
+                <td className="py-2 px-3" style={{ color: C.text2 }}>{row.l}</td>
+                <td className="py-2 px-3" style={{ color: C.text2 }}>{row.n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  )
+}
+
+function GovernanceTab() {
+  const [sub, setSub] = useState<GovSub>('compliance')
+  const subs: { id: GovSub; label: string }[] = [
+    { id: 'compliance', label: 'Compliance' },
+    { id: 'risk',       label: 'Risk Register' },
+    { id: 'minutes',    label: 'Board Minutes' },
+    { id: 'conflicts',  label: 'Conflicts of Interest' },
+    { id: 'policies',   label: 'Policies' },
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {subs.map(s => (
+          <button key={s.id} onClick={() => setSub(s.id)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+            style={{
+              backgroundColor: sub === s.id ? C.pinkDim : C.cardAlt,
+              color:           sub === s.id ? C.pinkSoft : C.muted,
+              border: `1px solid ${sub === s.id ? C.pinkBorder : C.border}`,
+            }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+      {sub === 'compliance' && <GovComplianceTab />}
+      {sub === 'risk'       && <GovRiskTab />}
+      {sub === 'minutes'    && <GovMinutesTab />}
+      {sub === 'conflicts'  && <GovConflictsTab />}
+      {sub === 'policies'   && <GovPoliciesTab />}
+    </div>
+  )
+}
+
 // ─── Stub tabs (filled in subsequent commits) ─────────────────────────────────
 
 function StubTab({ label, nextCommit }: { label: string; nextCommit: string }) {
@@ -1232,7 +1519,7 @@ export default function WomensBoardSuiteView({ club, onNavigate }: { club: Women
       {tab === 'finance'    && <FinanceTab />}
       {tab === 'welfare'    && <WelfareTab onNavigate={onNavigate} />}
       {tab === 'squad'      && <SquadTab />}
-      {tab === 'governance' && <StubTab label="Governance"          nextCommit="C5 of 5" />}
+      {tab === 'governance' && <GovernanceTab />}
       {tab === 'facilities' && <FacilitiesTab />}
     </div>
   )
