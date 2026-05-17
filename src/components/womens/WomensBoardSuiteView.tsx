@@ -854,6 +854,324 @@ function WelfareTab({ onNavigate }: { onNavigate?: (id: string) => void }) {
   )
 }
 
+// ─── Squad & Performance Tab ──────────────────────────────────────────────────
+// Squad scale matches the KPI strip (22 players). Contract-expiry count must
+// match the Overview Risk Register entry "Two senior player contracts expire
+// summer 2026" — both surfaces show 2, not 3. Injury/availability is the
+// selection-availability lens; it can sit alongside the Welfare tab's
+// "3 on modified-load" without contradiction (modified-load can apply to
+// players still selectable).
+
+function SquadTab() {
+  const performers = [
+    { name: 'S. Reyes',       pos: 'ST',  apps: 19, goals: 11, assists: 5, rating: 7.9 },
+    { name: 'A. Patel',       pos: 'CM',  apps: 20, goals:  4, assists: 8, rating: 7.7 },
+    { name: 'N. Achterberg',  pos: 'LW',  apps: 18, goals:  7, assists: 4, rating: 7.5 },
+    { name: 'J. Okonkwo',     pos: 'CB',  apps: 20, goals:  2, assists: 1, rating: 7.5 },
+    { name: 'M. Costa',       pos: 'GK',  apps: 20, goals:  0, assists: 0, rating: 7.4 },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { l: 'Squad Size',      v: '22',   i: Users,   c: C.pink   },
+          { l: 'Average Age',     v: '24.4', i: Users,   c: C.teal   },
+          { l: 'Internationals',  v: '3',    i: Trophy,  c: C.purple },
+          { l: 'Academy Grads',   v: '4',    i: Users,   c: C.good   },
+        ].map(s => (
+          <Card key={s.l}>
+            <div className="flex items-center gap-2 mb-1">
+              <s.i size={14} style={{ color: s.c }} />
+              <span className="text-xs" style={{ color: C.muted }}>{s.l}</span>
+            </div>
+            <p className="text-2xl font-black" style={{ color: C.text }}>{s.v}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Top 5 Performers</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {['Player', 'Pos', 'Apps', 'Goals', 'Assists', 'Rating'].map(h => (
+                <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {performers.map(p => (
+                <tr key={p.name} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td className="py-2.5 px-3 font-bold" style={{ color: C.text }}>{p.name}</td>
+                  <td className="py-2.5 px-3" style={{ color: C.muted }}>{p.pos}</td>
+                  <td className="py-2.5 px-3" style={{ color: C.text }}>{p.apps}</td>
+                  <td className="py-2.5 px-3 font-bold" style={{ color: C.good }}>{p.goals}</td>
+                  <td className="py-2.5 px-3" style={{ color: C.text }}>{p.assists}</td>
+                  <td className="py-2.5 px-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                      style={{
+                        backgroundColor: p.rating >= 7.6 ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)',
+                        color:           p.rating >= 7.6 ? C.good : C.warn,
+                      }}>{p.rating}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Injury & Availability</p>
+          <div className="space-y-2">
+            <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Available</span><span className="text-xs font-bold" style={{ color: C.good }}>18 ✅</span></div>
+            <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Suspended</span><span className="text-xs font-bold" style={{ color: C.warn }}>1 🟡</span></div>
+            <div className="pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
+              <p className="text-xs font-bold mb-2" style={{ color: C.bad }}>Injured (3) 🔴</p>
+              {[
+                { n: 'L. Brennan', inj: 'Hamstring', ret: '2 weeks' },
+                { n: 'K. Hwang',   inj: 'Ankle',     ret: '4 weeks' },
+                { n: 'T. Adeyemi', inj: 'Illness',   ret: '3 days'  },
+              ].map(p => (
+                <div key={p.n} className="flex justify-between py-1">
+                  <span className="text-xs" style={{ color: C.text }}>{p.n} — {p.inj}</span>
+                  <span className="text-[10px]" style={{ color: C.muted }}>{p.ret}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] mt-2" style={{ color: C.text4 }}>Modified-load list (3 players) sits in the Welfare tab — separate concept.</p>
+          </div>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Contract Status</p>
+          <div className="space-y-3">
+            <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <p className="text-xs font-bold mb-1" style={{ color: C.bad }}>Expiring Summer 2026 (2 senior)</p>
+              <p className="text-[10px]" style={{ color: C.muted }}>S. Reyes (ST) · A. Patel (CM) — renewal talks open, board approval required Jun</p>
+            </div>
+            <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Under contract 1yr+</span><span className="text-xs font-bold" style={{ color: C.text }}>14</span></div>
+            <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Under contract 2yr+</span><span className="text-xs font-bold" style={{ color: C.text }}>6</span></div>
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Form Guide (Last 5 Appearances)</p>
+        <div className="space-y-2">
+          {[
+            { n: 'S. Reyes',       dots: ['🟢','🟢','🟢','🟡','🟢'], avg: '7.8' },
+            { n: 'A. Patel',       dots: ['🟢','🟡','🟢','🟢','🟢'], avg: '7.7' },
+            { n: 'N. Achterberg',  dots: ['🟡','🟢','🟢','🟡','🟢'], avg: '7.4' },
+            { n: 'J. Okonkwo',     dots: ['🟢','🟢','🟡','🟢','🟢'], avg: '7.5' },
+            { n: 'M. Costa',       dots: ['🟢','🟢','🟢','🟡','🟡'], avg: '7.4' },
+            { n: 'O. Nakamura',    dots: ['🟡','🟢','🟡','🟢','🟡'], avg: '7.1' },
+            { n: 'F. Mireles',     dots: ['🟢','🟡','🟢','🟡','🟢'], avg: '7.3' },
+            { n: 'S. Connolly',    dots: ['🟡','🟡','🟢','🟢','🟢'], avg: '7.2' },
+          ].map(p => (
+            <div key={p.n} className="flex items-center gap-3">
+              <span className="text-xs w-24 shrink-0 font-medium" style={{ color: C.text }}>{p.n}</span>
+              <div className="flex gap-1">{p.dots.map((d, i) => <span key={i} className="text-sm">{d}</span>)}</div>
+              <span className="text-xs font-bold ml-auto" style={{ color: C.pinkSoft }}>{p.avg}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Age Profile</p>
+        <div className="flex rounded-full overflow-hidden h-4 mb-3">
+          <div style={{ width: '18%', backgroundColor: C.info   }} title="U21" />
+          <div style={{ width: '41%', backgroundColor: C.teal   }} title="21-25" />
+          <div style={{ width: '32%', backgroundColor: C.pink   }} title="26-29" />
+          <div style={{ width:  '9%', backgroundColor: C.bad    }} title="30+" />
+        </div>
+        <div className="flex gap-4 flex-wrap">
+          {[
+            { l: 'U21',   v: '4 (18%)', c: C.info },
+            { l: '21–25', v: '9 (41%)', c: C.teal },
+            { l: '26–29', v: '7 (32%)', c: C.pink },
+            { l: '30+',   v: '2 (9%)',  c: C.bad  },
+          ].map(a => (
+            <div key={a.l} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: a.c }} />
+              <span className="text-[10px]" style={{ color: C.muted }}>{a.l}: {a.v}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Academy / Pathway Pipeline</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Player', 'Age', 'Pos', 'Status'].map(h => (
+              <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[
+              { n: 'R. Adesina',    a: 18, p: 'ST', s: 'Training with first team' },
+              { n: 'C. McAllister', a: 17, p: 'CM', s: 'U21 captain' },
+              { n: 'I. Beckett',    a: 18, p: 'RB', s: 'Loan return Jun 2026' },
+              { n: 'N. Holloway',   a: 16, p: 'LW', s: 'Scholarship signed' },
+              { n: 'B. Osei',       a: 18, p: 'GK', s: 'First team squad' },
+            ].map(p => (
+              <tr key={p.n} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3 font-medium" style={{ color: C.text }}>{p.n}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{p.a}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{p.p}</td>
+                <td className="py-2 px-3" style={{ color: C.pinkSoft }}>{p.s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { l: 'Yellow Cards',     v: '28',  c: C.warn  },
+          { l: 'Red Cards',        v: '1',   c: C.bad   },
+          { l: 'Suspensions',      v: '2',   c: C.bad   },
+          { l: 'Avg Fouls / Game', v: '9.4', c: C.muted },
+        ].map(d => (
+          <Card key={d.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.muted }}>{d.l}</p>
+            <p className="text-xl font-black mt-1" style={{ color: d.c }}>{d.v}</p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Facilities Tab ───────────────────────────────────────────────────────────
+// East terrace inspection date (7 Jun 2026) and contractor briefing must
+// match the Overview Risk Register entry. Stadium capacity (6,500) and
+// average attendance (3,050 / 47%) match the Overview attendance card.
+
+function FacilitiesTab() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {[
+          { name: 'Main Pitch',          status: 'Good',                  icon: '🏟️', ok: true  },
+          { name: 'Training Ground',     status: 'Good',                  icon: '⚽', ok: true  },
+          { name: 'East Terrace',        status: 'Re-inspection due 7 Jun', icon: '🏗️', ok: false },
+          { name: 'Changing Rooms',      status: 'Women’s-spec, refurbished', icon: '🚿', ok: true  },
+          { name: 'Floodlights',         status: 'Operational',           icon: '💡', ok: true  },
+          { name: 'Medical & Welfare Suite', status: 'Operational',       icon: '🩺', ok: true  },
+        ].map(f => (
+          <Card key={f.name}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-lg">{f.icon}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: f.ok ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)',
+                  color:           f.ok ? C.good : C.warn,
+                }}>
+                {f.ok ? '✅' : '⚠️'} {f.status}
+              </span>
+            </div>
+            <p className="text-xs font-bold" style={{ color: C.text }}>{f.name}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-4" style={{ color: C.text }}>Upcoming Maintenance</p>
+        <div className="relative pl-6">
+          <div className="absolute left-[7px] top-0 bottom-0 w-px" style={{ backgroundColor: C.border }} />
+          {[
+            { date: '7 Jun',  task: 'East terrace safety re-inspection (contractor briefed)' },
+            { date: '22 Jun', task: 'Pitch aeration & overseeding' },
+            { date: '5 Jul',  task: 'CCTV system upgrade — women’s-only zones included' },
+            { date: '1 Aug',  task: 'Pre-season training ground refresh' },
+            { date: '15 Aug', task: 'Floodlight PAT testing' },
+          ].map((m, i) => (
+            <div key={i} className="relative flex items-start gap-4 pb-4">
+              <div className="absolute left-[-18px] w-3.5 h-3.5 rounded-full"
+                style={{ backgroundColor: i === 0 ? C.pink : C.border, border: `2px solid ${C.card}`, top: 2 }} />
+              <div>
+                <p className="text-xs font-bold" style={{ color: i === 0 ? C.pinkSoft : C.text }}>{m.date}</p>
+                <p className="text-xs" style={{ color: C.muted }}>{m.task}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Stadium Capacity Utilisation</p>
+        <div className="space-y-2">
+          <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>This season average</span><span className="text-xs font-bold" style={{ color: C.text }}>47% (3,050 / 6,500)</span></div>
+          <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Best attended</span><span className="text-xs font-bold" style={{ color: C.good }}>Derby vs Harfield United — 5,820 (90%)</span></div>
+          <div className="flex justify-between"><span className="text-xs" style={{ color: C.muted }}>Lowest</span><span className="text-xs font-bold" style={{ color: C.bad }}>Late-Sunday fixture vs Cliffe Town — 1,860 (29%)</span></div>
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Facility Investment Plan</p>
+        <table className="w-full text-xs">
+          <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {['Project', 'Budget', 'Status', 'Completion'].map(h => (
+              <th key={h} className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[
+              { p: 'East terrace inspection & repairs',          b: '£35k', s: 'In progress', c: 'Jun 2026', sc: C.warn  },
+              { p: 'Training ground drainage',                   b: '£22k', s: 'Approved',    c: 'Jul 2026', sc: C.good  },
+              { p: 'CCTV upgrade — women’s-only zones',          b: '£12k', s: 'Tendering',   c: 'Jul 2026', sc: C.warn  },
+              { p: 'Pitch resurfacing',                          b: '£45k', s: 'Planned',     c: 'Aug 2026', sc: C.muted },
+              { p: 'Club shop refit',                            b: '£18k', s: 'Planned',     c: 'Sep 2026', sc: C.muted },
+            ].map(r => (
+              <tr key={r.p} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td className="py-2 px-3" style={{ color: C.text }}>{r.p}</td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{r.b}</td>
+                <td className="py-2 px-3"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${r.sc}15`, color: r.sc }}>{r.s}</span></td>
+                <td className="py-2 px-3" style={{ color: C.muted }}>{r.c}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { l: 'Monthly Energy Cost', v: '£2,400',     c: C.warn },
+          { l: 'Solar Savings YTD',   v: '£1,100',     c: C.good },
+          { l: 'Pitch Water Usage',   v: '12,500 L/mo',c: C.info },
+          { l: 'Carbon Offset',       v: 'On track ✅', c: C.good },
+        ].map(e => (
+          <Card key={e.l}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.muted }}>{e.l}</p>
+            <p className="text-lg font-black mt-1" style={{ color: e.c }}>{e.v}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Stadium Timeline</p>
+        <div className="space-y-2">
+          {[
+            { y: '1923',    text: 'Oakridge Stadium opened (men’s side)' },
+            { y: '2018',    text: 'Women’s-spec facilities added — dedicated changing, medical room' },
+            { y: '2024',    text: 'East terrace refurbishment (re-inspection now due)' },
+            { y: 'Now',     text: 'Current capacity: 6,500' },
+            { y: 'Pending', text: 'Expand women’s hospitality capacity — board-approved scoping, target 2027/28' },
+          ].map(t => (
+            <div key={t.y} className="flex items-center gap-3">
+              <span className="text-xs font-bold w-16 shrink-0" style={{ color: t.y === 'Pending' ? C.pinkSoft : C.text }}>{t.y}</span>
+              <span className="text-xs" style={{ color: C.muted }}>{t.text}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 // ─── Stub tabs (filled in subsequent commits) ─────────────────────────────────
 
 function StubTab({ label, nextCommit }: { label: string; nextCommit: string }) {
@@ -913,9 +1231,9 @@ export default function WomensBoardSuiteView({ club, onNavigate }: { club: Women
       {tab === 'profile'    && <ProfileTab club={club} />}
       {tab === 'finance'    && <FinanceTab />}
       {tab === 'welfare'    && <WelfareTab onNavigate={onNavigate} />}
-      {tab === 'squad'      && <StubTab label="Squad & Performance" nextCommit="C4 of 5" />}
+      {tab === 'squad'      && <SquadTab />}
       {tab === 'governance' && <StubTab label="Governance"          nextCommit="C5 of 5" />}
-      {tab === 'facilities' && <StubTab label="Facilities"          nextCommit="C4 of 5" />}
+      {tab === 'facilities' && <FacilitiesTab />}
     </div>
   )
 }
