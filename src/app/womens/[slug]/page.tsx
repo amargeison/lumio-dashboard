@@ -50,6 +50,7 @@ import ClubLicensingView from '@/components/womens/ClubLicensingView'
 import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/WomensAvatarDropdown'
 import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
+import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -5481,8 +5482,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     }
   }, [dashTab])
 
-  // Team tab sub-tabs
-  const [teamSubTab, setTeamSubTab] = useState<'today'|'org'|'info'|'club'>('today')
 
   const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
@@ -5992,85 +5991,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               {dashTab === 'team' && (
                 <div className="space-y-4">
                   <SectionHeader title="Staff" subtitle="Staff, structure, and club information" icon="👥" />
-                  <div className="flex gap-1 border-b border-gray-800 mb-4">
-                    {[
-                      { id: 'today' as const, label: 'Today' },
-                      { id: 'org' as const, label: 'Org Chart' },
-                      { id: 'info' as const, label: 'Team Info' },
-                      { id: 'club' as const, label: 'Club Info' },
-                    ].map(t => (
-                      <button key={t.id} onClick={() => setTeamSubTab(t.id)}
-                        className="px-4 py-2 text-xs font-semibold transition-all"
-                        style={{ color: teamSubTab === t.id ? '#BE185D' : '#6B7280', borderBottom: teamSubTab === t.id ? '2px solid #BE185D' : '2px solid transparent' }}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  {teamSubTab === 'today' && (
-                    <div className="space-y-2">
-                      {[
-                        { name: club.manager, role: 'Head Coach', status: 'In office', icon: '🎽' },
-                        { name: 'Dr Sarah Patel', role: 'Club Doctor', status: 'Matchday prep', icon: '🏥' },
-                        { name: 'James Kerr', role: 'Performance Analyst', status: 'GPS review', icon: '📡' },
-                        { name: 'Lisa Okonkwo', role: 'Welfare Officer', status: '2 check-ins today', icon: '❤️' },
-                      ].map((s, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-[#0D1117] border border-gray-800 rounded-xl">
-                          <span className="text-lg">{s.icon}</span>
-                          <div className="flex-1"><div className="text-xs font-semibold text-white">{s.name}</div><div className="text-[10px] text-gray-500">{s.role}</div></div>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-green-600/20 text-green-400">{s.status}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {teamSubTab === 'org' && (
-                    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-                      <h3 className="text-sm font-bold text-white mb-4">Organisation Chart</h3>
-                      <div className="space-y-3 text-xs">
-                        <div className="text-center p-2 rounded-lg" style={{ backgroundColor: '#BE185D20', border: '1px solid #BE185D40' }}>
-                          <div className="font-bold text-white">{club.director}</div><div className="text-gray-400">Director</div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[{ n: club.manager, r: 'Head Coach' }, { n: 'Commercial Dir.', r: 'Commercial' }, { n: 'Lisa Okonkwo', r: 'Welfare' }].map((p, i) => (
-                            <div key={i} className="text-center p-2 rounded-lg bg-gray-800/50 border border-gray-700">
-                              <div className="font-semibold text-white">{p.n}</div><div className="text-gray-500">{p.r}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {teamSubTab === 'info' && (
-                    <div className="space-y-2">
-                      {[
-                        { l: 'Squad size', v: '24 registered' },
-                        { l: 'Coaching staff', v: '6 (Head Coach + 5)' },
-                        { l: 'Medical team', v: '3 (Doctor, Physio, S&C)' },
-                        { l: 'Welfare', v: '1 Welfare Officer' },
-                        { l: 'Analytics', v: '2 (Performance + Scout)' },
-                      ].map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
-                          <span className="text-xs text-gray-400">{r.l}</span>
-                          <span className="text-xs text-gray-200">{r.v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {teamSubTab === 'club' && (
-                    <div className="space-y-2">
-                      {[
-                        { l: 'Club', v: club.name },
-                        { l: 'League', v: club.league },
-                        { l: 'Stadium', v: `${club.stadium} (${club.capacity.toLocaleString()})` },
-                        { l: 'Founded', v: String(club.founded) },
-                        { l: 'Kit Sponsor', v: club.kitSponsor || 'None' },
-                      ].map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-[#0D1117] border border-gray-800 rounded-lg">
-                          <span className="text-xs text-gray-400">{r.l}</span>
-                          <span className="text-xs text-gray-200">{r.v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <WomensStaffTabs club={club} />
                 </div>
               )}
             </div>

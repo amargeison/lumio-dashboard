@@ -1,0 +1,518 @@
+'use client'
+
+import { useState } from 'react'
+
+// Women's portal — Staff dashboard tab (4 sub-tabs).
+//
+// Today      → ported from the Pro portal Staff Today layout (filter pills,
+//              avatar+dot cards with name/role/dept/status/location, plus
+//              an Upcoming Staff Events card).
+// Org Chart  → ported from the Pro portal Org Chart layout (3 levels:
+//              owner/board → CE+HC+DoF → dept heads, with a dept-colour
+//              legend). Dept palette pulled from WOMENS_ROLE_CONFIG accents.
+// Team Info  → ported from the TENNIS portal Team Info layout (richer
+//              attribute-card grid with rating block, dept badge, 6-stat
+//              grid, speciality / location / availability rows, ref +
+//              profile button). Stats are role-specific per the approved
+//              axes (incl. women's-specific WMN/CYC/RTP/SAF/LOA/ACL).
+// Club Info  → ported from the Pro portal Club Info layout (Club Documents
+//              grid + Club Details + Key Contacts + Upcoming This Month).
+//              Docs taxonomy adapted to Women's modules.
+//
+// Pink-themed throughout. Demo data only — no Pro / Tennis names carried.
+
+const C = {
+  panel:      '#0D1117',
+  panelAlt:   '#111318',
+  panelDeep:  '#0A0B10',
+  border:     '#1F2937',
+  borderSoft: '#1A2030',
+  text:       '#F9FAFB',
+  text2:      '#D1D5DB',
+  text3:      '#9CA3AF',
+  text4:      '#6B7280',
+  text5:      '#4B5563',
+  pink:       '#EC4899',
+  pinkDeep:   '#BE185D',
+  pinkDim:    'rgba(190,24,93,0.18)',
+  good:       '#22C55E',
+}
+
+// Department colour palette — drawn from WOMENS_ROLE_CONFIG accents.
+const DEPT_COLOR = {
+  Coaching:    '#BE185D', // pink-deep (matches portal accent)
+  DoF:         '#0EA5E9', // sky
+  Performance: '#22C55E', // green
+  Medical:     '#DC2626', // red
+  Welfare:     '#EF4444', // red-light
+  Operations:  '#F97316', // orange
+  Commercial:  '#F59E0B', // amber
+  Community:   '#22C55E', // green
+} as const
+
+type Dept = keyof typeof DEPT_COLOR
+
+interface ClubProps {
+  name: string
+  league: string
+  stadium: string
+  capacity: number
+  manager: string
+  director: string
+  founded: number
+  kitSponsor: string | null
+}
+
+interface Props {
+  club: ClubProps
+}
+
+type SubTab = 'today' | 'org' | 'info' | 'club'
+
+// ─── Today: staff status ────────────────────────────────────────────────────
+
+type StaffToday = {
+  name: string
+  role: string
+  dept: Dept
+  status: 'In today' | 'Away'
+  location: string
+  rel: string
+}
+
+const STAFF_TODAY: StaffToday[] = [
+  { name: 'Sarah Frost',     role: 'Head Coach',           dept: 'Coaching',    status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Reports to Director' },
+  { name: 'Helen Voss',      role: 'Director of Football', dept: 'DoF',         status: 'In today', location: 'Office + scouting day Thu', rel: 'Direct report' },
+  { name: 'Dr Anna Reid',    role: 'Club Doctor',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept' },
+  { name: 'Mel Hooper',      role: 'Head Physio',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept' },
+  { name: 'Nina Walsh',      role: 'Welfare Lead',         dept: 'Welfare',     status: 'In today', location: 'Office, 9am-5pm', rel: 'Reports to Director' },
+  { name: 'James Kerr',      role: 'Performance Analyst',  dept: 'Performance', status: 'In today', location: 'Analysis suite, 9am-6pm', rel: 'Performance dept' },
+  { name: 'Marcus Chen',     role: 'S&C Coach',            dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept' },
+  { name: 'Jordan Clarke',   role: 'Commercial Director',  dept: 'Commercial',  status: 'Away',     location: 'Away — sponsor meetings London', rel: 'Reports to Director' },
+]
+
+const STAFF_FILTERS = ['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Welfare', 'Performance', 'Commercial'] as const
+type StaffFilter = typeof STAFF_FILTERS[number]
+
+function TodayTab() {
+  const [filter, setFilter] = useState<StaffFilter>('All')
+  const filtered = STAFF_TODAY.filter(s =>
+    filter === 'All' ? true :
+    filter === 'In Today' ? s.status === 'In today' :
+    filter === 'Away'     ? s.status === 'Away' :
+    s.dept === filter
+  )
+  const inCount   = STAFF_TODAY.filter(s => s.status === 'In today').length
+  const awayCount = STAFF_TODAY.length - inCount
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-black" style={{ color: C.text }}>Staff Today</h2>
+        <p className="text-xs" style={{ color: C.text4 }}>{STAFF_TODAY.length} staff · {inCount} in · {awayCount} away · 0 alerts</p>
+      </div>
+
+      <div className="flex gap-1.5 flex-wrap">
+        {STAFF_FILTERS.map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className="px-3 py-1.5 text-xs font-bold rounded-xl transition-colors"
+            style={{
+              backgroundColor: filter === f ? C.pinkDeep : 'rgba(255,255,255,0.05)',
+              color: filter === f ? C.text : C.text4,
+            }}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {filtered.map(m => {
+          const colour = DEPT_COLOR[m.dept]
+          return (
+            <div key={m.name} className="rounded-2xl p-4" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: `${colour}20`, color: colour }}>
+                    {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full" style={{ backgroundColor: m.status === 'In today' ? C.good : '#F59E0B', border: `2px solid ${C.panelAlt}` }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm truncate" style={{ color: C.text }}>{m.name}</span>
+                  </div>
+                  <p className="text-xs truncate" style={{ color: C.text4 }}>{m.role} · {m.dept === 'DoF' ? 'Football' : m.dept}</p>
+                  <div className="flex gap-1.5 mt-1 items-center">
+                    <span className="text-xs font-medium" style={{ color: m.status === 'In today' ? '#4ADE80' : '#FBBF24' }}>{m.status}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: C.border, color: C.text4 }}>{m.rel}</span>
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: C.text4 }}>{m.location}</p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Upcoming Staff Events</p>
+        {[
+          'Board meeting Thursday 2pm',
+          'Welfare cadence review — Nina Walsh, Fri',
+          'New ACL screening lead onboarding Monday',
+        ].map(e => (
+          <p key={e} className="text-xs py-1" style={{ color: C.text2 }}>📅 {e}</p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Org Chart ──────────────────────────────────────────────────────────────
+
+function OrgChartTab({ club }: { club: ClubProps }) {
+  const owner = { name: `${club.name} Board`, role: 'Owner / Board' }
+  const level2: Array<{ name: string; role: string; dept: Dept }> = [
+    { name: club.director, role: 'Club Director',         dept: 'Operations' },
+    { name: club.manager,  role: 'Head Coach',            dept: 'Coaching' },
+    { name: 'Helen Voss',  role: 'Director of Football',  dept: 'DoF' },
+  ]
+  const level3: Array<{ name: string; role: string; dept: Dept }> = [
+    { name: 'Marcus Chen',     role: 'Head of Performance', dept: 'Performance' },
+    { name: 'Dr Anna Reid',    role: 'Club Doctor',         dept: 'Medical' },
+    { name: 'Nina Walsh',      role: 'Welfare Lead',        dept: 'Welfare' },
+    { name: 'Mark Walker',     role: 'Head of Operations',  dept: 'Operations' },
+    { name: 'Jordan Clarke',   role: 'Commercial Director', dept: 'Commercial' },
+    { name: 'Sasha Lin',       role: 'Head of Community',   dept: 'Community' },
+  ]
+
+  return (
+    <div>
+      <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
+
+      {/* Owner / Board */}
+      <div className="flex justify-center mb-8">
+        <div className="rounded-xl p-4 text-center w-56" style={{ backgroundColor: C.panelAlt, border: `2px solid ${C.text5}` }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(75,85,99,0.2)', color: C.text5 }}>
+            {owner.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
+          </div>
+          <p className="text-sm font-bold" style={{ color: C.text }}>{owner.name}</p>
+          <p className="text-[10px]" style={{ color: C.text5 }}>{owner.role}</p>
+        </div>
+      </div>
+
+      <div className="flex justify-center mb-2"><div className="w-px h-8" style={{ backgroundColor: '#374151' }} /></div>
+      <div className="flex justify-center mb-2"><div className="h-px" style={{ backgroundColor: '#374151', width: '50%' }} /></div>
+
+      {/* Level 2 — Director / Head Coach / DoF */}
+      <div className="flex justify-center gap-6 mb-8 flex-wrap">
+        {level2.map(m => {
+          const colour = DEPT_COLOR[m.dept]
+          return (
+            <div key={m.name} className="flex flex-col items-center">
+              <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
+              <div className="rounded-xl p-3 text-center w-48" style={{ backgroundColor: C.panelAlt, border: `1px solid ${colour}` }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${colour}20`, color: colour }}>
+                  {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                </div>
+                <p className="text-xs font-bold truncate" style={{ color: C.text }}>{m.name}</p>
+                <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Level 3 — dept heads */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {level3.map(m => {
+          const colour = DEPT_COLOR[m.dept]
+          return (
+            <div key={m.name} className="rounded-xl p-3 text-center" style={{ backgroundColor: C.panelDeep, border: `1px solid ${colour}40` }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${colour}15`, color: colour }}>
+                {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              </div>
+              <p className="text-xs font-medium truncate" style={{ color: C.text2 }}>{m.name}</p>
+              <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-3 justify-center mt-8 flex-wrap">
+        {(Object.entries(DEPT_COLOR) as Array<[Dept, string]>)
+          .filter(([d]) => d !== 'DoF' && d !== 'Community')
+          .concat([['Community', DEPT_COLOR.Community]])
+          .map(([label, colour]) => (
+            <div key={label} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colour }} />
+              {label}
+            </div>
+          ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Team Info — attribute-card grid (Tennis pattern) ───────────────────────
+
+type StaffCard = {
+  initials: string
+  name: string
+  role: string
+  dept: Dept
+  rating: number
+  ref: string
+  stats: Record<string, number>
+  speciality: string
+  location: string
+  available: boolean
+}
+
+const TEAM_INFO_CARDS: StaffCard[] = [
+  {
+    initials: 'SF', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
+    ref: 'WOM-001',
+    stats: { TAC: 92, MOT: 95, STR: 88, EXP: 91, COM: 90, PRE: 89 },
+    speciality: 'Tactical structure · matchday motivation', location: 'Oakridge Training Centre', available: true,
+  },
+  {
+    initials: 'HV', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
+    ref: 'WOM-002',
+    stats: { STR: 91, NEG: 88, NET: 90, VIS: 89, DEC: 86, COM: 87 },
+    speciality: 'Recruitment strategy · WSL 2 squad model', location: 'Oakridge HQ', available: true,
+  },
+  {
+    initials: 'MC', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
+    ref: 'WOM-003',
+    stats: { STR: 89, COND: 92, REC: 88, GPS: 91, PRE: 87, SPT: 90 },
+    speciality: 'Cycle-aware load · ACL prehab integration', location: 'Oakridge Training Centre', available: true,
+  },
+  {
+    initials: 'AR', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
+    ref: 'WOM-004',
+    stats: { DIA: 94, TRT: 93, REC: 90, WMN: 95, CON: 92, SPT: 88 },
+    speciality: 'Women’s clinical care · postpartum RTP', location: 'Oakridge Medical Centre', available: true,
+  },
+  {
+    initials: 'JK', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
+    ref: 'WOM-005',
+    stats: { LOA: 90, GPS: 92, ACL: 87, CYC: 86, CON: 88, COM: 85 },
+    speciality: 'GPS load + cycle-aware modelling', location: 'Oakridge Analysis Suite', available: true,
+  },
+  {
+    initials: 'NW', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
+    ref: 'WOM-006',
+    stats: { SAF: 93, PSY: 88, CYC: 92, RTP: 90, COM: 91, CON: 89 },
+    speciality: 'Carney-standards safeguarding · player-led support', location: 'Oakridge HQ', available: true,
+  },
+]
+
+function TeamInfoTab() {
+  return (
+    <div>
+      <h2 className="text-xl font-black mb-3" style={{ color: C.text }}>Team Info</h2>
+      <p className="text-xs mb-4" style={{ color: C.text4 }}>
+        Staff attribute cards — ratings and stats are demo only, role-specific axes (incl. women&apos;s-football-specific WMN / CYC / RTP / SAF / LOA / ACL).
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {TEAM_INFO_CARDS.map(m => {
+          const colour = DEPT_COLOR[m.dept]
+          const roleShort = m.role.split(/\s+/)[0].toUpperCase().slice(0, 4)
+          const statEntries = Object.entries(m.stats)
+          return (
+            <div
+              key={m.name}
+              className="rounded-xl overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${colour}18 0%, rgba(0,0,0,0.6) 100%)`,
+                border: `1px solid ${colour}40`,
+              }}
+            >
+              <div className="flex items-start justify-between px-3 pt-3 pb-1">
+                <div>
+                  <div className="text-2xl font-black leading-none" style={{ color: C.text }}>{m.rating}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: colour }}>{roleShort}</div>
+                </div>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: `${colour}25`, color: colour }}>{m.dept === 'DoF' ? 'Football' : m.dept}</span>
+              </div>
+
+              <div className="flex justify-center pb-1">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black" style={{ backgroundColor: `${colour}20`, color: colour, border: `1px solid ${colour}60` }}>
+                  {m.initials}
+                </div>
+              </div>
+
+              <div className="text-center px-3 pb-2">
+                <div className="text-sm font-black" style={{ color: C.text }}>{m.name}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: colour }}>{m.role}</div>
+              </div>
+
+              <div className="grid grid-cols-3" style={{ borderTop: `1px solid ${colour}20`, borderBottom: `1px solid ${colour}20` }}>
+                {statEntries.map(([k, v], i) => (
+                  <div
+                    key={k}
+                    className="flex items-center justify-center gap-1 py-1 text-[10px]"
+                    style={{
+                      borderRight: (i + 1) % 3 !== 0 ? `1px solid ${colour}15` : 'none',
+                      borderBottom: i < 3 ? `1px solid ${colour}15` : 'none',
+                    }}
+                  >
+                    <span className="font-black" style={{ color: C.text }}>{v}</span>
+                    <span style={{ color: colour }}>{k}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="px-3 py-2 space-y-0.5 text-[10px]">
+                <div className="flex justify-between gap-2"><span style={{ color: C.text4 }}>Speciality</span><span className="text-right truncate" style={{ color: C.text }}>{m.speciality}</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: C.text4 }}>Location</span><span className="text-right truncate" style={{ color: C.text }}>{m.location}</span></div>
+                <div className="flex justify-between"><span style={{ color: C.text4 }}>Available</span><span className="font-bold" style={{ color: m.available ? C.good : '#EF4444' }}>{m.available ? 'Yes' : 'No'}</span></div>
+              </div>
+
+              <div className="px-3 pb-3 pt-0.5 flex items-center justify-between">
+                <span className="text-[9px]" style={{ color: C.text5 }}>{m.ref}</span>
+                <button className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: `${colour}20`, color: colour, border: `1px solid ${colour}30` }}>👤 Profile</button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Club Info ──────────────────────────────────────────────────────────────
+
+const CLUB_DOCS = [
+  { icon: '📋', title: 'Staff Code of Conduct',          desc: 'Professional standards and disciplinary procedures' },
+  { icon: '🛡️', title: 'Karen Carney Compliance',         desc: 'Annual Carney-standards self-assessment (demo template)' },
+  { icon: '📊', title: 'FSR Submission Pack',            desc: 'Quarterly FSR submission template + supporting evidence' },
+  { icon: '🌸', title: 'Cycle-Tracking Privacy Policy',  desc: 'Opt-in policy + consent/revoke workflow — player-controlled' },
+  { icon: '🤰', title: 'Pregnancy & Return-to-Play Pathway', desc: '10-stage pathway + WSL 26-week + FIFA Art. 18quater notes' },
+  { icon: '🏛️', title: 'Club Licensing Evidence Vault',  desc: 'Index to the licensing evidence library (demo)' },
+  { icon: '🔒', title: 'Data & GDPR',                    desc: 'Welfare, cycle and medical data handling scope' },
+  { icon: '🎓', title: 'Coaching & CPD',                 desc: 'UEFA licence requirements and CPD policy' },
+]
+
+function ClubInfoTab({ club }: { club: ClubProps }) {
+  const details: Array<[string, string]> = [
+    ['Club',           club.name],
+    ['Founded',        String(club.founded)],
+    ['Nickname',       'The Oaks'],
+    ['Colours',        'Pink and navy'],
+    ['Stadium',        `${club.stadium} (${club.capacity.toLocaleString()})`],
+    ['Training Ground','Oakridge Training Centre'],
+    ['League',         club.league === 'WSL2' ? 'WSL 2' : club.league],
+    ['FA Charter Tier','Tier 2 — Professional Women’s Club'],
+  ]
+  const contacts: Array<[string, string]> = [
+    ['Director',              club.director],
+    ['Head Coach',            club.manager],
+    ['Director of Football',  'Helen Voss'],
+    ['Club Doctor',           'Dr Anna Reid'],
+    ['Welfare Lead',          'Nina Walsh'],
+    ['Commercial Director',   'Jordan Clarke'],
+  ]
+  const upcoming: Array<[string, string, string]> = [
+    ['📋', 'Pre-match briefing',    'Hartwell Women — Fri'],
+    ['⚽', 'Matchday',                'vs Hartwell Women (H) — Sat 12 Apr'],
+    ['📋', 'Post-match debrief',    'Mon'],
+  ]
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-black" style={{ color: C.text }}>Club Info</h2>
+
+      {/* Documents */}
+      <div>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Club Documents</p>
+        <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Document categories shown are illustrative demo placeholders — no real regulatory artefacts attached.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {CLUB_DOCS.map(p => (
+            <div
+              key={p.title}
+              className="rounded-xl p-4 transition-colors"
+              style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}`, cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = C.pinkDeep }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border }}
+            >
+              <span className="text-2xl block mb-2">{p.icon}</span>
+              <p className="text-xs font-bold" style={{ color: C.text }}>{p.title}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: C.text4 }}>{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Club Details + Key Contacts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Club Details</p>
+          {details.map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1">
+              <span className="text-xs" style={{ color: C.text4 }}>{l}</span>
+              <span className="text-xs font-medium text-right" style={{ color: C.text }}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+          <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Key Contacts</p>
+          {contacts.map(([r, n]) => (
+            <div key={r} className="flex justify-between py-1">
+              <span className="text-xs" style={{ color: C.text4 }}>{r}</span>
+              <span className="text-xs font-medium" style={{ color: C.text }}>{n}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Upcoming */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Upcoming This Month</p>
+        {upcoming.map(([icon, label, when], i) => (
+          <p key={i} className="text-xs py-1" style={{ color: C.text2 }}>{icon} {label} — {when}</p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main export ────────────────────────────────────────────────────────────
+
+export default function WomensStaffTabs({ club }: Props) {
+  const [tab, setTab] = useState<SubTab>('today')
+  const tabs: Array<{ id: SubTab; label: string }> = [
+    { id: 'today', label: 'Today' },
+    { id: 'org',   label: 'Org Chart' },
+    { id: 'info',  label: 'Team Info' },
+    { id: 'club',  label: 'Club Info' },
+  ]
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 border-b border-gray-800 mb-4">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="px-4 py-2 text-xs font-semibold transition-all"
+            style={{
+              color: tab === t.id ? C.pinkDeep : C.text4,
+              borderBottom: tab === t.id ? `2px solid ${C.pinkDeep}` : '2px solid transparent',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'today' && <TodayTab />}
+      {tab === 'org'   && <OrgChartTab club={club} />}
+      {tab === 'info'  && <TeamInfoTab />}
+      {tab === 'club'  && <ClubInfoTab club={club} />}
+    </div>
+  )
+}
