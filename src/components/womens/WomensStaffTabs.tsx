@@ -2,6 +2,21 @@
 
 import { useState } from 'react'
 
+// ─── Avatar helper ──────────────────────────────────────────────────────────
+// CC0-licensed avatars via DiceBear "notionists" style by Bohdan Trotsenko
+// (https://www.dicebear.com/styles/notionists/ — explicitly CC0 1.0 per
+// dicebear.com/licenses). Hand-illustrated humanoid portraits, not GAN
+// faces, not photographs. Deterministic per seed: same name → same SVG
+// every render, every reload, every device. Served from DiceBear's CDN.
+//
+// Each staff record carries an `avatar` field (string seed, typically the
+// staff member's full name). The helper produces a stable URL from that
+// seed. Initials are kept on each record as a graceful fallback if the
+// SVG fails to load.
+function avatarUrl(seed: string): string {
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`
+}
+
 // Women's portal — Staff dashboard tab (4 sub-tabs).
 //
 // Today      → ported from the Pro portal Staff Today layout (filter pills,
@@ -174,19 +189,21 @@ function TodayTab() {
 // ─── Org Chart ──────────────────────────────────────────────────────────────
 
 function OrgChartTab({ club }: { club: ClubProps }) {
+  // Owner is a group entity (the club board) — no per-person avatar.
   const owner = { name: `${club.name} Board`, role: 'Owner / Board' }
-  const level2: Array<{ name: string; role: string; dept: Dept }> = [
-    { name: club.director, role: 'Club Director',         dept: 'Operations' },
-    { name: club.manager,  role: 'Head Coach',            dept: 'Coaching' },
-    { name: 'Helen Voss',  role: 'Director of Football',  dept: 'DoF' },
+  // Avatar seeds default to each person's name (deterministic per individual).
+  const level2: Array<{ name: string; role: string; dept: Dept; avatar: string }> = [
+    { name: club.director, role: 'Club Director',         dept: 'Operations', avatar: club.director },
+    { name: club.manager,  role: 'Head Coach',            dept: 'Coaching',   avatar: club.manager },
+    { name: 'Helen Voss',  role: 'Director of Football',  dept: 'DoF',        avatar: 'Helen Voss' },
   ]
-  const level3: Array<{ name: string; role: string; dept: Dept }> = [
-    { name: 'Marcus Chen',     role: 'Head of Performance', dept: 'Performance' },
-    { name: 'Dr Anna Reid',    role: 'Club Doctor',         dept: 'Medical' },
-    { name: 'Nina Walsh',      role: 'Welfare Lead',        dept: 'Welfare' },
-    { name: 'Mark Walker',     role: 'Head of Operations',  dept: 'Operations' },
-    { name: 'Jordan Clarke',   role: 'Commercial Director', dept: 'Commercial' },
-    { name: 'Sasha Lin',       role: 'Head of Community',   dept: 'Community' },
+  const level3: Array<{ name: string; role: string; dept: Dept; avatar: string }> = [
+    { name: 'Marcus Chen',   role: 'Head of Performance', dept: 'Performance', avatar: 'Marcus Chen' },
+    { name: 'Dr Anna Reid',  role: 'Club Doctor',         dept: 'Medical',     avatar: 'Dr Anna Reid' },
+    { name: 'Nina Walsh',    role: 'Welfare Lead',        dept: 'Welfare',     avatar: 'Nina Walsh' },
+    { name: 'Mark Walker',   role: 'Head of Operations',  dept: 'Operations',  avatar: 'Mark Walker' },
+    { name: 'Jordan Clarke', role: 'Commercial Director', dept: 'Commercial',  avatar: 'Jordan Clarke' },
+    { name: 'Sasha Lin',     role: 'Head of Community',   dept: 'Community',   avatar: 'Sasha Lin' },
   ]
 
   return (
@@ -215,9 +232,12 @@ function OrgChartTab({ club }: { club: ClubProps }) {
             <div key={m.name} className="flex flex-col items-center">
               <div className="w-px h-6 mb-2" style={{ backgroundColor: '#374151' }} />
               <div className="rounded-xl p-3 text-center w-48" style={{ backgroundColor: C.panelAlt, border: `1px solid ${colour}` }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-1" style={{ backgroundColor: `${colour}20`, color: colour }}>
-                  {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                </div>
+                <img
+                  src={avatarUrl(m.avatar)}
+                  alt=""
+                  className="w-10 h-10 rounded-full mx-auto mb-1 object-cover"
+                  style={{ backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
+                />
                 <p className="text-xs font-bold truncate" style={{ color: C.text }}>{m.name}</p>
                 <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
               </div>
@@ -232,9 +252,12 @@ function OrgChartTab({ club }: { club: ClubProps }) {
           const colour = DEPT_COLOR[m.dept]
           return (
             <div key={m.name} className="rounded-xl p-3 text-center" style={{ backgroundColor: C.panelDeep, border: `1px solid ${colour}40` }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] mx-auto mb-1" style={{ backgroundColor: `${colour}15`, color: colour }}>
-                {m.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-              </div>
+              <img
+                src={avatarUrl(m.avatar)}
+                alt=""
+                className="w-8 h-8 rounded-full mx-auto mb-1 object-cover"
+                style={{ backgroundColor: `${colour}15`, border: `1px solid ${colour}30` }}
+              />
               <p className="text-xs font-medium truncate" style={{ color: C.text2 }}>{m.name}</p>
               <p className="text-[10px] truncate" style={{ color: colour }}>{m.role}</p>
             </div>
@@ -262,6 +285,7 @@ function OrgChartTab({ club }: { club: ClubProps }) {
 
 type StaffCard = {
   initials: string
+  avatar: string  // seed for avatarUrl() — defaults to staff name; deterministic per person
   name: string
   role: string
   dept: Dept
@@ -275,37 +299,37 @@ type StaffCard = {
 
 const TEAM_INFO_CARDS: StaffCard[] = [
   {
-    initials: 'SF', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
+    initials: 'SF', avatar: 'Sarah Frost', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
     ref: 'WOM-001',
     stats: { TAC: 92, MOT: 95, STR: 88, EXP: 91, COM: 90, PRE: 89 },
     speciality: 'Tactical structure · matchday motivation', location: 'Oakridge Training Centre', available: true,
   },
   {
-    initials: 'HV', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
+    initials: 'HV', avatar: 'Helen Voss', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
     ref: 'WOM-002',
     stats: { STR: 91, NEG: 88, NET: 90, VIS: 89, DEC: 86, COM: 87 },
     speciality: 'Recruitment strategy · WSL 2 squad model', location: 'Oakridge HQ', available: true,
   },
   {
-    initials: 'MC', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
+    initials: 'MC', avatar: 'Marcus Chen', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
     ref: 'WOM-003',
     stats: { STR: 89, COND: 92, REC: 88, GPS: 91, PRE: 87, SPT: 90 },
     speciality: 'Cycle-aware load · ACL prehab integration', location: 'Oakridge Training Centre', available: true,
   },
   {
-    initials: 'AR', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
+    initials: 'AR', avatar: 'Dr Anna Reid', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
     ref: 'WOM-004',
     stats: { DIA: 94, TRT: 93, REC: 90, WMN: 95, CON: 92, SPT: 88 },
     speciality: 'Women’s clinical care · postpartum RTP', location: 'Oakridge Medical Centre', available: true,
   },
   {
-    initials: 'JK', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
+    initials: 'JK', avatar: 'James Kerr', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
     ref: 'WOM-005',
     stats: { LOA: 90, GPS: 92, ACL: 87, CYC: 86, CON: 88, COM: 85 },
     speciality: 'GPS load + cycle-aware modelling', location: 'Oakridge Analysis Suite', available: true,
   },
   {
-    initials: 'NW', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
+    initials: 'NW', avatar: 'Nina Walsh', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
     ref: 'WOM-006',
     stats: { SAF: 93, PSY: 88, CYC: 92, RTP: 90, COM: 91, CON: 89 },
     speciality: 'Carney-standards safeguarding · player-led support', location: 'Oakridge HQ', available: true,
@@ -342,9 +366,12 @@ function TeamInfoTab() {
               </div>
 
               <div className="flex justify-center pb-1">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black" style={{ backgroundColor: `${colour}20`, color: colour, border: `1px solid ${colour}60` }}>
-                  {m.initials}
-                </div>
+                <img
+                  src={avatarUrl(m.avatar)}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover"
+                  style={{ backgroundColor: `${colour}20`, border: `1px solid ${colour}60` }}
+                />
               </div>
 
               <div className="text-center px-3 pb-2">
