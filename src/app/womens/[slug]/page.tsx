@@ -5531,7 +5531,16 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
 
 function WomensFootballPortalInner({ club, session }: { club: WomensClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Sidebar collapse / hover-expand — matches Pro behaviour. Pinned state
+  // persists across sessions in localStorage; hovered state is ephemeral
+  // with a 400ms leave timer to prevent flicker on quick mouse-outs.
+  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_womens_sidebar_pinned') === 'true')
+  const [hovered, setHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = pinned || hovered
+  const togglePin = () => setPinned(p => { const next = !p; try { localStorage.setItem('lumio_womens_sidebar_pinned', String(next)) } catch { /* SSR */ }; return next })
+  const handleSidebarEnter = () => { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null } setHovered(true) }
+  const handleSidebarLeave = () => { sidebarLeaveTimer.current = setTimeout(() => setHovered(false), 400) }
   const [activeRole, setActiveRole] = useState(session.role)
 
   // Role config
@@ -5885,12 +5894,29 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           the row well past 100vh; women's needs the explicit floor. */}
       <div className="flex flex-1" style={{ minHeight: 'calc(100vh / 0.9)' }}>
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col border-r border-gray-800 shrink-0 transition-all" style={{ width: sidebarCollapsed ? 64 : 220, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start' }}>
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-800">
+      <aside
+        className="hidden md:flex flex-col border-r border-gray-800 shrink-0 overflow-hidden"
+        style={{ width: expanded ? 220 : 72, background: '#0A0B12', position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', alignSelf: 'flex-start', transition: 'width 250ms ease' }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
+      >
+        <div className="flex items-center gap-2 border-b border-gray-800" style={{ padding: expanded ? '16px' : '16px 0', justifyContent: expanded ? 'flex-start' : 'center' }}>
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
             : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
-          {!sidebarCollapsed && <span className="text-sm font-bold text-white truncate">{session.clubName}</span>}
+          {expanded && (
+            <>
+              <span className="text-sm font-bold text-white truncate flex-1">{session.clubName}</span>
+              <button
+                onClick={togglePin}
+                className="shrink-0 p-1 rounded"
+                style={{ color: pinned ? '#EC4899' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 150ms ease, color 150ms ease' }}
+                title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+              </button>
+            </>
+          )}
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           {groups.map((group: string) => {
@@ -5900,17 +5926,22 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             if (items.length === 0) return null
             return (
             <div key={group}>
-              {!sidebarCollapsed && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
+              {expanded && <div className="text-[10px] text-gray-600 font-semibold tracking-wider px-4 pt-3 pb-1">{group}</div>}
               {items.map((item: { id: string; label: string; icon: string }) => {
                 const NavIcon = NAV_ICON_MAP[item.id] ?? CircleDot
                 return (
-                <button key={item.id} onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-xs transition-all ${
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveSection(item.id); if (!pinned) setHovered(false) }}
+                  className={`w-full flex items-center gap-2.5 py-2 text-xs transition-all ${
                     activeSection === item.id ? 'bg-pink-600/10 text-pink-400 font-semibold' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}>
+                  }`}
+                  style={{ paddingLeft: expanded ? 16 : 0, paddingRight: expanded ? 16 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}
+                  title={expanded ? undefined : item.label}
+                >
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
-                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                  {!sidebarCollapsed && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {expanded && <span className="truncate">{item.label}</span>}
+                  {expanded && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}
@@ -5924,15 +5955,9 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             roles={WOMENS_ROLES}
             accentColor="#EC4899"
             onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('insights') }}
-            sidebarCollapsed={sidebarCollapsed}
+            sidebarCollapsed={!expanded}
           />
         </div>
-        {/* Collapse button removed — feature not present in other portals
-            (football, cricket, rugby, etc.). Sidebar is fixed-width sticky
-            matching canonical pattern across all portals. The
-            sidebarCollapsed state is retained because it is still
-            referenced by the sidebar's width / label / RoleSwitcher
-            conditionals; in this build it stays at its default (false). */}
       </aside>
 
       {/* Main content */}
