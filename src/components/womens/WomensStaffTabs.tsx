@@ -459,18 +459,98 @@ function TeamInfoTab() {
 
 // ─── Club Info ──────────────────────────────────────────────────────────────
 
-const CLUB_DOCS = [
-  { icon: '📋', title: 'Staff Code of Conduct',          desc: 'Professional standards and disciplinary procedures' },
-  { icon: '🛡️', title: 'Karen Carney Compliance',         desc: 'Annual Carney-standards self-assessment (demo template)' },
-  { icon: '📊', title: 'FSR Submission Pack',            desc: 'Quarterly FSR submission template + supporting evidence' },
-  { icon: '🌸', title: 'Cycle-Tracking Privacy Policy',  desc: 'Opt-in policy + consent/revoke workflow — player-controlled' },
-  { icon: '🤰', title: 'Pregnancy & Return-to-Play Pathway', desc: '10-stage pathway + WSL 26-week + FIFA Art. 18quater notes' },
-  { icon: '🏛️', title: 'Club Licensing Evidence Vault',  desc: 'Index to the licensing evidence library (demo)' },
-  { icon: '🔒', title: 'Data & GDPR',                    desc: 'Welfare, cycle and medical data handling scope' },
-  { icon: '🎓', title: 'Coaching & CPD',                 desc: 'UEFA licence requirements and CPD policy' },
+// Each doc card opens an illustrative demo modal — see the modal disclaimer
+// inside ClubInfoTab. Bodies are intentionally short placeholders, not real
+// regulatory artefacts. Cycle-Tracking + Pregnancy & RTP entries use the
+// wellbeing-led, player-controlled framing the dedicated modules ship.
+type ClubDoc = { icon: string; title: string; desc: string; body: string[] }
+const CLUB_DOCS: ClubDoc[] = [
+  {
+    icon: '📋', title: 'Staff Code of Conduct',
+    desc: 'Professional standards and disciplinary procedures',
+    body: [
+      'Sets the professional standards expected of every member of staff at the club — coaches, medical, welfare, performance, operations, commercial and community.',
+      'Covers: conflicts of interest, gifts and hospitality, social media use, anti-discrimination and inclusion, safeguarding obligations, confidentiality of player data.',
+      'Disciplinary process is graduated (informal → formal → review) with PFA liaison available at every stage. Welfare Lead has independent reporting line for any concerns raised about staff conduct.',
+      'Reviewed annually by the Club Director and Welfare Lead. Last reviewed: March 2026.',
+    ],
+  },
+  {
+    icon: '🛡️', title: 'Karen Carney Compliance',
+    desc: 'Annual Carney-standards self-assessment (demo template)',
+    body: [
+      'Self-assessment template aligned to the Karen Carney Review recommendations for professional women’s football — welfare, mental-health provision, parental rights, environmental standards, transition support.',
+      'Sections cover: independent Welfare Lead in post, mandatory cycle-aware training adaptation, postpartum return-to-play pathway, mental-health pathway, player transition / retirement support, equality monitoring.',
+      'Annual return is signed by the Club Director and Welfare Lead. Outstanding items flagged on the FSR Dashboard so the board sees them every meeting.',
+      'Next return due: September 2026.',
+    ],
+  },
+  {
+    icon: '📊', title: 'FSR Submission Pack',
+    desc: 'Quarterly FSR submission template + supporting evidence',
+    body: [
+      'Template for the quarterly Financial Sustainability Regulation submission. Filed by the Club Director with the Finance & Welfare oversight committee.',
+      'Submission includes: relevant-revenue calculation (broadcast + matchday + commercial + sponsorship + central distributions), squad-cost calculation, wage-to-revenue ratio, headroom against the 80% cap, projections for the next four quarters.',
+      'Supporting evidence: signed sponsorship contracts (redacted), broadcast revenue confirmation, matchday receipts summary, wage bill snapshot, transfer-window forecast.',
+      'Q1 2026 submission accepted. Next submission window: Q2, due July 2026.',
+    ],
+  },
+  {
+    icon: '🌸', title: 'Cycle-Tracking Privacy Policy',
+    desc: 'Opt-in policy + consent/revoke workflow — player-controlled',
+    body: [
+      'Cycle tracking at this club is opt-in only. No player is ever required, encouraged in performance reviews, or chased on the matter. Choice and timing are entirely the player’s.',
+      'Consent is recorded in writing in the Lumio Cycle app at the moment the player opts in. Players can revoke consent at any time, from the same app, with no notice required and no questions asked.',
+      'Access is role-gated to the Club Doctor and the Welfare Lead only. Coaching staff see availability flags only (e.g. modified-load recommendation) — never the underlying phase data.',
+      'On revocation, data is purged from the active view immediately and from backup snapshots within the standard 30-day backup window. Welfare Lead is the data steward.',
+    ],
+  },
+  {
+    icon: '🤰', title: 'Pregnancy & Return-to-Play Pathway',
+    desc: '10-stage pathway + WSL 26-week + FIFA Art. 18quater notes',
+    body: [
+      'Pregnancy is treated as a phase of a player’s career the club has a duty to support, not a risk to monitor. The pathway is player-led at every stage.',
+      'Ten stages: notification & confirmation → clinical handover → adapted training (T1, T2) → cessation of contact → maternity leave → postpartum medical clearance → pelvic floor & MSK screening → graduated RTP (non-contact → contact) → match selection cleared.',
+      'Policy backstop: WSL 26 weeks full pay (UK domestic minimum); FIFA Regulations Art. 18quater 14 weeks paid maternity globally (8 weeks post-birth minimum, anti-termination, mandatory reintegration). Whichever is more favourable applies.',
+      'Visibility scope: clinical detail stays with the player and Club Doctor; the Welfare Lead sees pathway stage and contract obligations; the Director and Coach see availability status only. PFA support is offered and accessible at every stage.',
+    ],
+  },
+  {
+    icon: '🏛️', title: 'Club Licensing Evidence Vault',
+    desc: 'Index to the licensing evidence library (demo)',
+    body: [
+      'Index to evidence files maintained against the six licensing categories: facilities, staffing, academy, contact hours, welfare, medical.',
+      'Each criterion has its own evidence record: threshold, current status, evidence-on-file reference, last-reviewed date, next-review date, and (where applicable) the action-plan workstream addressing it.',
+      'Vault is the working document; the Club Licensing module surfaces a live read of the same data. Evidence is curated by the Operations Manager with sign-off from the Welfare Lead and Club Doctor for their sections.',
+      'Brand-safety reminder: figures and document numbers in the licensing module are illustrative demo values. The club does not issue its own licences.',
+    ],
+  },
+  {
+    icon: '🔒', title: 'Data & GDPR',
+    desc: 'Welfare, cycle and medical data handling scope',
+    body: [
+      'Player welfare data, cycle-tracking data and medical records are each held under separate consent. Players grant or revoke each consent independently.',
+      'Lawful basis: explicit consent for cycle and welfare data; legitimate interest with overriding consent for occupational medical records during employment.',
+      'Retention: cycle data purged on revocation (immediate from active view, 30 days from backups). Medical records retained for the statutory period after employment ends, then purged.',
+      'Subject Access Requests: handled by the Welfare Lead within 30 days. Right to erasure honoured for cycle and welfare data while contractual obligations allow.',
+    ],
+  },
+  {
+    icon: '🎓', title: 'Coaching & CPD',
+    desc: 'UEFA licence requirements and CPD policy',
+    body: [
+      'Coaching staff licence requirements: Head Coach UEFA Pro or recognised equivalent; Assistant Head Coach UEFA A; goalkeeper coach UEFA GK B; academy coaches UEFA B minimum.',
+      'CPD: each coach completes a minimum of 20 hours of recognised CPD per season, recorded in the coaches’ CPD log. Reimbursement for course fees is available — see Operations.',
+      'Mentor scheme: pairs newer coaching staff with senior coaches for a 12-month structured exchange. Optional but encouraged for academy and assistant coaches.',
+      'Equality, diversity and inclusion training is mandatory for all coaching staff annually and is included in the CPD hours total.',
+    ],
+  },
 ]
 
 function ClubInfoTab({ club }: { club: ClubProps }) {
+  const [openDoc, setOpenDoc] = useState<string | null>(null)
+  const openedDoc = openDoc ? CLUB_DOCS.find(d => d.title === openDoc) : null
+
   const details: Array<[string, string]> = [
     ['Club',           club.name],
     ['Founded',        String(club.founded)],
@@ -505,9 +585,10 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
         <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Document categories shown are illustrative demo placeholders — no real regulatory artefacts attached.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {CLUB_DOCS.map(p => (
-            <div
+            <button
               key={p.title}
-              className="rounded-xl p-4 transition-colors"
+              onClick={() => setOpenDoc(p.title)}
+              className="rounded-xl p-4 text-left transition-colors"
               style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}`, cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.pinkDeep }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border }}
@@ -515,10 +596,51 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
               <span className="text-2xl block mb-2">{p.icon}</span>
               <p className="text-xs font-bold" style={{ color: C.text }}>{p.title}</p>
               <p className="text-[10px] mt-0.5" style={{ color: C.text4 }}>{p.desc}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Doc viewer — illustrative demo content, opens on card click.
+          Backdrop + centred panel. Visible "demo placeholder" banner at top
+          honours the existing disclaimer immediately above the doc grid. */}
+      {openedDoc && (
+        <>
+          <div className="fixed inset-0 z-[100]" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setOpenDoc(null)} />
+          <div
+            className="fixed left-1/2 top-1/2 z-[101] -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col"
+            style={{ width: 'min(640px, 92vw)', maxHeight: '85vh', backgroundColor: C.panel, border: `1px solid ${C.border}`, boxShadow: '0 24px 60px rgba(0,0,0,0.55)' }}
+          >
+            <div className="flex items-start justify-between gap-3 px-6 py-4 shrink-0" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="text-2xl shrink-0">{openedDoc.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-base font-bold truncate" style={{ color: C.text }}>{openedDoc.title}</div>
+                  <div className="text-[11px]" style={{ color: C.text4 }}>{openedDoc.desc}</div>
+                </div>
+              </div>
+              <button onClick={() => setOpenDoc(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ color: C.text4 }} aria-label="Close">✕</button>
+            </div>
+
+            <div className="px-6 py-3 shrink-0" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
+              <p className="text-[11px] font-semibold" style={{ color: '#F472B6' }}>
+                ⚠ Illustrative demo placeholder. Not a real regulatory artefact, downloadable document, or signed policy. Shows what this document category would contain.
+              </p>
+            </div>
+
+            <div className="px-6 py-5 overflow-y-auto flex-1 space-y-3">
+              {openedDoc.body.map((para, i) => (
+                <p key={i} className="text-sm leading-relaxed" style={{ color: C.text2 }}>{para}</p>
+              ))}
+            </div>
+
+            <div className="px-6 py-3 shrink-0 flex items-center justify-between" style={{ borderTop: `1px solid ${C.border}` }}>
+              <span className="text-[10px]" style={{ color: C.text5 }}>Demo content · Oakridge Women FC · placeholder text</span>
+              <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Club Details + Key Contacts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
