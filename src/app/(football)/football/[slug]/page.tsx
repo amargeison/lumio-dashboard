@@ -21,7 +21,7 @@ import {
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2, Flame,
-  Building, Plane, Brain, Calculator,
+  Building, Plane, Brain, Calculator, Bot,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -80,7 +80,7 @@ type DeptId =
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
   | 'staff' | 'facilities' | 'settings'
-  | 'video-analysis' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'opta'
+  | 'video-analysis' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'performance-brief' | 'opta'
   | 'discover' | 'lumio-data-pro'
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
@@ -168,6 +168,7 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'player-welfare', label: 'Player Welfare Hub',   icon: Heart,          section: 'MEDICAL' },
   { id: 'performance',    label: 'GPS Tracking',         icon: Activity,       section: 'GPS & LOAD' },
   { id: 'gps-heatmaps',   label: 'Heatmaps',             icon: Flame,          section: 'GPS & LOAD' },
+  { id: 'performance-brief', label: 'AI Performance Brief', icon: Bot,        section: 'GPS & LOAD' },
   { id: 'gps-hardware',   label: 'GPS Hardware',         icon: Activity,       section: 'GPS & LOAD' },
   { id: 'club-operations', label: 'Club Operations',     icon: Building,       section: 'OPERATIONS' },
   { id: 'matchday-ops',   label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
@@ -4062,71 +4063,7 @@ function MediaView() {
   )
 }
 
-function MatchdayView() {
-  const [htLoading, setHtLoading] = useState(false);
-  const [htBrief, setHtBrief] = useState<{
-    headline: string;
-    fatigue_alerts: {player: string; stat: string; flag: string}[];
-    tactical_insight: string;
-    substitution_rec: string;
-    second_half_instruction: string;
-  } | null>(null);
-  const [htScore, setHtScore] = useState('0-0');
-  const [htOpponent, setHtOpponent] = useState('Millwall');
-  const [htManualData, setHtManualData] = useState(
-    GPS_PLAYER_DEMO.slice(0,11).map(p => ({
-      name: p.name,
-      dist: (p.distance * 0.48).toFixed(1),
-      load: Math.round(p.load * 0.52),
-      hsr: Math.round(p.hsr * 0.5),
-      acwr: p.acwr,
-    }))
-  );
-
-  const generateHalfTimeBrief = async () => {
-    setHtLoading(true);
-    try {
-      const highLoad = htManualData.filter(p => Number(p.load) > 240).map(p => `${p.name} (${p.load} AU)`);
-      const highACWR = htManualData.filter(p => p.acwr > 1.3).map(p => `${p.name} (ACWR ${p.acwr.toFixed(2)})`);
-      const avgDist = (htManualData.reduce((a,p) => a + Number(p.dist), 0) / htManualData.length).toFixed(1);
-      const response = await fetch('/api/ai/football', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 800,
-          messages: [{
-            role: 'user',
-            content: `You are a football performance analyst generating a half-time GPS brief for the manager. Be direct, specific, and actionable — this will be read in a 15-minute dressing room break.
-
-Match: Lumio Sports FC vs ${htOpponent}. Half-time score: ${htScore}.
-Average first-half distance covered: ${avgDist}km per player.
-High session load players (>240 AU): ${highLoad.length > 0 ? highLoad.join(', ') : 'None'}.
-High ACWR risk players (>1.3): ${highACWR.length > 0 ? highACWR.join(', ') : 'None'}.
-Full GPS data: ${htManualData.map(p => `${p.name}: ${p.dist}km, ${p.load} AU, ${p.hsr}m HSR, ACWR ${p.acwr}`).join(' | ')}.
-
-Respond ONLY in JSON (no markdown):
-{
-  "headline": "one sentence overall performance summary based on GPS data",
-  "fatigue_alerts": [{"player": "name", "stat": "specific GPS stat", "flag": "short flag e.g. Withdraw at 60min"}],
-  "tactical_insight": "2 sentences on what the GPS movement patterns suggest about tactical effectiveness in the first half",
-  "substitution_rec": "specific substitution recommendation with GPS reasoning — name the player and who to bring on",
-  "second_half_instruction": "2 sentences of specific second-half tactical instruction based on the GPS data"
-}`
-          }]
-        })
-      });
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '';
-      const s = text.indexOf('{'); const e = text.lastIndexOf('}');
-      if (s !== -1 && e !== -1) setHtBrief(JSON.parse(text.slice(s, e+1)));
-    } catch (err) {
-      console.error('Half-time brief failed:', err);
-    } finally {
-      setHtLoading(false);
-    }
-  };
-
+function MatchdayView({ onNavigate }: { onNavigate: (dept: DeptId) => void }) {
   return (
     <div className="space-y-5">
       <div>
@@ -4134,124 +4071,28 @@ Respond ONLY in JSON (no markdown):
         <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Matchday logistics, team sheet, ticketing, and operational checklists.</p>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #F1C40F33' }}>
-        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
+      {/* AI Performance Brief — cross-link to dedicated view (moved out of
+          MatchdayView in commit "AI Performance Brief 3-mode port"). The
+          dedicated view at sidebar id 'performance-brief' is the single
+          source of truth; this card just hops the user there. */}
+      <button
+        onClick={() => onNavigate('performance-brief')}
+        className="w-full rounded-xl p-5 text-left transition-colors"
+        style={{ backgroundColor: '#111318', border: '1px solid #F1C40F33' }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = '#003DA5' }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#F1C40F33' }}
+      >
+        <div className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>🤖 AI Half-Time GPS Brief</p>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>LIVE</span>
+              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>🤖 AI Performance Brief</p>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>3 MODES</span>
             </div>
-            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>GPS data from first 45 minutes → AI coach brief for the dressing room</p>
+            <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Half-Time · Full-Time · Training — structured Claude-powered briefs in 10 seconds. Open the dedicated view →</p>
           </div>
+          <ArrowRight size={20} style={{ color: '#003DA5', flexShrink: 0 }} />
         </div>
-        <div className="p-5">
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Half-time score</p>
-              <input value={htScore} onChange={e => setHtScore(e.target.value)}
-                className="w-full text-sm font-bold rounded-lg px-3 py-2"
-                style={{ backgroundColor: '#0d0f1a', border: '1px solid #1F2937', color: '#F9FAFB' }}
-                placeholder="e.g. 0-1"/>
-            </div>
-            <div>
-              <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Opposition</p>
-              <input value={htOpponent} onChange={e => setHtOpponent(e.target.value)}
-                className="w-full text-sm rounded-lg px-3 py-2"
-                style={{ backgroundColor: '#0d0f1a', border: '1px solid #1F2937', color: '#F9FAFB' }}/>
-            </div>
-          </div>
-
-          <div className="rounded-lg overflow-hidden mb-4" style={{ border: '1px solid #1F2937' }}>
-            <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1F2937' }}>
-              <p className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>First Half GPS Data (editable)</p>
-              <span className="text-xs" style={{ color: '#6B7280' }}>Auto-filled from last match session</span>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #1F2937', backgroundColor: '#111318' }}>
-                    {['Player','Dist (km)','Load (AU)','HSR (m)','ACWR'].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#6B7280', fontWeight: 500 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {htManualData.map((p, i) => (
-                    <tr key={i} style={{ borderBottom: i < htManualData.length-1 ? '1px solid #1F2937' : 'none', backgroundColor: p.acwr > 1.3 ? 'rgba(239,68,68,0.05)' : 'transparent' }}>
-                      <td style={{ padding: '7px 12px', color: '#F9FAFB', fontWeight: 500 }}>{p.name}</td>
-                      {(['dist','load','hsr'] as const).map(key => (
-                        <td key={key} style={{ padding: '7px 12px' }}>
-                          <input
-                            value={String((p as Record<string, string | number>)[key])}
-                            onChange={e => setHtManualData(prev => prev.map((x,j) => j===i ? {...x,[key]:e.target.value} : x))}
-                            style={{ width: 60, backgroundColor: 'transparent', border: 'none', color: '#D1D5DB', fontSize: 12, outline: 'none' }}/>
-                        </td>
-                      ))}
-                      <td style={{ padding: '7px 12px' }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: p.acwr > 1.3 ? '#EF4444' : p.acwr > 1.15 ? '#F59E0B' : '#22C55E' }}>
-                          {p.acwr.toFixed(2)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <button onClick={generateHalfTimeBrief} disabled={htLoading}
-            className="w-full py-3 rounded-xl text-sm font-bold mb-4 transition-all"
-            style={{ backgroundColor: htLoading ? '#1F2937' : '#003DA5', color: '#F1C40F', opacity: htLoading ? 0.6 : 1 }}>
-            {htLoading ? '⏳ Generating brief...' : '🎯 Generate Half-Time Brief'}
-          </button>
-
-          {htBrief && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl" style={{ backgroundColor: '#0d0f1a', border: '1px solid #003DA5' }}>
-                <p className="text-sm font-bold" style={{ color: '#93C5FD' }}>{htBrief.headline}</p>
-              </div>
-              {htBrief.fatigue_alerts.length > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
-                  <div className="px-4 py-2" style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1F2937' }}>
-                    <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>⚠ Fatigue Alerts</p>
-                  </div>
-                  {htBrief.fatigue_alerts.map((a, i) => (
-                    <div key={i} className="px-4 py-3 flex items-start gap-3" style={{ borderBottom: i < htBrief.fatigue_alerts.length-1 ? '1px solid #1F2937' : 'none' }}>
-                      <span className="text-sm font-bold" style={{ color: '#F9FAFB', minWidth: 120 }}>{a.player}</span>
-                      <span className="text-xs" style={{ color: '#9CA3AF' }}>{a.stat}</span>
-                      <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444', whiteSpace: 'nowrap' }}>{a.flag}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {[
-                { label: '📊 Tactical Insight', value: htBrief.tactical_insight, color: '#3B82F6' },
-                { label: '🔄 Substitution Recommendation', value: htBrief.substitution_rec, color: '#F59E0B' },
-                { label: '▶ Second Half Instruction', value: htBrief.second_half_instruction, color: '#22C55E' },
-              ].map(item => (
-                <div key={item.label} className="p-4 rounded-xl" style={{ backgroundColor: '#0d0f1a', border: '1px solid #1F2937' }}>
-                  <p className="text-xs font-semibold mb-2" style={{ color: item.color }}>{item.label}</p>
-                  <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{item.value}</p>
-                </div>
-              ))}
-              <div className="flex gap-2 mt-2">
-                <button onClick={() => setHtBrief(null)}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium"
-                  style={{ border: '1px solid #1F2937', color: '#6B7280' }}>
-                  Regenerate
-                </button>
-                <button onClick={() => {
-                  const text = `HALF-TIME GPS BRIEF\n\n${htBrief.headline}\n\nFATIGUE ALERTS:\n${htBrief.fatigue_alerts.map(a=>`• ${a.player}: ${a.stat} — ${a.flag}`).join('\n')}\n\nTACTICAL: ${htBrief.tactical_insight}\n\nSUBSTITUTION: ${htBrief.substitution_rec}\n\nSECOND HALF: ${htBrief.second_half_instruction}`;
-                  navigator.clipboard.writeText(text);
-                }} className="flex-1 py-2 rounded-lg text-xs font-medium"
-                  style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
-                  Copy for tablet
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      </button>
 
       <div className="flex items-center gap-2 flex-wrap">
         {[
@@ -4323,6 +4164,294 @@ Respond ONLY in JSON (no markdown):
         </div>
       </div>
 
+    </div>
+  )
+}
+
+// ─── AI PERFORMANCE BRIEF VIEW (Pro) ────────────────────────────────────────
+// 3-mode AI performance brief — Half-Time / Full-Time / Training. Pro
+// schemas are physical/tactical only (no welfare_flags — that's Women's-
+// specific). Each mode owns its own prompt template + JSON-structured
+// output schema, sharing the same render scaffolding.
+//
+// DEMO BEHAVIOUR: canned responses for all 3 modes (instant, free, no
+// Claude spend). 800ms artificial latency for tactile feel. The live
+// /api/ai/football fetch path is preserved as a commented reference inside
+// generateBrief() for re-enabling in signed-client deployments. The
+// /api/ai/football route enforces per-IP rate limits + daily spend cap via
+// lib/ai/guards, so live calls are safe but cost money per click — kept
+// canned for the public demo.
+
+interface ProHalfTimeBrief {
+  headline: string
+  fatigue_alerts: { player: string; stat: string; flag: string }[]
+  tactical_insight: string
+  substitution_rec: string
+  second_half_instruction: string
+}
+interface ProFullTimeBrief {
+  headline: string
+  red_zone_players: { player: string; stat: string; concern: string }[]
+  recovery_priorities: string
+  next_session_flags: string
+  rtp_watch: string
+}
+interface ProTrainingBrief {
+  headline: string
+  load_vs_plan: string
+  manage_tomorrow: { player: string; stat: string; action: string }[]
+  session_target_assessment: string
+}
+
+const PRO_CANNED_HALFTIME: ProHalfTimeBrief = {
+  headline: "Even at 1-1 at the break — we've dominated possession (62%) but failed to convert two clear xG chances. Their right side is creaking — exploit it for the next 45.",
+  fatigue_alerts: [
+    { player: 'Liam Barker',  stat: '5.8 km dist, 142 AU load, ACWR 1.42', flag: "Withdraw at 60'" },
+    { player: 'Dean Morris',  stat: '6.1 km dist, 28 sprints, top speed 33.2 km/h', flag: 'Manage load 2nd half' },
+    { player: 'Tom Fletcher', stat: '5.9 km dist, 156 AU', flag: 'Avoid additional defensive work' },
+  ],
+  tactical_insight: "PPDA 8.2 vs their 13.4 — we're pressing hard and they're cracking under it; the issue is converting recoveries into shots. Right channel against their RB has produced 6 of our 9 entries to the final third.",
+  substitution_rec: "At 60': Sam Porter in for Liam Barker — fresh legs in midfield, Porter's pace targets their tiring RB. Hold Ryan Cole back as a tactical option for 75' if we need extra control.",
+  second_half_instruction: 'Continue pressing high on their CBs — they panic. Get Tilley wider earlier; their RB has been stretched all half. Tighten on their #10 between the lines — he found two pockets in the first 45 that hurt us.',
+}
+
+const PRO_CANNED_FULLTIME: ProFullTimeBrief = {
+  headline: 'Solid 2-1 win, but full-match load tells a story — three players in the red zone, especially Barker whose ACWR ticked to 1.48. Recovery starts in the next 4 hours, not Monday.',
+  red_zone_players: [
+    { player: 'Liam Barker',  stat: '11.4 km, 312 AU, ACWR 1.48', concern: 'Highest accumulated load in the squad — second consecutive match above ACWR 1.4. Soft-tissue risk rising.' },
+    { player: 'Dean Morris',  stat: '11.2 km, 42 sprints, top speed 32.1 km/h', concern: 'Sprint count above 4-week rolling average by 22%. Hamstring watch tomorrow.' },
+    { player: 'Tom Fletcher', stat: '10.9 km, 290 AU, late-game HSR spike', concern: 'Held position through full 90 — workload high but acceptable. Monitor only.' },
+  ],
+  recovery_priorities: 'Cold immersion + nutrition shake within 30 minutes for Barker, Morris, Fletcher. Pool active recovery tomorrow morning for all match starters. Sleep tracking on overnight.',
+  next_session_flags: 'Pull Barker from Monday training entirely — full rest day. Morris: skip Monday high-speed work, tactical walkthrough only. Fletcher: standard session OK.',
+  rtp_watch: 'Kyle Osei (returning from grade-2 hamstring) — first 45 minutes today, no recurrence flags. Monitor through Wednesday before clearing for full 90 next match.',
+}
+
+const PRO_CANNED_TRAINING: ProTrainingBrief = {
+  headline: 'Thursday tactical session hit 92% of target load — strong intensity in the press block, two players flagged for tomorrow management ahead of Saturday.',
+  load_vs_plan: 'Squad average 156 AU vs 170 AU target — 8% under. Driver: shorter possession-keep block (15 min vs planned 22 min) cut total minutes. Press triggers block hit target exactly.',
+  manage_tomorrow: [
+    { player: 'Liam Barker', stat: 'RPE 8/10 (vs squad 6/10), ACWR 1.34', action: 'Friday session reduced to tactical only. No high-speed work.' },
+    { player: 'Dean Morris', stat: 'Cumulative HSR 1,840 m across week (target 1,500)', action: 'Skip Friday running block. Recovery + activation only.' },
+  ],
+  session_target_assessment: 'Intended physical stimulus (anaerobic capacity + 1v1 decision-making under fatigue) was achieved in the press block — players hit the lactate-zone targets. The possession-keep cut short means sustained-load decision-making wasn\'t fully tested; consider extending it next session.',
+}
+
+type ProPerfMode = 'halftime' | 'fulltime' | 'training'
+
+function ProAIPerformanceBriefView() {
+  const [mode, setMode] = useState<ProPerfMode>('halftime')
+  const [loading, setLoading] = useState(false)
+  const [briefs, setBriefs] = useState<{ halftime?: ProHalfTimeBrief; fulltime?: ProFullTimeBrief; training?: ProTrainingBrief }>({})
+
+  const generateBrief = async () => {
+    setLoading(true)
+    // Demo: canned response with 800ms artificial latency. To enable
+    // live Claude API calls in a signed-client (non-demo) portal, remove
+    // the canned path below and uncomment the fetch block at the end of
+    // this function. The /api/ai/football route already enforces per-IP
+    // rate limits + a daily spend cap via @/lib/ai/guards.
+    await new Promise(r => setTimeout(r, 800))
+    if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: PRO_CANNED_HALFTIME }))
+    else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: PRO_CANNED_FULLTIME }))
+    else setBriefs(b => ({ ...b, training: PRO_CANNED_TRAINING }))
+    setLoading(false)
+    return
+    /* LIVE API PATH — uncomment for non-demo deployments:
+    try {
+      const prompt = buildProPromptForMode(mode)
+      const response = await fetch('/api/ai/football', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      const data = await response.json()
+      const text = data.content?.[0]?.text || ''
+      const s = text.indexOf('{'); const e = text.lastIndexOf('}')
+      if (s !== -1 && e !== -1) {
+        const parsed = JSON.parse(text.slice(s, e + 1))
+        if (mode === 'halftime') setBriefs(b => ({ ...b, halftime: parsed as ProHalfTimeBrief }))
+        else if (mode === 'fulltime') setBriefs(b => ({ ...b, fulltime: parsed as ProFullTimeBrief }))
+        else setBriefs(b => ({ ...b, training: parsed as ProTrainingBrief }))
+      }
+    } catch (err) { console.error('Performance brief failed:', err) }
+    finally { setLoading(false) }
+    */
+  }
+
+  const modeTabs: { id: ProPerfMode; label: string; sub: string }[] = [
+    { id: 'halftime', label: 'Half-Time', sub: 'First-half → 2nd-half adjustments' },
+    { id: 'fulltime', label: 'Full-Time', sub: 'Full match → recovery + next session' },
+    { id: 'training', label: 'Training',  sub: 'Session load → tomorrow management' },
+  ]
+
+  const Headline = ({ text }: { text: string }) => (
+    <div className="p-4 rounded-xl" style={{ backgroundColor: '#0d0f1a', border: '1px solid #003DA5' }}>
+      <p className="text-sm font-bold" style={{ color: '#93C5FD' }}>{text}</p>
+    </div>
+  )
+
+  const Sub = ({ label, color, body }: { label: string; color: string; body: string }) => (
+    <div className="p-4 rounded-xl" style={{ backgroundColor: '#0d0f1a', border: '1px solid #1F2937' }}>
+      <p className="text-xs font-semibold mb-2" style={{ color }}>{label}</p>
+      <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>{body}</p>
+    </div>
+  )
+
+  const RowList = <T extends { player: string }>({ title, color, rows, render }: { title: string; color: string; rows: T[]; render: (r: T) => React.ReactNode }) => (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1F2937' }}>
+      <div className="px-4 py-2" style={{ backgroundColor: '#0d0f1a', borderBottom: '1px solid #1F2937' }}>
+        <p className="text-xs font-semibold" style={{ color }}>{title}</p>
+      </div>
+      {rows.map((r, i) => (
+        <div key={i} className="px-4 py-3 flex items-start gap-3" style={{ borderBottom: i < rows.length - 1 ? '1px solid #1F2937' : 'none' }}>
+          {render(r)}
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderHalfTime = (b: ProHalfTimeBrief) => (
+    <div className="space-y-4">
+      <Headline text={b.headline} />
+      {b.fatigue_alerts.length > 0 && (
+        <RowList<{ player: string; stat: string; flag: string }>
+          title="⚠ Fatigue Alerts"
+          color="#EF4444"
+          rows={b.fatigue_alerts}
+          render={a => (
+            <>
+              <span className="text-sm font-bold" style={{ color: '#F9FAFB', minWidth: 120 }}>{a.player}</span>
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>{a.stat}</span>
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444', whiteSpace: 'nowrap' }}>{a.flag}</span>
+            </>
+          )}
+        />
+      )}
+      <Sub label="📊 Tactical Insight"             color="#3B82F6" body={b.tactical_insight} />
+      <Sub label="🔄 Substitution Recommendation"  color="#F59E0B" body={b.substitution_rec} />
+      <Sub label="▶ Second Half Instruction"       color="#22C55E" body={b.second_half_instruction} />
+    </div>
+  )
+
+  const renderFullTime = (b: ProFullTimeBrief) => (
+    <div className="space-y-4">
+      <Headline text={b.headline} />
+      {b.red_zone_players.length > 0 && (
+        <RowList<{ player: string; stat: string; concern: string }>
+          title="🚨 Red-Zone Players"
+          color="#EF4444"
+          rows={b.red_zone_players}
+          render={p => (
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.player}</span>
+                <span className="text-xs" style={{ color: '#EF4444' }}>{p.stat}</span>
+              </div>
+              <div className="text-xs" style={{ color: '#9CA3AF' }}>{p.concern}</div>
+            </div>
+          )}
+        />
+      )}
+      <Sub label="🛁 Recovery Priorities"             color="#3B82F6" body={b.recovery_priorities} />
+      <Sub label="📋 Next Session — Management Flags" color="#F59E0B" body={b.next_session_flags} />
+      <Sub label="🩺 Return-to-Play Watch"             color="#22C55E" body={b.rtp_watch} />
+    </div>
+  )
+
+  const renderTraining = (b: ProTrainingBrief) => (
+    <div className="space-y-4">
+      <Headline text={b.headline} />
+      <Sub label="📊 Load vs Plan" color="#3B82F6" body={b.load_vs_plan} />
+      {b.manage_tomorrow.length > 0 && (
+        <RowList<{ player: string; stat: string; action: string }>
+          title="🛌 Manage Tomorrow"
+          color="#F59E0B"
+          rows={b.manage_tomorrow}
+          render={m => (
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <span className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{m.player}</span>
+                <span className="text-xs" style={{ color: '#F59E0B' }}>{m.stat}</span>
+              </div>
+              <div className="text-xs" style={{ color: '#9CA3AF' }}>{m.action}</div>
+            </div>
+          )}
+        />
+      )}
+      <Sub label="🎯 Session Target Assessment" color="#22C55E" body={b.session_target_assessment} />
+    </div>
+  )
+
+  const currentBrief: ProHalfTimeBrief | ProFullTimeBrief | ProTrainingBrief | undefined =
+    mode === 'halftime' ? briefs.halftime : mode === 'fulltime' ? briefs.fulltime : briefs.training
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>🤖 AI Performance Brief</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Three modes — Half-Time · Full-Time · Training. GPS + xG data → structured Claude-powered briefs for the dressing room or coaching staff iPad.</p>
+      </div>
+
+      {/* Mode tabs */}
+      <div className="flex gap-1 p-1 rounded-lg w-fit" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        {modeTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setMode(t.id)}
+            className="px-4 py-2 rounded-md text-xs font-medium transition-colors text-left"
+            style={{
+              backgroundColor: mode === t.id ? 'rgba(0,61,165,0.25)' : 'transparent',
+              color: mode === t.id ? '#F1C40F' : '#9CA3AF',
+              border: mode === t.id ? '1px solid rgba(0,61,165,0.5)' : '1px solid transparent',
+              minWidth: 180,
+            }}
+          >
+            <div className="font-bold">{t.label}</div>
+            <div className="text-[10px] opacity-70 mt-0.5">{t.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={generateBrief}
+        disabled={loading}
+        className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+        style={{ backgroundColor: loading ? '#1F2937' : '#003DA5', color: '#F1C40F', opacity: loading ? 0.6 : 1 }}
+      >
+        {loading ? `⏳ Generating ${modeTabs.find(t => t.id === mode)?.label} brief…` : `🎯 Generate ${modeTabs.find(t => t.id === mode)?.label} Brief`}
+      </button>
+
+      {!currentBrief && !loading && (
+        <p className="text-xs" style={{ color: '#6B7280' }}>
+          {mode === 'halftime' && 'First-half GPS + xG → structured 2nd-half brief (headline, fatigue alerts, tactical, substitution, second-half instruction).'}
+          {mode === 'fulltime' && 'Full-match load → recovery priorities, next-session flags, return-to-play watch.'}
+          {mode === 'training' && 'Session load vs plan → tomorrow-management decisions and target assessment.'}
+        </p>
+      )}
+
+      {currentBrief && (
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid rgba(0,61,165,0.5)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold" style={{ color: '#F1C40F' }}>🤖 Lumio AI Brief — {modeTabs.find(t => t.id === mode)?.label}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded font-bold" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>COACHING STAFF</span>
+            </div>
+            <button onClick={generateBrief} className="text-xs" style={{ color: '#6B7280' }}>↺ Regenerate</button>
+          </div>
+          {mode === 'halftime' && renderHalfTime(currentBrief as ProHalfTimeBrief)}
+          {mode === 'fulltime' && renderFullTime(currentBrief as ProFullTimeBrief)}
+          {mode === 'training' && renderTraining(currentBrief as ProTrainingBrief)}
+          <div className="mt-4 pt-3 border-t flex items-center justify-between" style={{ borderColor: '#1F2937' }}>
+            <span className="text-[10px]" style={{ color: '#4B5563' }}>Demo response · Lumio Sports FC · {modeTabs.find(t => t.id === mode)?.label} mode</span>
+            <button className="text-xs" style={{ color: '#60A5FA' }}>Copy for tablet →</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -7442,10 +7571,11 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
             {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} isDemoShell={session?.isDemoShell !== false} />}
             {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
-            {isFootballDemo && activeDept === 'matchday' && <MatchdayView />}
+            {isFootballDemo && activeDept === 'matchday' && <MatchdayView onNavigate={(d) => setActiveDept(d)} />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
             {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
+            {isFootballDemo && activeDept === 'performance-brief' && <ProAIPerformanceBriefView />}
             {isFootballDemo && activeDept === 'finance' && <FinanceView />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
