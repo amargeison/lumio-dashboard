@@ -52,6 +52,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
+import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -4663,45 +4664,10 @@ const StandaloneTrackerView = ({ club }: { club: WomensClub }) => (
   </div>
 )
 
-// ─── BOARD SUITE VIEW ─────────────────────────────────────────────────────────
-const BoardSuiteView = ({ club }: { club: WomensClub }) => (
-  <div>
-    <SectionHeader title={`Board Suite — ${club.name}`} subtitle="Executive dashboard for board and investors" icon="🏛️" />
-    <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 mb-6 flex items-center justify-between">
-      <div><div className="text-sm text-pink-300 font-medium">Next board meeting: 15 Apr 2025</div><div className="text-xs text-gray-400">Pack due in 11 days</div></div>
-      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Generate Pack — Phase 2</button>
-    </div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="FSR Status" value={`Safe (${club.salarySpend ?? 0}%)`} color="green" />
-      <StatCard label="Headroom" value={club.fsrHeadroom ? `£${(club.fsrHeadroom/1000).toFixed(0)}k` : 'N/A'} color="teal" />
-      <StatCard label="Revenue vs Budget" value="87%" color="blue" />
-      <StatCard label="Pipeline" value="£238k" color="pink" />
-    </div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Squad" value="20" color="purple" />
-      <StatCard label="Welfare Flags" value="2" color="amber" />
-      <StatCard label="Attendance" value="2,847" color="blue" />
-      <StatCard label="Points" value="34" color="green" />
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Commercial Growth (Season-on-Season)</h3>
-      <svg viewBox="0 0 400 140" className="w-full">
-        {[{year:'22-23',md:180,com:120,bc:80},{year:'23-24',md:220,com:180,bc:120},{year:'24-25',md:280,com:240,bc:160},{year:'25-26',md:320,com:310,bc:200}].map((y: {year:string;md:number;com:number;bc:number}, i: number) => {
-          const x = 40 + i * 90; const scale = 100 / 350;
-          return (<g key={i}><rect x={x} y={120 - y.md * scale} width={20} height={y.md * scale} rx={2} fill="#EC4899" opacity={0.7} /><rect x={x + 22} y={120 - y.com * scale} width={20} height={y.com * scale} rx={2} fill="#8B5CF6" opacity={0.7} /><rect x={x + 44} y={120 - y.bc * scale} width={20} height={y.bc * scale} rx={2} fill="#38BDF8" opacity={0.7} /><text x={x + 32} y={135} textAnchor="middle" fill="#6b7280" fontSize="9">{y.year}</text></g>)
-        })}
-      </svg>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-      <h3 className="text-sm font-bold text-white mb-3">WSL Compliance</h3>
-      <div className="space-y-2">
-        {[{item:'FSR salary cap',ok:true},{item:'Age-band minimums',ok:false,note:'1 player'},{item:'Welfare standards',ok:true},{item:'Registration',ok:true},{item:'Dual reg records',ok:true}].map((c: {item:string;ok:boolean;note?:string}, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-gray-800/50"><span className={c.ok ? 'text-green-400' : 'text-red-400'}>{c.ok ? '✓' : '✗'}</span><span className="text-gray-300">{c.item}</span>{c.note && <span className="text-amber-400 ml-auto">{c.note}</span>}</div>
-        ))}
-      </div>
-    </div>
-  </div>
-)
+// Board Suite — extracted to src/components/womens/WomensBoardSuiteView.tsx
+// (port-by-copying from Pro's BoardSuiteView, pink-themed, WSL 2 scale).
+// Built sequentially over 5 commits: scaffolding + Overview + Profile shipped
+// first; Finance / Welfare / Squad+Facilities / Governance follow.
 
 // ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
 const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
@@ -5813,7 +5779,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'performance-brief': return <AIPerformanceBriefView />
       case 'sponsorship': return <SponsorshipPipelineView club={club} />
       case 'standalone':  return <StandaloneTrackerView club={club} />
-      case 'board':       return <BoardSuiteView club={club} />
+      case 'board':       return <WomensBoardSuiteView club={club} />
       case 'club-vision': return <WomensClubVisionView club={club} />
       case 'financial':   return <WomensClubVisionView club={club} />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
