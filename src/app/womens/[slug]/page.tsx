@@ -48,6 +48,8 @@ import WomensToursAndCampsView from '@/components/womens/ToursAndCampsView'
 import GameStandardsView from '@/components/womens/GameStandardsView'
 import ClubLicensingView from '@/components/womens/ClubLicensingView'
 import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/WomensAvatarDropdown'
+import SportsSettings from '@/components/sports/SportsSettings'
+import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -4600,38 +4602,6 @@ const StaffDirectoryView = () => (
 )
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-const SettingsViewFull = ({ club }: { club: WomensClub }) => (
-  <div>
-    <SectionHeader title="Settings" subtitle="Club profile, notifications, integrations" icon="⚙️" />
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Club Profile</h3>
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        {[{l:'Club',v:club.name},{l:'League',v:club.league},{l:'Stadium',v:club.stadium},{l:'Accent',v:club.accent},{l:'Founded',v:String(club.founded)},{l:'Director',v:club.director}].map((f: {l:string;v:string}, i: number) => (
-          <div key={i} className="py-2 border-b border-gray-800/50"><div className="text-gray-500 text-[10px] uppercase">{f.l}</div><div className="text-gray-200 mt-0.5">{f.v}</div></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Notifications</h3>
-      <div className="space-y-3">
-        {['FSR compliance alerts','Welfare flags','Sponsorship renewals','Dual reg expiries','Board meetings'].map((n: string, i: number) => (
-          <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{n}</span><div className="w-10 h-5 bg-pink-600/30 rounded-full relative"><div className="w-4 h-4 bg-pink-400 rounded-full absolute top-0.5 right-0.5" /></div></div>
-        ))}
-      </div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Integrations</h3>
-      {['Lumio Health','FA Registration System'].map((ig: string, i: number) => (
-        <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50"><span className="text-sm text-gray-300">{ig}</span><button className="px-3 py-1 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Connect</button></div>
-      ))}
-    </div>
-    <div className="flex gap-3">
-      <button disabled className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed">Roles & Permissions — Demo</button>
-      <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-600/20 text-pink-400 border border-pink-600/30">Export Data (GDPR)</button>
-    </div>
-  </div>
-)
-
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   <div>
     <SectionHeader title={title} icon={icon} />
@@ -5521,6 +5491,131 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
 
+  // ── Settings — shared SportsSettings + Women's-specific augmentations ──
+  // SportsSettings is the shared chrome used by Tennis / Cricket / Darts /
+  // Golf / Boxing. Do NOT modify it; pass all Women's-specific content via
+  // configFields / integrationGroups / extraSections.
+  const womensStaffRoles = ['CEO / Chairman','Director of Football','Head Coach','Head of Performance','Club Doctor','Welfare Lead','Head of Operations','Commercial Director','Head of Community','Sponsor']
+  const SettingsView = () => (
+    <SportsSettings
+      sport="womens"
+      slug={club.slug}
+      sportLabel="Women's Football Club"
+      entity="club"
+      accentColour="#EC4899"
+      accentLight="#F472B6"
+      session={{
+        userName: session?.userName,
+        photoDataUrl: session?.photoDataUrl,
+        email: session?.email,
+        nickname: session?.nickname,
+        clubName: session?.clubName || club.name,
+        logoDataUrl: session?.logoDataUrl,
+        isDemoShell: session?.isDemoShell,
+      }}
+      storagePrefix="lumio_womens_"
+      profile={{
+        name: 'Director Name',
+        tour: 'Competition',
+        tourValue: club.league === 'WSL' ? 'WSL' : club.league === 'WSL2' ? 'WSL 2' : club.league,
+        ranking: 'League Position',
+        rankingValue: '3rd · WSL 2',
+        coach: 'Head Coach',
+        coachValue: club.manager,
+        agent: 'Director of Football',
+        agentValue: club.director,
+        homeVenue: 'Home Stadium',
+        homeVenueValue: club.stadium,
+        playerIdLabel: 'FA Club ID (demo)',
+        staffInviteRoles: womensStaffRoles,
+      }}
+      configFields={[
+        { id: 'faClubId',    label: 'FA Club ID (demo)',            description: 'Issued by the FA for affiliated women\'s clubs', kind: 'text',   placeholder: 'e.g. FA-OAKR-2025', defaultValue: 'FA-OAKR-2025' },
+        { id: 'wgsRef',      label: 'Whole Game System reference (demo)', description: 'FA Whole Game System club reference', kind: 'text', placeholder: 'e.g. WGS-OAKR-718', defaultValue: 'WGS-OAKR-718' },
+        { id: 'tier',        label: 'Tier',                         description: 'Drives sidebar gating — read-only', kind: 'select', options: ['WSL','WSL 2','Grassroots'], defaultValue: club.tier === 'pro' ? 'WSL' : club.tier === 'championship' ? 'WSL 2' : 'Grassroots' },
+        { id: 'competition', label: 'Primary competition',          description: 'Senior league competition', kind: 'select', options: ['WSL','WSL 2','National League','Women\'s FA Cup focus'], defaultValue: club.tier === 'pro' ? 'WSL' : club.tier === 'championship' ? 'WSL 2' : 'National League' },
+        { id: 'homeStadium', label: 'Home stadium',                 description: 'Primary match-day venue', kind: 'text',   placeholder: 'e.g. Oakridge Stadium', defaultValue: club.stadium },
+        { id: 'founded',     label: 'Founded',                      description: 'Year of formation', kind: 'number', defaultValue: String(club.founded) },
+        { id: 'kitSupplier', label: 'Kit supplier',                 description: 'Current kit-supply partner', kind: 'text', placeholder: 'e.g. Apex Performance', defaultValue: 'Apex Performance' },
+        { id: 'gpsProvider', label: 'GPS hardware provider',        description: 'Player tracking / load monitoring', kind: 'select', options: ['None','Lumio Health (recommended)','Lumio Health Pro (with live data)','CSV Upload (manual)'], defaultValue: 'Lumio Health (recommended)' },
+        { id: 'accentColor', label: 'Accent colour',                description: 'Drives in-portal accent', kind: 'color', defaultValue: club.accent },
+      ]}
+      integrationGroups={[
+        {
+          title: "WOMEN'S DATA",
+          items: [
+            { name: 'Lumio Cycle',           desc: 'Opt-in menstrual cycle tracking + load auto-adjustments', connected: true },
+            { name: 'Lumio Wear',            desc: 'Recovery / sleep monitoring' },
+            { name: 'FA Registration System', desc: 'Squad registrations + dual-reg agreements',              connected: true },
+          ],
+        },
+        {
+          title: 'PERFORMANCE',
+          items: [
+            { name: 'Lumio Health',  desc: 'GPS + load monitoring (matchday + training)', connected: true },
+            { name: 'Lumio Vision',  desc: 'Video tagging + AI clip review' },
+            { name: 'JOHAN Sports',  desc: 'GPS vest hardware · load and high-speed-run data' },
+            { name: 'CSV Upload',    desc: 'Generic GPS export · drop a file from any vendor' },
+          ],
+        },
+        {
+          title: 'COMMUNICATION',
+          items: [
+            { name: 'Slack',             desc: 'Squad + staff messaging' },
+            { name: 'Microsoft Teams',   desc: 'Board reviews + video conferencing' },
+            { name: 'Google Workspace',  desc: 'Calendar, Drive & email' },
+            { name: 'WhatsApp Business', desc: 'Match-day broadcast channel for squad + staff' },
+          ],
+        },
+      ]}
+      voiceOptions={[
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah',     desc: 'Warm, confident British female — ideal for morning briefings' },
+        { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — steady matchday narration' },
+        { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George',    desc: 'Professional British male — composed and match-report ready' },
+      ]}
+      notificationPreferences={[
+        'FSR compliance alerts',
+        'Welfare flags',
+        'ACL composite risk red flags',
+        'Cycle-phase load adjustments (auto-applied)',
+        'Pregnancy & RTP milestone reminders',
+        'Sponsorship renewals',
+        'Dual reg expiries',
+        'Board meeting reminders',
+        'AI morning briefing email',
+      ]}
+      teamInvite={{
+        enabled: true,
+        staffCount: 10,
+        pendingInvites: 0,
+        roleOptions: womensStaffRoles,
+      }}
+      navItems={SIDEBAR_ITEMS.map(item => ({ key: item.id, label: item.label, emoji: item.icon }))}
+      featureItems={[
+        { key: 'morning-briefing', label: 'Morning Briefing',           emoji: '🌅', description: 'AI summary at top of dashboard' },
+        { key: 'quick-actions',    label: 'Quick Actions bar',          emoji: '⚡', description: 'Action buttons below tab bar (Today only)' },
+        { key: 'ai-section',       label: 'AI Department Intelligence', emoji: '✨', description: 'AI Summary + Key Highlights' },
+        { key: 'world-clock',      label: 'World Clock',                emoji: '🕐', description: 'Multi-timezone clock in banner' },
+        { key: 'weather',          label: 'Weather widget',             emoji: '🌤️', description: 'Matchday weather + forecast' },
+        { key: 'stat-tiles',       label: 'KPI stat tiles',             emoji: '📊', description: 'Squad / FSR / form tiles on Today' },
+      ]}
+      showWorldClock
+      showAppearance
+      showDeveloperTools
+      devApiRouteOptions={['/api/ai/womens']}
+      extraSections={
+        <WomensSettingsAdditions
+          onNavigate={(sectionId) => setActiveSection(sectionId)}
+          roleConfig={WOMENS_ROLE_CONFIG}
+          cycleOptInRate="14 of 22"
+          fsrStatus={{ label: 'SAFE', rag: 'green', sub: `${club.salarySpend ?? 78}% spend · £${club.fsrHeadroom ? (club.fsrHeadroom / 1000).toFixed(0) : '380'}k headroom` }}
+          gameStandardsStatus={{ label: 'On track', rag: 'amber', sub: '4 of 5 sub-recommendations compliant' }}
+          clubLicensingStatus={{ label: 'PROVISIONAL', rag: 'amber', sub: '4 of 6 categories green · 2 amber' }}
+        />
+      }
+    />
+  )
+
   const renderView = () => {
     switch (activeSection) {
       case 'dashboard':   return null // handled inline
@@ -5580,7 +5675,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
             <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
           </div>
         )
-      case 'settings':    return <SettingsViewFull club={club} />
+      case 'settings':    return <SettingsView />
       default:            return null
     }
   }
