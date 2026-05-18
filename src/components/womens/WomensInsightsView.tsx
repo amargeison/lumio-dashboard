@@ -921,21 +921,132 @@ function PerformanceContent() {
 }
 
 function WelfareContent() {
+  // Strict welfare-lens visibility — every per-player figure is either
+  // anonymised, a pathway stage, a band rollup, or a count. No cycle phase
+  // per player, no ACL composite, no clinical injury detail, no mental-
+  // health session content. Doctor owns the clinical surface (Head of
+  // Medical tab).
   return (
     <div className="space-y-6">
-      <SectionHeader title="Welfare Lead View" subtitle="Aggregate flags, pathway stages, opt-in posture, compliance" icon="❤️" />
+      <SectionHeader title="Welfare Lead View" subtitle="Aggregate flags, pathway stages, opt-in posture, compliance, GDPR" icon="❤️" />
       <VisibilityNote role="welfare" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard label="Open Welfare Flags" value="4" sub="2 amber · 2 yellow · 0 red" color="amber" />
+        <StatCard label="On Modified-Load" value="3" sub="Within standard pathway" color="amber" />
         <StatCard label="Cycle Opt-in Rate" value="64%" sub="14 of 22 — opt-in only" color="pink" />
         <StatCard label="Check-ins Overdue" value="2" sub="Action required" color="red" />
-        <StatCard label="Carney Compliance" value="91%" sub="2 criteria below threshold" color="green" />
+        <StatCard label="Carney Compliance" value="91/100" sub="2 criteria outstanding" color="green" />
+        <StatCard label="SAR Response (avg)" value="14d" sub="Statutory: 30d" color="green" />
       </div>
+
+      {/* Open welfare flags — anonymised aggregate table */}
+      <ICard>
+        <IH3>Open Welfare Flags (4 anonymised)</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Player identifiers withheld at this surface — full case files sit with the named owner. Detail follows the consent given for each flag type.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Flag</th>
+          <th className="text-left p-3">Severity</th>
+          <th className="text-left p-3">Owner</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { f: 'Welfare review request',               sev: 'Yellow', sc: '#F59E0B', o: 'Welfare Lead',           st: 'Awaiting initial meeting (this week)' },
+          { f: 'Mental-health pathway access',          sev: 'Amber',  sc: '#F59E0B', o: 'Welfare Lead',           st: 'Referral made — first session this week' },
+          { f: 'Pregnancy & RTP pathway',               sev: 'Yellow', sc: '#F59E0B', o: 'Player + Club Doctor',   st: 'Active case at Stage 4 (adapted training T2)' },
+          { f: 'Maternity transition planning',         sev: 'Amber',  sc: '#F59E0B', o: 'Welfare Lead + Doctor',  st: 'Pre-leave medical coordinated — due 30 Apr' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.f}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.sc}20`, color: r.sc }}>{r.sev}</span></td><td className={ttd}>{r.o}</td><td className="p-3 text-xs text-gray-300">{r.st}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Priority Actions Today — 5 items (was 3) */}
       <ICard><IH3>Priority Actions Today</IH3><div className="space-y-2">{[
         { t: 'ACL risk bands today: 17 low · 3 moderate · 2 elevated. Confirm with Club Doctor that intervention pathway is active for the elevated cases.', c: 'red'   },
         { t: 'Cycle module: 8 of 22 squad have not yet had the opt-in conversation. Schedule sessions over the next 2 weeks.',                                  c: 'amber' },
+        { t: 'Welfare Lead recruitment: final interviews w/c 26 May, start date 1 Jul 2026 — onboarding plan to draft.',                                       c: 'amber' },
         { t: 'Maternity pathway: 1 active case at Stage 4. Pre-leave medical coordinated with Club Doctor — due by 30 Apr.',                                    c: 'blue'  },
+        { t: 'Karen Carney annual welfare audit: scoping complete, scheduled for June 2026 to align with Q2 FSR submission window.',                            c: 'blue'  },
       ].map((a, i) => <div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c === 'red' ? 'border-red-600/30 bg-red-900/10' : a.c === 'amber' ? 'border-amber-600/30 bg-amber-900/10' : 'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
+
+      {/* ACL Risk-Band Split — squad-level visualisation, NO composites */}
+      <ICard>
+        <IH3>ACL Risk Bands — Squad Rollup</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Welfare Lead sees band counts. Per-player composite scores sit with the Club Doctor on the Head of Medical tab — never surfaced here.</p>
+        <div className="space-y-2">{[
+          { b: 'Low risk',      v: 17, c: '#22C55E' },
+          { b: 'Moderate risk', v:  3, c: '#F59E0B' },
+          { b: 'Elevated risk', v:  2, c: '#EF4444' },
+        ].map(r => <div key={r.b}>
+          <div className="flex justify-between mb-1"><span className="text-xs text-gray-400">{r.b}</span><span className="text-xs font-bold" style={{ color: r.c }}>{r.v}</span></div>
+          <div className="h-2 bg-gray-800 rounded-full overflow-hidden"><div className="h-2 rounded-full" style={{ width: `${(r.v / 22) * 100}%`, backgroundColor: r.c }} /></div>
+        </div>)}</div>
+        <p className="text-[10px] mt-3 text-gray-500">22-player squad. Intervention pathway for elevated band coordinated with Club Doctor.</p>
+      </ICard>
+
+      {/* Cycle Module Posture — opt-in / consent / role-gated only */}
+      <ICard>
+        <IH3>Cycle Module Posture</IH3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">{[
+          { l: 'Opt-in players',         v: '14 / 22' },
+          { l: 'Awaiting conversation',  v: '8'       },
+          { l: 'Consent revoked YTD',    v: '1'       },
+          { l: 'Backup-purge window',    v: '30 days' },
+        ].map(s => <div key={s.l} className="rounded-lg p-3 text-center" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-lg font-bold text-pink-400">{s.v}</p>
+          <p className="text-[10px] text-gray-500 mt-1">{s.l}</p>
+        </div>)}</div>
+        <div className="space-y-1.5 text-xs text-gray-400">
+          <p>· Access is role-gated to the <span className="text-white font-bold">Club Doctor + Welfare Lead</span> only.</p>
+          <p>· Coaching staff sees <span className="text-white font-bold">availability flags only</span> — never phase data.</p>
+          <p>· Players control opt-in / opt-out — revocation purges active view immediately and backups within 30 days.</p>
+        </div>
+      </ICard>
+
+      {/* Pregnancy & RTP Pathway — anonymised stage tracker */}
+      <ICard>
+        <IH3>Pregnancy &amp; Return-to-Play — Active Cases</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">1 active case at Stage 4 of 10. Pathway stage is the only surface for Welfare Lead — clinical detail stays with the player + Club Doctor.</p>
+        <div className="flex gap-1 mb-3">
+          {[
+            { s: 1, label: 'Notification' },
+            { s: 2, label: 'Clinical handover' },
+            { s: 3, label: 'Adapted training (T1)' },
+            { s: 4, label: 'Adapted training (T2)' },
+            { s: 5, label: 'Cessation of contact' },
+            { s: 6, label: 'Maternity leave' },
+            { s: 7, label: 'Postpartum clearance' },
+            { s: 8, label: 'Pelvic floor / MSK' },
+            { s: 9, label: 'Graduated RTP' },
+            { s: 10, label: 'Match selection' },
+          ].map((st) => (
+            <div key={st.s} className="flex-1 text-center" title={st.label}>
+              <div className="h-2 rounded" style={{ backgroundColor: st.s <= 4 ? '#EC4899' : st.s === 5 ? 'rgba(236,72,153,0.15)' : '#1F2937' }} />
+              <p className={`text-[9px] mt-1 font-bold ${st.s === 4 ? 'text-pink-400' : 'text-gray-500'}`}>{st.s}</p>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs mt-3">
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Active cases</span><div className="text-white font-bold mt-0.5">1 — Stage 4</div></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Pay backstop</span><div className="text-green-400 font-bold mt-0.5">WSL 26 wks · FIFA Art.18quater</div></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Pre-leave medical</span><div className="text-amber-400 font-bold mt-0.5">Due 30 Apr (w/ Doctor)</div></div>
+        </div>
+      </ICard>
+
+      {/* Mental Health Utilisation — counts only, never content */}
+      <ICard>
+        <IH3>Mental Health — Utilisation</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Confidential by default. Welfare Lead sees utilisation only — session content stays with the practitioner. No clinical detail surfaces here.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[
+          { l: 'Sessions delivered (YTD)',        v: '62',     c: '#F472B6' },
+          { l: '% squad accessing service',        v: '~55%',   c: '#F472B6' },
+          { l: 'PFA referrals open',               v: '2',      c: '#F59E0B' },
+          { l: 'Avg wait to first session',        v: '3 days', c: '#22C55E' },
+        ].map(s => <div key={s.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500">{s.l}</p>
+          <p className="text-lg font-bold mt-1" style={{ color: s.c }}>{s.v}</p>
+        </div>)}</div>
+      </ICard>
+
+      {/* Karen Carney Standards (carried, kept inline) */}
       <ICard><IH3>Karen Carney Review — Welfare Criteria</IH3><div className="space-y-1.5">{[
         { t: 'Licensed performance psychologist available',          s: '✓' },
         { t: 'Monthly wellbeing check-ins logged',                   s: '✓' },
@@ -946,39 +1057,230 @@ function WelfareContent() {
         { t: 'Independent Welfare Lead appointed (in progress)',     s: '⚠' },
         { t: 'Annual welfare audit completed (due Jun 2026)',        s: '⚠' },
       ].map((c, i) => <div key={i} className="flex items-center gap-2 text-xs"><span className={c.s === '✓' ? 'text-green-400' : 'text-amber-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
+
+      {/* GDPR / SAR stats */}
+      <ICard>
+        <IH3>Data &amp; GDPR — Welfare Lead as Data Steward</IH3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[
+          { l: 'SARs YTD',                  v: '4',        c: '#F9FAFB' },
+          { l: 'Avg response time',          v: '14 days',  c: '#22C55E' },
+          { l: 'Cycle consents revoked YTD', v: '1',        c: '#F9FAFB' },
+          { l: 'Data steward',               v: 'Welfare Lead', c: '#F472B6' },
+        ].map(d => <div key={d.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500">{d.l}</p>
+          <p className="text-sm font-bold mt-1" style={{ color: d.c }}>{d.v}</p>
+        </div>)}</div>
+        <p className="text-[10px] mt-3 text-gray-500">Lawful basis: explicit consent (cycle / welfare data); legitimate interest with overriding consent (medical records during employment). Statutory SAR deadline 30 days.</p>
+      </ICard>
+
+      {/* Welfare Lead Recruitment Status */}
+      <ICard>
+        <IH3>Welfare Lead Recruitment Status</IH3>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between"><span className="text-gray-400">Status</span><span className="font-bold text-amber-400">Interim cover · permanent hire in flight</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Shortlist</span><span className="font-bold text-white">3 candidates</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Final interviews</span><span className="font-bold text-white">w/c 26 May 2026</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Expected start</span><span className="font-bold text-white">1 Jul 2026</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Reporting line</span><span className="font-bold text-pink-400">Independent — direct to Club Director + board access</span></div>
+        </div>
+      </ICard>
+
+      {/* Cross-link chips */}
+      <ICard>
+        <p className="text-[10px] uppercase tracking-wider font-semibold mb-3 text-gray-500">Open full welfare modules</p>
+        <div className="flex flex-wrap gap-2">{[
+          'Player Welfare Hub',
+          'Cycle Tracking',
+          'Pregnancy & RTP',
+          'ACL Prevention',
+          'Mental Health',
+          'Medical Records (Doctor only)',
+        ].map(l => <span key={l} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 bg-[#0a0c14]" style={{ border: '1px solid #1F2937' }}>{l}</span>)}</div>
+        <p className="text-[10px] mt-3 text-gray-500">Module-level access is role-gated separately — Welfare Lead can open the Player Welfare / Cycle / Pregnancy &amp; RTP / Mental Health modules but not the Medical Records module (Doctor only).</p>
+      </ICard>
     </div>
   )
 }
 
 function MedicalContent() {
+  // Clinical detail — the ONE surface that carries per-player composites,
+  // diagnoses, RTP phases and cycle phase as clinical load context.
+  // Mental-health clinical content is separately consented and does NOT
+  // appear here.
   return (
     <div className="space-y-6">
-      <SectionHeader title="Head of Medical View" subtitle="Clinical detail — injuries, ACL composite, RTP, screening, GPS load as injury-risk context" icon="🏥" />
+      <SectionHeader title="Head of Medical View" subtitle="Clinical detail — injuries, ACL composite, RTP, screening, concussion register, cycle-load context" icon="🏥" />
       <VisibilityNote role="medical" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Active Injuries" value="3" sub="1 severe · 1 moderate · 1 minor" color="red" />
-        <StatCard label="ACL Red Flags" value="2" sub="Immediate action required" color="red" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="Active Injuries" value="3" sub="Grade 1–2 · short-term" color="red" />
+        <StatCard label="Long-term RTP" value="1" sub="Sophie Turner — ACL Phase 3" color="blue" />
+        <StatCard label="ACL Red Flags" value="2" sub="Composite > 70" color="red" />
         <StatCard label="Screenings Overdue" value="4" sub="Schedule this week" color="amber" />
-        <StatCard label="RTP Players" value="1" sub="Sophie Turner — Phase 3" color="blue" />
+        <StatCard label="Days Lost (YTD)" value="47" sub="Across 5 incidents" color="amber" />
+        <StatCard label="Injury Cost (est.)" value="£28k" sub="Wages during absence" color="amber" />
       </div>
-      <ICard><IH3>ACL Composite Score — Medical View</IH3><p className="text-[10px] mb-3 text-gray-500">Per-player composite scores — clinical detail owned by the medical team. Not visible on the Welfare Lead tab.</p><div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[
+
+      {/* ACL Composite Score grid (5 detailed + band rollup) */}
+      <ICard><IH3>ACL Composite Score — Medical View</IH3><p className="text-[10px] mb-3 text-gray-500">Per-player composite scores — clinical detail owned by the medical team. Not visible on the Welfare Lead tab (Welfare sees the band rollup only — 17 low / 3 moderate / 2 elevated).</p><div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">{[
         { n: 'Emily Zhang',    p: 'CM', t: 98, l: 'red'   as const, a: 'Contact physio NOW. No training today.' },
-        { n: 'Priya Nair',     p: 'FW', t: 53, l: 'amber' as const, a: 'Avoid cutting drills. Review post-training.' },
+        { n: 'Priya Nair',     p: 'FW', t: 73, l: 'red'   as const, a: 'Elevated — apply load cap; review Thu.' },
+        { n: 'Charlotte Reed', p: 'CB', t: 53, l: 'amber' as const, a: 'Avoid cutting drills. Review post-training.' },
         { n: 'Sophie Turner',  p: 'CB', t: 57, l: 'amber' as const, a: 'Continue RTP Phase 3. ACL physio Thu.' },
         { n: 'Jade Osei',      p: 'LB', t: 15, l: 'green' as const, a: 'Clear for full training.' },
-        { n: 'Emma Clarke',    p: 'GK', t: 18, l: 'green' as const, a: 'Schedule overdue ACL screening.' },
-      ].map(p => <div key={p.n} className={`border rounded-xl p-3 ${p.l === 'red' ? 'bg-red-600/10 border-red-600/30' : p.l === 'amber' ? 'bg-amber-600/10 border-amber-600/30' : 'bg-green-600/10 border-green-600/30'}`}><div className="flex items-center gap-2 mb-2"><div className={`w-5 h-5 rounded-full ${p.l === 'red' ? 'bg-red-500' : p.l === 'amber' ? 'bg-amber-500' : 'bg-green-500'}`} /><div><div className="text-xs font-bold text-white">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.t}/100</div></div></div><div className="text-[10px] text-gray-400">{p.a}</div></div>)}</div></ICard>
-      <ICard><IH3>Injury Register</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Injury</th><th className="text-left p-3">Severity</th><th className="text-left p-3">RTP</th></tr></thead><tbody>{[
-        { n: 'Sophie Turner', i: 'ACL',        s: 'Severe',   r: 'Aug 2026'    },
-        { n: 'K. Hwang',      i: 'Ankle',      s: 'Moderate', r: '4 weeks'     },
-        { n: 'L. Brennan',    i: 'Hamstring',  s: 'Minor',    r: '2 weeks'     },
-      ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.i}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.s === 'Severe' ? 'bg-red-600/20 text-red-400' : r.s === 'Moderate' ? 'bg-amber-600/20 text-amber-400' : 'bg-blue-600/20 text-blue-400'}`}>{r.s}</span></td><td className={ttd}>{r.r}</td></tr>)}</tbody></table></ICard>
+      ].map(p => <div key={p.n} className={`border rounded-xl p-3 ${p.l === 'red' ? 'bg-red-600/10 border-red-600/30' : p.l === 'amber' ? 'bg-amber-600/10 border-amber-600/30' : 'bg-green-600/10 border-green-600/30'}`}><div className="flex items-center gap-2 mb-2"><div className={`w-5 h-5 rounded-full ${p.l === 'red' ? 'bg-red-500' : p.l === 'amber' ? 'bg-amber-500' : 'bg-green-500'}`} /><div><div className="text-xs font-bold text-white">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.t}/100</div></div></div><div className="text-[10px] text-gray-400">{p.a}</div></div>)}</div>
+        <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Squad ACL band summary</p>
+          <div className="flex gap-3 text-xs">
+            <span className="text-green-400 font-bold">17 low</span>
+            <span className="text-amber-400 font-bold">3 moderate</span>
+            <span className="text-red-400 font-bold">2 elevated</span>
+            <span className="text-gray-500 ml-auto">22 total · band thresholds: &lt;30 green · 30–70 amber · &gt;70 red</span>
+          </div>
+        </div>
+      </ICard>
+
+      {/* Injury Register — 3 active + 1 long-term RTP */}
+      <ICard><IH3>Injury Register</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">3 active short-term (matches Board Suite Squad &quot;3 injured&quot;) + 1 long-term RTP (Sophie Turner — separate category).</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Injury</th>
+          <th className="text-left p-3">Grade / Severity</th>
+          <th className="text-left p-3">Sustained</th>
+          <th className="text-left p-3">RTP</th>
+          <th className="text-left p-3">Phase</th>
+        </tr></thead><tbody>{[
+          { n: 'L. Brennan',    i: 'Hamstring strain',   s: 'Grade 1 · Minor',    sus: '14 May',  r: '2 weeks',     ph: 'Rehab phase 1' },
+          { n: 'K. Hwang',      i: 'Ankle lateral ligament', s: 'Grade 2 · Moderate', sus: '7 May', r: '4 weeks',     ph: 'Rehab phase 1' },
+          { n: 'T. Adeyemi',    i: 'Viral illness',      s: 'Minor',              sus: '17 May',  r: '3 days',       ph: 'Recovery'      },
+          { n: 'Sophie Turner', i: 'ACL reconstruction (Mar 2026)', s: 'Severe · long-term', sus: '12 Mar', r: 'Aug 2026', ph: 'RTP Phase 3' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.i}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.s.startsWith('Severe') ? 'bg-red-600/20 text-red-400' : r.s.startsWith('Grade 2') ? 'bg-amber-600/20 text-amber-400' : 'bg-blue-600/20 text-blue-400'}`}>{r.s}</span></td><td className={ttd}>{r.sus}</td><td className={ttd}>{r.r}</td><td className="p-3 text-xs text-pink-400 font-bold">{r.ph}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* RTP Pathway Tracker — Sophie Turner */}
+      <ICard><IH3>RTP Pathway — Sophie Turner (ACL, 6-Phase)</IH3>
+        <div className="flex gap-1 mb-3">{[
+          { p: 1, label: 'Acute / surgical', done: true  },
+          { p: 2, label: 'Range of motion',  done: true  },
+          { p: 3, label: 'Strength + lin.',  done: false, current: true },
+          { p: 4, label: 'Multi-plane',      done: false },
+          { p: 5, label: 'Sport-specific',   done: false },
+          { p: 6, label: 'Full match',       done: false },
+        ].map(st => <div key={st.p} className="flex-1 text-center" title={st.label}>
+          <div className="h-2 rounded" style={{ backgroundColor: st.done ? '#22C55E' : st.current ? '#EC4899' : '#1F2937' }} />
+          <p className={`text-[9px] mt-1 font-bold ${st.done ? 'text-green-400' : st.current ? 'text-pink-400' : 'text-gray-500'}`}>{st.p}</p>
+        </div>)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Current phase</span><div className="text-pink-400 font-bold mt-0.5">Phase 3 — Strength + linear running</div></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Next milestone</span><div className="text-white font-bold mt-0.5">Full sprint clearance — Jul 2026</div></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-gray-500">Match RTP target</span><div className="text-white font-bold mt-0.5">Aug 2026 — pre-season</div></div>
+        </div>
+        <p className="text-[10px] mt-3 text-gray-500">Welfare Lead sees pathway stage + contract obligations only. Coach sees &quot;Unavailable&quot;. Player owns the clinical narrative with the medical team.</p>
+      </ICard>
+
+      {/* Cycle Phase as Clinical Load Context — opt-in 14 players only */}
+      <ICard>
+        <IH3>Cycle Phase — Clinical Load Context (14 opt-in players)</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">This is the <span className="text-pink-400">only</span> surface in the portal where per-player cycle phase is visible — used for clinical load planning. Welfare Lead sees opt-in posture only; coaching staff sees availability flag only. Players control opt-in / opt-out at any time.</p>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Pos</th>
+          <th className="text-left p-3">Phase</th>
+          <th className="text-left p-3">Days since menses</th>
+          <th className="text-left p-3">Load recommendation</th>
+        </tr></thead><tbody>{[
+          { n: 'S. Reyes',       p: 'ST', ph: 'Follicular', d: '8',  rec: 'Full load · symptom-free' },
+          { n: 'A. Patel',       p: 'CM', ph: 'Follicular', d: '6',  rec: 'Full load · symptom-free' },
+          { n: 'N. Achterberg',  p: 'LW', ph: 'Ovulatory',  d: '14', rec: 'Full load · monitor laxity' },
+          { n: 'J. Okonkwo',     p: 'CB', ph: 'Luteal',     d: '21', rec: 'Full load · symptom-free' },
+          { n: 'Jade Osei',      p: 'LB', ph: 'Follicular', d: '5',  rec: 'Full load · symptom-free' },
+          { n: 'F. Mireles',     p: 'CB', ph: 'Luteal',     d: '23', rec: 'Full load · symptom-free' },
+          { n: 'I. Beckett',     p: 'RB', ph: 'Follicular', d: '9',  rec: 'Full load · symptom-free' },
+          { n: 'Lucy Whitmore',  p: 'CM', ph: 'Menstrual',  d: '2',  rec: 'Light symptoms — monitor' },
+          { n: 'O. Nakamura',    p: 'CM', ph: 'Follicular', d: '11', rec: 'Full load · symptom-free' },
+          { n: 'Abbi Walsh',     p: 'RM', ph: 'Luteal',     d: '24', rec: 'Mild discomfort flagged — adapt if needed' },
+          { n: 'Charlotte Reed', p: 'CB', ph: 'Late luteal',d: '27', rec: 'Modified load applied (clinical)' },
+          { n: 'Emily Zhang',    p: 'CM', ph: 'Menstrual',  d: '1',  rec: 'Modified load applied (clinical)' },
+          { n: 'C. Beaufort',    p: 'ST', ph: 'Luteal',     d: '19', rec: 'Full load · symptom-free' },
+          { n: 'Priya Nair',     p: 'FW', ph: 'Follicular', d: '7',  rec: 'Full load · ACL screening due' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.ph}</td><td className={ttd}>{r.d}</td><td className="p-3 text-xs text-gray-300">{r.rec}</td></tr>)}</tbody></table></div>
+        <p className="text-[10px] mt-3 text-gray-500">8 of 22 players have not opted in — Welfare Lead is scheduling opt-in conversations over the next 2 weeks. Consent revoked: 1 YTD (purged from active view immediately, from backup within 30 days).</p>
+      </ICard>
+
+      {/* Screening Register */}
+      <ICard>
+        <IH3>Screening Register — Overdue + This Week</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Screening</th>
+          <th className="text-left p-3">Last completed</th>
+          <th className="text-left p-3">Next due</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { n: 'Emma Clarke',    sc: 'ACL screening',     lc: 'Nov 2025', nd: '17 May 2026',  s: 'Overdue 2 days',     c: '#EF4444' },
+          { n: 'Priya Nair',     sc: 'ACL screening',     lc: 'Dec 2025', nd: '22 May 2026',  s: 'Overdue tomorrow',   c: '#F59E0B' },
+          { n: 'M. Costa',       sc: 'Cardiac MOT',       lc: 'May 2025', nd: '15 May 2026',  s: 'Overdue 3 days',     c: '#EF4444' },
+          { n: 'R. Bailey',      sc: 'S&C baseline',       lc: 'Aug 2025', nd: '23 May 2026',  s: 'Due Friday',         c: '#F59E0B' },
+          { n: 'Squad block',     sc: 'ACL screening (4)',  lc: '—',         nd: '27 May 2026',  s: 'Scheduled',          c: '#22C55E' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.sc}</td><td className={ttd}>{r.lc}</td><td className={ttd}>{r.nd}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.c}20`, color: r.c }}>{r.s}</span></td></tr>)}</tbody></table>
+        <p className="text-[10px] mt-3 text-gray-500">4 overdue (matches KPI). Squad ACL screening block 27 May clears 4 players + reduces overdue to zero.</p>
+      </ICard>
+
+      {/* Concussion Register */}
+      <ICard>
+        <IH3>Concussion Register</IH3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">{[
+          { l: 'Active cases',         v: '0',          c: '#22C55E' },
+          { l: 'Incidents YTD',         v: '2',          c: '#F59E0B' },
+          { l: 'Avg time to RTN',       v: '11 days',    c: '#F472B6' },
+          { l: 'Baseline tests current', v: '22 / 22',   c: '#22C55E' },
+        ].map(s => <div key={s.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500">{s.l}</p>
+          <p className="text-lg font-bold mt-1" style={{ color: s.c }}>{s.v}</p>
+        </div>)}</div>
+        <p className="text-[10px] text-gray-500">Last incident: T. Brookes 14 Apr 2026 — HIA protocol completed, graduated RTN followed, cleared 25 Apr. Annual baseline test programme covers all 22 senior players + academy bridges.</p>
+      </ICard>
+
+      {/* GPS Load + Injury Risk correlation — cross-reference Performance tab */}
+      <ICard>
+        <IH3>GPS Load &amp; Injury-Risk Correlation</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Cross-reference with Head of Performance tab — Medical applies clinical lens to the same A:C signals.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">A:C Ratio</th>
+          <th className="text-left p-3">Band</th>
+          <th className="text-left p-3">Clinical action</th>
+        </tr></thead><tbody>{[
+          { n: 'I. Beckett',     ac: '1.42', b: 'High',     c: '#F59E0B', a: 'Load cap applied — review Thu' },
+          { n: 'Lucy Whitmore',  ac: '1.32', b: 'High',     c: '#F59E0B', a: 'Chronic-load monitoring — extend warm-up' },
+          { n: 'S. Reyes',       ac: '1.22', b: 'Optimal',  c: '#22C55E', a: 'Continue current programme' },
+          { n: 'N. Achterberg',  ac: '1.18', b: 'Optimal',  c: '#22C55E', a: 'Continue current programme' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.ac}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.c}20`, color: r.c }}>{r.b}</span></td><td className="p-3 text-xs text-gray-300">{r.a}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Upcoming Medical Appointments — 7 entries */}
       <ICard><IH3>Upcoming Medical Appointments</IH3><div className="space-y-2">{[
+        'Tue 19 May — Emma Clarke ACL screening (overdue clearance)',
+        'Tue 19 May — M. Costa cardiac MOT (overdue clearance)',
+        'Wed 20 May — Priya Nair ACL screening + composite re-test',
         'Thu 21 May — Emily Zhang physio consultation (ACL flag)',
         'Fri 22 May — T. Adeyemi illness clearance review',
-        'Mon 25 May — Sophie Turner RTP Phase 3 assessment',
-        'Wed 27 May — Squad ACL screening block (4 players)',
+        'Mon 25 May — Sophie Turner RTP Phase 3 → Phase 4 progression assessment',
+        'Wed 27 May — Squad ACL screening block (4 players, clears overdue list)',
       ].map((a, i) => <div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{a}</div>)}</div></ICard>
+
+      {/* Annual Physio Audit Status */}
+      <ICard>
+        <IH3>Annual Physio Audit Status</IH3>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between"><span className="text-gray-400">Last audit</span><span className="font-bold text-white">Mar 2026 — submitted</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Outcome</span><span className="font-bold text-green-400">Pass — no major findings</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Minor actions</span><span className="font-bold text-amber-400">2 (concussion-baseline frequency · ACL screening cadence)</span></div>
+          <div className="flex justify-between"><span className="text-gray-400">Next audit</span><span className="font-bold text-white">Mar 2027</span></div>
+        </div>
+      </ICard>
     </div>
   )
 }
