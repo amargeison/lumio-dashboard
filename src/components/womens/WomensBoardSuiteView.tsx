@@ -13,6 +13,7 @@ import { useState } from 'react'
 import {
   Crown, TrendingDown, Users, DollarSign, Trophy, AlertCircle,
 } from 'lucide-react'
+import { RISK_OVERVIEW_SNAPSHOT } from '@/data/womens/board-risks'
 
 interface WomensClub {
   name: string
@@ -91,17 +92,11 @@ function TabBtn({ active, label, onClick }: { active: boolean; label: string; on
   )
 }
 
-// Shared between the Overview tab's top-N snapshot and the Governance tab's
-// fuller register. Both surfaces render from this single source so any
-// risk appearing in both (FSR breach, Welfare Lead vacancy, contracts,
-// east terrace, sponsorship) has guaranteed-identical wording and RAG.
-const RISK_OVERVIEW_SNAPSHOT = [
-  { risk: 'FSR breach if wage bill exceeds 80% cap',                level: 'Medium', color: '#F59E0B', mitigation: 'Currently 72% (£260k headroom) — monthly CFO review' },
-  { risk: 'Two senior player contracts expire summer 2026',          level: 'High',   color: '#EF4444', mitigation: 'Renewal talks open — board approval required Jun' },
-  { risk: 'Welfare Lead post unfilled — interim cover only',         level: 'High',   color: '#EF4444', mitigation: 'Shortlist of 3, final interviews w/c 26 May' },
-  { risk: 'East terrace safety re-inspection due',                   level: 'Medium', color: '#F59E0B', mitigation: 'Inspection booked 7 Jun, contractor briefed' },
-  { risk: 'Sponsorship pipeline thinner than budget for 26/27',      level: 'Medium', color: '#F59E0B', mitigation: 'Commercial Lead opening 4 new conversations Q2' },
-] as const
+// RISK_OVERVIEW_SNAPSHOT — the 5 board-level risks shown both as the Overview
+// snapshot and as the top entries of the Governance full register — is now
+// imported from src/data/womens/board-risks.ts. The CEO/Chairman Insights tab
+// also consumes from there, so changing a risk in one place propagates to
+// every board-facing surface.
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 

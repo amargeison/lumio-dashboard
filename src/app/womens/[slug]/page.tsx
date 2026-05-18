@@ -53,6 +53,7 @@ import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions
 import WomensStaffTabs from '@/components/womens/WomensStaffTabs'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
 import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
+import WomensInsightsView from '@/components/womens/WomensInsightsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
@@ -242,230 +243,10 @@ const SectionHeader = ({ title, subtitle, icon }: { title: string; subtitle?: st
 )
 
 // ─── INSIGHTS VIEW ───────────────────────────────────────────────────────────
-const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: string }) => {
-  const [activeRole, setActiveRole] = useState(defaultRole ?? 'coach');
-  const roles = [
-    { id: 'coach', label: 'Head Coach', icon: '🎽' },
-    { id: 'dof', label: 'Director of Football', icon: '📋' },
-    { id: 'welfare', label: 'Welfare Lead', icon: '❤️' },
-    { id: 'doctor', label: 'Club Doctor', icon: '🏥' },
-    { id: 'commercial', label: 'Commercial Director', icon: '💼' },
-    { id: 'academy', label: 'Academy Director', icon: '🎓' },
-    { id: 'board', label: 'Board', icon: '🏛️' },
-    { id: 'media', label: 'Media & Comms', icon: '📣' },
-  ];
-  const ICard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-[#0D1117] border border-gray-800 rounded-xl p-5 ${className}`}>{children}</div>
-  );
-  const IH3 = ({ children }: { children: React.ReactNode }) => <h3 className="text-sm font-bold text-white mb-3">{children}</h3>;
-  const thd = "text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30";
-  const ttd = "p-3 text-gray-400 text-xs";
-
-  const coachContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Head Coach View" subtitle="Performance and squad availability" icon="🎽" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Squad Available" value="19/24" sub="5 unavailable today" color="pink" />
-        <StatCard label="Today's Adapted Load" value="3" sub="On modified-load recs (squad-wide)" color="amber" />
-        <StatCard label="xG Last Match" value="0.31" sub="vs Hartwell Women (L 0–1)" color="amber" />
-        <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Castleton Women (A)" color="blue" />
-      </div>
-      <ICard>
-        <IH3>Squad Availability</IH3>
-        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
-          <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Fitness</th><th className="text-left p-3">Load Cap</th><th className="text-left p-3">Available</th>
-        </tr></thead><tbody>
-          {[
-            {n:'Emma Clarke',p:'GK',f:'100%',lc:'100%',av:'Available',avC:'green'},
-            {n:'Priya Nair',p:'FW',f:'92%',lc:'95%',av:'Available',avC:'green'},
-            {n:'Emily Zhang',p:'CM',f:'88%',lc:'60%',av:'Adapted load',avC:'amber'},
-            {n:'Charlotte Reed',p:'CB',f:'95%',lc:'65%',av:'Adapted load',avC:'amber'},
-            {n:'Jade Osei',p:'LB',f:'100%',lc:'100%',av:'Available',avC:'green'},
-            {n:'Abbi Walsh',p:'RM',f:'97%',lc:'80%',av:'Available',avC:'green'},
-            {n:'Lucy Whitmore',p:'CM',f:'100%',lc:'100%',av:'Available',avC:'green'},
-            {n:'Sophie Turner',p:'CB',f:'40%',lc:'—',av:'Unavailable',avC:'red'},
-          ].map((r,i)=>{
-            const lcN=parseInt(r.lc);const lcC=isNaN(lcN)?'text-gray-500':lcN<=65?'text-red-400':lcN<=85?'text-amber-400':'text-green-400';
-            const avB=r.avC==='green'?'bg-green-600/20 text-green-400':r.avC==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400';
-            return<tr key={i} className="border-b border-gray-800/50">
-              <td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.f}</td>
-              <td className="p-3"><span className={`text-xs font-bold ${lcC}`}>{r.lc}</span></td>
-              <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${avB}`}>{r.av}</span></td>
-            </tr>;
-          })}
-        </tbody></table></div>
-      </ICard>
-      <ICard>
-        <IH3>Form &amp; Momentum</IH3>
-        <div className="flex gap-2 mb-4">{['L','W','W','D','W'].map((r,i)=><span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${r==='W'?'bg-green-600/20 text-green-400':r==='L'?'bg-red-600/20 text-red-400':'bg-amber-600/20 text-amber-400'}`}>{r}</span>)}</div>
-        <div className="text-xs text-gray-500 mb-2">xG trend last 5:</div>
-        <svg viewBox="0 0 200 40" className="w-full max-w-xs" style={{height:40}}>
-          {[0.31,1.42,0.98,0.67,1.21].map((v,i,a)=>{const x=i*50;const y=40-(v/1.5)*36;return i<a.length-1?<line key={i} x1={x} y1={y} x2={(i+1)*50} y2={40-(a[i+1]/1.5)*36} stroke="#EC4899" strokeWidth="2"/>:null;})}
-          {[0.31,1.42,0.98,0.67,1.21].map((v,i)=><circle key={i} cx={i*50} cy={40-(v/1.5)*36} r="3" fill="#EC4899"/>)}
-          {[0.31,1.42,0.98,0.67,1.21].map((v,i)=><text key={`t${i}`} x={i*50} y={40-(v/1.5)*36-6} textAnchor="middle" fill="#9CA3AF" fontSize="7">{v}</text>)}
-        </svg>
-      </ICard>
-      <ICard>
-        <IH3>Tactical Notes — Next Opponent (Castleton Women)</IH3>
-        <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Load consideration: 3 players on modified-load today. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
-      </ICard>
-    </div>
-  );
-
-  const dofContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Director of Football View" subtitle="FSR headroom, transfers, and squad planning" icon="📋" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="FSR Headroom" value="£380k" sub="Before 80% cap breach" color="green" />
-        <StatCard label="Contract Expiries" value="4" sub="End of season 2026" color="amber" />
-        <StatCard label="Transfer Window" value="12 days" sub="Summer window opens" color="blue" />
-        <StatCard label="Squad Age (avg)" value="24.3" sub="Median 23 — good curve" color="pink" />
-      </div>
-      <ICard>
-        <IH3>FSR Headroom Tracker</IH3>
-        <div className="flex justify-between text-xs mb-2"><span className="text-gray-400">£2.18M spent</span><span className="text-gray-400">£2.56M cap</span></div>
-        <div className="h-4 bg-gray-800 rounded-full overflow-hidden mb-2"><div className="h-full rounded-full bg-pink-500" style={{width:'85%'}}/></div>
-        <div className="text-xs text-teal-400 mb-4">Headroom: £380k</div>
-        <IH3>Proposed Signings Impact</IH3>
-        <div className="space-y-2">{[{t:'LB — Lena Müller (Hoffenheim)',s:'£62k',h:'£318k',c:'green'},{t:'FW — Chloe Dubois (D1 Arkema)',s:'£78k',h:'£240k',c:'green'},{t:'CM — Unknown',s:'£120k',h:'£120k',c:'amber'}].map((r,i)=><div key={i} className="flex items-center justify-between p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-xs text-gray-200">{r.t}</div><div className="flex items-center gap-4 text-xs"><span className="text-gray-500">{r.s}</span><span className={`font-bold ${r.c==='green'?'text-green-400':'text-amber-400'}`}>→ {r.h}</span></div></div>)}</div>
-      </ICard>
-      <ICard>
-        <IH3>Contract Expiry Pipeline</IH3>
-        <table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Ends</th><th className="text-left p-3">Value</th><th className="text-left p-3">Action</th></tr></thead><tbody>
-          {[{n:'Lucy Whitmore',p:'CM',e:'Jun 2026',v:'£55k/yr',a:'Renewal offer sent'},{n:'Jade Osei',p:'LB',e:'Jun 2026',v:'£48k/yr',a:'Negotiating'},{n:'Tilly Brooks',p:'FW',e:'Jun 2026',v:'£38k/yr',a:'Below WSL min — review'},{n:'Megan Hughes',p:'CM',e:'Dec 2026',v:'£52k/yr',a:'Monitor'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.e}</td><td className={ttd}>{r.v}</td><td className="p-3 text-xs text-pink-400">{r.a}</td></tr>)}
-        </tbody></table>
-      </ICard>
-      <ICard>
-        <IH3>Squad Age Distribution</IH3>
-        <svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{height:80}}>
-          {[{l:'U21',v:4},{l:'21–24',v:8},{l:'25–28',v:7},{l:'29+',v:5}].map((b,i)=>{const x=i*50+5;const h=(b.v/8)*55;return<g key={i}><rect x={x} y={70-h} width={35} height={h} fill="#EC4899" rx="3" opacity="0.8"/><text x={x+17.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x+17.5} y={66-h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">{b.v}</text></g>;})}
-        </svg>
-      </ICard>
-    </div>
-  );
-
-  const welfareContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Welfare Lead View" subtitle="Cycle flags, ACL risk, mental health, and compliance" icon="❤️" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Active Welfare Cases" value="3" sub="ACL · MH · Maternity" color="amber" />
-        <StatCard label="Cycle Opt-in Rate" value="64%" sub="14 of 22 eligible" color="pink" />
-        <StatCard label="Check-ins Overdue" value="2" sub="Action required" color="red" />
-        <StatCard label="Carney Compliance" value="91%" sub="2 criteria below threshold" color="green" />
-      </div>
-      <ICard><IH3>Priority Actions Today</IH3><div className="space-y-2">{[{t:'ACL risk bands today: 17 low · 3 moderate · 2 elevated. Confirm with Club Doctor that intervention pathway is active for the elevated cases.',c:'red'},{t:'Cycle module: 8 of 22 squad have not yet had the opt-in conversation. Schedule sessions over the next 2 weeks.',c:'amber'},{t:'Maternity pathway: 1 active case at Stage 4. Pre-leave medical coordinated with Club Doctor — due by 30 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
-      <ICard><IH3>Cycle Phase Summary — Squad Today</IH3><div className="space-y-2">{[{l:'Menstrual',v:3,c:'bg-red-500'},{l:'Follicular',v:8,c:'bg-pink-500'},{l:'Ovulatory',v:3,c:'bg-purple-500'},{l:'Luteal',v:8,c:'bg-amber-500'}].map(p=><div key={p.l} className="flex items-center gap-3"><div className="w-20 text-xs text-gray-400">{p.l}</div><div className="flex-1 bg-gray-800 rounded-full h-3"><div className={`${p.c} h-3 rounded-full`} style={{width:`${(p.v/22)*100}%`}}/></div><span className="text-xs text-gray-300 w-8 text-right">{p.v}</span></div>)}</div></ICard>
-      <ICard><IH3>Karen Carney Review — Welfare Criteria</IH3><div className="space-y-1.5">{[{t:'Licensed performance psychologist available',s:'✓'},{t:'Monthly wellbeing check-ins logged',s:'✓'},{t:'Maternity policy documented and enacted',s:'✓'},{t:'Mental health first aider on staff',s:'✓'},{t:'PFA referral pathway in place',s:'✓'},{t:'No selection pressure during recovery',s:'✓'},{t:'Independent welfare officer appointed (in progress)',s:'⚠'},{t:'Annual welfare audit completed (due Jun 2026)',s:'⚠'}].map((c,i)=><div key={i} className="flex items-center gap-2 text-xs"><span className={c.s==='✓'?'text-green-400':'text-amber-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
-    </div>
-  );
-
-  const doctorContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Club Doctor View" subtitle="Medical records, ACL composite scores, and injury risk" icon="🏥" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Active Injuries" value="3" sub="1 severe · 1 moderate · 1 minor" color="red" />
-        <StatCard label="ACL Red Flags" value="2" sub="Immediate action required" color="red" />
-        <StatCard label="Screenings Overdue" value="4" sub="Schedule this week" color="amber" />
-        <StatCard label="RTP Players" value="1" sub="Sophie Turner — Phase 3" color="blue" />
-      </div>
-      <ICard><IH3>ACL Composite Score — Medical View</IH3><div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[{n:'Emily Zhang',p:'CM',t:98,l:'red' as const,a:'Contact physio NOW. No training today.'},{n:'Priya Nair',p:'FW',t:53,l:'amber' as const,a:'Avoid cutting drills. Review post-training.'},{n:'Sophie Turner',p:'CB',t:57,l:'amber' as const,a:'Continue RTP Phase 3. ACL physio Thu.'},{n:'Jade Osei',p:'LB',t:15,l:'green' as const,a:'Clear for full training.'},{n:'Emma Clarke',p:'GK',t:18,l:'green' as const,a:'Schedule overdue ACL screening.'}].map(p=><div key={p.n} className={`border rounded-xl p-3 ${p.l==='red'?'bg-red-600/10 border-red-600/30':p.l==='amber'?'bg-amber-600/10 border-amber-600/30':'bg-green-600/10 border-green-600/30'}`}><div className="flex items-center gap-2 mb-2"><div className={`w-5 h-5 rounded-full ${p.l==='red'?'bg-red-500':p.l==='amber'?'bg-amber-500':'bg-green-500'}`}/><div><div className="text-xs font-bold text-white">{p.n}</div><div className="text-[10px] text-gray-500">{p.p} · {p.t}/100</div></div></div><div className="text-[10px] text-gray-400">{p.a}</div></div>)}</div></ICard>
-      <ICard><IH3>Injury Register</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Injury</th><th className="text-left p-3">Severity</th><th className="text-left p-3">RTP</th></tr></thead><tbody>{[{n:'Sophie Turner',i:'ACL',s:'Severe',r:'Aug 2026'},{n:'Megan Hughes',i:'Hamstring',s:'Moderate',r:'May 2026'},{n:'Tilly Brooks',i:'Concussion',s:'Minor',r:'14 Apr 2026'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.i}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.s==='Severe'?'bg-red-600/20 text-red-400':r.s==='Moderate'?'bg-amber-600/20 text-amber-400':'bg-blue-600/20 text-blue-400'}`}>{r.s}</span></td><td className={ttd}>{r.r}</td></tr>)}</tbody></table></ICard>
-      <ICard><IH3>Upcoming Medical Appointments</IH3><div className="space-y-2">{['Thu 10 Apr — Emily Zhang physio consultation (ACL flag)','Fri 11 Apr — Tilly Brooks concussion clearance','Mon 14 Apr — Sophie Turner RTP Phase 3 assessment','Wed 16 Apr — Squad ACL screening block (4 players)'].map((a,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{a}</div>)}</div></ICard>
-    </div>
-  );
-
-  const commercialContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Commercial Director View" subtitle="Sponsorship, revenue, and standalone attribution" icon="💼" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Commercial Revenue" value="£1.42M" sub="Women-attributed" color="pink" />
-        <StatCard label="Active Sponsors" value="6" sub="3 renewal due" color="green" />
-        <StatCard label="Pipeline Value" value="£285k" sub="3 live opportunities" color="blue" />
-        <StatCard label="Standalone Revenue %" value="31%" sub="vs parent club benchmark" color="teal" />
-      </div>
-      <ICard><IH3>Sponsorship Portfolio</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Sponsor</th><th className="text-left p-3">Type</th><th className="text-left p-3">Value</th><th className="text-left p-3">Attr</th><th className="text-left p-3">Renewal</th><th className="text-left p-3">Status</th></tr></thead><tbody>{[{n:'Kestrel Finance',t:'Kit',v:'£420k',a:'100%',r:'Jun 2027',s:'Active',c:'green'},{n:'Barclays (WSL)',t:'League',v:'£85k',a:'100%',r:'League',s:'Active',c:'green'},{n:'NovaTech UK',t:'Sleeve',v:'£40k',a:'100%',r:'Dec 2026',s:'Active',c:'green'},{n:'Meridian Insurance',t:'Shared',v:'£95k',a:'11.9%',r:'Mar 2026',s:'Review',c:'amber'},{n:'Local Energy Co',t:"Women's",v:'£35k',a:'100%',r:'Apr 2026',s:'Renewal',c:'red'},{n:'Oakridge Council',t:'Community',v:'£18k',a:'100%',r:'Jun 2026',s:'Active',c:'green'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.t}</td><td className={ttd}>{r.v}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.r}</td><td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${r.c==='green'?'bg-green-600/20 text-green-400':r.c==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400'}`}>{r.s}</span></td></tr>)}</tbody></table></div></ICard>
-      <ICard><IH3>Pipeline Opportunities</IH3><div className="space-y-2">{['Cycle tracking app partnership — Lumio Cycle data product. Est. £60–120k/yr. In discussion.','Women\'s kit sleeve — post-Carney opportunity. Est. £25–40k/yr. Proposal stage.','GPS vest bundle — Lumio Health co-sell. Est. £85k one-off. Scoping.'].map((o,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {o}</div>)}</div></ICard>
-      <ICard><IH3>Revenue YoY Trend</IH3><svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{height:80}}>{[{l:'23/24',v:1.06},{l:'24/25',v:1.27},{l:'25/26',v:1.42}].map((b,i)=>{const x=i*65+10;const h=(b.v/1.5)*55;return<g key={i}><rect x={x} y={70-h} width={45} height={h} fill="#EC4899" rx="3" opacity="0.8"/><text x={x+22.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x+22.5} y={66-h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">£{b.v}M</text></g>;})}</svg></ICard>
-    </div>
-  );
-
-  const academyContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Academy Director View" subtitle="FA Girls' Centre of Excellence · U21/U18" icon="🎓" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Academy Players" value="34" sub="U18: 18 · U21: 16" color="pink" />
-        <StatCard label="First Team Promotions" value="2" sub="This season" color="green" />
-        <StatCard label="CoE Compliance" value="87%" sub="3 criteria outstanding" color="amber" />
-        <StatCard label="Development Contracts" value="8" sub="Scholarship agreements" color="blue" />
-      </div>
-      <ICard><IH3>FA Girls&apos; Centre of Excellence Compliance</IH3><div className="space-y-1.5">{[{t:'Qualified coaching staff ratio met (1:15)',s:'✓'},{t:'Safeguarding DBS checks up to date',s:'✓'},{t:'Education welfare officer in post',s:'✓'},{t:'Player development plans filed (all U18)',s:'✓'},{t:'Medical screening completed (all academy)',s:'✓'},{t:'Physiotherapy provision (shared — standalone required by Aug 2026)',s:'⚠'},{t:'S&C coach (U18 — recruitment underway)',s:'⚠'},{t:'Mental health practitioner for academy (Required Jun 2026 — urgent)',s:'✗'}].map((c,i)=><div key={i} className="flex items-center gap-2 text-xs"><span className={c.s==='✓'?'text-green-400':c.s==='⚠'?'text-amber-400':'text-red-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
-      <ICard><IH3>U18 Squad — GPS Development Profiles</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Age</th><th className="text-left p-3">Pos</th><th className="text-left p-3">GPS</th><th className="text-left p-3">Rating</th><th className="text-left p-3">Potential</th></tr></thead><tbody>{[{n:'Isla Pearce',a:17,p:'FW',g:'64 AU',d:'★★★★☆',po:'High'},{n:'Freya Watts',a:16,p:'CM',g:'58 AU',d:'★★★☆☆',po:'Medium'},{n:"Niamh O'Brien",a:17,p:'CB',g:'71 AU',d:'★★★★★',po:'Elite'},{n:'Becca Lane',a:15,p:'GK',g:'55 AU',d:'★★★☆☆',po:'Monitor'},{n:'Simone Ashby',a:17,p:'LB',g:'62 AU',d:'★★★★☆',po:'High'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.g}</td><td className="p-3 text-pink-400 text-xs">{r.d}</td><td className="p-3 text-xs text-teal-400">{r.po}</td></tr>)}</tbody></table></ICard>
-      <ICard><IH3>Dual Pathway — First Team Bridge</IH3><div className="space-y-2">{["Niamh O'Brien — nominated for dual registration from May 2026. Pending DoF sign-off.","Isla Pearce — training with first team Fridays. No formal registration yet."].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-pink-600/20 rounded-lg text-xs text-gray-300">{t}</div>)}</div></ICard>
-    </div>
-  );
-
-  const boardContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Board View" subtitle="Financial performance, FSR compliance, and strategic KPIs" icon="🏛️" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Season P&L" value="-£420k" sub="Operating loss (budgeted)" color="amber" />
-        <StatCard label="FSR Status" value="SAFE" sub="68% of relevant revenue" color="green" />
-        <StatCard label="3-Year Revenue Target" value="£4.2M" sub="By 2027/28" color="blue" />
-        <StatCard label="Karen Carney Score" value="91/100" sub="2 criteria outstanding" color="pink" />
-      </div>
-      <ICard><IH3>Financial Summary</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Category</th><th className="text-left p-3">Budget</th><th className="text-left p-3">Actual</th><th className="text-left p-3">Variance</th></tr></thead><tbody>{[{c:'Revenue',b:'£3.4M',a:'£3.2M',v:'-£200k',vc:'amber'},{c:'Salary',b:'£2.3M',a:'£2.18M',v:'+£120k',vc:'green'},{c:'Operations',b:'£800k',a:'£840k',v:'-£40k',vc:'amber'},{c:'Commercial',b:'£180k',a:'£165k',v:'-£15k',vc:'amber'},{c:'Net',b:'—',a:'-£420k',v:'On budget',vc:'green'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.c}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.a}</td><td className="p-3"><span className={`text-xs font-bold ${r.vc==='green'?'text-green-400':'text-amber-400'}`}>{r.v}</span></td></tr>)}</tbody></table></ICard>
-      <ICard><IH3>Strategic KPIs — 3-Year Plan</IH3><div className="space-y-3">{[{l:'Revenue growth to £4.2M',v:76,c:'£3.2M'},{l:'Avg attendance to 4,500',v:62,c:'2,800'},{l:'WSL top 6 finish',v:100,c:'5th — On track'}].map(k=><div key={k.l}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{k.l}</span><span className="text-gray-300">{k.c} ({k.v}%)</span></div><div className="h-2 bg-gray-800 rounded-full"><div className="h-2 rounded-full bg-pink-500" style={{width:`${k.v}%`}}/></div></div>)}</div></ICard>
-      <ICard><IH3>Board Actions Required</IH3><div className="space-y-2">{[{t:'Academy mental health practitioner — recruitment sign-off by 30 Apr.',c:'red'},{t:'Local Energy Co renewal — £35k deal expiring. Uplift to £45k approval.',c:'amber'},{t:'Lumio Cycle data product — Board presentation Mon 14 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
-    </div>
-  );
-
-  const mediaContent = () => (
-    <div className="space-y-6">
-      <SectionHeader title="Media & Comms View" subtitle="Audience growth, social media, and fan engagement" icon="📣" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Social Followers" value="42.8k" sub="+18% this season" color="pink" />
-        <StatCard label="Match Attendance" value="2,800 avg" sub="+340 vs last season" color="green" />
-        <StatCard label="Media Requests" value="3 pending" sub="2 interview · 1 feature" color="amber" />
-        <StatCard label="Fan Hub Members" value="1,240" sub="Launched Jan 2026" color="blue" />
-      </div>
-      <ICard><IH3>Social Media Performance</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Platform</th><th className="text-left p-3">Followers</th><th className="text-left p-3">Growth</th><th className="text-left p-3">Best Post</th><th className="text-left p-3">Eng.</th></tr></thead><tbody>{[{p:'Instagram',f:'18.4k',g:'+22%',b:'48k (WSL goal)',e:'6.8%'},{p:'TikTok',f:'14.2k',g:'+41%',b:'112k (BTS reel)',e:'9.2%'},{p:'X',f:'7.6k',g:'+8%',b:'22k (match thread)',e:'3.1%'},{p:'YouTube',f:'2.6k',g:'+14%',b:'8.4k (profile)',e:'4.7%'}].map((r,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.f}</td><td className="p-3 text-green-400 text-xs">{r.g}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.e}</td></tr>)}</tbody></table></div></ICard>
-      <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{['Thu 10 Apr — Match preview (vs Castleton Women) — IG + X','Fri 11 Apr — Player spotlight: Emma Clarke — TikTok','Sat 12 Apr — Live match thread + post-match reel — All','Mon 14 Apr — Behind the season ep 7 — YouTube'].map((c,i)=><div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
-      <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[{t:'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 15 Apr.',u:false},{t:'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 18 Apr.',u:false},{t:'Northbridge Sport — matchday access vs Castleton Women (Sat). Confirm by Thu.',u:true}].map((m,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u?'border-red-600/30 bg-red-900/10':'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u&&<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
-      <ICard><IH3>Fan Hub Highlights</IH3><div className="grid grid-cols-3 gap-3">{[{l:'Members',v:'1,240'},{l:'Match Overlap',v:'68%'},{l:'Top Topic',v:'Player welfare'}].map(s=><div key={s.l} className="text-center p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-lg font-bold text-pink-400">{s.v}</div><div className="text-[10px] text-gray-500 mt-0.5">{s.l}</div></div>)}</div></ICard>
-    </div>
-  );
-
-  const renderRole = () => {
-    switch (activeRole) {
-      case 'coach': return coachContent();
-      case 'dof': return dofContent();
-      case 'welfare': return welfareContent();
-      case 'doctor': return doctorContent();
-      case 'commercial': return commercialContent();
-      case 'academy': return academyContent();
-      case 'board': return boardContent();
-      case 'media': return mediaContent();
-      default: return coachContent();
-    }
-  };
-
-  return (
-    <div>
-      <SectionHeader title={`${club.name} — Insights`} subtitle="Role-based dashboards — 8 views for 8 roles across the club" icon="📊" />
-      <div className="overflow-x-auto pb-2 mb-6">
-        <div className="flex gap-1 min-w-max">
-          {roles.map(r => (
-            <button key={r.id} onClick={() => setActiveRole(r.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap transition-all ${activeRole===r.id?'bg-pink-600/20 text-pink-400 border-b-2 border-pink-500':'text-gray-500 hover:text-gray-300'}`}>
-              <span>{r.icon}</span>{r.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {renderRole()}
-    </div>
-  );
-};
+// Extracted to src/components/womens/WomensInsightsView.tsx (port-by-copying
+// pattern). 10-tab grouped order, locked Board Suite figures, shared common
+// strip, per-tab confidentiality scopes. Dense per-role build proceeds across
+// commits C2–C6.
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
 const DashboardView = ({ club }: { club: WomensClub }) => (
@@ -5750,7 +5531,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'fsr':         return <FSRDashboardView club={club} />
       case 'welfare':     return <WelfareView />
       case 'briefing':    return <MorningBriefingView club={club} />
-      case 'insights':    return <InsightsView club={club} defaultRole={activeRole} />
+      case 'insights':    return <WomensInsightsView club={club} defaultRole={activeRole} />
       case 'salary':      return <SalaryComplianceView />
       case 'revenue':     return <RevenueAttributionView />
       case 'acl':         return <ACLRiskMonitorView />
