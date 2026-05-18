@@ -1624,16 +1624,211 @@ function CommercialContent() {
 function OperationsContent() {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Head of Operations View" subtitle="Matchday ops, facilities, logistics, travel, scheduling" icon="🛠️" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <SectionHeader title="Head of Operations View" subtitle="Matchday ops, facilities, fixtures, travel, stewarding, maintenance, pre-season logistics" icon="🛠️" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard label="Next Match Ready" value="On track" sub="Sun 24 May (H)" color="green" />
-        <StatCard label="Stewarding Capacity" value="100%" sub="Booked for next fixture" color="green" />
+        <StatCard label="Fixtures Played" value="20 / 22" sub="2 remaining + cups" color="pink" />
+        <StatCard label="Stewarding" value="100%" sub="Booked for next fixture" color="green" />
         <StatCard label="East Terrace" value="Re-inspection 7 Jun" sub="Contractor briefed" color="amber" />
-        <StatCard label="Away Travel Plan" value="Submitted" sub="Next away: 31 May" color="blue" />
+        <StatCard label="Travel Plan" value="Submitted" sub="Next away: 31 May" color="blue" />
+        <StatCard label="Pre-Season Camp" value="30 Jun" sub="Lake District — booked" color="purple" />
       </div>
+
+      {/* Next Match Readiness Checklist */}
       <ICard>
-        <IH3>Notes</IH3>
-        <p className="text-xs text-gray-400">Full matchday ops scoreboard, fixture logistics, travel & accommodation pipeline, facility booking and stewarding plan build out in <span className="text-pink-400">commit C6</span> alongside Media &amp; Comms.</p>
+        <IH3>Next Match Readiness — Sun 24 May vs Harfield United Women (H)</IH3>
+        <div className="space-y-1.5">{[
+          { item: 'Pitch inspection completed (Fri 22 May)',                          ok: true  },
+          { item: 'Floodlight check + PAT compliance current',                          ok: true  },
+          { item: 'Changing rooms — home + away prepared',                              ok: true  },
+          { item: 'Matchday programme printed (1,200 copies)',                          ok: true  },
+          { item: 'Stewarding rota confirmed (28 stewards · 4 supervisors)',            ok: true  },
+          { item: 'Hospitality covers — 64 of 80 sold',                                 ok: true  },
+          { item: 'Press box accreditations — 6 issued (incl. Northbridge Sport)',     ok: true  },
+          { item: 'Safeguarding briefing for matchday staff completed',                 ok: true  },
+          { item: 'Medical cover — Club Doctor + 2 physios on-site confirmed',          ok: true  },
+          { item: 'Concessions stock check (Sat 23 May AM)',                            ok: false, note: 'Scheduled' },
+          { item: 'Visiting team logistics call (Fri 22 May PM)',                       ok: false, note: 'Scheduled' },
+        ].map((c, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs">
+            <span className={c.ok ? 'text-green-400' : 'text-amber-400'}>{c.ok ? '✓' : '○'}</span>
+            <span className="text-gray-300 flex-1">{c.item}</span>
+            {c.note && <span className="text-[10px] text-amber-400">{c.note}</span>}
+          </div>
+        ))}</div>
+      </ICard>
+
+      {/* Fixtures Schedule — upcoming 5 */}
+      <ICard>
+        <IH3>Upcoming Fixtures — Next 5</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Date</th>
+          <th className="text-left p-3">Opponent</th>
+          <th className="text-left p-3">Venue</th>
+          <th className="text-left p-3">Comp</th>
+          <th className="text-left p-3">Kick-Off</th>
+          <th className="text-left p-3">Logistics</th>
+        </tr></thead><tbody>{[
+          { d: 'Sun 24 May', o: 'Harfield United Women',  ven: 'Home',  c: 'WSL 2',     k: '14:00', l: 'Ready'                  , sc: '#22C55E' },
+          { d: 'Sat 31 May', o: 'Riverside Athletic',     ven: 'Away',  c: 'WSL 2',     k: '15:00', l: 'Coach booked · 4 hr trip', sc: '#22C55E' },
+          { d: 'Sun 8 Jun',  o: 'Cliffe Town Women',      ven: 'Home',  c: 'WSL 2',     k: '14:00', l: 'East terrace re-inspect Fri', sc: '#F59E0B' },
+          { d: 'Wed 18 Jun', o: 'Lakeside FC Women',      ven: 'Away',  c: 'FA Cup R3', k: '19:30', l: 'Overnight stay booked'      , sc: '#22C55E' },
+          { d: 'Sun 22 Jun', o: 'Northern Lights FC',     ven: 'Home',  c: 'WSL 2',     k: '14:00', l: 'Season finale — full ops'  , sc: '#F472B6' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={ttd}>{r.d}</td><td className="p-3 text-gray-200">{r.o}</td><td className={ttd}>{r.ven}</td><td className={ttd}>{r.c}</td><td className={ttd}>{r.k}</td><td className="p-3 text-xs" style={{ color: r.sc }}>{r.l}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Facilities Status — matches Board Suite Facilities tab */}
+      <ICard>
+        <IH3>Facilities Status</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Matches Board Suite Facilities tab. East terrace re-inspection date (7 Jun) is the same anchor used in the Risk Register and CEO Board Action Queue.</p>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">{[
+          { name: 'Main Pitch',                  status: 'Good',                          icon: '🏟️', ok: true  },
+          { name: 'Training Ground',             status: 'Good',                          icon: '⚽', ok: true  },
+          { name: 'East Terrace',                status: 'Re-inspection due 7 Jun',       icon: '🏗️', ok: false },
+          { name: 'Changing Rooms',              status: "Women's-spec, refurbished",     icon: '🚿', ok: true  },
+          { name: 'Floodlights',                 status: 'Operational',                   icon: '💡', ok: true  },
+          { name: 'Medical & Welfare Suite',     status: 'Operational',                   icon: '🩺', ok: true  },
+        ].map(f => (
+          <div key={f.name} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-lg">{f.icon}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: f.ok ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)', color: f.ok ? '#22C55E' : '#F59E0B' }}>{f.ok ? '✅' : '⚠️'} {f.status}</span>
+            </div>
+            <p className="text-xs font-bold text-white">{f.name}</p>
+          </div>
+        ))}</div>
+      </ICard>
+
+      {/* East Terrace Inspection Milestones */}
+      <ICard>
+        <IH3>East Terrace Re-Inspection — Milestones</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Risk Register entry: &quot;East terrace safety re-inspection due / Inspection booked 7 Jun, contractor briefed.&quot; Status tracking.</p>
+        <div className="relative pl-6">
+          <div className="absolute left-[7px] top-0 bottom-0 w-px bg-gray-800" />
+          {[
+            { date: 'Mar 2026',  task: 'Annual safety check flagged east terrace for re-inspection',      done: true  },
+            { date: 'Apr 2026',  task: 'Contractor (independent structural engineer) appointed',           done: true  },
+            { date: 'May 2026',  task: 'Contractor briefing call completed · paperwork submitted',         done: true  },
+            { date: 'Fri 6 Jun', task: 'Pre-inspection access prep — area closed off (5 hrs)',             done: false, current: false },
+            { date: 'Sat 7 Jun', task: 'On-site re-inspection (full day) · report turnaround 5 working days', done: false, current: true  },
+            { date: '~14 Jun',   task: 'Report received → submit to board for 12 Jun meeting context',     done: false },
+            { date: 'Sun 8 Jun', task: 'Cliffe Town Women home fixture — terrace open under existing cert', done: false },
+          ].map((m, i) => (
+            <div key={i} className="relative flex items-start gap-4 pb-3">
+              <div className="absolute left-[-18px] w-3.5 h-3.5 rounded-full" style={{ backgroundColor: m.done ? '#22C55E' : m.current ? '#EC4899' : '#1F2937', border: '2px solid #0D1117', top: 2 }} />
+              <div>
+                <p className={`text-xs font-bold ${m.done ? 'text-green-400' : m.current ? 'text-pink-400' : 'text-white'}`}>{m.date}</p>
+                <p className="text-xs text-gray-500">{m.task}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ICard>
+
+      {/* Travel & Accommodation Plan */}
+      <ICard>
+        <IH3>Travel &amp; Accommodation — Next 3 Away Fixtures</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Fixture</th>
+          <th className="text-left p-3">Mode</th>
+          <th className="text-left p-3">Duration</th>
+          <th className="text-left p-3">Overnight</th>
+          <th className="text-left p-3">Budget</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { f: '31 May · Riverside Athletic',  m: 'Coach',          dur: '4h each way', on: 'No',  b: '£1.2k',  s: 'Booked',  sc: '#22C55E' },
+          { f: '18 Jun · Lakeside FC (FA Cup)', m: 'Coach + hotel', dur: '5h each way', on: 'Yes (1 night)', b: '£3.8k',  s: 'Booked',  sc: '#22C55E' },
+          { f: '5 Jul · Pre-season Camp',       m: 'Coach + hotel', dur: 'Lake District · 4 nights', on: 'Yes', b: '£18k',  s: 'Booked',  sc: '#22C55E' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.f}</td><td className={ttd}>{r.m}</td><td className={ttd}>{r.dur}</td><td className={ttd}>{r.on}</td><td className={ttd}>{r.b}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.sc}20`, color: r.sc }}>{r.s}</span></td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Stewarding & Matchday Staffing */}
+      <ICard>
+        <IH3>Stewarding &amp; Matchday Staffing</IH3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">{[
+          { l: 'Contracted stewards',     v: '18', c: '#F9FAFB' },
+          { l: 'Casual pool',              v: '12', c: '#F9FAFB' },
+          { l: 'Avg per match',            v: '28', c: '#F472B6' },
+          { l: 'Supervisor / NVQ qual.',   v: '4',  c: '#22C55E' },
+        ].map(s => <div key={s.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500">{s.l}</p>
+          <p className="text-lg font-bold mt-1" style={{ color: s.c }}>{s.v}</p>
+        </div>)}</div>
+        <p className="text-[10px] text-gray-500">Post-Mar-derby review actioned — derby-day deployment increased from 28 to 36 stewards for 2026/27 home derby (Risk Register entry: stewarding capacity at derby fixtures).</p>
+      </ICard>
+
+      {/* Maintenance Schedule — matches Board Suite */}
+      <ICard>
+        <IH3>Maintenance Schedule — Next 5</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Matches Board Suite Facilities tab Upcoming Maintenance — single source of truth.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Date</th>
+          <th className="text-left p-3">Task</th>
+          <th className="text-left p-3">Owner</th>
+        </tr></thead><tbody>{[
+          { d: '7 Jun',  t: 'East terrace safety re-inspection (contractor briefed)', o: 'Ops + structural engineer' },
+          { d: '22 Jun', t: 'Pitch aeration & overseeding',                            o: 'Groundsperson'             },
+          { d: '5 Jul',  t: "CCTV system upgrade — women's-only zones included",       o: 'Ops + IT'                  },
+          { d: '1 Aug',  t: 'Pre-season training ground refresh',                      o: 'Groundsperson + Ops'       },
+          { d: '15 Aug', t: 'Floodlight PAT testing',                                  o: 'Compliance contractor'     },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-pink-400 text-xs font-bold">{r.d}</td><td className="p-3 text-gray-200">{r.t}</td><td className={ttd}>{r.o}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Pre-Season Camp Logistics */}
+      <ICard>
+        <IH3>Pre-Season Camp — Lake District (30 Jun – 4 Jul)</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Matches DoF Transfer Window timeline (30 Jun pre-season camp begins) and Board Suite Travel & Accommodation budget.</p>
+        <div className="space-y-1.5">{[
+          { item: 'Venue booked — Lake District training centre (12 pitches, on-site accommodation)', ok: true  },
+          { item: 'Travel — coach booked (5h each way), departing 09:00 30 Jun',                       ok: true  },
+          { item: 'Accommodation — 32 rooms (squad + staff) confirmed',                                ok: true  },
+          { item: 'Catering — sports-nutrition provision agreed with venue',                            ok: true  },
+          { item: 'Medical cover — Club Doctor on-site days 1–3; physios full duration',               ok: true  },
+          { item: 'Friendly fixtures — 2 scheduled (vs Northern Lights · vs Cliffe Town)',              ok: true  },
+          { item: 'Family days — Tue 1 Jul + Thu 3 Jul (Carney welfare standard)',                     ok: true  },
+          { item: 'Insurance + risk assessment paperwork submitted',                                    ok: false, note: 'Due 7 Jun' },
+        ].map((c, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs">
+            <span className={c.ok ? 'text-green-400' : 'text-amber-400'}>{c.ok ? '✓' : '○'}</span>
+            <span className="text-gray-300 flex-1">{c.item}</span>
+            {c.note && <span className="text-[10px] text-amber-400">{c.note}</span>}
+          </div>
+        ))}</div>
+      </ICard>
+
+      {/* Procurement & Kit Status */}
+      <ICard>
+        <IH3>Procurement &amp; Kit Status</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Item</th>
+          <th className="text-left p-3">Status</th>
+          <th className="text-left p-3">Delivery</th>
+          <th className="text-left p-3">Owner</th>
+        </tr></thead><tbody>{[
+          { i: '2026/27 home kit',          s: 'Design signed off · production',  d: 'Jul 2026',   o: 'Commercial + Ops' },
+          { i: '2026/27 away kit',          s: 'Design signed off · production',  d: 'Jul 2026',   o: 'Commercial + Ops' },
+          { i: 'Training kit replenishment', s: 'On order',                       d: 'Jun 2026',   o: 'Ops'              },
+          { i: 'Matchday match balls',       s: 'Stock OK to season-end',          d: '—',          o: 'Ops'              },
+          { i: 'Medical supplies (annual)',  s: 'Reorder due',                     d: 'May 2026',   o: 'Ops + Doctor'     },
+          { i: 'GPS vests (5 replacements)', s: 'Approved',                        d: 'Jun 2026',   o: 'Performance + Ops' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.i}</td><td className={ttd}>{r.s}</td><td className={ttd}>{r.d}</td><td className={ttd}>{r.o}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Energy & Sustainability */}
+      <ICard>
+        <IH3>Energy &amp; Sustainability</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Matches Board Suite Facilities tab Energy & Sustainability KPIs.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[
+          { l: 'Monthly energy cost',   v: '£2,400',     c: '#F59E0B' },
+          { l: 'Solar savings YTD',     v: '£1,100',     c: '#22C55E' },
+          { l: 'Pitch water usage',     v: '12,500 L/mo', c: '#3B82F6' },
+          { l: 'Carbon offset',          v: 'On track ✅', c: '#22C55E' },
+        ].map(e => <div key={e.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-[10px] uppercase tracking-wider text-gray-500">{e.l}</p>
+          <p className="text-lg font-bold mt-1" style={{ color: e.c }}>{e.v}</p>
+        </div>)}</div>
       </ICard>
     </div>
   )
@@ -1642,35 +1837,155 @@ function OperationsContent() {
 function MediaContent() {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Media & Comms View" subtitle="Audience growth, social media, and fan engagement" icon="📣" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <SectionHeader title="Media & Comms View" subtitle="Audience, content pipeline, press coverage, sentiment, fan engagement, crisis comms" icon="📣" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard label="Social Followers" value="42.8k" sub="+18% this season" color="pink" />
         <StatCard label="Match Attendance" value="3,050 avg" sub="+400 vs last season" color="green" />
         <StatCard label="Media Requests" value="3 pending" sub="2 interview · 1 feature" color="amber" />
+        <StatCard label="Press Mentions YTD" value="184" sub="↑31% vs 24/25" color="teal" />
+        <StatCard label="Sentiment Score" value="74/100" sub="12-wk avg · trending up" color="green" />
         <StatCard label="Fan Hub Members" value="1,240" sub="Launched Jan 2026" color="blue" />
       </div>
+
+      {/* Social Media Performance (carried) */}
       <ICard><IH3>Social Media Performance</IH3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Platform</th><th className="text-left p-3">Followers</th><th className="text-left p-3">Growth</th><th className="text-left p-3">Best Post</th><th className="text-left p-3">Eng.</th></tr></thead><tbody>{[
         { p: 'Instagram', f: '18.4k', g: '+22%', b: '48k (WSL goal)',    e: '6.8%' },
         { p: 'TikTok',    f: '14.2k', g: '+41%', b: '112k (BTS reel)',   e: '9.2%' },
         { p: 'X',         f: '7.6k',  g: '+8%',  b: '22k (match thread)', e: '3.1%' },
         { p: 'YouTube',   f: '2.6k',  g: '+14%', b: '8.4k (profile)',    e: '4.7%' },
       ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.f}</td><td className="p-3 text-green-400 text-xs">{r.g}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.e}</td></tr>)}</tbody></table></div></ICard>
+
+      {/* Content Calendar — This Week */}
       <ICard><IH3>Content Calendar — This Week</IH3><div className="space-y-2">{[
         'Thu 21 May — Match preview (vs Harfield United Women) — IG + X',
         'Fri 22 May — Player spotlight: Emma Clarke — TikTok',
         'Sun 24 May — Live match thread + post-match reel — All',
         'Mon 26 May — Behind the season ep 7 — YouTube',
       ].map((c, i) => <div key={i} className="p-2.5 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">{c}</div>)}</div></ICard>
+
+      {/* Content Pipeline — drafts / scheduled / awaiting approval */}
+      <ICard>
+        <IH3>Content Pipeline</IH3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 mb-2">📝 Drafts (4)</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· Season review long-form (post Harfield)</li>
+              <li>· Welfare Lead recruitment announcement</li>
+              <li>· Pre-season camp BTS series outline</li>
+              <li>· Carney compliance year-in-review piece</li>
+            </ul>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-blue-400 mb-2">📅 Scheduled (6)</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· 4 weekly &quot;Behind the Season&quot; episodes</li>
+              <li>· Matchday templates (Sun 24 May)</li>
+              <li>· Player birthday content (3 in next 2 wks)</li>
+            </ul>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-pink-400 mb-2">✋ Awaiting approval (2)</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· Crown Broadcasting feature script (Welfare Lead)</li>
+              <li>· Sarah Frost interview Q&amp;A (Club Director)</li>
+            </ul>
+          </div>
+        </div>
+      </ICard>
+
+      {/* Press & Coverage Tracker */}
+      <ICard>
+        <IH3>Press &amp; Coverage Tracker — Last 30 Days</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Date</th>
+          <th className="text-left p-3">Outlet</th>
+          <th className="text-left p-3">Story</th>
+          <th className="text-left p-3">Reach</th>
+          <th className="text-left p-3">Sentiment</th>
+        </tr></thead><tbody>{[
+          { d: '17 May', o: 'Northbridge Sport',   st: 'Hartwell defeat — match report',           r: '12k',  sn: 'Neutral',  sc: '#9CA3AF' },
+          { d: '14 May', o: 'The Chronicle',        st: 'Welfare Lead recruitment announcement',    r: '28k',  sn: 'Positive', sc: '#22C55E' },
+          { d: '10 May', o: 'Crown Broadcasting',   st: 'Cliffe Town home win — match report',      r: '42k',  sn: 'Positive', sc: '#22C55E' },
+          { d: '5 May',  o: 'WSL Today',            st: 'WSL 2 mid-season power rankings',          r: '18k',  sn: 'Positive', sc: '#22C55E' },
+          { d: '2 May',  o: 'The Athletic UK',      st: 'Carney compliance feature — Oakridge featured', r: '64k', sn: 'Positive', sc: '#22C55E' },
+          { d: '28 Apr', o: 'Northbridge Sport',    st: 'Sponsor renewal — NovaTech UK',            r: '8k',   sn: 'Neutral',  sc: '#9CA3AF' },
+          { d: '22 Apr', o: 'The Chronicle',        st: 'Concussion protocol piece (T. Brookes)',   r: '22k',  sn: 'Positive', sc: '#22C55E' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={ttd}>{r.d}</td><td className="p-3 text-gray-200 text-xs">{r.o}</td><td className={ttd}>{r.st}</td><td className={ttd}>{r.r}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.sc}20`, color: r.sc }}>{r.sn}</span></td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Sentiment Trend SVG — last 12 weeks */}
+      <ICard>
+        <IH3>Sentiment Trend — Last 12 Weeks</IH3>
+        <svg viewBox="0 0 360 80" className="w-full max-w-md" style={{ height: 100 }}>
+          <line x1="0" y1="40" x2="360" y2="40" stroke="#1F2937" strokeWidth="0.5" strokeDasharray="2,2" />
+          <text x="0" y="12" fill="#22C55E" fontSize="7">100 (very positive)</text>
+          <text x="0" y="44" fill="#9CA3AF" fontSize="7">50 (neutral)</text>
+          <text x="0" y="76" fill="#EF4444" fontSize="7">0 (very negative)</text>
+          {(() => {
+            const vals = [62, 65, 70, 68, 72, 71, 69, 75, 78, 76, 73, 74]
+            const xStep = 320 / (vals.length - 1)
+            const yFor = (v: number) => 80 - (v / 100) * 70
+            const pts = vals.map((v, i) => `${40 + i * xStep},${yFor(v)}`).join(' ')
+            return <>
+              <polyline points={pts} fill="none" stroke="#EC4899" strokeWidth="2" />
+              {vals.map((v, i) => <circle key={i} cx={40 + i * xStep} cy={yFor(v)} r="2.5" fill="#EC4899" />)}
+              {vals.map((v, i) => <text key={`t${i}`} x={40 + i * xStep} y={yFor(v) - 5} textAnchor="middle" fill="#9CA3AF" fontSize="6">{v}</text>)}
+            </>
+          })()}
+        </svg>
+        <p className="text-[10px] mt-2 text-gray-500">12-week trend: 62 → 74 (+12pts). Carney feature in The Athletic UK was the inflection point (week 8). Current week 74 — slightly off the 78 peak but stable.</p>
+      </ICard>
+
+      {/* Pending Media Requests (carried) */}
       <ICard><IH3>Pending Media Requests</IH3><div className="space-y-2">{[
         { t: 'Crown Broadcasting — feature on Lumio Cycle welfare integration. Deadline: 28 May.',                u: false },
         { t: 'The Chronicle — interview: Sarah Frost on WSL season. Deadline: 30 May.',                            u: false },
         { t: 'Northbridge Sport — matchday access vs Harfield United Women (Sun). Confirm by Fri.',                u: true  },
       ].map((m, i) => <div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 flex items-start justify-between gap-2 ${m.u ? 'border-red-600/30 bg-red-900/10' : 'border-amber-600/30 bg-amber-900/10'}`}><span>{m.t}</span>{m.u && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 flex-shrink-0">URGENT</span>}</div>)}</div></ICard>
+
+      {/* Fan Hub Highlights (carried) */}
       <ICard><IH3>Fan Hub Highlights</IH3><div className="grid grid-cols-3 gap-3">{[
         { l: 'Members',       v: '1,240' },
         { l: 'Match Overlap', v: '68%'   },
         { l: 'Top Topic',     v: 'Player welfare' },
       ].map(s => <div key={s.l} className="text-center p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-lg font-bold text-pink-400">{s.v}</div><div className="text-[10px] text-gray-500 mt-0.5">{s.l}</div></div>)}</div></ICard>
+
+      {/* Player Spotlight rotation */}
+      <ICard>
+        <IH3>Player Spotlight Rotation</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Weekly spotlight rotation balances first-team exposure, academy bridges, and welfare-led storytelling. Player consent confirmed before each spotlight goes live.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Week</th>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Angle</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { w: 'This week (W21)',  p: 'Emma Clarke',     a: 'Captaincy season recap',                       s: 'Live Fri',  sc: '#EC4899' },
+          { w: 'W22',              p: 'S. Reyes',         a: 'Top scorer — contract renewal context',         s: 'Drafted',   sc: '#F59E0B' },
+          { w: 'W23',              p: "Niamh O'Brien",    a: 'Academy → first-team bridge',                   s: 'Drafted',   sc: '#F59E0B' },
+          { w: 'W24',              p: 'A. Patel',          a: 'Mid-season MVP candidate',                      s: 'Scheduled', sc: '#3B82F6' },
+          { w: 'W25 (finale)',     p: 'M. Costa',          a: 'Season-finale GK feature',                      s: 'Outlined',  sc: '#6B7280' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={ttd}>{r.w}</td><td className="p-3 text-gray-200">{r.p}</td><td className={ttd}>{r.a}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.sc}20`, color: r.sc }}>{r.s}</span></td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Crisis Comms log */}
+      <ICard>
+        <IH3>Crisis Comms Log — YTD</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Reactive comms responses tracked for post-event review and board reporting. 2 incidents YTD; 0 active.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Date</th>
+          <th className="text-left p-3">Incident</th>
+          <th className="text-left p-3">Response Type</th>
+          <th className="text-left p-3">Resolution</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { d: '14 Apr', i: 'On-field concussion (T. Brookes) — fan / press concern',         rt: 'Statement + protocol explainer',     res: 'HIA + RTN protocol communicated; positive coverage', sc: '#22C55E' },
+          { d: '8 Mar',  i: 'Derby steward incident — fan complaint via social',              rt: 'Direct response + steward review',   res: 'Stewarding deployment increased for 26/27 derby',    sc: '#22C55E' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={ttd}>{r.d}</td><td className="p-3 text-gray-200 text-xs">{r.i}</td><td className={ttd}>{r.rt}</td><td className="p-3 text-xs text-gray-300">{r.res}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.sc}20`, color: r.sc }}>Closed</span></td></tr>)}</tbody></table>
+      </ICard>
     </div>
   )
 }
