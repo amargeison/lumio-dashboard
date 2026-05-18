@@ -555,30 +555,61 @@ function DoFContent() {
 }
 
 function CoachContent() {
+  // Full 22-player squad. Availability column is the only signal the coach
+  // sees — no cycle phase, no ACL composite, no clinical reason. The
+  // "Coordinated with Medical" footnote below the table is where clinical
+  // detail goes (and only the Head of Medical tab carries it).
+  const squad = [
+    // GK (2)
+    { n: 'Emma Clarke',     p: 'GK', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'M. Costa',        p: 'GK', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    // DEF (7)
+    { n: 'J. Okonkwo',      p: 'CB', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'Charlotte Reed',  p: 'CB', f: '95%',  lc: '65%',  av: 'Adapted load', avC: 'amber' },
+    { n: 'F. Mireles',      p: 'CB', f: '96%',  lc: '90%',  av: 'Available',    avC: 'green' },
+    { n: 'Jade Osei',       p: 'LB', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'R. Bailey',       p: 'LB', f: '94%',  lc: '90%',  av: 'Available',    avC: 'green' },
+    { n: 'I. Beckett',      p: 'RB', f: '98%',  lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'K. Hwang',        p: 'RB', f: '—',    lc: '—',    av: 'Unavailable',  avC: 'red'   },
+    // MID (7)
+    { n: 'A. Patel',        p: 'CM', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'Lucy Whitmore',   p: 'CM', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'Emily Zhang',     p: 'CM', f: '88%',  lc: '60%',  av: 'Adapted load', avC: 'amber' },
+    { n: 'O. Nakamura',     p: 'CM', f: '95%',  lc: '95%',  av: 'Available',    avC: 'green' },
+    { n: 'S. Connolly',     p: 'CM', f: '92%',  lc: '90%',  av: 'Available',    avC: 'green' },
+    { n: 'Abbi Walsh',      p: 'RM', f: '97%',  lc: '95%',  av: 'Available',    avC: 'green' },
+    { n: 'N. Lakeman',      p: 'MID', f: '100%', lc: '100%', av: 'Suspended',    avC: 'amber' },
+    // FWD (6)
+    { n: 'S. Reyes',        p: 'ST', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'C. Beaufort',     p: 'ST', f: '95%',  lc: '95%',  av: 'Available',    avC: 'green' },
+    { n: 'N. Achterberg',   p: 'LW', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
+    { n: 'Priya Nair',      p: 'FW', f: '92%',  lc: '95%',  av: 'Available',    avC: 'green' },
+    { n: 'L. Brennan',      p: 'FW', f: '—',    lc: '—',    av: 'Unavailable',  avC: 'red'   },
+    { n: 'T. Adeyemi',      p: 'FW', f: '—',    lc: '—',    av: 'Unavailable',  avC: 'red'   },
+  ]
+
   return (
     <div className="space-y-6">
-      <SectionHeader title="Head Coach View" subtitle="Performance and squad availability" icon="🎽" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Squad Available" value="18/22" sub="1 suspended · 3 injured" color="pink" />
-        <StatCard label="Today's Adapted Load" value="3" sub="On modified-load recs (squad-wide)" color="amber" />
+      <SectionHeader title="Head Coach View" subtitle="Performance, squad availability, next opposition, set-pieces, training schedule" icon="🎽" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="Squad Available" value="18/22" sub="1 suspended · 3 unavailable" color="pink" />
+        <StatCard label="Today's Adapted Load" value="3" sub="Modified-load recs (squad-wide)" color="amber" />
+        <StatCard label="Form (Last 5)" value="3W 1D 1L" sub="10 pts from last 15" color="green" />
         <StatCard label="xG Last Match" value="0.31" sub="vs Hartwell Women (L 0–1)" color="amber" />
+        <StatCard label="Best XI Confidence" value="84%" sub="Avg likely-to-start" color="teal" />
         <StatCard label="Next Match" value="Sun 24 May" sub="vs Harfield United Women (H)" color="blue" />
       </div>
+
+      {/* Full 22-player squad availability matrix */}
       <ICard>
-        <IH3>Squad Availability</IH3>
+        <IH3>Squad Availability (22 players)</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Coach view — availability flags only. Clinical reasons for unavailability sit with the Club Doctor on the Head of Medical tab (locked confidentiality model).</p>
         <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
           <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Fitness</th><th className="text-left p-3">Load Cap</th><th className="text-left p-3">Available</th>
         </tr></thead><tbody>
-          {[
-            { n: 'Emma Clarke',     p: 'GK', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
-            { n: 'Priya Nair',      p: 'FW', f: '92%',  lc: '95%',  av: 'Available',    avC: 'green' },
-            { n: 'Emily Zhang',     p: 'CM', f: '88%',  lc: '60%',  av: 'Adapted load', avC: 'amber' },
-            { n: 'Charlotte Reed',  p: 'CB', f: '95%',  lc: '65%',  av: 'Adapted load', avC: 'amber' },
-            { n: 'Jade Osei',       p: 'LB', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
-            { n: 'Abbi Walsh',      p: 'RM', f: '97%',  lc: '80%',  av: 'Available',    avC: 'green' },
-            { n: 'Lucy Whitmore',   p: 'CM', f: '100%', lc: '100%', av: 'Available',    avC: 'green' },
-            { n: 'Sophie Turner',   p: 'CB', f: '40%',  lc: '—',    av: 'Unavailable',  avC: 'red'   },
-          ].map((r, i) => {
+          {squad.map((r, i) => {
             const lcN = parseInt(r.lc); const lcC = isNaN(lcN) ? 'text-gray-500' : lcN <= 65 ? 'text-red-400' : lcN <= 85 ? 'text-amber-400' : 'text-green-400'
             const avB = r.avC === 'green' ? 'bg-green-600/20 text-green-400' : r.avC === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'
             return <tr key={i} className="border-b border-gray-800/50">
@@ -589,22 +620,129 @@ function CoachContent() {
           })}
         </tbody></table></div>
       </ICard>
+
+      {/* Form & xG-diff trend — 10 matches */}
       <ICard>
-        <IH3>Form &amp; Momentum</IH3>
-        <div className="flex gap-2 mb-4">{['L', 'W', 'W', 'D', 'W'].map((r, i) => <span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-green-600/20 text-green-400' : r === 'L' ? 'bg-red-600/20 text-red-400' : 'bg-amber-600/20 text-amber-400'}`}>{r}</span>)}</div>
-        <div className="text-xs text-gray-500 mb-2">xG trend last 5:</div>
-        <svg viewBox="0 0 200 40" className="w-full max-w-xs" style={{ height: 40 }}>
-          {[0.31, 1.42, 0.98, 0.67, 1.21].map((v, i, a) => { const x = i * 50; const y = 40 - (v / 1.5) * 36; return i < a.length - 1 ? <line key={i} x1={x} y1={y} x2={(i + 1) * 50} y2={40 - (a[i + 1] / 1.5) * 36} stroke="#EC4899" strokeWidth="2" /> : null })}
-          {[0.31, 1.42, 0.98, 0.67, 1.21].map((v, i) => <circle key={i} cx={i * 50} cy={40 - (v / 1.5) * 36} r="3" fill="#EC4899" />)}
-          {[0.31, 1.42, 0.98, 0.67, 1.21].map((v, i) => <text key={`t${i}`} x={i * 50} y={40 - (v / 1.5) * 36 - 6} textAnchor="middle" fill="#9CA3AF" fontSize="7">{v}</text>)}
+        <IH3>Form &amp; xG-Diff Trend (Last 10)</IH3>
+        <div className="flex gap-1.5 mb-4">{['W', 'D', 'W', 'L', 'W', 'W', 'D', 'L', 'W', 'D'].map((r, i) => <span key={i} className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-green-600/20 text-green-400' : r === 'L' ? 'bg-red-600/20 text-red-400' : 'bg-amber-600/20 text-amber-400'}`}>{r}</span>)}</div>
+        <p className="text-xs text-gray-500 mb-2">5W 3D 2L — 18 points from last 30</p>
+        <svg viewBox="0 0 360 60" className="w-full max-w-md" style={{ height: 60 }}>
+          <line x1="0" y1="30" x2="360" y2="30" stroke="#1F2937" strokeWidth="0.5" strokeDasharray="2,2" />
+          {(() => {
+            const vals = [0.6, -0.2, 0.9, -0.7, 1.1, 0.8, -0.1, -0.4, 1.2, 0.0]
+            const xStep = 360 / (vals.length - 1)
+            const yFor = (v: number) => 30 - (v / 1.5) * 24
+            const pts = vals.map((v, i) => `${i * xStep},${yFor(v)}`).join(' ')
+            return (
+              <>
+                <polyline points={pts} fill="none" stroke="#EC4899" strokeWidth="2" />
+                {vals.map((v, i) => <circle key={i} cx={i * xStep} cy={yFor(v)} r="3" fill={v >= 0 ? '#22C55E' : '#EF4444'} />)}
+                {vals.map((v, i) => <text key={`t${i}`} x={i * xStep} y={yFor(v) - 6} textAnchor="middle" fill="#9CA3AF" fontSize="7">{v >= 0 ? `+${v.toFixed(1)}` : v.toFixed(1)}</text>)}
+              </>
+            )
+          })()}
         </svg>
+        <p className="text-[10px] mt-2 text-gray-500">Avg xG diff last 10: +0.32 — positive trend.</p>
       </ICard>
+
+      {/* Last 3 results — detailed breakdown */}
       <ICard>
-        <IH3>Tactical Notes — Next Opponent (Harfield United Women)</IH3>
+        <IH3>Last 3 Results — Detailed</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Date</th>
+          <th className="text-left p-3">Opponent</th>
+          <th className="text-left p-3">Score</th>
+          <th className="text-left p-3">xG (F / A)</th>
+          <th className="text-left p-3">Possession</th>
+          <th className="text-left p-3">Shots</th>
+        </tr></thead><tbody>{[
+          { d: '17 May', o: 'vs Hartwell Women (A)',     s: 'L 0–1', xg: '0.31 / 1.42', p: '48%', sh: '7–14', sc: 'red'   },
+          { d: '10 May', o: 'vs Cliffe Town Women (H)',  s: 'W 2–1', xg: '1.84 / 0.95', p: '56%', sh: '15–9', sc: 'green' },
+          { d: '3 May',  o: 'vs Riverside Athletic (A)', s: 'W 3–0', xg: '2.21 / 0.42', p: '58%', sh: '17–6', sc: 'green' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={ttd}>{r.d}</td><td className="p-3 text-gray-200">{r.o}</td><td className="p-3"><span className={`text-xs font-bold ${r.sc === 'green' ? 'text-green-400' : r.sc === 'red' ? 'text-red-400' : 'text-amber-400'}`}>{r.s}</span></td><td className={ttd}>{r.xg}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.sh}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Next Opposition Profile — threats / weaknesses */}
+      <ICard>
+        <IH3>Next Opposition — Harfield United Women</IH3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold mb-2 text-amber-400">⚠ THEIR THREATS</p>
+            {[
+              'Top scorer: T. Mason (9 goals)',
+              'Set-piece danger from corners — 38% of goals from set pieces',
+              'Fast counter-attack through right side (R. Field, RM)',
+              'High press in first 15 minutes — disrupts build-up',
+            ].map(t => <p key={t} className="text-xs mb-1 text-gray-300">⚠ {t}</p>)}
+          </div>
+          <div>
+            <p className="text-xs font-bold mb-2 text-green-400">✓ THEIR WEAKNESSES</p>
+            {[
+              'Vulnerable to balls in behind LB — pace mismatch',
+              'Slow centre-back pair on turning — exploit with through balls',
+              'Goalkeeper command of area weak — corners winnable',
+              '7 goals conceded from crosses this season',
+            ].map(t => <p key={t} className="text-xs mb-1 text-gray-300">✓ {t}</p>)}
+          </div>
+        </div>
+      </ICard>
+
+      {/* Set-piece record */}
+      <ICard>
+        <IH3>Set-Piece Record (season)</IH3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">{[
+          { l: 'Corners / Match',     v: '4.8',  c: '#F472B6' },
+          { l: 'Goals from Corners',  v: '6 (12%)', c: '#22C55E' },
+          { l: 'Penalties',           v: '4 / 4 (100%)', c: '#22C55E' },
+          { l: 'Set-pieces Conceded', v: '5 goals', c: '#F59E0B' },
+        ].map(s => <div key={s.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">{s.l}</p>
+        </div>)}</div>
+      </ICard>
+
+      {/* Formation usage */}
+      <ICard>
+        <IH3>Formation Usage (season)</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Formation</th>
+          <th className="text-left p-3">Games</th>
+          <th className="text-left p-3">W-D-L</th>
+          <th className="text-left p-3">Win%</th>
+          <th className="text-left p-3">GF</th>
+          <th className="text-left p-3">GA</th>
+          <th className="text-left p-3">xG Diff</th>
+        </tr></thead><tbody>{[
+          { f: '4-3-3',   g: 14, r: '8-3-3', w: '57%', gf: 22, ga: 14, x: '+8.4' },
+          { f: '4-2-3-1', g:  5, r: '2-1-2', w: '40%', gf:  7, ga:  6, x: '+1.6' },
+          { f: '3-5-2',   g:  2, r: '1-0-1', w: '50%', gf:  4, ga:  3, x: '+0.7' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.f}</td><td className={ttd}>{r.g}</td><td className={ttd}>{r.r}</td><td className="p-3 text-xs text-pink-400 font-bold">{r.w}</td><td className={ttd}>{r.gf}</td><td className={ttd}>{r.ga}</td><td className="p-3 text-xs text-green-400 font-bold">{r.x}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Training schedule — next 3 sessions */}
+      <ICard>
+        <IH3>Training Schedule — Next 3 Sessions</IH3>
         <div className="space-y-2">{[
-          'Press trigger: opponent plays out from back. High press in first 10 minutes effective.',
+          { d: 'Tue 19 May · AM', f: 'Tactical block — press triggers + transitions (vs Harfield prep)', l: 'High intensity' },
+          { d: 'Wed 20 May · AM', f: 'Set-pieces — corners attack and defend; penalty rota review',     l: 'Moderate'      },
+          { d: 'Thu 21 May · AM', f: 'Light technical — match minus 3 protocol',                         l: 'Low'           },
+        ].map((s, i) => <div key={i} className="flex items-center justify-between p-3 bg-[#0a0c14] border border-gray-800 rounded-lg">
+          <div>
+            <p className="text-xs font-bold text-pink-400">{s.d}</p>
+            <p className="text-[11px] text-gray-300 mt-0.5">{s.f}</p>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ backgroundColor: s.l === 'High intensity' ? 'rgba(239,68,68,0.15)' : s.l === 'Moderate' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)', color: s.l === 'High intensity' ? '#EF4444' : s.l === 'Moderate' ? '#F59E0B' : '#22C55E' }}>{s.l}</span>
+        </div>)}</div>
+      </ICard>
+
+      {/* Tactical Notes */}
+      <ICard>
+        <IH3>Tactical Notes — Match-Day Briefing</IH3>
+        <div className="space-y-2">{[
+          'Press trigger: Harfield play out from back. High press in first 10 minutes effective.',
           'Set-piece threat: opponent scores 38% of goals from corners. Zonal or man-mark decision required.',
           'Load consideration: 3 players on modified-load today. Conserve energy in transitions.',
+          'XI confidence: 84% likely-to-start average — final call subject to fitness checks Saturday AM.',
         ].map((t, i) => <div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
       </ICard>
     </div>
@@ -612,19 +750,171 @@ function CoachContent() {
 }
 
 function PerformanceContent() {
+  // Physical / load only. No clinical diagnosis, no injury detail, no
+  // cycle phase, no ACL composite, no mental-health content. Players who
+  // are unavailable show as "—" or "Coordinated w/ Medical" — coach +
+  // medical own the reason; performance owns the physical envelope.
   return (
     <div className="space-y-6">
-      <SectionHeader title="Head of Performance View" subtitle="GPS / load / physical readiness — sits alongside Medical, not duplicating it" icon="📊" />
+      <SectionHeader title="Head of Performance View" subtitle="GPS, load, training analytics, fitness, conditioning" icon="📊" />
       <VisibilityNote role="performance" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Squad Avg Load (7-day)" value="412 AU" sub="Target band: 380–450" color="green" />
-        <StatCard label="Above target" value="2" sub="Modified-load applied" color="amber" />
-        <StatCard label="Below target" value="1" sub="RTP — coordinated with Medical" color="blue" />
-        <StatCard label="High-Speed Distance" value="68%" sub="Squad avg vs season baseline" color="teal" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="Squad Avg Load (7-day)" value="412 AU" sub="Target band 380–450" color="green" />
+        <StatCard label="Above Target" value="2" sub="Modified-load applied" color="amber" />
+        <StatCard label="Below Target" value="1" sub="Coordinated w/ Medical" color="blue" />
+        <StatCard label="HSR Squad Avg" value="68%" sub="vs season baseline" color="teal" />
+        <StatCard label="Max Speed (last session)" value="29.4 km/h" sub="N. Achterberg" color="pink" />
+        <StatCard label="Training Hours / Week" value="14.2" sub="Plan: 14.0" color="green" />
       </div>
+
+      {/* 7-day squad-aggregate load trend */}
       <ICard>
-        <IH3>Notes</IH3>
-        <p className="text-xs text-gray-400">Full GPS / load tables, sprint distribution, intensity zones and conditioning pipeline build out in <span className="text-pink-400">commit C3</span> alongside Head Coach. Interim KPIs above reflect squad-aggregate physical signals only — no clinical detail (that's the Head of Medical tab).</p>
+        <IH3>Squad Load — Last 7 Days (squad average AU)</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Target band 380–450 AU. Matchday spike on Sun 17 May; recovery dip Mon 18 May; tactical-block ramp through midweek.</p>
+        <svg viewBox="0 0 350 100" className="w-full max-w-lg" style={{ height: 120 }}>
+          {/* Target band */}
+          <rect x="0" y={100 - (450 / 600) * 80} width="350" height={((450 - 380) / 600) * 80} fill="#22C55E" opacity="0.08" />
+          <line x1="0" y1={100 - (450 / 600) * 80} x2="350" y2={100 - (450 / 600) * 80} stroke="#22C55E" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.4" />
+          <line x1="0" y1={100 - (380 / 600) * 80} x2="350" y2={100 - (380 / 600) * 80} stroke="#22C55E" strokeWidth="0.5" strokeDasharray="2,2" opacity="0.4" />
+          {(() => {
+            const days = [
+              { d: 'Sat 17', v: 580, label: 'Match' },
+              { d: 'Sun 18', v: 180, label: 'Recovery' },
+              { d: 'Mon 19', v: 280, label: 'Off / Light' },
+              { d: 'Tue 20', v: 510, label: 'Tactical' },
+              { d: 'Wed 21', v: 460, label: 'Set-pieces' },
+              { d: 'Thu 22', v: 320, label: 'M-3' },
+              { d: 'Fri 23', v: 240, label: 'M-2 Light' },
+            ]
+            const xStep = 350 / (days.length - 1)
+            const yFor = (v: number) => 100 - (v / 600) * 80
+            const pts = days.map((d, i) => `${i * xStep},${yFor(d.v)}`).join(' ')
+            return <>
+              <polyline points={pts} fill="none" stroke="#EC4899" strokeWidth="2" />
+              {days.map((d, i) => <circle key={i} cx={i * xStep} cy={yFor(d.v)} r="3" fill="#EC4899" />)}
+              {days.map((d, i) => <text key={`d${i}`} x={i * xStep} y={97} textAnchor="middle" fill="#6B7280" fontSize="7">{d.d}</text>)}
+              {days.map((d, i) => <text key={`v${i}`} x={i * xStep} y={yFor(d.v) - 6} textAnchor="middle" fill="#9CA3AF" fontSize="6">{d.v}</text>)}
+            </>
+          })()}
+        </svg>
+      </ICard>
+
+      {/* GPS load by player — selectable players only (unavailable rows omitted, since they don't have load) */}
+      <ICard>
+        <IH3>GPS Load — Last Session (selectable players)</IH3>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Distance</th>
+          <th className="text-left p-3">HSR (m)</th>
+          <th className="text-left p-3">Sprints</th>
+          <th className="text-left p-3">Max Speed</th>
+          <th className="text-left p-3">A:C Ratio</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { n: 'N. Achterberg',  d: '11.4 km', h: '720', sp: 18, ms: '29.4', ac: '1.18', st: 'Optimal', c: '#22C55E' },
+          { n: 'S. Reyes',       d: '10.6 km', h: '680', sp: 22, ms: '28.7', ac: '1.22', st: 'Optimal', c: '#22C55E' },
+          { n: 'A. Patel',       d: '12.1 km', h: '540', sp: 12, ms: '26.8', ac: '1.10', st: 'Optimal', c: '#22C55E' },
+          { n: 'Lucy Whitmore',  d: '12.6 km', h: '580', sp: 14, ms: '27.2', ac: '1.32', st: 'High',    c: '#F59E0B' },
+          { n: 'O. Nakamura',    d: '11.8 km', h: '510', sp: 13, ms: '27.5', ac: '1.16', st: 'Optimal', c: '#22C55E' },
+          { n: 'J. Okonkwo',     d: '10.9 km', h: '480', sp: 9,  ms: '27.9', ac: '1.08', st: 'Optimal', c: '#22C55E' },
+          { n: 'F. Mireles',     d: '10.4 km', h: '450', sp: 8,  ms: '27.1', ac: '1.04', st: 'Optimal', c: '#22C55E' },
+          { n: 'Jade Osei',      d: '11.2 km', h: '620', sp: 16, ms: '28.4', ac: '1.14', st: 'Optimal', c: '#22C55E' },
+          { n: 'I. Beckett',     d: '11.0 km', h: '600', sp: 15, ms: '28.2', ac: '1.42', st: 'High',    c: '#F59E0B' },
+          { n: 'Abbi Walsh',     d: '10.8 km', h: '560', sp: 14, ms: '27.6', ac: '1.20', st: 'Optimal', c: '#22C55E' },
+          { n: 'Priya Nair',     d: '10.2 km', h: '530', sp: 16, ms: '28.0', ac: '1.06', st: 'Optimal', c: '#22C55E' },
+          { n: 'Charlotte Reed', d: '8.4 km',  h: '320', sp: 6,  ms: '24.5', ac: '0.82', st: 'Adapted', c: '#3B82F6' },
+          { n: 'Emily Zhang',    d: '7.9 km',  h: '280', sp: 4,  ms: '23.8', ac: '0.78', st: 'Adapted', c: '#3B82F6' },
+          { n: 'Emma Clarke',    d: '6.1 km',  h: '180', sp: 2,  ms: '21.4', ac: '1.00', st: 'GK plan', c: '#6B7280' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.d}</td><td className={ttd}>{r.h}</td><td className={ttd}>{r.sp}</td><td className={ttd}>{r.ms} km/h</td><td className={ttd}>{r.ac}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: `${r.c}20`, color: r.c }}>{r.st}</span></td></tr>)}</tbody></table></div>
+        <p className="text-[10px] mt-3 text-gray-500">A:C ratio (acute / chronic workload) — green &lt; 1.30 optimal · amber 1.30–1.50 high · red &gt; 1.50 elevated injury-risk per literature. Players on adapted-load show below-baseline numbers by design — clinical reasoning sits with Medical.</p>
+      </ICard>
+
+      {/* Training intensity zones */}
+      <ICard>
+        <IH3>Training Intensity Zones — Last 7 Days (% squad-minutes)</IH3>
+        <div className="space-y-2">{[
+          { l: 'Zone 1 — Low (recovery, walking)',         v: 22, c: '#22C55E' },
+          { l: 'Zone 2 — Moderate (jogging, technical)',   v: 38, c: '#3B82F6' },
+          { l: 'Zone 3 — High (running, tactical)',        v: 28, c: '#F59E0B' },
+          { l: 'Zone 4 — Max (sprint, HSR)',               v: 12, c: '#EF4444' },
+        ].map(z => <div key={z.l}>
+          <div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{z.l}</span><span className="text-gray-300 font-bold">{z.v}%</span></div>
+          <div className="h-2 rounded-full bg-gray-800"><div className="h-2 rounded-full" style={{ width: `${z.v}%`, backgroundColor: z.c }} /></div>
+        </div>)}</div>
+        <p className="text-[10px] mt-3 text-gray-500">Plan target band: Zone 3 + 4 combined 35–45% in match-week. Currently 40% — on target.</p>
+      </ICard>
+
+      {/* A:C workload ratio distribution */}
+      <ICard>
+        <IH3>A:C Workload Ratio — Squad Distribution</IH3>
+        <div className="grid grid-cols-3 gap-3 text-center">{[
+          { l: 'Optimal (<1.30)', v: 11, c: '#22C55E' },
+          { l: 'High (1.30–1.50)', v: 2, c: '#F59E0B' },
+          { l: 'Elevated (>1.50)', v: 0, c: '#EF4444' },
+        ].map(b => <div key={b.l} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+          <p className="text-2xl font-black" style={{ color: b.c }}>{b.v}</p>
+          <p className="text-[10px] text-gray-500 mt-1">{b.l}</p>
+        </div>)}</div>
+        <p className="text-[10px] mt-3 text-gray-500">Of 14 players with full GPS load this week. Lucy Whitmore + I. Beckett in High band — apply load cap or rest day. No elevated-band cases.</p>
+      </ICard>
+
+      {/* Conditioning compliance per player */}
+      <ICard>
+        <IH3>Conditioning Compliance — This Week (S&amp;C sessions)</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Planned</th>
+          <th className="text-left p-3">Attended</th>
+          <th className="text-left p-3">Compliance</th>
+        </tr></thead><tbody>{[
+          { n: 'Squad average',  p: 3, a: '2.8', c: '93%', sc: '#22C55E' },
+          { n: 'S. Reyes',       p: 3, a: '3',   c: '100%', sc: '#22C55E' },
+          { n: 'N. Achterberg',  p: 3, a: '3',   c: '100%', sc: '#22C55E' },
+          { n: 'O. Nakamura',    p: 3, a: '3',   c: '100%', sc: '#22C55E' },
+          { n: 'I. Beckett',     p: 3, a: '2',   c: '67%',  sc: '#F59E0B' },
+          { n: 'Priya Nair',     p: 3, a: '2',   c: '67%',  sc: '#F59E0B' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={`p-3 ${i === 0 ? 'text-pink-400 font-bold' : 'text-gray-200'}`}>{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.a}</td><td className="p-3"><span className="text-xs font-bold" style={{ color: r.sc }}>{r.c}</span></td></tr>)}</tbody></table>
+        <p className="text-[10px] mt-3 text-gray-500">Showing the 5 most-relevant rows. Full breakdown in S&amp;C log.</p>
+      </ICard>
+
+      {/* Fitness test results — pre-season baseline + last test */}
+      <ICard>
+        <IH3>Fitness Test Results — Pre-Season Baseline vs Last Test (May 2026)</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Metric</th>
+          <th className="text-left p-3">Squad Avg (Aug 25)</th>
+          <th className="text-left p-3">Squad Avg (May 26)</th>
+          <th className="text-left p-3">Delta</th>
+        </tr></thead><tbody>{[
+          { m: 'Yo-Yo IR1 (m)',         pre: '1,820', now: '2,140', d: '+18%', sc: '#22C55E' },
+          { m: 'Vertical jump (cm)',    pre: '42.6',  now: '44.1',  d: '+3.5%', sc: '#22C55E' },
+          { m: '20m sprint (s)',        pre: '3.18',  now: '3.11',  d: '−2.2%', sc: '#22C55E' },
+          { m: 'CMJ peak force (N)',    pre: '1,540', now: '1,610', d: '+4.5%', sc: '#22C55E' },
+          { m: 'Match HSR (m / 90)',    pre: '480',   now: '560',   d: '+17%',  sc: '#22C55E' },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.m}</td><td className={ttd}>{r.pre}</td><td className={ttd}>{r.now}</td><td className="p-3 text-xs font-bold" style={{ color: r.sc }}>{r.d}</td></tr>)}</tbody></table>
+        <p className="text-[10px] mt-3 text-gray-500">Season-long S&amp;C plan working. Next test block: Aug 2026 pre-season.</p>
+      </ICard>
+
+      {/* Weekly training plan (load periodisation) */}
+      <ICard>
+        <IH3>Weekly Training Plan — Periodisation</IH3>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Day</th>
+          <th className="text-left p-3">Focus</th>
+          <th className="text-left p-3">Load Target (AU)</th>
+          <th className="text-left p-3">Intensity</th>
+        </tr></thead><tbody>{[
+          { day: 'Mon',     f: 'Recovery + technical',          au: '180–280', i: 'Low'      },
+          { day: 'Tue',     f: 'Strength + tactical block',     au: '450–520', i: 'High'     },
+          { day: 'Wed',     f: 'Set-pieces + small-sided',      au: '420–480', i: 'Moderate' },
+          { day: 'Thu',     f: 'High-intensity intervals (M-3)', au: '300–360', i: 'Moderate' },
+          { day: 'Fri',     f: 'Light technical (M-2)',          au: '220–260', i: 'Low'      },
+          { day: 'Sat',     f: 'Activation + walk-through (M-1)', au: '120–160', i: 'Low'      },
+          { day: 'Sun',     f: 'MATCH',                          au: '550–650', i: 'Max'      },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.day}</td><td className={ttd}>{r.f}</td><td className={ttd}>{r.au}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-bold" style={{ backgroundColor: r.i === 'High' || r.i === 'Max' ? 'rgba(239,68,68,0.15)' : r.i === 'Moderate' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)', color: r.i === 'High' || r.i === 'Max' ? '#EF4444' : r.i === 'Moderate' ? '#F59E0B' : '#22C55E' }}>{r.i}</span></td></tr>)}</tbody></table>
+        <p className="text-[10px] mt-3 text-gray-500">Squad-wide template — individual modifications applied for adapted-load players (coordinated with Medical).</p>
       </ICard>
     </div>
   )
