@@ -212,13 +212,19 @@ function SharedCommonStrip() {
 function CEOContent() {
   return (
     <div className="space-y-6">
-      <SectionHeader title="CEO / Chairman View" subtitle="Financial performance, FSR compliance, and strategic KPIs" icon="🏛️" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="EOY Surplus (projected)" value="+£185k" sub="Net of all operating costs" color="green" />
-        <StatCard label="FSR Status" value="SAFE" sub="72% wage-to-revenue · £260k headroom" color="green" />
-        <StatCard label="3-Year Revenue Target" value="£4.2M" sub="By 2027/28" color="blue" />
-        <StatCard label="Karen Carney Score" value="91/100" sub="2 criteria outstanding" color="pink" />
+      <SectionHeader title="CEO / Chairman View" subtitle="Financial performance, FSR compliance, strategic plan, governance and stakeholder context" icon="🏛️" />
+
+      {/* 6-tile executive KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatCard label="League Position" value="5th" sub="WSL 2 · 34 pts" color="pink" />
+        <StatCard label="EOY Surplus (projected)" value="+£185k" sub="Net of operating costs" color="green" />
+        <StatCard label="FSR Status" value="SAFE" sub="72% WTR · £260k headroom" color="green" />
+        <StatCard label="3-Yr Revenue Target" value="£4.2M" sub="By 2027/28" color="blue" />
+        <StatCard label="Karen Carney" value="91/100" sub="2 criteria outstanding" color="pink" />
+        <StatCard label="Avg Attendance" value="3,050" sub="47% of 6,500 capacity" color="teal" />
       </div>
+
+      {/* Annual Financial Summary */}
       <ICard><IH3>Financial Summary (annual, projected)</IH3><table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Category</th><th className="text-left p-3">Budget</th><th className="text-left p-3">Actual / Projected</th><th className="text-left p-3">Variance</th></tr></thead><tbody>{[
         { c: 'Relevant Revenue', b: '£3.35M', a: '£3.25M', v: '−£100k',  vc: 'amber' },
         { c: 'Wage Bill',        b: '£2.34M', a: '£2.34M', v: 'On budget', vc: 'green' },
@@ -226,6 +232,78 @@ function CEOContent() {
         { c: 'Academy',          b: '£210k',  a: '£204k',  v: '+£6k',    vc: 'green' },
         { c: 'Net Position',     b: '—',      a: '+£185k', v: 'On budget', vc: 'green' },
       ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.c}</td><td className={ttd}>{r.b}</td><td className={ttd}>{r.a}</td><td className="p-3"><span className={`text-xs font-bold ${r.vc === 'green' ? 'text-green-400' : 'text-amber-400'}`}>{r.v}</span></td></tr>)}</tbody></table></ICard>
+
+      {/* Quarterly P&L — explains the +£185k EOY landing through the year */}
+      <ICard><IH3>P&amp;L by Quarter</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">YTD net +£230k after Q3 (current); Q4 forecast modest negative as summer commercial revenue lags pre-season costs.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Quarter</th>
+          <th className="text-left p-3">Revenue</th>
+          <th className="text-left p-3">Costs</th>
+          <th className="text-left p-3">Net</th>
+        </tr></thead><tbody>{[
+          { q: 'Q1 25/26 (Sep–Nov)',           r: '£820k',   c: '£780k',   n: '+£40k',  ok: true  },
+          { q: 'Q2 25/26 (Dec–Feb)',           r: '£620k',   c: '£640k',   n: '−£20k',  ok: false },
+          { q: 'Q3 25/26 (Mar–May, current)',  r: '£970k',   c: '£760k',   n: '+£210k', ok: true  },
+          { q: 'Q4 25/26 (Jun–Aug, fcst)',     r: '£840k',   c: '£885k',   n: '−£45k',  ok: false },
+          { q: 'EOY total (projected)',         r: '£3.25M',  c: '£3.07M',  n: '+£185k', ok: true  },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.q}</td><td className={ttd}>{r.r}</td><td className={ttd}>{r.c}</td><td className="p-3"><span className={`text-xs font-bold ${r.ok ? 'text-green-400' : 'text-amber-400'}`}>{r.n}</span></td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* FSR posture with the locked quarterly trend (matches Board Suite Finance tracker) */}
+      <ICard><IH3>FSR Posture</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Current wage-to-revenue 72% — within the 80% FSR cap. Quarterly trend matches the Board Suite Finance tracker (single source of truth on numbers).</p>
+        <div className="flex items-center gap-2 mb-4">{[
+          { q: 'Q4 24/25',         v: 70 },
+          { q: 'Q1 25/26',         v: 74 },
+          { q: 'Q2 25/26 (curr)',  v: 72 },
+        ].map(q => <div key={q.q} className="flex-1 text-center">
+          <div className="h-2 rounded-full mb-1 bg-gray-800"><div className="h-full rounded-full" style={{ width: `${q.v}%`, backgroundColor: q.v >= 78 ? '#EF4444' : q.v >= 70 ? '#F59E0B' : '#22C55E' }} /></div>
+          <span className="text-[10px] font-bold text-gray-400">{q.q}: {q.v}%</span>
+        </div>)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div><span className="text-gray-500">Wage Bill</span><div className="font-bold text-white">£2.34M</div></div>
+          <div><span className="text-gray-500">Cap (80%)</span><div className="font-bold text-white">£2.60M</div></div>
+          <div><span className="text-gray-500">Headroom</span><div className="font-bold text-green-400">£260k</div></div>
+          <div><span className="text-gray-500">Next submission</span><div className="font-bold text-white">Q2, opens 1 Jul</div></div>
+        </div>
+      </ICard>
+
+      {/* Strategic KPIs — 3-Year Plan, expanded to 5 lines */}
+      <ICard><IH3>Strategic KPIs — 3-Year Plan (2025–2028)</IH3><div className="space-y-3">{[
+        { l: 'Revenue growth to £4.2M',              v: 77,  c: '£3.25M of £4.2M'        },
+        { l: 'Avg attendance to 4,500',              v: 68,  c: '3,050 of 4,500'          },
+        { l: 'Standalone revenue % to 45%',          v: 69,  c: '31% of 45%'              },
+        { l: 'WSL 2 top-half finish (current year)', v: 100, c: '5th — On track'          },
+        { l: 'Karen Carney 95+',                     v: 96,  c: '91/100 of 95'            },
+      ].map(k => <div key={k.l}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{k.l}</span><span className="text-gray-300">{k.c} ({k.v}%)</span></div><div className="h-2 bg-gray-800 rounded-full"><div className="h-2 rounded-full bg-pink-500" style={{ width: `${k.v}%` }} /></div></div>)}</div></ICard>
+
+      {/* 3-Year horizon model */}
+      <ICard><IH3>3-Year Horizon Model</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Projections — board-approved working scenario. Updated quarterly against actuals.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Year</th>
+          <th className="text-left p-3">Revenue</th>
+          <th className="text-left p-3">Wage Bill</th>
+          <th className="text-left p-3">WTR</th>
+          <th className="text-left p-3">Attendance</th>
+          <th className="text-left p-3">League</th>
+        </tr></thead><tbody>{[
+          { y: '2025/26 (current)', rev: '£3.25M', w: '£2.34M', wtr: '72%', a: '3,050', lg: '5th WSL 2', curr: true  },
+          { y: '2026/27 (proj)',     rev: '£3.55M', w: '£2.55M', wtr: '72%', a: '3,400', lg: 'Top 4 WSL 2',  curr: false },
+          { y: '2027/28 (proj)',     rev: '£4.20M', w: '£3.00M', wtr: '71%', a: '4,500', lg: 'Promotion push', curr: false },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className={`p-3 ${r.curr ? 'text-pink-400 font-bold' : 'text-gray-300'}`}>{r.y}</td><td className={ttd}>{r.rev}</td><td className={ttd}>{r.w}</td><td className={ttd}>{r.wtr}</td><td className={ttd}>{r.a}</td><td className={ttd}>{r.lg}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Karen Carney standards — outstanding criteria detail */}
+      <ICard><IH3>Karen Carney Standards — Outstanding Criteria</IH3>
+        <div className="space-y-2">{[
+          { t: 'Independent Welfare Lead in post — interim cover only; permanent hire shortlist of 3, final interviews w/c 26 May, start 1 Jul 2026.', c: 'amber' },
+          { t: 'Annual welfare audit completed — scoped, scheduled for June 2026 to align with Q2 FSR submission window.',                            c: 'amber' },
+        ].map((c, i) => <div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${c.c === 'amber' ? 'border-amber-600/30 bg-amber-900/10' : 'border-red-600/30 bg-red-900/10'}`}>{c.t}</div>)}</div>
+      </ICard>
+
+      {/* Risk Register — shared snapshot */}
       <ICard><IH3>Risk Register (board snapshot)</IH3><p className="text-[10px] mb-3 text-gray-500">Shared with Board Suite Overview — single source of truth (src/data/womens/board-risks.ts). Full register on Board Suite → Governance → Risk Register.</p><div className="space-y-2">{RISK_OVERVIEW_SNAPSHOT.map((r, i) => (
         <div key={i} className="flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
           <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: `${r.color}15`, color: r.color }}>{r.level}</span>
@@ -235,11 +313,48 @@ function CEOContent() {
           </div>
         </div>
       ))}</div></ICard>
-      <ICard><IH3>Strategic KPIs — 3-Year Plan</IH3><div className="space-y-3">{[
-        { l: 'Revenue growth to £4.2M', v: 77, c: '£3.25M' },
-        { l: 'Avg attendance to 4,500',  v: 68, c: '3,050' },
-        { l: 'WSL top-half finish',      v: 100, c: '5th — On track' },
-      ].map(k => <div key={k.l}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{k.l}</span><span className="text-gray-300">{k.c} ({k.v}%)</span></div><div className="h-2 bg-gray-800 rounded-full"><div className="h-2 rounded-full bg-pink-500" style={{ width: `${k.v}%` }} /></div></div>)}</div></ICard>
+
+      {/* Board Action Queue — mirrors Board Suite Overview action items */}
+      <ICard><IH3>Board Action Queue</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Mirrors Board Suite Overview. 4 open · 1 done.</p>
+        <div className="space-y-2">{[
+          { icon: '📋', t: 'Board meeting: 12 Jun — agenda being drafted by Club Director',                       c: 'amber' },
+          { icon: '🩺', t: 'Welfare Lead recruitment: shortlist of 3 — final interviews scheduled w/c 26 May',     c: 'amber' },
+          { icon: '💷', t: 'FSR Q2 submission window opens 1 Jul — supporting evidence pack 80% complete',         c: 'amber' },
+          { icon: '🏟️', t: 'East terrace safety inspection booked: 7 Jun',                                          c: 'amber' },
+          { icon: '✅', t: 'Karen Carney self-assessment annual return — submitted Mar 2026',                      c: 'done'  },
+        ].map((a, i) => <div key={i} className={`flex items-center gap-3 p-3 border rounded-lg text-xs ${a.c === 'done' ? 'border-green-600/20 bg-green-900/10 text-gray-500 line-through' : 'border-amber-600/30 bg-amber-900/10 text-gray-300'}`}><span>{a.icon}</span><span>{a.t}</span></div>)}</div>
+      </ICard>
+
+      {/* Recent Highlights digest — commercial, press, community */}
+      <ICard><IH3>Recent Highlights — Last 30 days</IH3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-pink-400 mb-2">💼 Commercial</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· NovaTech UK sleeve renewal signed (£40k/yr through Dec 2026)</li>
+              <li>· Lumio Cycle partnership scoping with two prospective sponsors</li>
+              <li>· Hospitality utilisation up 9% YoY for the Harfield derby</li>
+            </ul>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-blue-400 mb-2">📰 Press</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· Crown Broadcasting feature pitch confirmed (welfare-tech focus)</li>
+              <li>· The Chronicle interview with Sarah Frost scheduled 30 May</li>
+              <li>· Northbridge Sport matchday access secured for 24 May fixture</li>
+            </ul>
+          </div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-green-400 mb-2">🌍 Community</p>
+            <ul className="text-[11px] text-gray-300 space-y-1">
+              <li>· Oakridge Council co-funded girls&apos; football days — 4 schools reached</li>
+              <li>· Fan Hub membership crossed 1,200 (+18% this quarter)</li>
+              <li>· Player visits programme: 6 visits delivered, 4 scheduled</li>
+            </ul>
+          </div>
+        </div>
+      </ICard>
     </div>
   )
 }
@@ -247,33 +362,160 @@ function CEOContent() {
 function DoFContent() {
   return (
     <div className="space-y-6">
-      <SectionHeader title="Director of Football View" subtitle="FSR headroom, transfers, and squad planning" icon="📋" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <SectionHeader title="Director of Football View" subtitle="Squad strategy, FSR headroom, transfers, dual-registration, scouting pipeline" icon="📋" />
+
+      {/* 6-tile KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard label="FSR Headroom" value="£260k" sub="Before 80% cap breach" color="green" />
         <StatCard label="Contract Expiries" value="2" sub="Senior, summer 2026" color="amber" />
         <StatCard label="Transfer Window" value="Opens 1 Jun" sub="Summer window" color="blue" />
-        <StatCard label="Squad Age (avg)" value="24.4" sub="22 senior players" color="pink" />
+        <StatCard label="Squad Size" value="22" sub="WSL 2 registered" color="pink" />
+        <StatCard label="Squad Age (avg)" value="24.4" sub="Median 24" color="teal" />
+        <StatCard label="Dual-Reg Active" value="3" sub="With Tier-3 sides" color="purple" />
       </div>
+
+      {/* Squad Overview triple-bar — quick snapshot of fitness / contracts / age */}
+      <ICard>
+        <IH3>Squad Overview (22 players)</IH3>
+        <div className="space-y-3">{[
+          { label: 'Fitness',   values: [{ l: 'Fit',         v: 18, c: '#22C55E' }, { l: 'Injured',     v:  3, c: '#EF4444' }, { l: 'Suspended', v: 1, c: '#F59E0B' }] },
+          { label: 'Contracts', values: [{ l: 'Expiring',    v:  2, c: '#EF4444' }, { l: 'Negotiating', v:  4, c: '#F59E0B' }, { l: 'Secure',    v: 16, c: '#22C55E' }] },
+          { label: 'Age',       values: [{ l: 'U21',         v:  4, c: '#3B82F6' }, { l: '21–25',       v:  9, c: '#0D9488' }, { l: '26–29',     v:  7, c: '#8B5CF6' }, { l: '30+',  v: 2, c: '#6B7280' }] },
+        ].map(row => (
+          <div key={row.label}>
+            <p className="text-xs mb-1 text-gray-500">{row.label}</p>
+            <div className="flex h-4 rounded-full overflow-hidden bg-gray-800">
+              {row.values.map(v => <div key={v.l} style={{ width: `${(v.v / 22) * 100}%`, backgroundColor: v.c }} title={`${v.l}: ${v.v}`} />)}
+            </div>
+            <div className="flex flex-wrap gap-3 mt-1">{row.values.map(v => <span key={v.l} className="text-[10px]" style={{ color: v.c }}>{v.l}: {v.v}</span>)}</div>
+          </div>
+        ))}</div>
+      </ICard>
+
+      {/* FSR Headroom Tracker with quarterly trend */}
       <ICard>
         <IH3>FSR Headroom Tracker</IH3>
         <div className="flex justify-between text-xs mb-2"><span className="text-gray-400">£2.34M spent</span><span className="text-gray-400">£2.60M cap (80%)</span></div>
         <div className="h-4 bg-gray-800 rounded-full overflow-hidden mb-2"><div className="h-full rounded-full bg-pink-500" style={{ width: '90%' }} /></div>
-        <div className="text-xs text-teal-400 mb-4">Headroom: £260k</div>
-        <IH3>Proposed Signings Impact</IH3>
+        <div className="text-xs text-teal-400 mb-4">Headroom: £260k · current quarter 72%</div>
+        <p className="text-[10px] mb-2 text-gray-500">Quarterly trend (matches Board Suite Finance &amp; CEO tabs):</p>
+        <div className="flex items-center gap-2 mb-4">{[
+          { q: 'Q4 24/25',        v: 70 },
+          { q: 'Q1 25/26',        v: 74 },
+          { q: 'Q2 25/26 (curr)', v: 72 },
+        ].map(q => <div key={q.q} className="flex-1 text-center">
+          <div className="h-2 rounded-full mb-1 bg-gray-800"><div className="h-full rounded-full" style={{ width: `${q.v}%`, backgroundColor: q.v >= 78 ? '#EF4444' : q.v >= 70 ? '#F59E0B' : '#22C55E' }} /></div>
+          <span className="text-[10px] font-bold text-gray-400">{q.q}: {q.v}%</span>
+        </div>)}</div>
+      </ICard>
+
+      {/* Proposed signings + departures impact on FSR headroom */}
+      <ICard>
+        <IH3>Proposed Signings &amp; Departures — FSR Impact</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Running headroom after each move. Departures free space; signings consume it.</p>
         <div className="space-y-2">{[
-          { t: 'LB — invented target A (Tier-3 side)',          s: '£42k', h: '£218k', c: 'green' },
-          { t: 'FW — invented target B (overseas senior side)', s: '£68k', h: '£150k', c: 'green' },
-          { t: 'CM — placeholder (TBC)',                         s: '£90k', h: '£60k',  c: 'amber' },
+          { t: '↑ Signing  · LB — K. Holm (Northern Lights FC, Tier 3)',         s: '−£42k',  h: '£218k', c: 'green' },
+          { t: '↑ Signing  · FW — M. Sandhu (Riverside Athletic Women, Tier 3)', s: '−£68k',  h: '£150k', c: 'green' },
+          { t: '↑ Signing  · CM — L. Tanaka (overseas senior side)',              s: '−£90k',  h: '£60k',  c: 'amber' },
+          { t: '↓ Departure · GK — backup keeper out of contract (no renewal)',   s: '+£28k',  h: '£88k',  c: 'green' },
+          { t: '↓ Departure · MID — placeholder loan-back',                       s: '+£18k',  h: '£106k', c: 'green' },
         ].map((r, i) => <div key={i} className="flex items-center justify-between p-3 bg-[#0a0c14] border border-gray-800 rounded-lg"><div className="text-xs text-gray-200">{r.t}</div><div className="flex items-center gap-4 text-xs"><span className="text-gray-500">{r.s}</span><span className={`font-bold ${r.c === 'green' ? 'text-green-400' : 'text-amber-400'}`}>→ {r.h}</span></div></div>)}</div>
       </ICard>
+
+      {/* Contract Expiry Pipeline — 2 senior matching Board Suite Risk Register */}
       <ICard>
         <IH3>Contract Expiry Pipeline</IH3>
-        <p className="text-[10px] mb-3 text-gray-500">Matches Board Suite: "Two senior player contracts expire summer 2026" (S. Reyes, A. Patel).</p>
+        <p className="text-[10px] mb-3 text-gray-500">Matches Board Suite Risk Register: "Two senior player contracts expire summer 2026" (S. Reyes, A. Patel). Plus the U21 and rolling-renewal context.</p>
         <table className="w-full text-sm"><thead><tr className={thd}><th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Ends</th><th className="text-left p-3">Value</th><th className="text-left p-3">Action</th></tr></thead><tbody>{[
-          { n: 'S. Reyes',  p: 'ST', e: 'Jun 2026', v: '£68k/yr', a: 'Renewal priority 1 — top scorer' },
-          { n: 'A. Patel',  p: 'CM', e: 'Jun 2026', v: '£55k/yr', a: 'Renewal talks open' },
+          { n: 'S. Reyes',         p: 'ST',  e: 'Jun 2026', v: '£68k/yr', a: 'Renewal priority 1 — top scorer'           },
+          { n: 'A. Patel',         p: 'CM',  e: 'Jun 2026', v: '£55k/yr', a: 'Renewal talks open — board approval Jun'   },
+          { n: 'N. Achterberg',    p: 'LW',  e: 'Jun 2027', v: '£44k/yr', a: '12-month rolling — monitor'                 },
+          { n: 'J. Okonkwo',       p: 'CB',  e: 'Jun 2027', v: '£42k/yr', a: 'Negotiating extension'                      },
+          { n: "Niamh O'Brien",    p: 'CB',  e: 'Aug 2026', v: 'Scholarship', a: 'Pro contract offer drafted (U18 → U21)' },
         ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.e}</td><td className={ttd}>{r.v}</td><td className="p-3 text-xs text-pink-400">{r.a}</td></tr>)}</tbody></table>
       </ICard>
+
+      {/* Squad depth by position */}
+      <ICard>
+        <IH3>Squad Depth by Position</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">22 senior + dual-registered academy bridges. Forward depth thinnest — informs window priorities.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Position</th>
+          <th className="text-left p-3">Senior</th>
+          <th className="text-left p-3">Academy / Dual-Reg</th>
+          <th className="text-left p-3">Total</th>
+          <th className="text-left p-3">Window Priority</th>
+        </tr></thead><tbody>{[
+          { p: 'GK',  s: 2, a: 1, prio: 'Backup-keeper signing planned' },
+          { p: 'DEF', s: 6, a: 1, prio: 'Adequate'                       },
+          { p: 'MID', s: 6, a: 1, prio: 'CM target identified'            },
+          { p: 'FWD', s: 4, a: 2, prio: 'Thin — depth signing required'   },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.p}</td><td className={ttd}>{r.s}</td><td className={ttd}>{r.a}</td><td className="p-3 text-xs text-white font-bold">{r.s + r.a}</td><td className="p-3 text-xs text-pink-400">{r.prio}</td></tr>)}</tbody></table>
+      </ICard>
+
+      {/* Form & xG-diff trend (last 8 matches) */}
+      <ICard>
+        <IH3>Form &amp; xG-Diff Trend (last 8)</IH3>
+        <div className="flex gap-2 mb-3">{['W', 'D', 'W', 'L', 'W', 'W', 'D', 'L'].map((r, i) => <span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${r === 'W' ? 'bg-green-600/20 text-green-400' : r === 'L' ? 'bg-red-600/20 text-red-400' : 'bg-amber-600/20 text-amber-400'}`}>{r}</span>)}</div>
+        <svg viewBox="0 0 320 60" className="w-full max-w-md" style={{ height: 60 }}>
+          <line x1="0" y1="30" x2="320" y2="30" stroke="#1F2937" strokeWidth="0.5" strokeDasharray="2,2" />
+          {(() => {
+            const vals = [-0.5, -0.2, 1.2, 0.6, -0.1, 1.1, 0.8, -0.4]
+            const xStep = 320 / (vals.length - 1)
+            const yFor = (v: number) => 30 - (v / 1.5) * 24
+            const pts = vals.map((v, i) => `${i * xStep},${yFor(v)}`).join(' ')
+            return (
+              <>
+                <polyline points={pts} fill="none" stroke="#EC4899" strokeWidth="2" />
+                {vals.map((v, i) => <circle key={i} cx={i * xStep} cy={yFor(v)} r="3" fill={v >= 0 ? '#22C55E' : '#EF4444'} />)}
+                {vals.map((v, i) => <text key={`t${i}`} x={i * xStep} y={yFor(v) - 6} textAnchor="middle" fill="#9CA3AF" fontSize="7">{v >= 0 ? `+${v.toFixed(1)}` : v.toFixed(1)}</text>)}
+              </>
+            )
+          })()}
+        </svg>
+        <p className="text-[10px] mt-2 text-gray-500">xG difference per match — most recent on right. Average xG diff last 8: +0.31. Improving trend.</p>
+      </ICard>
+
+      {/* Scout targets — brand-safe fictional sides */}
+      <ICard>
+        <IH3>Scout Targets</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Active scouting pipeline for summer 2026 window. All targets at fictional Tier-3 / overseas / free-agent level — illustrative demo data.</p>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Club</th>
+          <th className="text-left p-3">Age</th>
+          <th className="text-left p-3">Pos</th>
+          <th className="text-left p-3">Value</th>
+          <th className="text-left p-3">Rating</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { n: 'K. Holm',      cl: 'Northern Lights FC',          a: 22, p: 'LB',  v: '£42k', r: '★★★★☆', s: 'Approached',   c: '#F59E0B' },
+          { n: 'M. Sandhu',    cl: 'Riverside Athletic Women',     a: 24, p: 'FW',  v: '£68k', r: '★★★★☆', s: 'Bid pending',  c: '#EF4444' },
+          { n: 'L. Tanaka',    cl: 'Overseas senior side',         a: 26, p: 'CM',  v: '£90k', r: '★★★★★', s: 'Watching',     c: '#6B7280' },
+          { n: 'F. Bauer',     cl: 'Castleton United Women',       a: 19, p: 'RB',  v: '£28k', r: '★★★☆☆', s: 'Reported',     c: '#6B7280' },
+          { n: 'O. Beaumont',  cl: 'Free agent',                   a: 28, p: 'GK',  v: '£0',   r: '★★★☆☆', s: 'Final stages', c: '#F59E0B' },
+        ].map((t, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{t.n}</td><td className={ttd}>{t.cl}</td><td className={ttd}>{t.a}</td><td className={ttd}>{t.p}</td><td className={ttd}>{t.v}</td><td className="p-3 text-pink-400 text-xs">{t.r}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: `${t.c}20`, color: t.c }}>{t.s}</span></td></tr>)}</tbody></table></div>
+      </ICard>
+
+      {/* Dual-Registration Status — Women's-specific */}
+      <ICard>
+        <IH3>Dual-Registration Status</IH3>
+        <p className="text-[10px] mb-3 text-gray-500">Women&apos;s-game-specific arrangement: senior players with limited minutes / academy bridges retain dual registration with Tier-3 sides for matchday exposure.</p>
+        <table className="w-full text-sm"><thead><tr className={thd}>
+          <th className="text-left p-3">Player</th>
+          <th className="text-left p-3">Pos</th>
+          <th className="text-left p-3">Partner Club</th>
+          <th className="text-left p-3">Tier</th>
+          <th className="text-left p-3">Status</th>
+        </tr></thead><tbody>{[
+          { n: 'N. Lakeman',   p: 'MID', cl: 'Cliffe Town Women U23',        t: 'Tier 4', st: 'Active — 8 minutes-rich games' },
+          { n: 'B. Osei',      p: 'GK',  cl: 'Oakridge Reserves',             t: 'Tier 4', st: 'Active — rotation keeper'      },
+          { n: 'P. Diallo',    p: 'LW',  cl: 'Local U21 development side',    t: 'U21',    st: 'Active — academy bridge'        },
+        ].map((r, i) => <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.cl}</td><td className={ttd}>{r.t}</td><td className="p-3 text-xs text-teal-400">{r.st}</td></tr>)}</tbody></table>
+        <p className="text-[10px] mt-3 text-gray-500">Pipeline: 2 academy players nominated for next window (Niamh O&apos;Brien, Isla Pearce).</p>
+      </ICard>
+
+      {/* Squad age distribution (carried over) */}
       <ICard>
         <IH3>Squad Age Distribution (22 players)</IH3>
         <svg viewBox="0 0 200 80" className="w-full max-w-xs" style={{ height: 80 }}>
@@ -282,6 +524,31 @@ function DoFContent() {
             return <g key={i}><rect x={x} y={70 - h} width={35} height={h} fill="#EC4899" rx="3" opacity="0.8" /><text x={x + 17.5} y={78} textAnchor="middle" fill="#9CA3AF" fontSize="8">{b.l}</text><text x={x + 17.5} y={66 - h} textAnchor="middle" fill="#F9FAFB" fontSize="9" fontWeight="700">{b.v}</text></g>
           })}
         </svg>
+      </ICard>
+
+      {/* Transfer Window Timeline */}
+      <ICard>
+        <IH3>Summer 2026 Transfer Window — Timeline</IH3>
+        <div className="relative pl-6">
+          <div className="absolute left-[7px] top-0 bottom-0 w-px bg-gray-800" />
+          {[
+            { date: '26 May 2026',  task: 'Final squad review — DoF + Head Coach',           current: true  },
+            { date: '1 Jun 2026',   task: 'Summer window opens',                              current: false },
+            { date: '5 Jun 2026',   task: 'Target shortlist finalised — submitted to board',  current: false },
+            { date: '12 Jun 2026',  task: 'Board meeting — transfer plan approval',           current: false },
+            { date: '30 Jun 2026',  task: 'Pre-season camp begins (Lake District)',           current: false },
+            { date: '1 Sep 2026',   task: 'Summer window closes',                             current: false },
+            { date: '8 Sep 2026',   task: 'WSL 2 registration deadline',                      current: false },
+          ].map((m, i) => (
+            <div key={i} className="relative flex items-start gap-4 pb-3">
+              <div className="absolute left-[-18px] w-3.5 h-3.5 rounded-full" style={{ backgroundColor: m.current ? '#EC4899' : '#1F2937', border: '2px solid #0D1117', top: 2 }} />
+              <div>
+                <p className={`text-xs font-bold ${m.current ? 'text-pink-400' : 'text-white'}`}>{m.date}</p>
+                <p className="text-xs text-gray-500">{m.task}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </ICard>
     </div>
   )
