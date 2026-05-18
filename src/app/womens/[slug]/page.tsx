@@ -263,34 +263,33 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
 
   const coachContent = () => (
     <div className="space-y-6">
-      <SectionHeader title="Head Coach View" subtitle="Performance, cycle overlay, and squad readiness" icon="🎽" />
+      <SectionHeader title="Head Coach View" subtitle="Performance and squad availability" icon="🎽" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Squad Available" value="19/24" sub="5 unavailable (injury/cycle load cap)" color="pink" />
-        <StatCard label="Today's ACL Flags" value="2" sub="Emily Zhang · Priya Nair" color="red" />
+        <StatCard label="Squad Available" value="19/24" sub="5 unavailable today" color="pink" />
+        <StatCard label="Today's Adapted Load" value="3" sub="On modified-load recs (squad-wide)" color="amber" />
         <StatCard label="xG Last Match" value="0.31" sub="vs Hartwell Women (L 0–1)" color="amber" />
         <StatCard label="Next Match" value="Sat 12 Apr" sub="vs Castleton Women (A)" color="blue" />
       </div>
       <ICard>
-        <IH3>Squad Readiness — Cycle Phase Overlay</IH3>
+        <IH3>Squad Availability</IH3>
         <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className={thd}>
-          <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Fitness</th><th className="text-left p-3">Cycle</th><th className="text-left p-3">Load Cap</th><th className="text-left p-3">ACL</th><th className="text-left p-3">Available</th>
+          <th className="text-left p-3">Player</th><th className="text-left p-3">Pos</th><th className="text-left p-3">Fitness</th><th className="text-left p-3">Load Cap</th><th className="text-left p-3">Available</th>
         </tr></thead><tbody>
           {[
-            {n:'Emma Clarke',p:'GK',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
-            {n:'Priya Nair',p:'FW',f:'92%',c:'Ovulatory',lc:'95%',acl:'⚠ Laxity',av:'✓',avC:'amber'},
-            {n:'Emily Zhang',p:'CM',f:'88%',c:'Luteal',lc:'60%',acl:'🔴 High risk',av:'Limited',avC:'red'},
-            {n:'Charlotte Reed',p:'CB',f:'95%',c:'Menstrual',lc:'65%',acl:'—',av:'Limited',avC:'amber'},
-            {n:'Jade Osei',p:'LB',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
-            {n:'Abbi Walsh',p:'RM',f:'97%',c:'Luteal',lc:'80%',acl:'⚠ Luteal',av:'✓',avC:'amber'},
-            {n:'Lucy Whitmore',p:'CM',f:'100%',c:'Follicular',lc:'100%',acl:'—',av:'✓',avC:'green'},
-            {n:'Sophie Turner',p:'CB',f:'40%',c:'—',lc:'RTP P3',acl:'—',av:'No — injured',avC:'red'},
+            {n:'Emma Clarke',p:'GK',f:'100%',lc:'100%',av:'Available',avC:'green'},
+            {n:'Priya Nair',p:'FW',f:'92%',lc:'95%',av:'Available',avC:'green'},
+            {n:'Emily Zhang',p:'CM',f:'88%',lc:'60%',av:'Adapted load',avC:'amber'},
+            {n:'Charlotte Reed',p:'CB',f:'95%',lc:'65%',av:'Adapted load',avC:'amber'},
+            {n:'Jade Osei',p:'LB',f:'100%',lc:'100%',av:'Available',avC:'green'},
+            {n:'Abbi Walsh',p:'RM',f:'97%',lc:'80%',av:'Available',avC:'green'},
+            {n:'Lucy Whitmore',p:'CM',f:'100%',lc:'100%',av:'Available',avC:'green'},
+            {n:'Sophie Turner',p:'CB',f:'40%',lc:'—',av:'Unavailable',avC:'red'},
           ].map((r,i)=>{
-            const lcN=parseInt(r.lc);const lcC=isNaN(lcN)?'text-blue-400':lcN<=65?'text-red-400':lcN<=85?'text-amber-400':'text-green-400';
+            const lcN=parseInt(r.lc);const lcC=isNaN(lcN)?'text-gray-500':lcN<=65?'text-red-400':lcN<=85?'text-amber-400':'text-green-400';
             const avB=r.avC==='green'?'bg-green-600/20 text-green-400':r.avC==='amber'?'bg-amber-600/20 text-amber-400':'bg-red-600/20 text-red-400';
             return<tr key={i} className="border-b border-gray-800/50">
-              <td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.f}</td><td className={ttd}>{r.c}</td>
+              <td className="p-3 text-gray-200 font-medium">{r.n}</td><td className={ttd}>{r.p}</td><td className={ttd}>{r.f}</td>
               <td className="p-3"><span className={`text-xs font-bold ${lcC}`}>{r.lc}</span></td>
-              <td className="p-3">{r.acl.startsWith('🔴')?<span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400">{r.acl}</span>:r.acl.startsWith('⚠')?<span className="text-[10px] px-2 py-0.5 rounded bg-amber-600/20 text-amber-400">{r.acl}</span>:<span className="text-gray-600">—</span>}</td>
               <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded ${avB}`}>{r.av}</span></td>
             </tr>;
           })}
@@ -308,7 +307,7 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
       </ICard>
       <ICard>
         <IH3>Tactical Notes — Next Opponent (Castleton Women)</IH3>
-        <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Cycle consideration: 3 players in high-load-cap phases. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
+        <div className="space-y-2">{['Press trigger: Bristol play out from back. High press in first 10 minutes effective.','Set piece threat: Bristol score 38% of goals from corners. Zonal or man-mark decision required.','Load consideration: 3 players on modified-load today. Conserve energy in transitions.'].map((t,i)=><div key={i} className="p-3 bg-[#0a0c14] border border-gray-800 rounded-lg text-xs text-gray-300">• {t}</div>)}</div>
       </ICard>
     </div>
   );
@@ -354,7 +353,7 @@ const InsightsView = ({ club, defaultRole }: { club: WomensClub; defaultRole?: s
         <StatCard label="Check-ins Overdue" value="2" sub="Action required" color="red" />
         <StatCard label="Carney Compliance" value="91%" sub="2 criteria below threshold" color="green" />
       </div>
-      <ICard><IH3>Priority Actions Today</IH3><div className="space-y-2">{[{t:'Emily Zhang — ACL composite 87/100. Immediate load reduction to 60% and physio consultation.',c:'red'},{t:'Priya Nair — Ovulatory phase + yellow card risk. Substitution recommended before 60 min.',c:'amber'},{t:'Ava Mitchell — Maternity leave starts May 2026. Pre-leave medical due by 30 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
+      <ICard><IH3>Priority Actions Today</IH3><div className="space-y-2">{[{t:'ACL risk bands today: 17 low · 3 moderate · 2 elevated. Confirm with Club Doctor that intervention pathway is active for the elevated cases.',c:'red'},{t:'Cycle module: 8 of 22 squad have not yet had the opt-in conversation. Schedule sessions over the next 2 weeks.',c:'amber'},{t:'Maternity pathway: 1 active case at Stage 4. Pre-leave medical coordinated with Club Doctor — due by 30 Apr.',c:'blue'}].map((a,i)=><div key={i} className={`p-3 border rounded-lg text-xs text-gray-300 ${a.c==='red'?'border-red-600/30 bg-red-900/10':a.c==='amber'?'border-amber-600/30 bg-amber-900/10':'border-blue-600/30 bg-blue-900/10'}`}>{a.t}</div>)}</div></ICard>
       <ICard><IH3>Cycle Phase Summary — Squad Today</IH3><div className="space-y-2">{[{l:'Menstrual',v:3,c:'bg-red-500'},{l:'Follicular',v:8,c:'bg-pink-500'},{l:'Ovulatory',v:3,c:'bg-purple-500'},{l:'Luteal',v:8,c:'bg-amber-500'}].map(p=><div key={p.l} className="flex items-center gap-3"><div className="w-20 text-xs text-gray-400">{p.l}</div><div className="flex-1 bg-gray-800 rounded-full h-3"><div className={`${p.c} h-3 rounded-full`} style={{width:`${(p.v/22)*100}%`}}/></div><span className="text-xs text-gray-300 w-8 text-right">{p.v}</span></div>)}</div></ICard>
       <ICard><IH3>Karen Carney Review — Welfare Criteria</IH3><div className="space-y-1.5">{[{t:'Licensed performance psychologist available',s:'✓'},{t:'Monthly wellbeing check-ins logged',s:'✓'},{t:'Maternity policy documented and enacted',s:'✓'},{t:'Mental health first aider on staff',s:'✓'},{t:'PFA referral pathway in place',s:'✓'},{t:'No selection pressure during recovery',s:'✓'},{t:'Independent welfare officer appointed (in progress)',s:'⚠'},{t:'Annual welfare audit completed (due Jun 2026)',s:'⚠'}].map((c,i)=><div key={i} className="flex items-center gap-2 text-xs"><span className={c.s==='✓'?'text-green-400':'text-amber-400'}>{c.s}</span><span className="text-gray-300">{c.t}</span></div>)}</div></ICard>
     </div>
