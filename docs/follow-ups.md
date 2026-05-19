@@ -117,6 +117,38 @@ When picked up:
 Priority: should be done before the next significant football demo
 to JOHAN, Snowball, or other partnership prospects.
 
+## Junior portal — WOMENS_* → JUNIOR_* identifier rename
+
+The junior portal was scaffolded by copying the women's data + modules
+files verbatim (per the 1B plan), so the inherited identifier names
+(`WOMENS_ORG`, `WOMENS_FIXTURES`, `WOMENS_INBOX`, `WOMENS_ACCENT`,
+`WOMENS_SQUAD`, etc.) still appear in:
+
+- `src/app/junior/[slug]/_lib/junior-dashboard-data.ts`
+- `src/app/junior/[slug]/_components/JuniorDashboardModules.tsx`
+
+These will get renamed to `JUNIOR_*` alongside the real junior data
+rewrite (Workstream B — live Supabase data layer). Pure rename is
+mechanical, but the data rewrite is the natural moment because the
+*contents* of those exports change too (junior squad data, junior
+fixtures, junior inbox, etc., not women's first-team data).
+
+Dead `'pink'` string tokens to clean up at the same time
+(inherited from women's data, harmless because they fall through
+to `accent.hex` which is now green, but cosmetically out of place):
+
+- `WfStatTone` union — drop the `'pink'` literal
+  (`junior-dashboard-data.ts:19`)
+- `WfInboxChannel.tone` union — drop the `'pink'` literal
+  (`junior-dashboard-data.ts:34`)
+- Player Welfare channel record — change `tone: 'pink'` to a
+  green-family token (likely `'green'` or `'accent'`)
+  (`junior-dashboard-data.ts:48`)
+
+Risk: the rename touches a lot of lines but is mechanical. Best
+done as a dedicated rename commit so it doesn't bury substantive
+data changes in the diff.
+
 ## Football quotes location
 
 `FOOTBALL_QUOTES` is now duplicated across THREE locations:
