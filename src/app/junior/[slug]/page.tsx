@@ -18,8 +18,9 @@
 // — same SIDEBAR_ITEMS / DashboardView pattern, junior naming and
 // junior-specific KPIs.
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -968,6 +969,21 @@ function SettingsView({
 
 function JuniorPortalInner({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('today')
+
+  // Role-switcher state layer. The active role is held in React state so the
+  // RoleSwitcher control in the sidebar can drive sidebar filtering, role-
+  // aware labels and role-gated dispatch without mutating the immutable
+  // SportsDemoSession prop. effectiveSession is a spread-override that
+  // substitutes the live activeRole onto session.role; non-role fields
+  // (userName, email, isDemoShell, photoDataUrl, sport, etc.) flow through
+  // unchanged. Pass effectiveSession at every site where role drives
+  // behaviour — see the role-switcher report for the audited 7-site list.
+  const [activeRole, setActiveRole] = useState(session.role)
+  const effectiveSession = useMemo(
+    () => ({ ...session, role: activeRole }),
+    [session, activeRole],
+  )
+
   // Tranche 3 — Send Message composer is a modal, not a sidebar destination.
   // The quick-action with target === 'send_message' is intercepted by
   // handleNavigate below and opens the modal instead of calling
@@ -987,11 +1003,12 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
     setActiveSection(id)
   }
 
-  // Apply per-role sidebar gating. Fall back to 'all' if the session role
-  // isn't in the config (e.g., an unrecognised demo role) — failing open
-  // is the right call for a demo shell; failing closed could hide content
-  // from a stakeholder mid-walkthrough.
-  const roleConfig = JUNIOR_ROLE_CONFIG[session.role]
+  // Apply per-role sidebar gating. Fall back to 'all' if the role isn't
+  // in the config (e.g., an unrecognised demo role) — failing open is the
+  // right call for a demo shell; failing closed could hide content from a
+  // stakeholder mid-walkthrough. Reads effectiveSession.role so the
+  // RoleSwitcher re-filters the sidebar live.
+  const roleConfig = JUNIOR_ROLE_CONFIG[effectiveSession.role]
   const sidebarItems =
     !roleConfig || roleConfig.sidebar === 'all'
       ? JUNIOR_SIDEBAR_ITEMS
@@ -1047,7 +1064,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                         }}
                       >
                         <span>{item.icon}</span>
-                        <span>{roleAwareLabel(item, session.role)}</span>
+                        <span>{roleAwareLabel(item, effectiveSession.role)}</span>
                       </button>
                     )
                   })}
@@ -1056,15 +1073,30 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             )
           })}
         </nav>
-        <div className="p-3 text-[10px] shrink-0" style={{ borderTop: '1px solid #1F2937', color: '#6B7280' }}>
-          Signed in as <span style={{ color: '#22C55E' }}>{session.userName || session.email}</span><br />
-          Role <span style={{ color: '#22C55E' }}>{roleConfig?.label ?? session.role}</span>{session.isDemoShell !== false ? ' · Demo shell' : ' · Live'}
+        {/* Interactive role switcher (replaces the static role-indicator pill).
+            The shared RoleSwitcher persists the switched role to
+            localStorage[lumio_sports_demo_junior] — same behaviour as every
+            other sports portal. The "Demo shell / Live" indicator line
+            preserves the signal the old static pill carried. Switching the
+            role re-routes to 'today' so the user always lands on a section
+            their new role can see. */}
+        <div className="p-3 shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+          <RoleSwitcher
+            session={effectiveSession}
+            roles={JUNIOR_ROLES}
+            accentColor="#16A34A"
+            onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('today') }}
+            sidebarCollapsed={false}
+          />
+          <p className="px-2 pt-2 text-[10px]" style={{ color: '#6B7280' }}>
+            {effectiveSession.isDemoShell !== false ? 'Demo shell' : 'Live'}
+          </p>
         </div>
       </aside>
 
       <main className="flex-1 p-6 overflow-x-hidden">
         {activeSection === 'today' && (
-          <TodayView club={club} session={session} onNavigate={handleNavigate} />
+          <TodayView club={club} session={effectiveSession} onNavigate={handleNavigate} />
         )}
         {activeSection === 'safeguarding' && (
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
@@ -1080,7 +1112,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             item is active (renders as "My Player" for parents). For staff,
             the 'squad' item still falls through to the placeholder below
             until the staff Squad view is built. */}
-        {activeSection === 'squad' && session.role === 'parent_guardian' && (
+        {activeSection === 'squad' && effectiveSession.role === 'parent_guardian' && (
           <JuniorParentApp
             session={session}
             demoChild={club.demoChild}
@@ -1110,7 +1142,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         {/* Staff Squad management — full module as of Tranche 1. The
             parent_guardian dispatch of 'squad' to JuniorParentApp above
             is unchanged. */}
-        {activeSection === 'squad' && session.role !== 'parent_guardian' && (
+        {activeSection === 'squad' && effectiveSession.role !== 'parent_guardian' && (
           <JuniorSquadManagement session={session} demoChild={club.demoChild} />
         )}
 
