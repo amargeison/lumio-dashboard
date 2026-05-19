@@ -47,6 +47,7 @@ import JuniorFundraising from './_components/JuniorFundraising'
 import JuniorTravel from './_components/JuniorTravel'
 import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
+import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -505,10 +506,16 @@ interface QuickAction {
   target: string
 }
 
-// Role-aware quick actions. Six per role to match the women's bar
-// length convention. Targets must be sidebar item ids the role can
-// see (the filtered sidebar) — clicking a hidden target is a no-op
-// on a role's surface, which is fine for demo.
+// Role-aware quick actions. Originally 5–6 per role to match the women's bar
+// length convention. Tranche 3 adds a 'send_message' action to every role;
+// target 'send_message' is the special string intercepted by handleNavigate
+// in JuniorPortalInner to open JuniorSendMessageModal rather than a sidebar
+// section. academy_lead is also added here as an explicit entry so it no
+// longer falls back to chairman.
+//
+// Targets must be sidebar item ids the role can see, OR the modal-special
+// 'send_message'. Clicking a hidden sidebar target is a no-op on a role's
+// surface, which is fine for demo.
 const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
   chairman: [
     { id: 'view_charter',       label: 'FA Charter status',     icon: '✅', target: 'club_team' },
@@ -517,6 +524,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
     { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
     { id: 'open_settings',      label: 'Club settings',         icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   coach: [
     { id: 'view_squad',         label: 'Today\'s squad',        icon: '👥', target: 'squad' },
@@ -525,6 +533,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_performance',   label: 'GPS & performance',     icon: '📡', target: 'performance' },
     { id: 'view_safeguarding',  label: 'Consent status',        icon: '🛡️', target: 'safeguarding' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   team_manager: [
     { id: 'view_squad',         label: 'Squad & availability',  icon: '👥', target: 'squad' },
@@ -533,6 +542,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
     { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   welfare_officer: [
     { id: 'view_safeguarding',  label: 'Open safeguarding',     icon: '🛡️', target: 'safeguarding' },
@@ -540,9 +550,19 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_squad',         label: 'Players directory',     icon: '👥', target: 'squad' },
     { id: 'view_today',         label: 'Today briefing',        icon: '🏠', target: 'today' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
-    // welfare_officer has 5 explicit; one slot left blank intentionally
-    // (the role's surface is lean — padding with irrelevant actions would
-    // dilute focus).
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
+    // welfare_officer originally had 5 explicit; Tranche 3 adds send_message.
+  ],
+  academy_lead: [
+    // Tranche 3 — explicit entry so academy_lead no longer falls back to
+    // chairman. Targets are sidebar ids the role can see (today, squad,
+    // development, coach_toolkit, performance_brief, match_video).
+    { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
+    { id: 'view_squad',         label: 'Squad overview',        icon: '👥', target: 'squad' },
+    { id: 'view_coach_toolkit', label: 'Coach Toolkit',         icon: '🎽', target: 'coach_toolkit' },
+    { id: 'view_brief',         label: 'AI Performance Brief',  icon: '🤖', target: 'performance_brief' },
+    { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   parent_guardian: [
     { id: 'view_my_player',     label: 'My player',             icon: '👨‍👧', target: 'squad' },
@@ -550,7 +570,8 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_performance',   label: "Jack's performance",    icon: '📡', target: 'performance' },
     { id: 'view_development',   label: 'Development update',    icon: '📈', target: 'development' },
     { id: 'view_today',         label: 'Today briefing',        icon: '🏠', target: 'today' },
-    // Parent role: 5 actions, no padding. No settings here — settings
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
+    // Parent role: Tranche 3 adds send_message. No settings — settings
     // lives in the user menu for parents.
   ],
 }
@@ -675,6 +696,7 @@ function TodayView({
             <button
               key={a.id}
               type="button"
+              onClick={() => onNavigate(a.target)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
               style={{
                 backgroundColor: 'rgba(22,101,52,0.10)',
@@ -936,6 +958,24 @@ function SettingsView({
 
 function JuniorPortalInner({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('today')
+  // Tranche 3 — Send Message composer is a modal, not a sidebar destination.
+  // The quick-action with target === 'send_message' is intercepted by
+  // handleNavigate below and opens the modal instead of calling
+  // setActiveSection. Real comms delivery (push / WhatsApp / email) is the
+  // future comms backend workstream's job, not this composer's.
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
+
+  // Wrapper around setActiveSection that intercepts the modal-special
+  // target. Passed wherever onNavigate is consumed (TodayView quick
+  // actions today; SettingsView for consistency — its onNavigate doesn't
+  // produce 'send_message', so the interception is a no-op there).
+  const handleNavigate = (id: string) => {
+    if (id === 'send_message') {
+      setSendMessageOpen(true)
+      return
+    }
+    setActiveSection(id)
+  }
 
   // Apply per-role sidebar gating. Fall back to 'all' if the session role
   // isn't in the config (e.g., an unrecognised demo role) — failing open
@@ -1014,7 +1054,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
 
       <main className="flex-1 p-6 overflow-x-hidden">
         {activeSection === 'today' && (
-          <TodayView club={club} session={session} onNavigate={setActiveSection} />
+          <TodayView club={club} session={session} onNavigate={handleNavigate} />
         )}
         {activeSection === 'safeguarding' && (
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
@@ -1023,7 +1063,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         {activeSection === 'revenue_funding' && <JuniorRevenueFunding session={session} />}
         {activeSection === 'coach_toolkit' && <JuniorCoachToolkit session={session} />}
         {activeSection === 'settings' && (
-          <SettingsView club={club} session={session} onNavigate={setActiveSection} />
+          <SettingsView club={club} session={session} onNavigate={handleNavigate} />
         )}
 
         {/* Parent App — rendered for parent_guardian when the sidebar 'squad'
@@ -1122,6 +1162,14 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorFacilities session={session} demoChild={club.demoChild} />
         )}
       </main>
+
+      {/* Tranche 3 — Send Message composer (modal). Mounted at the portal
+          root so it sits above the sticky sidebar and the main content.
+          Opens via the role-aware quick action with target === 'send_message';
+          handleNavigate intercepts that special target above. */}
+      {sendMessageOpen && (
+        <JuniorSendMessageModal onClose={() => setSendMessageOpen(false)} />
+      )}
     </div>
   )
 }
