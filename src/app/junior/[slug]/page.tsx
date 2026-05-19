@@ -50,6 +50,7 @@ import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
 import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
 import JuniorClubProfile from './_components/JuniorClubProfile'
+import JuniorReferees from './_components/JuniorReferees'
 import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -253,6 +254,7 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // OPERATIONS — Tranche 2a. Per-Saturday, per-trip, per-summer
   // volunteer glue. "Whose Saturday does this save."
   { id: 'matchday_ops',    label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
+  { id: 'referees',        label: 'Referees',            icon: '🟨', group: 'OPERATIONS' },
   { id: 'tournaments',     label: 'Tournaments',         icon: '🏆', group: 'OPERATIONS' },
   { id: 'fundraising',     label: 'Fundraising',         icon: '💰', group: 'OPERATIONS' },
   { id: 'travel',          label: 'Travel & Car-Share',  icon: '🚗', group: 'OPERATIONS' },
@@ -328,7 +330,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_profile', 'safeguarding',
-      'matchday_ops', 'tournaments', 'travel', 'facilities',
+      'matchday_ops', 'referees', 'tournaments', 'travel', 'facilities',
       'settings',
     ],
     hiddenTabs: [],
@@ -343,7 +345,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_team', 'club_profile', 'safeguarding', 'volunteer_roles',
-      'matchday_ops', 'tournaments', 'fundraising', 'travel', 'tours_camps', 'facilities',
+      'matchday_ops', 'referees', 'tournaments', 'fundraising', 'travel', 'tours_camps', 'facilities',
       'settings',
     ],
     hiddenTabs: [],
@@ -357,7 +359,9 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // fixture picture (planning welfare-officer attendance at away
     // games, etc.) but do NOT need the coaching modules.
     // 'club_profile' added — general club identity surface, visible to all.
-    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'club_profile', 'settings'],
+    // 'referees' added — the Protect-the-Referee layer is squarely welfare
+    // territory (abuse reporting, under-18 ref duty of care).
+    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'referees', 'club_profile', 'settings'],
     hiddenTabs: [],
     message: 'Safeguarding, consent and welfare view.',
   },
@@ -1199,6 +1203,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         )}
         {activeSection === 'matchday_ops' && (
           <JuniorMatchdayOps session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'referees' && (
+          <JuniorReferees session={session} demoChild={club.demoChild} />
         )}
         {activeSection === 'tournaments' && (
           <JuniorTournaments session={session} demoChild={club.demoChild} />

@@ -269,3 +269,71 @@ surfaces (Tranche 3 Send Message composer, Volunteer Roles rota,
 Matchday Ops, Travel) are the receiving side of this pattern and
 already in place canned; they wire to a real backend in the
 comms workstream.
+
+## Live regional referee pool (cross-club shared pool · referee-backend workstream)
+
+Belongs to the future referee/comms backend workstream &mdash; NOT
+the Junior portal&rsquo;s Referees module (Tab 2: Referee Pool),
+which is canned-only by design. This entry captures the live
+shared pool that the canned tab is a mock of.
+
+The pattern: a regional pool of referees discoverable across
+clubs, with real availability synced rather than each club
+maintaining its own phonebook. The pool is shared across every
+Lumio Junior club in a County FA area (Surrey, etc.); a club
+&ldquo;publishes&rdquo; a fixture needing a ref and any opted-in
+referee in the area can pick it up. The opposite of the current
+&ldquo;coaches contacting 20+ refs to cover one game&rdquo;
+reality.
+
+Backend pieces required:
+- A referee record schema covering FA registration, FA DBS
+  (required for youth football refereeing), level, area,
+  fee-per-match, rating history. The canned `RefereeRecord` shape
+  in `src/app/junior/[slug]/_components/JuniorReferees.tsx` is the
+  starting point.
+- Availability sync &mdash; per weekend / per fixture-day, with
+  ICS-style updates or a lightweight Lumio-native control. Probably
+  in-app push for adult refs; in-app only for minors (no WhatsApp /
+  SMS to under-18 refs, see the safeguarding constraint below).
+- A booking handshake &mdash; a club posts the fixture, refs in
+  range see and claim it, a confirmation message + cash-on-day
+  reminder routes back. The booking-status flow in Tab 1 of the
+  canned module is the receiving side.
+- Cross-club rating &mdash; aggregated post-match referee
+  experience ratings, with the under-18 safeguarding constraint
+  baked in (a minor referee&rsquo;s identity is restricted across
+  the cross-club view the same way it is within a single club&rsquo;s
+  view).
+
+Constraints to design around:
+- <strong>Minor referee safety</strong> &mdash; refs under 18 are
+  minors and inherit the same safeguarding posture as players.
+  Across the regional pool, that means: no phone / contact-detail
+  exposure to clubs outside the referee&rsquo;s own; first-name +
+  initial display by default; opposition clubs notified pre-match
+  that the referee is a minor. The canned `isMinor` /
+  `displayName` / `displayContact` helpers in `JuniorReferees.tsx`
+  encode this rule client-side; the backend must enforce it at the
+  read layer too (a club querying the pool should never receive
+  full contact details for an under-18 ref).
+- <strong>FA DBS verification</strong> &mdash; the pool must
+  expose a verified `faDbsYouth` flag and refuse to surface a
+  referee for a youth fixture if it&rsquo;s missing or expired.
+  Restriction to mini-soccer only if FA DBS not on file.
+- <strong>Opt-in</strong> &mdash; referees opt into the shared
+  pool per County FA area, with a default of opted-out. Parents
+  / guardians give consent on behalf of any referee under 18.
+- <strong>Abuse-report routing</strong> &mdash; the
+  Protect-the-Referee tab&rsquo;s reports must route to both the
+  reporting club&rsquo;s Welfare Officer AND, where the
+  referee&rsquo;s home club differs, that club&rsquo;s Welfare
+  Officer. Backend needs the cross-club routing logic.
+
+Status: designed/specified in the Junior portal&rsquo;s Referees
+module (`src/app/junior/[slug]/_components/JuniorReferees.tsx`
+&mdash; tab `pool`). All four tabs of the module are canned UI
+&mdash; the live backend is the next step. The booking, develop
+and protect tabs also depend partially on this workstream
+(real-time availability, cross-club abuse-report routing) but
+their canned UI is functional as a single-club demo today.
