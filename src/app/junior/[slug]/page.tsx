@@ -30,6 +30,7 @@ import JuniorAIMatchRecap, { JuniorAIMatchRecapPreview } from './_components/Jun
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
 import JuniorPerformance from './_components/JuniorPerformance'
 import JuniorDevelopment from './_components/JuniorDevelopment'
+import JuniorRevenueFunding from './_components/JuniorRevenueFunding'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,7 +145,7 @@ const JUNIOR_ROLES = [
 ]
 
 // ─── Sidebar catalogue ───────────────────────────────────────────────────────
-// 9 top-level sidebar items, mirroring the Women's SIDEBAR_ITEMS shape
+// 10 top-level sidebar items, mirroring the Women's SIDEBAR_ITEMS shape
 // ({ id, label, icon, group }) but cut down to the Junior product surface.
 // Women's-only items deliberately dropped: Board Suite (no junior board
 // surface), FSR Dashboard (no salary-cap regime), Cycle Tracking and
@@ -178,8 +179,15 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   { id: 'coach_toolkit', label: 'Coach Toolkit',      icon: '🎽', group: 'PLAYERS' },
 
   // CLUB — staff-only in practice (the role whitelist gates this).
-  { id: 'club_team',    label: 'Club & Team',        icon: '🏛️', group: 'CLUB' },
-  { id: 'safeguarding', label: 'Safeguarding',       icon: '🛡️', group: 'CLUB' },
+  { id: 'club_team',       label: 'Club & Team',     icon: '🏛️', group: 'CLUB' },
+  { id: 'safeguarding',    label: 'Safeguarding',    icon: '🛡️', group: 'CLUB' },
+  // Revenue & Funding — chairman-only, promoted to a first-class sidebar
+  // destination in Commit 7.1 (was a tab inside Club & Team Admin). The
+  // 'all' resolver for chairman now picks up 10 items including this one;
+  // every other role's explicit whitelist excludes 'revenue_funding', so
+  // it stays chairman-only. Treasurer role, if added, inherits via its
+  // own whitelist.
+  { id: 'revenue_funding', label: 'Revenue & Funding', icon: '💷', group: 'CLUB' },
 
   // SETTINGS — its own group, very bottom (mirrors Women's pattern).
   { id: 'settings',     label: 'Settings',           icon: '⚙️', group: 'SETTINGS' },
@@ -197,7 +205,13 @@ function roleAwareLabel(item: JuniorSidebarItem, role: string): string {
 // Per-role sidebar gating, accent colour, and welcome-line copy. Adapted
 // from src/app/womens/[slug]/page.tsx WOMENS_ROLE_CONFIG; same shape, junior
 // sidebar item ids (today / squad / match_video / performance /
-// development / coach_toolkit / club_team / safeguarding / settings).
+// development / coach_toolkit / club_team / safeguarding /
+// revenue_funding / settings).
+//
+// revenue_funding is chairman-only — resolved automatically via the
+// 'all' setting on chairman. Every other role's explicit whitelist
+// below excludes it. Defensive role check inside the
+// JuniorRevenueFunding module too.
 //
 // Parent / Guardian sidebar is materially narrower than any staff role:
 // no coach_toolkit (coach-only), no club_team (club admin), no settings
@@ -911,6 +925,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
         )}
         {activeSection === 'club_team' && <JuniorClubTeamAdmin session={session} />}
+        {activeSection === 'revenue_funding' && <JuniorRevenueFunding session={session} />}
         {activeSection === 'coach_toolkit' && <JuniorCoachToolkit session={session} />}
         {activeSection === 'settings' && (
           <SettingsView club={club} session={session} onNavigate={setActiveSection} />
