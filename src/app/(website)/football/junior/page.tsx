@@ -108,6 +108,7 @@ const CLUB_PRICING: PricingTier[] = [
     priceSub: 'up to 3 teams',
     features: [
       'Safeguarding & Consent Hub',
+      'GDPR-safe by design — built around the Safeguarding & Consent Hub',
       'Fixtures & Results — pluggable FA Full-Time / league / manual',
       'Squad lists & registration',
       'Volunteer Roles — the web of jobs that runs your team',
