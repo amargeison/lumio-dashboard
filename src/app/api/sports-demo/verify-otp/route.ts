@@ -220,6 +220,7 @@ export async function POST(req: NextRequest) {
     const sportNames: Record<string, string> = {
       rugby: 'Rugby', football: 'Football', nonleague: 'Non League',
       grassroots: 'Grassroots', womens: "Women's FC",
+      junior: 'Junior Football',
       golf: 'Golf', tennis: 'Tennis', cricket: 'Cricket', darts: 'Darts',
     }
     if (process.env.RESEND_API_KEY) {
