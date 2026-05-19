@@ -45,6 +45,8 @@ import JuniorMatchdayOps from './_components/JuniorMatchdayOps'
 import JuniorTournaments from './_components/JuniorTournaments'
 import JuniorFundraising from './_components/JuniorFundraising'
 import JuniorTravel from './_components/JuniorTravel'
+import JuniorToursCamps from './_components/JuniorToursCamps'
+import JuniorFacilities from './_components/JuniorFacilities'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +238,9 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   { id: 'tournaments',     label: 'Tournaments',         icon: '🏆', group: 'OPERATIONS' },
   { id: 'fundraising',     label: 'Fundraising',         icon: '💰', group: 'OPERATIONS' },
   { id: 'travel',          label: 'Travel & Car-Share',  icon: '🚗', group: 'OPERATIONS' },
+  // Tranche 2b additions.
+  { id: 'tours_camps',     label: 'Tours & Camps',       icon: '🏕️', group: 'OPERATIONS' },
+  { id: 'facilities',      label: 'Facilities',          icon: '🌱', group: 'OPERATIONS' },
 
   // SETTINGS — its own group, very bottom (mirrors Women's pattern).
   { id: 'settings',     label: 'Settings',           icon: '⚙️', group: 'SETTINGS' },
@@ -305,7 +310,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'safeguarding',
-      'matchday_ops', 'tournaments', 'travel',
+      'matchday_ops', 'tournaments', 'travel', 'facilities',
       'settings',
     ],
     hiddenTabs: [],
@@ -320,7 +325,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_team', 'safeguarding', 'volunteer_roles',
-      'matchday_ops', 'tournaments', 'fundraising', 'travel',
+      'matchday_ops', 'tournaments', 'fundraising', 'travel', 'tours_camps', 'facilities',
       'settings',
     ],
     hiddenTabs: [],
@@ -376,7 +381,9 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // modules remain coach-side only.
     // Tranche 2a adds 'travel' — parents both offer and need lifts, so
     // they belong in the car-share view.
-    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel'],
+    // Tranche 2b adds 'tours_camps' — parents book their child onto
+    // camps and the end-of-season tour.
+    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps'],
     hiddenTabs: [],
     message: "Your child's training, video, performance, development and consent.",
   },
@@ -1105,6 +1112,14 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         )}
         {activeSection === 'travel' && (
           <JuniorTravel session={session} demoChild={club.demoChild} />
+        )}
+
+        {/* OPERATIONS modules added in Tranche 2b. */}
+        {activeSection === 'tours_camps' && (
+          <JuniorToursCamps session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'facilities' && (
+          <JuniorFacilities session={session} demoChild={club.demoChild} />
         )}
       </main>
     </div>
