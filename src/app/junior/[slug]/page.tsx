@@ -54,7 +54,7 @@ const DEMO_CLUBS: Record<string, JuniorClub> = {
     name: 'Sunday Rovers Juniors',
     slug: 'sunday-rovers-juniors',
     tier: 'grassroots',
-    accent: '#16A34A',
+    accent: '#166534',
     programme: 'Grassroots community club, working toward Charter Standard',
     teamCount: 3,
     coachingModel: 'fully_volunteer',

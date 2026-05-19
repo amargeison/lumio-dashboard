@@ -95,7 +95,7 @@ export function HeroToday({
       </svg>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
       {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
-          without conflicting with women's pink brand accent. Italic, single
+          without conflicting with the junior green brand accent. Italic, single
           line, bottom-center of banner. Truncates visually if too long. */}
       <div style={{
         position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
@@ -286,7 +286,7 @@ export function Inbox({ T, density }: Common) {
   )
 }
 
-// ─── Squad availability — GK / DEF / MID / FWD with pink accent on cleared
+// ─── Squad availability — GK / DEF / MID / FWD with green accent on cleared
 
 // SQUAD AVAILABILITY — full-width strip layout. Cells use fixed pixel
 // size (48×48) instead of aspectRatio:1 so cards don't grow with
@@ -294,14 +294,14 @@ export function Inbox({ T, density }: Common) {
 // flex row with justifyContent: center to keep total card height
 // ~110px (comparable in vertical weight to Recent Results / Season
 // Standing). Injuries list moved out of this card to keep the strip
-// compact. Pink accent (#BE185D) preserved on out/cleared statuses.
+// compact. Junior green deep (#166534) used on out/cleared statuses.
 //
 // SQUAD TILES sized 48×48 to fill the bottom strip without overflow.
 // Tiles centered horizontally (justify-content: center on flex container).
 function SquadCell({ T, accent, slot }: { T: ThemeTokens; accent: AccentTokens; slot: WfPlayerSlot }) {
   const status = slot.status
   const c = status === 'ok' ? T.good : status === 'doubt' ? T.warn : status === 'cleared' ? accent.hex : accent.hex
-  // Note: women's FC uses the pink accent (#BE185D) for `out` status too —
+  // Note: junior portal uses the brand-deep green (#166534) for `out` status —
   // brand consistency over the default red. Doubt stays warm/amber.
   return (
     <div title={`${slot.num}. ${slot.name} · ${slot.pos} · ${status}`}

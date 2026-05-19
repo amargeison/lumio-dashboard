@@ -218,7 +218,7 @@ export const WOMENS_NAV_GROUPS: WfNavGroup[] = [
 ]
 
 export const WOMENS_ACCENT = {
-  hex:    '#BE185D',
-  dim:    'rgba(190,24,93,0.16)',
-  border: 'rgba(190,24,93,0.45)',
+  hex:    '#166534',
+  dim:    'rgba(22,101,52,0.16)',
+  border: 'rgba(22,101,52,0.45)',
 }

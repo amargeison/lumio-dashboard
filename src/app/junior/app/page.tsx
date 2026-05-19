@@ -8,7 +8,7 @@ export default function JuniorAppPage() {
       sport="junior"
       sportLabel="Lumio Junior Football"
       emoji="⚽"
-      accentColor="#16a34a"
+      accentColor="#16A34A"
       demoHref="/junior/junior-demo"
     />
   )
