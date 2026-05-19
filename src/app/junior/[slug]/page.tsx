@@ -47,6 +47,7 @@ import JuniorFundraising from './_components/JuniorFundraising'
 import JuniorTravel from './_components/JuniorTravel'
 import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
+import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
 import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -183,8 +184,16 @@ interface JuniorSidebarItem {
 }
 
 const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
-  // OVERVIEW
-  { id: 'today',        label: 'Today',              icon: '🏠', group: 'OVERVIEW' },
+  // OVERVIEW — landing + chair-scoped overview surfaces. Renders in the
+  // OVERVIEW group's order (today → insights → committee_suite) via the
+  // grouped reduce + groupOrder below. 'today' keeps its id and dispatch
+  // (TodayView); its label changed to "Overview" to match the sibling
+  // portals' Dashboard/Insights/Board Suite pattern. 'insights' moved
+  // here from CLUB (chairman-scoped, same whitelist). 'committee_suite'
+  // is new in this commit — the grassroots committee oversight view.
+  { id: 'today',           label: 'Overview',        icon: '🏠', group: 'OVERVIEW' },
+  { id: 'insights',        label: 'Insights',        icon: '📊', group: 'OVERVIEW' },
+  { id: 'committee_suite', label: 'Committee Suite', icon: '📜', group: 'OVERVIEW' },
 
   // FOOTBALL — added in Tranche 1. Renders between OVERVIEW and PLAYERS via
   // groupOrder. Mirrors the Football section of the Women's portal but with
@@ -226,11 +235,12 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // it stays chairman-only. Treasurer role, if added, inherits via its
   // own whitelist.
   { id: 'revenue_funding', label: 'Revenue & Funding', icon: '💷', group: 'CLUB' },
-  // CLUB additions — Tranche 2a. 'insights' is the chairman's weekend
-  // health-check (kept off other roles' whitelists). 'volunteer_roles'
-  // is the differentiator — the web of volunteer jobs a real junior
-  // team actually runs on.
-  { id: 'insights',        label: 'Insights',          icon: '📊', group: 'CLUB' },
+  // CLUB addition — Tranche 2a. 'volunteer_roles' is the differentiator
+  // — the web of volunteer jobs a real junior team actually runs on.
+  // ('insights' was originally added here in Tranche 2a; moved up to
+  // the OVERVIEW group in the structural-tweaks commit to match the
+  // sibling-portals Dashboard / Insights / Board Suite pattern. Role
+  // whitelist unchanged — still chairman-only via chairman's 'all'.)
   { id: 'volunteer_roles', label: 'Volunteer Roles',   icon: '🤝', group: 'CLUB' },
 
   // OPERATIONS — Tranche 2a. Per-Saturday, per-trip, per-summer
@@ -994,7 +1004,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
     acc[it.group].push(it)
     return acc
   }, {})
-  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'FOOTBALL', 'PLAYERS', 'CLUB', 'OPERATIONS', 'SETTINGS']
+  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'PLAYERS', 'FOOTBALL', 'CLUB', 'OPERATIONS', 'SETTINGS']
 
   return (
     // Standard portal zoom: 0.9 (per CLAUDE.md). Sidebar height compensates
@@ -1137,6 +1147,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         {/* CLUB + OPERATIONS modules added in Tranche 2a. */}
         {activeSection === 'insights' && (
           <JuniorInsights session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'committee_suite' && (
+          <JuniorCommitteeSuite session={session} demoChild={club.demoChild} />
         )}
         {activeSection === 'volunteer_roles' && (
           <JuniorVolunteerRoles session={session} demoChild={club.demoChild} />
