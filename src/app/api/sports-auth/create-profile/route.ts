@@ -5,7 +5,7 @@ import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 
 // All sport IDs the picker exposes
 const ALLOWED_SPORTS = new Set([
-  'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens',
+  'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens','junior',
 ])
 
 function getServiceClient() {

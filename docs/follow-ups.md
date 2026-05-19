@@ -162,3 +162,178 @@ Should eventually be migrated to `src/lib/sports-quotes.ts`
 alongside cricket, tennis, boxing, golf, darts. Defer until
 next quote-related work to avoid bundling refactor in feature
 commits.
+
+## Junior founding-member empty-portal landing (`/junior/app`)
+
+A real junior founding member who signs in via the welcome email&rsquo;s
+"Sign in to your portal" CTA lands on `/junior/app`. The route
+exists at `src/app/junior/app/page.tsx` and renders the
+`SportsComingSoon` placeholder &mdash; not a live portal, not the
+founder&rsquo;s own data. Every sport ships the same coming-soon
+placeholder today (`src/app/{boxing,cricket,darts,golf,tennis,rugby,
+womens,nonleague,grassroots,(football)/football,junior}/app/page.tsx`),
+so this is not junior-specific.
+
+The fix belongs to the founding-member onboarding wizard &mdash;
+the separate future workstream that:
+- Writes a real `sports_clubs` row for the founder&rsquo;s club
+- Creates a `sports_memberships` row binding the founder to that club
+- Replaces the per-sport `SportsComingSoon` with a real `/<sport>/app`
+  page that reads the founder&rsquo;s own club, not the demo data
+- For junior specifically, the wizard also seeds the empty
+  `junior_*` tables (teams, age bands, welfare officer placeholder,
+  initial consent rows, etc.) for the new club so the safeguarding
+  surfaces don&rsquo;t render empty on first sign-in
+
+Smaller adjacent item discovered while logging this: the junior
+coming-soon page passes `demoHref="/junior/junior-demo"`
+(`src/app/junior/app/page.tsx:12`), but `junior-demo` is not a key
+in `DEMO_CLUBS` in `src/app/junior/[slug]/page.tsx`, so the demo
+button falls back to Oakridge Juniors via `DEMO_CLUBS[params.slug]
+?? DEMO_CLUBS['oakridge-juniors']`. Functional but the URL is ugly;
+change `demoHref` to `/junior/oakridge-juniors` whenever the
+onboarding wizard touches this file.
+
+Risk: shipping junior founder sign-ups before the wizard exists
+means a paying chairman&rsquo;s first authenticated experience is a
+"coming soon" placeholder, which contradicts the
+"your portal is ready to build" framing in the founder welcome
+email. Either fix this when wiring up the onboarding wizard, or
+hold junior founder sign-ups behind a waitlist until the wizard
+ships.
+
+## WhatsApp template-nudge → in-app confirmation flow (comms backend workstream)
+
+Belongs to the future comms BACKEND workstream &mdash; NOT the
+Tranche 3 Junior portal Send Message UI, which is canned and
+UI-only by design. This entry is the place to capture the
+designed-but-not-built delivery pattern that the comms workstream
+needs to implement.
+
+The pattern: send parents a short WhatsApp NUDGE that drives them
+to open the Lumio app and answer there. WhatsApp is the delivery
+layer, not the conversation surface. The actual interaction
+(availability Y/N, "are you driving?" Y/N, lift requests, kit
+confirmations, camp sign-ups) happens IN-APP &mdash; big simple
+buttons in Lumio &mdash; where there are no templates, no
+per-message cost, and full UI control. The portal modules to
+surface these confirmations already exist: Volunteer Roles rota
+(this weekend&rsquo;s rota tab), Matchday Operations (kit /
+equipment / ops checklists), Travel &amp; Car-Share (driver +
+passenger matching).
+
+WhatsApp delivery side:
+- Official WhatsApp Business Platform via a provider such as
+  Twilio (server-side REST API). No client-side WhatsApp logic.
+- Business-initiated WhatsApp messages MUST use a pre-approved
+  Meta message template &mdash; so the nudge is a fixed approved
+  template (e.g. "{team} has an update &mdash; open Lumio to
+  confirm availability for Saturday"). Free-form business-initiated
+  WhatsApp messaging out of the blue is not permitted; only
+  template messages cross the platform from us → parent.
+- Templates need registering with Meta in advance; expect a
+  template catalogue alongside the comms backend (nudges for
+  availability, lift, camp sign-up, payment reminder, welfare
+  follow-up, etc.).
+
+Constraints to design around:
+- Per-conversation cost &mdash; WhatsApp Business messages are
+  paid, unlike an in-app push. Treat WhatsApp as a paid catch-all,
+  not the default channel.
+- Opt-in is mandatory &mdash; every parent must consent to
+  WhatsApp contact before any message. For a children&rsquo;s
+  product this should slot into the existing Safeguarding &amp;
+  Consent hub (`src/app/junior/[slug]/_components/JuniorSafeguardingHub.tsx`)
+  as a new consent type alongside photography / filming / data-
+  sharing, with the same chase / expiry treatment.
+- Restricted-child rule from the safeguarding boundary still
+  applies &mdash; WhatsApp template content must not name or
+  identify restricted children. Audit at template-design time.
+
+Recommended layering:
+- Native push notification for parents who HAVE the Lumio app
+  installed &mdash; same nudge content, zero per-message cost.
+  Push is the default channel.
+- WhatsApp template-nudge as the paid catch-all for parents who
+  have not installed the app yet (or have notifications off).
+  WhatsApp&rsquo;s value is reach, not being the cheapest channel.
+- Email as a third-tier fallback for parents who have opted out
+  of both push and WhatsApp.
+
+Status: designed/specified here, not built. Depends on the comms
+backend workstream &mdash; provider integration (Twilio or
+equivalent), opt-in handling stored on the parent record,
+Meta template registration, server-side delivery pipeline,
+and the in-app push infrastructure. The Junior portal UI
+surfaces (Tranche 3 Send Message composer, Volunteer Roles rota,
+Matchday Ops, Travel) are the receiving side of this pattern and
+already in place canned; they wire to a real backend in the
+comms workstream.
+
+## Live regional referee pool (cross-club shared pool · referee-backend workstream)
+
+Belongs to the future referee/comms backend workstream &mdash; NOT
+the Junior portal&rsquo;s Referees module (Tab 2: Referee Pool),
+which is canned-only by design. This entry captures the live
+shared pool that the canned tab is a mock of.
+
+The pattern: a regional pool of referees discoverable across
+clubs, with real availability synced rather than each club
+maintaining its own phonebook. The pool is shared across every
+Lumio Junior club in a County FA area (Surrey, etc.); a club
+&ldquo;publishes&rdquo; a fixture needing a ref and any opted-in
+referee in the area can pick it up. The opposite of the current
+&ldquo;coaches contacting 20+ refs to cover one game&rdquo;
+reality.
+
+Backend pieces required:
+- A referee record schema covering FA registration, FA DBS
+  (required for youth football refereeing), level, area,
+  fee-per-match, rating history. The canned `RefereeRecord` shape
+  in `src/app/junior/[slug]/_components/JuniorReferees.tsx` is the
+  starting point.
+- Availability sync &mdash; per weekend / per fixture-day, with
+  ICS-style updates or a lightweight Lumio-native control. Probably
+  in-app push for adult refs; in-app only for minors (no WhatsApp /
+  SMS to under-18 refs, see the safeguarding constraint below).
+- A booking handshake &mdash; a club posts the fixture, refs in
+  range see and claim it, a confirmation message + cash-on-day
+  reminder routes back. The booking-status flow in Tab 1 of the
+  canned module is the receiving side.
+- Cross-club rating &mdash; aggregated post-match referee
+  experience ratings, with the under-18 safeguarding constraint
+  baked in (a minor referee&rsquo;s identity is restricted across
+  the cross-club view the same way it is within a single club&rsquo;s
+  view).
+
+Constraints to design around:
+- <strong>Minor referee safety</strong> &mdash; refs under 18 are
+  minors and inherit the same safeguarding posture as players.
+  Across the regional pool, that means: no phone / contact-detail
+  exposure to clubs outside the referee&rsquo;s own; first-name +
+  initial display by default; opposition clubs notified pre-match
+  that the referee is a minor. The canned `isMinor` /
+  `displayName` / `displayContact` helpers in `JuniorReferees.tsx`
+  encode this rule client-side; the backend must enforce it at the
+  read layer too (a club querying the pool should never receive
+  full contact details for an under-18 ref).
+- <strong>FA DBS verification</strong> &mdash; the pool must
+  expose a verified `faDbsYouth` flag and refuse to surface a
+  referee for a youth fixture if it&rsquo;s missing or expired.
+  Restriction to mini-soccer only if FA DBS not on file.
+- <strong>Opt-in</strong> &mdash; referees opt into the shared
+  pool per County FA area, with a default of opted-out. Parents
+  / guardians give consent on behalf of any referee under 18.
+- <strong>Abuse-report routing</strong> &mdash; the
+  Protect-the-Referee tab&rsquo;s reports must route to both the
+  reporting club&rsquo;s Welfare Officer AND, where the
+  referee&rsquo;s home club differs, that club&rsquo;s Welfare
+  Officer. Backend needs the cross-club routing logic.
+
+Status: designed/specified in the Junior portal&rsquo;s Referees
+module (`src/app/junior/[slug]/_components/JuniorReferees.tsx`
+&mdash; tab `pool`). All four tabs of the module are canned UI
+&mdash; the live backend is the next step. The booking, develop
+and protect tabs also depend partially on this workstream
+(real-time availability, cross-club abuse-report routing) but
+their canned UI is functional as a single-club demo today.

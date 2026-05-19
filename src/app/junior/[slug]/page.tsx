@@ -18,8 +18,9 @@
 // — same SIDEBAR_ITEMS / DashboardView pattern, junior naming and
 // junior-specific KPIs.
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -31,6 +32,26 @@ import JuniorMatchVideo from './_components/JuniorMatchVideo'
 import JuniorPerformance from './_components/JuniorPerformance'
 import JuniorDevelopment from './_components/JuniorDevelopment'
 import JuniorRevenueFunding from './_components/JuniorRevenueFunding'
+import JuniorSquadManagement from './_components/JuniorSquadManagement'
+import JuniorTactics from './_components/JuniorTactics'
+import JuniorTraining from './_components/JuniorTraining'
+import JuniorSetPieces from './_components/JuniorSetPieces'
+import JuniorVideoAnalysis from './_components/JuniorVideoAnalysis'
+import JuniorGpsPerformance from './_components/JuniorGpsPerformance'
+import JuniorHeatmaps from './_components/JuniorHeatmaps'
+import JuniorFixtures from './_components/JuniorFixtures'
+import JuniorInsights from './_components/JuniorInsights'
+import JuniorVolunteerRoles from './_components/JuniorVolunteerRoles'
+import JuniorMatchdayOps from './_components/JuniorMatchdayOps'
+import JuniorTournaments from './_components/JuniorTournaments'
+import JuniorFundraising from './_components/JuniorFundraising'
+import JuniorTravel from './_components/JuniorTravel'
+import JuniorToursCamps from './_components/JuniorToursCamps'
+import JuniorFacilities from './_components/JuniorFacilities'
+import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
+import JuniorClubProfile from './_components/JuniorClubProfile'
+import JuniorReferees from './_components/JuniorReferees'
+import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,25 +174,54 @@ const JUNIOR_ROLES = [
 // dense 10-tab Insights role view (a senior club role overlay, not a
 // junior-club construct).
 //
-// "Fixtures + fees" deliberately is NOT a sidebar item — it's content
-// inside the Parent App / Match Recap view (built in Commit 6), not a
-// navigation destination.
+// (Earlier scope kept "Fixtures + fees" out of the sidebar and inside the
+// Parent App / Match Recap — superseded in Tranche 1. Fixtures & Results
+// is now a first-class FOOTBALL sidebar destination; see
+// JuniorFixtures.tsx for the module + pluggable data source switcher.)
 
 interface JuniorSidebarItem {
   id: string
   label: string
   icon: string
-  group: 'OVERVIEW' | 'PLAYERS' | 'CLUB' | 'SETTINGS'
+  group: 'OVERVIEW' | 'FOOTBALL' | 'PLAYERS' | 'CLUB' | 'OPERATIONS' | 'SETTINGS'
 }
 
 const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
-  // OVERVIEW
-  { id: 'today',        label: 'Today',              icon: '🏠', group: 'OVERVIEW' },
+  // OVERVIEW — landing + chair-scoped overview surfaces. Renders in the
+  // OVERVIEW group's order (today → insights → committee_suite) via the
+  // grouped reduce + groupOrder below. 'today' keeps its id and dispatch
+  // (TodayView); its label changed to "Overview" to match the sibling
+  // portals' Dashboard/Insights/Board Suite pattern. 'insights' moved
+  // here from CLUB (chairman-scoped, same whitelist). 'committee_suite'
+  // is new in this commit — the grassroots committee oversight view.
+  { id: 'today',           label: 'Overview',        icon: '🏠', group: 'OVERVIEW' },
+  { id: 'insights',        label: 'Insights',        icon: '📊', group: 'OVERVIEW' },
+  { id: 'committee_suite', label: 'Committee Suite', icon: '📜', group: 'OVERVIEW' },
+
+  // FOOTBALL — added in Tranche 1. Renders between OVERVIEW and PLAYERS via
+  // groupOrder. Mirrors the Football section of the Women's portal but with
+  // junior-appropriate modules. 'squad' stays in PLAYERS (label swap via
+  // roleAwareLabel does the "Squad Management" framing for staff); the
+  // existing 'match_video' (matchday highlights / parent-facing recap) and
+  // 'performance' (per-player match performance) ALSO stay in PLAYERS —
+  // the new 'video_analysis' and 'gps_performance' below are distinct
+  // coaching/tactical and training-load tools, not duplicates.
+  // performance_brief is a NEW sidebar destination that renders
+  // JuniorAIMatchRecap; the existing sidebar-less 'ai_match_recap' route
+  // from the Today banner / Parent App is preserved unchanged.
+  { id: 'tactics',          label: 'Tactics',              icon: '🎯', group: 'FOOTBALL' },
+  { id: 'training',         label: 'Training',             icon: '🏃', group: 'FOOTBALL' },
+  { id: 'set_pieces',       label: 'Set Pieces',           icon: '📐', group: 'FOOTBALL' },
+  { id: 'video_analysis',   label: 'Video & Analysis',     icon: '📹', group: 'FOOTBALL' },
+  { id: 'gps_performance',  label: 'GPS & Performance',    icon: '📊', group: 'FOOTBALL' },
+  { id: 'heatmaps',         label: 'Heatmaps',             icon: '🔥', group: 'FOOTBALL' },
+  { id: 'performance_brief',label: 'AI Performance Brief', icon: '🤖', group: 'FOOTBALL' },
+  { id: 'fixtures',         label: 'Fixtures & Results',   icon: '📅', group: 'FOOTBALL' },
 
   // PLAYERS — child- or squad-scoped depending on role.
   // 'squad' renders as "My Player" for parent_guardian (single child),
-  // "My Players / Squad" for staff (full age-band roster). The label
-  // swap is handled at render time via roleAwareLabel() below.
+  // "Squad Management" for staff (full age-band roster + selection). The
+  // label swap is handled at render time via roleAwareLabel() below.
   { id: 'squad',         label: 'My Players / Squad', icon: '👥', group: 'PLAYERS' },
   { id: 'match_video',   label: 'Match Video',        icon: '🎬', group: 'PLAYERS' },
   { id: 'performance',   label: 'Performance',        icon: '📡', group: 'PLAYERS' },
@@ -180,6 +230,11 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
 
   // CLUB — staff-only in practice (the role whitelist gates this).
   { id: 'club_team',       label: 'Club & Team',     icon: '🏛️', group: 'CLUB' },
+  // 'club_profile' is the public-facing identity page (badge, history,
+  // ground, honours, committee, kit, sponsors). Visible to ALL roles —
+  // general club info that every member can see — see JUNIOR_ROLE_CONFIG
+  // below for the per-role whitelist additions.
+  { id: 'club_profile',    label: 'Club Profile',    icon: '📇', group: 'CLUB' },
   { id: 'safeguarding',    label: 'Safeguarding',    icon: '🛡️', group: 'CLUB' },
   // Revenue & Funding — chairman-only, promoted to a first-class sidebar
   // destination in Commit 7.1 (was a tab inside Club & Team Admin). The
@@ -188,6 +243,24 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // it stays chairman-only. Treasurer role, if added, inherits via its
   // own whitelist.
   { id: 'revenue_funding', label: 'Revenue & Funding', icon: '💷', group: 'CLUB' },
+  // CLUB addition — Tranche 2a. 'volunteer_roles' is the differentiator
+  // — the web of volunteer jobs a real junior team actually runs on.
+  // ('insights' was originally added here in Tranche 2a; moved up to
+  // the OVERVIEW group in the structural-tweaks commit to match the
+  // sibling-portals Dashboard / Insights / Board Suite pattern. Role
+  // whitelist unchanged — still chairman-only via chairman's 'all'.)
+  { id: 'volunteer_roles', label: 'Volunteer Roles',   icon: '🤝', group: 'CLUB' },
+
+  // OPERATIONS — Tranche 2a. Per-Saturday, per-trip, per-summer
+  // volunteer glue. "Whose Saturday does this save."
+  { id: 'matchday_ops',    label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
+  { id: 'referees',        label: 'Referees',            icon: '🟨', group: 'OPERATIONS' },
+  { id: 'tournaments',     label: 'Tournaments',         icon: '🏆', group: 'OPERATIONS' },
+  { id: 'fundraising',     label: 'Fundraising',         icon: '💰', group: 'OPERATIONS' },
+  { id: 'travel',          label: 'Travel & Car-Share',  icon: '🚗', group: 'OPERATIONS' },
+  // Tranche 2b additions.
+  { id: 'tours_camps',     label: 'Tours & Camps',       icon: '🏕️', group: 'OPERATIONS' },
+  { id: 'facilities',      label: 'Facilities',          icon: '🌱', group: 'OPERATIONS' },
 
   // SETTINGS — its own group, very bottom (mirrors Women's pattern).
   { id: 'settings',     label: 'Settings',           icon: '⚙️', group: 'SETTINGS' },
@@ -197,7 +270,12 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
 // child-scoped) where staff see "My Players / Squad". Keeping the same
 // item id keeps role gating mechanical; only the rendered string changes.
 function roleAwareLabel(item: JuniorSidebarItem, role: string): string {
-  if (item.id === 'squad' && role === 'parent_guardian') return 'My Player'
+  // 'squad' = single child for parents ("My Player"), full staff selection
+  // surface for everyone else ("Squad Management"). Keeping the same id
+  // keeps role gating mechanical; only the rendered string changes.
+  if (item.id === 'squad') {
+    return role === 'parent_guardian' ? 'My Player' : 'Squad Management'
+  }
   return item.label
 }
 
@@ -247,7 +325,14 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Lead Coach',
     icon: '🎽',
     accent: '#22C55E',
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'safeguarding', 'settings'],
+    sidebar: [
+      'today',
+      'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
+      'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
+      'club_profile', 'safeguarding',
+      'matchday_ops', 'referees', 'tournaments', 'travel', 'facilities',
+      'settings',
+    ],
     hiddenTabs: [],
     message: 'Coaching, sessions and player-development view.',
   },
@@ -255,7 +340,14 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Team Manager',
     icon: '📋',
     accent: '#0EA5E9',
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'club_team', 'safeguarding', 'settings'],
+    sidebar: [
+      'today',
+      'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
+      'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
+      'club_team', 'club_profile', 'safeguarding', 'volunteer_roles',
+      'matchday_ops', 'referees', 'tournaments', 'fundraising', 'travel', 'tours_camps', 'facilities',
+      'settings',
+    ],
     hiddenTabs: [],
     message: 'Team logistics, availability and parent-comms view.',
   },
@@ -263,7 +355,13 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Welfare Officer',
     icon: '🛡️',
     accent: '#EF4444',
-    sidebar: ['today', 'squad', 'development', 'safeguarding', 'settings'],
+    // Fixtures added in Tranche 1 — welfare officers benefit from the
+    // fixture picture (planning welfare-officer attendance at away
+    // games, etc.) but do NOT need the coaching modules.
+    // 'club_profile' added — general club identity surface, visible to all.
+    // 'referees' added — the Protect-the-Referee layer is squarely welfare
+    // territory (abuse reporting, under-18 ref duty of care).
+    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'referees', 'club_profile', 'settings'],
     hiddenTabs: [],
     message: 'Safeguarding, consent and welfare view.',
   },
@@ -277,7 +375,15 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // edit, performance + match_video read for context), safeguarding for
     // welfare context, and settings. Club & Team admin omitted — the
     // academy lead doesn't own fixtures, training schedules or comms.
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'safeguarding', 'settings'],
+    // Tranche 1 adds the FOOTBALL coaching modules and Fixtures &
+    // Results — academy leads consume the development pathway across
+    // age bands and need the coaching context that surrounds it.
+    sidebar: [
+      'today',
+      'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
+      'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
+      'club_profile', 'safeguarding', 'settings',
+    ],
     hiddenTabs: [],
     message: 'Development pathway across age bands · termly reviews.',
   },
@@ -293,7 +399,15 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // DBS register, incident log, or club-wide Welfare dashboard. That
     // role-scoping is enforced inside the Safeguarding module, not by
     // hiding the sidebar item.
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'safeguarding'],
+    // Tranche 1 adds 'fixtures' so parents can see the schedule, results
+    // and league position without leaving Lumio. Coaching/tactical
+    // modules remain coach-side only.
+    // Tranche 2a adds 'travel' — parents both offer and need lifts, so
+    // they belong in the car-share view.
+    // Tranche 2b adds 'tours_camps' — parents book their child onto
+    // camps and the end-of-season tour.
+    // 'club_profile' is general club info — visible to every role.
+    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps', 'club_profile'],
     hiddenTabs: [],
     message: "Your child's training, video, performance, development and consent.",
   },
@@ -415,10 +529,16 @@ interface QuickAction {
   target: string
 }
 
-// Role-aware quick actions. Six per role to match the women's bar
-// length convention. Targets must be sidebar item ids the role can
-// see (the filtered sidebar) — clicking a hidden target is a no-op
-// on a role's surface, which is fine for demo.
+// Role-aware quick actions. Originally 5–6 per role to match the women's bar
+// length convention. Tranche 3 adds a 'send_message' action to every role;
+// target 'send_message' is the special string intercepted by handleNavigate
+// in JuniorPortalInner to open JuniorSendMessageModal rather than a sidebar
+// section. academy_lead is also added here as an explicit entry so it no
+// longer falls back to chairman.
+//
+// Targets must be sidebar item ids the role can see, OR the modal-special
+// 'send_message'. Clicking a hidden sidebar target is a no-op on a role's
+// surface, which is fine for demo.
 const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
   chairman: [
     { id: 'view_charter',       label: 'FA Charter status',     icon: '✅', target: 'club_team' },
@@ -427,6 +547,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
     { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
     { id: 'open_settings',      label: 'Club settings',         icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   coach: [
     { id: 'view_squad',         label: 'Today\'s squad',        icon: '👥', target: 'squad' },
@@ -435,6 +556,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_performance',   label: 'GPS & performance',     icon: '📡', target: 'performance' },
     { id: 'view_safeguarding',  label: 'Consent status',        icon: '🛡️', target: 'safeguarding' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   team_manager: [
     { id: 'view_squad',         label: 'Squad & availability',  icon: '👥', target: 'squad' },
@@ -443,6 +565,7 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
     { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   welfare_officer: [
     { id: 'view_safeguarding',  label: 'Open safeguarding',     icon: '🛡️', target: 'safeguarding' },
@@ -450,9 +573,19 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_squad',         label: 'Players directory',     icon: '👥', target: 'squad' },
     { id: 'view_today',         label: 'Today briefing',        icon: '🏠', target: 'today' },
     { id: 'open_settings',      label: 'Settings',              icon: '⚙️', target: 'settings' },
-    // welfare_officer has 5 explicit; one slot left blank intentionally
-    // (the role's surface is lean — padding with irrelevant actions would
-    // dilute focus).
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
+    // welfare_officer originally had 5 explicit; Tranche 3 adds send_message.
+  ],
+  academy_lead: [
+    // Tranche 3 — explicit entry so academy_lead no longer falls back to
+    // chairman. Targets are sidebar ids the role can see (today, squad,
+    // development, coach_toolkit, performance_brief, match_video).
+    { id: 'view_development',   label: 'Development tracker',   icon: '📈', target: 'development' },
+    { id: 'view_squad',         label: 'Squad overview',        icon: '👥', target: 'squad' },
+    { id: 'view_coach_toolkit', label: 'Coach Toolkit',         icon: '🎽', target: 'coach_toolkit' },
+    { id: 'view_brief',         label: 'AI Performance Brief',  icon: '🤖', target: 'performance_brief' },
+    { id: 'view_video',         label: 'Match video',           icon: '🎬', target: 'match_video' },
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
   ],
   parent_guardian: [
     { id: 'view_my_player',     label: 'My player',             icon: '👨‍👧', target: 'squad' },
@@ -460,7 +593,8 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { id: 'view_performance',   label: "Jack's performance",    icon: '📡', target: 'performance' },
     { id: 'view_development',   label: 'Development update',    icon: '📈', target: 'development' },
     { id: 'view_today',         label: 'Today briefing',        icon: '🏠', target: 'today' },
-    // Parent role: 5 actions, no padding. No settings here — settings
+    { id: 'send_message',       label: 'Send message',          icon: '📨', target: 'send_message' },
+    // Parent role: Tranche 3 adds send_message. No settings — settings
     // lives in the user menu for parents.
   ],
 }
@@ -585,6 +719,7 @@ function TodayView({
             <button
               key={a.id}
               type="button"
+              onClick={() => onNavigate(a.target)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
               style={{
                 backgroundColor: 'rgba(22,101,52,0.10)',
@@ -847,11 +982,45 @@ function SettingsView({
 function JuniorPortalInner({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('today')
 
-  // Apply per-role sidebar gating. Fall back to 'all' if the session role
-  // isn't in the config (e.g., an unrecognised demo role) — failing open
-  // is the right call for a demo shell; failing closed could hide content
-  // from a stakeholder mid-walkthrough.
-  const roleConfig = JUNIOR_ROLE_CONFIG[session.role]
+  // Role-switcher state layer. The active role is held in React state so the
+  // RoleSwitcher control in the sidebar can drive sidebar filtering, role-
+  // aware labels and role-gated dispatch without mutating the immutable
+  // SportsDemoSession prop. effectiveSession is a spread-override that
+  // substitutes the live activeRole onto session.role; non-role fields
+  // (userName, email, isDemoShell, photoDataUrl, sport, etc.) flow through
+  // unchanged. Pass effectiveSession at every site where role drives
+  // behaviour — see the role-switcher report for the audited 7-site list.
+  const [activeRole, setActiveRole] = useState(session.role)
+  const effectiveSession = useMemo(
+    () => ({ ...session, role: activeRole }),
+    [session, activeRole],
+  )
+
+  // Tranche 3 — Send Message composer is a modal, not a sidebar destination.
+  // The quick-action with target === 'send_message' is intercepted by
+  // handleNavigate below and opens the modal instead of calling
+  // setActiveSection. Real comms delivery (push / WhatsApp / email) is the
+  // future comms backend workstream's job, not this composer's.
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
+
+  // Wrapper around setActiveSection that intercepts the modal-special
+  // target. Passed wherever onNavigate is consumed (TodayView quick
+  // actions today; SettingsView for consistency — its onNavigate doesn't
+  // produce 'send_message', so the interception is a no-op there).
+  const handleNavigate = (id: string) => {
+    if (id === 'send_message') {
+      setSendMessageOpen(true)
+      return
+    }
+    setActiveSection(id)
+  }
+
+  // Apply per-role sidebar gating. Fall back to 'all' if the role isn't
+  // in the config (e.g., an unrecognised demo role) — failing open is the
+  // right call for a demo shell; failing closed could hide content from a
+  // stakeholder mid-walkthrough. Reads effectiveSession.role so the
+  // RoleSwitcher re-filters the sidebar live.
+  const roleConfig = JUNIOR_ROLE_CONFIG[effectiveSession.role]
   const sidebarItems =
     !roleConfig || roleConfig.sidebar === 'all'
       ? JUNIOR_SIDEBAR_ITEMS
@@ -864,7 +1033,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
     acc[it.group].push(it)
     return acc
   }, {})
-  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'PLAYERS', 'CLUB', 'SETTINGS']
+  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'PLAYERS', 'FOOTBALL', 'CLUB', 'OPERATIONS', 'SETTINGS']
 
   return (
     // Standard portal zoom: 0.9 (per CLAUDE.md). Sidebar height compensates
@@ -907,7 +1076,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                         }}
                       >
                         <span>{item.icon}</span>
-                        <span>{roleAwareLabel(item, session.role)}</span>
+                        <span>{roleAwareLabel(item, effectiveSession.role)}</span>
                       </button>
                     )
                   })}
@@ -916,31 +1085,49 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             )
           })}
         </nav>
-        <div className="p-3 text-[10px] shrink-0" style={{ borderTop: '1px solid #1F2937', color: '#6B7280' }}>
-          Signed in as <span style={{ color: '#22C55E' }}>{session.userName || session.email}</span><br />
-          Role <span style={{ color: '#22C55E' }}>{roleConfig?.label ?? session.role}</span>{session.isDemoShell !== false ? ' · Demo shell' : ' · Live'}
+        {/* Interactive role switcher (replaces the static role-indicator pill).
+            The shared RoleSwitcher persists the switched role to
+            localStorage[lumio_sports_demo_junior] — same behaviour as every
+            other sports portal. The "Demo shell / Live" indicator line
+            preserves the signal the old static pill carried. Switching the
+            role re-routes to 'today' so the user always lands on a section
+            their new role can see. */}
+        <div className="p-3 shrink-0" style={{ borderTop: '1px solid #1F2937' }}>
+          <RoleSwitcher
+            session={effectiveSession}
+            roles={JUNIOR_ROLES}
+            accentColor="#16A34A"
+            onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('today') }}
+            sidebarCollapsed={false}
+          />
+          <p className="px-2 pt-2 text-[10px]" style={{ color: '#6B7280' }}>
+            {effectiveSession.isDemoShell !== false ? 'Demo shell' : 'Live'}
+          </p>
         </div>
       </aside>
 
       <main className="flex-1 p-6 overflow-x-hidden">
         {activeSection === 'today' && (
-          <TodayView club={club} session={session} onNavigate={setActiveSection} />
+          <TodayView club={club} session={effectiveSession} onNavigate={handleNavigate} />
         )}
         {activeSection === 'safeguarding' && (
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
         )}
         {activeSection === 'club_team' && <JuniorClubTeamAdmin session={session} />}
+        {activeSection === 'club_profile' && (
+          <JuniorClubProfile session={session} demoChild={club.demoChild} />
+        )}
         {activeSection === 'revenue_funding' && <JuniorRevenueFunding session={session} />}
         {activeSection === 'coach_toolkit' && <JuniorCoachToolkit session={session} />}
         {activeSection === 'settings' && (
-          <SettingsView club={club} session={session} onNavigate={setActiveSection} />
+          <SettingsView club={club} session={session} onNavigate={handleNavigate} />
         )}
 
         {/* Parent App — rendered for parent_guardian when the sidebar 'squad'
             item is active (renders as "My Player" for parents). For staff,
             the 'squad' item still falls through to the placeholder below
             until the staff Squad view is built. */}
-        {activeSection === 'squad' && session.role === 'parent_guardian' && (
+        {activeSection === 'squad' && effectiveSession.role === 'parent_guardian' && (
           <JuniorParentApp
             session={session}
             demoChild={club.demoChild}
@@ -967,31 +1154,85 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorDevelopment session={session} demoChild={club.demoChild} />
         )}
 
-        {/* Staff Squad management view — placeholder until the staff Squad
-            management surface is built. parent_guardian on 'squad' is
-            handled by JuniorParentApp above. */}
-        {activeSection === 'squad' && session.role !== 'parent_guardian' && (
-          <div>
-            <SectionHeader
-              title={
-                roleAwareLabel(
-                  JUNIOR_SIDEBAR_ITEMS.find(i => i.id === activeSection) ?? JUNIOR_SIDEBAR_ITEMS[0],
-                  session.role,
-                )
-              }
-              subtitle="Staff squad management — view ships in a later commit."
-              icon={JUNIOR_SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon ?? '📄'}
-            />
-            <div className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-              <p className="text-sm font-bold mb-2 text-white">Staff Squad management</p>
-              <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                Placeholder. Staff-facing Squad management (roster, registration,
-                rotation, dual-team coverage) lands in a subsequent commit.
-              </p>
-            </div>
-          </div>
+        {/* Staff Squad management — full module as of Tranche 1. The
+            parent_guardian dispatch of 'squad' to JuniorParentApp above
+            is unchanged. */}
+        {activeSection === 'squad' && effectiveSession.role !== 'parent_guardian' && (
+          <JuniorSquadManagement session={session} demoChild={club.demoChild} />
+        )}
+
+        {/* FOOTBALL group modules added in Tranche 1. */}
+        {activeSection === 'tactics' && (
+          <JuniorTactics session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'training' && (
+          <JuniorTraining session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'set_pieces' && (
+          <JuniorSetPieces session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'video_analysis' && (
+          <JuniorVideoAnalysis session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'gps_performance' && (
+          <JuniorGpsPerformance session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'heatmaps' && (
+          <JuniorHeatmaps session={session} demoChild={club.demoChild} />
+        )}
+        {/* AI Performance Brief sidebar destination — renders the existing
+            JuniorAIMatchRecap component. The sidebar-less 'ai_match_recap'
+            route (opened from the Today banner and Parent App MatchRecapCard)
+            stays as-is above this block — both paths render the same view. */}
+        {activeSection === 'performance_brief' && (
+          <JuniorAIMatchRecap session={session} />
+        )}
+        {activeSection === 'fixtures' && (
+          <JuniorFixtures session={session} demoChild={club.demoChild} />
+        )}
+
+        {/* CLUB + OPERATIONS modules added in Tranche 2a. */}
+        {activeSection === 'insights' && (
+          <JuniorInsights session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'committee_suite' && (
+          <JuniorCommitteeSuite session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'volunteer_roles' && (
+          <JuniorVolunteerRoles session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'matchday_ops' && (
+          <JuniorMatchdayOps session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'referees' && (
+          <JuniorReferees session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'tournaments' && (
+          <JuniorTournaments session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'fundraising' && (
+          <JuniorFundraising session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'travel' && (
+          <JuniorTravel session={session} demoChild={club.demoChild} />
+        )}
+
+        {/* OPERATIONS modules added in Tranche 2b. */}
+        {activeSection === 'tours_camps' && (
+          <JuniorToursCamps session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'facilities' && (
+          <JuniorFacilities session={session} demoChild={club.demoChild} />
         )}
       </main>
+
+      {/* Tranche 3 — Send Message composer (modal). Mounted at the portal
+          root so it sits above the sticky sidebar and the main content.
+          Opens via the role-aware quick action with target === 'send_message';
+          handleNavigate intercepts that special target above. */}
+      {sendMessageOpen && (
+        <JuniorSendMessageModal onClose={() => setSendMessageOpen(false)} />
+      )}
     </div>
   )
 }
