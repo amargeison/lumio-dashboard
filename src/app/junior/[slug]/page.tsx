@@ -25,6 +25,8 @@ import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
 import JuniorClubTeamAdmin from './_components/JuniorClubTeamAdmin'
 import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
+import JuniorParentApp from './_components/JuniorParentApp'
+import JuniorAIMatchRecap, { JuniorAIMatchRecapPreview } from './_components/JuniorAIMatchRecap'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -442,8 +444,11 @@ const GETTING_STARTED_ITEMS: { id: string; label: string; done: boolean; help: s
   { id: 'gs_invite_team',  label: 'Invite the rest of your team',     done: false, help: 'Invite assistant coaches, team managers and parents from Club & Team → Invitations.' },
 ]
 
-function TodayView({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
+function TodayView({
+  club, session, onNavigate,
+}: { club: JuniorClub; session: SportsDemoSession; onNavigate: (id: string) => void }) {
   const [tab, setTab] = useState<'overview' | 'getting_started'>('overview')
+  const isParent = session.role === 'parent_guardian'
   const kpis = DEMO_KPIS[club.slug] ?? DEMO_KPIS['oakridge-juniors']
   const charter = charterLabel(kpis.charterStatus)
   const consentColor = consentBadgeColor(kpis.consentsCurrent, kpis.consentsTotal)
@@ -458,8 +463,13 @@ function TodayView({ club, session }: { club: JuniorClub; session: SportsDemoSes
 
   return (
     <div>
-      {/* Morning banner / AI-summary slot. Placeholder copy until Commit 6
-          wires the canned parent brief (and role-aware variants). */}
+      {/* Morning banner / AI-summary slot. For parent_guardian: renders the
+          canned AI Match Recap preview (flagship demo brief — Jack Carter,
+          Oakridge U11 Lions). "Open full recap" navigates to the full brief
+          at activeSection 'ai_match_recap'. For staff: a club-level summary
+          (placeholder copy still — staff-facing AI brief modes live inside
+          the JuniorAIMatchRecap component, accessed via Coach Toolkit or
+          the AI brief route, not the Today banner). */}
       <div
         className="rounded-xl p-5 mb-6 relative overflow-hidden"
         style={{
@@ -467,22 +477,27 @@ function TodayView({ club, session }: { club: JuniorClub; session: SportsDemoSes
           border: '1px solid rgba(22,163,74,0.30)',
         }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1">AI summary · today</p>
-            <h3 className="text-base font-bold text-white">{greeting}</h3>
-            <p className="text-sm text-gray-300 mt-1 leading-relaxed">
-              {session.role === 'parent_guardian' && club.demoChild
-                ? `${club.demoChild.name}'s next session is logged for this week. No outstanding consent items. Match recap from the last fixture is ready to view.`
-                : `${club.name} — ${kpis.sessionsThisMonth} sessions delivered this month across ${club.teamCount} teams. ${kpis.consentsTotal - kpis.consentsCurrent} consent items outstanding. ${charter.label}.`}
-            </p>
-            <p className="text-[10px] text-gray-500 mt-2 italic">
-              Placeholder summary — the canned parent brief (and role-aware variants for staff)
-              wires in Commit 6.
-            </p>
+        {isParent ? (
+          <JuniorAIMatchRecapPreview
+            onOpen={() => onNavigate('ai_match_recap')}
+            childName={club.demoChild?.name}
+          />
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1">AI summary · today</p>
+              <h3 className="text-base font-bold text-white">{greeting}</h3>
+              <p className="text-sm text-gray-300 mt-1 leading-relaxed">
+                {club.name} — {kpis.sessionsThisMonth} sessions delivered this month across {club.teamCount} teams. {kpis.consentsTotal - kpis.consentsCurrent} consent items outstanding. {charter.label}.
+              </p>
+              <p className="text-[10px] text-gray-500 mt-2 italic">
+                Coach-facing AI briefs (Half-Time / Full-Time / Training) live in the AI Match Recap module —
+                accessible from Coach Toolkit or via the AI brief view.
+              </p>
+            </div>
+            <div className="shrink-0 text-3xl" aria-hidden>🤖</div>
           </div>
-          <div className="shrink-0 text-3xl" aria-hidden>🤖</div>
-        </div>
+        )}
       </div>
 
       <SectionHeader
@@ -871,7 +886,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
       </aside>
 
       <main className="flex-1 p-6 overflow-x-hidden">
-        {activeSection === 'today' && <TodayView club={club} session={session} />}
+        {activeSection === 'today' && (
+          <TodayView club={club} session={session} onNavigate={setActiveSection} />
+        )}
         {activeSection === 'safeguarding' && (
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
         )}
@@ -880,10 +897,33 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         {activeSection === 'settings' && (
           <SettingsView club={club} session={session} onNavigate={setActiveSection} />
         )}
+
+        {/* Parent App — rendered for parent_guardian when the sidebar 'squad'
+            item is active (renders as "My Player" for parents). For staff,
+            the 'squad' item still falls through to the placeholder below
+            until the staff Squad view is built. */}
+        {activeSection === 'squad' && session.role === 'parent_guardian' && (
+          <JuniorParentApp
+            session={session}
+            demoChild={club.demoChild}
+            onOpenFullRecap={() => setActiveSection('ai_match_recap')}
+          />
+        )}
+
+        {/* AI Match Recap — a sidebar-less route opened from the Today AI
+            banner and from the Parent App MatchRecapCard "Open full recap"
+            button. Renders for parent_guardian (Match Recap mode) and staff
+            (Half-Time / Full-Time / Training / parent-view modes). */}
+        {activeSection === 'ai_match_recap' && (
+          <JuniorAIMatchRecap session={session} />
+        )}
+
         {/* Module views still to build — placeholder for the remaining sidebar
             ids until they get their own commits. */}
-        {(activeSection === 'squad' || activeSection === 'match_video' ||
-          activeSection === 'performance' || activeSection === 'development') && (
+        {((activeSection === 'squad' && session.role !== 'parent_guardian') ||
+          activeSection === 'match_video' ||
+          activeSection === 'performance' ||
+          activeSection === 'development') && (
           <div>
             <SectionHeader
               title={
@@ -898,17 +938,10 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             <div className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-2 text-white">Section: {activeSection}</p>
               <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                Placeholder view. The remaining player-side modules (Squad / My
-                Player with fixtures + fees content, Match Video, Performance,
-                Development) ship in subsequent commits.
+                Placeholder view. The remaining player-side modules (staff Squad
+                management, Match Video, Performance, Development) ship in
+                subsequent commits.
               </p>
-              {activeSection === 'squad' && session.role === 'parent_guardian' && club.demoChild && (
-                <p className="text-xs mt-3" style={{ color: '#6B7280' }}>
-                  Parent view: this is where {club.demoChild.name}&apos;s profile
-                  (with fixtures + fees content from the Parent App / Match
-                  Recap view) will render once that view is built.
-                </p>
-              )}
             </div>
           </div>
         )}
