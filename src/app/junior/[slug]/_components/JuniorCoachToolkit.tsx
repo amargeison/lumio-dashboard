@@ -57,12 +57,21 @@ interface PlayerCard {
   name: string
   pos: 'GK' | 'DEF' | 'MID' | 'FWD'
   shirt: number
-  /** FIFA-style attribute tokens. Junior context: small set, age-appropriate. */
+  /**
+   * FA Four-Corner model — the canonical Lumio Junior development
+   * framework. Same four attributes are the authoring surface in the
+   * Player Development Tracker (see JuniorDevelopment.tsx); these
+   * tiles are the FIFA-style display layer of the same data.
+   *
+   * Reconciled in Commit 7 (previously TEC/PHY/DEC/TEM through
+   * Commits 5–6 — the backlog entry logged in Commit 6 closed by
+   * adopting the FA framework as canonical across both surfaces).
+   */
   attrs: {
-    technical: number
-    physical:  number
-    decision:  number
-    teamplay:  number
+    technical:     number
+    physical:      number
+    social:        number
+    psychological: number
   }
   status: 'fit' | 'doubt' | 'unavailable'
 }
@@ -111,15 +120,15 @@ const DRILLS: Drill[] = [
 ]
 
 const U11_SQUAD: PlayerCard[] = [
-  { id: 'p-01', name: 'Jack Carter',   pos: 'MID', shirt: 8,  attrs: { technical: 78, physical: 65, decision: 74, teamplay: 82 }, status: 'fit' },
-  { id: 'p-02', name: 'Ollie Wren',    pos: 'GK',  shirt: 1,  attrs: { technical: 70, physical: 72, decision: 76, teamplay: 78 }, status: 'fit' },
-  { id: 'p-03', name: 'Maya Singh',    pos: 'DEF', shirt: 4,  attrs: { technical: 72, physical: 75, decision: 71, teamplay: 80 }, status: 'fit' },
-  { id: 'p-04', name: 'Zac Daley',     pos: 'DEF', shirt: 5,  attrs: { technical: 66, physical: 78, decision: 68, teamplay: 74 }, status: 'doubt' },
-  { id: 'p-05', name: 'Aria Khoury',   pos: 'MID', shirt: 6,  attrs: { technical: 80, physical: 62, decision: 78, teamplay: 81 }, status: 'fit' },
-  { id: 'p-06', name: 'Liam Forrest',  pos: 'MID', shirt: 10, attrs: { technical: 82, physical: 64, decision: 80, teamplay: 76 }, status: 'fit' },
-  { id: 'p-07', name: 'Ravi Doshi',    pos: 'FWD', shirt: 9,  attrs: { technical: 79, physical: 70, decision: 73, teamplay: 70 }, status: 'fit' },
-  { id: 'p-08', name: 'Beth Halpern',  pos: 'FWD', shirt: 11, attrs: { technical: 76, physical: 68, decision: 72, teamplay: 74 }, status: 'fit' },
-  { id: 'p-09', name: 'Ben Aitken',    pos: 'DEF', shirt: 2,  attrs: { technical: 68, physical: 76, decision: 70, teamplay: 75 }, status: 'fit' },
+  { id: 'p-01', name: 'Jack Carter',   pos: 'MID', shirt: 8,  attrs: { technical: 78, physical: 65, social: 82, psychological: 74 }, status: 'fit' },
+  { id: 'p-02', name: 'Ollie Wren',    pos: 'GK',  shirt: 1,  attrs: { technical: 70, physical: 72, social: 78, psychological: 76 }, status: 'fit' },
+  { id: 'p-03', name: 'Maya Singh',    pos: 'DEF', shirt: 4,  attrs: { technical: 72, physical: 75, social: 80, psychological: 71 }, status: 'fit' },
+  { id: 'p-04', name: 'Zac Daley',     pos: 'DEF', shirt: 5,  attrs: { technical: 66, physical: 78, social: 74, psychological: 68 }, status: 'doubt' },
+  { id: 'p-05', name: 'Aria Khoury',   pos: 'MID', shirt: 6,  attrs: { technical: 80, physical: 62, social: 81, psychological: 78 }, status: 'fit' },
+  { id: 'p-06', name: 'Liam Forrest',  pos: 'MID', shirt: 10, attrs: { technical: 82, physical: 64, social: 76, psychological: 80 }, status: 'fit' },
+  { id: 'p-07', name: 'Ravi Doshi',    pos: 'FWD', shirt: 9,  attrs: { technical: 79, physical: 70, social: 70, psychological: 73 }, status: 'fit' },
+  { id: 'p-08', name: 'Beth Halpern',  pos: 'FWD', shirt: 11, attrs: { technical: 76, physical: 68, social: 74, psychological: 72 }, status: 'fit' },
+  { id: 'p-09', name: 'Ben Aitken',    pos: 'DEF', shirt: 2,  attrs: { technical: 68, physical: 76, social: 75, psychological: 70 }, status: 'fit' },
 ]
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -138,7 +147,7 @@ function attrColor(v: number) {
 }
 
 function PlayerTile({ p }: { p: PlayerCard }) {
-  const overall = Math.round((p.attrs.technical + p.attrs.physical + p.attrs.decision + p.attrs.teamplay) / 4)
+  const overall = Math.round((p.attrs.technical + p.attrs.physical + p.attrs.social + p.attrs.psychological) / 4)
   const statusBadge =
     p.status === 'fit'         ? { label: 'Fit',         color: T.good } :
     p.status === 'doubt'       ? { label: 'Doubt',       color: T.warn } :
@@ -162,11 +171,13 @@ function PlayerTile({ p }: { p: PlayerCard }) {
         </div>
       </div>
       <div className="grid grid-cols-4 gap-1 mb-2">
+        {/* FA four-corner scheme — canonical attributes shared with the
+            Player Development Tracker. Abbreviations: TEC/PHY/SOC/PSY. */}
         {([
           ['TEC', p.attrs.technical],
           ['PHY', p.attrs.physical],
-          ['DEC', p.attrs.decision],
-          ['TEM', p.attrs.teamplay],
+          ['SOC', p.attrs.social],
+          ['PSY', p.attrs.psychological],
         ] as [string, number][]).map(([k, v]) => (
           <div key={k} className="rounded p-1 text-center" style={{ backgroundColor: T.panel }}>
             <p className="text-[8px] uppercase tracking-wider" style={{ color: T.text4 }}>{k}</p>

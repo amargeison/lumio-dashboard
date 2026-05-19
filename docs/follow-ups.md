@@ -149,51 +149,6 @@ Risk: the rename touches a lot of lines but is mechanical. Best
 done as a dedicated rename commit so it doesn't bury substantive
 data changes in the diff.
 
-## Junior portal — reconcile Coach Toolkit player cards with Player Development Tracker
-
-The Coach Toolkit FIFA-style player cards (Commit 5, in
-`src/app/junior/[slug]/_components/JuniorCoachToolkit.tsx`) use a
-4-attribute rating scheme:
-
-- **TEC** — Technical
-- **PHY** — Physical
-- **DEC** — Decision
-- **TEM** — Teamplay
-
-The Player Development Tracker (planned for Commit 7) is specced
-to use a different 4-attribute framework, aligned to FA Youth
-Development Phase categories:
-
-- **Technical**
-- **Physical**
-- **Social**
-- **Psychological**
-
-These two schemes overlap (Technical, Physical) but diverge on
-the other two (Decision/Teamplay vs Social/Psychological). They
-cannot both be the "junior junior-player attribute model" — that
-would mean a coach rating a child differently in two surfaces of
-the same portal.
-
-Commit 7 task: pick one canonical scheme and unify both surfaces
-on it. Two defensible options:
-
-1. Adopt the FA-aligned framework (Tech / Phys / Social / Psych)
-   as canonical, and update the Coach Toolkit player tiles to
-   match. Slightly less FIFA-card-like but pedagogically correct
-   and lines up with grant / Charter Standard evidence frames.
-2. Keep TEC/PHY/DEC/TEM as the FIFA-style display layer, but
-   make the Development Tracker the authoring surface; the four
-   tracker attributes feed the four card stats (DEC ← Psych,
-   TEM ← Social, etc., with documented mapping). Cleaner
-   product UX but requires a published mapping doc.
-
-Recommendation when picked up: option 1 — the FA framework is
-the right canonical surface, and Coach Toolkit cards should
-reflect what's tracked, not invent a parallel scheme. Either
-way, Commit 7 must reconcile deliberately rather than introduce
-a third scheme or quietly let two diverge.
-
 ## Football quotes location
 
 `FOOTBALL_QUOTES` is now duplicated across THREE locations:

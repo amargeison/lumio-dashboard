@@ -406,7 +406,7 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
   coach: {
     id: 'coach',
     label: 'Coach',
-    description: 'Coaching staff. Manages training, squad selection, player development. Used at both lumio_grassroots and lumio_junior; at lumio_junior this also covers age-group coaching until a dedicated academy_lead role is added.',
+    description: 'Coaching staff. Manages training, squad selection, player development. Used at both lumio_grassroots and lumio_junior; for development-pathway oversight at lumio_junior, see also academy_lead.',
     products: ['lumio_grassroots', 'lumio_junior'],
     permissions: {
       football_operations: 'edit',
@@ -519,6 +519,30 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       player_development:    'view',
       football_operations:   'view',
       safeguarding_consent:  'view',
+    },
+  },
+
+  academy_lead: {
+    id: 'academy_lead',
+    label: 'Academy Lead',
+    description:
+      'Owns the development pathway across age bands. Reviews and signs off termly player development, ' +
+      'edits the coach toolkit (drills, session templates), and reads welfare context as needed. ' +
+      'Junior-scoped (lumio_junior). Deferred from Commit 1A pending the player_development module — ' +
+      'added now that the Development Tracker exists.',
+    products: ['lumio_junior'],
+    scope: 'all',
+    permissions: {
+      player_development:    'admin',
+      coach_toolkit:         'edit',
+      player_welfare:        'view',
+      safeguarding_consent:  'view',
+      video_analysis:        'view',
+      performance_gps:       'view',
+      football_operations:   'view',
+      staff_directory:       'view',
+      overview:              'view',
+      insights:              'view',
     },
   },
 }

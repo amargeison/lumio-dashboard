@@ -27,6 +27,9 @@ import JuniorClubTeamAdmin from './_components/JuniorClubTeamAdmin'
 import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 import JuniorParentApp from './_components/JuniorParentApp'
 import JuniorAIMatchRecap, { JuniorAIMatchRecapPreview } from './_components/JuniorAIMatchRecap'
+import JuniorMatchVideo from './_components/JuniorMatchVideo'
+import JuniorPerformance from './_components/JuniorPerformance'
+import JuniorDevelopment from './_components/JuniorDevelopment'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -136,6 +139,7 @@ const JUNIOR_ROLES = [
   { id: 'coach',            label: 'Lead Coach',         icon: '🎽' },
   { id: 'team_manager',     label: 'Team Manager',       icon: '📋' },
   { id: 'welfare_officer',  label: 'Welfare Officer',    icon: '🛡️' },
+  { id: 'academy_lead',     label: 'Academy Lead',       icon: '🎓' },
   { id: 'parent_guardian',  label: 'Parent / Guardian',  icon: '👨‍👧' },
 ]
 
@@ -248,6 +252,20 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     sidebar: ['today', 'squad', 'development', 'safeguarding', 'settings'],
     hiddenTabs: [],
     message: 'Safeguarding, consent and welfare view.',
+  },
+  academy_lead: {
+    label: 'Academy Lead',
+    icon: '🎓',
+    accent: '#A78BFA',
+    // Development-pathway role. Whitelist is squad-and-development-focused:
+    // sees Today landing, the squad, all the development-pathway surfaces
+    // (development tracker is admin via the RBAC layer, coach_toolkit is
+    // edit, performance + match_video read for context), safeguarding for
+    // welfare context, and settings. Club & Team admin omitted — the
+    // academy lead doesn't own fixtures, training schedules or comms.
+    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'safeguarding', 'settings'],
+    hiddenTabs: [],
+    message: 'Development pathway across age bands · termly reviews.',
   },
   parent_guardian: {
     label: 'Parent / Guardian',
@@ -918,12 +936,21 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorAIMatchRecap session={session} />
         )}
 
-        {/* Module views still to build — placeholder for the remaining sidebar
-            ids until they get their own commits. */}
-        {((activeSection === 'squad' && session.role !== 'parent_guardian') ||
-          activeSection === 'match_video' ||
-          activeSection === 'performance' ||
-          activeSection === 'development') && (
+        {/* Player-side modules. */}
+        {activeSection === 'match_video' && (
+          <JuniorMatchVideo session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'performance' && (
+          <JuniorPerformance session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'development' && (
+          <JuniorDevelopment session={session} demoChild={club.demoChild} />
+        )}
+
+        {/* Staff Squad management view — placeholder until the staff Squad
+            management surface is built. parent_guardian on 'squad' is
+            handled by JuniorParentApp above. */}
+        {activeSection === 'squad' && session.role !== 'parent_guardian' && (
           <div>
             <SectionHeader
               title={
@@ -932,15 +959,14 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                   session.role,
                 )
               }
-              subtitle="Module view — full content lands in a later commit."
+              subtitle="Staff squad management — view ships in a later commit."
               icon={JUNIOR_SIDEBAR_ITEMS.find(i => i.id === activeSection)?.icon ?? '📄'}
             />
             <div className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
-              <p className="text-sm font-bold mb-2 text-white">Section: {activeSection}</p>
+              <p className="text-sm font-bold mb-2 text-white">Staff Squad management</p>
               <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                Placeholder view. The remaining player-side modules (staff Squad
-                management, Match Video, Performance, Development) ship in
-                subsequent commits.
+                Placeholder. Staff-facing Squad management (roster, registration,
+                rotation, dual-team coverage) lands in a subsequent commit.
               </p>
             </div>
           </div>
