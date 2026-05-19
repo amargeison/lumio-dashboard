@@ -39,6 +39,12 @@ import JuniorVideoAnalysis from './_components/JuniorVideoAnalysis'
 import JuniorGpsPerformance from './_components/JuniorGpsPerformance'
 import JuniorHeatmaps from './_components/JuniorHeatmaps'
 import JuniorFixtures from './_components/JuniorFixtures'
+import JuniorInsights from './_components/JuniorInsights'
+import JuniorVolunteerRoles from './_components/JuniorVolunteerRoles'
+import JuniorMatchdayOps from './_components/JuniorMatchdayOps'
+import JuniorTournaments from './_components/JuniorTournaments'
+import JuniorFundraising from './_components/JuniorFundraising'
+import JuniorTravel from './_components/JuniorTravel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -170,7 +176,7 @@ interface JuniorSidebarItem {
   id: string
   label: string
   icon: string
-  group: 'OVERVIEW' | 'FOOTBALL' | 'PLAYERS' | 'CLUB' | 'SETTINGS'
+  group: 'OVERVIEW' | 'FOOTBALL' | 'PLAYERS' | 'CLUB' | 'OPERATIONS' | 'SETTINGS'
 }
 
 const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
@@ -217,6 +223,19 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // it stays chairman-only. Treasurer role, if added, inherits via its
   // own whitelist.
   { id: 'revenue_funding', label: 'Revenue & Funding', icon: '💷', group: 'CLUB' },
+  // CLUB additions — Tranche 2a. 'insights' is the chairman's weekend
+  // health-check (kept off other roles' whitelists). 'volunteer_roles'
+  // is the differentiator — the web of volunteer jobs a real junior
+  // team actually runs on.
+  { id: 'insights',        label: 'Insights',          icon: '📊', group: 'CLUB' },
+  { id: 'volunteer_roles', label: 'Volunteer Roles',   icon: '🤝', group: 'CLUB' },
+
+  // OPERATIONS — Tranche 2a. Per-Saturday, per-trip, per-summer
+  // volunteer glue. "Whose Saturday does this save."
+  { id: 'matchday_ops',    label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
+  { id: 'tournaments',     label: 'Tournaments',         icon: '🏆', group: 'OPERATIONS' },
+  { id: 'fundraising',     label: 'Fundraising',         icon: '💰', group: 'OPERATIONS' },
+  { id: 'travel',          label: 'Travel & Car-Share',  icon: '🚗', group: 'OPERATIONS' },
 
   // SETTINGS — its own group, very bottom (mirrors Women's pattern).
   { id: 'settings',     label: 'Settings',           icon: '⚙️', group: 'SETTINGS' },
@@ -285,7 +304,9 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'today',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
-      'safeguarding', 'settings',
+      'safeguarding',
+      'matchday_ops', 'tournaments', 'travel',
+      'settings',
     ],
     hiddenTabs: [],
     message: 'Coaching, sessions and player-development view.',
@@ -298,7 +319,9 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'today',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
-      'club_team', 'safeguarding', 'settings',
+      'club_team', 'safeguarding', 'volunteer_roles',
+      'matchday_ops', 'tournaments', 'fundraising', 'travel',
+      'settings',
     ],
     hiddenTabs: [],
     message: 'Team logistics, availability and parent-comms view.',
@@ -351,7 +374,9 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // Tranche 1 adds 'fixtures' so parents can see the schedule, results
     // and league position without leaving Lumio. Coaching/tactical
     // modules remain coach-side only.
-    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding'],
+    // Tranche 2a adds 'travel' — parents both offer and need lifts, so
+    // they belong in the car-share view.
+    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel'],
     hiddenTabs: [],
     message: "Your child's training, video, performance, development and consent.",
   },
@@ -922,7 +947,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
     acc[it.group].push(it)
     return acc
   }, {})
-  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'FOOTBALL', 'PLAYERS', 'CLUB', 'SETTINGS']
+  const groupOrder: JuniorSidebarItem['group'][] = ['OVERVIEW', 'FOOTBALL', 'PLAYERS', 'CLUB', 'OPERATIONS', 'SETTINGS']
 
   return (
     // Standard portal zoom: 0.9 (per CLAUDE.md). Sidebar height compensates
@@ -1062,6 +1087,25 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorFixtures session={session} demoChild={club.demoChild} />
         )}
 
+        {/* CLUB + OPERATIONS modules added in Tranche 2a. */}
+        {activeSection === 'insights' && (
+          <JuniorInsights session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'volunteer_roles' && (
+          <JuniorVolunteerRoles session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'matchday_ops' && (
+          <JuniorMatchdayOps session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'tournaments' && (
+          <JuniorTournaments session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'fundraising' && (
+          <JuniorFundraising session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'travel' && (
+          <JuniorTravel session={session} demoChild={club.demoChild} />
+        )}
       </main>
     </div>
   )
