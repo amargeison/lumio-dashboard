@@ -162,3 +162,42 @@ Should eventually be migrated to `src/lib/sports-quotes.ts`
 alongside cricket, tennis, boxing, golf, darts. Defer until
 next quote-related work to avoid bundling refactor in feature
 commits.
+
+## Junior founding-member empty-portal landing (`/junior/app`)
+
+A real junior founding member who signs in via the welcome email&rsquo;s
+"Sign in to your portal" CTA lands on `/junior/app`. The route
+exists at `src/app/junior/app/page.tsx` and renders the
+`SportsComingSoon` placeholder &mdash; not a live portal, not the
+founder&rsquo;s own data. Every sport ships the same coming-soon
+placeholder today (`src/app/{boxing,cricket,darts,golf,tennis,rugby,
+womens,nonleague,grassroots,(football)/football,junior}/app/page.tsx`),
+so this is not junior-specific.
+
+The fix belongs to the founding-member onboarding wizard &mdash;
+the separate future workstream that:
+- Writes a real `sports_clubs` row for the founder&rsquo;s club
+- Creates a `sports_memberships` row binding the founder to that club
+- Replaces the per-sport `SportsComingSoon` with a real `/<sport>/app`
+  page that reads the founder&rsquo;s own club, not the demo data
+- For junior specifically, the wizard also seeds the empty
+  `junior_*` tables (teams, age bands, welfare officer placeholder,
+  initial consent rows, etc.) for the new club so the safeguarding
+  surfaces don&rsquo;t render empty on first sign-in
+
+Smaller adjacent item discovered while logging this: the junior
+coming-soon page passes `demoHref="/junior/junior-demo"`
+(`src/app/junior/app/page.tsx:12`), but `junior-demo` is not a key
+in `DEMO_CLUBS` in `src/app/junior/[slug]/page.tsx`, so the demo
+button falls back to Oakridge Juniors via `DEMO_CLUBS[params.slug]
+?? DEMO_CLUBS['oakridge-juniors']`. Functional but the URL is ugly;
+change `demoHref` to `/junior/oakridge-juniors` whenever the
+onboarding wizard touches this file.
+
+Risk: shipping junior founder sign-ups before the wizard exists
+means a paying chairman&rsquo;s first authenticated experience is a
+"coming soon" placeholder, which contradicts the
+"your portal is ready to build" framing in the founder welcome
+email. Either fix this when wiring up the onboarding wizard, or
+hold junior founder sign-ups behind a waitlist until the wizard
+ships.
