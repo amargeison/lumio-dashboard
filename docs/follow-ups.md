@@ -201,3 +201,71 @@ means a paying chairman&rsquo;s first authenticated experience is a
 email. Either fix this when wiring up the onboarding wizard, or
 hold junior founder sign-ups behind a waitlist until the wizard
 ships.
+
+## WhatsApp template-nudge → in-app confirmation flow (comms backend workstream)
+
+Belongs to the future comms BACKEND workstream &mdash; NOT the
+Tranche 3 Junior portal Send Message UI, which is canned and
+UI-only by design. This entry is the place to capture the
+designed-but-not-built delivery pattern that the comms workstream
+needs to implement.
+
+The pattern: send parents a short WhatsApp NUDGE that drives them
+to open the Lumio app and answer there. WhatsApp is the delivery
+layer, not the conversation surface. The actual interaction
+(availability Y/N, "are you driving?" Y/N, lift requests, kit
+confirmations, camp sign-ups) happens IN-APP &mdash; big simple
+buttons in Lumio &mdash; where there are no templates, no
+per-message cost, and full UI control. The portal modules to
+surface these confirmations already exist: Volunteer Roles rota
+(this weekend&rsquo;s rota tab), Matchday Operations (kit /
+equipment / ops checklists), Travel &amp; Car-Share (driver +
+passenger matching).
+
+WhatsApp delivery side:
+- Official WhatsApp Business Platform via a provider such as
+  Twilio (server-side REST API). No client-side WhatsApp logic.
+- Business-initiated WhatsApp messages MUST use a pre-approved
+  Meta message template &mdash; so the nudge is a fixed approved
+  template (e.g. "{team} has an update &mdash; open Lumio to
+  confirm availability for Saturday"). Free-form business-initiated
+  WhatsApp messaging out of the blue is not permitted; only
+  template messages cross the platform from us → parent.
+- Templates need registering with Meta in advance; expect a
+  template catalogue alongside the comms backend (nudges for
+  availability, lift, camp sign-up, payment reminder, welfare
+  follow-up, etc.).
+
+Constraints to design around:
+- Per-conversation cost &mdash; WhatsApp Business messages are
+  paid, unlike an in-app push. Treat WhatsApp as a paid catch-all,
+  not the default channel.
+- Opt-in is mandatory &mdash; every parent must consent to
+  WhatsApp contact before any message. For a children&rsquo;s
+  product this should slot into the existing Safeguarding &amp;
+  Consent hub (`src/app/junior/[slug]/_components/JuniorSafeguardingHub.tsx`)
+  as a new consent type alongside photography / filming / data-
+  sharing, with the same chase / expiry treatment.
+- Restricted-child rule from the safeguarding boundary still
+  applies &mdash; WhatsApp template content must not name or
+  identify restricted children. Audit at template-design time.
+
+Recommended layering:
+- Native push notification for parents who HAVE the Lumio app
+  installed &mdash; same nudge content, zero per-message cost.
+  Push is the default channel.
+- WhatsApp template-nudge as the paid catch-all for parents who
+  have not installed the app yet (or have notifications off).
+  WhatsApp&rsquo;s value is reach, not being the cheapest channel.
+- Email as a third-tier fallback for parents who have opted out
+  of both push and WhatsApp.
+
+Status: designed/specified here, not built. Depends on the comms
+backend workstream &mdash; provider integration (Twilio or
+equivalent), opt-in handling stored on the parent record,
+Meta template registration, server-side delivery pipeline,
+and the in-app push infrastructure. The Junior portal UI
+surfaces (Tranche 3 Send Message composer, Volunteer Roles rota,
+Matchday Ops, Travel) are the receiving side of this pattern and
+already in place canned; they wire to a real backend in the
+comms workstream.
