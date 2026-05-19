@@ -20,6 +20,11 @@
 
 import { useState } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import SportsSettings from '@/components/sports/SportsSettings'
+import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
+import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
+import JuniorClubTeamAdmin from './_components/JuniorClubTeamAdmin'
+import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +138,7 @@ const JUNIOR_ROLES = [
 ]
 
 // ─── Sidebar catalogue ───────────────────────────────────────────────────────
-// 8 top-level sidebar items, mirroring the Women's SIDEBAR_ITEMS shape
+// 9 top-level sidebar items, mirroring the Women's SIDEBAR_ITEMS shape
 // ({ id, label, icon, group }) but cut down to the Junior product surface.
 // Women's-only items deliberately dropped: Board Suite (no junior board
 // surface), FSR Dashboard (no salary-cap regime), Cycle Tracking and
@@ -141,16 +146,9 @@ const JUNIOR_ROLES = [
 // dense 10-tab Insights role view (a senior club role overlay, not a
 // junior-club construct).
 //
-// IMPORTANT (Commit 4 design note — see report-back to user):
-// the user spec listed "Parent sees only Today / My Player / Match Video /
-// Performance / Development / fixtures + fees" alongside an 8-item
-// canonical sidebar. Those two can't both be literal sidebar lists. The
-// reading taken here: 8 sidebar items as listed, and "fixtures + fees"
-// is content rendered *inside* the parent's "My Player" view (parent-
-// scoped variant of the Squad item). If the user actually wanted
-// fixtures+fees as a 9th parent-only sidebar item, it's a one-line add
-// (push it onto JUNIOR_SIDEBAR_ITEMS and into the parent_guardian
-// whitelist below).
+// "Fixtures + fees" deliberately is NOT a sidebar item — it's content
+// inside the Parent App / Match Recap view (built in Commit 6), not a
+// navigation destination.
 
 interface JuniorSidebarItem {
   id: string
@@ -167,10 +165,11 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // 'squad' renders as "My Player" for parent_guardian (single child),
   // "My Players / Squad" for staff (full age-band roster). The label
   // swap is handled at render time via roleAwareLabel() below.
-  { id: 'squad',        label: 'My Players / Squad', icon: '👥', group: 'PLAYERS' },
-  { id: 'match_video',  label: 'Match Video',        icon: '🎬', group: 'PLAYERS' },
-  { id: 'performance',  label: 'Performance',        icon: '📡', group: 'PLAYERS' },
-  { id: 'development',  label: 'Development',        icon: '📈', group: 'PLAYERS' },
+  { id: 'squad',         label: 'My Players / Squad', icon: '👥', group: 'PLAYERS' },
+  { id: 'match_video',   label: 'Match Video',        icon: '🎬', group: 'PLAYERS' },
+  { id: 'performance',   label: 'Performance',        icon: '📡', group: 'PLAYERS' },
+  { id: 'development',   label: 'Development',        icon: '📈', group: 'PLAYERS' },
+  { id: 'coach_toolkit', label: 'Coach Toolkit',      icon: '🎽', group: 'PLAYERS' },
 
   // CLUB — staff-only in practice (the role whitelist gates this).
   { id: 'club_team',    label: 'Club & Team',        icon: '🏛️', group: 'CLUB' },
@@ -191,17 +190,17 @@ function roleAwareLabel(item: JuniorSidebarItem, role: string): string {
 // ─── Role config ──────────────────────────────────────────────────────────────
 // Per-role sidebar gating, accent colour, and welcome-line copy. Adapted
 // from src/app/womens/[slug]/page.tsx WOMENS_ROLE_CONFIG; same shape, junior
-// sidebar item ids. Whitelists use the new Commit 4 ids (today / squad /
-// match_video / performance / development / club_team / safeguarding /
-// settings).
+// sidebar item ids (today / squad / match_video / performance /
+// development / coach_toolkit / club_team / safeguarding / settings).
 //
 // Parent / Guardian sidebar is materially narrower than any staff role:
-// no club_team (club admin), no safeguarding (parent's consent lives
-// inside their child profile, not a top-level admin surface), no
-// settings (accessible from the user menu, not the sidebar). What
-// remains is child-scoped — Today landing, the child's "My Player"
-// view (with fixtures + fees content inside it), Match Video,
-// Performance and Development.
+// no coach_toolkit (coach-only), no club_team (club admin), no settings
+// (accessible from the user menu, not the sidebar). Safeguarding IS
+// included for parents but is CHILD-SCOPED — a parent's view of the
+// Safeguarding module shows only their own child's photography /
+// filming / data-sharing consent records, never the club-wide DBS
+// register, incident log, or Welfare Officer dashboard. Role scoping
+// is enforced inside the module, not by hiding the sidebar item.
 
 interface JuniorRoleConfig {
   label: string
@@ -228,7 +227,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Lead Coach',
     icon: '🎽',
     accent: '#22C55E',
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'settings'],
+    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'safeguarding', 'settings'],
     hiddenTabs: [],
     message: 'Coaching, sessions and player-development view.',
   },
@@ -236,7 +235,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Team Manager',
     icon: '📋',
     accent: '#0EA5E9',
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'club_team', 'safeguarding', 'settings'],
+    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'coach_toolkit', 'club_team', 'safeguarding', 'settings'],
     hiddenTabs: [],
     message: 'Team logistics, availability and parent-comms view.',
   },
@@ -252,12 +251,17 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     label: 'Parent / Guardian',
     icon: '👨‍👧',
     accent: '#16A34A',
-    // Materially reduced surface (see notes above). Settings deliberately
-    // omitted — parent account management lives in the user menu, not
-    // a top-level sidebar slot.
-    sidebar: ['today', 'squad', 'match_video', 'performance', 'development'],
+    // Materially reduced surface. Settings deliberately omitted — parent
+    // account management lives in the user menu, not a top-level sidebar
+    // slot. Safeguarding IS included but is CHILD-SCOPED for parents —
+    // a parent's "Safeguarding" view shows only their own child's
+    // photography / filming / data-sharing consent records, never the
+    // DBS register, incident log, or club-wide Welfare dashboard. That
+    // role-scoping is enforced inside the Safeguarding module, not by
+    // hiding the sidebar item.
+    sidebar: ['today', 'squad', 'match_video', 'performance', 'development', 'safeguarding'],
     hiddenTabs: [],
-    message: "Your child's training, video, performance and development.",
+    message: "Your child's training, video, performance, development and consent.",
   },
 }
 
@@ -663,6 +667,129 @@ function TodayView({ club, session }: { club: JuniorClub; session: SportsDemoSes
   )
 }
 
+// ─── Settings view ───────────────────────────────────────────────────────────
+// Shared SportsSettings chrome (same as Tennis / Cricket / Darts / Golf /
+// Boxing / Women's) plus junior-specific augmentations via extraSections.
+// JUNIOR_ROLE_CONFIG is passed verbatim so the Roles & Permissions read-only
+// table renders the live config rather than a stale duplicate.
+
+function SettingsView({
+  club, session, onNavigate,
+}: { club: JuniorClub; session: SportsDemoSession; onNavigate: (id: string) => void }) {
+  const juniorStaffRoles = [
+    'Volunteer Chair', 'Lead Coach', 'Team Manager', 'Welfare Officer',
+    'Assistant Coach', 'Treasurer', 'Fixtures Secretary',
+  ]
+  return (
+    <SportsSettings
+      sport="junior"
+      slug={club.slug}
+      sportLabel="Lumio Junior Football"
+      entity="club"
+      accentColour="#16A34A"
+      accentLight="#22C55E"
+      session={{
+        userName: session?.userName,
+        photoDataUrl: session?.photoDataUrl,
+        email: session?.email,
+        nickname: session?.nickname,
+        clubName: session?.clubName || club.name,
+        logoDataUrl: session?.logoDataUrl,
+        isDemoShell: session?.isDemoShell,
+      }}
+      storagePrefix="lumio_junior_"
+      profile={{
+        name: 'Volunteer Chair',
+        tour: 'Competition tier',
+        tourValue: club.tier === 'charter_standard' ? 'Charter Standard development' : 'Grassroots',
+        ranking: 'Team count',
+        rankingValue: `${club.teamCount} teams · ${club.ageBands.join(', ')}`,
+        coach: 'Lead Coach',
+        coachValue: club.director,
+        agent: 'Welfare Officer',
+        agentValue: club.welfareOfficer ?? 'Not yet appointed',
+        homeVenue: 'Home ground',
+        homeVenueValue: club.ground,
+        playerIdLabel: 'FA Affiliation ID (demo)',
+        staffInviteRoles: juniorStaffRoles,
+      }}
+      configFields={[
+        { id: 'faAffiliationId', label: 'FA Affiliation ID (demo)',         description: 'Issued by the local County FA for affiliated junior clubs', kind: 'text',   placeholder: 'e.g. FA-OJC-2025', defaultValue: 'FA-OJC-2025' },
+        { id: 'wgsRef',          label: 'Whole Game System reference (demo)', description: 'FA Whole Game System club reference',                       kind: 'text',   placeholder: 'e.g. WGS-OJC-901', defaultValue: 'WGS-OJC-901' },
+        { id: 'charterTier',     label: 'FA Charter Standard tier',         description: 'Charter Standard tier — drives evidence-pack content',         kind: 'select', options: ['Charter Standard (Junior)','Working toward','Not entered'], defaultValue: club.charterStatus === 'achieved' ? 'Charter Standard (Junior)' : club.charterStatus === 'working_toward' ? 'Working toward' : 'Not entered' },
+        { id: 'coachingModel',   label: 'Coaching model',                   description: 'Paid head coach + volunteer assistants, or fully volunteer',  kind: 'select', options: ['Paid head + volunteer assistants','Fully volunteer'], defaultValue: club.coachingModel === 'paid_head_volunteer_assistants' ? 'Paid head + volunteer assistants' : 'Fully volunteer' },
+        { id: 'homeGround',      label: 'Home ground',                      description: 'Primary training and matchday venue',                          kind: 'text',   placeholder: 'e.g. Oakridge Community Pitches', defaultValue: club.ground },
+        { id: 'founded',         label: 'Founded',                          description: 'Year of formation',                                            kind: 'number', defaultValue: String(club.founded) },
+        { id: 'gpsProvider',     label: 'GPS hardware provider',            description: 'Junior GPS tracking — opt-in by age band',                     kind: 'select', options: ['None','Lumio Health (junior-tuned)','CSV Upload (manual)'], defaultValue: 'Lumio Health (junior-tuned)' },
+        { id: 'accentColor',     label: 'Accent colour',                    description: 'Drives in-portal accent',                                      kind: 'color',  defaultValue: club.accent },
+      ]}
+      integrationGroups={[
+        {
+          title: 'FA & REGISTRATION',
+          items: [
+            { name: 'Whole Game System',     desc: 'Squad registrations + matchday reporting', connected: true },
+            { name: 'FA Charter Standard',   desc: 'Charter accreditation evidence pack',      connected: true },
+            { name: 'County FA portal',      desc: 'League fixtures + discipline records' },
+          ],
+        },
+        {
+          title: 'SAFEGUARDING',
+          items: [
+            { name: 'DBS Online',            desc: 'Enhanced DBS with barred-list check renewals', connected: true },
+            { name: 'FA Safeguarding course', desc: 'Mandatory refresher tracking',                connected: true },
+          ],
+        },
+        {
+          title: 'COMMUNICATION',
+          items: [
+            { name: 'WhatsApp Business', desc: 'Team-by-team broadcast (GDPR-bounded)' },
+            { name: 'Email',             desc: 'Parent comms — consent-gated' },
+            { name: 'Push notifications',desc: 'Match-day reminders + welfare alerts' },
+          ],
+        },
+      ]}
+      voiceOptions={[
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah',     desc: 'Warm, confident British female — match recap narration' },
+        { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm British female — measured parent-brief delivery' },
+        { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George',    desc: 'Professional British male — alternative voice option' },
+      ]}
+      notificationPreferences={[
+        'Safeguarding standing changes',
+        'DBS renewals due',
+        'Consent expiries / chase reminders',
+        'FA Charter evidence due',
+        'Fixture changes / referee bookings',
+        'Parent comms delivery summary',
+        'Welfare incident new entries',
+      ]}
+      teamInvite={{
+        enabled: true,
+        staffCount: 8,
+        pendingInvites: 1,
+        roleOptions: juniorStaffRoles,
+      }}
+      navItems={JUNIOR_SIDEBAR_ITEMS.map(item => ({ key: item.id, label: item.label, emoji: item.icon }))}
+      featureItems={[
+        { key: 'morning-briefing', label: 'AI summary banner',  emoji: '🤖', description: 'AI summary at top of Today' },
+        { key: 'quick-actions',    label: 'Quick Actions bar',  emoji: '⚡', description: 'Role-aware shortcuts on Today' },
+        { key: 'getting-started',  label: 'Getting Started tab',emoji: '🚀', description: 'Onboarding checklist on Today' },
+        { key: 'restricted-flag',  label: 'Restricted imagery exclusion', emoji: '🔒', description: 'Auto-exclude restricted children from imagery surfaces' },
+      ]}
+      showWorldClock
+      showAppearance
+      showDeveloperTools
+      devApiRouteOptions={['/api/ai/junior']}
+      extraSections={
+        <JuniorSettingsAdditions
+          onNavigate={onNavigate}
+          roleConfig={JUNIOR_ROLE_CONFIG}
+          consentCoverage="4 of 5"
+        />
+      }
+    />
+  )
+}
+
 // ─── Portal Inner ─────────────────────────────────────────────────────────────
 
 function JuniorPortalInner({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
@@ -745,7 +872,18 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
 
       <main className="flex-1 p-6 overflow-x-hidden">
         {activeSection === 'today' && <TodayView club={club} session={session} />}
-        {activeSection !== 'today' && (
+        {activeSection === 'safeguarding' && (
+          <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'club_team' && <JuniorClubTeamAdmin session={session} />}
+        {activeSection === 'coach_toolkit' && <JuniorCoachToolkit session={session} />}
+        {activeSection === 'settings' && (
+          <SettingsView club={club} session={session} onNavigate={setActiveSection} />
+        )}
+        {/* Module views still to build — placeholder for the remaining sidebar
+            ids until they get their own commits. */}
+        {(activeSection === 'squad' || activeSection === 'match_video' ||
+          activeSection === 'performance' || activeSection === 'development') && (
           <div>
             <SectionHeader
               title={
@@ -760,17 +898,15 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             <div className="rounded-xl p-6" style={{ backgroundColor: '#0D1117', border: '1px solid #1F2937' }}>
               <p className="text-sm font-bold mb-2 text-white">Section: {activeSection}</p>
               <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                Placeholder view. Lumio Junior Football is in active build. Module
-                surfaces (Safeguarding &amp; Consent first per the standing
-                instruction, then Parent App / My Player, Coach Toolkit, Match
-                Video, Performance, Development, Club &amp; Team) ship in
-                dedicated commits.
+                Placeholder view. The remaining player-side modules (Squad / My
+                Player with fixtures + fees content, Match Video, Performance,
+                Development) ship in subsequent commits.
               </p>
               {activeSection === 'squad' && session.role === 'parent_guardian' && club.demoChild && (
                 <p className="text-xs mt-3" style={{ color: '#6B7280' }}>
-                  Parent view: this is where {club.demoChild.name}&apos;s profile (with
-                  fixtures + fees) will render once the Parent App / My Player
-                  view is built.
+                  Parent view: this is where {club.demoChild.name}&apos;s profile
+                  (with fixtures + fees content from the Parent App / Match
+                  Recap view) will render once that view is built.
                 </p>
               )}
             </div>
