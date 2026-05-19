@@ -36,6 +36,7 @@ export const PRODUCT_IDS = [
   'lumio_club',
   'lumio_women',
   'lumio_grassroots',
+  'lumio_junior',
 ] as const
 
 export type ProductId = typeof PRODUCT_IDS[number]
@@ -74,11 +75,17 @@ export const MODULE_IDS = [
   'staff_directory',
   'community',
   'settings',
+  // Junior-specific functional modules (lumio_junior only).
+  'parent_app',
+  'safeguarding_consent',
+  'coach_toolkit',
+  'player_development',
   // Compliance variants — one per product, label set on the module
   'psr_modeller',         // Lumio Pro
   'ground_grading_fsr',   // Lumio Club
   'wsl_handbook',         // Lumio Women
   'fa_charter',           // Lumio Grassroots
+  'fa_charter_junior',    // Lumio Junior
 ] as const
 
 export type ModuleId = typeof MODULE_IDS[number]
@@ -91,6 +98,7 @@ export type ComplianceId =
   | 'ground_grading_fsr'
   | 'wsl_handbook'
   | 'fa_charter'
+  | 'fa_charter_junior'
 
 // ─── Module tier + metadata ─────────────────────────────────────────────
 
@@ -164,12 +172,12 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
   overview: {
     label: 'Overview',
     description: 'Daily snapshot, headlines, today\'s matches and tasks',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
   },
   insights: {
     label: 'Insights',
     description: 'AI insights and analytics across club departments',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
   },
   board_executive: {
     label: 'Board & Executive',
@@ -178,12 +186,12 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // executive. Phase 4a.5 inherited 'full' from the higher product
     // tiers in error; corrected during Phase 4c reconciliation after
     // live-portal review.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   football_operations: {
     label: 'Football Operations',
     description: 'Squad, fixtures, training, matchday operations',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   cup_manager: {
     label: 'Cup Manager',
@@ -193,7 +201,7 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // within football_operations (Fixtures view has a Cups tab).
     // Phase 4a.6 'lite' tier reconsidered after live-portal review
     // (Phase 4c reconciliation).
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   tours_camps: {
     label: 'Tours & Camps',
@@ -201,17 +209,17 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // Grassroots 'lite' = pre-season planner only, no commercial
     // activation. Component reads the tier and renders the stripped-
     // down variant.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'lite' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'lite', lumio_junior: 'disabled' },
   },
   performance_gps: {
     label: 'Performance & GPS',
     description: 'Performance data, GPS load, ACWR, training response',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'optional' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'optional', lumio_junior: 'full' },
   },
   medical: {
     label: 'Medical',
     description: 'Clinical injury management — physios, treatment, return-to-play protocols, injury records',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   player_welfare: {
     label: 'Player Welfare',
@@ -220,12 +228,17 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // medical_welfare split — welfare is community-relevant at all
     // tiers, only the clinical 'medical' module is disabled for
     // Grassroots (no physio infrastructure).
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    // lumio_junior 'disabled' — junior welfare is handled by the
+    // dedicated safeguarding_consent module (DBS, photography consent,
+    // age-band rules) plus the welfare_officer role's grants on
+    // player_development. Adult-grade player_welfare surface (ACL,
+    // mental health for senior players, maternity) does not apply.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   recruitment_scouting: {
     label: 'Recruitment & Scouting',
     description: 'Transfer pipeline, scouting reports, agent contacts',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   youth_academy: {
     label: 'Youth & Academy',
@@ -234,24 +247,30 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // Grassroots community youth ops live in the separate
     // junior_section module. The two modules are mutually exclusive
     // by product — never both enabled, never both disabled.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    // lumio_junior is its own product — uses neither this nor
+    // junior_section; junior player development lives in the dedicated
+    // player_development module.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   junior_section: {
     label: 'Junior Section',
     description: 'Grassroots youth football operation — separate from elite academy pathway',
     // Phase 4a.5: Grassroots-only counterpart to youth_academy. See
     // the youth_academy comment for the mutual-exclusion rule.
-    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'full' },
+    // lumio_junior 'disabled' — junior_section remains the
+    // grassroots-club youth surface; the dedicated lumio_junior
+    // product uses player_development instead.
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   travel_logistics: {
     label: 'Travel & Logistics',
     description: 'Coach hire, hotels, away-day logistics',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   commercial_marketing: {
     label: 'Commercial & Marketing',
     description: 'Sponsorship, partnerships, brand activations',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   fundraising: {
     label: 'Fundraising',
@@ -260,17 +279,20 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // community (non-revenue programmes). Tier 'full' for all 4
     // products — fundraising is especially material at non-league /
     // grassroots scale.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    // lumio_junior 'full' — surfaces as "Club Revenue & Parent
+    // Funding" at the component layer; junior funding model is
+    // parent-subscription + event-based community revenue.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
   },
   ticketing_crm_fans: {
     label: 'Ticketing, CRM & Fans',
     description: 'Fan database, season tickets, matchday revenue',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   media_comms: {
     label: 'Media & Comms',
     description: 'Press, social media, media obligations',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   video_analysis: {
     label: 'Video & Analysis',
@@ -281,52 +303,84 @@ export const MODULES: Readonly<Record<ModuleId, ModuleMeta>> = {
     // football only at Phase 1; cricket/rugby/tennis/etc. not in
     // catalogue. When this module is enabled for non-football products
     // in future, extend the tier matrix.
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    // lumio_junior 'full' — surfaces as "Match Video & AI Highlights"
+    // at the component layer; junior framing prioritises parent-
+    // shareable highlight clips and coach-facing development clips.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
   },
   facilities_grounds: {
     label: 'Facilities & Grounds',
     description: 'Stadium, training ground, pitches, maintenance',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   finance_hr_admin: {
     label: 'Finance, HR & Admin',
     description: 'Budgets, payroll, contracts, HR records',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   staff_directory: {
     label: 'Staff Directory',
     description: 'People management — staff records, org chart, club info, player records',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    // lumio_junior 'full' — surfaces as "Club & Team Admin" at the
+    // component layer; covers volunteer coach records, DBS register
+    // pointers (detail in safeguarding_consent), per-team rosters.
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
   },
   community: {
     label: 'Community',
     description: 'Foundation, community programmes, schools outreach',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'disabled' },
   },
   settings: {
     label: 'Settings',
     description: 'Club configuration and admin',
-    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'full', lumio_club: 'full', lumio_women: 'full', lumio_grassroots: 'full', lumio_junior: 'full' },
+  },
+  // ─── Junior-only functional modules ────────────────────────────────────
+  parent_app: {
+    label: 'Parent App',
+    description: 'Parent-facing surface for fixtures, training schedule, consent settings, comms, and per-child subscription.',
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'full' },
+  },
+  safeguarding_consent: {
+    label: 'Safeguarding & Consent Hub',
+    description: 'Safeguarding records, DBS register, photography and data-sharing consents, age-band rules. Gates imagery across the portal — first module built.',
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'full' },
+  },
+  coach_toolkit: {
+    label: 'Coach Toolkit',
+    description: 'Session planner, drill library, age-band-appropriate coaching templates, FA coach education tracker.',
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'full' },
+  },
+  player_development: {
+    label: 'Player Development Tracker',
+    description: 'Per-child development tracker — age-band progression, skill milestones, coach feedback, parent visibility.',
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'full' },
   },
   psr_modeller: {
     label: 'PSR Modeller',
     description: 'Profitability & Sustainability Rules compliance modelling',
-    tiers: { lumio_pro: 'full', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'full', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   ground_grading_fsr: {
     label: 'Ground Grading + FSR',
     description: 'Ground Grading + Financial Sustainability Regs compliance',
-    tiers: { lumio_pro: 'disabled', lumio_club: 'full', lumio_women: 'disabled', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'disabled', lumio_club: 'full', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   wsl_handbook: {
     label: 'WSL Handbook + Carney',
     description: 'WSL Handbook and Carney Review compliance',
-    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'full', lumio_grassroots: 'disabled' },
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'full', lumio_grassroots: 'disabled', lumio_junior: 'disabled' },
   },
   fa_charter: {
     label: 'FA Charter',
     description: 'FA Charter Standard compliance',
-    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'full' },
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'full', lumio_junior: 'disabled' },
+  },
+  fa_charter_junior: {
+    label: 'FA Charter Standard (Junior)',
+    description: 'FA Charter Standard compliance for the junior game — age-band rules, DBS, safeguarding, consent. Separate from the adult-grassroots fa_charter module.',
+    tiers: { lumio_pro: 'disabled', lumio_club: 'disabled', lumio_women: 'disabled', lumio_grassroots: 'disabled', lumio_junior: 'full' },
   },
 }
 
@@ -391,6 +445,22 @@ export const PRODUCT_CONFIG: Record<ProductId, ProductConfig> = {
     per_seat_price_gbp: 15,
     badge_colour: '#10B981',
   },
+
+  // Junior Football is funded by per-child parent subscriptions
+  // (~£8.99/child/mo), not per-seat licensing. Club tiers are flat
+  // (free Starter / £49 Pro / £149 Academy). Billing model lands in
+  // a later commit — do not infer pricing from per_seat_price_gbp.
+  lumio_junior: {
+    id: 'lumio_junior',
+    display_name: 'Lumio Junior Football',
+    tier_label: 'Charter Standard / Grassroots Junior',
+    compliance_module: 'fa_charter_junior',
+    ai_tone: 'volunteer',
+    default_seats: 5,
+    base_price_gbp: 0,
+    per_seat_price_gbp: 0,
+    badge_colour: '#16A34A',
+  },
 } as const
 
 // ─── Helper functions ───────────────────────────────────────────────────
@@ -423,7 +493,7 @@ export function getBadgeColour(product: ProductId): string {
 }
 
 /** Returns the compliance module ID for a product (psr_modeller,
- *  ground_grading_fsr, wsl_handbook, or fa_charter). */
+ *  ground_grading_fsr, wsl_handbook, fa_charter, or fa_charter_junior). */
 export function getComplianceModuleId(product: ProductId): ComplianceId {
   return PRODUCT_CONFIG[product].compliance_module
 }

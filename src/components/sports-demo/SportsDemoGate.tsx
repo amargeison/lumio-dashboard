@@ -18,6 +18,7 @@ const SPORT_LOGOS: Record<string, string> = {
   nonleague: '/football_logo.png',
   grassroots: '/football_logo.png',
   womens: '/womens_fc_logo.png',
+  junior: '/junior_logo.png',
 }
 
 // ── TYPES ──────────────────────────────────────────────────────────────────
@@ -43,7 +44,7 @@ export interface SportsDemoSession {
 
 export type SportKey =
   | 'rugby' | 'football' | 'womens' | 'nonleague' | 'grassroots'
-  | 'golf' | 'tennis' | 'darts' | 'cricket' | 'boxing'
+  | 'golf' | 'tennis' | 'darts' | 'cricket' | 'boxing' | 'junior'
 
 interface SportsDemoGateProps {
   sport: string

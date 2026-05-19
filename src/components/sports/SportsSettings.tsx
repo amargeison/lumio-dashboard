@@ -28,6 +28,7 @@ async function writeProfilePatch(patch: Record<string, unknown>) {
 export type SportKey =
   | 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket'
   | 'rugby'  | 'football' | 'womens' | 'grassroots' | 'nonleague'
+  | 'junior'
 
 export type PortalEntity = 'player' | 'club'
 
