@@ -772,18 +772,23 @@ function SettingsView({
       ]}
       integrationGroups={[
         {
+          // Brand-safety: third-party integrations listed as planned, NEVER as
+          // active partnerships. Lumio has no live wiring to the FA's Whole
+          // Game System, FA Charter Standard accreditation portal, DBS Online,
+          // or the FA Safeguarding course platform — those integrations are
+          // roadmap items. Same framing as the JOHAN "coming" pattern.
           title: 'FA & REGISTRATION',
           items: [
-            { name: 'Whole Game System',     desc: 'Squad registrations + matchday reporting', connected: true },
-            { name: 'FA Charter Standard',   desc: 'Charter accreditation evidence pack',      connected: true },
-            { name: 'County FA portal',      desc: 'League fixtures + discipline records' },
+            { name: 'Whole Game System',     desc: 'Squad registrations + matchday reporting — integration coming' },
+            { name: 'FA Charter Standard',   desc: 'Charter accreditation evidence pack — integration coming' },
+            { name: 'County FA portal',      desc: 'League fixtures + discipline records — integration coming' },
           ],
         },
         {
           title: 'SAFEGUARDING',
           items: [
-            { name: 'DBS Online',            desc: 'Enhanced DBS with barred-list check renewals', connected: true },
-            { name: 'FA Safeguarding course', desc: 'Mandatory refresher tracking',                connected: true },
+            { name: 'DBS Online',             desc: 'Enhanced DBS with barred-list check renewals — integration coming' },
+            { name: 'FA Safeguarding course', desc: 'Mandatory refresher tracking — integration coming' },
           ],
         },
         {

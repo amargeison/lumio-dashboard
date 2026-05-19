@@ -314,7 +314,7 @@ export default function JuniorClubTeamAdmin({ session: _session }: { session: Sp
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <p className="text-sm font-bold" style={{ color: T.text }}>Squads & registration</p>
             <span className="text-[11px]" style={{ color: T.text3 }}>
-              Whole Game System sync · last fetched 2 hours ago
+              Whole Game System sync — coming
             </span>
           </div>
           <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
