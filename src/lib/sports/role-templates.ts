@@ -59,10 +59,26 @@ export type RoleId = string
  *  listed are implicitly 'none' (resolved as such by getPermission). */
 export type RolePermissions = Readonly<Partial<Record<ModuleId, PermissionLevel>>>
 
+/** Row-level scoping declaration for a role.
+ *
+ *  - 'all'           — role sees every row of every module it has access to.
+ *  - 'own_children'  — parent_guardian: scoped to rows linked to their own
+ *                      children via junior_guardianships.
+ *  - 'own_profile'   — junior_player: scoped to their own profile only.
+ *
+ *  DECLARATIVE ONLY in this commit. There is NO row-level enforcement
+ *  here — this field documents the INTENDED scope so downstream API
+ *  routes / RLS policies can read it. Actual filtering arrives in a
+ *  later commit alongside the junior_guardianships table + data-layer
+ *  filter helpers. Do NOT treat presence of this field as an active
+ *  access control until that work lands. */
+export type RoleScope = 'all' | 'own_children' | 'own_profile'
+
 /** A role definition. `products` is the list of products this role is
  *  available to (e.g. team_manager is grassroots-only). `is_admin_role`
  *  marks a role that can manage other roles + billing. `is_protected`
- *  marks a role that can't be removed or reassigned (owner only). */
+ *  marks a role that can't be removed or reassigned (owner only).
+ *  `scope` is declarative row-level scoping intent — see RoleScope. */
 export type RoleTemplate = {
   readonly id: RoleId
   readonly label: string
@@ -71,6 +87,7 @@ export type RoleTemplate = {
   readonly permissions: RolePermissions
   readonly is_admin_role?: boolean
   readonly is_protected?: boolean
+  readonly scope?: RoleScope
 }
 
 // ─── Internal: programmatic permission builder ──────────────────────────
@@ -175,8 +192,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
   chairman: {
     id: 'chairman',
     label: 'Chairman',
-    description: 'Club Chairman. Board-level oversight, governance, strategic direction.',
-    products: ['lumio_pro', 'lumio_club', 'lumio_women'],
+    description: 'Club Chairman. Board-level oversight, governance, strategic direction. At lumio_junior, this also covers the Club Secretary / Chair role.',
+    products: ['lumio_pro', 'lumio_club', 'lumio_women', 'lumio_junior'],
     // Same Option A compliance pattern: chairman engages with compliance
     // at board sign-off level. MODULES.tiers filters to the product's
     // flagship variant at render time.
@@ -368,8 +385,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
   team_manager: {
     id: 'team_manager',
     label: 'Team Manager',
-    description: 'Manages day-to-day team operations: fixtures, training, comms, away days.',
-    products: ['lumio_grassroots'],
+    description: 'Manages day-to-day team operations: fixtures, training, comms, away days. Used at both lumio_grassroots and lumio_junior (e.g. an age-group team manager).',
+    products: ['lumio_grassroots', 'lumio_junior'],
     permissions: {
       football_operations: 'admin',
       travel_logistics: 'admin',
@@ -389,8 +406,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
   coach: {
     id: 'coach',
     label: 'Coach',
-    description: 'Coaching staff. Manages training, squad selection, player development.',
-    products: ['lumio_grassroots'],
+    description: 'Coaching staff. Manages training, squad selection, player development. Used at both lumio_grassroots and lumio_junior; at lumio_junior this also covers age-group coaching until a dedicated academy_lead role is added.',
+    products: ['lumio_grassroots', 'lumio_junior'],
     permissions: {
       football_operations: 'edit',
       video_analysis: 'view',
@@ -436,8 +453,8 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
   volunteer: {
     id: 'volunteer',
     label: 'Volunteer',
-    description: 'Club volunteer. Helps with matchday, facilities, events.',
-    products: ['lumio_grassroots'],
+    description: 'Club volunteer. Helps with matchday, facilities, events. At lumio_junior, volunteer assistant coaches typically use this role.',
+    products: ['lumio_grassroots', 'lumio_junior'],
     permissions: {
       football_operations: 'edit',
       facilities_grounds: 'edit',
@@ -445,6 +462,63 @@ export const ROLE_TEMPLATES: Readonly<Record<RoleId, RoleTemplate>> = {
       media_comms: 'view',
       community: 'edit',
       overview: 'view',
+    },
+  },
+
+  // ─── Junior-specific roles ────────────────────────────────────────────
+  // Cross-product where the responsibility exists at both grassroots and
+  // junior (welfare_officer); junior-only otherwise (parent_guardian,
+  // junior_player). parent_guardian and junior_player declare scope via
+  // the new RoleTemplate.scope field — declarative only, no row-level
+  // enforcement until junior_guardianships + data-layer filters land.
+
+  welfare_officer: {
+    id: 'welfare_officer',
+    label: 'Welfare Officer',
+    description: 'Designated Welfare Officer. Owns FA Charter Standard safeguarding compliance: DBS register, photography and data-sharing consent, age-band rules, welfare casework.',
+    products: ['lumio_junior', 'lumio_grassroots'],
+    scope: 'all',
+    permissions: {
+      player_welfare:        'admin',
+      safeguarding_consent:  'edit',
+      fa_charter_junior:     'edit',
+      player_development:    'view',
+      parent_app:            'view',
+      staff_directory:       'view',
+      football_operations:   'view',
+      overview:              'view',
+      insights:              'view',
+    },
+  },
+
+  parent_guardian: {
+    id: 'parent_guardian',
+    label: 'Parent / Guardian',
+    description: 'Parent or guardian of a junior player. Scoped to their own children: sees their fixtures, training, consent settings, and team comms — nothing else.',
+    products: ['lumio_junior'],
+    scope: 'own_children',
+    permissions: {
+      overview:              'view',
+      parent_app:            'edit',
+      safeguarding_consent:  'view',
+      player_development:    'view',
+      football_operations:   'view',
+      travel_logistics:      'view',
+      media_comms:           'view',
+    },
+  },
+
+  junior_player: {
+    id: 'junior_player',
+    label: 'Junior Player',
+    description: 'Junior player. Read-only access to their own profile, fixtures, and consent settings.',
+    products: ['lumio_junior'],
+    scope: 'own_profile',
+    permissions: {
+      overview:              'view',
+      player_development:    'view',
+      football_operations:   'view',
+      safeguarding_consent:  'view',
     },
   },
 }
