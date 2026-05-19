@@ -49,6 +49,7 @@ import JuniorTravel from './_components/JuniorTravel'
 import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
 import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
+import JuniorClubProfile from './_components/JuniorClubProfile'
 import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -228,6 +229,11 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
 
   // CLUB — staff-only in practice (the role whitelist gates this).
   { id: 'club_team',       label: 'Club & Team',     icon: '🏛️', group: 'CLUB' },
+  // 'club_profile' is the public-facing identity page (badge, history,
+  // ground, honours, committee, kit, sponsors). Visible to ALL roles —
+  // general club info that every member can see — see JUNIOR_ROLE_CONFIG
+  // below for the per-role whitelist additions.
+  { id: 'club_profile',    label: 'Club Profile',    icon: '📇', group: 'CLUB' },
   { id: 'safeguarding',    label: 'Safeguarding',    icon: '🛡️', group: 'CLUB' },
   // Revenue & Funding — chairman-only, promoted to a first-class sidebar
   // destination in Commit 7.1 (was a tab inside Club & Team Admin). The
@@ -321,7 +327,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'today',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
-      'safeguarding',
+      'club_profile', 'safeguarding',
       'matchday_ops', 'tournaments', 'travel', 'facilities',
       'settings',
     ],
@@ -336,7 +342,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'today',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
-      'club_team', 'safeguarding', 'volunteer_roles',
+      'club_team', 'club_profile', 'safeguarding', 'volunteer_roles',
       'matchday_ops', 'tournaments', 'fundraising', 'travel', 'tours_camps', 'facilities',
       'settings',
     ],
@@ -350,7 +356,8 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // Fixtures added in Tranche 1 — welfare officers benefit from the
     // fixture picture (planning welfare-officer attendance at away
     // games, etc.) but do NOT need the coaching modules.
-    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'settings'],
+    // 'club_profile' added — general club identity surface, visible to all.
+    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'club_profile', 'settings'],
     hiddenTabs: [],
     message: 'Safeguarding, consent and welfare view.',
   },
@@ -371,7 +378,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
       'today',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
-      'safeguarding', 'settings',
+      'club_profile', 'safeguarding', 'settings',
     ],
     hiddenTabs: [],
     message: 'Development pathway across age bands · termly reviews.',
@@ -395,7 +402,8 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // they belong in the car-share view.
     // Tranche 2b adds 'tours_camps' — parents book their child onto
     // camps and the end-of-season tour.
-    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps'],
+    // 'club_profile' is general club info — visible to every role.
+    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps', 'club_profile'],
     hiddenTabs: [],
     message: "Your child's training, video, performance, development and consent.",
   },
@@ -1102,6 +1110,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorSafeguardingHub session={session} demoChild={club.demoChild} />
         )}
         {activeSection === 'club_team' && <JuniorClubTeamAdmin session={session} />}
+        {activeSection === 'club_profile' && (
+          <JuniorClubProfile session={session} demoChild={club.demoChild} />
+        )}
         {activeSection === 'revenue_funding' && <JuniorRevenueFunding session={session} />}
         {activeSection === 'coach_toolkit' && <JuniorCoachToolkit session={session} />}
         {activeSection === 'settings' && (
