@@ -7,6 +7,7 @@ const FOOTBALL_TIERS = [
   { href: '/football/pro',         label: 'Pro & Academy', subtitle: 'EFL · Premier League · Academies' },
   { href: '/football/non-league',  label: 'Non-League',    subtitle: 'National League · Steps 1–6' },
   { href: '/football/grassroots',  label: 'Grassroots',    subtitle: 'Amateur · Youth · Sunday League' },
+  { href: '/football/junior',      label: 'Junior',        subtitle: 'U7–U16 · FA Charter Standard · Volunteer-led' },
 ]
 
 type Props = {

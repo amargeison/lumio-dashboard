@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-type TierKey = 'pro' | 'non-league' | 'grassroots'
+type TierKey = 'pro' | 'non-league' | 'grassroots' | 'junior'
 
 const COPY: Record<TierKey, { lead: string; links: { href: string; label: string }[] }> = {
   'pro': {
@@ -8,6 +8,7 @@ const COPY: Record<TierKey, { lead: string; links: { href: string; label: string
     links: [
       { href: '/football/non-league',  label: 'See Lumio for Non-League →' },
       { href: '/football/grassroots',  label: 'Or Grassroots →' },
+      { href: '/football/junior',      label: 'Running a junior section? → See Junior' },
     ],
   },
   'non-league': {
@@ -15,6 +16,7 @@ const COPY: Record<TierKey, { lead: string; links: { href: string; label: string
     links: [
       { href: '/football/pro',         label: 'Premier League or EFL — See Lumio Pro →' },
       { href: '/football/grassroots',  label: 'Amateur side — See Grassroots →' },
+      { href: '/football/junior',      label: 'Running a junior section? → See Junior' },
     ],
   },
   'grassroots': {
@@ -22,6 +24,14 @@ const COPY: Record<TierKey, { lead: string; links: { href: string; label: string
     links: [
       { href: '/football/non-league',  label: 'Non-League club — See Lumio Non-League →' },
       { href: '/football/pro',         label: 'Pro club — See Lumio Pro →' },
+      { href: '/football/junior',      label: 'Running a junior section? → See Junior' },
+    ],
+  },
+  'junior': {
+    lead: 'Different setup?',
+    links: [
+      { href: '/football/grassroots',  label: 'Amateur / Sunday League — See Grassroots →' },
+      { href: '/football/non-league',  label: 'Senior Non-League club — See Lumio Non-League →' },
     ],
   },
 }
