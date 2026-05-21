@@ -22,6 +22,7 @@ import { useState, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
+import JuniorStatTiles, { JuniorAIBrief, JuniorInbox, JuniorTodaySchedule, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -415,29 +416,8 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
 }
 
 // ─── Shared dashboard primitives ─────────────────────────────────────────────
-// StatCard + SectionHeader mirror the Women's portal pattern (gradient
-// tile, gray-on-dark border). Colour palette is junior green-leaning,
-// with amber/red/blue retained for status communication.
-
-function StatCard({
-  label, value, sub, color = 'green',
-}: { label: string; value: string | number; sub?: string; color?: 'green' | 'deep-green' | 'amber' | 'blue' | 'red' | 'gray' }) {
-  const colorMap: Record<string, string> = {
-    'green':      'from-green-600/20 to-green-900/10 border-green-600/30',
-    'deep-green': 'from-emerald-700/25 to-emerald-900/10 border-emerald-700/30',
-    'amber':      'from-amber-600/20 to-amber-900/10 border-amber-600/30',
-    'blue':       'from-blue-600/20 to-blue-900/10 border-blue-600/30',
-    'red':        'from-red-600/20 to-red-900/10 border-red-600/30',
-    'gray':       'from-gray-700/30 to-gray-900/10 border-gray-700/30',
-  }
-  return (
-    <div className={`bg-gradient-to-br ${colorMap[color] || colorMap.green} border rounded-xl p-4`}>
-      <div className="text-2xl font-bold text-white mb-0.5">{value}</div>
-      <div className="text-sm text-gray-400">{label}</div>
-      {sub && <div className="text-xs text-gray-500 mt-1">{sub}</div>}
-    </div>
-  )
-}
+// SectionHeader mirrors the Women's portal pattern. KPI tiles now live in
+// JuniorStatTiles (./_components/JuniorDashboardModules).
 
 function SectionHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: string }) {
   return (
@@ -620,11 +600,6 @@ function TodayView({
   const charter = charterLabel(kpis.charterStatus)
   const consentColor = consentBadgeColor(kpis.consentsCurrent, kpis.consentsTotal)
   const dbsColor = consentBadgeColor(kpis.dbsCurrent, kpis.dbsTotal)
-  // Combined safeguarding-standing tile: take the lower of the two badges.
-  const safeguardingColor: 'green' | 'amber' | 'red' =
-    consentColor === 'red' || dbsColor === 'red' ? 'red'
-    : consentColor === 'amber' || dbsColor === 'amber' ? 'amber'
-    : 'green'
   const actions = QUICK_ACTIONS_BY_ROLE[session.role] ?? QUICK_ACTIONS_BY_ROLE['chairman']
   const greeting = session.userName ? `Good morning, ${session.userName.split(' ')[0]}.` : 'Good morning.'
 
@@ -650,20 +625,7 @@ function TodayView({
             childName={club.demoChild?.name}
           />
         ) : (
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1">AI summary · today</p>
-              <h3 className="text-base font-bold text-white">{greeting}</h3>
-              <p className="text-sm text-gray-300 mt-1 leading-relaxed">
-                {club.name} — {kpis.sessionsThisMonth} sessions delivered this month across {club.teamCount} teams. {kpis.consentsTotal - kpis.consentsCurrent} consent items outstanding. {charter.label}.
-              </p>
-              <p className="text-[10px] text-gray-500 mt-2 italic">
-                Coach-facing AI briefs (Half-Time / Full-Time / Training) live in the AI Match Recap module —
-                accessible from Coach Toolkit or via the AI brief view.
-              </p>
-            </div>
-            <div className="shrink-0 text-3xl" aria-hidden>🤖</div>
-          </div>
+          <JuniorAIBrief greeting={greeting} />
         )}
       </div>
 
@@ -673,39 +635,10 @@ function TodayView({
         icon="🏠"
       />
 
-      {/* KPI grid — 5 Junior KPIs from the spec. */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <StatCard
-          label="Registered players"
-          value={kpis.registeredPlayers}
-          sub={`Across ${club.teamCount} teams`}
-          color="green"
-        />
-        <StatCard
-          label="Sessions this month"
-          value={kpis.sessionsThisMonth}
-          sub="Training + matches"
-          color="deep-green"
-        />
-        <StatCard
-          label="Parent communications"
-          value={kpis.parentCommsSent}
-          sub="Sent this month"
-          color="blue"
-        />
-        <StatCard
-          label="Safeguarding standing"
-          value={`${kpis.consentsCurrent}/${kpis.consentsTotal}`}
-          sub={`Consents current · DBS ${kpis.dbsCurrent}/${kpis.dbsTotal}`}
-          color={safeguardingColor}
-        />
-        <StatCard
-          label="FA Charter Standard"
-          value={charter.label}
-          sub={club.charterStatus === 'achieved' ? 'Re-accreditation on track' : 'Evidence pack in progress'}
-          color={charter.color}
-        />
-      </div>
+      {/* KPI grid — 5 Junior stat tiles per the dashboard port spec.
+          Inbox / Approvals / Sessions / Charter Standard / Safeguarding.
+          Driven by JUNIOR_TOP_STATS in junior-dashboard-data.ts. */}
+      <JuniorStatTiles />
 
       {/* Quick actions row — role-aware, junior-specific. Inline (not the
           shared RoleAwareQuickActionsBar — that component only supports
@@ -721,13 +654,13 @@ function TodayView({
               key={a.id}
               type="button"
               onClick={() => onNavigate(a.target)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs font-semibold transition-colors"
               style={{
                 backgroundColor: 'rgba(22,101,52,0.10)',
-                border: '1px solid rgba(22,163,74,0.30)',
+                border: '1px solid rgba(22,163,74,0.40)',
                 color: '#D1D5DB',
               }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(22,163,74,0.18)'; e.currentTarget.style.color = '#F9FAFB' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(22,163,74,0.22)'; e.currentTarget.style.color = '#F9FAFB' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(22,101,52,0.10)'; e.currentTarget.style.color = '#D1D5DB' }}
             >
               <span>{a.icon}</span>
@@ -763,6 +696,7 @@ function TodayView({
       </div>
 
       {tab === 'overview' && (
+        <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
             <h3 className="text-sm font-bold text-white mb-3">This week</h3>
@@ -812,6 +746,20 @@ function TodayView({
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Dashboard modules ported from Women's pattern — Inbox + Today's
+            schedule, Upcoming fixtures, Recent results + Squad availability.
+            All driven by JUNIOR_* demo data in junior-dashboard-data.ts. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <JuniorInbox />
+          <JuniorTodaySchedule />
+        </div>
+        <JuniorFixturesPanel />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <JuniorRecents />
+          <JuniorSquadSummary />
+        </div>
         </div>
       )}
 

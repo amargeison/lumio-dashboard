@@ -1,224 +1,101 @@
-// Women's FC dashboard demo data. Mirrors the cricket / rugby / football v2
-// shape so the womens dashboard modules can read it the same way.
-// Tier: WSL 2 · Club: Oakridge Women FC.
+// Junior Football dashboard demo data — grassroots-appropriate.
+// Demo content only, no real club references.
+//
+// Fictional opponents drawn from the Meridian / Apex / Crown / Hartfield
+// fictional universe (see docs/brand-universe.md). Home teams are the
+// Oakridge Juniors age bands (U7 Eagles, U9 Tigers, U11 Lions, U12 Lions,
+// U14 United). Numbers tuned to volunteer-led junior football scale:
+// ~128 registered players across 8 age bands, ~46 sessions/month, 18
+// DBS-cleared coaches.
 
-export const WOMENS_ORG = {
-  product:        'Lumio Women',
-  club:           'Oakridge Women FC',
-  clubShort:      'Oakridge Women FC',
-  manager:        'Sarah Frost',
-  director:       'Kate Brennan',
-  greetingNameShort: 'Sarah',
-  date:           'Sun, 03 May 2026',
-  formation:      '4-3-3',
-  weather:        { tempC: 13, cond: 'Light cloud', wind: '9 mph SW', kickoff: '14:00' },
-  season:         { played: 18, won: 11, drawn: 3, lost: 4, position: 3, league: 'WSL 2', points: 36, gd: '+18' },
-} as const
+export type JuniorStatTone = 'urgent' | 'warn' | 'ok' | 'accent' | 'info'
+export type JuniorStatTile = { label: string; value: string | number; sub: string; tone: JuniorStatTone }
 
-// ─── StatTiles — includes FSR Score (the differentiator) ────────────────
-export type WfStatTone = 'urgent' | 'warn' | 'danger' | 'ok' | 'accent' | 'pink'
-export type WfStatTile = { label: string; value: string | number; sub: string; tone: WfStatTone }
-
-export const WOMENS_TOP_STATS: WfStatTile[] = [
-  { label: 'Inbox',          value: 24, sub: '4 urgent',                tone: 'urgent' },
-  { label: 'Approvals',      value: 4,  sub: 'awaiting',                tone: 'warn' },
-  { label: 'Out · doubt',    value: 3,  sub: '2 inj · 1 protocol',     tone: 'danger' },
-  { label: 'Today',          value: 8,  sub: 'sessions',                tone: 'ok' },
-  { label: 'FSR Score',      value: '82%', sub: 'Compliant · 3 items', tone: 'accent' },
+export const JUNIOR_TOP_STATS: JuniorStatTile[] = [
+  { label: 'Inbox',             value: 24,    sub: '4 urgent',                      tone: 'urgent' },
+  { label: 'Approvals',         value: 4,     sub: 'awaiting',                      tone: 'warn'   },
+  { label: 'Sessions',          value: 46,    sub: 'this month',                    tone: 'ok'     },
+  { label: 'Charter Standard',  value: '5/6', sub: 'criteria green',                tone: 'accent' },
+  { label: 'Safeguarding',      value: '98%', sub: 'consents + DBS combined',       tone: 'ok'     },
 ]
 
-// ─── Inbox — includes Player Welfare + Sponsorship channels ─────────────
-export type WfInboxChannel = {
-  ch: string
-  count: number
-  tone: 'green' | 'red' | 'purple' | 'amber' | 'navy' | 'orange' | 'pink'
-  urgent: boolean
-  last: string
+export type JuniorAIBriefItem = { tag: string; pri: 'high' | 'med' | 'low'; txt: string }
+
+export const JUNIOR_AI_BRIEF: JuniorAIBriefItem[] = [
+  { tag: 'Squad',        pri: 'med',  txt: 'U11 Lions 18/20 fit. U9 Tigers 13/15 fit. Tom Reece returns from ankle next week — light training only.' },
+  { tag: 'Training',     pri: 'med',  txt: '6 sessions this week across all age bands. U14 United GPS load nominal. U7–U9 focusing on ball control drills.' },
+  { tag: 'Safeguarding', pri: 'high', txt: '128/128 consents current. 1 DBS renewal due before 14 Jun (M. Hutchings) — renewal window open now.' },
+  { tag: 'Welfare',      pri: 'med',  txt: 'No open welfare flags. Quarterly wellbeing check-in due next week — schedule parent 1-to-1s for U11–U16.' },
+  { tag: 'Compliance',   pri: 'high', txt: 'FA Charter Standard renewal — 5/6 criteria green. Insurance renewal due 31 May. Affiliation active.' },
+  { tag: 'Comms',        pri: 'low',  txt: '312 parent messages sent this month. Match-day reminders auto-send Fri 17:00. Newsletter due Friday.' },
+]
+
+export type JuniorInboxItem = {
+  id: string
+  channel: string
+  from: string
+  preview: string
   time: string
+  urgent?: boolean
 }
 
-export const WOMENS_INBOX: WfInboxChannel[] = [
-  { ch: 'SMS · Coaches',         count: 2, tone: 'red',    urgent: true,  last: 'Carter cleared to play, scan negative',                 time: '07:14' },
-  { ch: 'WhatsApp · Squad',      count: 5, tone: 'green',  urgent: false, last: 'Captain: morale high, good session today',              time: '07:42' },
-  { ch: 'Email · Selectors',     count: 4, tone: 'red',    urgent: false, last: "WSL 2 — fixture amendment confirmed",       time: '06:58' },
-  { ch: 'Agent messages',        count: 3, tone: 'navy',   urgent: false, last: 'Williams contract extension — deadline end of month',  time: '06:45' },
-  { ch: 'Board messages',        count: 2, tone: 'navy',   urgent: false, last: 'Quarterly review Thursday',                              time: 'Yesterday' },
-  { ch: 'Medical Hub',           count: 2, tone: 'red',    urgent: true,  last: 'Davies knee assessment — MRI results back',             time: '07:02' },
-  { ch: 'Media & Press',         count: 3, tone: 'orange', urgent: false, last: "Northbridge Sport — women's game growth feature",       time: '07:11' },
-  { ch: 'Player Welfare',        count: 1, tone: 'pink',   urgent: false, last: 'Quarterly wellbeing survey — 2 outstanding',            time: 'Yesterday' },
-  { ch: 'Sponsorship',           count: 2, tone: 'amber',  urgent: false, last: 'Apex Performance activation — content shoot Friday',    time: '07:30' },
+export const JUNIOR_INBOX: JuniorInboxItem[] = [
+  { id: '1', channel: 'Safeguarding', from: 'System alert',         preview: 'DBS renewal due 14 Jun — M. Hutchings (Lead Coach).',                   time: '12 min ago', urgent: true },
+  { id: '2', channel: 'Parent',       from: 'Sarah Bell (U9 Tigers)', preview: 'Kit collection — can I pick up on Wednesday after training?',         time: '38 min ago' },
+  { id: '3', channel: 'Fixture',      from: 'Meridian Town Youth',  preview: 'U10 fixture confirmed — Sat 09:30, Apex Park, ref booked.',             time: '2 hours ago' },
+  { id: '4', channel: 'Registration', from: 'P. Khouri (U7 enquiry)', preview: 'New U7 registration — consent forms pending. Welcome pack sent.',     time: '4 hours ago', urgent: true },
+  { id: '5', channel: 'Kit',          from: 'Crown Sportswear',     preview: 'Mid-season top-up order — 4 items outstanding (shorts U11, socks U14).', time: 'Yesterday' },
 ]
 
-// ─── Fixtures ────────────────────────────────────────────────────────────
-export type WfFixture = {
-  day: string; date: string; opp: string; comp: string; venue: string;
-  time: string; state: 'today' | 'tomorrow' | 'upcoming'; side: string;
-  competitionTone?: 'league' | 'cup'
+export type JuniorScheduleItem = { time: string; what: string; where: string; note?: string }
+
+export const JUNIOR_TODAY_SCHEDULE: JuniorScheduleItem[] = [
+  { time: '17:30', what: 'U7 Eagles training',            where: 'Pitch 2',     note: 'Coach: J. Lawford' },
+  { time: '18:00', what: 'U11 Lions training',            where: 'Pitch 1',     note: 'Coach: M. Hutchings' },
+  { time: '19:00', what: 'Welfare check-in',              where: 'Clubhouse',   note: 'All age-band leads' },
+  { time: '19:30', what: 'DBS renewal — M. Hutchings',    where: '1-to-1',      note: '20 min' },
+  { time: '20:00', what: 'Parent comms — match reminders', where: 'Auto-send',  note: 'Fri 17:00 default' },
+]
+
+export type JuniorFixture = {
+  id: string
+  ageBand: string
+  homeTeam: string
+  awayTeam: string
+  venue: 'H' | 'A'
+  date: string
+  time: string
+  ground: string
+  competition: string
 }
 
-export const WOMENS_FIXTURES: WfFixture[] = [
-  { day: 'Sun', date: '03 May', opp: 'Hartwell Women',         comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'today',    side: '1st team', competitionTone: 'league' },
-  { day: 'Wed', date: '06 May', opp: 'Ashbourne Women FC',     comp: "Women's FA Cup R3",   venue: 'Away · Riverside Park',    time: '19:30', state: 'upcoming', side: '1st team', competitionTone: 'cup' },
-  { day: 'Sun', date: '10 May', opp: 'Thornvale Ladies',       comp: 'WSL 2',   venue: 'Away · Thornvale Stadium', time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
-  { day: 'Sun', date: '17 May', opp: 'Kingsmere City Women',   comp: 'WSL 2',   venue: 'Home · Oakridge Stadium',  time: '14:00', state: 'upcoming', side: '1st team', competitionTone: 'league' },
-  { day: 'Wed', date: '20 May', opp: 'Ridgefield Athletic Women', comp: 'WSL Cup Semi-final', venue: 'Neutral · The Hive',     time: '19:45', state: 'upcoming', side: '1st team', competitionTone: 'cup' },
+export const JUNIOR_FIXTURES: JuniorFixture[] = [
+  { id: 'f1', ageBand: 'U8',  homeTeam: 'Oakridge U8 Eagles',  awayTeam: 'Meridian Town Youth U8',   venue: 'H', date: 'Sat 24 May', time: '09:30', ground: 'Pitch 2',         competition: 'U8 League' },
+  { id: 'f2', ageBand: 'U10', homeTeam: 'Apex United Juniors U10', awayTeam: 'Oakridge U10 Tigers',  venue: 'A', date: 'Sat 24 May', time: '11:00', ground: 'Apex Park',       competition: 'U10 League' },
+  { id: 'f3', ageBand: 'U12', homeTeam: 'Oakridge U12 Lions',  awayTeam: 'Crown Park U12',           venue: 'H', date: 'Sun 25 May', time: '09:30', ground: 'Pitch 1',         competition: 'U12 League' },
+  { id: 'f4', ageBand: 'U14', homeTeam: 'Hartfield Athletic U14', awayTeam: 'Oakridge U14 United',   venue: 'A', date: 'Sun 25 May', time: '11:30', ground: 'Hartfield Ground', competition: 'U14 Cup' },
 ]
 
-// ─── Today schedule (training day with welfare check-ins) ───────────────
-export type WfScheduleItem = { t: string; what: string; where: string; highlight?: boolean }
+export type JuniorResult = { id: string; ageBand: string; vs: string; res: 'W' | 'D' | 'L'; score: string; date: string; comp: string }
 
-export const WOMENS_TODAY: WfScheduleItem[] = [
-  { t: '08:00', what: 'Staff meeting · review + FSR check',     where: 'Boardroom' },
-  { t: '09:30', what: 'First team training · possession',       where: 'Pitch 1' },
-  { t: '10:30', what: 'Set pieces · corners + throw-ins',       where: 'Pitch 1' },
-  { t: '11:30', what: 'Recovery · rotation management',         where: 'Gym + pool', highlight: true },
-  { t: '13:00', what: 'Lunch + welfare check-ins',              where: 'Pavilion' },
-  { t: '14:00', what: 'Media · pre-match interviews',           where: 'Press box' },
-  { t: '15:00', what: 'Video analysis · opposition scout',      where: 'Analysis room' },
-  { t: '16:00', what: 'Sponsorship meeting · Apex activation',  where: "Manager's office" },
+export const JUNIOR_RECENTS: JuniorResult[] = [
+  { id: 'r1', ageBand: 'U11', vs: 'Meridian Town Youth U11', res: 'W', score: '4–2', date: 'Sat 03 May', comp: 'U11 League' },
+  { id: 'r2', ageBand: 'U9',  vs: 'Crown Park U9',           res: 'L', score: '1–3', date: 'Sat 03 May', comp: 'U9 League'  },
+  { id: 'r3', ageBand: 'U14', vs: 'Apex United U14',         res: 'D', score: '2–2', date: 'Sun 04 May', comp: 'U14 Cup'    },
+  { id: 'r4', ageBand: 'U7',  vs: 'Hartfield Athletic U7',   res: 'W', score: '3–1', date: 'Sat 26 Apr', comp: 'U7 Friendly' },
+  { id: 'r5', ageBand: 'U12', vs: 'Meridian Town Youth U12', res: 'W', score: '2–0', date: 'Sat 26 Apr', comp: 'U12 League' },
 ]
 
-// ─── Morning brief — WELFARE + COMPLIANCE are the differentiators ──────
-export type WfAIBriefItem = { tag: string; pri: 'high' | 'med' | 'low'; txt: string }
-
-export const WOMENS_AI_BRIEF: WfAIBriefItem[] = [
-  { tag: 'select',     pri: 'high', txt: 'Carter cleared after scan — returns to starting XI. Decision: partner with Davies or Williams in midfield?' },
-  { tag: 'tactic',     pri: 'med',  txt: 'Sunday opponent sit deep, 5-4-1 block. Work on wide overloads + early crosses; their GK weak on high balls.' },
-  { tag: 'medical',    pri: 'high', txt: 'Davies MRI — Grade 1 MCL, 2-3 weeks. Available for cup match if managed carefully.' },
-  { tag: 'welfare',    pri: 'high', txt: 'Quarterly wellbeing survey 87% complete. 2 players amber on sleep quality — schedule 1-to-1s this week.' },
-  { tag: 'compliance', pri: 'high', txt: 'FSR audit due end of month. 3 items outstanding: supporter forum minutes, diversity report, safeguarding refresher.' },
-  { tag: 'op',         pri: 'med',  txt: 'Apex Performance content shoot Friday — 4 players needed. Check availability vs training schedule.' },
-]
-
-// ─── Performance signals ─────────────────────────────────────────────────
-export type WfPerfItem = { txt: string; delta?: string; tone?: 'good' | 'bad' | 'neutral' }
-
-export const WOMENS_PERF_INTEL: WfPerfItem[] = [
-  { txt: 'xG differential +0.6 / match — best in division',                delta: '+0.1', tone: 'good' },
-  { txt: 'Pass completion 84% — improving',                                delta: '+2.1 pp', tone: 'good' },
-  { txt: 'Clean sheets 5 / 8 — best run this season',                       delta: '+2',   tone: 'good' },
-  { txt: 'Pressing intensity PPDA 8.4 — 2nd in league',                    delta: '+0.8', tone: 'good' },
-  { txt: 'Set-piece conversion 31% — above league avg 24%',                 delta: '+3 pp', tone: 'good' },
-  { txt: 'Squad rotation: 18 of 23 players started this month',             delta: '+4',   tone: 'neutral' },
-]
-
-// ─── Recents ─────────────────────────────────────────────────────────────
-export type WfResult = { vs: string; res: 'W' | 'L' | 'D'; score: string; date: string; comp: string }
-
-export const WOMENS_RECENTS: WfResult[] = [
-  { vs: 'Northgate Women',       res: 'W', score: '3 – 0', date: 'Sun 26 Apr', comp: 'WSL 2' },
-  { vs: 'Plymouth Marine Women', res: 'W', score: '2 – 1', date: 'Sun 19 Apr', comp: 'WSL 2' },
-  { vs: 'Fernbrook Women',       res: 'D', score: '0 – 0', date: 'Sun 12 Apr', comp: 'WSL 2' },
-  { vs: 'Castleton Women',       res: 'W', score: '4 – 1', date: 'Sun 05 Apr', comp: "Women's FA Cup R2" },
-  { vs: 'Glenmoor Wanderers W',  res: 'L', score: '1 – 2', date: 'Sun 29 Mar', comp: 'WSL 2' },
-]
-
-export const WOMENS_SEASON_FORM: ('W' | 'L' | 'D')[] = ['W','D','W','W','L','W','D','W','W','L','D','W','W','L','W','W','D','W']
-
-// ─── Squad availability — 23 players grouped GK / DEF / MID / FWD ──────
-export type WfPlayerSlot = {
-  num: number
-  initials: string
-  name: string
-  pos: string
-  group: 'gk' | 'def' | 'mid' | 'fwd'
-  status: 'ok' | 'doubt' | 'out' | 'cleared'
+export type JuniorSquadSummaryShape = {
+  registered: number
+  out: number
+  dbsPending: number
+  consents: string
 }
 
-export const WOMENS_SQUAD: WfPlayerSlot[] = [
-  // Goalkeepers (3)
-  { num: 1,  initials:'EH', name:'Ellie Hayes',     pos:'GK',  group:'gk',  status:'ok' },
-  { num: 13, initials:'JM', name:'Jenna Marsh',     pos:'GK',  group:'gk',  status:'ok' },
-  { num: 30, initials:'AP', name:'Amelia Parr',     pos:'GK',  group:'gk',  status:'ok' },
-  // Defenders (7)
-  { num: 2,  initials:'KO', name:'Kira Okonkwo',    pos:'RB',  group:'def', status:'ok' },
-  { num: 3,  initials:'TF', name:'Tessa Foley',     pos:'LB',  group:'def', status:'ok' },
-  { num: 4,  initials:'LB', name:'Lucy Brennan',    pos:'CB',  group:'def', status:'ok' },
-  { num: 5,  initials:'MR', name:'Maya Reid',       pos:'CB',  group:'def', status:'ok' },
-  { num: 15, initials:'CW', name:'Caitlin Webb',    pos:'CB',  group:'def', status:'ok' },
-  { num: 17, initials:'BC', name:'Bea Chen',        pos:'CB',  group:'def', status:'doubt' },
-  { num: 21, initials:'OM', name:'Olivia Marsh',    pos:'RB',  group:'def', status:'ok' },
-  // Midfielders (7)
-  { num: 6,  initials:'PG', name:'Priya Granger',   pos:'CDM', group:'mid', status:'ok' },
-  { num: 8,  initials:'LB', name:'Lia Barker',      pos:'CM',  group:'mid', status:'ok' },
-  { num: 10, initials:'NC', name:'Nia Carter',      pos:'CAM', group:'mid', status:'cleared' },
-  { num: 12, initials:'RC', name:'Ria Cole',        pos:'CM',  group:'mid', status:'ok' },
-  { num: 16, initials:'DA', name:'Demi Ashton',     pos:'CM',  group:'mid', status:'ok' },
-  { num: 19, initials:'JT', name:'Jess Tilley',     pos:'RW',  group:'mid', status:'ok' },
-  { num: 23, initials:'SD', name:'Sasha Davies',    pos:'CM',  group:'mid', status:'out' },
-  // Forwards (6)
-  { num: 7,  initials:'JM', name:'Jamie Morgan',    pos:'CF',  group:'fwd', status:'out' },
-  { num: 9,  initials:'ZW', name:'Zara Williams',   pos:'ST',  group:'fwd', status:'ok' },
-  { num: 11, initials:'DM', name:'Dani Morris',     pos:'LW',  group:'fwd', status:'ok' },
-  { num: 14, initials:'RO', name:'Rita Okafor',     pos:'CF',  group:'fwd', status:'doubt' },
-  { num: 18, initials:'AR', name:'Aria Rowe',       pos:'CF',  group:'fwd', status:'ok' },
-  { num: 22, initials:'CP', name:'Carla Porter',    pos:'ST',  group:'fwd', status:'ok' },
-]
-
-export const WOMENS_INJURIES = [
-  { name: 'S. Davies', issue: 'MCL Grade 1',                       back: '2-3 weeks',  status: 'rehab'    as const },
-  { name: 'R. Okafor', issue: 'Concussion protocol Day 3',          back: 'Next week',  status: 'imaging'  as const },
-  { name: 'J. Morgan', issue: 'ACL reconstruction',                 back: '5 months',   status: 'rehab'    as const },
-]
-
-// ─── Sidebar nav (v2 visual) — IDs MUST match v1 SIDEBAR_ITEMS ids ──────
-export type WfNavItem  = { id: string; label: string; icon: string; badge?: string }
-export type WfNavGroup = { g: string; items: WfNavItem[] }
-
-export const WOMENS_NAV_GROUPS: WfNavGroup[] = [
-  { g: 'Overview', items: [
-    { id: 'dashboard', label: 'Dashboard',         icon: 'home' },
-    { id: 'briefing',  label: 'Morning Briefing',  icon: 'sun' },
-    { id: 'insights',  label: 'Insights',          icon: 'bars' },
-  ]},
-  { g: 'FSR Compliance', items: [
-    { id: 'fsr',     label: 'FSR Dashboard',       icon: 'shield', badge: 'NEW' },
-    { id: 'salary',  label: 'Salary Compliance',   icon: 'pound' },
-    { id: 'revenue', label: 'Revenue Attribution', icon: 'bars' },
-  ]},
-  { g: 'Player Welfare', items: [
-    { id: 'welfare',   label: 'Welfare Hub',         icon: 'medical', badge: 'NEW' },
-    { id: 'mental',    label: 'Mental Health',       icon: 'sparkles', badge: 'NEW' },
-    { id: 'acl',       label: 'ACL Risk Monitor',    icon: 'medical' },
-    { id: 'cycle',     label: 'Cycle Tracking',      icon: 'sparkles' },
-    { id: 'maternity', label: 'Maternity Tracker',   icon: 'people' },
-  ]},
-  { g: 'First Team', items: [
-    { id: 'squad',    label: 'Squad Management',     icon: 'people' },
-    { id: 'dualreg',  label: 'Dual Registration',    icon: 'arrow-up-right' },
-    { id: 'tactics',  label: 'Tactics & Set Pieces', icon: 'crosshair' },
-    { id: 'match',    label: 'Match Preparation',    icon: 'flag' },
-    { id: 'analytics',label: 'Analytics',            icon: 'bars' },
-    { id: 'halftime', label: 'AI Halftime Brief',    icon: 'sparkles' },
-  ]},
-  { g: 'GPS & Load', items: [
-    { id: 'gps-load',     label: 'GPS & Load',  icon: 'wave', badge: 'NEW' },
-    { id: 'gps-heatmaps', label: 'Heatmaps',    icon: 'grid', badge: 'NEW' },
-  ]},
-  { g: 'Recruitment', items: [
-    { id: 'transfers', label: 'Transfers',  icon: 'arrow-up-right' },
-    { id: 'scouting',  label: 'Scouting',   icon: 'eye', badge: 'NEW' },
-    { id: 'academy',   label: 'Academy',    icon: 'arrow-up-right' },
-  ]},
-  { g: 'Commercial', items: [
-    { id: 'sponsorship', label: 'Sponsorship Pipeline', icon: 'briefcase' },
-    { id: 'standalone',  label: 'Standalone Tracker',   icon: 'crosshair' },
-    { id: 'board',       label: 'Board Suite',          icon: 'trophy' },
-    { id: 'financial',   label: 'Financial Planning',   icon: 'pound' },
-    { id: 'media',       label: 'Media & Content',      icon: 'newspaper' },
-    { id: 'social',      label: 'Social Media',         icon: 'mic' },
-    { id: 'fanhub',      label: 'Fan Hub',              icon: 'people' },
-  ]},
-  { g: 'Operations', items: [
-    { id: 'team',      label: 'Staff Directory',  icon: 'people' },
-    { id: 'medical',   label: 'Medical Records',  icon: 'medical' },
-    { id: 'preseason', label: 'Pre-Season',       icon: 'calendar' },
-    { id: 'settings',  label: 'Settings',         icon: 'settings' },
-  ]},
-]
-
-export const WOMENS_ACCENT = {
-  hex:    '#166534',
-  dim:    'rgba(22,101,52,0.16)',
-  border: 'rgba(22,101,52,0.45)',
+export const JUNIOR_SQUAD_SUMMARY: JuniorSquadSummaryShape = {
+  registered: 128,
+  out:        6,
+  dbsPending: 2,
+  consents:   '124/128',
 }
