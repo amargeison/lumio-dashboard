@@ -21,6 +21,7 @@
 import { useState, useMemo } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -194,7 +195,7 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // portals' Dashboard/Insights/Board Suite pattern. 'insights' moved
   // here from CLUB (chairman-scoped, same whitelist). 'committee_suite'
   // is new in this commit — the grassroots committee oversight view.
-  { id: 'today',           label: 'Overview',        icon: '🏠', group: 'OVERVIEW' },
+  { id: 'today',           label: 'Dashboard',       icon: '🏠', group: 'OVERVIEW' },
   { id: 'insights',        label: 'Insights',        icon: '📊', group: 'OVERVIEW' },
   { id: 'committee_suite', label: 'Committee Suite', icon: '📜', group: 'OVERVIEW' },
 
@@ -1050,6 +1051,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         }}
       >
         <div className="p-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+          {session.logoDataUrl
+            ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0 mb-2" alt="" />
+            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0 mb-2" alt="Oakridge Juniors crest" />}
           <p className="text-xs uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Lumio Junior Football</p>
           <p className="text-sm font-bold mt-1">{club.name}</p>
           <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{club.programme}</p>
@@ -1106,7 +1110,26 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         </div>
       </aside>
 
-      <main className="flex-1 p-6 overflow-x-hidden">
+      <div className="flex-1 flex flex-col">
+        {/* Demo workspace banner — paddingRight reserves space for the
+            fixed top-right avatar + notification controls below. */}
+        <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#16A34A', color: '#ffffff', paddingRight: 110 }}>
+          <span>This is a demo · sample data</span>
+          <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
+        </div>
+
+        {/* Top-right header controls — bell + avatar.
+            Demo-safe avatar (no /api/workspace/* calls). Mirrors Pro
+            portal placement (fixed, top:6, right:16, hidden on mobile). */}
+        <div className="fixed hidden md:flex items-center gap-2" style={{ top: 6, right: 16, zIndex: 60 }}>
+          <JuniorNotifications />
+          <JuniorAvatarDropdown
+            initials={(effectiveSession.clubName || 'OJ').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            onSettings={() => setActiveSection('settings')}
+          />
+        </div>
+
+        <main className="flex-1 p-6 overflow-x-hidden">
         {activeSection === 'today' && (
           <TodayView club={club} session={effectiveSession} onNavigate={handleNavigate} />
         )}
@@ -1225,6 +1248,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
           <JuniorFacilities session={session} demoChild={club.demoChild} />
         )}
       </main>
+      </div>
 
       {/* Tranche 3 — Send Message composer (modal). Mounted at the portal
           root so it sits above the sticky sidebar and the main content.
