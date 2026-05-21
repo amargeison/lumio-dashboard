@@ -18,7 +18,7 @@
 // — same SIDEBAR_ITEMS / DashboardView pattern, junior naming and
 // junior-specific KPIs.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
@@ -983,6 +983,17 @@ function SettingsView({
 function JuniorPortalInner({ club, session }: { club: JuniorClub; session: SportsDemoSession }) {
   const [activeSection, setActiveSection] = useState('today')
 
+  // Sidebar collapse / hover-expand — mirrors the Women's portal pattern.
+  // Pinned state persists across sessions in localStorage; hovered state is
+  // ephemeral with a 400ms leave timer to prevent flicker on quick mouse-outs.
+  const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_junior_sidebar_pinned') === 'true')
+  const [hovered, setHovered] = useState(false)
+  const sidebarLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = pinned || hovered
+  const togglePin = () => setPinned(p => { const next = !p; try { localStorage.setItem('lumio_junior_sidebar_pinned', String(next)) } catch { /* SSR */ }; return next })
+  const handleSidebarEnter = () => { if (sidebarLeaveTimer.current) { clearTimeout(sidebarLeaveTimer.current); sidebarLeaveTimer.current = null } setHovered(true) }
+  const handleSidebarLeave = () => { sidebarLeaveTimer.current = setTimeout(() => setHovered(false), 400) }
+
   // Role-switcher state layer. The active role is held in React state so the
   // RoleSwitcher control in the sidebar can drive sidebar filtering, role-
   // aware labels and role-gated dispatch without mutating the immutable
@@ -1043,20 +1054,38 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
       {/* Floating / sticky sidebar — full-height, scrolls internally when
           the catalogue is longer than the viewport. */}
       <aside
-        className="w-64 shrink-0 border-r flex flex-col sticky top-0"
+        className="shrink-0 border-r flex flex-col sticky top-0 overflow-hidden"
         style={{
           borderColor: '#1F2937',
           backgroundColor: '#0D1117',
+          width: expanded ? 220 : 72,
           height: 'calc(100vh / 0.9)',
+          transition: 'width 250ms ease',
         }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
       >
-        <div className="p-4 shrink-0" style={{ borderBottom: '1px solid #1F2937' }}>
+        <div className="shrink-0 flex items-center gap-2" style={{ borderBottom: '1px solid #1F2937', padding: expanded ? '16px' : '16px 0', justifyContent: expanded ? 'flex-start' : 'center' }}>
           {session.logoDataUrl
-            ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0 mb-2" alt="" />
-            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0 mb-2" alt="Oakridge Juniors crest" />}
-          <p className="text-xs uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Lumio Junior Football</p>
-          <p className="text-sm font-bold mt-1">{club.name}</p>
-          <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{club.programme}</p>
+            ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
+            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Juniors crest" />}
+          {expanded && (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs uppercase tracking-wider truncate" style={{ color: '#9CA3AF' }}>Lumio Junior Football</p>
+                <p className="text-sm font-bold mt-1 truncate">{club.name}</p>
+                <p className="text-[10px] mt-0.5 truncate" style={{ color: '#6B7280' }}>{club.programme}</p>
+              </div>
+              <button
+                onClick={togglePin}
+                className="shrink-0 p-1 rounded"
+                style={{ color: pinned ? '#16A34A' : '#4B5563', transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 150ms ease, color 150ms ease' }}
+                title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg>
+              </button>
+            </>
+          )}
         </div>
         <nav className="p-2 space-y-3 flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
           {groupOrder.map(g => {
@@ -1064,7 +1093,7 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             if (!items || items.length === 0) return null
             return (
               <div key={g}>
-                <p className="px-3 pb-1 text-[10px] uppercase tracking-wider" style={{ color: '#4B5563' }}>{g}</p>
+                {expanded && <p className="px-3 pb-1 text-[10px] uppercase tracking-wider" style={{ color: '#4B5563' }}>{g}</p>}
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const active = activeSection === item.id
@@ -1072,15 +1101,17 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setActiveSection(item.id)}
+                        onClick={() => { setActiveSection(item.id); if (!pinned) setHovered(false) }}
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs"
                         style={{
                           backgroundColor: active ? 'rgba(22,163,74,0.15)' : 'transparent',
                           color:           active ? '#22C55E' : '#9CA3AF',
+                          justifyContent:  expanded ? 'flex-start' : 'center',
                         }}
+                        title={expanded ? undefined : roleAwareLabel(item, effectiveSession.role)}
                       >
                         <span>{item.icon}</span>
-                        <span>{roleAwareLabel(item, effectiveSession.role)}</span>
+                        {expanded && <span>{roleAwareLabel(item, effectiveSession.role)}</span>}
                       </button>
                     )
                   })}
@@ -1102,11 +1133,13 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
             roles={JUNIOR_ROLES}
             accentColor="#16A34A"
             onRoleChange={(newRole) => { setActiveRole(newRole); setActiveSection('today') }}
-            sidebarCollapsed={false}
+            sidebarCollapsed={!expanded}
           />
-          <p className="px-2 pt-2 text-[10px]" style={{ color: '#6B7280' }}>
-            {effectiveSession.isDemoShell !== false ? 'Demo shell' : 'Live'}
-          </p>
+          {expanded && (
+            <p className="px-2 pt-2 text-[10px]" style={{ color: '#6B7280' }}>
+              {effectiveSession.isDemoShell !== false ? 'Demo shell' : 'Live'}
+            </p>
+          )}
         </div>
       </aside>
 
