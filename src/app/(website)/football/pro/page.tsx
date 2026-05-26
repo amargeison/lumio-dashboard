@@ -278,9 +278,9 @@ export default function FootballProPage() {
             <Link href="/sports-signup?sport=football" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for founding access →
             </Link>
-            <Link href="/football/oakridge-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
               Try the demo
-            </Link>
+            </span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -310,7 +310,7 @@ export default function FootballProPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="football" demoHref="/football/lumio-dev" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={FOOTBALL_ROLES} />
+      <SportRoleTabs sport="football" demoHref="/football/lumio-dev" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={FOOTBALL_ROLES} demoDisabled={true} />
 
       <Spotlight
         eyebrow="SPOTLIGHT · AI HALF-TIME GPS BRIEF"
@@ -402,9 +402,9 @@ export default function FootballProPage() {
             <Link href="/sports-signup?sport=football" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for founding access →
             </Link>
-            <Link href="/football/oakridge-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
               Try the demo →
-            </Link>
+            </span>
           </div>
           <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Fictional demo club · All player data is illustrative · GPS vest integration from Professional tier</p>
         </div>
