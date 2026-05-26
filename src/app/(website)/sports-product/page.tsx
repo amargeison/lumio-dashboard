@@ -3,6 +3,21 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check, ChevronRight } from 'lucide-react'
+import { SPORTS } from '@/lib/sports/marketing-sports'
+
+// Map the sports-product PORTALS array's ID convention to the
+// marketing-sports SPORTS array's IDs. Only the women's product
+// uses a different slug ('womensfootball' here vs 'womens' in
+// marketing-sports). Everything else is a direct match.
+const MARKETING_SPORT_ID: Record<string, string> = { womensfootball: 'womens' }
+
+function isPortalDemoGated(portalId: string): boolean {
+  const sportId = MARKETING_SPORT_ID[portalId] ?? portalId
+  const entry = SPORTS.find(s => s.id === sportId)
+  // Default to gated when we can't find a match — safer than
+  // accidentally exposing a demo link that should be off.
+  return entry ? !entry.available : true
+}
 
 // ─── Types & Data ─────────────────────────────────────────────────────────────
 
@@ -347,13 +362,27 @@ export default function SportsProductPage() {
               )}
             </div>
 
-            {/* CTA button */}
-            <Link
-              href={portal.href}
-              className="flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: portal.color, color: '#F9FAFB' }}>
-              {portal.cta} <ArrowRight size={16} />
-            </Link>
+            {/* CTA button — gated when the matching marketing-sports
+                entry is not available. Women's portal CTA is a
+                /contact link (not a sport demo) so isPortalDemoGated
+                returns false for it and it stays clickable. */}
+            {isPortalDemoGated(portal.id) ? (
+              <span
+                role="button"
+                aria-disabled="true"
+                title="Coming soon"
+                className="flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: portal.color, color: '#F9FAFB', opacity: 0.5, cursor: 'not-allowed' }}>
+                {portal.cta} <ArrowRight size={16} />
+              </span>
+            ) : (
+              <Link
+                href={portal.href}
+                className="flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+                style={{ backgroundColor: portal.color, color: '#F9FAFB' }}>
+                {portal.cta} <ArrowRight size={16} />
+              </Link>
+            )}
 
           </div>
         </div>
