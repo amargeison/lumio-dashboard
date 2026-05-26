@@ -19,9 +19,14 @@ export interface SportRoleTabsProps {
   accentColor: string
   accentColorDim: string
   roles: SportRole[]
+  /** Gate the per-role demo CTA. When true, the "See {sport} live in
+   *  a demo →" button renders disabled with a native `title="Coming
+   *  soon"` tooltip. Defaults to false (demo enabled) so existing call
+   *  sites are unaffected. */
+  demoDisabled?: boolean
 }
 
-export default function SportRoleTabs({ sport, demoHref, accentColor, accentColorDim, roles }: SportRoleTabsProps) {
+export default function SportRoleTabs({ sport, demoHref, accentColor, accentColorDim, roles, demoDisabled = false }: SportRoleTabsProps) {
   const [activeId, setActiveId] = useState(roles[0]?.id ?? '')
   const [openModule, setOpenModule] = useState<number | null>(null)
   const active = roles.find(r => r.id === activeId) ?? roles[0]
@@ -152,13 +157,25 @@ export default function SportRoleTabs({ sport, demoHref, accentColor, accentColo
                 ))}
               </ul>
 
-              <Link
-                href={demoHref}
-                className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
-                style={{ backgroundColor: accentColor, color: '#FFFFFF' }}
-              >
-                See {sport} live in a demo →
-              </Link>
+              {demoDisabled ? (
+                <span
+                  role="button"
+                  aria-disabled="true"
+                  title="Coming soon"
+                  className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold"
+                  style={{ backgroundColor: accentColor, color: '#FFFFFF', opacity: 0.5, cursor: 'not-allowed' }}
+                >
+                  See {sport} live in a demo →
+                </span>
+              ) : (
+                <Link
+                  href={demoHref}
+                  className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: accentColor, color: '#FFFFFF' }}
+                >
+                  See {sport} live in a demo →
+                </Link>
+              )}
             </div>
           </div>
         </div>
