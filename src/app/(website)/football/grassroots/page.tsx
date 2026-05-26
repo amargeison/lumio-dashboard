@@ -48,9 +48,9 @@ export default function FootballGrassrootsPage() {
             <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
               Apply for founding access →
             </Link>
-            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
               Try the demo
-            </Link>
+            </span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PILLS.map(p => (
@@ -122,9 +122,9 @@ export default function FootballGrassrootsPage() {
             <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
               Apply for founding access →
             </Link>
-            <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
               Try the demo →
-            </Link>
+            </span>
           </div>
         </div>
       </section>

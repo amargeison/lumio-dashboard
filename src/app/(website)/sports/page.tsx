@@ -271,7 +271,7 @@ export default function SportsLandingPage() {
         <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#7C3AED', color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none' }}>
           Apply for Free Founding Access →
         </Link>
-        <p style={{ fontSize: 12, color: '#4B5563', marginTop: 12 }}>Available for Tennis, Golf, Darts, Boxing, Rugby, Cricket</p>
+        <p style={{ fontSize: 12, color: '#4B5563', marginTop: 12 }}>Available for Junior Football and Women&apos;s FC</p>
       </section>
 
       {/* ═══ SECTION 6: FINAL CTA ═══ */}
