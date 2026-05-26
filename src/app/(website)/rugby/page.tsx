@@ -255,12 +255,12 @@ export default function RugbyLandingPage() {
             Salary cap intelligence. GPS-powered performance analytics. AI Halftime Brief. Franchise readiness tracking. Everything a Championship or Premiership club needs — in one platform.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+            <Link href="/sports-signup?sport=rugby" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+              Apply for founding access →
+            </Link>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
               View demo →
-            </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Book a club demo
-            </Link>
+            </span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -312,7 +312,7 @@ export default function RugbyLandingPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="rugby" demoHref="/rugby/hartfield" accentColor={PURPLE} accentColorDim={`${PURPLE}26`} roles={RUGBY_ROLES} />
+      <SportRoleTabs sport="rugby" demoHref="/rugby/hartfield" accentColor={PURPLE} accentColorDim={`${PURPLE}26`} roles={RUGBY_ROLES} demoDisabled={true} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
@@ -417,9 +417,9 @@ export default function RugbyLandingPage() {
                 Club Pro+ · £599/mo
               </div>
             </div>
-            <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55`, whiteSpace: 'nowrap' }}>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, boxShadow: `0 16px 40px ${PURPLE}55`, whiteSpace: 'nowrap', opacity: 0.5, cursor: 'not-allowed' }}>
               Explore the live demo →
-            </Link>
+            </span>
           </div>
         </div>
       </section>
@@ -479,9 +479,12 @@ export default function RugbyLandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              View Hartfield RFC demo →
+            <Link href="/sports-signup?sport=rugby" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+              Apply for founding access →
             </Link>
+            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+              View Hartfield RFC demo →
+            </span>
             <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Book a walkthrough
             </Link>
