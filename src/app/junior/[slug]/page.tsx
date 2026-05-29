@@ -32,6 +32,7 @@ import JuniorParentApp from './_components/JuniorParentApp'
 import JuniorAIMatchRecap from './_components/JuniorAIMatchRecap'
 import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatchDayHero'
 import JuniorAIBriefingBox from './_components/JuniorAIBriefingBox'
+import JuniorPerformanceSignals from './_components/JuniorPerformanceSignals'
 import { JUNIOR_ACCENT, JUNIOR_ORG } from './_lib/junior-dashboard-data'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
@@ -797,6 +798,15 @@ function TodayView({
           <JuniorRecents />
           <JuniorSquadSummary />
         </div>
+
+        {/* Performance Signals — port of Women's WfPerf, full-width strip
+            at the bottom of the Overview tab. Reads JUNIOR_PERF_INTEL
+            (six youth-football KPIs). */}
+        <JuniorPerformanceSignals
+          T={THEMES.dark}
+          accent={JUNIOR_ACCENT}
+          density={DENSITY.regular}
+        />
         </div>
       )}
 
