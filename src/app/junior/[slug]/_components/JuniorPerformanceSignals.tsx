@@ -24,6 +24,8 @@ import type { ReactNode, CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { JUNIOR_PERF_INTEL } from '../_lib/junior-dashboard-data'
+// CSSProperties imported above is consumed by the optional `style` prop
+// the dashboard uses to set gridColumn when this card sits in a 12-col row.
 
 // ─── Local primitives ──────────────────────────────────────────────────
 
@@ -60,11 +62,14 @@ interface Props {
   T: ThemeTokens
   accent: AccentTokens
   density: Density
+  /** Optional style override merged onto the outer Card — used for
+   *  gridColumn placement when this card sits inside a 12-col row. */
+  style?: CSSProperties
 }
 
-export default function JuniorPerformanceSignals({ T, accent, density }: Props) {
+export default function JuniorPerformanceSignals({ T, accent, density, style }: Props) {
   return (
-    <Card T={T} density={density}>
+    <Card T={T} density={density} style={style}>
       <SectionHead
         T={T}
         title="Performance signals"

@@ -34,6 +34,9 @@ import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatc
 import JuniorTodayInset from './_components/JuniorTodayInset'
 import JuniorAIBriefingBox from './_components/JuniorAIBriefingBox'
 import JuniorPerformanceSignals from './_components/JuniorPerformanceSignals'
+import JuniorInboxLive from './_components/JuniorInboxLive'
+import JuniorThisWeek from './_components/JuniorThisWeek'
+import JuniorOutstandingItems from './_components/JuniorOutstandingItems'
 import { JUNIOR_ACCENT, JUNIOR_ORG } from './_lib/junior-dashboard-data'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
@@ -683,88 +686,66 @@ function TodayView({
       </div>
 
       <div className="space-y-4">
-        {/* AI Briefing Box — port of Women's AIBrief, relocated from the
-            old top-of-page banner to the top of the Overview tab. Reads
-            the same JUNIOR_AI_BRIEF data (Squad / Training / Safeguarding
-            / Welfare / Compliance / Comms) but in the Women's-style row
-            layout with time-of-day label switch and dismissible items.
-            onAsk reuses the performance_brief route — no separate Ask
-            modal in the Junior portal yet. */}
-        <JuniorAIBriefingBox
-          T={THEMES.dark}
-          accent={JUNIOR_ACCENT}
-          density={DENSITY.regular}
-          onAsk={() => onNavigate('performance_brief')}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">This week</h3>
-            <ul className="space-y-2 text-xs text-gray-300">
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>U11 Lions — training (Tue 18:00)</span>
-                <span className="text-[10px] text-gray-500">Coach: M. Hutchings</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>U9 Tigers vs Harfield Juniors (Sat 09:30, H)</span>
-                <span className="text-[10px] text-gray-500">Ref booked</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>Welfare check-in (Wed 19:00)</span>
-                <span className="text-[10px] text-gray-500">All teams</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Parent comms — match-day reminders</span>
-                <span className="text-[10px] text-gray-500">Auto-send Fri 17:00</span>
-              </li>
-            </ul>
-          </div>
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">Outstanding items</h3>
-            <ul className="space-y-2 text-xs text-gray-300">
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>{kpis.consentsTotal - kpis.consentsCurrent} consent renewals outstanding</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${consentColor === 'green' ? 'bg-green-600/20 text-green-400' : consentColor === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {consentColor === 'green' ? 'On track' : consentColor === 'amber' ? 'Chase due' : 'Action needed'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>DBS renewals — {kpis.dbsCurrent}/{kpis.dbsTotal} current</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${dbsColor === 'green' ? 'bg-green-600/20 text-green-400' : dbsColor === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {dbsColor === 'green' ? 'OK' : dbsColor === 'amber' ? 'Review' : 'Urgent'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>FA Charter — {charter.label}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${charter.color === 'green' ? 'bg-green-600/20 text-green-400' : charter.color === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {charter.color === 'green' ? 'Achieved' : charter.color === 'amber' ? 'In progress' : 'Not entered'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Welfare flags</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">No open flags</span>
-              </li>
-            </ul>
-          </div>
+        {/* Row A — 3-col band: Inbox · AI Briefing · Outstanding items.
+            gap: 8 (tighter than the surrounding space-y-4) and
+            alignItems: stretch so the three cards equalise to one
+            unified row regardless of inbox expansion. Matches Women's
+            three-column-band pattern (page.tsx line 5849). */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+          <JuniorInboxLive
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+          />
+          <JuniorAIBriefingBox
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            onAsk={() => onNavigate('performance_brief')}
+            style={{ gridColumn: '5 / span 4' }}
+          />
+          <JuniorOutstandingItems
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            kpis={kpis}
+            charter={charter}
+            consentColor={consentColor}
+            dbsColor={dbsColor}
+            style={{ gridColumn: '9 / span 4' }}
+          />
         </div>
 
-        {/* Inbox is rebuilt as JuniorInboxLive and rendered inside Row A
-            in Commit 4 — between this commit and Commit 4 the dashboard
-            has no inbox panel by design. Today's schedule moved into the
-            hero row's right-hand inset (JuniorTodayInset). */}
         <JuniorFixturesPanel />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <JuniorRecents />
-          <JuniorSquadSummary />
+
+        {/* Row B — 3-col band: This week · Recent results · Performance
+            signals. Same gap: 8 / alignItems: stretch convention as
+            Row A. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+          <JuniorThisWeek
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '1 / span 4' }}
+          />
+          <JuniorRecents
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '5 / span 4' }}
+          />
+          <JuniorPerformanceSignals
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '9 / span 4' }}
+          />
         </div>
 
-        {/* Performance Signals — port of Women's WfPerf, full-width strip
-            at the bottom of the Overview tab. Reads JUNIOR_PERF_INTEL
-            (six youth-football KPIs). */}
-        <JuniorPerformanceSignals
-          T={THEMES.dark}
-          accent={JUNIOR_ACCENT}
-          density={DENSITY.regular}
-        />
+        {/* Squad availability — currently still half-width Tailwind
+            card from the old layout. Commit 5 relocates it to a
+            full-width strip with a 4-col grid body. */}
+        <JuniorSquadSummary />
         </div>
     </div>
   )

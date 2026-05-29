@@ -7,10 +7,17 @@
 // green accent (#16A34A / #15803D).
 //
 // All components consume hardcoded demo data from ../_lib/junior-dashboard-data.
-// No Cricket v2 theme imports, no shared portal theme tokens — Tailwind
-// classes + inline style only. Future live-data swap is a data-layer
-// concern, not a component-layer concern.
+// JuniorStatTiles / JuniorFixturesPanel / JuniorSquadSummary stay on
+// Tailwind classes — they're standalone full-width cards that don't
+// share a row with theme-token siblings. JuniorRecents was re-skinned
+// to theme tokens when it moved into the Row B 3-col layout so the
+// row reads as a unified visual band with its AI / Performance
+// siblings. Future live-data swap is a data-layer concern, not a
+// component-layer concern.
 
+import type { CSSProperties, ReactNode } from 'react'
+import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
   JUNIOR_TOP_STATS,
   JUNIOR_FIXTURES,
@@ -97,39 +104,143 @@ export function JuniorFixturesPanel() {
 }
 
 // ─── JuniorRecents — recent results ─────────────────────────────────────────
+// Re-skinned to theme tokens when it moved into Row B (3-col row alongside
+// JuniorAIBriefingBox / JuniorThisWeek / JuniorPerformanceSignals). Card
+// + SectionHead primitives inlined locally — same pattern as the other
+// theme-token Junior components.
 
-const RESULT_TINT: Record<'W' | 'D' | 'L', { bg: string; color: string }> = {
-  W: { bg: 'rgba(22,163,74,0.18)',  color: '#86EFAC' },
-  D: { bg: 'rgba(245,158,11,0.18)', color: '#FCD34D' },
-  L: { bg: 'rgba(239,68,68,0.18)',  color: '#FCA5A5' },
+function ThemeCard({ T, density, children, style }: { T: ThemeTokens; density: Density; children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        background: T.panel,
+        border: `1px solid ${T.border}`,
+        borderRadius: density.radius,
+        padding: density.pad,
+        boxShadow: T.cardShadow,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  )
 }
 
-export function JuniorRecents() {
+function ThemeSectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; right?: ReactNode }) {
   return (
-    <div className={CARD_CLASS}>
-      <h3 className="text-sm font-bold text-white mb-3">Recent results</h3>
-      <ul className="space-y-2">
-        {JUNIOR_RECENTS.map(r => {
-          const tint = RESULT_TINT[r.res]
+    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{title}</div>
+      <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3, display: 'flex', alignItems: 'center', gap: 4 }}>{right}</div>
+    </div>
+  )
+}
+
+// Result tint matches the cricket / NL / Women's resTint pattern.
+const resTint = (T: ThemeTokens, r: 'W' | 'D' | 'L') => {
+  if (r === 'W') return { bg: 'rgba(58,171,133,0.14)', fg: T.good }
+  if (r === 'L') return { bg: 'rgba(199,90,90,0.12)',  fg: T.bad }
+  return { bg: T.hover, fg: T.text2 }
+}
+
+interface JuniorRecentsProps {
+  T: ThemeTokens
+  accent: AccentTokens
+  density: Density
+  style?: CSSProperties
+}
+
+export function JuniorRecents({ T, accent, density, style }: JuniorRecentsProps) {
+  return (
+    <ThemeCard T={T} density={density} style={style}>
+      <ThemeSectionHead
+        T={T}
+        title="Recent results"
+        right={
+          <div style={{ display: 'flex', gap: 4 }}>
+            {JUNIOR_RECENTS.map((r, i) => {
+              const t = resTint(T, r.res)
+              return (
+                <span
+                  key={i}
+                  style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    fontSize: 9.5, fontWeight: 700,
+                    display: 'grid', placeItems: 'center',
+                    background: t.bg, color: t.fg,
+                  }}
+                >
+                  {r.res}
+                </span>
+              )
+            })}
+          </div>
+        }
+      />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {JUNIOR_RECENTS.map((r, i) => {
+          const t = resTint(T, r.res)
           return (
-            <li key={r.id} className="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0">
+            <div
+              key={r.id}
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 10,
+                padding: '8px 0',
+                borderTop: i ? `1px solid ${T.border}` : 'none',
+              }}
+            >
               <span
-                className="shrink-0 text-[10px] font-bold w-6 h-6 rounded flex items-center justify-center"
-                style={{ backgroundColor: tint.bg, color: tint.color }}
+                style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  fontSize: 9.5, fontWeight: 700,
+                  display: 'grid', placeItems: 'center',
+                  background: t.bg, color: t.fg,
+                  flexShrink: 0,
+                }}
               >
                 {r.res}
               </span>
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider w-9 text-emerald-400">{r.ageBand}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{r.vs}</p>
-                <p className="text-[10px] text-gray-500">{r.comp} · {r.date}</p>
+              <span
+                style={{
+                  fontSize: 9.5, fontWeight: 700,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: accent.hex,
+                  width: 32, flexShrink: 0,
+                  fontFamily: FONT_MONO,
+                }}
+              >
+                {r.ageBand}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 12, color: T.text, fontWeight: 500,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}
+                >
+                  {r.vs}
+                </div>
+                <div style={{ fontSize: 10, color: T.text3 }}>
+                  {r.comp} · {r.date}
+                </div>
               </div>
-              <span className="shrink-0 text-sm font-bold text-white">{r.score}</span>
-            </li>
+              <span
+                className="tnum"
+                style={{
+                  fontSize: 12.5, fontWeight: 600,
+                  color: T.text, fontFamily: FONT_MONO,
+                  flexShrink: 0,
+                }}
+              >
+                {r.score}
+              </span>
+            </div>
           )
         })}
-      </ul>
-    </div>
+      </div>
+    </ThemeCard>
   )
 }
 

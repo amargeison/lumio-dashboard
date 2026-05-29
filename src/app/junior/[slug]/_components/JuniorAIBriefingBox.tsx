@@ -62,9 +62,12 @@ interface Props {
   accent: AccentTokens
   density: Density
   onAsk?: () => void
+  /** Optional style override merged onto the outer Card. Used by the
+   *  dashboard to set `gridColumn` when the box sits in a 12-col row. */
+  style?: CSSProperties
 }
 
-export default function JuniorAIBriefingBox({ T, accent, density, onAsk }: Props) {
+export default function JuniorAIBriefingBox({ T, accent, density, onAsk, style }: Props) {
   // Local dismissed state — matches Women's pattern. Resets on remount
   // (e.g. user navigates away from Today and back).
   const [items, setItems] = useState<(JuniorAIBriefItem & { dismissed?: boolean })[]>(
@@ -76,7 +79,7 @@ export default function JuniorAIBriefingBox({ T, accent, density, onAsk }: Props
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
 
   return (
-    <Card T={T} density={density}>
+    <Card T={T} density={density} style={style}>
       <SectionHead
         T={T}
         title={<>
