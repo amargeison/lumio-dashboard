@@ -420,24 +420,8 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
   },
 }
 
-// ─── Shared dashboard primitives ─────────────────────────────────────────────
-// SectionHeader mirrors the Women's portal pattern. KPI tiles now live in
-// JuniorStatTiles (./_components/JuniorDashboardModules).
-
-function SectionHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: string }) {
-  return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-xl">{icon}</span>}
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-      </div>
-      {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
-    </div>
-  )
-}
-
 // ─── Today view (dashboard landing) ──────────────────────────────────────────
-// Mirrors Women's DashboardView pattern: SectionHeader + KPI grid +
+// Mirrors Women's DashboardView pattern: match-day hero + KPI grid +
 // content cards. Junior KPIs from spec:
 //   - registered players
 //   - sessions delivered this month
@@ -585,17 +569,6 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
   ],
 }
 
-// Getting Started checklist — onboarding hints for first-time users.
-// Items vary slightly by role; for now a single shared list keyed to
-// what the demo flow exercises. Wire role-aware variants later.
-const GETTING_STARTED_ITEMS: { id: string; label: string; done: boolean; help: string }[] = [
-  { id: 'gs_profile',      label: 'Complete your profile',            done: true,  help: 'Add a photo and contact details so other club members can recognise you.' },
-  { id: 'gs_consent',      label: 'Review safeguarding consents',     done: true,  help: 'Photography, travel and medical consents must be current for every player.' },
-  { id: 'gs_link_child',   label: 'Link to your child (parents)',     done: false, help: 'Parents: link your account to your child\'s profile to unlock the Parent App view.' },
-  { id: 'gs_first_session',label: 'Log your first training session',  done: false, help: 'Coaches: logging sessions feeds the development tracker and FA Charter evidence pack.' },
-  { id: 'gs_invite_team',  label: 'Invite the rest of your team',     done: false, help: 'Invite assistant coaches, team managers and parents from Club & Team → Invitations.' },
-]
-
 // 8-point compass conversion for open-meteo winddirection (degrees → label).
 // Inline helper used by the TodayView weather fetch; small enough not to
 // warrant its own file. Matches the simple wind direction style used in the
@@ -608,7 +581,6 @@ function degreesToCompass(deg: number): string {
 function TodayView({
   club, session, onNavigate,
 }: { club: JuniorClub; session: SportsDemoSession; onNavigate: (id: string) => void }) {
-  const [tab, setTab] = useState<'overview' | 'getting_started'>('overview')
   const kpis = DEMO_KPIS[club.slug] ?? DEMO_KPIS['oakridge-juniors']
   const charter = charterLabel(kpis.charterStatus)
   const consentColor = consentBadgeColor(kpis.consentsCurrent, kpis.consentsTotal)
@@ -695,33 +667,7 @@ function TodayView({
         </div>
       </div>
 
-      {/* Tabs — Overview / Getting Started. Mirrors the Women's tab
-          pattern (border-bottom accent on the active tab). */}
-      <div className="flex gap-1 border-b border-gray-800 mb-4">
-        {[
-          { id: 'overview',         label: 'Overview',        icon: '📊' },
-          { id: 'getting_started',  label: 'Getting Started', icon: '🚀' },
-        ].map(t => {
-          const active = tab === t.id
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id as 'overview' | 'getting_started')}
-              className="px-4 py-2.5 text-xs font-semibold transition-all relative"
-              style={{
-                color: active ? '#22C55E' : '#6B7280',
-                borderBottom: active ? '2px solid #22C55E' : '2px solid transparent',
-              }}
-            >
-              <span className="mr-1.5">{t.icon}</span>{t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {tab === 'overview' && (
-        <div className="space-y-4">
+      <div className="space-y-4">
         {/* AI Briefing Box — port of Women's AIBrief, relocated from the
             old top-of-page banner to the top of the Overview tab. Reads
             the same JUNIOR_AI_BRIEF data (Squad / Training / Safeguarding
@@ -808,39 +754,6 @@ function TodayView({
           density={DENSITY.regular}
         />
         </div>
-      )}
-
-      {tab === 'getting_started' && (
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-white mb-1">Getting Started</h3>
-          <p className="text-xs text-gray-400 mb-4">
-            A short checklist to get you running. Items marked done are based on the
-            demo profile; in a live club these update from real activity.
-          </p>
-          <ul className="space-y-3">
-            {GETTING_STARTED_ITEMS.map(item => (
-              <li key={item.id} className="flex items-start gap-3">
-                <span
-                  className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                  style={{
-                    backgroundColor: item.done ? 'rgba(34,197,94,0.18)' : 'rgba(75,85,99,0.30)',
-                    color: item.done ? '#22C55E' : '#9CA3AF',
-                    border: item.done ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(75,85,99,0.45)',
-                  }}
-                >
-                  {item.done ? '✓' : ''}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium ${item.done ? 'text-gray-300' : 'text-white'}`}>
-                    {item.label}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{item.help}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }
