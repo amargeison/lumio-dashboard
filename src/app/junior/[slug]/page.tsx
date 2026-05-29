@@ -18,18 +18,21 @@
 // — same SIDEBAR_ITEMS / DashboardView pattern, junior naming and
 // junior-specific KPIs.
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
-import JuniorStatTiles, { JuniorAIBrief, JuniorInbox, JuniorTodaySchedule, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
+import JuniorStatTiles, { JuniorInbox, JuniorTodaySchedule, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
 import JuniorClubTeamAdmin from './_components/JuniorClubTeamAdmin'
 import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 import JuniorParentApp from './_components/JuniorParentApp'
-import JuniorAIMatchRecap, { JuniorAIMatchRecapPreview } from './_components/JuniorAIMatchRecap'
+import JuniorAIMatchRecap from './_components/JuniorAIMatchRecap'
+import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatchDayHero'
+import { JUNIOR_ORG } from './_lib/junior-dashboard-data'
+import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
 import JuniorPerformance from './_components/JuniorPerformance'
 import JuniorDevelopment from './_components/JuniorDevelopment'
@@ -591,11 +594,19 @@ const GETTING_STARTED_ITEMS: { id: string; label: string; done: boolean; help: s
   { id: 'gs_invite_team',  label: 'Invite the rest of your team',     done: false, help: 'Invite assistant coaches, team managers and parents from Club & Team → Invitations.' },
 ]
 
+// 8-point compass conversion for open-meteo winddirection (degrees → label).
+// Inline helper used by the TodayView weather fetch; small enough not to
+// warrant its own file. Matches the simple wind direction style used in the
+// hero's "9 mph SW" demo line.
+function degreesToCompass(deg: number): string {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8]
+}
+
 function TodayView({
   club, session, onNavigate,
 }: { club: JuniorClub; session: SportsDemoSession; onNavigate: (id: string) => void }) {
   const [tab, setTab] = useState<'overview' | 'getting_started'>('overview')
-  const isParent = session.role === 'parent_guardian'
   const kpis = DEMO_KPIS[club.slug] ?? DEMO_KPIS['oakridge-juniors']
   const charter = charterLabel(kpis.charterStatus)
   const consentColor = consentBadgeColor(kpis.consentsCurrent, kpis.consentsTotal)
@@ -603,36 +614,48 @@ function TodayView({
   const actions = QUICK_ACTIONS_BY_ROLE[session.role] ?? QUICK_ACTIONS_BY_ROLE['chairman']
   const greeting = session.userName ? `Good morning, ${session.userName.split(' ')[0]}.` : 'Good morning.'
 
+  // open-meteo current_weather — key-less, Surrey coords from JUNIOR_ORG.
+  // Mirrors the Women's portal pattern (page.tsx line 5334) but actually
+  // wires the result through to the hero (Women's leaves it as dead state).
+  // `null` while in-flight or after error — the hero renders placeholder
+  // dashes in that state so the banner doesn't collapse.
+  const [weather, setWeather] = useState<JuniorWeather | null>(null)
+  useEffect(() => {
+    const { latitude, longitude } = JUNIOR_ORG.weatherCoords
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`)
+      .then(r => r.json())
+      .then(d => {
+        const cw = d?.current_weather
+        if (!cw) return
+        const code = cw.weathercode as number
+        const condition = code <= 3 ? 'Clear' : code <= 48 ? 'Cloudy' : code <= 67 ? 'Rain' : code <= 77 ? 'Snow' : 'Storm'
+        setWeather({
+          tempC:    Math.round(cw.temperature),
+          condition,
+          windMph:  Math.round((cw.windspeed as number) * 0.621371),
+          windDir:  degreesToCompass(cw.winddirection as number),
+        })
+      })
+      .catch(() => { /* leave weather null — hero renders placeholder */ })
+  }, [])
+
   return (
     <div>
-      {/* Morning banner / AI-summary slot. For parent_guardian: renders the
-          canned AI Match Recap preview (flagship demo brief — Jack Carter,
-          Oakridge U11 Lions). "Open full recap" navigates to the full brief
-          at activeSection 'ai_match_recap'. For staff: a club-level summary
-          (placeholder copy still — staff-facing AI brief modes live inside
-          the JuniorAIMatchRecap component, accessed via Coach Toolkit or
-          the AI brief route, not the Today banner). */}
-      <div
-        className="rounded-xl p-5 mb-6 relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, rgba(22,101,52,0.20) 0%, rgba(22,163,74,0.08) 60%, transparent 100%)',
-          border: '1px solid rgba(22,163,74,0.30)',
-        }}
-      >
-        {isParent ? (
-          <JuniorAIMatchRecapPreview
-            onOpen={() => onNavigate('ai_match_recap')}
-            childName={club.demoChild?.name}
-          />
-        ) : (
-          <JuniorAIBrief greeting={greeting} />
-        )}
-      </div>
-
-      <SectionHeader
-        title={`${club.name} — Today`}
-        subtitle={`${club.programme} · ${club.area}`}
-        icon="🏠"
+      {/* Match-day hero — replaces the old morning banner + section header.
+          Parent role no longer sees JuniorAIMatchRecapPreview here; recap
+          remains reachable via the Parent App ("My Player") MatchRecapCard.
+          Buttons wire to existing sidebar destinations: performance_brief
+          (AI brief) and matchday_ops. Ask Lumio reuses performance_brief
+          since there's no separate Ask modal in the Junior portal yet. */}
+      <JuniorMatchDayHero
+        T={THEMES.dark}
+        density={DENSITY.regular}
+        greeting={greeting}
+        weather={weather}
+        squadCount={14}
+        onTodaysBriefing={() => onNavigate('performance_brief')}
+        onMatchdayOps={() => onNavigate('matchday_ops')}
+        onAsk={() => onNavigate('performance_brief')}
       />
 
       {/* KPI grid — 5 Junior stat tiles per the dashboard port spec.
