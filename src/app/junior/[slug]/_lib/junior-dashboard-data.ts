@@ -99,3 +99,79 @@ export const JUNIOR_SQUAD_SUMMARY: JuniorSquadSummaryShape = {
   dbsPending: 2,
   consents:   '124/128',
 }
+
+// ─── Accent tokens ──────────────────────────────────────────────────────
+// Mirrors WOMENS_ACCENT shape. Junior green per CLAUDE.md / sidebar tokens.
+
+export const JUNIOR_ACCENT = {
+  hex:    '#16A34A',
+  dim:    'rgba(22,163,74,0.16)',
+  border: 'rgba(22,163,74,0.45)',
+} as const
+
+// ─── Club identity + season state ───────────────────────────────────────
+// Single source of truth for match-day hero meta (club short, date,
+// weather coords, season standing). `clubShort` is the U11 Lions
+// framing — the canonical demo squad hosting the demo child Jack
+// Carter, also the team featured in the new match-day hero.
+
+export const JUNIOR_ORG = {
+  clubShort:     'Oakridge U11 Lions',
+  date:          'Sat, 24 May 2026',
+  weatherCoords: { latitude: 51.24, longitude: -0.21 },
+  season: {
+    played:   14,
+    won:      9,
+    drawn:    3,
+    lost:     2,
+    position: '2nd',
+    league:   'Surrey Youth League · U11',
+    points:   18,
+    gd:       '+11',
+  },
+} as const
+
+// ─── Form string (most recent first) ────────────────────────────────────
+// Drives the hero meta-row "Form" field. Hero slices first 5 for display.
+
+export const JUNIOR_SEASON_FORM: ('W' | 'D' | 'L')[] = [
+  'W', 'W', 'L', 'W', 'D', 'W', 'W', 'D', 'W', 'L', 'W', 'W', 'D', 'W',
+]
+
+// ─── Next fixture — drives match-day hero ───────────────────────────────
+// Fictional opposition (Harfield Juniors) from the Meridian / Apex /
+// Crown / Hartfield universe — see docs/brand-universe.md. `kickoffISO`
+// drives the real-time countdown via computeCountdown() in junior-time.ts.
+
+export const JUNIOR_NEXT_FIXTURE = {
+  opp:         'Harfield Juniors U11',
+  time:        '09:30',
+  date:        '2026-05-24',
+  kickoffISO:  '2026-05-24T09:30:00+01:00',
+  venue:       'Oakridge Community Pitches',
+  comp:        'U11 League',
+  matchday:    15,
+} as const
+
+// ─── Performance signals ────────────────────────────────────────────────
+// Six youth-football KPIs surfaced at the bottom of the dashboard. Mirrors
+// the Women's WfPerfItem shape locally (do not import WfPerfItem — the
+// shapes overlap but Junior owns its own type).
+//
+// Minus prefix on '−3 pp' is U+2212 (proper minus), matching Women's
+// pattern — visually centred and typographically correct, not a hyphen.
+
+export type JuniorPerfItem = {
+  txt: string
+  delta?: string
+  tone?: 'good' | 'bad' | 'neutral'
+}
+
+export const JUNIOR_PERF_INTEL: JuniorPerfItem[] = [
+  { txt: 'Equal-participation rate 94% — 17/18 U11 squad on target this term',                       delta: '+2 pp',   tone: 'good'    },
+  { txt: '8 players moved up a development band — strongest term this year',                          delta: '+3',      tone: 'good'    },
+  { txt: 'Parent highlight engagement 78% — 56/72 parents watched last weekend',                      delta: '+5 pp',   tone: 'good'    },
+  { txt: 'Player retention 84% — 76/90 returners, 6 below last season',                               delta: '−3 pp',   tone: 'bad'     },
+  { txt: 'Charter Standard 5/6 criteria green · 1 amber (insurance renewal due 31 May)',                                 tone: 'neutral' },
+  { txt: 'Training attendance 87% across all age groups — week-over-week steady',                     delta: '+0.5 pp', tone: 'good'    },
+]
