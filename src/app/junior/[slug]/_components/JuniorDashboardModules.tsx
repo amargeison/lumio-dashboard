@@ -7,16 +7,19 @@
 // green accent (#16A34A / #15803D).
 //
 // All components consume hardcoded demo data from ../_lib/junior-dashboard-data.
-// No Cricket v2 theme imports, no shared portal theme tokens — Tailwind
-// classes + inline style only. Future live-data swap is a data-layer
-// concern, not a component-layer concern.
+// JuniorStatTiles / JuniorFixturesPanel / JuniorSquadSummary stay on
+// Tailwind classes — they're standalone full-width cards that don't
+// share a row with theme-token siblings. JuniorRecents was re-skinned
+// to theme tokens when it moved into the Row B 3-col layout so the
+// row reads as a unified visual band with its AI / Performance
+// siblings. Future live-data swap is a data-layer concern, not a
+// component-layer concern.
 
-import { useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
   JUNIOR_TOP_STATS,
-  JUNIOR_AI_BRIEF,
-  JUNIOR_INBOX,
-  JUNIOR_TODAY_SCHEDULE,
   JUNIOR_FIXTURES,
   JUNIOR_RECENTS,
   JUNIOR_SQUAD_SUMMARY,
@@ -31,12 +34,6 @@ const TONE: Record<JuniorStatTone, { bg: string; border: string; value: string; 
   ok:     { bg: 'rgba(22,163,74,0.10)',  border: 'rgba(22,163,74,0.40)',  value: '#22C55E', sub: '#86EFAC' },
   accent: { bg: 'rgba(21,128,61,0.14)',  border: 'rgba(21,128,61,0.50)',  value: '#22C55E', sub: '#86EFAC' },
   info:   { bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.40)', value: '#93C5FD', sub: '#93C5FD' },
-}
-
-const PRIORITY_STYLES: Record<'high' | 'med' | 'low', { bg: string; border: string; color: string }> = {
-  high: { bg: 'rgba(239,68,68,0.18)',  border: 'rgba(239,68,68,0.40)',  color: '#FCA5A5' },
-  med:  { bg: 'rgba(245,158,11,0.18)', border: 'rgba(245,158,11,0.40)', color: '#FCD34D' },
-  low:  { bg: 'rgba(34,197,94,0.18)',  border: 'rgba(34,197,94,0.40)',  color: '#86EFAC' },
 }
 
 const CARD_CLASS = 'bg-[#0D1117] border border-gray-800 rounded-xl p-5'
@@ -60,114 +57,6 @@ export default function JuniorStatTiles() {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-// ─── JuniorAIBrief — multi-category AI summary, dismissible per item ────────
-
-export function JuniorAIBrief({ greeting }: { greeting?: string }) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
-  const visible = JUNIOR_AI_BRIEF.filter(item => !dismissed.has(item.tag))
-
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1">AI summary · today</p>
-      {greeting && <h3 className="text-base font-bold text-white mb-3">{greeting}</h3>}
-      {visible.length > 0 ? (
-        <ul className="space-y-2">
-          {visible.map(item => {
-            const p = PRIORITY_STYLES[item.pri]
-            return (
-              <li key={item.tag} className="flex items-start gap-2.5">
-                <span
-                  className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-                  style={{ backgroundColor: p.bg, color: p.color, border: `1px solid ${p.border}`, minWidth: 84, textAlign: 'center' }}
-                >
-                  {item.tag}
-                </span>
-                <p className="flex-1 text-sm text-gray-300 leading-relaxed">{item.txt}</p>
-                <button
-                  onClick={() => setDismissed(prev => { const next = new Set(prev); next.add(item.tag); return next })}
-                  className="shrink-0 text-gray-600 hover:text-gray-300 text-xs"
-                  aria-label={`Dismiss ${item.tag} brief`}
-                >
-                  ✕
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className="text-sm text-gray-400 italic">All clear · check back tomorrow.</p>
-      )}
-    </div>
-  )
-}
-
-// ─── JuniorInbox — lightweight inbox panel ──────────────────────────────────
-
-export function JuniorInbox() {
-  const urgentCount = JUNIOR_INBOX.filter(i => i.urgent).length
-  return (
-    <div className={CARD_CLASS}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-white">Inbox</h3>
-        {urgentCount > 0 && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.18)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.40)' }}>
-            {urgentCount} urgent
-          </span>
-        )}
-      </div>
-      <ul className="space-y-2">
-        {JUNIOR_INBOX.map(item => (
-          <li key={item.id} className="flex items-start gap-2.5 py-2 border-b border-gray-800 last:border-0">
-            <span
-              className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-              style={{
-                backgroundColor: item.urgent ? 'rgba(239,68,68,0.18)' : 'rgba(22,163,74,0.12)',
-                color:           item.urgent ? '#FCA5A5' : '#86EFAC',
-                border:          item.urgent ? '1px solid rgba(239,68,68,0.40)' : '1px solid rgba(22,163,74,0.30)',
-                minWidth: 84,
-                textAlign: 'center',
-              }}
-            >
-              {item.channel}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-white truncate">{item.from}</span>
-                <span className="text-[10px] text-gray-500 shrink-0">{item.time}</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{item.preview}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-// ─── JuniorTodaySchedule — today's agenda ───────────────────────────────────
-
-export function JuniorTodaySchedule() {
-  return (
-    <div className={CARD_CLASS}>
-      <h3 className="text-sm font-bold text-white mb-3">Today&rsquo;s schedule</h3>
-      <ul className="space-y-2">
-        {JUNIOR_TODAY_SCHEDULE.map(item => (
-          <li key={`${item.time}-${item.what}`} className="flex items-start gap-3 py-2 border-b border-gray-800 last:border-0">
-            <span className="shrink-0 text-xs font-bold text-emerald-400" style={{ minWidth: 48 }}>{item.time}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-white truncate">{item.what}</span>
-                <span className="text-[10px] text-gray-500 shrink-0">{item.where}</span>
-              </div>
-              {item.note && <p className="text-[10px] text-gray-500 mt-0.5">{item.note}</p>}
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
@@ -215,50 +104,159 @@ export function JuniorFixturesPanel() {
 }
 
 // ─── JuniorRecents — recent results ─────────────────────────────────────────
+// Re-skinned to theme tokens when it moved into Row B (3-col row alongside
+// JuniorAIBriefingBox / JuniorThisWeek / JuniorPerformanceSignals). Card
+// + SectionHead primitives inlined locally — same pattern as the other
+// theme-token Junior components.
 
-const RESULT_TINT: Record<'W' | 'D' | 'L', { bg: string; color: string }> = {
-  W: { bg: 'rgba(22,163,74,0.18)',  color: '#86EFAC' },
-  D: { bg: 'rgba(245,158,11,0.18)', color: '#FCD34D' },
-  L: { bg: 'rgba(239,68,68,0.18)',  color: '#FCA5A5' },
-}
-
-export function JuniorRecents() {
+function ThemeCard({ T, density, children, style }: { T: ThemeTokens; density: Density; children: ReactNode; style?: CSSProperties }) {
   return (
-    <div className={CARD_CLASS}>
-      <h3 className="text-sm font-bold text-white mb-3">Recent results</h3>
-      <ul className="space-y-2">
-        {JUNIOR_RECENTS.map(r => {
-          const tint = RESULT_TINT[r.res]
-          return (
-            <li key={r.id} className="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0">
-              <span
-                className="shrink-0 text-[10px] font-bold w-6 h-6 rounded flex items-center justify-center"
-                style={{ backgroundColor: tint.bg, color: tint.color }}
-              >
-                {r.res}
-              </span>
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider w-9 text-emerald-400">{r.ageBand}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{r.vs}</p>
-                <p className="text-[10px] text-gray-500">{r.comp} · {r.date}</p>
-              </div>
-              <span className="shrink-0 text-sm font-bold text-white">{r.score}</span>
-            </li>
-          )
-        })}
-      </ul>
+    <div
+      style={{
+        position: 'relative',
+        background: T.panel,
+        border: `1px solid ${T.border}`,
+        borderRadius: density.radius,
+        padding: density.pad,
+        boxShadow: T.cardShadow,
+        ...style,
+      }}
+    >
+      {children}
     </div>
   )
 }
 
-// ─── JuniorSquadSummary — aggregate availability tile ───────────────────────
+function ThemeSectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; right?: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{title}</div>
+      <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3, display: 'flex', alignItems: 'center', gap: 4 }}>{right}</div>
+    </div>
+  )
+}
 
-export function JuniorSquadSummary() {
+// Result tint matches the cricket / NL / Women's resTint pattern.
+const resTint = (T: ThemeTokens, r: 'W' | 'D' | 'L') => {
+  if (r === 'W') return { bg: 'rgba(58,171,133,0.14)', fg: T.good }
+  if (r === 'L') return { bg: 'rgba(199,90,90,0.12)',  fg: T.bad }
+  return { bg: T.hover, fg: T.text2 }
+}
+
+interface JuniorRecentsProps {
+  T: ThemeTokens
+  accent: AccentTokens
+  density: Density
+  style?: CSSProperties
+}
+
+export function JuniorRecents({ T, accent, density, style }: JuniorRecentsProps) {
+  return (
+    <ThemeCard T={T} density={density} style={style}>
+      <ThemeSectionHead
+        T={T}
+        title="Recent results"
+        right={
+          <div style={{ display: 'flex', gap: 4 }}>
+            {JUNIOR_RECENTS.map((r, i) => {
+              const t = resTint(T, r.res)
+              return (
+                <span
+                  key={i}
+                  style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    fontSize: 9.5, fontWeight: 700,
+                    display: 'grid', placeItems: 'center',
+                    background: t.bg, color: t.fg,
+                  }}
+                >
+                  {r.res}
+                </span>
+              )
+            })}
+          </div>
+        }
+      />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {JUNIOR_RECENTS.map((r, i) => {
+          const t = resTint(T, r.res)
+          return (
+            <div
+              key={r.id}
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 10,
+                padding: '8px 0',
+                borderTop: i ? `1px solid ${T.border}` : 'none',
+              }}
+            >
+              <span
+                style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  fontSize: 9.5, fontWeight: 700,
+                  display: 'grid', placeItems: 'center',
+                  background: t.bg, color: t.fg,
+                  flexShrink: 0,
+                }}
+              >
+                {r.res}
+              </span>
+              <span
+                style={{
+                  fontSize: 9.5, fontWeight: 700,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: accent.hex,
+                  width: 32, flexShrink: 0,
+                  fontFamily: FONT_MONO,
+                }}
+              >
+                {r.ageBand}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 12, color: T.text, fontWeight: 500,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}
+                >
+                  {r.vs}
+                </div>
+                <div style={{ fontSize: 10, color: T.text3 }}>
+                  {r.comp} · {r.date}
+                </div>
+              </div>
+              <span
+                className="tnum"
+                style={{
+                  fontSize: 12.5, fontWeight: 600,
+                  color: T.text, fontFamily: FONT_MONO,
+                  flexShrink: 0,
+                }}
+              >
+                {r.score}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </ThemeCard>
+  )
+}
+
+// ─── JuniorSquadSummary — aggregate availability tile ───────────────────────
+// Stays on Tailwind (per the Phase 2 spec — only the inner grid breakpoint
+// changes). Inner grid is now `grid-cols-2 md:grid-cols-4` so the four
+// stat tiles sit on a single row at md+ widths when the card renders as
+// a full-width strip at the bottom of the dashboard. At sub-md widths it
+// gracefully wraps back to 2×2 — same as before.
+
+export function JuniorSquadSummary({ style }: { style?: CSSProperties } = {}) {
   const s = JUNIOR_SQUAD_SUMMARY
   return (
-    <div className={CARD_CLASS}>
+    <div className={CARD_CLASS} style={style}>
       <h3 className="text-sm font-bold text-white mb-3">Squad availability</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-wider text-gray-500">Registered</div>
           <div className="text-2xl font-bold text-white">{s.registered}</div>

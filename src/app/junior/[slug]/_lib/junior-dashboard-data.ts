@@ -30,29 +30,115 @@ export const JUNIOR_AI_BRIEF: JuniorAIBriefItem[] = [
   { tag: 'Comms',        pri: 'low',  txt: '312 parent messages sent this month. Match-day reminders auto-send Fri 17:00. Newsletter due Friday.' },
 ]
 
+export type JuniorInboxChannel = 'sms' | 'whatsapp' | 'email' | 'parent' | 'noticeboard'
+
+export type JuniorInboxThreadEntry = {
+  from: 'them' | 'us'
+  text: string
+  time: string
+}
+
 export type JuniorInboxItem = {
   id: string
-  channel: string
-  from: string
+  channel: JuniorInboxChannel
+  sender: string
+  subject: string
   preview: string
-  time: string
-  urgent?: boolean
+  timestamp: string
+  urgent: boolean
+  unread: boolean
+  thread: JuniorInboxThreadEntry[]
 }
 
 export const JUNIOR_INBOX: JuniorInboxItem[] = [
-  { id: '1', channel: 'Safeguarding', from: 'System alert',         preview: 'DBS renewal due 14 Jun — M. Hutchings (Lead Coach).',                   time: '12 min ago', urgent: true },
-  { id: '2', channel: 'Parent',       from: 'Sarah Bell (U9 Tigers)', preview: 'Kit collection — can I pick up on Wednesday after training?',         time: '38 min ago' },
-  { id: '3', channel: 'Fixture',      from: 'Meridian Town Youth',  preview: 'U10 fixture confirmed — Sat 09:30, Apex Park, ref booked.',             time: '2 hours ago' },
-  { id: '4', channel: 'Registration', from: 'P. Khouri (U7 enquiry)', preview: 'New U7 registration — consent forms pending. Welcome pack sent.',     time: '4 hours ago', urgent: true },
-  { id: '5', channel: 'Kit',          from: 'Crown Sportswear',     preview: 'Mid-season top-up order — 4 items outstanding (shorts U11, socks U14).', time: 'Yesterday' },
+  {
+    id: '1', channel: 'sms', sender: 'Mark Hutchings (Lead Coach)',
+    subject: 'SMS · Coach',
+    preview: 'Saturday — going with 4-3-3, Jack starts on the left wing.',
+    timestamp: '07:14', urgent: true, unread: true,
+    thread: [
+      { from: 'them', time: 'Yesterday 18:42',
+        text: "Quick one — thinking about Saturday's shape. We've got Tom back from his ankle, so I'd like to push Jack out wide and start Tom centrally. Thoughts?" },
+      { from: 'us', time: 'Yesterday 19:05',
+        text: 'Works for me. Make sure Tom is light load only — last week was his first full session back.' },
+      { from: 'them', time: '07:14',
+        text: "Confirmed. 4-3-3, Jack starts on the left, Tom central. I'll let parents know the team sheet by Friday teatime." },
+    ],
+  },
+  {
+    id: '2', channel: 'whatsapp', sender: 'U11 Lions parents · Jenna H.',
+    subject: 'WhatsApp · Parents',
+    preview: 'Kit collection — can someone be at the clubhouse Wed 6pm?',
+    timestamp: '07:38', urgent: false, unread: true,
+    thread: [
+      { from: 'them', time: '07:38',
+        text: 'Hi all — Lily has grown out of her shorts again 😅. Can I swing by Wed evening to swap sizes? Anyone going to be there?' },
+      { from: 'them', time: '07:42',
+        text: "I'll be at training 6pm Wed — happy to hand over if Jenna's not around. Need to grab a new socks set anyway." },
+    ],
+  },
+  {
+    id: '3', channel: 'email', sender: 'Mike Donnelly (League referee)',
+    subject: 'Email · Referee',
+    preview: 'Sat 24 May — referee confirmed for U11 vs Harfield, 09:30 KO.',
+    timestamp: '06:58', urgent: false, unread: false,
+    thread: [
+      { from: 'them', time: '06:58',
+        text: "Good morning — confirming I'm available for the U11 Lions vs Harfield Juniors fixture Saturday 24 May, 09:30 KO at your home pitch. I'll arrive at 09:00 for warm-up. Please email me the team sheet by Friday evening." },
+    ],
+  },
+  {
+    id: '4', channel: 'parent', sender: 'Sarah Bell (Mum of #7 U9 Tigers)',
+    subject: 'Parent · U9 Tigers',
+    preview: 'Charlie has a hospital appointment Sat morning, will miss the game.',
+    timestamp: '12 min ago', urgent: false, unread: true,
+    thread: [
+      { from: 'them', time: '12 min ago',
+        text: "Hi — just a heads up Charlie has a follow-up at the hospital Saturday morning so he'll miss the U9s game. Sorry for the short notice. He should be fine for Tuesday training." },
+    ],
+  },
+  {
+    id: '5', channel: 'noticeboard', sender: 'David Costa (Chair)',
+    subject: 'Noticeboard · Insurance renewal',
+    preview: 'Club public liability insurance renews 31 May — action needed.',
+    timestamp: 'Yesterday', urgent: true, unread: true,
+    thread: [
+      { from: 'them', time: 'Yesterday 21:18',
+        text: 'All — heads up. Our annual public liability insurance is up for renewal 31 May. Renewal quote came in £20 higher than last year. Need committee sign-off this week, then I can pay and forward the certificate to FA. Charter Standard panel checks for this. Please thumbs-up below or flag any concerns.' },
+      { from: 'them', time: 'Yesterday 21:34',
+        text: "Budget's fine — go ahead. Send me the receipt for the books." },
+    ],
+  },
+  {
+    id: '6', channel: 'whatsapp', sender: 'Volunteer Coach Group',
+    subject: 'WhatsApp · Coaches',
+    preview: 'Training pitch — Pitch 2 booked Thurs? Confirming with Steve.',
+    timestamp: '2 days ago', urgent: false, unread: false,
+    thread: [
+      { from: 'them', time: '2 days ago',
+        text: 'Heads up — Pitch 2 looks double-booked Thursday 18:00. U10 are also on there per the council calendar. Anyone confirm with Steve at the council?' },
+      { from: 'us', time: '2 days ago',
+        text: 'On it — will call Steve this morning and confirm in the group.' },
+    ],
+  },
 ]
 
-export type JuniorScheduleItem = { time: string; what: string; where: string; note?: string }
+export type JuniorScheduleItem = {
+  time: string
+  what: string
+  where: string
+  note?: string
+  /** When true, the row renders with the accent treatment (filled dot,
+   *  accent-coloured time, bolder `what` text) in JuniorTodayInset.
+   *  Preset in data, not computed against current time — matches the
+   *  Non-League pattern. Exactly one row should carry this flag. */
+  highlight?: boolean
+}
 
 export const JUNIOR_TODAY_SCHEDULE: JuniorScheduleItem[] = [
   { time: '17:30', what: 'U7 Eagles training',            where: 'Pitch 2',     note: 'Coach: J. Lawford' },
   { time: '18:00', what: 'U11 Lions training',            where: 'Pitch 1',     note: 'Coach: M. Hutchings' },
-  { time: '19:00', what: 'Welfare check-in',              where: 'Clubhouse',   note: 'All age-band leads' },
+  { time: '19:00', what: 'Welfare check-in',              where: 'Clubhouse',   note: 'All age-band leads', highlight: true },
   { time: '19:30', what: 'DBS renewal — M. Hutchings',    where: '1-to-1',      note: '20 min' },
   { time: '20:00', what: 'Parent comms — match reminders', where: 'Auto-send',  note: 'Fri 17:00 default' },
 ]
@@ -99,3 +185,79 @@ export const JUNIOR_SQUAD_SUMMARY: JuniorSquadSummaryShape = {
   dbsPending: 2,
   consents:   '124/128',
 }
+
+// ─── Accent tokens ──────────────────────────────────────────────────────
+// Mirrors WOMENS_ACCENT shape. Junior green per CLAUDE.md / sidebar tokens.
+
+export const JUNIOR_ACCENT = {
+  hex:    '#16A34A',
+  dim:    'rgba(22,163,74,0.16)',
+  border: 'rgba(22,163,74,0.45)',
+} as const
+
+// ─── Club identity + season state ───────────────────────────────────────
+// Single source of truth for match-day hero meta (club short, date,
+// weather coords, season standing). `clubShort` is the U11 Lions
+// framing — the canonical demo squad hosting the demo child Jack
+// Carter, also the team featured in the new match-day hero.
+
+export const JUNIOR_ORG = {
+  clubShort:     'Oakridge U11 Lions',
+  date:          'Sat, 24 May 2026',
+  weatherCoords: { latitude: 51.24, longitude: -0.21 },
+  season: {
+    played:   14,
+    won:      9,
+    drawn:    3,
+    lost:     2,
+    position: '2nd',
+    league:   'Surrey Youth League · U11',
+    points:   18,
+    gd:       '+11',
+  },
+} as const
+
+// ─── Form string (most recent first) ────────────────────────────────────
+// Drives the hero meta-row "Form" field. Hero slices first 5 for display.
+
+export const JUNIOR_SEASON_FORM: ('W' | 'D' | 'L')[] = [
+  'W', 'W', 'L', 'W', 'D', 'W', 'W', 'D', 'W', 'L', 'W', 'W', 'D', 'W',
+]
+
+// ─── Next fixture — drives match-day hero ───────────────────────────────
+// Fictional opposition (Harfield Juniors) from the Meridian / Apex /
+// Crown / Hartfield universe — see docs/brand-universe.md. `kickoffISO`
+// drives the real-time countdown via computeCountdown() in junior-time.ts.
+
+export const JUNIOR_NEXT_FIXTURE = {
+  opp:         'Harfield Juniors U11',
+  time:        '09:30',
+  date:        '2026-05-24',
+  kickoffISO:  '2026-05-24T09:30:00+01:00',
+  venue:       'Oakridge Community Pitches',
+  comp:        'U11 League',
+  matchday:    15,
+} as const
+
+// ─── Performance signals ────────────────────────────────────────────────
+// Six youth-football KPIs surfaced at the bottom of the dashboard. Mirrors
+// the Women's WfPerfItem shape locally (do not import WfPerfItem — the
+// shapes overlap but Junior owns its own type).
+//
+// Minus prefix on '−3 pp' is U+2212 (proper minus), matching Women's
+// pattern — visually centred and typographically correct, not a hyphen.
+
+export type JuniorPerfItem = {
+  txt: string
+  delta?: string
+  tone?: 'good' | 'bad' | 'neutral'
+}
+
+export const JUNIOR_PERF_INTEL: JuniorPerfItem[] = [
+  { txt: 'Equal-participation rate 94% — 17/18 U11 squad on target this term',                       delta: '+2 pp',   tone: 'good'    },
+  { txt: '8 players moved up a development band — strongest term this year',                          delta: '+3',      tone: 'good'    },
+  { txt: 'Parent highlight engagement 78% — 56/72 parents watched last weekend',                      delta: '+5 pp',   tone: 'good'    },
+  { txt: 'Player retention 84% — 76/90 returners, 6 below last season',                               delta: '−3 pp',   tone: 'bad'     },
+  { txt: 'Charter Standard 5/6 criteria green · 1 amber (insurance renewal due 31 May)',                                 tone: 'neutral' },
+  { txt: 'Training attendance 87% across all age groups — week-over-week steady',                     delta: '+0.5 pp', tone: 'good'    },
+]

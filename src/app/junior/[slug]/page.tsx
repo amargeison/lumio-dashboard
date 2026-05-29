@@ -18,18 +18,27 @@
 // — same SIDEBAR_ITEMS / DashboardView pattern, junior naming and
 // junior-specific KPIs.
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
-import JuniorStatTiles, { JuniorAIBrief, JuniorInbox, JuniorTodaySchedule, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
+import JuniorStatTiles, { JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
 import JuniorClubTeamAdmin from './_components/JuniorClubTeamAdmin'
 import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 import JuniorParentApp from './_components/JuniorParentApp'
-import JuniorAIMatchRecap, { JuniorAIMatchRecapPreview } from './_components/JuniorAIMatchRecap'
+import JuniorAIMatchRecap from './_components/JuniorAIMatchRecap'
+import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatchDayHero'
+import JuniorTodayInset from './_components/JuniorTodayInset'
+import JuniorAIBriefingBox from './_components/JuniorAIBriefingBox'
+import JuniorPerformanceSignals from './_components/JuniorPerformanceSignals'
+import JuniorInboxLive from './_components/JuniorInboxLive'
+import JuniorThisWeek from './_components/JuniorThisWeek'
+import JuniorOutstandingItems from './_components/JuniorOutstandingItems'
+import { JUNIOR_ACCENT, JUNIOR_ORG } from './_lib/junior-dashboard-data'
+import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
 import JuniorPerformance from './_components/JuniorPerformance'
 import JuniorDevelopment from './_components/JuniorDevelopment'
@@ -415,24 +424,8 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
   },
 }
 
-// ─── Shared dashboard primitives ─────────────────────────────────────────────
-// SectionHeader mirrors the Women's portal pattern. KPI tiles now live in
-// JuniorStatTiles (./_components/JuniorDashboardModules).
-
-function SectionHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: string }) {
-  return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-xl">{icon}</span>}
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-      </div>
-      {subtitle && <p className="text-sm text-gray-400 mt-1 ml-7">{subtitle}</p>}
-    </div>
-  )
-}
-
 // ─── Today view (dashboard landing) ──────────────────────────────────────────
-// Mirrors Women's DashboardView pattern: SectionHeader + KPI grid +
+// Mirrors Women's DashboardView pattern: match-day hero + KPI grid +
 // content cards. Junior KPIs from spec:
 //   - registered players
 //   - sessions delivered this month
@@ -580,22 +573,18 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
   ],
 }
 
-// Getting Started checklist — onboarding hints for first-time users.
-// Items vary slightly by role; for now a single shared list keyed to
-// what the demo flow exercises. Wire role-aware variants later.
-const GETTING_STARTED_ITEMS: { id: string; label: string; done: boolean; help: string }[] = [
-  { id: 'gs_profile',      label: 'Complete your profile',            done: true,  help: 'Add a photo and contact details so other club members can recognise you.' },
-  { id: 'gs_consent',      label: 'Review safeguarding consents',     done: true,  help: 'Photography, travel and medical consents must be current for every player.' },
-  { id: 'gs_link_child',   label: 'Link to your child (parents)',     done: false, help: 'Parents: link your account to your child\'s profile to unlock the Parent App view.' },
-  { id: 'gs_first_session',label: 'Log your first training session',  done: false, help: 'Coaches: logging sessions feeds the development tracker and FA Charter evidence pack.' },
-  { id: 'gs_invite_team',  label: 'Invite the rest of your team',     done: false, help: 'Invite assistant coaches, team managers and parents from Club & Team → Invitations.' },
-]
+// 8-point compass conversion for open-meteo winddirection (degrees → label).
+// Inline helper used by the TodayView weather fetch; small enough not to
+// warrant its own file. Matches the simple wind direction style used in the
+// hero's "9 mph SW" demo line.
+function degreesToCompass(deg: number): string {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8]
+}
 
 function TodayView({
   club, session, onNavigate,
 }: { club: JuniorClub; session: SportsDemoSession; onNavigate: (id: string) => void }) {
-  const [tab, setTab] = useState<'overview' | 'getting_started'>('overview')
-  const isParent = session.role === 'parent_guardian'
   const kpis = DEMO_KPIS[club.slug] ?? DEMO_KPIS['oakridge-juniors']
   const charter = charterLabel(kpis.charterStatus)
   const consentColor = consentBadgeColor(kpis.consentsCurrent, kpis.consentsTotal)
@@ -603,37 +592,63 @@ function TodayView({
   const actions = QUICK_ACTIONS_BY_ROLE[session.role] ?? QUICK_ACTIONS_BY_ROLE['chairman']
   const greeting = session.userName ? `Good morning, ${session.userName.split(' ')[0]}.` : 'Good morning.'
 
+  // open-meteo current_weather — key-less, Surrey coords from JUNIOR_ORG.
+  // Mirrors the Women's portal pattern (page.tsx line 5334) but actually
+  // wires the result through to the hero (Women's leaves it as dead state).
+  // `null` while in-flight or after error — the hero renders placeholder
+  // dashes in that state so the banner doesn't collapse.
+  const [weather, setWeather] = useState<JuniorWeather | null>(null)
+  useEffect(() => {
+    const { latitude, longitude } = JUNIOR_ORG.weatherCoords
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`)
+      .then(r => r.json())
+      .then(d => {
+        const cw = d?.current_weather
+        if (!cw) return
+        const code = cw.weathercode as number
+        const condition = code <= 3 ? 'Clear' : code <= 48 ? 'Cloudy' : code <= 67 ? 'Rain' : code <= 77 ? 'Snow' : 'Storm'
+        setWeather({
+          tempC:    Math.round(cw.temperature),
+          condition,
+          windMph:  Math.round((cw.windspeed as number) * 0.621371),
+          windDir:  degreesToCompass(cw.winddirection as number),
+        })
+      })
+      .catch(() => { /* leave weather null — hero renders placeholder */ })
+  }, [])
+
   return (
     <div>
-      {/* Morning banner / AI-summary slot. For parent_guardian: renders the
-          canned AI Match Recap preview (flagship demo brief — Jack Carter,
-          Oakridge U11 Lions). "Open full recap" navigates to the full brief
-          at activeSection 'ai_match_recap'. For staff: a club-level summary
-          (placeholder copy still — staff-facing AI brief modes live inside
-          the JuniorAIMatchRecap component, accessed via Coach Toolkit or
-          the AI brief route, not the Today banner). */}
+      {/* Hero row — 12-col grid, hero 2/3 and Today inset 1/3, matching
+          the Non-League pattern. Hero takes a style override for its
+          gridColumn span; JuniorTodayInset sets its own '9 / span 4'
+          internally. Bottom margin lives on the row wrapper (previously
+          baked into the hero's outer wrapper). */}
       <div
-        className="rounded-xl p-5 mb-6 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(22,101,52,0.20) 0%, rgba(22,163,74,0.08) 60%, transparent 100%)',
-          border: '1px solid rgba(22,163,74,0.30)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gap: DENSITY.regular.gap,
+          marginBottom: 16,
         }}
       >
-        {isParent ? (
-          <JuniorAIMatchRecapPreview
-            onOpen={() => onNavigate('ai_match_recap')}
-            childName={club.demoChild?.name}
-          />
-        ) : (
-          <JuniorAIBrief greeting={greeting} />
-        )}
+        <JuniorMatchDayHero
+          T={THEMES.dark}
+          density={DENSITY.regular}
+          greeting={greeting}
+          weather={weather}
+          squadCount={14}
+          onTodaysBriefing={() => onNavigate('performance_brief')}
+          onMatchdayOps={() => onNavigate('matchday_ops')}
+          onAsk={() => onNavigate('performance_brief')}
+          style={{ gridColumn: '1 / span 8' }}
+        />
+        <JuniorTodayInset
+          T={THEMES.dark}
+          accent={JUNIOR_ACCENT}
+          density={DENSITY.regular}
+        />
       </div>
-
-      <SectionHeader
-        title={`${club.name} — Today`}
-        subtitle={`${club.programme} · ${club.area}`}
-        icon="🏠"
-      />
 
       {/* KPI grid — 5 Junior stat tiles per the dashboard port spec.
           Inbox / Approvals / Sessions / Charter Standard / Safeguarding.
@@ -670,130 +685,68 @@ function TodayView({
         </div>
       </div>
 
-      {/* Tabs — Overview / Getting Started. Mirrors the Women's tab
-          pattern (border-bottom accent on the active tab). */}
-      <div className="flex gap-1 border-b border-gray-800 mb-4">
-        {[
-          { id: 'overview',         label: 'Overview',        icon: '📊' },
-          { id: 'getting_started',  label: 'Getting Started', icon: '🚀' },
-        ].map(t => {
-          const active = tab === t.id
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id as 'overview' | 'getting_started')}
-              className="px-4 py-2.5 text-xs font-semibold transition-all relative"
-              style={{
-                color: active ? '#22C55E' : '#6B7280',
-                borderBottom: active ? '2px solid #22C55E' : '2px solid transparent',
-              }}
-            >
-              <span className="mr-1.5">{t.icon}</span>{t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {tab === 'overview' && (
-        <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">This week</h3>
-            <ul className="space-y-2 text-xs text-gray-300">
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>U11 Lions — training (Tue 18:00)</span>
-                <span className="text-[10px] text-gray-500">Coach: M. Hutchings</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>U9 Tigers vs Harfield Juniors (Sat 09:30, H)</span>
-                <span className="text-[10px] text-gray-500">Ref booked</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>Welfare check-in (Wed 19:00)</span>
-                <span className="text-[10px] text-gray-500">All teams</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Parent comms — match-day reminders</span>
-                <span className="text-[10px] text-gray-500">Auto-send Fri 17:00</span>
-              </li>
-            </ul>
-          </div>
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">Outstanding items</h3>
-            <ul className="space-y-2 text-xs text-gray-300">
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>{kpis.consentsTotal - kpis.consentsCurrent} consent renewals outstanding</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${consentColor === 'green' ? 'bg-green-600/20 text-green-400' : consentColor === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {consentColor === 'green' ? 'On track' : consentColor === 'amber' ? 'Chase due' : 'Action needed'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>DBS renewals — {kpis.dbsCurrent}/{kpis.dbsTotal} current</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${dbsColor === 'green' ? 'bg-green-600/20 text-green-400' : dbsColor === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {dbsColor === 'green' ? 'OK' : dbsColor === 'amber' ? 'Review' : 'Urgent'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between border-b border-gray-800 pb-2">
-                <span>FA Charter — {charter.label}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${charter.color === 'green' ? 'bg-green-600/20 text-green-400' : charter.color === 'amber' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                  {charter.color === 'green' ? 'Achieved' : charter.color === 'amber' ? 'In progress' : 'Not entered'}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Welfare flags</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">No open flags</span>
-              </li>
-            </ul>
-          </div>
+      <div className="space-y-4">
+        {/* Row A — 3-col band: Inbox · AI Briefing · Outstanding items.
+            gap: 8 (tighter than the surrounding space-y-4) and
+            alignItems: stretch so the three cards equalise to one
+            unified row regardless of inbox expansion. Matches Women's
+            three-column-band pattern (page.tsx line 5849). */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+          <JuniorInboxLive
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+          />
+          <JuniorAIBriefingBox
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            onAsk={() => onNavigate('performance_brief')}
+            style={{ gridColumn: '5 / span 4' }}
+          />
+          <JuniorOutstandingItems
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            kpis={kpis}
+            charter={charter}
+            consentColor={consentColor}
+            dbsColor={dbsColor}
+            style={{ gridColumn: '9 / span 4' }}
+          />
         </div>
 
-        {/* Dashboard modules ported from Women's pattern — Inbox + Today's
-            schedule, Upcoming fixtures, Recent results + Squad availability.
-            All driven by JUNIOR_* demo data in junior-dashboard-data.ts. */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <JuniorInbox />
-          <JuniorTodaySchedule />
-        </div>
         <JuniorFixturesPanel />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <JuniorRecents />
-          <JuniorSquadSummary />
-        </div>
-        </div>
-      )}
 
-      {tab === 'getting_started' && (
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-white mb-1">Getting Started</h3>
-          <p className="text-xs text-gray-400 mb-4">
-            A short checklist to get you running. Items marked done are based on the
-            demo profile; in a live club these update from real activity.
-          </p>
-          <ul className="space-y-3">
-            {GETTING_STARTED_ITEMS.map(item => (
-              <li key={item.id} className="flex items-start gap-3">
-                <span
-                  className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                  style={{
-                    backgroundColor: item.done ? 'rgba(34,197,94,0.18)' : 'rgba(75,85,99,0.30)',
-                    color: item.done ? '#22C55E' : '#9CA3AF',
-                    border: item.done ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(75,85,99,0.45)',
-                  }}
-                >
-                  {item.done ? '✓' : ''}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium ${item.done ? 'text-gray-300' : 'text-white'}`}>
-                    {item.label}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{item.help}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+        {/* Row B — 3-col band: This week · Recent results · Performance
+            signals. Same gap: 8 / alignItems: stretch convention as
+            Row A. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
+          <JuniorThisWeek
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '1 / span 4' }}
+          />
+          <JuniorRecents
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '5 / span 4' }}
+          />
+          <JuniorPerformanceSignals
+            T={THEMES.dark}
+            accent={JUNIOR_ACCENT}
+            density={DENSITY.regular}
+            style={{ gridColumn: '9 / span 4' }}
+          />
         </div>
-      )}
+
+        {/* Squad availability — full-width strip at the very bottom.
+            Renders as 4-col at md+ (Registered / Out / DBS pending /
+            Consents on one line) and gracefully wraps to 2×2 below. */}
+        <JuniorSquadSummary />
+        </div>
     </div>
   )
 }
