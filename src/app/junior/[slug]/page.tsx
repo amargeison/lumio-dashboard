@@ -742,9 +742,9 @@ function TodayView({
           />
         </div>
 
-        {/* Squad availability — currently still half-width Tailwind
-            card from the old layout. Commit 5 relocates it to a
-            full-width strip with a 4-col grid body. */}
+        {/* Squad availability — full-width strip at the very bottom.
+            Renders as 4-col at md+ (Registered / Out / DBS pending /
+            Consents on one line) and gracefully wraps to 2×2 below. */}
         <JuniorSquadSummary />
         </div>
     </div>

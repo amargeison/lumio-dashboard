@@ -245,13 +245,18 @@ export function JuniorRecents({ T, accent, density, style }: JuniorRecentsProps)
 }
 
 // ─── JuniorSquadSummary — aggregate availability tile ───────────────────────
+// Stays on Tailwind (per the Phase 2 spec — only the inner grid breakpoint
+// changes). Inner grid is now `grid-cols-2 md:grid-cols-4` so the four
+// stat tiles sit on a single row at md+ widths when the card renders as
+// a full-width strip at the bottom of the dashboard. At sub-md widths it
+// gracefully wraps back to 2×2 — same as before.
 
-export function JuniorSquadSummary() {
+export function JuniorSquadSummary({ style }: { style?: CSSProperties } = {}) {
   const s = JUNIOR_SQUAD_SUMMARY
   return (
-    <div className={CARD_CLASS}>
+    <div className={CARD_CLASS} style={style}>
       <h3 className="text-sm font-bold text-white mb-3">Squad availability</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-wider text-gray-500">Registered</div>
           <div className="text-2xl font-bold text-white">{s.registered}</div>
