@@ -31,7 +31,8 @@ import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 import JuniorParentApp from './_components/JuniorParentApp'
 import JuniorAIMatchRecap from './_components/JuniorAIMatchRecap'
 import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatchDayHero'
-import { JUNIOR_ORG } from './_lib/junior-dashboard-data'
+import JuniorAIBriefingBox from './_components/JuniorAIBriefingBox'
+import { JUNIOR_ACCENT, JUNIOR_ORG } from './_lib/junior-dashboard-data'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import JuniorMatchVideo from './_components/JuniorMatchVideo'
 import JuniorPerformance from './_components/JuniorPerformance'
@@ -720,6 +721,19 @@ function TodayView({
 
       {tab === 'overview' && (
         <div className="space-y-4">
+        {/* AI Briefing Box — port of Women's AIBrief, relocated from the
+            old top-of-page banner to the top of the Overview tab. Reads
+            the same JUNIOR_AI_BRIEF data (Squad / Training / Safeguarding
+            / Welfare / Compliance / Comms) but in the Women's-style row
+            layout with time-of-day label switch and dismissible items.
+            onAsk reuses the performance_brief route — no separate Ask
+            modal in the Junior portal yet. */}
+        <JuniorAIBriefingBox
+          T={THEMES.dark}
+          accent={JUNIOR_ACCENT}
+          density={DENSITY.regular}
+          onAsk={() => onNavigate('performance_brief')}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
             <h3 className="text-sm font-bold text-white mb-3">This week</h3>

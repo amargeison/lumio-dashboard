@@ -11,10 +11,8 @@
 // classes + inline style only. Future live-data swap is a data-layer
 // concern, not a component-layer concern.
 
-import { useState } from 'react'
 import {
   JUNIOR_TOP_STATS,
-  JUNIOR_AI_BRIEF,
   JUNIOR_INBOX,
   JUNIOR_TODAY_SCHEDULE,
   JUNIOR_FIXTURES,
@@ -31,12 +29,6 @@ const TONE: Record<JuniorStatTone, { bg: string; border: string; value: string; 
   ok:     { bg: 'rgba(22,163,74,0.10)',  border: 'rgba(22,163,74,0.40)',  value: '#22C55E', sub: '#86EFAC' },
   accent: { bg: 'rgba(21,128,61,0.14)',  border: 'rgba(21,128,61,0.50)',  value: '#22C55E', sub: '#86EFAC' },
   info:   { bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.40)', value: '#93C5FD', sub: '#93C5FD' },
-}
-
-const PRIORITY_STYLES: Record<'high' | 'med' | 'low', { bg: string; border: string; color: string }> = {
-  high: { bg: 'rgba(239,68,68,0.18)',  border: 'rgba(239,68,68,0.40)',  color: '#FCA5A5' },
-  med:  { bg: 'rgba(245,158,11,0.18)', border: 'rgba(245,158,11,0.40)', color: '#FCD34D' },
-  low:  { bg: 'rgba(34,197,94,0.18)',  border: 'rgba(34,197,94,0.40)',  color: '#86EFAC' },
 }
 
 const CARD_CLASS = 'bg-[#0D1117] border border-gray-800 rounded-xl p-5'
@@ -60,47 +52,6 @@ export default function JuniorStatTiles() {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-// ─── JuniorAIBrief — multi-category AI summary, dismissible per item ────────
-
-export function JuniorAIBrief({ greeting }: { greeting?: string }) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
-  const visible = JUNIOR_AI_BRIEF.filter(item => !dismissed.has(item.tag))
-
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1">AI summary · today</p>
-      {greeting && <h3 className="text-base font-bold text-white mb-3">{greeting}</h3>}
-      {visible.length > 0 ? (
-        <ul className="space-y-2">
-          {visible.map(item => {
-            const p = PRIORITY_STYLES[item.pri]
-            return (
-              <li key={item.tag} className="flex items-start gap-2.5">
-                <span
-                  className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-                  style={{ backgroundColor: p.bg, color: p.color, border: `1px solid ${p.border}`, minWidth: 84, textAlign: 'center' }}
-                >
-                  {item.tag}
-                </span>
-                <p className="flex-1 text-sm text-gray-300 leading-relaxed">{item.txt}</p>
-                <button
-                  onClick={() => setDismissed(prev => { const next = new Set(prev); next.add(item.tag); return next })}
-                  className="shrink-0 text-gray-600 hover:text-gray-300 text-xs"
-                  aria-label={`Dismiss ${item.tag} brief`}
-                >
-                  ✕
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className="text-sm text-gray-400 italic">All clear · check back tomorrow.</p>
-      )}
     </div>
   )
 }
