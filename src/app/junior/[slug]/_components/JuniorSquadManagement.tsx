@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import JuniorAddTeamModal from './JuniorAddTeamModal'
+import JuniorAddPlayerModal from './JuniorAddPlayerModal'
 
 const T = {
   panel:      '#0D1117',
@@ -138,6 +139,7 @@ export default function JuniorSquadManagement({ session }: Props) {
   const [teams, setTeams] = useState<SquadTeam[]>(SEED_TEAMS)
   const [teamId, setTeamId] = useState<string>(SEED_TEAMS[0].id)
   const [addTeamOpen, setAddTeamOpen] = useState(false)
+  const [addPlayerOpen, setAddPlayerOpen] = useState(false)
 
   const team = teams.find(t => t.id === teamId) ?? teams[0]
   const squadSize = team.players.length
@@ -213,6 +215,23 @@ export default function JuniorSquadManagement({ session }: Props) {
         <KpiTile label="Out / unavailable" value={totals.out + totals.unavailable} tone="bad" />
         <KpiTile label="FA registered" value={`${totals.faRegistered}/${squadSize}`} tone="neutral" />
         <KpiTile label="Squad capacity" value={`${squadSize}/${team.capacity}`} tone="neutral" />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.text3 }}>
+          Roster · {team.name}
+        </p>
+        <button
+          type="button"
+          onClick={() => setAddPlayerOpen(true)}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+          style={{
+            backgroundColor: T.accentDeep,
+            color: '#fff',
+          }}
+        >
+          + Add player
+        </button>
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: T.panel, border: `1px solid ${T.border}` }}>
@@ -303,6 +322,20 @@ export default function JuniorSquadManagement({ session }: Props) {
             }
             setTeams(prev => [...prev, newTeam])
             setTeamId(newTeam.id)
+          }}
+        />
+      )}
+
+      {addPlayerOpen && (
+        <JuniorAddPlayerModal
+          teamName={team.name}
+          onClose={() => setAddPlayerOpen(false)}
+          onSubmit={(player) => {
+            setTeams(prev => prev.map(t =>
+              t.id === teamId
+                ? { ...t, players: [...t.players, player] }
+                : t,
+            ))
           }}
         />
       )}
