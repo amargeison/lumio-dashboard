@@ -22,7 +22,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
-import JuniorStatTiles, { JuniorInbox, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
+import JuniorStatTiles, { JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -747,12 +747,10 @@ function TodayView({
           </div>
         </div>
 
-        {/* Dashboard modules ported from Women's pattern — Inbox + Upcoming
-            fixtures + Recent results + Squad availability. Today's schedule
-            moved into the hero row's right-hand inset (JuniorTodayInset). */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <JuniorInbox />
-        </div>
+        {/* Inbox is rebuilt as JuniorInboxLive and rendered inside Row A
+            in Commit 4 — between this commit and Commit 4 the dashboard
+            has no inbox panel by design. Today's schedule moved into the
+            hero row's right-hand inset (JuniorTodayInset). */}
         <JuniorFixturesPanel />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <JuniorRecents />

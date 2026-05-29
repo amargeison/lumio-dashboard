@@ -13,7 +13,6 @@
 
 import {
   JUNIOR_TOP_STATS,
-  JUNIOR_INBOX,
   JUNIOR_FIXTURES,
   JUNIOR_RECENTS,
   JUNIOR_SQUAD_SUMMARY,
@@ -51,49 +50,6 @@ export default function JuniorStatTiles() {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-// ─── JuniorInbox — lightweight inbox panel ──────────────────────────────────
-
-export function JuniorInbox() {
-  const urgentCount = JUNIOR_INBOX.filter(i => i.urgent).length
-  return (
-    <div className={CARD_CLASS}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-white">Inbox</h3>
-        {urgentCount > 0 && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.18)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.40)' }}>
-            {urgentCount} urgent
-          </span>
-        )}
-      </div>
-      <ul className="space-y-2">
-        {JUNIOR_INBOX.map(item => (
-          <li key={item.id} className="flex items-start gap-2.5 py-2 border-b border-gray-800 last:border-0">
-            <span
-              className="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-              style={{
-                backgroundColor: item.urgent ? 'rgba(239,68,68,0.18)' : 'rgba(22,163,74,0.12)',
-                color:           item.urgent ? '#FCA5A5' : '#86EFAC',
-                border:          item.urgent ? '1px solid rgba(239,68,68,0.40)' : '1px solid rgba(22,163,74,0.30)',
-                minWidth: 84,
-                textAlign: 'center',
-              }}
-            >
-              {item.channel}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-white truncate">{item.from}</span>
-                <span className="text-[10px] text-gray-500 shrink-0">{item.time}</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{item.preview}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
