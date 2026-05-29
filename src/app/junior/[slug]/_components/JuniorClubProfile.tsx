@@ -13,6 +13,7 @@
 
 import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import JuniorCoachesTab from './JuniorCoachesTab'
 
 const T = {
   panel:      '#0D1117',
@@ -34,7 +35,7 @@ const T = {
   goldText:   '#FDE68A',
 } as const
 
-type Tab = 'info' | 'history' | 'ground' | 'honours' | 'committee' | 'kit' | 'sponsors'
+type Tab = 'info' | 'history' | 'ground' | 'honours' | 'committee' | 'coaches' | 'kit' | 'sponsors'
 
 interface Props {
   session: SportsDemoSession
@@ -49,6 +50,7 @@ export default function JuniorClubProfile({ session }: Props) {
     { id: 'ground',    label: 'Ground',     icon: '🌱' },
     { id: 'honours',   label: 'Honours',    icon: '🏆' },
     { id: 'committee', label: 'Committee',  icon: '👥' },
+    { id: 'coaches',   label: 'Coaches',    icon: '🎽' },
     { id: 'kit',       label: 'Kit',        icon: '👕' },
     { id: 'sponsors',  label: 'Sponsors',   icon: '🤝' },
   ]
@@ -100,6 +102,7 @@ export default function JuniorClubProfile({ session }: Props) {
       {tab === 'ground' && <GroundTab />}
       {tab === 'honours' && <HonoursTab />}
       {tab === 'committee' && <CommitteeTab />}
+      {tab === 'coaches' && <JuniorCoachesTab session={session} />}
       {tab === 'kit' && <KitTab />}
       {tab === 'sponsors' && <SponsorsTab />}
     </div>

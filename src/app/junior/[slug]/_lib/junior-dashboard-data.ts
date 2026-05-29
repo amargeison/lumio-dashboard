@@ -98,7 +98,7 @@ export const JUNIOR_INBOX: JuniorInboxItem[] = [
     ],
   },
   {
-    id: '5', channel: 'noticeboard', sender: 'David Costa (Chair)',
+    id: '5', channel: 'noticeboard', sender: 'Pete Connolly (Chair)',
     subject: 'Noticeboard · Insurance renewal',
     preview: 'Club public liability insurance renews 31 May — action needed.',
     timestamp: 'Yesterday', urgent: true, unread: true,

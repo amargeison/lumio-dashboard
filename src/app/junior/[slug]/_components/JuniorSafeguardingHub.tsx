@@ -189,7 +189,7 @@ const DBS_REGISTER: DbsRecord[] = [
   { id: 'j-holroyd',   name: 'Jenna Holroyd',   role: 'Welfare Officer',          status: 'current',        expires: '2027-06-30', certificateRef: 'DBS-001-23811' },
   { id: 'p-rolfe',     name: 'Pat Rolfe',       role: 'U7 Cubs Coach (volunteer)',status: 'current',        expires: '2026-12-12', certificateRef: 'DBS-001-24006' },
   { id: 'a-singh',     name: 'Anil Singh',      role: 'U11 Lions Asst. Coach',    status: 'expiring_soon',  expires: '2026-07-08', certificateRef: 'DBS-001-24112' },
-  { id: 'g-yardley',   name: 'Greta Yardley',   role: 'U14 Eagles Team Manager',  status: 'current',        expires: '2027-09-22', certificateRef: 'DBS-001-24201' },
+  { id: 'k-atherton',  name: 'Kim Atherton',    role: 'U14 Eagles Team Manager',  status: 'current',        expires: '2027-09-22', certificateRef: 'DBS-001-24201' },
   { id: 'k-amari',     name: 'Kofi Amari',      role: 'Casual matchday volunteer',status: 'expired',        expires: '2026-04-05', certificateRef: 'DBS-001-23644' },
 ]
 
