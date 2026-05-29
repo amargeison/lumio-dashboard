@@ -47,12 +47,22 @@ export const JUNIOR_INBOX: JuniorInboxItem[] = [
   { id: '5', channel: 'Kit',          from: 'Crown Sportswear',     preview: 'Mid-season top-up order — 4 items outstanding (shorts U11, socks U14).', time: 'Yesterday' },
 ]
 
-export type JuniorScheduleItem = { time: string; what: string; where: string; note?: string }
+export type JuniorScheduleItem = {
+  time: string
+  what: string
+  where: string
+  note?: string
+  /** When true, the row renders with the accent treatment (filled dot,
+   *  accent-coloured time, bolder `what` text) in JuniorTodayInset.
+   *  Preset in data, not computed against current time — matches the
+   *  Non-League pattern. Exactly one row should carry this flag. */
+  highlight?: boolean
+}
 
 export const JUNIOR_TODAY_SCHEDULE: JuniorScheduleItem[] = [
   { time: '17:30', what: 'U7 Eagles training',            where: 'Pitch 2',     note: 'Coach: J. Lawford' },
   { time: '18:00', what: 'U11 Lions training',            where: 'Pitch 1',     note: 'Coach: M. Hutchings' },
-  { time: '19:00', what: 'Welfare check-in',              where: 'Clubhouse',   note: 'All age-band leads' },
+  { time: '19:00', what: 'Welfare check-in',              where: 'Clubhouse',   note: 'All age-band leads', highlight: true },
   { time: '19:30', what: 'DBS renewal — M. Hutchings',    where: '1-to-1',      note: '20 min' },
   { time: '20:00', what: 'Parent comms — match reminders', where: 'Auto-send',  note: 'Fri 17:00 default' },
 ]

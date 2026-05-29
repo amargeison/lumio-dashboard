@@ -22,7 +22,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import JuniorAvatarDropdown, { JuniorNotifications } from '@/components/junior/JuniorAvatarDropdown'
-import JuniorStatTiles, { JuniorInbox, JuniorTodaySchedule, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
+import JuniorStatTiles, { JuniorInbox, JuniorFixturesPanel, JuniorRecents, JuniorSquadSummary } from './_components/JuniorDashboardModules'
 import SportsSettings from '@/components/sports/SportsSettings'
 import JuniorSettingsAdditions from '@/components/junior/JuniorSettingsAdditions'
 import JuniorSafeguardingHub from './_components/JuniorSafeguardingHub'
@@ -31,6 +31,7 @@ import JuniorCoachToolkit from './_components/JuniorCoachToolkit'
 import JuniorParentApp from './_components/JuniorParentApp'
 import JuniorAIMatchRecap from './_components/JuniorAIMatchRecap'
 import JuniorMatchDayHero, { type JuniorWeather } from './_components/JuniorMatchDayHero'
+import JuniorTodayInset from './_components/JuniorTodayInset'
 import JuniorAIBriefingBox from './_components/JuniorAIBriefingBox'
 import JuniorPerformanceSignals from './_components/JuniorPerformanceSignals'
 import { JUNIOR_ACCENT, JUNIOR_ORG } from './_lib/junior-dashboard-data'
@@ -615,22 +616,36 @@ function TodayView({
 
   return (
     <div>
-      {/* Match-day hero — replaces the old morning banner + section header.
-          Parent role no longer sees JuniorAIMatchRecapPreview here; recap
-          remains reachable via the Parent App ("My Player") MatchRecapCard.
-          Buttons wire to existing sidebar destinations: performance_brief
-          (AI brief) and matchday_ops. Ask Lumio reuses performance_brief
-          since there's no separate Ask modal in the Junior portal yet. */}
-      <JuniorMatchDayHero
-        T={THEMES.dark}
-        density={DENSITY.regular}
-        greeting={greeting}
-        weather={weather}
-        squadCount={14}
-        onTodaysBriefing={() => onNavigate('performance_brief')}
-        onMatchdayOps={() => onNavigate('matchday_ops')}
-        onAsk={() => onNavigate('performance_brief')}
-      />
+      {/* Hero row — 12-col grid, hero 2/3 and Today inset 1/3, matching
+          the Non-League pattern. Hero takes a style override for its
+          gridColumn span; JuniorTodayInset sets its own '9 / span 4'
+          internally. Bottom margin lives on the row wrapper (previously
+          baked into the hero's outer wrapper). */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gap: DENSITY.regular.gap,
+          marginBottom: 16,
+        }}
+      >
+        <JuniorMatchDayHero
+          T={THEMES.dark}
+          density={DENSITY.regular}
+          greeting={greeting}
+          weather={weather}
+          squadCount={14}
+          onTodaysBriefing={() => onNavigate('performance_brief')}
+          onMatchdayOps={() => onNavigate('matchday_ops')}
+          onAsk={() => onNavigate('performance_brief')}
+          style={{ gridColumn: '1 / span 8' }}
+        />
+        <JuniorTodayInset
+          T={THEMES.dark}
+          accent={JUNIOR_ACCENT}
+          density={DENSITY.regular}
+        />
+      </div>
 
       {/* KPI grid — 5 Junior stat tiles per the dashboard port spec.
           Inbox / Approvals / Sessions / Charter Standard / Safeguarding.
@@ -732,12 +747,11 @@ function TodayView({
           </div>
         </div>
 
-        {/* Dashboard modules ported from Women's pattern — Inbox + Today's
-            schedule, Upcoming fixtures, Recent results + Squad availability.
-            All driven by JUNIOR_* demo data in junior-dashboard-data.ts. */}
+        {/* Dashboard modules ported from Women's pattern — Inbox + Upcoming
+            fixtures + Recent results + Squad availability. Today's schedule
+            moved into the hero row's right-hand inset (JuniorTodayInset). */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <JuniorInbox />
-          <JuniorTodaySchedule />
         </div>
         <JuniorFixturesPanel />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -20,7 +20,7 @@
 // from the shared cricket v2 surface — consumed across every sport
 // portal, not unique to Women's. We are not modifying it.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -51,6 +51,11 @@ interface Props {
   onTodaysBriefing: () => void
   onMatchdayOps: () => void
   onAsk: () => void
+  /** Optional style override on the outer wrapper. Used by the dashboard
+   *  to set `gridColumn: '1 / span 8'` when the hero sits in a 12-col
+   *  row alongside JuniorTodayInset. Merged after the built-in styles,
+   *  so callers can override margin / placement. */
+  style?: CSSProperties
 }
 
 // Eyebrow takes only the last segment of the league string ("U11"),
@@ -61,7 +66,7 @@ const formPreview  = JUNIOR_SEASON_FORM.slice(0, 5).join(' ')
 
 export default function JuniorMatchDayHero({
   T, density, greeting, weather, squadCount,
-  onTodaysBriefing, onMatchdayOps, onAsk,
+  onTodaysBriefing, onMatchdayOps, onAsk, style,
 }: Props) {
   // Real-time countdown — recomputes every second from the fixture
   // kickoffISO. Clamps to zero past kick-off so the label can swap
@@ -96,10 +101,10 @@ export default function JuniorMatchDayHero({
         color: T.text,
         fontFamily: FONT,
         padding: density.gap,
-        margin: '0 0 16px 0',
         borderRadius: 12,
         position: 'relative',
         overflow: 'hidden',
+        ...style,
       }}
     >
       {/* Ghost crest watermark — same asset Junior uses in the sidebar.

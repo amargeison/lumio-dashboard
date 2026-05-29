@@ -14,7 +14,6 @@
 import {
   JUNIOR_TOP_STATS,
   JUNIOR_INBOX,
-  JUNIOR_TODAY_SCHEDULE,
   JUNIOR_FIXTURES,
   JUNIOR_RECENTS,
   JUNIOR_SQUAD_SUMMARY,
@@ -91,30 +90,6 @@ export function JuniorInbox() {
                 <span className="text-[10px] text-gray-500 shrink-0">{item.time}</span>
               </div>
               <p className="text-xs text-gray-400 mt-0.5 truncate">{item.preview}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-// ─── JuniorTodaySchedule — today's agenda ───────────────────────────────────
-
-export function JuniorTodaySchedule() {
-  return (
-    <div className={CARD_CLASS}>
-      <h3 className="text-sm font-bold text-white mb-3">Today&rsquo;s schedule</h3>
-      <ul className="space-y-2">
-        {JUNIOR_TODAY_SCHEDULE.map(item => (
-          <li key={`${item.time}-${item.what}`} className="flex items-start gap-3 py-2 border-b border-gray-800 last:border-0">
-            <span className="shrink-0 text-xs font-bold text-emerald-400" style={{ minWidth: 48 }}>{item.time}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-white truncate">{item.what}</span>
-                <span className="text-[10px] text-gray-500 shrink-0">{item.where}</span>
-              </div>
-              {item.note && <p className="text-[10px] text-gray-500 mt-0.5">{item.note}</p>}
             </div>
           </li>
         ))}
