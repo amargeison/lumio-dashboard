@@ -117,9 +117,9 @@ const SQUADS: SquadRow[] = [
   { team: 'U7 Cubs',     ageBand: 'U7',  registered: 11, capacity: 12, unregistered: 0, coach: 'P. Rolfe',     manager: 'B. Donnelly' },
   { team: 'U9 Tigers',   ageBand: 'U9',  registered: 12, capacity: 12, unregistered: 0, coach: 'P. Rolfe',     manager: 'S. Wong' },
   { team: 'U10 Owls',    ageBand: 'U10', registered: 14, capacity: 14, unregistered: 0, coach: 'R. Patel',     manager: 'D. Lally' },
-  { team: 'U11 Lions',   ageBand: 'U11', registered: 16, capacity: 16, unregistered: 0, coach: 'M. Hutchings', manager: 'L. Owens' },
+  { team: 'U11 Lions',   ageBand: 'U11', registered: 16, capacity: 16, unregistered: 0, coach: 'M. Hutchings', manager: 'Greta Yardley' },
   { team: 'U12 Hawks',   ageBand: 'U12', registered: 14, capacity: 16, unregistered: 1, coach: 'R. Patel',     manager: 'D. Lally' },
-  { team: 'U13 Falcons', ageBand: 'U13', registered: 16, capacity: 16, unregistered: 0, coach: 'M. Hutchings', manager: 'F. Aydin' },
+  { team: 'U13 Falcons', ageBand: 'U13', registered: 16, capacity: 16, unregistered: 0, coach: 'M. Hutchings', manager: 'Saoirse Lynch' },
   { team: 'U14 Eagles',  ageBand: 'U14', registered: 15, capacity: 16, unregistered: 1, coach: 'G. Yardley',   manager: 'G. Yardley' },
   { team: 'U16 Wolves',  ageBand: 'U16', registered: 16, capacity: 16, unregistered: 0, coach: 'M. Hutchings', manager: 'T. Brennan' },
 ]
