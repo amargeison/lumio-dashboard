@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
+import JuniorAddTeamModal from './JuniorAddTeamModal'
 
 const T = {
   panel:      '#0D1117',
@@ -49,11 +50,13 @@ interface SquadTeam {
   coach: string
   manager: string
   capacity: number
-  squadSize: number
   players: SquadPlayer[]
 }
 
-const TEAMS: SquadTeam[] = [
+// Seeded teams. The component holds these in local state so Add Team
+// can append at runtime (demo-state, vanishes on refresh). Squad size
+// is computed from players.length at render time — no separate field.
+const SEED_TEAMS: SquadTeam[] = [
   {
     id: 'u11-lions',
     name: 'U11 Lions',
@@ -61,7 +64,6 @@ const TEAMS: SquadTeam[] = [
     coach: 'Mark Hutchings',
     manager: 'Greta Yardley',
     capacity: 14,
-    squadSize: 12,
     players: [
       { shirt: 1,  name: 'Theo Renshaw',    position: 'GK',  availability: 'available', attendancePct: 96, faRegistered: true },
       { shirt: 2,  name: 'Oscar Mbeki',     position: 'DEF', availability: 'available', attendancePct: 92, faRegistered: true },
@@ -84,7 +86,6 @@ const TEAMS: SquadTeam[] = [
     coach: 'Greta Yardley',
     manager: 'Saoirse Lynch',
     capacity: 16,
-    squadSize: 14,
     players: [
       { shirt: 1,  name: 'Amira Wells',     position: 'GK',  availability: 'available', attendancePct: 97, faRegistered: true },
       { shirt: 2,  name: 'Imogen Holt',     position: 'DEF', availability: 'available', attendancePct: 90, faRegistered: true },
@@ -106,7 +107,6 @@ const TEAMS: SquadTeam[] = [
     coach: 'Dev Patel',
     manager: 'Kim Atherton',
     capacity: 16,
-    squadSize: 13,
     players: [
       { shirt: 1, name: 'Caleb Frazier',  position: 'GK',  availability: 'available', attendancePct: 91, faRegistered: true },
       { shirt: 4, name: 'Noah Baxter',    position: 'DEF', availability: 'available', attendancePct: 89, faRegistered: true, restricted: true, note: 'Imagery exclusion enforced across all surfaces.' },
@@ -133,8 +133,14 @@ interface Props {
 }
 
 export default function JuniorSquadManagement({ session }: Props) {
-  const [teamId, setTeamId] = useState<string>(TEAMS[0].id)
-  const team = TEAMS.find(t => t.id === teamId) ?? TEAMS[0]
+  // Teams held in local state so Add Team can append at runtime. State
+  // is component-local and vanishes on refresh (c.ii demo-state).
+  const [teams, setTeams] = useState<SquadTeam[]>(SEED_TEAMS)
+  const [teamId, setTeamId] = useState<string>(SEED_TEAMS[0].id)
+  const [addTeamOpen, setAddTeamOpen] = useState(false)
+
+  const team = teams.find(t => t.id === teamId) ?? teams[0]
+  const squadSize = team.players.length
 
   const totals = team.players.reduce(
     (acc, p) => {
@@ -158,7 +164,7 @@ export default function JuniorSquadManagement({ session }: Props) {
           Squad Management · Staff view
         </p>
         <h2 className="text-lg font-bold" style={{ color: T.text }}>
-          {team.name} · {team.ageBand} · {team.squadSize} of {team.capacity} registered
+          {team.name} · {team.ageBand} · {squadSize} of {team.capacity} registered
         </h2>
         <p className="text-sm mt-1 leading-relaxed" style={{ color: T.text2 }}>
           Roster, FA registration status and matchday availability. Coach
@@ -168,8 +174,8 @@ export default function JuniorSquadManagement({ session }: Props) {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {TEAMS.map(t => {
+      <div className="flex flex-wrap gap-2 items-center">
+        {teams.map(t => {
           const active = t.id === teamId
           return (
             <button
@@ -187,14 +193,26 @@ export default function JuniorSquadManagement({ session }: Props) {
             </button>
           )
         })}
+        <button
+          type="button"
+          onClick={() => setAddTeamOpen(true)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+          style={{
+            backgroundColor: 'transparent',
+            border: `1px dashed ${T.border}`,
+            color: T.text3,
+          }}
+        >
+          + Add team
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KpiTile label="Available" value={totals.available} tone="good" />
         <KpiTile label="Doubt" value={totals.doubt} tone="warn" />
         <KpiTile label="Out / unavailable" value={totals.out + totals.unavailable} tone="bad" />
-        <KpiTile label="FA registered" value={`${totals.faRegistered}/${team.squadSize}`} tone="neutral" />
-        <KpiTile label="Squad capacity" value={`${team.squadSize}/${team.capacity}`} tone="neutral" />
+        <KpiTile label="FA registered" value={`${totals.faRegistered}/${squadSize}`} tone="neutral" />
+        <KpiTile label="Squad capacity" value={`${squadSize}/${team.capacity}`} tone="neutral" />
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: T.panel, border: `1px solid ${T.border}` }}>
@@ -268,6 +286,26 @@ export default function JuniorSquadManagement({ session }: Props) {
           Safeguarding for the audit log.
         </p>
       </div>
+
+      {addTeamOpen && (
+        <JuniorAddTeamModal
+          existingAgeBands={teams.map(t => t.ageBand)}
+          onClose={() => setAddTeamOpen(false)}
+          onSubmit={(t) => {
+            const newTeam: SquadTeam = {
+              id: `team-${Date.now()}`,
+              name: t.name,
+              ageBand: t.ageBand,
+              coach: t.coach,
+              manager: t.manager,
+              capacity: t.capacity,
+              players: [],
+            }
+            setTeams(prev => [...prev, newTeam])
+            setTeamId(newTeam.id)
+          }}
+        />
+      )}
     </div>
   )
 }
