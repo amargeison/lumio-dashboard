@@ -60,13 +60,15 @@ import JuniorTravel from './_components/JuniorTravel'
 import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
 import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
+import JuniorNoticeboard from './_components/JuniorNoticeboard'
+import { countUnread, NOTICEBOARD_SEEN_EVENT } from './_lib/junior-noticeboard-unread'
 import JuniorClubProfile from './_components/JuniorClubProfile'
 import JuniorReferees from './_components/JuniorReferees'
 import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface JuniorClub {
+export interface JuniorClub {
   name: string
   slug: string
   tier: 'charter_standard' | 'grassroots'
@@ -207,6 +209,7 @@ const JUNIOR_SIDEBAR_ITEMS: JuniorSidebarItem[] = [
   // is new in this commit — the grassroots committee oversight view.
   { id: 'today',           label: 'Dashboard',       icon: '🏠', group: 'OVERVIEW' },
   { id: 'insights',        label: 'Insights',        icon: '📊', group: 'OVERVIEW' },
+  { id: 'noticeboard',     label: 'Noticeboard',     icon: '📢', group: 'OVERVIEW' },
   { id: 'committee_suite', label: 'Committee Suite', icon: '📜', group: 'OVERVIEW' },
 
   // FOOTBALL — added in Tranche 1. Renders between OVERVIEW and PLAYERS via
@@ -337,7 +340,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     icon: '🎽',
     accent: '#22C55E',
     sidebar: [
-      'today',
+      'today', 'noticeboard',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_profile', 'safeguarding',
@@ -352,7 +355,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     icon: '📋',
     accent: '#0EA5E9',
     sidebar: [
-      'today',
+      'today', 'noticeboard',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_team', 'club_profile', 'safeguarding', 'volunteer_roles',
@@ -372,7 +375,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // 'club_profile' added — general club identity surface, visible to all.
     // 'referees' added — the Protect-the-Referee layer is squarely welfare
     // territory (abuse reporting, under-18 ref duty of care).
-    sidebar: ['today', 'fixtures', 'squad', 'development', 'safeguarding', 'referees', 'club_profile', 'settings'],
+    sidebar: ['today', 'noticeboard', 'fixtures', 'squad', 'development', 'safeguarding', 'referees', 'club_profile', 'settings'],
     hiddenTabs: [],
     message: 'Safeguarding, consent and welfare view.',
   },
@@ -390,7 +393,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // Results — academy leads consume the development pathway across
     // age bands and need the coaching context that surrounds it.
     sidebar: [
-      'today',
+      'today', 'noticeboard',
       'tactics', 'training', 'set_pieces', 'video_analysis', 'gps_performance', 'heatmaps', 'performance_brief', 'fixtures',
       'squad', 'match_video', 'performance', 'development', 'coach_toolkit',
       'club_profile', 'safeguarding', 'settings',
@@ -418,7 +421,7 @@ const JUNIOR_ROLE_CONFIG: Record<string, JuniorRoleConfig> = {
     // Tranche 2b adds 'tours_camps' — parents book their child onto
     // camps and the end-of-season tour.
     // 'club_profile' is general club info — visible to every role.
-    sidebar: ['today', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps', 'club_profile'],
+    sidebar: ['today', 'noticeboard', 'fixtures', 'squad', 'match_video', 'performance', 'development', 'safeguarding', 'travel', 'tours_camps', 'club_profile'],
     hiddenTabs: [],
     message: "Your child's training, video, performance, development and consent.",
   },
@@ -916,6 +919,24 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
   // future comms backend workstream's job, not this composer's.
   const [sendMessageOpen, setSendMessageOpen] = useState(false)
 
+  // Phase 3c — Noticeboard sidebar unread badge. Counts broadcasts +
+  // activity events newer than the persisted last-seen for this
+  // session.userName, role-filtered so the badge can't count items
+  // the user isn't allowed to see. Recomputes on mount and whenever
+  // the Noticeboard surface dispatches NOTICEBOARD_SEEN_EVENT (i.e.
+  // when the user opens the Noticeboard and last-seen is bumped).
+  const [noticeboardUnread, setNoticeboardUnread] = useState(0)
+  useEffect(() => {
+    const recompute = () => setNoticeboardUnread(countUnread({
+      userName: session.userName,
+      role: activeRole,
+      childAgeBand: club.demoChild?.ageBand,
+    }))
+    recompute()
+    window.addEventListener(NOTICEBOARD_SEEN_EVENT, recompute)
+    return () => window.removeEventListener(NOTICEBOARD_SEEN_EVENT, recompute)
+  }, [session.userName, activeRole, club.demoChild?.ageBand])
+
   // Wrapper around setActiveSection that intercepts the modal-special
   // target. Passed wherever onNavigate is consumed (TodayView quick
   // actions today; SettingsView for consistency — its onNavigate doesn't
@@ -998,6 +1019,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const active = activeSection === item.id
+                    const badge = item.id === 'noticeboard' && noticeboardUnread > 0
+                      ? noticeboardUnread
+                      : null
                     return (
                       <button
                         key={item.id}
@@ -1011,8 +1035,45 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                         }}
                         title={expanded ? undefined : roleAwareLabel(item, effectiveSession.role)}
                       >
-                        <span>{item.icon}</span>
-                        {expanded && <span>{roleAwareLabel(item, effectiveSession.role)}</span>}
+                        <span style={{ position: 'relative' }}>
+                          {item.icon}
+                          {!expanded && badge !== null && (
+                            <span
+                              className="absolute text-[8px] font-bold rounded-full flex items-center justify-center"
+                              style={{
+                                top: -4,
+                                right: -8,
+                                minWidth: 14,
+                                height: 14,
+                                padding: '0 4px',
+                                backgroundColor: '#16A34A',
+                                color: '#FFFFFF',
+                                border: '1.5px solid #0D1117',
+                              }}
+                            >
+                              {badge > 9 ? '9+' : badge}
+                            </span>
+                          )}
+                        </span>
+                        {expanded && (
+                          <>
+                            <span className="flex-1">{roleAwareLabel(item, effectiveSession.role)}</span>
+                            {badge !== null && (
+                              <span
+                                className="text-[10px] font-bold rounded-full flex items-center justify-center"
+                                style={{
+                                  minWidth: 18,
+                                  height: 18,
+                                  padding: '0 6px',
+                                  backgroundColor: '#16A34A',
+                                  color: '#FFFFFF',
+                                }}
+                              >
+                                {badge > 9 ? '9+' : badge}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </button>
                     )
                   })}
@@ -1151,6 +1212,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
         {/* CLUB + OPERATIONS modules added in Tranche 2a. */}
         {activeSection === 'insights' && (
           <JuniorInsights session={session} demoChild={club.demoChild} />
+        )}
+        {activeSection === 'noticeboard' && (
+          <JuniorNoticeboard session={effectiveSession} club={club} />
         )}
         {activeSection === 'committee_suite' && (
           <JuniorCommitteeSuite session={session} demoChild={club.demoChild} />

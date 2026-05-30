@@ -98,18 +98,6 @@ export const JUNIOR_INBOX: JuniorInboxItem[] = [
     ],
   },
   {
-    id: '5', channel: 'noticeboard', sender: 'Pete Connolly (Chair)',
-    subject: 'Noticeboard · Insurance renewal',
-    preview: 'Club public liability insurance renews 31 May — action needed.',
-    timestamp: 'Yesterday', urgent: true, unread: true,
-    thread: [
-      { from: 'them', time: 'Yesterday 21:18',
-        text: 'All — heads up. Our annual public liability insurance is up for renewal 31 May. Renewal quote came in £20 higher than last year. Need committee sign-off this week, then I can pay and forward the certificate to FA. Charter Standard panel checks for this. Please thumbs-up below or flag any concerns.' },
-      { from: 'them', time: 'Yesterday 21:34',
-        text: "Budget's fine — go ahead. Send me the receipt for the books." },
-    ],
-  },
-  {
     id: '6', channel: 'whatsapp', sender: 'Volunteer Coach Group',
     subject: 'WhatsApp · Coaches',
     preview: 'Training pitch — Pitch 2 booked Thurs? Confirming with Steve.',
