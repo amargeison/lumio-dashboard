@@ -30,6 +30,9 @@
 import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import { JuniorAIMatchRecapPreview } from './JuniorAIMatchRecap'
+import JuniorPlayerCard from './JuniorPlayerCard'
+import { JUNIOR_PLAYER_DETAIL } from '../_lib/junior-squad-data'
+import type { SquadPlayer } from './JuniorSquadManagement'
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
@@ -65,6 +68,7 @@ const T = {
 
 interface ParentAppChild {
   id: string
+  detailId: string  // key into JUNIOR_PLAYER_DETAIL for the card embed
   name: string
   ageBand: string
   team: string
@@ -87,6 +91,7 @@ interface ParentAppChild {
 const PARENT_CHILDREN: ParentAppChild[] = [
   {
     id: 'jack-carter',
+    detailId: 'u11-jack-carter',
     name: 'Jack Carter',
     ageBand: 'U11',
     team: 'U11 Lions',
@@ -99,6 +104,7 @@ const PARENT_CHILDREN: ParentAppChild[] = [
   },
   {
     id: 'mia-carter',
+    detailId: 'u13-mia-carter',
     name: 'Mia Carter',
     ageBand: 'U13',
     team: 'U13 Falcons',
@@ -453,25 +459,49 @@ export default function JuniorParentApp({ session: _session, demoChild, onOpenFu
           border: `1px solid ${T.accent}55`,
         }}
       >
-        <div className="flex items-center gap-4">
-          <div
-            className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-lg font-black"
-            style={{
-              backgroundColor: 'rgba(0,0,0,0.25)',
-              color: T.text,
-              border: `1px solid ${T.accent}55`,
-            }}
-          >
-            #{child.shirt}
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+          {/* LEFT — identity content (avatar + name + position) */}
+          <div className="flex items-center gap-4 flex-1">
+            <div
+              className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-lg font-black"
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.25)',
+                color: T.text,
+                border: `1px solid ${T.accent}55`,
+              }}
+            >
+              #{child.shirt}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: T.accent }}>
+                {child.team} · {child.ageBand} · {child.position}
+              </p>
+              <h1 className="text-2xl font-bold" style={{ color: T.text }}>{child.name}</h1>
+              <p className="text-[11px] mt-0.5" style={{ color: T.text3 }}>
+                Parent / Guardian view · child-scoped
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider" style={{ color: T.accent }}>
-              {child.team} · {child.ageBand} · {child.position}
-            </p>
-            <h1 className="text-2xl font-bold" style={{ color: T.text }}>{child.name}</h1>
-            <p className="text-[11px] mt-0.5" style={{ color: T.text3 }}>
-              Parent / Guardian view · child-scoped
-            </p>
+
+          {/* RIGHT — embedded player card. Card is reused verbatim;
+              compact sizing handled here via a transform: scale wrapper
+              (62.5% of the 320×480 modal version → 200×300). */}
+          <div style={{ width: 200, height: 300, overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ transform: 'scale(0.625)', transformOrigin: 'top left', width: 320 }}>
+              <JuniorPlayerCard
+                player={{
+                  id: child.detailId,
+                  shirt: child.shirt,
+                  name: child.name,
+                  position: child.position,
+                  availability: 'available',
+                  attendancePct: 0,
+                  faRegistered: true,
+                } satisfies SquadPlayer}
+                detail={JUNIOR_PLAYER_DETAIL[child.detailId]}
+                teamName={child.team}
+              />
+            </div>
           </div>
         </div>
       </div>
