@@ -60,13 +60,23 @@ function initialsOf(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
 }
 
-export default function JuniorBroadcastCard({ broadcast, isUnread = false, reactions }: Props) {
+export default function JuniorBroadcastCard({
+  broadcast,
+  isUnread = false,
+  reactions,
+  userId,
+  onReact,
+}: Props) {
   const r = reactions ?? broadcast.reactions
   const counts = {
     acknowledged: r.filter(x => x.type === 'acknowledged').length,
     done:         r.filter(x => x.type === 'done').length,
     seen:         r.filter(x => x.type === 'seen').length,
   }
+  const myReaction = userId
+    ? r.find(x => x.userId === userId)?.type
+    : undefined
+  const canReact = Boolean(userId && onReact)
 
   return (
     <div
@@ -132,16 +142,61 @@ export default function JuniorBroadcastCard({ broadcast, isUnread = false, react
 
       {/* Reactions row + timestamp */}
       <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: `1px solid ${C.borderSoft}` }}>
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: C.text4 }}>
-          <span title="Acknowledged">👍 {counts.acknowledged}</span>
-          <span title="Done">✅ {counts.done}</span>
-          <span title="Seen">👀 {counts.seen}</span>
+        <div className="flex items-center gap-1.5">
+          <ReactionButton
+            type="acknowledged" emoji="👍" title="Acknowledged"
+            count={counts.acknowledged} active={myReaction === 'acknowledged'}
+            canReact={canReact} onClick={() => onReact?.('acknowledged')}
+          />
+          <ReactionButton
+            type="done" emoji="✅" title="Done"
+            count={counts.done} active={myReaction === 'done'}
+            canReact={canReact} onClick={() => onReact?.('done')}
+          />
+          <ReactionButton
+            type="seen" emoji="👀" title="Seen"
+            count={counts.seen} active={myReaction === 'seen'}
+            canReact={canReact} onClick={() => onReact?.('seen')}
+          />
         </div>
         <div className="text-[10px]" style={{ color: C.text4 }}>
           {formatRelativeTime(broadcast.timestamp)}
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Reaction button ─────────────────────────────────────────────────
+
+function ReactionButton({
+  emoji, title, count, active, canReact, onClick,
+}: {
+  type: JuniorReactionType
+  emoji: string
+  title: string
+  count: number
+  active: boolean
+  canReact: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!canReact}
+      title={title}
+      className="px-2 py-1 rounded-md text-[11px] font-medium inline-flex items-center gap-1 transition-all"
+      style={{
+        backgroundColor: active ? C.accentDim : 'transparent',
+        color: active ? C.accentLight : C.text4,
+        border: `1px solid ${active ? C.accent55 : 'transparent'}`,
+        cursor: canReact ? 'pointer' : 'default',
+      }}
+    >
+      <span>{emoji}</span>
+      <span>{count}</span>
+    </button>
   )
 }
 

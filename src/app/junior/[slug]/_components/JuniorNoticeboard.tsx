@@ -1,37 +1,49 @@
 'use client'
 
 // JuniorNoticeboard — main Noticeboard view. Renders broadcasts +
-// activity events with filter tabs, pinned section, and unread
-// tracking via localStorage.
+// activity events with filter tabs, pinned section, interactive
+// reactions, and (Commit 5) localStorage unread tracking.
 //
-// Commit 3 adds: filter tabs (All / Broadcasts / Activity), pinned
-// section above the main feed, JuniorBroadcastCard + JuniorActivityRow
-// sub-components, empty state.
-// Commit 4 will add reactions + composer.
-// Commit 5 will add localStorage unread tracking + sidebar badge.
+// Commit 4 adds: lifted broadcast + reactions state, interactive
+// reaction toggle on broadcast cards, JuniorBroadcastComposerModal
+// for staff roles, "+ New broadcast" header button.
 //
-// Role gating:
+// Reaction toggle semantics:
+//   - User has no reaction → click adds that reaction.
+//   - User already reacted with the same type → click removes it.
+//   - User reacted with a different type → click switches to the new
+//     type (one reaction per user per broadcast).
+//
+// Composer:
+//   - Visible only to roles mappable to JuniorBroadcastAuthorRole:
+//     chairman → chair, welfare_officer, coach, team_manager.
+//   - Other staff (academy_lead) and parent_guardian don't see the
+//     button. academy_lead is a viewer-only Noticeboard role.
+//
+// Role gating (broadcasts/activity filter — unchanged from Commit 3):
 //   parent_guardian: club_wide + age_band broadcasts (must match their
 //                    child's ageBand). staff_only hidden.
-//                    Activity events with visibility 'all' (compliance/
-//                    welfare events use 'staff' or whitelists and are
-//                    hidden from parents).
+//                    Activity events with visibility 'all'.
 //   staff roles    : club_wide + staff_only + all age_band broadcasts.
 //                    Activity events with visibility 'all' or 'staff'.
 //   welfare_officer/chairman: also welfare visibility events (whitelist
 //                             array on the event).
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import type { JuniorClub } from '../page'
 import {
   JUNIOR_BROADCASTS,
   JUNIOR_ACTIVITY_EVENTS,
   type JuniorBroadcast,
+  type JuniorBroadcastAuthorRole,
   type JuniorActivityEvent,
+  type JuniorReaction,
+  type JuniorReactionType,
 } from '../_lib/junior-noticeboard-data'
 import JuniorBroadcastCard from './JuniorBroadcastCard'
 import JuniorActivityRow from './JuniorActivityRow'
+import JuniorBroadcastComposerModal from './JuniorBroadcastComposerModal'
 
 const C = {
   bg:         '#0A0E13',
@@ -41,6 +53,8 @@ const C = {
   border:     '#1F2937',
   accent:     '#16A34A',
   accentLight:'#22C55E',
+  accentDim:  'rgba(22,163,74,0.15)',
+  accent55:   'rgba(22,163,74,0.55)',
 } as const
 
 interface Props {
@@ -54,37 +68,64 @@ type FeedItem =
   | { kind: 'broadcast'; data: JuniorBroadcast; ts: number }
   | { kind: 'activity'; data: JuniorActivityEvent; ts: number }
 
+// Map portal session.role → broadcast author role. Returns null for
+// roles that cannot author broadcasts (parent_guardian, academy_lead).
+function authorRoleFor(role: string): JuniorBroadcastAuthorRole | null {
+  switch (role) {
+    case 'chairman':        return 'chair'
+    case 'welfare_officer': return 'welfare_officer'
+    case 'coach':           return 'coach'
+    case 'team_manager':    return 'team_manager'
+    default:                return null
+  }
+}
+
 export default function JuniorNoticeboard({ session, club }: Props) {
   const [tab, setTab] = useState<TabId>('all')
+  const [composerOpen, setComposerOpen] = useState(false)
+
+  // Lifted broadcasts list — seeded from the static data, allows local
+  // composer to prepend. Vanishes on refresh (demo state).
+  const [broadcasts, setBroadcasts] = useState<JuniorBroadcast[]>(JUNIOR_BROADCASTS)
+
+  // Lifted reactions map — { [broadcastId]: JuniorReaction[] }. Seeded
+  // from each broadcast's reactions on first render, then mutated
+  // independently. Avoids re-cloning the whole broadcast array on each
+  // reaction toggle.
+  const [reactionsMap, setReactionsMap] = useState<Record<string, JuniorReaction[]>>(() =>
+    Object.fromEntries(JUNIOR_BROADCASTS.map(b => [b.id, b.reactions]))
+  )
 
   const isParent = session.role === 'parent_guardian'
   const childAgeBand = club.demoChild?.ageBand
+  const userId = session.userName
+  const authorRole = authorRoleFor(session.role)
+  const canCompose = authorRole !== null
 
   // Filter broadcasts by role + audience.
-  const visibleBroadcasts = JUNIOR_BROADCASTS.filter(b => {
+  const visibleBroadcasts = useMemo(() => broadcasts.filter(b => {
     if (isParent) {
       if (b.audience === 'staff_only') return false
       if (b.audience === 'age_band' && b.ageBand !== childAgeBand) return false
     }
     return true
-  })
+  }), [broadcasts, isParent, childAgeBand])
 
   // Filter activity events by visibility.
-  const visibleActivity = JUNIOR_ACTIVITY_EVENTS.filter(e => {
+  const visibleActivity = useMemo(() => JUNIOR_ACTIVITY_EVENTS.filter(e => {
     if (e.visibility === 'all') return true
     if (e.visibility === 'staff') return !isParent
     if (Array.isArray(e.visibility)) return e.visibility.includes(session.role)
     return false
-  })
+  }), [isParent, session.role])
 
-  // Pinned section — only broadcasts marked pinned, only when the
-  // current filter actually includes broadcasts.
+  // Pinned section.
   const includesBroadcasts = tab === 'all' || tab === 'broadcasts'
   const pinned = includesBroadcasts
     ? visibleBroadcasts.filter(b => b.pinned)
     : []
 
-  // Main feed (non-pinned), tab-filtered, sorted by timestamp desc.
+  // Main feed.
   const feed: FeedItem[] = []
   if (tab === 'all' || tab === 'broadcasts') {
     visibleBroadcasts
@@ -102,6 +143,37 @@ export default function JuniorNoticeboard({ session, club }: Props) {
 
   const totalCount = pinned.length + feed.length
 
+  // ─── Reaction toggle ────────────────────────────────────────────────
+  function handleReact(broadcastId: string, type: JuniorReactionType) {
+    setReactionsMap(prev => {
+      const current = prev[broadcastId] ?? []
+      const mine = current.find(r => r.userId === userId)
+      let next: JuniorReaction[]
+      if (mine && mine.type === type) {
+        // Toggle off.
+        next = current.filter(r => r.userId !== userId)
+      } else if (mine) {
+        // Switch type.
+        next = current.map(r =>
+          r.userId === userId
+            ? { ...r, type, timestamp: new Date().toISOString() }
+            : r
+        )
+      } else {
+        // Add new.
+        next = [...current, { userId, type, timestamp: new Date().toISOString() }]
+      }
+      return { ...prev, [broadcastId]: next }
+    })
+  }
+
+  // ─── Composer submit ────────────────────────────────────────────────
+  function handleComposerSubmit(b: JuniorBroadcast) {
+    setBroadcasts(prev => [b, ...prev])
+    setReactionsMap(prev => ({ ...prev, [b.id]: b.reactions }))
+    setComposerOpen(false)
+  }
+
   return (
     <div style={{ backgroundColor: C.bg, minHeight: '100%' }}>
       <div className="px-6 py-6 max-w-3xl mx-auto">
@@ -115,6 +187,20 @@ export default function JuniorNoticeboard({ session, club }: Props) {
               Club broadcasts and recent activity
             </p>
           </div>
+          {canCompose && (
+            <button
+              type="button"
+              onClick={() => setComposerOpen(true)}
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+              style={{
+                color: C.accentLight,
+                backgroundColor: C.accentDim,
+                border: `1px solid ${C.accent55}`,
+              }}
+            >
+              + New broadcast
+            </button>
+          )}
         </div>
 
         {/* Filter tabs */}
@@ -142,7 +228,13 @@ export default function JuniorNoticeboard({ session, club }: Props) {
             </div>
             <div className="space-y-3">
               {pinned.map(b => (
-                <JuniorBroadcastCard key={b.id} broadcast={b} />
+                <JuniorBroadcastCard
+                  key={b.id}
+                  broadcast={b}
+                  reactions={reactionsMap[b.id] ?? b.reactions}
+                  userId={userId}
+                  onReact={(t) => handleReact(b.id, t)}
+                />
               ))}
             </div>
           </div>
@@ -155,7 +247,13 @@ export default function JuniorNoticeboard({ session, club }: Props) {
           <div className="space-y-3">
             {feed.map(item =>
               item.kind === 'broadcast' ? (
-                <JuniorBroadcastCard key={`b-${item.data.id}`} broadcast={item.data} />
+                <JuniorBroadcastCard
+                  key={`b-${item.data.id}`}
+                  broadcast={item.data}
+                  reactions={reactionsMap[item.data.id] ?? item.data.reactions}
+                  userId={userId}
+                  onReact={(t) => handleReact(item.data.id, t)}
+                />
               ) : (
                 <JuniorActivityRow key={`a-${item.data.id}`} event={item.data} />
               )
@@ -173,6 +271,16 @@ export default function JuniorNoticeboard({ session, club }: Props) {
           </div>
         )}
       </div>
+
+      {/* Composer modal */}
+      {composerOpen && authorRole && (
+        <JuniorBroadcastComposerModal
+          authorName={session.userName}
+          authorRole={authorRole}
+          onClose={() => setComposerOpen(false)}
+          onSubmit={handleComposerSubmit}
+        />
+      )}
     </div>
   )
 }
