@@ -12,6 +12,7 @@ import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import JuniorAddTeamModal from './JuniorAddTeamModal'
 import JuniorAddPlayerModal from './JuniorAddPlayerModal'
+import JuniorPlayerCardModal from './JuniorPlayerCardModal'
 
 const T = {
   panel:      '#0D1117',
@@ -33,7 +34,8 @@ const T = {
 
 type Availability = 'available' | 'doubt' | 'out' | 'unavailable'
 
-interface SquadPlayer {
+export interface SquadPlayer {
+  id: string
   shirt: number | null
   name: string
   position: string
@@ -66,18 +68,18 @@ const SEED_TEAMS: SquadTeam[] = [
     manager: 'Greta Yardley',
     capacity: 14,
     players: [
-      { shirt: 1,  name: 'Theo Renshaw',    position: 'GK',  availability: 'available', attendancePct: 96, faRegistered: true },
-      { shirt: 2,  name: 'Oscar Mbeki',     position: 'DEF', availability: 'available', attendancePct: 92, faRegistered: true },
-      { shirt: 3,  name: 'Reuben Hart',     position: 'DEF', availability: 'doubt',     attendancePct: 88, faRegistered: true, note: 'Tight calf — reassess Thu' },
-      { shirt: 4,  name: 'Sami Iqbal',      position: 'DEF', availability: 'available', attendancePct: 94, faRegistered: true },
-      { shirt: 5,  name: 'Felix Yarrow',    position: 'MID', availability: 'available', attendancePct: 90, faRegistered: true },
-      { shirt: 6,  name: 'Jack Carter',     position: 'MID', availability: 'available', attendancePct: 98, faRegistered: true },
-      { shirt: 7,  name: 'Marco Pereira',   position: 'MID', availability: 'available', attendancePct: 86, faRegistered: true },
-      { shirt: 8,  name: 'Daniel O’Hara', position: 'MID', availability: 'available', attendancePct: 91, faRegistered: true },
-      { shirt: 9,  name: 'Kai Linton',      position: 'FWD', availability: 'out',       attendancePct: 82, faRegistered: true, note: 'School fixture clash this Sat' },
-      { shirt: 10, name: 'Adam Sefer',      position: 'FWD', availability: 'available', attendancePct: 95, faRegistered: true },
-      { shirt: 11, name: 'Henry Brindle',   position: 'FWD', availability: 'available', attendancePct: 93, faRegistered: true },
-      { shirt: null, name: 'Joel Tate',     position: 'MID', availability: 'unavailable', attendancePct: 64, faRegistered: false, note: 'FA registration pending — paperwork with County' },
+      { id: 'u11-theo-renshaw',    shirt: 1,  name: 'Theo Renshaw',    position: 'GK',  availability: 'available', attendancePct: 96, faRegistered: true },
+      { id: 'u11-oscar-mbeki',     shirt: 2,  name: 'Oscar Mbeki',     position: 'DEF', availability: 'available', attendancePct: 92, faRegistered: true },
+      { id: 'u11-reuben-hart',     shirt: 3,  name: 'Reuben Hart',     position: 'DEF', availability: 'doubt',     attendancePct: 88, faRegistered: true, note: 'Tight calf — reassess Thu' },
+      { id: 'u11-sami-iqbal',      shirt: 4,  name: 'Sami Iqbal',      position: 'DEF', availability: 'available', attendancePct: 94, faRegistered: true },
+      { id: 'u11-felix-yarrow',    shirt: 5,  name: 'Felix Yarrow',    position: 'MID', availability: 'available', attendancePct: 90, faRegistered: true },
+      { id: 'u11-jack-carter',     shirt: 6,  name: 'Jack Carter',     position: 'MID', availability: 'available', attendancePct: 98, faRegistered: true },
+      { id: 'u11-marco-pereira',   shirt: 7,  name: 'Marco Pereira',   position: 'MID', availability: 'available', attendancePct: 86, faRegistered: true },
+      { id: 'u11-daniel-ohara',    shirt: 8,  name: 'Daniel O’Hara', position: 'MID', availability: 'available', attendancePct: 91, faRegistered: true },
+      { id: 'u11-kai-linton',      shirt: 9,  name: 'Kai Linton',      position: 'FWD', availability: 'out',       attendancePct: 82, faRegistered: true, note: 'School fixture clash this Sat' },
+      { id: 'u11-adam-sefer',      shirt: 10, name: 'Adam Sefer',      position: 'FWD', availability: 'available', attendancePct: 95, faRegistered: true },
+      { id: 'u11-henry-brindle',   shirt: 11, name: 'Henry Brindle',   position: 'FWD', availability: 'available', attendancePct: 93, faRegistered: true },
+      { id: 'u11-joel-tate',       shirt: null, name: 'Joel Tate',     position: 'MID', availability: 'unavailable', attendancePct: 64, faRegistered: false, note: 'FA registration pending — paperwork with County' },
     ],
   },
   {
@@ -88,17 +90,17 @@ const SEED_TEAMS: SquadTeam[] = [
     manager: 'Saoirse Lynch',
     capacity: 16,
     players: [
-      { shirt: 1,  name: 'Amira Wells',     position: 'GK',  availability: 'available', attendancePct: 97, faRegistered: true },
-      { shirt: 2,  name: 'Imogen Holt',     position: 'DEF', availability: 'available', attendancePct: 90, faRegistered: true },
-      { shirt: 3,  name: 'Bea Aldridge',    position: 'DEF', availability: 'available', attendancePct: 89, faRegistered: true },
-      { shirt: 4,  name: 'Phoebe Carrick',  position: 'DEF', availability: 'doubt',     attendancePct: 91, faRegistered: true, note: 'Mild ankle — light week, no Sat' },
-      { shirt: 5,  name: 'Sophie Mahan',    position: 'MID', availability: 'available', attendancePct: 93, faRegistered: true },
-      { shirt: 6,  name: 'Mia Carter',      position: 'MID', availability: 'available', attendancePct: 95, faRegistered: true },
-      { shirt: 7,  name: 'Esme Penrose',    position: 'MID', availability: 'available', attendancePct: 88, faRegistered: true },
-      { shirt: 8,  name: 'Layla Quintero',  position: 'MID', availability: 'available', attendancePct: 92, faRegistered: true },
-      { shirt: 9,  name: 'Ruby Sanderson',  position: 'FWD', availability: 'available', attendancePct: 94, faRegistered: true },
-      { shirt: 10, name: 'Tilly Brackenhall', position: 'FWD', availability: 'available', attendancePct: 96, faRegistered: true },
-      { shirt: 11, name: 'Nia Okonkwo',     position: 'FWD', availability: 'out',       attendancePct: 84, faRegistered: true, note: 'Family week — return Tue' },
+      { id: 'u13-amira-wells',       shirt: 1,  name: 'Amira Wells',     position: 'GK',  availability: 'available', attendancePct: 97, faRegistered: true },
+      { id: 'u13-imogen-holt',       shirt: 2,  name: 'Imogen Holt',     position: 'DEF', availability: 'available', attendancePct: 90, faRegistered: true },
+      { id: 'u13-bea-aldridge',      shirt: 3,  name: 'Bea Aldridge',    position: 'DEF', availability: 'available', attendancePct: 89, faRegistered: true },
+      { id: 'u13-phoebe-carrick',    shirt: 4,  name: 'Phoebe Carrick',  position: 'DEF', availability: 'doubt',     attendancePct: 91, faRegistered: true, note: 'Mild ankle — light week, no Sat' },
+      { id: 'u13-sophie-mahan',      shirt: 5,  name: 'Sophie Mahan',    position: 'MID', availability: 'available', attendancePct: 93, faRegistered: true },
+      { id: 'u13-mia-carter',        shirt: 6,  name: 'Mia Carter',      position: 'MID', availability: 'available', attendancePct: 95, faRegistered: true },
+      { id: 'u13-esme-penrose',      shirt: 7,  name: 'Esme Penrose',    position: 'MID', availability: 'available', attendancePct: 88, faRegistered: true },
+      { id: 'u13-layla-quintero',    shirt: 8,  name: 'Layla Quintero',  position: 'MID', availability: 'available', attendancePct: 92, faRegistered: true },
+      { id: 'u13-ruby-sanderson',    shirt: 9,  name: 'Ruby Sanderson',  position: 'FWD', availability: 'available', attendancePct: 94, faRegistered: true },
+      { id: 'u13-tilly-brackenhall', shirt: 10, name: 'Tilly Brackenhall', position: 'FWD', availability: 'available', attendancePct: 96, faRegistered: true },
+      { id: 'u13-nia-okonkwo',       shirt: 11, name: 'Nia Okonkwo',     position: 'FWD', availability: 'out',       attendancePct: 84, faRegistered: true, note: 'Family week — return Tue' },
     ],
   },
   {
@@ -109,14 +111,14 @@ const SEED_TEAMS: SquadTeam[] = [
     manager: 'Kim Atherton',
     capacity: 16,
     players: [
-      { shirt: 1, name: 'Caleb Frazier',  position: 'GK',  availability: 'available', attendancePct: 91, faRegistered: true },
-      { shirt: 4, name: 'Noah Baxter',    position: 'DEF', availability: 'available', attendancePct: 89, faRegistered: true, restricted: true, note: 'Imagery exclusion enforced across all surfaces.' },
-      { shirt: 5, name: 'Idris Khan',     position: 'DEF', availability: 'available', attendancePct: 88, faRegistered: true },
-      { shirt: 6, name: 'Sebastian Cole', position: 'MID', availability: 'available', attendancePct: 92, faRegistered: true },
-      { shirt: 8, name: 'Ben Morley',     position: 'MID', availability: 'doubt',     attendancePct: 85, faRegistered: true, note: 'Growth-spurt monitor — coach + parent flagged' },
-      { shirt: 9, name: 'Toby Lockhart',  position: 'FWD', availability: 'available', attendancePct: 90, faRegistered: true },
-      { shirt: 10, name: 'Arjun Mehta',   position: 'FWD', availability: 'available', attendancePct: 93, faRegistered: true },
-      { shirt: 11, name: 'Riley Vasilakis', position: 'FWD', availability: 'available', attendancePct: 87, faRegistered: true },
+      { id: 'u14-caleb-frazier',   shirt: 1, name: 'Caleb Frazier',  position: 'GK',  availability: 'available', attendancePct: 91, faRegistered: true },
+      { id: 'u14-noah-baxter',     shirt: 4, name: 'Noah Baxter',    position: 'DEF', availability: 'available', attendancePct: 89, faRegistered: true, restricted: true, note: 'Imagery exclusion enforced across all surfaces.' },
+      { id: 'u14-idris-khan',      shirt: 5, name: 'Idris Khan',     position: 'DEF', availability: 'available', attendancePct: 88, faRegistered: true },
+      { id: 'u14-sebastian-cole',  shirt: 6, name: 'Sebastian Cole', position: 'MID', availability: 'available', attendancePct: 92, faRegistered: true },
+      { id: 'u14-ben-morley',      shirt: 8, name: 'Ben Morley',     position: 'MID', availability: 'doubt',     attendancePct: 85, faRegistered: true, note: 'Growth-spurt monitor — coach + parent flagged' },
+      { id: 'u14-toby-lockhart',   shirt: 9, name: 'Toby Lockhart',  position: 'FWD', availability: 'available', attendancePct: 90, faRegistered: true },
+      { id: 'u14-arjun-mehta',     shirt: 10, name: 'Arjun Mehta',   position: 'FWD', availability: 'available', attendancePct: 93, faRegistered: true },
+      { id: 'u14-riley-vasilakis', shirt: 11, name: 'Riley Vasilakis', position: 'FWD', availability: 'available', attendancePct: 87, faRegistered: true },
     ],
   },
 ]
@@ -133,16 +135,30 @@ interface Props {
   demoChild?: { name: string; ageBand: string; team: string }
 }
 
-export default function JuniorSquadManagement({ session }: Props) {
+export default function JuniorSquadManagement({ session, demoChild }: Props) {
   // Teams held in local state so Add Team can append at runtime. State
   // is component-local and vanishes on refresh (c.ii demo-state).
   const [teams, setTeams] = useState<SquadTeam[]>(SEED_TEAMS)
   const [teamId, setTeamId] = useState<string>(SEED_TEAMS[0].id)
   const [addTeamOpen, setAddTeamOpen] = useState(false)
   const [addPlayerOpen, setAddPlayerOpen] = useState(false)
+  const [viewPlayer, setViewPlayer] = useState<SquadPlayer | null>(null)
 
   const team = teams.find(t => t.id === teamId) ?? teams[0]
   const squadSize = team.players.length
+
+  // Role + child-of-this-club gating for player card opens.
+  //   - Restricted players are never viewable (imagery exclusion per
+  //     Safeguarding policy).
+  //   - parent_guardian role can only open their own child's card.
+  //   - Staff roles can open any non-restricted card.
+  const isParent = session.role === 'parent_guardian'
+  const childName = demoChild?.name
+  const canViewPlayer = (p: SquadPlayer): boolean => {
+    if (p.restricted) return false
+    if (isParent) return p.name === childName
+    return true
+  }
 
   const totals = team.players.reduce(
     (acc, p) => {
@@ -248,10 +264,27 @@ export default function JuniorSquadManagement({ session }: Props) {
             </tr>
           </thead>
           <tbody>
-            {team.players.map((p, i) => {
+            {team.players.map((p) => {
               const tone = AVAIL_TONE[p.availability]
+              const clickable = canViewPlayer(p)
               return (
-                <tr key={`${p.name}-${i}`} style={{ borderTop: `1px solid ${T.borderSoft}` }}>
+                <tr
+                  key={p.id}
+                  onClick={() => clickable && setViewPlayer(p)}
+                  onMouseEnter={(e) => {
+                    if (clickable) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
+                  style={{
+                    borderTop: `1px solid ${T.borderSoft}`,
+                    cursor: clickable ? 'pointer' : 'default',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
                   <td className="px-3 py-2 font-mono" style={{ color: T.text4 }}>{p.shirt ?? '—'}</td>
                   <td className="px-3 py-2" style={{ color: T.text }}>
                     <span>{p.name}</span>
@@ -331,12 +364,24 @@ export default function JuniorSquadManagement({ session }: Props) {
           teamName={team.name}
           onClose={() => setAddPlayerOpen(false)}
           onSubmit={(player) => {
+            const newPlayer: SquadPlayer = {
+              id: `player-${Date.now()}`,
+              ...player,
+            }
             setTeams(prev => prev.map(t =>
               t.id === teamId
-                ? { ...t, players: [...t.players, player] }
+                ? { ...t, players: [...t.players, newPlayer] }
                 : t,
             ))
           }}
+        />
+      )}
+
+      {viewPlayer && (
+        <JuniorPlayerCardModal
+          player={viewPlayer}
+          teamName={team.name}
+          onClose={() => setViewPlayer(null)}
         />
       )}
     </div>
