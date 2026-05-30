@@ -12,6 +12,7 @@ import { useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import JuniorAddTeamModal from './JuniorAddTeamModal'
 import JuniorAddPlayerModal from './JuniorAddPlayerModal'
+import JuniorPlayerCardModal from './JuniorPlayerCardModal'
 
 const T = {
   panel:      '#0D1117',
@@ -134,16 +135,30 @@ interface Props {
   demoChild?: { name: string; ageBand: string; team: string }
 }
 
-export default function JuniorSquadManagement({ session }: Props) {
+export default function JuniorSquadManagement({ session, demoChild }: Props) {
   // Teams held in local state so Add Team can append at runtime. State
   // is component-local and vanishes on refresh (c.ii demo-state).
   const [teams, setTeams] = useState<SquadTeam[]>(SEED_TEAMS)
   const [teamId, setTeamId] = useState<string>(SEED_TEAMS[0].id)
   const [addTeamOpen, setAddTeamOpen] = useState(false)
   const [addPlayerOpen, setAddPlayerOpen] = useState(false)
+  const [viewPlayer, setViewPlayer] = useState<SquadPlayer | null>(null)
 
   const team = teams.find(t => t.id === teamId) ?? teams[0]
   const squadSize = team.players.length
+
+  // Role + child-of-this-club gating for player card opens.
+  //   - Restricted players are never viewable (imagery exclusion per
+  //     Safeguarding policy).
+  //   - parent_guardian role can only open their own child's card.
+  //   - Staff roles can open any non-restricted card.
+  const isParent = session.role === 'parent_guardian'
+  const childName = demoChild?.name
+  const canViewPlayer = (p: SquadPlayer): boolean => {
+    if (p.restricted) return false
+    if (isParent) return p.name === childName
+    return true
+  }
 
   const totals = team.players.reduce(
     (acc, p) => {
@@ -251,8 +266,25 @@ export default function JuniorSquadManagement({ session }: Props) {
           <tbody>
             {team.players.map((p) => {
               const tone = AVAIL_TONE[p.availability]
+              const clickable = canViewPlayer(p)
               return (
-                <tr key={p.id} style={{ borderTop: `1px solid ${T.borderSoft}` }}>
+                <tr
+                  key={p.id}
+                  onClick={() => clickable && setViewPlayer(p)}
+                  onMouseEnter={(e) => {
+                    if (clickable) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
+                  style={{
+                    borderTop: `1px solid ${T.borderSoft}`,
+                    cursor: clickable ? 'pointer' : 'default',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
                   <td className="px-3 py-2 font-mono" style={{ color: T.text4 }}>{p.shirt ?? '—'}</td>
                   <td className="px-3 py-2" style={{ color: T.text }}>
                     <span>{p.name}</span>
@@ -342,6 +374,14 @@ export default function JuniorSquadManagement({ session }: Props) {
                 : t,
             ))
           }}
+        />
+      )}
+
+      {viewPlayer && (
+        <JuniorPlayerCardModal
+          player={viewPlayer}
+          teamName={team.name}
+          onClose={() => setViewPlayer(null)}
         />
       )}
     </div>
