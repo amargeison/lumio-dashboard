@@ -29,7 +29,7 @@
 //   welfare_officer/chairman: also welfare visibility events (whitelist
 //                             array on the event).
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import type { JuniorClub } from '../page'
 import {
@@ -41,6 +41,7 @@ import {
   type JuniorReaction,
   type JuniorReactionType,
 } from '../_lib/junior-noticeboard-data'
+import { getLastSeen, setLastSeen } from '../_lib/junior-noticeboard-unread'
 import JuniorBroadcastCard from './JuniorBroadcastCard'
 import JuniorActivityRow from './JuniorActivityRow'
 import JuniorBroadcastComposerModal from './JuniorBroadcastComposerModal'
@@ -101,6 +102,25 @@ export default function JuniorNoticeboard({ session, club }: Props) {
   const userId = session.userName
   const authorRole = authorRoleFor(session.role)
   const canCompose = authorRole !== null
+
+  // Snapshot last-seen for THIS render — used to compute the
+  // per-item isUnread stripe. Frozen on mount via useRef so the
+  // stripes don't flicker off as soon as the effect persists a new
+  // last-seen.
+  const snapshotLastSeenRef = useRef<number | null>(null)
+  if (snapshotLastSeenRef.current === null) {
+    const ls = getLastSeen(session.userName)
+    snapshotLastSeenRef.current = ls ? new Date(ls).getTime() : 0
+  }
+  const snapshotMs = snapshotLastSeenRef.current
+
+  // On mount: persist now() as the new last-seen and dispatch the
+  // window event so the sidebar badge clears. Runs once per
+  // Noticeboard navigation — when the user clicks elsewhere and
+  // returns, this fires again.
+  useEffect(() => {
+    setLastSeen(session.userName, new Date().toISOString())
+  }, [session.userName])
 
   // Filter broadcasts by role + audience.
   const visibleBroadcasts = useMemo(() => broadcasts.filter(b => {
@@ -231,6 +251,7 @@ export default function JuniorNoticeboard({ session, club }: Props) {
                 <JuniorBroadcastCard
                   key={b.id}
                   broadcast={b}
+                  isUnread={new Date(b.timestamp).getTime() > snapshotMs}
                   reactions={reactionsMap[b.id] ?? b.reactions}
                   userId={userId}
                   onReact={(t) => handleReact(b.id, t)}
@@ -250,12 +271,17 @@ export default function JuniorNoticeboard({ session, club }: Props) {
                 <JuniorBroadcastCard
                   key={`b-${item.data.id}`}
                   broadcast={item.data}
+                  isUnread={item.ts > snapshotMs}
                   reactions={reactionsMap[item.data.id] ?? item.data.reactions}
                   userId={userId}
                   onReact={(t) => handleReact(item.data.id, t)}
                 />
               ) : (
-                <JuniorActivityRow key={`a-${item.data.id}`} event={item.data} />
+                <JuniorActivityRow
+                  key={`a-${item.data.id}`}
+                  event={item.data}
+                  isUnread={item.ts > snapshotMs}
+                />
               )
             )}
           </div>

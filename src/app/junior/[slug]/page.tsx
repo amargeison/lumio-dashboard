@@ -61,6 +61,7 @@ import JuniorToursCamps from './_components/JuniorToursCamps'
 import JuniorFacilities from './_components/JuniorFacilities'
 import JuniorCommitteeSuite from './_components/JuniorCommitteeSuite'
 import JuniorNoticeboard from './_components/JuniorNoticeboard'
+import { countUnread, NOTICEBOARD_SEEN_EVENT } from './_lib/junior-noticeboard-unread'
 import JuniorClubProfile from './_components/JuniorClubProfile'
 import JuniorReferees from './_components/JuniorReferees'
 import JuniorSendMessageModal from '@/components/junior/JuniorSendMessageModal'
@@ -918,6 +919,24 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
   // future comms backend workstream's job, not this composer's.
   const [sendMessageOpen, setSendMessageOpen] = useState(false)
 
+  // Phase 3c — Noticeboard sidebar unread badge. Counts broadcasts +
+  // activity events newer than the persisted last-seen for this
+  // session.userName, role-filtered so the badge can't count items
+  // the user isn't allowed to see. Recomputes on mount and whenever
+  // the Noticeboard surface dispatches NOTICEBOARD_SEEN_EVENT (i.e.
+  // when the user opens the Noticeboard and last-seen is bumped).
+  const [noticeboardUnread, setNoticeboardUnread] = useState(0)
+  useEffect(() => {
+    const recompute = () => setNoticeboardUnread(countUnread({
+      userName: session.userName,
+      role: activeRole,
+      childAgeBand: club.demoChild?.ageBand,
+    }))
+    recompute()
+    window.addEventListener(NOTICEBOARD_SEEN_EVENT, recompute)
+    return () => window.removeEventListener(NOTICEBOARD_SEEN_EVENT, recompute)
+  }, [session.userName, activeRole, club.demoChild?.ageBand])
+
   // Wrapper around setActiveSection that intercepts the modal-special
   // target. Passed wherever onNavigate is consumed (TodayView quick
   // actions today; SettingsView for consistency — its onNavigate doesn't
@@ -1000,6 +1019,9 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const active = activeSection === item.id
+                    const badge = item.id === 'noticeboard' && noticeboardUnread > 0
+                      ? noticeboardUnread
+                      : null
                     return (
                       <button
                         key={item.id}
@@ -1013,8 +1035,45 @@ function JuniorPortalInner({ club, session }: { club: JuniorClub; session: Sport
                         }}
                         title={expanded ? undefined : roleAwareLabel(item, effectiveSession.role)}
                       >
-                        <span>{item.icon}</span>
-                        {expanded && <span>{roleAwareLabel(item, effectiveSession.role)}</span>}
+                        <span style={{ position: 'relative' }}>
+                          {item.icon}
+                          {!expanded && badge !== null && (
+                            <span
+                              className="absolute text-[8px] font-bold rounded-full flex items-center justify-center"
+                              style={{
+                                top: -4,
+                                right: -8,
+                                minWidth: 14,
+                                height: 14,
+                                padding: '0 4px',
+                                backgroundColor: '#16A34A',
+                                color: '#FFFFFF',
+                                border: '1.5px solid #0D1117',
+                              }}
+                            >
+                              {badge > 9 ? '9+' : badge}
+                            </span>
+                          )}
+                        </span>
+                        {expanded && (
+                          <>
+                            <span className="flex-1">{roleAwareLabel(item, effectiveSession.role)}</span>
+                            {badge !== null && (
+                              <span
+                                className="text-[10px] font-bold rounded-full flex items-center justify-center"
+                                style={{
+                                  minWidth: 18,
+                                  height: 18,
+                                  padding: '0 6px',
+                                  backgroundColor: '#16A34A',
+                                  color: '#FFFFFF',
+                                }}
+                              >
+                                {badge > 9 ? '9+' : badge}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </button>
                     )
                   })}
