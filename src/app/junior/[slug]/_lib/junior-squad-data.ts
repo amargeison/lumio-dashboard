@@ -182,7 +182,21 @@ export const JUNIOR_PLAYER_DETAIL: Record<string, JuniorPlayerDetail> = {
   'u13-bea-aldridge':      { stats: { rating: 72, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
   'u13-phoebe-carrick':    { stats: { rating: 73, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
   'u13-sophie-mahan':      { stats: { rating: 75, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
-  'u13-mia-carter':        { stats: { rating: 77, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
+  // Mia Carter — full profile (sibling of Jack Carter). Promoted from
+  // stub to support the parent My Player view card embed. Mia is the
+  // second sibling visible in the parent app and would otherwise read
+  // as "favouritism" against Jack's full profile.
+  'u13-mia-carter': {
+    stats: { rating: 80, tec: 82, tac: 78, phy: 81, soc: 84, eff: 86, pot: 85 },
+    aboutMe: {
+      favouritePlayer: 'Sol Henrikson — Crown City',
+      favouriteClub: 'Crown City',
+      favouriteFilm: 'a film about a girls\' football team',
+      goalCelebration: 'Knee slide + point to my mum',
+      preMatchMeal: 'Porridge + banana',
+      dreamPosition: 'Number 10, like my big brother Jack',
+    },
+  },
   'u13-esme-penrose':      { stats: { rating: 71, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
   'u13-layla-quintero':    { stats: { rating: 74, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
   'u13-ruby-sanderson':    { stats: { rating: 76, tec: 0, tac: 0, phy: 0, soc: 0, eff: 0, pot: 0 }, aboutMe: {}, stub: true },
