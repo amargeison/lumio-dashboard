@@ -3450,6 +3450,7 @@ function WomensGPSHeatmapsView({ club }: { club: WomensClub }) {
       trainingSessions={WOMENS_HEATMAP_TRAINING}
       matchDayLabel="MATCH"
       comparisonMode="four"
+      tabbed
       includeWelfareSection
       welfareLabel="Welfare & Load Monitoring (Karen Carney Review)"
     />
@@ -6424,6 +6425,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
 
 
 

@@ -360,6 +360,8 @@ export interface GPSHeatmapsViewProps {
   comparisonMode?: 'four' | 'eleven'
   includeWelfareSection?: boolean
   welfareLabel?: string
+  /** When true, render the 6 sections as tabs across the top instead of one long scroll. */
+  tabbed?: boolean
 }
 
 // ─── 5+1 section heatmap view, configurable per sport ──────────────────────
@@ -376,9 +378,11 @@ export function GPSHeatmapsView({
   comparisonMode = 'four',
   includeWelfareSection = false,
   welfareLabel = 'Welfare & Load Monitoring',
+  tabbed = false,
 }: GPSHeatmapsViewProps) {
   const [brandPrimary, setBrandPrimary] = useState(defaultPrimary)
   const [brandSecondary, setBrandSecondary] = useState(defaultSecondary)
+  const [activeTab, setActiveTab] = useState(0)
   const [matchIdx, setMatchIdx] = useState(0)
   const [selectedPlayer, setSelectedPlayer] = useState(players[0]?.name ?? '')
   const [trainingIdx, setTrainingIdx] = useState(0)
@@ -403,7 +407,11 @@ export function GPSHeatmapsView({
 
   const selectedPlayerMeta = players.find(p => p.name === selectedPlayer) || players[0]
 
-  const Section = ({ title, subtitle, children, accentColor }: { title: string; subtitle?: string; children: React.ReactNode; accentColor?: string }) => (
+  const sectionTabs = ['1 · Match Heatmaps', '2 · Training Heatmaps', '3 · Speed & Intensity Zones', '4 · Squad Comparison', '5 · Season Overview'].concat(includeWelfareSection ? ['6 · Welfare & Load'] : [])
+
+  const Section = ({ title, subtitle, children, accentColor, index }: { title: string; subtitle?: string; children: React.ReactNode; accentColor?: string; index?: number }) => {
+    if (tabbed && index !== undefined && activeTab !== index) return null
+    return (
     <section className="space-y-4">
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -418,7 +426,8 @@ export function GPSHeatmapsView({
       </div>
       {children}
     </section>
-  )
+    )
+  }
 
   const HCard = ({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) => (
     <div className="rounded-xl p-4 border" style={{ background: '#0d1117', borderColor: '#1F2937' }}>
@@ -458,8 +467,18 @@ export function GPSHeatmapsView({
         </div>
       </div>
 
+      {tabbed && (
+        <div className="flex gap-1 flex-wrap" style={{ borderBottom: '1px solid #1F2937' }}>
+          {sectionTabs.map((t, i) => (
+            <button key={t} onClick={() => setActiveTab(i)} className="px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-colors" style={{ color: activeTab === i ? '#fff' : '#9CA3AF', borderBottom: `2px solid ${activeTab === i ? brandPrimary : 'transparent'}`, marginBottom: -1 }}>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ─── 1. MATCH HEATMAPS ─────────────────────────────────────── */}
-      <Section title="1 · Match Heatmaps" subtitle="Match-day positional intelligence — who covered which space, where they touched the ball, and what they did under load.">
+      <Section index={0} title="1 · Match Heatmaps" subtitle="Match-day positional intelligence — who covered which space, where they touched the ball, and what they did under load.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Player</label>
@@ -509,7 +528,7 @@ export function GPSHeatmapsView({
       </Section>
 
       {/* ─── 2. TRAINING HEATMAPS ──────────────────────────────────── */}
-      <Section title="2 · Training Heatmaps" subtitle="Session-level distribution and weekly load microcycle." accentColor={brandSecondary}>
+      <Section index={1} title="2 · Training Heatmaps" subtitle="Session-level distribution and weekly load microcycle." accentColor={brandSecondary}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 block">Session</label>
@@ -561,7 +580,7 @@ export function GPSHeatmapsView({
       </Section>
 
       {/* ─── 3. SPEED & INTENSITY ZONES ────────────────────────────── */}
-      <Section title="3 · Speed & Intensity Zones" subtitle="How distance, speed and accel/decel events distribute across the squad.">
+      <Section index={2} title="3 · Speed & Intensity Zones" subtitle="How distance, speed and accel/decel events distribute across the squad.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <HCard title="Distance by Speed Zone" subtitle={`${selectedPlayer} — match average across last 5`}>
             <SpeedZoneBars player={selectedPlayer} group={selectedPlayerMeta?.group ?? 'Midfielders'} />
@@ -576,7 +595,7 @@ export function GPSHeatmapsView({
       </Section>
 
       {/* ─── 4. SQUAD COMPARISON ───────────────────────────────────── */}
-      <Section title="4 · Squad Comparison" subtitle={comparisonMode === 'eleven' ? 'Starting XI side-by-side — limited squad size.' : 'Up to 4 players side-by-side — grouped by role.'}>
+      <Section index={3} title="4 · Squad Comparison" subtitle={comparisonMode === 'eleven' ? 'Starting XI side-by-side — limited squad size.' : 'Up to 4 players side-by-side — grouped by role.'}>
         <HCard>
           <div className="mb-3">
             <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
@@ -634,7 +653,7 @@ export function GPSHeatmapsView({
       </Section>
 
       {/* ─── 5. SEASON OVERVIEW ────────────────────────────────────── */}
-      <Section title="5 · Season Overview" subtitle="Trend grids and home/away differentials across the campaign.">
+      <Section index={4} title="5 · Season Overview" subtitle="Trend grids and home/away differentials across the campaign.">
         <HCard title="Rolling 10-Match Load Grid" subtitle="Rows = players · columns = last 10 matches · cell colour = relative load (AU)">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[10px]">
@@ -720,7 +739,7 @@ export function GPSHeatmapsView({
 
       {/* ─── 6. WELFARE & LOAD MONITORING (optional) ───────────────── */}
       {includeWelfareSection && (
-        <Section title={`6 · ${welfareLabel}`}
+        <Section index={5} title={`6 · ${welfareLabel}`}
           subtitle="28-day rolling load grid with threshold flags. Cells exceeding the recommended weekly load cap (Karen Carney Review compliance context) are highlighted." accentColor="#EC4899">
           <HCard title="28-Day Rolling Load" subtitle="Rows = player · columns = day · cell = AU load · 🚩 cells exceed weekly cap">
             <div className="overflow-x-auto">
@@ -833,3 +852,4 @@ export function GPSHeatmapsView({
     </div>
   )
 }
+
