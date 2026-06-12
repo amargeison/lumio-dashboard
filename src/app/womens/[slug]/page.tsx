@@ -2756,59 +2756,12 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
 
 // ─── TRANSFERS VIEW ──────────────────────────────────────────────────────────
 const TransfersView = ({ club }: { club: WomensClub }) => {
-  const [activeTab, setActiveTab] = useState<'tracker' | 'researcher'>('tracker');
-  const [step, setStep] = useState<1|2|3|4>(1);
-  const [position, setPosition] = useState('');
-  const [maxSalary, setMaxSalary] = useState('');
-  const [style, setStyle] = useState('');
-  const [league, setLeague] = useState('WSL');
-  const [results, setResults] = useState<string|null>(null);
-  const [loading, setLoading] = useState(false);
   const FSR_HEADROOM = club.fsrHeadroom ?? 380000;
   const fmt2 = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
 
-  const runSearch = async () => {
-    setLoading(true); setResults(null);
-    try {
-      const response = await fetch('/api/ai/womens', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          messages: [{ role: 'user', content: `You are a women's football transfer analyst for ${club.name}, a ${club.league} club.
-Search criteria: Position: ${position}. Max salary: £${maxSalary}/yr. Style: ${style}. Target leagues: ${league}. FSR headroom: ${fmt2(FSR_HEADROOM)}.
-Generate 5 player profiles. For each: **[Name]** — [Club], [Nationality]. Age, position, est salary, FSR impact, style match (2 sentences), key stats, availability, Lumio Scout rating (6.8–8.4), recommended action.
-After profiles add **## FSR IMPACT SUMMARY** table and **## RECOMMENDED SIGNING** paragraph.
-Use plausible fictional names — no real WSL players. WSL salary range £28k–£120k. Format with markdown.` }]
-        })
-      });
-      const data = await response.json();
-      setResults(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'No results.');
-      setStep(4);
-    } catch { setResults('Error connecting to AI.'); }
-    setLoading(false);
-  };
-
-  const renderMd = (text: string) => text.split('\n').map((line,i) => {
-    if (line.startsWith('## ')||line.startsWith('**## ')) return <h3 key={i} className="text-sm font-bold text-white mt-6 mb-2 border-b border-gray-800 pb-1">{line.replace(/\*\*?##\s?/g,'')}</h3>;
-    if (line.startsWith('**')&&line.endsWith('**')) return <p key={i} className="text-sm font-bold text-pink-400 mt-4 mb-1">{line.replace(/\*\*/g,'')}</p>;
-    if (line.startsWith('- ')) return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1 ml-2"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ','')}</span></div>;
-    if (line.trim()==='') return <div key={i} className="h-1"/>;
-    return <p key={i} className="text-xs text-gray-300 mb-1 leading-relaxed">{line}</p>;
-  });
-
   return (
     <div>
-      <SectionHeader title="Transfers" subtitle="WSL market · FSR-gated · AI Transfer Researcher" icon="🔁" />
-      <div className="flex gap-1 mb-6 border-b border-gray-800">
-        {[{id:'tracker',label:'Transfer Tracker',icon:'📋'},{id:'researcher',label:'AI Transfer Researcher',icon:'🤖'}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTab(t.id as 'tracker'|'researcher')}
-            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            <span>{t.icon}</span>{t.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab==='tracker'&&(
+      <SectionHeader title="Transfers" subtitle="WSL market · FSR-gated transfer tracker" icon="🔁" />
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="FSR Headroom" value={fmt2(FSR_HEADROOM)} sub="Available for new signings" color="green" />
@@ -2857,55 +2810,6 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
             </div>
           </div>
         </div>
-      )}
-
-      {activeTab==='researcher'&&(
-        <div className="space-y-6">
-          <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 flex items-center justify-between">
-            <div><p className="text-sm font-bold text-pink-400">FSR Headroom: {fmt2(FSR_HEADROOM)}</p><p className="text-xs text-gray-400 mt-0.5">All AI recommendations filtered to your FSR salary cap.</p></div>
-            <span className="text-2xl">🤖</span>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            {[1,2,3,4].map(s=><div key={s} className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step>=s?'bg-pink-600 text-white':'bg-gray-800 text-gray-600'}`}>{s}</div>{s<4&&<div className={`h-px w-8 ${step>s?'bg-pink-600':'bg-gray-800'}`}/>}</div>)}
-            <span className="text-xs text-gray-500 ml-2">{step===1?'Position':step===2?'Budget & League':step===3?'Playing Style':'Results'}</span>
-          </div>
-          {step===1&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 1 — Position</h3><p className="text-xs text-gray-500 mb-4">Select the primary position.</p>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">{['GK','CB','LB','RB','CM','DM','AM','LW','RW','FW','SS','Any'].map(p=><button key={p} onClick={()=>setPosition(p)} className={`py-2 rounded-lg text-xs font-semibold ${position===p?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>)}</div>
-              <button onClick={()=>{if(position)setStep(2)}} disabled={!position} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button>
-            </div>
-          )}
-          {step===2&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 2 — Budget &amp; League</h3><p className="text-xs text-gray-500 mb-4">FSR headroom: {fmt2(FSR_HEADROOM)}</p>
-              <div className="space-y-4">
-                <div><label className="text-xs text-gray-400 mb-1 block">Max annual salary (£)</label><input type="number" value={maxSalary} onChange={e=>setMaxSalary(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"/>{maxSalary&&Number(maxSalary)>FSR_HEADROOM&&<p className="text-xs text-red-400 mt-1">⚠ Exceeds FSR headroom</p>}</div>
-                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
-              </div>
-              <div className="flex gap-2 mt-5"><button onClick={()=>setStep(1)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={()=>{if(maxSalary&&league)setStep(3)}} disabled={!maxSalary||!league} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button></div>
-            </div>
-          )}
-          {step===3&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 3 — Playing Style</h3><p className="text-xs text-gray-500 mb-4">Claude will match this against available players.</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">{['High press — engine','Ball-playing — technical','Physical — aerial','Pace — in behind','Creative — final third','Defensive — positional','Box-to-box — hybrid','Set piece specialist','Leadership — experienced'].map(s2=><button key={s2} onClick={()=>setStyle(s2)} className={`py-2 px-3 rounded-lg text-xs text-left font-medium ${style===s2?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{s2}</button>)}</div>
-              <div className="mb-4"><label className="text-xs text-gray-400 mb-1 block">Or describe in your own words</label><input type="text" value={style} onChange={e=>setStyle(e.target.value)} placeholder="e.g. Left-footed CB who can carry ball" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white w-full focus:outline-none focus:border-pink-500"/></div>
-              <div className="flex gap-2"><button onClick={()=>setStep(2)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={runSearch} disabled={!style||loading} className="px-6 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white flex items-center gap-2">{loading?<><span className="animate-spin inline-block">⟳</span> Searching...</>:'🤖 Find Players →'}</button></div>
-            </div>
-          )}
-          {step===4&&results&&(
-            <div className="space-y-4">
-              <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">AI Results</span><span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">{position} · {fmt2(Number(maxSalary))}/yr max · {league}</span></div><button onClick={()=>{setStep(1);setPosition('');setMaxSalary('');setStyle('');setLeague('WSL');setResults(null)}} className="text-xs text-gray-500 hover:text-gray-300">↺ New search</button></div>
-              <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
-                <div className="flex items-center gap-2 mb-4"><span className="text-pink-400 font-bold text-xs">🤖 Lumio AI Transfer Researcher</span><span className="text-[10px] text-gray-600">· FSR-filtered · {club.league}</span></div>
-                <div>{renderMd(results)}</div>
-                <div className="mt-5 pt-4 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · WSL database · FSR headroom: {fmt2(FSR_HEADROOM)}</span><button className="text-xs text-pink-400 hover:text-pink-300">Export shortlist →</button></div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -6286,6 +6190,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
 
 
 
