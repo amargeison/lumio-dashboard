@@ -17,7 +17,10 @@
 // its OWN equivalent fixtures file (copy-and-retheme); this file is not
 // shared.
 
-import type { Trip, TripSupplier, TripDraft, DraftType } from '@/lib/sports/travel/trip-types'
+import type {
+  Trip, TripSupplier, TripDraft, DraftType,
+  AwayStatusRow, ResearchResults, SeasonStat,
+} from '@/lib/sports/travel/trip-types'
 
 export const OAKRIDGE_CLUB_ID = 'demo-oakridge-women'
 
@@ -274,3 +277,48 @@ export function getCannedDraft(trip: Trip, type: DraftType, supplierName?: strin
       }
   }
 }
+
+
+// ─── Away-fixture status tracker (the "what's booked" board) ──────────────
+// Ported from the Club Operations travel tab, themed for Oakridge. Opponents
+// align with the cost-compare trips above (tripId links across), plus two
+// further fixtures so the board reads like a real season.
+export const OAKRIDGE_AWAY_STATUS: AwayStatusRow[] = [
+  { id: 'aw-hartwell', date: 'Sun 17 May', opponent: 'Hartwell Women',          venue: 'Hartwell Community Stadium', distanceMiles: 31,  coach: 'done',    hotel: 'na',   meals: 'done',    overall: 'complete',    tripId: 'trip-hartwell-away' },
+  { id: 'aw-tyneside', date: 'Sun 24 May', opponent: 'Tyneside Athletic Women', venue: 'Riverbank Arena, Newcastle', distanceMiles: 214, coach: 'done',    hotel: 'partial', meals: 'partial', overall: 'in_progress', tripId: 'trip-tyneside-away' },
+  { id: 'aw-westport', date: 'Fri 29 May', opponent: 'Westport City Women',     venue: 'Harbour Park, Westport',     distanceMiles: 158, coach: 'done',    hotel: 'na',   meals: 'partial', overall: 'in_progress', tripId: 'trip-westport-away' },
+  { id: 'aw-marsh',    date: 'Sun 07 Jun', opponent: 'Marsh Rovers Women',      venue: 'Marsh Lane',                 distanceMiles: 92,  coach: 'done',    hotel: 'na',   meals: 'done',    overall: 'complete',    tripId: null },
+  { id: 'aw-calder',   date: 'Sun 21 Jun', opponent: 'Calderport Women',        venue: 'Calder Park',                distanceMiles: 176, coach: 'partial', hotel: 'none', meals: 'none',    overall: 'not_started', tripId: null },
+]
+
+// ─── Canned Travel Researcher results (NO live search/AI in demo) ─────────
+// A realistic ranked set across coach / hotel / meals. savedSupplierId !=
+// null = maps to one of the club's saved suppliers; null = AI-DISCOVERED
+// (the key value-prop: a club new to a division with no hotels/caterers
+// saved still gets the best, cheapest options found FOR them).
+export const OAKRIDGE_RESEARCH: ResearchResults = {
+  coaches: [
+    { id: 'cq-pennine',  operator: 'Pennine Coachways',  vehicle: '53-seat executive coach', seats: 53, priceReturn: 1027, etaNote: 'Pickup 09:30 · home ~late evening', score: 92, badge: 'Best value', savedSupplierId: 'sup-pennine-coach' },
+    { id: 'cq-northgate',operator: 'Northgate Travel',   vehicle: '49-seat coach',           seats: 49, priceReturn: 880,  etaNote: 'Pickup 09:45 · driver hours OK',   score: 88, badge: 'Cheapest',   savedSupplierId: null },
+    { id: 'cq-citywide', operator: 'Citywide Coaches',   vehicle: '57-seat exec + WiFi/WC',  seats: 57, priceReturn: 1180, etaNote: 'Pickup 09:15 · onboard catering', score: 84, badge: 'Best rated', savedSupplierId: null },
+    { id: 'cq-citylink', operator: 'CityLink Minibus Hire', vehicle: '2 × 16-seat minibus',  seats: 32, priceReturn: 760,  etaNote: 'Self-drive or with driver',         score: 78, badge: null,         savedSupplierId: 'sup-citylink-minibus' },
+  ],
+  hotels: [
+    { id: 'hq-parkside', name: 'Parkside Lodge Hotel',  stars: 3, area: 'Newcastle',  distanceToVenue: '6 min from ground',  pricePerNight: 75, totalPrice: 900,  rating: 8.4, amenities: ['Twin rooms','Breakfast','Coach parking'], score: 90, badge: 'Best value', savedSupplierId: 'sup-parkside-hotel' },
+    { id: 'hq-premier',  name: 'Riverside Premier Inn', stars: 3, area: 'Quayside',    distanceToVenue: '9 min from ground',  pricePerNight: 69, totalPrice: 828,  rating: 8.2, amenities: ['Breakfast','WiFi','Parking'],           score: 86, badge: 'Cheapest',   savedSupplierId: null },
+    { id: 'hq-quayside', name: 'The Quayside Hotel',    stars: 4, area: 'Quayside',    distanceToVenue: '4 min from ground',  pricePerNight: 95, totalPrice: 1140, rating: 8.7, amenities: ['Restaurant','Gym','Coach parking'],     score: 83, badge: 'Best rated', savedSupplierId: null },
+    { id: 'hq-station',  name: 'Station Lodge B&B',     stars: 0, area: 'City centre', distanceToVenue: '12 min from ground', pricePerNight: 58, totalPrice: 696,  rating: 8.0, amenities: ['Breakfast','Parking'],                  score: 78, badge: null,         savedSupplierId: null },
+  ],
+  meals: [
+    { id: 'mq-roadside', name: 'Roadside Kitchen (M6 J38)',     kind: 'Food stop (return)',  perHead: 8,  total: 192, note: 'Pre-order hot meals ~2h after full-time',     score: 88, badge: 'Best value', savedSupplierId: 'sup-roadside-kitchen' },
+    { id: 'mq-venue',    name: 'Riverbank Arena — match caterer', kind: 'Pre-match @ venue', perHead: 12, total: 288, note: 'Pasta/chicken + veggie, served 3h before KO',  score: 85, badge: null,         savedSupplierId: null },
+    { id: 'mq-hotel',    name: 'Parkside Lodge — team dinner',   kind: 'Hotel dinner',        perHead: 14, total: 336, note: 'Evening meal, overnight stays only',           score: 82, badge: null,         savedSupplierId: null },
+    { id: 'mq-halfway',  name: 'The Halfway Diner',              kind: 'Food stop (return)',  perHead: 7,  total: 168, note: 'Booth seating, quick turnaround',             score: 80, badge: 'Cheapest',   savedSupplierId: null },
+  ],
+}
+
+export const OAKRIDGE_SEASON_STATS: SeasonStat[] = [
+  { label: 'Away trips',     value: '12',     sub: 'this season' },
+  { label: 'Overnight stays', value: '3',     sub: '4 nights total' },
+  { label: 'Est. travel spend', value: '£18.4k', sub: 'coach · hotel · meals' },
+]

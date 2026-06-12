@@ -163,3 +163,80 @@ export interface DraftSendResult {
 }
 
 export type DataMode = 'demo' | 'live'
+
+// ─── Travel Researcher (AI agent) — result shapes ─────────────────────────
+// The "recommend → draft → handoff" agent researches options across coach,
+// hotel and catering, scores them, and drafts a booking enquiry. In demo
+// these come from canned fixtures; on a live portal from a real AI/search
+// call. `savedSupplierId` is set when the option maps to one of the club's
+// existing suppliers; null = AI-DISCOVERED (a club new to a division with no
+// hotels/caterers saved still gets options found for them).
+
+export type ResearchMode = 'full' | 'coach' | 'hotel' | 'meals'
+
+export interface CoachQuote {
+  id: string
+  operator: string
+  vehicle: string          // e.g. "53-seat executive coach"
+  seats: number
+  priceReturn: number      // £ for the return journey
+  etaNote: string          // e.g. "Pickup 09:30 · home ~late"
+  score: number            // 0-100 Lumio value score
+  badge?: string | null    // "Cheapest" | "Best value" | "Best rated" | null
+  savedSupplierId?: string | null
+}
+
+export interface HotelQuote {
+  id: string
+  name: string
+  stars: number            // 0 = guesthouse/B&B
+  area: string
+  distanceToVenue: string  // e.g. "6 min from ground"
+  pricePerNight: number    // £ per room per night
+  totalPrice: number       // £ for the stay (rooms × nights)
+  rating: number           // /10
+  amenities: string[]
+  score: number
+  badge?: string | null
+  savedSupplierId?: string | null
+}
+
+export interface MealQuote {
+  id: string
+  name: string
+  kind: string             // "Pre-match @ venue" | "Food stop (return)" | "Hotel dinner"
+  perHead: number
+  total: number
+  note: string             // dietary / timing note
+  score: number
+  badge?: string | null
+  savedSupplierId?: string | null
+}
+
+export interface ResearchResults {
+  coaches: CoachQuote[]
+  hotels: HotelQuote[]
+  meals: MealQuote[]
+}
+
+// Away-fixture status tracker row (the "what's booked" board).
+export type BookingState = 'done' | 'partial' | 'none' | 'na'
+export interface AwayStatusRow {
+  id: string
+  date: string             // display, e.g. "Sun 17 May"
+  opponent: string
+  venue: string
+  distanceMiles: number
+  coach: BookingState
+  hotel: BookingState
+  meals: BookingState
+  overall: 'complete' | 'in_progress' | 'not_started'
+  /** Links to a Trip in the cost-compare tab, when present. */
+  tripId?: string | null
+}
+
+export interface SeasonStat {
+  label: string
+  value: string
+  sub: string
+}
