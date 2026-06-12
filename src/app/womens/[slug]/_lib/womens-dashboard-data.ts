@@ -22,7 +22,7 @@ export type WfStatTile = { label: string; value: string | number; sub: string; t
 export const WOMENS_TOP_STATS: WfStatTile[] = [
   { label: 'Inbox',          value: 24, sub: '4 urgent',                tone: 'urgent' },
   { label: 'Approvals',      value: 4,  sub: 'awaiting',                tone: 'warn' },
-  { label: 'Out · doubt',    value: 3,  sub: '2 inj · 1 protocol',     tone: 'danger' },
+  { label: 'Out · doubt',    value: 4,  sub: '2 out · 2 doubt',       tone: 'danger' },
   { label: 'Today',          value: 8,  sub: 'sessions',                tone: 'ok' },
   { label: 'FSR Score',      value: '82%', sub: 'Compliant · 3 items', tone: 'accent' },
 ]
@@ -126,33 +126,35 @@ export type WfPlayerSlot = {
 }
 
 export const WOMENS_SQUAD: WfPlayerSlot[] = [
-  // Goalkeepers (3)
-  { num: 1,  initials:'EH', name:'Ellie Hayes',     pos:'GK',  group:'gk',  status:'ok' },
-  { num: 13, initials:'JM', name:'Jenna Marsh',     pos:'GK',  group:'gk',  status:'ok' },
-  { num: 30, initials:'AP', name:'Amelia Parr',     pos:'GK',  group:'gk',  status:'ok' },
+  // Canonical first-team 22 (2025/26). Names + positions reconciled with
+  // Squad Management and the Cycle/ACL/GPS/medical views so every department
+  // references the same player universe.
+  // Goalkeepers (2)
+  { num: 1,  initials:'CR', name:'Charlotte Reed',  pos:'GK',  group:'gk',  status:'ok' },
+  { num: 13, initials:'EH', name:'Ellie Hayes',     pos:'GK',  group:'gk',  status:'ok' },
   // Defenders (7)
-  { num: 2,  initials:'KO', name:'Kira Okonkwo',    pos:'RB',  group:'def', status:'ok' },
-  { num: 3,  initials:'TF', name:'Tessa Foley',     pos:'LB',  group:'def', status:'ok' },
+  { num: 5,  initials:'EC', name:'Emma Clarke',     pos:'CB',  group:'def', status:'ok' },
+  { num: 2,  initials:'SL', name:'Sophie Lawson',   pos:'RB',  group:'def', status:'out' },
+  { num: 3,  initials:'ST', name:'Sophie Turner',   pos:'LB',  group:'def', status:'doubt' },
+  { num: 15, initials:'BC', name:'Bea Chen',        pos:'CB',  group:'def', status:'doubt' },
+  { num: 18, initials:'TF', name:'Tessa Foley',     pos:'LB',  group:'def', status:'ok' },
   { num: 4,  initials:'LB', name:'Lucy Brennan',    pos:'CB',  group:'def', status:'ok' },
-  { num: 5,  initials:'MR', name:'Maya Reid',       pos:'CB',  group:'def', status:'ok' },
-  { num: 15, initials:'CW', name:'Caitlin Webb',    pos:'CB',  group:'def', status:'ok' },
-  { num: 17, initials:'BC', name:'Bea Chen',        pos:'CB',  group:'def', status:'doubt' },
-  { num: 21, initials:'OM', name:'Olivia Marsh',    pos:'RB',  group:'def', status:'ok' },
+  { num: 6,  initials:'MR', name:'Maya Reid',       pos:'CB',  group:'def', status:'ok' },
   // Midfielders (7)
-  { num: 6,  initials:'PG', name:'Priya Granger',   pos:'CDM', group:'mid', status:'ok' },
-  { num: 8,  initials:'LB', name:'Lia Barker',      pos:'CM',  group:'mid', status:'ok' },
-  { num: 10, initials:'NC', name:'Nia Carter',      pos:'CAM', group:'mid', status:'cleared' },
-  { num: 12, initials:'RC', name:'Ria Cole',        pos:'CM',  group:'mid', status:'ok' },
-  { num: 16, initials:'DA', name:'Demi Ashton',     pos:'CM',  group:'mid', status:'ok' },
-  { num: 19, initials:'JT', name:'Jess Tilley',     pos:'RW',  group:'mid', status:'ok' },
+  { num: 8,  initials:'MH', name:'Megan Hughes',    pos:'CDM', group:'mid', status:'ok' },
+  { num: 10, initials:'PN', name:'Priya Nair',      pos:'CM',  group:'mid', status:'ok' },
+  { num: 20, initials:'FA', name:'Fatima Al-Said',  pos:'CAM', group:'mid', status:'ok' },
+  { num: 16, initials:'EZ', name:'Emily Zhang',     pos:'CM',  group:'mid', status:'cleared' },
+  { num: 12, initials:'LW', name:'Lucy Whitmore',   pos:'CM',  group:'mid', status:'ok' },
   { num: 23, initials:'SD', name:'Sasha Davies',    pos:'CM',  group:'mid', status:'out' },
+  { num: 19, initials:'JT', name:'Jess Tilley',     pos:'RW',  group:'mid', status:'ok' },
   // Forwards (6)
-  { num: 7,  initials:'JM', name:'Jamie Morgan',    pos:'CF',  group:'fwd', status:'out' },
-  { num: 9,  initials:'ZW', name:'Zara Williams',   pos:'ST',  group:'fwd', status:'ok' },
-  { num: 11, initials:'DM', name:'Dani Morris',     pos:'LW',  group:'fwd', status:'ok' },
-  { num: 14, initials:'RO', name:'Rita Okafor',     pos:'CF',  group:'fwd', status:'doubt' },
-  { num: 18, initials:'AR', name:'Aria Rowe',       pos:'CF',  group:'fwd', status:'ok' },
-  { num: 22, initials:'CP', name:'Carla Porter',    pos:'ST',  group:'fwd', status:'ok' },
+  { num: 7,  initials:'AW', name:'Abbi Walsh',      pos:'RW',  group:'fwd', status:'ok' },
+  { num: 11, initials:'TB', name:'Tilly Brooks',    pos:'LW',  group:'fwd', status:'ok' },
+  { num: 9,  initials:'JO', name:'Jade Osei',       pos:'ST',  group:'fwd', status:'ok' },
+  { num: 14, initials:'ZW', name:'Zara Williams',   pos:'ST',  group:'fwd', status:'ok' },
+  { num: 17, initials:'DM', name:'Dani Morris',     pos:'LW',  group:'fwd', status:'ok' },
+  { num: 22, initials:'AR', name:'Aria Rowe',       pos:'ST',  group:'fwd', status:'ok' },
 ]
 
 export const WOMENS_INJURIES = [
@@ -222,3 +224,5 @@ export const WOMENS_ACCENT = {
   dim:    'rgba(190,24,93,0.16)',
   border: 'rgba(190,24,93,0.45)',
 }
+
+

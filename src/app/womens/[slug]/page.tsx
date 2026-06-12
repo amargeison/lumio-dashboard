@@ -733,6 +733,18 @@ const ACLRiskMonitorView = () => {
     {name:'Megan Hughes',    pos:'DM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
     {name:'Sophie Lawson',   pos:'RB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
     {name:'Tilly Brooks',    pos:'LW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Ellie Hayes',     pos:'GK',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Bea Chen',        pos:'CB',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Tessa Foley',     pos:'LB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Lucy Brennan',    pos:'CB',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Maya Reid',       pos:'CB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Emily Zhang',     pos:'CM',history:'Previous ACL (left, 2023)',  lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'High'},
+    {name:'Lucy Whitmore',   pos:'CM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Medium'},
+    {name:'Sasha Davies',    pos:'CM',history:'Meniscus repair (2025)',     lastScreening:'Apr 2026',nextDue:'Jul 2026',overdue:false,risk:'Medium'},
+    {name:'Jess Tilley',     pos:'RW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Zara Williams',   pos:'ST',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Dani Morris',     pos:'LW',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Aria Rowe',       pos:'ST',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
   ]
   const overdueCount = aclPlayers.filter(p => p.overdue).length
 
@@ -1355,6 +1367,21 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
     {name:'Megan Hughes',   pos:'DM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2026',welfare:'Available'},
     {name:'Sophie Lawson',  pos:'RB',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Maternity'},
     {name:'Tilly Brooks',   pos:'LW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇮🇪 Ireland',international:true, contract:'Jun 2028',welfare:'Available'},
+    // ── Squad expanded to a full 22 (2025/26). Names reconciled with the
+    //    Cycle/ACL/GPS/dashboard rosters so every department references the
+    //    same player universe (no module lists a name outside this 22).
+    {name:'Ellie Hayes',    pos:'GK',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Bea Chen',       pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Tessa Foley',    pos:'LB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Lucy Brennan',   pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇮🇪 Ireland',international:true, contract:'Jun 2026',welfare:'Available'},
+    {name:'Maya Reid',      pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Emily Zhang',    pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Lucy Whitmore',  pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Sasha Davies',   pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2028',welfare:'RTP'},
+    {name:'Jess Tilley',    pos:'RW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Zara Williams',  pos:'ST',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Dani Morris',    pos:'LW',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Aria Rowe',      pos:'ST',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
   ]
 
   const [filter, setFilter] = useState<'all' | 'fulltime' | 'parttime' | 'dualreg' | 'leave' | 'international'>('all')
@@ -1836,6 +1863,12 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
     { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
     { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
+    { id: 18, name: 'Orla Devine',     age: 16, pos: 'RB',  gpsAvg: 57, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 7,  goals: 0,  assists: 2,  notes: 'Energetic full-back. Defensive positioning developing well. Strong attitude in training.' },
+    { id: 19, name: 'Maddie Yates',    age: 17, pos: 'CM',  gpsAvg: 61, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 12, goals: 2,  assists: 3,  notes: 'Tidy in possession. Needs to add tempo to her passing under pressure.' },
+    { id: 20, name: 'Sienna Ford',     age: 15, pos: 'FW',  gpsAvg: 54, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 6,  goals: 3,  assists: 1,  notes: 'Sharp movement in the box. Youngest forward in the U18s — one to watch.' },
+    { id: 21, name: 'Robyn Mackay',    age: 16, pos: 'CB',  gpsAvg: 58, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 9,  goals: 0,  assists: 0,  notes: 'Composed centre-half. Good in the air. Building match minutes this season.' },
+    { id: 22, name: 'Tia Bennett',     age: 17, pos: 'LW',  gpsAvg: 64, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 11, goals: 5,  assists: 4,  notes: 'Direct winger with end product. Lumio Scout flagged for U21 step-up next season.' },
+    { id: 23, name: 'Hollie Frost',    age: 15, pos: 'GK',  gpsAvg: 50, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 4,  goals: 0,  assists: 0,  notes: 'Promising shot-stopper. Footwork and distribution the current focus.' },
   ]
 
   const u21Players = [
@@ -1846,6 +1879,11 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 15, name: 'Abby Thornton',   age: 19, pos: 'CB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 15, goals: 1,  assists: 2,  firstTeamSessions: 2,  notes: 'Solid defensively. Aerial strength above average for age. Needs more first-team exposure.' },
     { id: 16, name: 'Meg Farr',        age: 21, pos: 'RW',  gpsAvg: 76, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 19, goals: 6,  assists: 10, firstTeamSessions: 8,  notes: 'Winger with excellent delivery. Pushing for first-team squad place next season.' },
     { id: 17, name: 'Tara Flynn',      age: 20, pos: 'DM',  gpsAvg: 69, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 14, goals: 0,  assists: 3,  firstTeamSessions: 3,  notes: 'Reads the game well. Lacks top-end pace. Potential loan candidate Summer 2026.' },
+    { id: 24, name: 'Erin Doyle',      age: 19, pos: 'CB',  gpsAvg: 73, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 16, goals: 0,  assists: 1,  firstTeamSessions: 3,  notes: 'Dependable defender. Strong communicator. Building toward first-team training invites.' },
+    { id: 25, name: 'Faye Sutton',     age: 20, pos: 'AM',  gpsAvg: 75, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 18, goals: 5,  assists: 7,  firstTeamSessions: 7,  notes: 'Creative number 10. Set-piece delivery a real asset. Pushing for a first-team bench spot.' },
+    { id: 26, name: 'Connie Pryce',    age: 21, pos: 'GK',  gpsAvg: 68, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 12, goals: 0,  assists: 0,  firstTeamSessions: 2,  notes: 'Reliable understudy. Loan to a WSL 2 side recommended for regular minutes.' },
+    { id: 27, name: 'Megan Royce',     age: 19, pos: 'ST',  gpsAvg: 77, devRating: 4, potential: 'High',   contract: 'Scholar → Pro offer pending', appearances: 17, goals: 11, assists: 3,  firstTeamSessions: 9,  notes: 'Prolific in U21 WSL. Trains with the first team midweek. Ready for dual reg consideration.' },
+    { id: 28, name: 'Lily Garrett',    age: 20, pos: 'LB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 14, goals: 1,  assists: 5,  firstTeamSessions: 4,  notes: 'Attacking full-back. Good engine. Defensive 1v1s the next development priority.' },
   ]
 
   const potentialColor = (p: string) =>
@@ -1873,7 +1911,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
       <SectionHeader title="Academy & Player Pathway" subtitle="FA Girls' Centre of Excellence · U18 · U21 · First Team Bridge" icon="🎓" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Academy Players" value="34"   sub="U18: 10 · U21: 7 · Scholars: 27" color="pink"  />
+        <StatCard label="Academy Players" value="40"   sub="U18: 16 · U21: 12 · Scholars: 28" color="pink"  />
         <StatCard label="Elite Potential" value="2"    sub="Niamh O'Brien · Sasha Kone"       color="purple" />
         <StatCard label="First Team Ready" value="3"   sub="Dual reg candidates this window"  color="green"  />
         <StatCard label="CoE Compliance"  value="87%"  sub="3 criteria outstanding"           color="amber"  />
@@ -3419,6 +3457,18 @@ const GPS_PLAYERS: GPSPlayer[] = [
   { name: 'Megan Hughes',    pos: 'DM', distance: 10.9, hsr: 720, sprints: 18, topSpeed: 27.6, load: 770,  acwr: 1.01, status: 'On',         zones: { walk: 4.6, jog: 3.5, run: 1.9, sprint: 0.9 }, accels: 31, decels: 34 },
   { name: 'Sophie Lawson',   pos: 'RB', distance: 0,    hsr: 0,   sprints: 0,  topSpeed: 0,    load: 0,    acwr: 0,    status: 'On Leave',   zones: { walk: 0,   jog: 0,   run: 0,   sprint: 0   }, accels: 0,  decels: 0  },
   { name: 'Tilly Brooks',    pos: 'LW', distance: 9.8,  hsr: 760, sprints: 24, topSpeed: 30.1, load: 1010, acwr: 1.38, status: 'High',       zones: { walk: 3.9, jog: 3.0, run: 1.9, sprint: 1.0 }, accels: 41, decels: 45 },
+  { name: 'Ellie Hayes',     pos: 'GK', distance: 5.1,  hsr: 110, sprints: 3,  topSpeed: 17.6, load: 380,  acwr: 0.91, status: 'On',         zones: { walk: 3.3, jog: 1.3, run: 0.4, sprint: 0.1 }, accels: 5,  decels: 4  },
+  { name: 'Bea Chen',        pos: 'CB', distance: 8.9,  hsr: 560, sprints: 12, topSpeed: 27.4, load: 690,  acwr: 1.02, status: 'On',         zones: { walk: 4.4, jog: 2.7, run: 1.3, sprint: 0.5 }, accels: 26, decels: 29 },
+  { name: 'Tessa Foley',     pos: 'LB', distance: 9.6,  hsr: 700, sprints: 19, topSpeed: 29.0, load: 760,  acwr: 1.06, status: 'On',         zones: { walk: 4.2, jog: 3.0, run: 1.7, sprint: 0.7 }, accels: 33, decels: 36 },
+  { name: 'Lucy Brennan',    pos: 'CB', distance: 9.1,  hsr: 600, sprints: 13, topSpeed: 27.9, load: 710,  acwr: 1.03, status: 'On',         zones: { walk: 4.5, jog: 2.8, run: 1.3, sprint: 0.5 }, accels: 27, decels: 30 },
+  { name: 'Maya Reid',       pos: 'CB', distance: 9.0,  hsr: 580, sprints: 12, topSpeed: 27.5, load: 700,  acwr: 1.00, status: 'On',         zones: { walk: 4.5, jog: 2.7, run: 1.3, sprint: 0.5 }, accels: 25, decels: 28 },
+  { name: 'Emily Zhang',     pos: 'CM', distance: 11.0, hsr: 840, sprints: 21, topSpeed: 28.9, load: 1120, acwr: 1.45, status: 'High',       zones: { walk: 4.7, jog: 3.5, run: 2.0, sprint: 0.8 }, accels: 37, decels: 40 },
+  { name: 'Lucy Whitmore',   pos: 'CM', distance: 10.7, hsr: 800, sprints: 19, topSpeed: 28.6, load: 820,  acwr: 1.05, status: 'On',         zones: { walk: 4.6, jog: 3.4, run: 1.9, sprint: 0.8 }, accels: 35, decels: 38 },
+  { name: 'Sasha Davies',    pos: 'CM', distance: 4.2,  hsr: 180, sprints: 4,  topSpeed: 21.5, load: 300,  acwr: 0.55, status: 'Restricted', zones: { walk: 2.8, jog: 1.1, run: 0.3, sprint: 0.0 }, accels: 9,  decels: 10 },
+  { name: 'Jess Tilley',     pos: 'RW', distance: 10.4, hsr: 820, sprints: 25, topSpeed: 30.3, load: 900,  acwr: 1.18, status: 'On',         zones: { walk: 4.0, jog: 3.1, run: 2.2, sprint: 1.1 }, accels: 42, decels: 46 },
+  { name: 'Zara Williams',   pos: 'ST', distance: 10.0, hsr: 770, sprints: 27, topSpeed: 31.0, load: 800,  acwr: 1.10, status: 'On',         zones: { walk: 4.1, jog: 3.0, run: 1.8, sprint: 1.1 }, accels: 43, decels: 47 },
+  { name: 'Dani Morris',     pos: 'LW', distance: 9.9,  hsr: 760, sprints: 24, topSpeed: 30.2, load: 980,  acwr: 1.33, status: 'High',       zones: { walk: 3.9, jog: 3.0, run: 1.9, sprint: 1.0 }, accels: 40, decels: 44 },
+  { name: 'Aria Rowe',       pos: 'ST', distance: 9.7,  hsr: 740, sprints: 23, topSpeed: 30.0, load: 780,  acwr: 1.09, status: 'On',         zones: { walk: 4.1, jog: 2.9, run: 1.7, sprint: 1.0 }, accels: 39, decels: 42 },
 ]
 
 const GPSLoadView = ({ club }: { club: WomensClub }) => {
@@ -3462,7 +3512,7 @@ const GPSLoadView = ({ club }: { club: WomensClub }) => {
         <StatCard label="Sprint Count"       value={sprintCount}        sub="Squad total · session"   color="amber"  />
         <StatCard label="High Load Count"    value={highLoad}           sub="ACWR > 1.3"              color="amber"  />
         <StatCard label="Restricted Players" value={restricted}         sub="RTP + on leave"          color="red"    />
-        <StatCard label="Devices Active"     value="9 / 10"             sub="JOHAN vests · 1 charging" color="green"  />
+        <StatCard label="Devices Active"     value="21 / 22"            sub="JOHAN vests · 1 charging" color="green"  />
       </div>
 
       {/* TABS */}
@@ -3514,7 +3564,7 @@ const GPSSessionOverview = ({ players, phase }: { players: GPSPlayer[]; phase: {
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
           <h3 className="text-sm font-bold text-white">Squad — Session Output</h3>
-          <span className="text-[10px] text-gray-500">10 players · 9 outfield active · 1 on leave</span>
+          <span className="text-[10px] text-gray-500">22 players · 20 outfield active · 2 unavailable</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -6139,4 +6189,9 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
+
+
+
+
 
