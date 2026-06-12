@@ -497,9 +497,23 @@ const CLUB_DOCS: ClubDoc[] = [
   },
 ]
 
+// Downloadable PDF artefacts (generated demo documents) keyed by doc title.
+// Files live in /public/docs/womens and are served at /docs/womens/<file>.
+const DOC_META: Record<string, { file: string; ref: string; version: string; effective: string; owner: string }> = {
+  'Staff Code of Conduct':              { file: 'staff-code-of-conduct.pdf',            ref: 'OWFC-HR-001',   version: 'v3.1', effective: '01 Mar 2026', owner: 'Club Director' },
+  'Karen Carney Compliance':            { file: 'karen-carney-compliance.pdf',          ref: 'OWFC-COMP-004', version: 'v2.0', effective: '01 Sep 2025', owner: 'Welfare Lead' },
+  'FSR Submission Pack':                { file: 'fsr-submission-pack.pdf',               ref: 'OWFC-FIN-012',  version: 'v1.4', effective: '01 Apr 2026', owner: 'Club Director' },
+  'Cycle-Tracking Privacy Policy':      { file: 'cycle-tracking-privacy-policy.pdf',     ref: 'OWFC-WEL-007',  version: 'v2.2', effective: '15 Jan 2026', owner: 'Welfare Lead' },
+  'Pregnancy & Return-to-Play Pathway': { file: 'pregnancy-return-to-play-pathway.pdf',  ref: 'OWFC-MED-009',  version: 'v1.3', effective: '01 Feb 2026', owner: 'Club Doctor' },
+  'Club Licensing Evidence Vault':      { file: 'club-licensing-evidence-index.pdf',     ref: 'OWFC-OPS-015',  version: 'v1.1', effective: '01 Mar 2026', owner: 'Head of Operations' },
+  'Data & GDPR':                        { file: 'data-protection-gdpr.pdf',              ref: 'OWFC-LEG-003',  version: 'v2.1', effective: '01 Jan 2026', owner: 'Welfare Lead' },
+  'Coaching & CPD':                     { file: 'coaching-cpd-policy.pdf',               ref: 'OWFC-COA-006',  version: 'v1.2', effective: '01 Aug 2025', owner: 'Head Coach' },
+}
+
 function ClubInfoTab({ club }: { club: ClubProps }) {
   const [openDoc, setOpenDoc] = useState<string | null>(null)
   const openedDoc = openDoc ? CLUB_DOCS.find(d => d.title === openDoc) : null
+  const meta = openDoc ? DOC_META[openDoc] : null
 
   const details: Array<[string, string]> = [
     ['Club',           club.name],
@@ -532,7 +546,7 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
       {/* Documents */}
       <div>
         <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Club Documents</p>
-        <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Document categories shown are illustrative demo placeholders — no real regulatory artefacts attached.</p>
+        <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Downloadable sample policies &amp; club artefacts — demo content for Oakridge Women FC.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {CLUB_DOCS.map(p => (
             <button
@@ -572,10 +586,16 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
               <button onClick={() => setOpenDoc(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ color: C.text4 }} aria-label="Close">✕</button>
             </div>
 
-            <div className="px-6 py-3 shrink-0" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
-              <p className="text-[11px] font-semibold" style={{ color: '#F472B6' }}>
-                ⚠ Illustrative demo placeholder. Not a real regulatory artefact, downloadable document, or signed policy. Shows what this document category would contain.
-              </p>
+            <div className="px-6 py-2.5 shrink-0 flex flex-wrap items-center gap-x-4 gap-y-1" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
+              {meta && (
+                <>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Ref</b> {meta.ref}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Version</b> {meta.version}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Effective</b> {meta.effective}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Owner</b> {meta.owner}</span>
+                  <a href={`/docs/womens/${meta.file}`} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ backgroundColor: C.pinkDeep, color: '#fff' }}>⬇ Download PDF</a>
+                </>
+              )}
             </div>
 
             <div className="px-6 py-5 overflow-y-auto flex-1 space-y-3">
@@ -585,8 +605,11 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
             </div>
 
             <div className="px-6 py-3 shrink-0 flex items-center justify-between" style={{ borderTop: `1px solid ${C.border}` }}>
-              <span className="text-[10px]" style={{ color: C.text5 }}>Demo content · Oakridge Women FC · placeholder text</span>
-              <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+              <span className="text-[10px]" style={{ color: C.text5 }}>Sample document · Oakridge Women FC · demo content</span>
+              <div className="flex items-center gap-2">
+                {meta && <a href={`/docs/womens/${meta.file}`} target="_blank" rel="noreferrer" className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDeep, color: '#fff' }}>⬇ Download PDF</a>}
+                <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+              </div>
             </div>
           </div>
         </>
@@ -659,5 +682,6 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
