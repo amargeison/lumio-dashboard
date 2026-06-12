@@ -53,7 +53,7 @@ export const WOMENS_STAFF: StaffMember[] = [
     stats: { LEAD: 94, STR: 93, FIN: 90, GOV: 92, COM: 89, VIS: 91 } },
   { name: 'Sarah Frost', initials: 'SF', role: 'Head Coach', dept: 'Coaching',
     email: 's.frost@oakridge.com', phone: '01632 960002', start: 'Aug 2022', location: 'Oakridge Training Centre, 9am-6pm',
-    status: 'In today', available: true, reportsTo: 'Board', rating: 92, ref: 'WOM-002',
+    status: 'In today', available: true, reportsTo: 'Helen Voss', rating: 92, ref: 'WOM-002',
     speciality: 'Tactical structure · matchday motivation', bio: 'Leads first-team coaching and selection. UEFA Pro Licence; third season in charge.',
     stats: { TAC: 92, MOT: 95, STR: 88, DEV: 87, COM: 90, PRE: 89 } },
   { name: 'Helen Voss', initials: 'HV', role: 'Director of Football', dept: 'DoF',
@@ -162,3 +162,4 @@ export const WOMENS_STAFF: StaffMember[] = [
     speciality: 'Fan engagement · grassroots · CoE outreach', bio: 'Runs community programmes, the fan hub and academy/grassroots outreach.',
     stats: { ENG: 90, OUT: 89, NET: 87, COM: 88, REL: 89, VIS: 86 } },
 ]
+

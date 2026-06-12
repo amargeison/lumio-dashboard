@@ -216,102 +216,73 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   const root = staff.find(s => s.reportsTo === null)
   if (!root) return null
   const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
-  const level1 = directReports(root.name)
 
-  const PersonCard = ({ node, size }: { node: StaffNode; size: 'mid' | 'leaf' }) => {
+  const Card = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
-    const isMid = size === 'mid'
-    const avatarPx = isMid ? 40 : 32
+    const isRoot = depth === 0
+    const isDir = depth === 1
+    const w = isRoot ? 200 : isDir ? 170 : 146
+    const avatarPx = isDir ? 38 : 30
     return (
-      <div
-        className="rounded-xl text-center"
-        style={{
-          backgroundColor: isMid ? C.panelAlt : C.panelDeep,
-          border: `1px solid ${colour}${isMid ? '' : '40'}`,
-          padding: isMid ? 12 : 10,
-          width: isMid ? 168 : 132,
-        }}
-      >
-        <img
-          src={avatarUrl(node.avatar)}
-          alt=""
-          className="rounded-full mx-auto mb-1 object-cover"
-          style={{ width: avatarPx, height: avatarPx, backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
-        />
-        <p className={isMid ? 'text-xs font-bold truncate' : 'text-xs font-medium truncate'} style={{ color: isMid ? C.text : C.text2 }}>{node.name}</p>
-        <p className="text-[10px] truncate" style={{ color: colour }}>{node.role}</p>
+      <div className="org-card" style={{ width: w, background: isDir ? C.panelAlt : C.panelDeep, border: `${isDir ? 2 : 1}px solid ${colour}${isRoot || isDir ? '' : '55'}`, padding: isRoot ? 12 : isDir ? 11 : 9 }}>
+        {isRoot
+          ? <div className="org-initials" style={{ background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(x => x[0]).join('').slice(0, 3)}</div>
+          : <img src={avatarUrl(node.avatar)} alt="" className="org-avatar" style={{ width: avatarPx, height: avatarPx, background: `${colour}20`, border: `1px solid ${colour}55` }} />}
+        <div className="org-name" style={{ color: isRoot || isDir ? C.text : C.text2 }}>{node.name}</div>
+        <div className="org-role" style={{ color: isRoot ? C.text5 : colour }}>{node.role}</div>
       </div>
     )
   }
 
-  // Recursive sub-tree: renders a person + all of their reports beneath them,
-  // to any depth, so the chart shows the FULL roster (physios under the Head
-  // Physio, analysts under Performance, academy coaches under the Assistant,
-  // etc.) — not just the top two levels.
-  const Subtree = ({ node, depth }: { node: StaffNode; depth: number }) => {
+  // Recursive node — renders a person and (if any) a <ul> of their reports.
+  // The connector lines are drawn purely in CSS (.org-tree below), so the
+  // tree stays centred and aligned at any depth.
+  const Node = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const reports = directReports(node.name)
     return (
-      <div className="flex flex-col items-center">
-        <PersonCard node={node} size={depth === 0 ? 'mid' : 'leaf'} />
-        {reports.length > 0 && (
-          <>
-            <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-            <div className="flex gap-3 justify-center items-start flex-wrap">
-              {reports.map(rep => (
-                <div key={rep.name} className="flex flex-col items-center">
-                  <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
-                  <Subtree node={rep} depth={depth + 1} />
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      <li>
+        <Card node={node} depth={depth} />
+        {reports.length > 0 && <ul>{reports.map(rep => <Node key={rep.name} node={rep} depth={depth + 1} />)}</ul>}
+      </li>
     )
   }
+
+  const depts = Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept)))
 
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
-
-      {/* Root — Owner / Board */}
-      <div className="flex justify-center mb-2">
-        <div className="rounded-xl p-4 text-center w-56" style={{ backgroundColor: C.panelAlt, border: `2px solid ${C.text5}` }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(75,85,99,0.2)', color: C.text5 }}>
-            {root.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
-          </div>
-          <p className="text-sm font-bold" style={{ color: C.text }}>{root.name}</p>
-          <p className="text-[10px]" style={{ color: C.text5 }}>{root.role}</p>
-        </div>
+      <div style={{ overflowX: 'auto', paddingBottom: 12 }}>
+        <ul className="org-tree">
+          <Node node={root} depth={0} />
+        </ul>
       </div>
-
-      {/* Connector from root down */}
-      <div className="flex justify-center mb-1"><div className="w-px h-6" style={{ backgroundColor: '#374151' }} /></div>
-
-      {/* Level 1 columns — each top-of-tree person gets their own column
-          containing their card + their direct reports below. Reports are
-          derived from the staff[].reportsTo edges, so changing a
-          reportsTo here re-routes the lines automatically. */}
-      {/* Full reporting tree — each board-reporting leader heads a column that
-          expands recursively to every level beneath them. */}
-      <div className="flex justify-center gap-8 items-start flex-wrap overflow-x-auto pb-2">
-        {level1.map(person => (
-          <div key={person.name} className="flex flex-col items-center">
-            <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-            <Subtree node={person} depth={0} />
-          </div>
-        ))}
-      </div>
-
-      {/* Legend — dept colours present in the rendered roster */}
-      <div className="flex gap-3 justify-center mt-8 flex-wrap">
-        {Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept))).map(dept => (
+      <div className="flex gap-3 justify-center mt-6 flex-wrap">
+        {depts.map(dept => (
           <div key={dept} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DEPT_COLOR[dept as Dept] }} />
             {dept === 'DoF' ? 'Football' : dept}
           </div>
         ))}
       </div>
+      <style>{`
+        .org-tree, .org-tree ul { display: flex; padding: 0; margin: 0; list-style: none; justify-content: center; }
+        .org-tree li { position: relative; padding: 26px 9px 0; }
+        .org-tree li::before, .org-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #374151; width: 50%; height: 26px; }
+        .org-tree li::after { right: auto; left: 50%; border-left: 1px solid #374151; }
+        .org-tree li:only-child::before, .org-tree li:only-child::after { display: none; }
+        .org-tree li:only-child { padding-top: 26px; }
+        .org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
+        .org-tree li:last-child::before { border-right: 1px solid #374151; }
+        .org-tree ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #374151; width: 0; height: 26px; }
+        .org-tree > li { padding-top: 0; }
+        .org-tree > li::before, .org-tree > li::after { display: none; }
+        .org-card { display: inline-block; border-radius: 12px; text-align: center; vertical-align: top; }
+        .org-initials { width: 44px; height: 44px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; margin: 0 auto 8px; }
+        .org-avatar { border-radius: 9999px; margin: 0 auto 5px; display: block; object-fit: cover; }
+        .org-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .org-role { font-size: 10px; line-height: 1.25; margin-top: 2px; }
+      `}</style>
     </div>
   )
 }
@@ -690,6 +661,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
