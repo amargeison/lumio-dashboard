@@ -15,7 +15,8 @@ import {
 } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
 import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from '../_lib/session-plan'
-import { getReviews, subscribe as subscribeReviews } from '../_lib/session-review'
+import { getReviews, getReview, subscribe as subscribeReviews } from '../_lib/session-review'
+import { upsertLesson, removeLesson, lessonFromSession, sessionLessonId } from '../_lib/lessons-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
@@ -119,7 +120,15 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const reviewed = reviewedIds.includes(sel.id)
   useEffect(() => { setShowReview(false) }, [selId])
 
-  const markDone = () => { isDone ? clearStatus(sel.id) : setStatus(sel.id, 'done') }
+  const markDone = () => {
+    if (isDone) {
+      clearStatus(sel.id)
+      removeLesson(sessionLessonId(sel.id))   // un-marking removes the entry it created
+    } else {
+      setStatus(sel.id, 'done')
+      upsertLesson(lessonFromSession(sel, getReview(sel.id)?.review))  // auto-populate from the AI review if present
+    }
+  }
   const onDelete = () => {
     const next = allSessions.find(s => s.id !== sel.id)
     deleteSession(sel.id)

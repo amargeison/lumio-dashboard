@@ -14,6 +14,7 @@ import type { TodaySession } from '../_lib/coach-data'
 import { addPlan } from '../_lib/session-plan'
 import { DEMO_REVIEWS, REVIEW_STAGES, type DemoReview, type FocusStatus, type Airtime } from '../_lib/session-review-data'
 import { getReview, saveReview } from '../_lib/session-review'
+import { upsertLesson, lessonFromSession } from '../_lib/lessons-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 type Stage = 'idle' | 'recording' | 'processing' | 'report'
@@ -69,10 +70,14 @@ export function SessionReviewPanel({ T, accent, density, session }: Common & { s
   }, [stage])
 
   // Persist the completed review so the planner shows "Reviewed" on reopen/reload.
+  // If the session was already marked done, upsert its Lesson Summary so the
+  // entry picks up the review content (it may have been a skeleton before).
   useEffect(() => {
     if (stage !== 'report' || !review) return
     saveReview({ id: `review-${session.id}`, sessionId: session.id, player: session.player, createdAt: Date.now(), review })
-  }, [stage, session.id, session.player, review])
+    if (session.status === 'done') upsertLesson(lessonFromSession(session, review))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, session.id, session.player, session.status, review])
 
   // ── graceful fallback ──────────────────────────────────────────────────────
   if (!review) {
@@ -218,6 +223,13 @@ function ReportView({ T, accent, density, session, review, planSaved, onCreatePl
 
   return (
     <div>
+      {session.status === 'done' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, padding: '7px 11px', background: 'rgba(111,168,138,0.12)', border: `1px solid ${T.good}`, borderRadius: 8 }}>
+          <Icon name="note" size={13} stroke={1.9} style={{ color: T.good }} />
+          <span style={{ fontSize: 11.5, color: T.text2 }}>Lesson summary updated in <strong style={{ color: T.text }}>Lesson Summaries</strong>.</span>
+        </div>
+      )}
+
       {/* focus point results */}
       <MiniHead T={T}>Plan vs delivery · focus points</MiniHead>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

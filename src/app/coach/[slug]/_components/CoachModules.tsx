@@ -17,7 +17,7 @@ import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
 import { NewSummaryModal } from './NewSummary'
-import { getAddedLessons, subscribe as subscribeLessons } from '../_lib/lessons-store'
+import { getAllLessons, subscribe as subscribeLessons } from '../_lib/lessons-store'
 import { BooksPanel } from './BooksPanel'
 import { openResource } from './ResourceDocs'
 import { DrillLibrary } from './DrillLibrary'
@@ -229,9 +229,8 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
 // ════════════════════════════════════════════════════════════════════════════
 export function LessonsView({ T, accent, density }: Common) {
   const players = useAllPlayers()
-  const [added, setAdded] = useState<Lesson[]>([])
-  useEffect(() => { const r = () => setAdded(getAddedLessons()); r(); return subscribeLessons(r) }, [])
-  const allLessons = [...added, ...LESSONS]
+  const [allLessons, setAllLessons] = useState<Lesson[]>(LESSONS)
+  useEffect(() => { const r = () => setAllLessons(getAllLessons()); r(); return subscribeLessons(r) }, [])
   const [selId, setSelId] = useState(LESSONS[0].id)
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
