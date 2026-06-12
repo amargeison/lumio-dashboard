@@ -111,3 +111,56 @@ the session). To eyeball it: `npm run dev` → open `/womens/womens-demo` → si
 
 > Housekeeping: `tsconfig.travelcheck.json` (repo root, untracked) is a temporary
 > scoped typecheck config from this session — safe to delete.
+
+---
+
+# v2 redesign — AI agent as the flagship (follow-up session)
+
+Reframed per founder feedback: the flagship is the **AI doing the booking
+legwork**, not the cost table. Commits `3fd5f50e`, `1694580c` on `dev`.
+
+## What changed
+- **Travel Researcher (`TravelResearcher.tsx`)** — the hero. A 4-step AI agent
+  (Configure → Research → Results → Book) adapted from the Boxing/Tennis
+  "Travel Researcher" pattern for a football away day: **coach + hotel + meals**
+  (NO flights — Pro Phase 2). Modes: Full away day / Coach only / Hotel only /
+  Meals only — so you can do the whole trip in one or just book a coach. It
+  researches, **scores** options (Lumio score + cheapest/best badges), drafts a
+  booking enquiry, and hands off (simulated send). Canned in demo; live AI
+  scaffolded (`TODO(live)` → `/api/ai/womens`).
+- **AI supplier discovery** — results aren't limited to saved suppliers. Options
+  with `savedSupplierId: null` are flagged "✨ Found for you" with a **Save
+  supplier** chip, and a callout explains it. This is the answer to "a new club
+  in a new division has no hotels/caterers saved" — the agent finds them.
+- **Overview reframed** — leads with the **"Plan away trip"** hero + one-click
+  **Book Team Coach / Book Hotel / Order Pre-Match Meals** cards, plus the
+  **"what's booked" status board** (Coach/Hotel/Meals/Status per away fixture)
+  and season stats. Status board + book buttons were ported from the old Club
+  Operations travel tab.
+- **Cost compare demoted** — the same-day-vs-overnight comparison moved into a
+  **Cost compare** sub-tab (`TripCostCompare.tsx`). Still fully functional
+  (engine, both costs, recommendation, per-trip draft→send); just no longer the
+  headline. Module sub-tabs: Overview / Cost compare / Suppliers.
+- **Club Operations travel tab retired** — `PlayerWelfareHub` gained a
+  backward-compatible `hideTravelTab` prop. Women's Club Operations now passes
+  it (defaultTab → matchday, subtitle drops "Travel logistics"). **Men's
+  football is unaffected** (prop defaults false; the tab still shows there).
+
+## Still stubbed / next (updated)
+- Researcher **live path** (`mode='live'`): real coach/hotel/catering research +
+  scoring via `/api/ai/womens`, a real search/Maps source for discovery, and
+  Resend send. Demo canned path is the only one wired.
+- **"Save supplier"** in the researcher is UI-only in demo — on live it should
+  `INSERT` into `sports_trip_suppliers`.
+- Migration 106 still needs applying (SQL editor) — unchanged from above.
+- **Club/Woking + Non-League port**: copy `TravelLogisticsView.tsx`,
+  `TravelResearcher.tsx`, `TripCostCompare.tsx` + a portal fixtures file into the
+  new portal; swap accent + demo data; render in that portal's section switch.
+  Shared lib (`src/lib/sports/travel/*`) reused untouched. For men's football,
+  decide whether to give Travel & Logistics its own menu item too (then pass
+  `hideTravelTab` to its Club Operations as well).
+
+> Environment note: the editor tooling intermittently truncated large files on
+> in-place edits this session (`page.tsx`, `PlayerWelfareHub.tsx`) — each was
+> caught via syntactic typecheck and rebuilt cleanly before commit. All files
+> verify NUL-clean, typecheck and lint clean.
