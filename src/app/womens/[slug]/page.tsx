@@ -5574,7 +5574,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'licensing':   return <ClubLicensingView />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
-      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hideTravelTab defaultTab="matchday" title="Club Operations" subtitle="Matchday ops · compliance · insurance · player satisfaction" />
       case 'kit-manager':  return <WomensKitManagerView />
       case 'travel-logistics':
         // Demo workspace (womens-demo) runs the canned/simulated path; a
@@ -6139,3 +6139,4 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+

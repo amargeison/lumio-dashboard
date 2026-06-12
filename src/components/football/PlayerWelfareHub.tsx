@@ -725,6 +725,10 @@ export interface PlayerWelfareHubProps {
   subtitle?: string
   /** "womens" adds maternity / cycle / women's-specific safeguarding to the foreign-player checklist */
   variant?: 'mens' | 'womens'
+  /** Hide the Travel & Logistics tab. The Women's portal sets this because
+   *  Travel & Logistics is now its own top-level module; men's football
+   *  still surfaces it here (default false, so men's is unaffected). */
+  hideTravelTab?: boolean
 }
 
 export default function PlayerWelfareHub({
@@ -734,8 +738,14 @@ export default function PlayerWelfareHub({
   title = 'Player Welfare & Club Operations',
   subtitle = 'Foreign player integration · travel · matchday · compliance · wellbeing',
   variant = 'mens',
+  hideTravelTab = false,
 }: PlayerWelfareHubProps) {
-  const [tab, setTab] = useState<WelfareTabId>(defaultTab)
+  // When travel is hidden, never let it be the active tab (the host may
+  // still pass defaultTab="travel" historically).
+  const visibleTabs = hideTravelTab ? TABS.filter(t => t.id !== 'travel') : TABS
+  const initialTab: WelfareTabId =
+    hideTravelTab && defaultTab === 'travel' ? 'matchday' : defaultTab
+  const [tab, setTab] = useState<WelfareTabId>(initialTab)
 
   return (
     <div className="space-y-4">
@@ -749,7 +759,7 @@ export default function PlayerWelfareHub({
 
       {/* Tab bar — cricket v2 style (inline-flex, accent underline) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${COLORS.border}`, overflowX: 'auto' }}>
-        {TABS.map(t => {
+        {visibleTabs.map(t => {
           const active = tab === t.id
           const TabIcon = t.icon
           return (
@@ -785,3 +795,4 @@ export default function PlayerWelfareHub({
     </div>
   )
 }
+
