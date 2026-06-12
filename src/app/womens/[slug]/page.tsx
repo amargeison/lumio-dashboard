@@ -4554,6 +4554,155 @@ function StaffCardModal({ s, onClose }: { s: typeof WOMENS_STAFF[number]; onClos
   )
 }
 
+// ─── FACILITIES — STADIUM & FACILITIES ────────────────────────────────────────
+const StadiumFacilitiesView = ({ club }: { club: WomensClub }) => {
+  const stands = [
+    { name: 'North Stand (Main)', cap: 2400, covered: 'Yes', acc: '12 WAV', notes: 'Hospitality boxes, press, gantry' },
+    { name: 'East Terrace',       cap: 1600, covered: 'Part', acc: '6 WAV',  notes: 'Home supporters, family zone' },
+    { name: 'South Stand',        cap: 1500, covered: 'Yes', acc: '6 WAV',  notes: 'Away allocation + neutral' },
+    { name: 'West Terrace',       cap: 1000, covered: 'No',  acc: '—',      notes: 'Standing, safe-standing rail' },
+  ]
+  const facilities = [
+    { f: 'Home changing room', s: 'Refurbished 2025' }, { f: 'Away changing room', s: 'Compliant' },
+    { f: 'Match officials room', s: 'Compliant' }, { f: 'Medical / treatment room', s: 'Compliant · defib on site' },
+    { f: 'Media & press room', s: '40 seats · broadcast feed' }, { f: 'Hospitality suite', s: '8 boxes · 120 covers' },
+    { f: 'Club shop', s: 'Matchday + online' }, { f: 'Family fan zone', s: 'Open 2h pre-KO' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Stadium & Facilities" subtitle={`${club.stadium} · capacity ${club.capacity.toLocaleString()}`} icon="🏟️" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Capacity" value={club.capacity.toLocaleString()} sub="All seated + safe-standing" color="pink" />
+        <StatCard label="Stands" value="4" sub="2 covered · 2 terrace" color="blue" />
+        <StatCard label="Hospitality" value="8" sub="Boxes · 120 covers" color="amber" />
+        <StatCard label="Accessibility" value="24" sub="WAV spaces · Changing Places" color="teal" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Stadium Overview</h3>
+          {[['Pitch dimensions','105m × 68m (FA standard)'],['Floodlights','LED · 800 lux (broadcast)'],['Undersoil heating','No — frost covers held'],['Big screen','Yes · 24m²'],['PA / scoreboard','Tested matchday-1'],['Ground grading','FA Women’s Tier 2']].map(([l,v])=>(
+            <div key={l} className="flex justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-500">{l}</span><span className="text-xs text-gray-200 font-medium">{v}</span></div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Safety & Compliance</h3>
+          {[['Safety certificate','Valid to Aug 2027','green'],['Stewarding','SGSA-compliant · 20 stewards','green'],['Last ground inspection','12 Mar 2026 — passed','green'],['Crowd doctor + ambulance','Confirmed each matchday','green'],['Evacuation plan','Reviewed Feb 2026','amber']].map(([l,v,c])=>(
+            <div key={l} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-400">{l}</span><span className={`text-xs font-medium ${c==='green'?'text-green-400':'text-amber-400'}`}>{v}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Stands</h3></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Stand</th><th className="text-left p-3">Capacity</th><th className="text-left p-3">Covered</th><th className="text-left p-3">Accessibility</th><th className="text-left p-3">Notes</th></tr></thead><tbody>
+          {stands.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.name}</td><td className="p-3 text-gray-300 text-xs">{r.cap.toLocaleString()}</td><td className="p-3 text-xs"><span className={`px-2 py-0.5 rounded ${r.covered==='Yes'?'bg-green-600/20 text-green-400':r.covered==='Part'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400'}`}>{r.covered}</span></td><td className="p-3 text-gray-400 text-xs">{r.acc}</td><td className="p-3 text-gray-500 text-xs">{r.notes}</td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Matchday Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {facilities.map(x=>(<div key={x.f} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{x.f}</div><div className="text-[10px] text-green-400 mt-0.5">{x.s}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FACILITIES — PITCH & GROUNDS ─────────────────────────────────────────────
+const PitchGroundsView = () => {
+  const maint = [
+    { t: 'Mowing (28mm)', freq: '3× / week', last: 'Today 06:30', next: 'Wed', s: 'green' },
+    { t: 'Line marking', freq: 'Matchday-1', last: 'Fri', next: 'Next home', s: 'green' },
+    { t: 'Aeration (verti-drain)', freq: 'Monthly', last: '02 Apr', next: '02 May', s: 'green' },
+    { t: 'Fertilisation', freq: '6-weekly', last: '20 Mar', next: '01 May', s: 'amber' },
+    { t: 'Divoting / repairs', freq: 'Post-match', last: 'Sun', next: 'Post next match', s: 'green' },
+    { t: 'Deep scarification', freq: 'Off-season', last: 'Jul 2025', next: 'Jun 2026', s: 'amber' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Pitch & Grounds" subtitle="Oakridge Stadium pitch · GMA performance quality standard" icon="🌱" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="GMA Rating" value="8.6 / 10" sub="Performance Quality Standard" color="green" />
+        <StatCard label="Mowing Height" value="28 mm" sub="Match length" color="teal" />
+        <StatCard label="Matches Since Reno" value="14" sub="Hybrid relay Jul 2025" color="blue" />
+        <StatCard label="Next Renovation" value="Jun 2026" sub="End of season" color="amber" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Pitch Specification</h3>
+          {[['Surface','FibreLink reinforced hybrid (95% natural)'],['Drainage','Sand-band · primary + lateral'],['Irrigation','Pop-up automated · 18 heads'],['Soil','USGA rootzone'],['Last GMA assessment','08 Apr 2026 — 8.6/10'],['Condition','Excellent · even cover']].map(([l,v])=>(
+            <div key={l} className="flex justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-500">{l}</span><span className="text-xs text-gray-200 font-medium text-right">{v}</span></div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Usage & Conditions</h3>
+          {[['Matches this month','3 (2 home · 1 cup)','green'],['Training on stadium pitch','Captain’s run only','green'],['Weather risk (7 day)','Low — light rain Thu','green'],['Frost cover','On standby','amber'],['Pitch inspection','Matchday-1, 16:00','green']].map(([l,v,c])=>(
+            <div key={l} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-400">{l}</span><span className={`text-xs font-medium ${c==='green'?'text-green-400':'text-amber-400'}`}>{v}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Maintenance Schedule</h3></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Task</th><th className="text-left p-3">Frequency</th><th className="text-left p-3">Last Done</th><th className="text-left p-3">Next Due</th><th className="text-left p-3">Status</th></tr></thead><tbody>
+          {maint.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.t}</td><td className="p-3 text-gray-400 text-xs">{r.freq}</td><td className="p-3 text-gray-400 text-xs">{r.last}</td><td className="p-3 text-gray-300 text-xs">{r.next}</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${r.s==='green'?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{r.s==='green'?'On track':'Due soon'}</span></td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Grounds Team & Equipment</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[['Head Groundsperson','Dave Pryce · IOG Level 3'],['Assistant','1 FT + 2 matchday'],['Mowers','2× cylinder · 1× rotary'],['Verti-drain / sprayer','On site']].map(([a,b])=>(<div key={a} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{a}</div><div className="text-[10px] text-gray-500 mt-0.5">{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FACILITIES — TRAINING GROUND ─────────────────────────────────────────────
+const TrainingGroundView = () => {
+  const bookings = [
+    { time: '08:00', team: 'First team — recovery', pitch: 'Grass 1', s: 'In progress' },
+    { time: '09:30', team: 'First team — main session', pitch: 'Grass 1 (GPS)', s: 'Scheduled' },
+    { time: '11:00', team: 'Goalkeepers', pitch: '3G area', s: 'Scheduled' },
+    { time: '13:00', team: 'U21 development', pitch: 'Grass 2', s: 'Scheduled' },
+    { time: '16:00', team: 'U18 academy', pitch: 'Grass 3 (GPS)', s: 'Scheduled' },
+    { time: '18:00', team: 'Community / CoE', pitch: '3G area', s: 'Booked' },
+  ]
+  const fac = [
+    { f: 'Full-size grass pitches', s: '4 · 2 GPS-enabled' }, { f: '3G / 4G surface', s: 'Floodlit · year-round' },
+    { f: 'Indoor dome', s: '60×40m · all-weather' }, { f: 'Gym & S&C suite', s: '24 stations · platforms' },
+    { f: 'Hydrotherapy & recovery', s: 'Pool · ice baths · compression' }, { f: 'Medical centre', s: 'Treatment · imaging referral' },
+    { f: 'Analysis suite', s: 'Edit bays · meeting room' }, { f: 'Education / classroom', s: 'Scholar programme' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Training Ground" subtitle="Oakridge Training Centre · first team + academy" icon="📍" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Grass Pitches" value="4" sub="2 GPS-enabled" color="green" />
+        <StatCard label="All-Weather" value="2" sub="3G area + indoor dome" color="blue" />
+        <StatCard label="Gym Stations" value="24" sub="S&C + lifting platforms" color="pink" />
+        <StatCard label="Recovery Suite" value="Yes" sub="Pool · ice · compression" color="teal" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {fac.map(x=>(<div key={x.f} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{x.f}</div><div className="text-[10px] text-pink-400 mt-0.5">{x.s}</div></div>))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between"><h3 className="text-sm font-bold text-white">Today’s Pitch & Facility Bookings</h3><span className="text-[10px] text-gray-500">4 pitches · 1 dome</span></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Time</th><th className="text-left p-3">Group</th><th className="text-left p-3">Pitch / Area</th><th className="text-left p-3">Status</th></tr></thead><tbody>
+          {bookings.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-300 text-xs font-mono">{r.time}</td><td className="p-3 text-gray-200 font-medium">{r.team}</td><td className="p-3 text-gray-400 text-xs">{r.pitch}</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${r.s==='In progress'?'bg-green-600/20 text-green-400':r.s==='Booked'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400'}`}>{r.s}</span></td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Site Information</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[['Address','Oakridge Training Centre, Lane End'],['Opened','2021 · expanded 2024'],['GPS coverage','JOHAN — 2 pitches'],['Access','First team + academy + CoE']].map(([a,b])=>(<div key={a} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-[10px] text-gray-500">{a}</div><div className="text-xs text-white font-medium mt-0.5">{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
   <div>
@@ -5631,9 +5780,10 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
         // Demo workspace (womens-demo) runs the canned/simulated path; a
         // real signed-in portal (isDemoShell === false) would run live.
         return <TravelLogisticsView mode={session.isDemoShell !== false ? 'demo' : 'live'} />
+      case 'facilities':      return <StadiumFacilitiesView club={club} />
+      case 'pitch-grounds':   return <PitchGroundsView />
+      case 'training-ground': return <TrainingGroundView />
       case 'matchday-ops':
-      case 'pitch-grounds':
-      case 'training-ground':
         return (
           <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
             <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
@@ -6190,6 +6340,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
 
 
 
