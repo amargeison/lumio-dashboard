@@ -226,6 +226,13 @@ function OrgChartTab({ club }: { club: ClubProps }) {
     const cont = containerRef.current
     if (!cont) return
     const cb = cont.getBoundingClientRect()
+    // A CSS `zoom`/transform ancestor (sport portals use zoom: 0.9) makes
+    // getBoundingClientRect return already-scaled pixels; the SVG (inside the
+    // same scaled context) scales them AGAIN. Normalise client coords back to
+    // the container's own layout units so the lines track the boxes exactly.
+    const scale = cont.offsetWidth ? cb.width / cont.offsetWidth : 1
+    const lx = (clientX: number) => Math.round((clientX - cb.left) / scale)
+    const ly = (clientY: number) => Math.round((clientY - cb.top) / scale)
     const segs: string[] = []
     for (const person of staff) {
       const reports = staff.filter(s => s.reportsTo === person.name)
@@ -233,15 +240,15 @@ function OrgChartTab({ club }: { club: ClubProps }) {
       const pe = cardRefs.current[person.name]
       if (!pe) continue
       const pr = pe.getBoundingClientRect()
-      const px = Math.round(pr.left + pr.width / 2 - cb.left)
-      const py = Math.round(pr.bottom - cb.top)
+      const px = lx(pr.left + pr.width / 2)
+      const py = ly(pr.bottom)
       const midY = py + 20
       for (const rep of reports) {
         const ce = cardRefs.current[rep.name]
         if (!ce) continue
         const cr = ce.getBoundingClientRect()
-        const cx = Math.round(cr.left + cr.width / 2 - cb.left)
-        const cy = Math.round(cr.top - cb.top)
+        const cx = lx(cr.left + cr.width / 2)
+        const cy = ly(cr.top)
         segs.push(`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`)
       }
     }
@@ -709,6 +716,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
