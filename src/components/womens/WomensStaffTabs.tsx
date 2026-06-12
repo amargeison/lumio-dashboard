@@ -217,33 +217,39 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   if (!root) return null
   const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
 
-  const Card = ({ node, depth }: { node: StaffNode; depth: number }) => {
+  // Compact pill for a person; root + the two directors are emphasised.
+  const RowCard = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
     const isRoot = depth === 0
-    const isDir = depth === 1
-    const w = isRoot ? 200 : isDir ? 170 : 146
-    const avatarPx = isDir ? 38 : 30
+    const emphasised = depth <= 1
+    const deptLabel = node.dept === 'Board' ? '' : node.dept === 'DoF' ? 'Football' : node.dept
     return (
-      <div className="org-card" style={{ width: w, background: isDir ? C.panelAlt : C.panelDeep, border: `${isDir ? 2 : 1}px solid ${colour}${isRoot || isDir ? '' : '55'}`, padding: isRoot ? 12 : isDir ? 11 : 9 }}>
+      <div className="org-card" style={{ background: emphasised ? C.panelAlt : C.panelDeep, border: `1px solid ${colour}${isRoot ? '' : emphasised ? 'aa' : '55'}` }}>
         {isRoot
-          ? <div className="org-initials" style={{ background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(x => x[0]).join('').slice(0, 3)}</div>
-          : <img src={avatarUrl(node.avatar)} alt="" className="org-avatar" style={{ width: avatarPx, height: avatarPx, background: `${colour}20`, border: `1px solid ${colour}55` }} />}
-        <div className="org-name" style={{ color: isRoot || isDir ? C.text : C.text2 }}>{node.name}</div>
-        <div className="org-role" style={{ color: isRoot ? C.text5 : colour }}>{node.role}</div>
+          ? <div className="org-ini" style={{ background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(w => w[0]).join('').slice(0, 3)}</div>
+          : <img src={avatarUrl(node.avatar)} alt="" className="org-av" style={{ width: 30, height: 30, background: `${colour}20`, border: `1px solid ${colour}55` }} />}
+        <div className="org-meta">
+          <div className="org-nm" style={{ color: C.text }}>{node.name}</div>
+          <div className="org-rl" style={{ color: isRoot ? C.text5 : colour }}>{node.role}{deptLabel ? ` · ${deptLabel}` : ''}</div>
+        </div>
       </div>
     )
   }
 
-  // Recursive node — renders a person and (if any) a <ul> of their reports.
-  // The connector lines are drawn purely in CSS (.org-tree below), so the
-  // tree stays centred and aligned at any depth.
-  const Node = ({ node, depth }: { node: StaffNode; depth: number }) => {
+  // Recursive indented row. Connectors (elbow + spine) are drawn in CSS on
+  // each child of .org-children — robust at any depth/breadth (unlike a
+  // top-down bus, which sprawls when sibling sub-trees differ in width).
+  const Row = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const reports = directReports(node.name)
     return (
-      <li>
-        <Card node={node} depth={depth} />
-        {reports.length > 0 && <ul>{reports.map(rep => <Node key={rep.name} node={rep} depth={depth + 1} />)}</ul>}
-      </li>
+      <div className="org-row-wrap">
+        <RowCard node={node} depth={depth} />
+        {reports.length > 0 && (
+          <div className="org-children">
+            {reports.map(rep => <Row key={rep.name} node={rep} depth={depth + 1} />)}
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -252,10 +258,8 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
-      <div style={{ overflowX: 'auto', paddingBottom: 12 }}>
-        <ul className="org-tree">
-          <Node node={root} depth={0} />
-        </ul>
+      <div className="org-root" style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <Row node={root} depth={0} />
       </div>
       <div className="flex gap-3 justify-center mt-6 flex-wrap">
         {depts.map(dept => (
@@ -266,22 +270,19 @@ function OrgChartTab({ club }: { club: ClubProps }) {
         ))}
       </div>
       <style>{`
-        .org-tree, .org-tree ul { display: flex; padding: 0; margin: 0; list-style: none; justify-content: center; }
-        .org-tree li { position: relative; padding: 26px 9px 0; }
-        .org-tree li::before, .org-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #374151; width: 50%; height: 26px; }
-        .org-tree li::after { right: auto; left: 50%; border-left: 1px solid #374151; }
-        .org-tree li:only-child::before, .org-tree li:only-child::after { display: none; }
-        .org-tree li:only-child { padding-top: 26px; }
-        .org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
-        .org-tree li:last-child::before { border-right: 1px solid #374151; }
-        .org-tree ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #374151; width: 0; height: 26px; }
-        .org-tree > li { padding-top: 0; }
-        .org-tree > li::before, .org-tree > li::after { display: none; }
-        .org-card { display: inline-block; border-radius: 12px; text-align: center; vertical-align: top; }
-        .org-initials { width: 44px; height: 44px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; margin: 0 auto 8px; }
-        .org-avatar { border-radius: 9999px; margin: 0 auto 5px; display: block; object-fit: cover; }
-        .org-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .org-role { font-size: 10px; line-height: 1.25; margin-top: 2px; }
+        .org-root { min-width: 0; }
+        .org-card { display: inline-flex; align-items: center; gap: 10px; border-radius: 10px; padding: 7px 12px; }
+        .org-ini { width: 30px; height: 30px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex: 0 0 auto; }
+        .org-av { border-radius: 9999px; object-fit: cover; flex: 0 0 auto; }
+        .org-meta { line-height: 1.25; white-space: nowrap; }
+        .org-nm { font-size: 12.5px; font-weight: 700; }
+        .org-rl { font-size: 10.5px; }
+        .org-row-wrap > .org-card { margin-top: 6px; }
+        .org-children { margin-left: 15px; }
+        .org-children > .org-row-wrap { position: relative; padding-left: 24px; }
+        .org-children > .org-row-wrap::before { content: ''; position: absolute; left: 0; top: 28px; width: 22px; height: 2px; background: #2A3444; border-radius: 2px; }
+        .org-children > .org-row-wrap::after { content: ''; position: absolute; left: 0; top: 0; width: 2px; height: 28px; background: #2A3444; }
+        .org-children > .org-row-wrap:not(:last-child)::after { height: 100%; }
       `}</style>
     </div>
   )
@@ -661,6 +662,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
