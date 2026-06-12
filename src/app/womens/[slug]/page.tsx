@@ -58,6 +58,7 @@ import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActions
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 import TravelLogisticsView from './_components/TravelLogisticsView'
 import { WOMENS_STAFF, DEPT_COLOR } from './_lib/womens-staff-data'
+import { buildPlayerCard } from './_lib/womens-player-cards'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -1415,6 +1416,7 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
   ]
 
   const [filter, setFilter] = useState<'all' | 'fulltime' | 'parttime' | 'dualreg' | 'leave' | 'international'>('all')
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const filtered = players.filter(p => {
     if (filter === 'all') return true
     if (filter === 'fulltime') return p.employment === 'Full-time'
@@ -1493,7 +1495,7 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
             {filtered.map(p => {
               const wb = welfareBadge(p.welfare)
               return (
-                <tr key={p.name} className="border-b border-gray-800/50">
+                <tr key={p.name} onClick={() => setSelectedPlayer(p.name)} className="border-b border-gray-800/50 hover:bg-pink-600/5 cursor-pointer transition-colors">
                   <td className="p-3 text-gray-200 font-medium">{p.name}</td>
                   <td className="p-3 text-gray-400">{p.pos}</td>
                   <td className="p-3">
@@ -1525,6 +1527,88 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
 
       <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
         ⚠ Fatima Al-Said — ITC (International Transfer Certificate) pending. Cannot be registered until clearance received from FIFA TMS.
+      </div>
+      <p className="text-[11px] text-gray-600 mt-2">Click a player for their full profile card.</p>
+      {selectedPlayer && (() => {
+        const pl = players.find(p => p.name === selectedPlayer)
+        return pl ? <WomensPlayerCardModal player={pl} onClose={() => setSelectedPlayer(null)} /> : null
+      })()}
+    </div>
+  )
+}
+
+// ─── WOMEN'S PLAYER CARD MODAL (Football-Pro-style) ────────────────
+function WomensPlayerCardModal({ player, onClose }: { player: { name: string; pos: string; ageBand: string; nationality: string; welfare: string; contract: string }; onClose: () => void }) {
+  const c = buildPlayerCard(player)
+  const statColor = (v: number) => v >= 80 ? '#22c55e' : v >= 65 ? '#EC4899' : v >= 50 ? '#eab308' : '#ef4444'
+  const fitBg = c.fitTone === 'fit' ? '#16a34a30' : c.fitTone === 'injured' ? '#dc262630' : '#d9770630'
+  const fitFg = c.fitTone === 'fit' ? '#4ade80' : c.fitTone === 'injured' ? '#f87171' : '#fb923c'
+  const moraleFg = c.morale >= 75 ? '#4ade80' : c.morale >= 50 ? '#EC4899' : '#f87171'
+  const wellbeing: Array<[string, number, string]> = [['Morale', c.morale, moraleFg], ['GPS Load (this week)', c.gpsLoad, '#EC4899'], ['Recovery Score', c.recovery, '#16a34a']]
+  const contract: Array<[string, string]> = [['Market Value', c.marketValue], ['Contract Until', player.contract], ['Wage Band', c.wageBand], ['Agent', c.agent], ['Nationality', player.nationality], ['Appearances', String(c.appearances)], ['Minutes Played', c.minutes], ['Signed From', c.signedFrom]]
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-[10000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.78)' }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6" style={{ background: '#0F1117', borderColor: '#BE185D40' }}>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white" style={{ background: '#BE185D' }}>{c.number}</div>
+            <div>
+              <div className="text-2xl font-extrabold text-white">{player.name}</div>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded text-xs font-bold" style={{ background: '#BE185D30', color: '#F472B6' }}>{player.pos}</span>
+                <span className="text-sm">{player.nationality}</span>
+                <span className="text-xs text-gray-500">Age {c.age}</span>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase" style={{ background: fitBg, color: fitFg }}>{c.fitLabel}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-sm px-3.5 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white">✕ Close</button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Performance</div>
+            <div className="flex gap-4 mb-5">
+              <div className="text-center"><div className="text-2xl font-black" style={{ color: '#EC4899' }}>{c.rating.toFixed(1)}</div><div className="text-[11px] text-gray-500">Rating</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-white">{c.goals}</div><div className="text-[11px] text-gray-500">Goals</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-white">{c.assists}</div><div className="text-[11px] text-gray-500">Assists</div></div>
+            </div>
+            <div className="text-[11px] text-gray-500 mb-2">Last 5 matches</div>
+            <div className="flex gap-1.5 mb-5">{c.form.map((r, i) => (<div key={i} className="flex-1 text-center rounded py-1" style={{ background: r >= 7.5 ? '#16a34a30' : r >= 6.5 ? '#BE185D30' : '#dc262630' }}><span className="text-xs font-bold" style={{ color: r >= 7.5 ? '#4ade80' : r >= 6.5 ? '#F472B6' : '#f87171' }}>{r.toFixed(1)}</span></div>))}</div>
+            <div className="text-[11px] text-gray-500 mb-2.5">Attributes</div>
+            {(['PAC', 'SHO', 'PAS', 'DRI', 'DEF', 'PHY'] as const).map((k) => { const v = c.attrs[k]; return (
+              <div key={k} className="flex items-center gap-2 mb-1.5">
+                <div className="w-8 text-[11px] font-bold text-gray-400">{k}</div>
+                <div className="flex-1 h-1.5 rounded" style={{ background: '#374151' }}><div className="h-full rounded" style={{ width: `${v}%`, background: statColor(v) }} /></div>
+                <div className="w-6 text-right text-[11px] font-bold" style={{ color: statColor(v) }}>{v}</div>
+              </div>) })}
+          </div>
+
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Contract &amp; Value</div>
+            {contract.map(([l, v]) => (
+              <div key={l} className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0"><span className="text-[13px] text-gray-500">{l}</span><span className="text-[13px] font-semibold text-white text-right">{v}</span></div>
+            ))}
+          </div>
+
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Wellbeing &amp; Load</div>
+            {wellbeing.map(([l, v, col]) => (
+              <div key={l} className="mb-5">
+                <div className="flex justify-between mb-1.5"><span className="text-[13px] text-gray-500">{l}</span><span className="text-[13px] font-bold" style={{ color: col }}>{v}{l === 'Morale' ? '/100' : '%'}</span></div>
+                <div className="h-2 rounded" style={{ background: '#374151' }}><div className="h-full rounded" style={{ width: `${v}%`, background: col }} /></div>
+              </div>
+            ))}
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-3">Injury History</div>
+            {c.injuries.map((inj, i) => (<div key={i} className="flex justify-between rounded-lg px-3 py-2 mb-2" style={{ background: '#111318' }}><span className="text-[13px] text-white">{inj.type}</span><span className="text-xs text-gray-500">{inj.date}{inj.games ? ` · ${inj.games}` : ''}</span></div>))}
+          </div>
+        </div>
+
+        <div className="flex gap-2.5 flex-wrap">
+          {['Log Injury', 'Contact Agent', 'Extend Contract', 'Transfer List', 'Player Report', 'Team Talk'].map((act) => (
+            <button key={act} onClick={onClose} className="px-4 py-2.5 rounded-lg text-[13px] font-bold text-white" style={{ background: '#BE185D' }}>{act}</button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -6340,6 +6424,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
 
 
 
