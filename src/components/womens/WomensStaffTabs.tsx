@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { WOMENS_STAFF, DEPT_COLOR, type StaffDept } from '@/app/womens/[slug]/_lib/womens-staff-data'
 
 // ─── Avatar helper ──────────────────────────────────────────────────────────
@@ -221,41 +221,50 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   const [paths, setPaths] = useState<string[]>([])
   const [box, setBox] = useState({ w: 0, h: 0 })
 
-  useEffect(() => {
-    const compute = () => {
-      const cont = containerRef.current
-      if (!cont) return
-      const cb = cont.getBoundingClientRect()
-      const segs: string[] = []
-      for (const person of staff) {
-        const reports = staff.filter(s => s.reportsTo === person.name)
-        if (!reports.length) continue
-        const pe = cardRefs.current[person.name]
-        if (!pe) continue
-        const pr = pe.getBoundingClientRect()
-        const px = pr.left + pr.width / 2 - cb.left
-        const py = pr.bottom - cb.top
-        const midY = py + 19
-        for (const rep of reports) {
-          const ce = cardRefs.current[rep.name]
-          if (!ce) continue
-          const cr = ce.getBoundingClientRect()
-          const cx = cr.left + cr.width / 2 - cb.left
-          const cy = cr.top - cb.top
-          segs.push(`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`)
-        }
+  // Measure box positions and draw connectors from real coordinates.
+  const compute = useCallback(() => {
+    const cont = containerRef.current
+    if (!cont) return
+    const cb = cont.getBoundingClientRect()
+    const segs: string[] = []
+    for (const person of staff) {
+      const reports = staff.filter(s => s.reportsTo === person.name)
+      if (!reports.length) continue
+      const pe = cardRefs.current[person.name]
+      if (!pe) continue
+      const pr = pe.getBoundingClientRect()
+      const px = Math.round(pr.left + pr.width / 2 - cb.left)
+      const py = Math.round(pr.bottom - cb.top)
+      const midY = py + 20
+      for (const rep of reports) {
+        const ce = cardRefs.current[rep.name]
+        if (!ce) continue
+        const cr = ce.getBoundingClientRect()
+        const cx = Math.round(cr.left + cr.width / 2 - cb.left)
+        const cy = Math.round(cr.top - cb.top)
+        segs.push(`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`)
       }
-      setBox({ w: cont.scrollWidth, h: cont.scrollHeight })
-      setPaths(segs)
     }
+    setBox({ w: cont.scrollWidth, h: cont.scrollHeight })
+    setPaths(segs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [club])
+
+  useEffect(() => {
     compute()
+    const r1 = requestAnimationFrame(() => requestAnimationFrame(compute)) // after layout settles
+    const t = window.setTimeout(compute, 450)
+    // re-measure once fonts finish loading (text reflow shifts box positions)
+    const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts
+    fonts?.ready?.then(() => compute()).catch(() => {})
     const ro = new ResizeObserver(compute)
     if (containerRef.current) ro.observe(containerRef.current)
     window.addEventListener('resize', compute)
-    const t = window.setTimeout(compute, 350) // re-measure after avatars load
-    return () => { ro.disconnect(); window.removeEventListener('resize', compute); window.clearTimeout(t) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [club])
+    return () => {
+      cancelAnimationFrame(r1); window.clearTimeout(t)
+      ro.disconnect(); window.removeEventListener('resize', compute)
+    }
+  }, [compute])
 
   if (!root) return null
 
@@ -278,7 +287,7 @@ function OrgChartTab({ club }: { club: ClubProps }) {
       >
         {isRoot
           ? <div style={{ width: 46, height: 46, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto 8px', background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(x => x[0]).join('').slice(0, 3)}</div>
-          : <img src={avatarUrl(node.avatar)} alt="" style={{ width: avatarPx, height: avatarPx, borderRadius: 9999, objectFit: 'cover', margin: '0 auto 6px', display: 'block', background: `${colour}20`, border: `1px solid ${colour}55` }} />}
+          : <img src={avatarUrl(node.avatar)} alt="" onLoad={compute} style={{ width: avatarPx, height: avatarPx, borderRadius: 9999, objectFit: 'cover', margin: '0 auto 6px', display: 'block', background: `${colour}20`, border: `1px solid ${colour}55` }} />}
         <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.name}</div>
         <div style={{ fontSize: 10.5, lineHeight: 1.2, marginTop: 2, color: isRoot ? C.text5 : colour }}>{node.role}{deptLabel ? ` · ${deptLabel}` : ''}</div>
       </div>
@@ -286,16 +295,14 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   }
 
   // Each node is a centred column: its box above a row of its children's
-  // columns. Connector lines are NOT CSS — they're an SVG overlay drawn from
-  // the measured box positions, so they always join box-bottom to child-top
-  // however lopsided the tree is.
+  // columns. Connector lines are an SVG overlay drawn from measured positions.
   const Node = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const reports = directReports(node.name)
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
         <Box node={node} depth={depth} />
         {reports.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginTop: 38 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginTop: 40 }}>
             {reports.map(rep => <Node key={rep.name} node={rep} depth={depth + 1} />)}
           </div>
         )}
@@ -311,7 +318,7 @@ function OrgChartTab({ club }: { club: ClubProps }) {
       <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
         <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', padding: '4px 10px 10px' }}>
           <svg width={box.w} height={box.h} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 0, overflow: 'visible' }}>
-            {paths.map((d, i) => <path key={i} d={d} fill="none" stroke="#3A4254" strokeWidth={1.5} />)}
+            {paths.map((d, i) => <path key={i} d={d} fill="none" stroke="#3A4254" strokeWidth={1.5} shapeRendering="crispEdges" />)}
           </svg>
           <Node node={root} depth={0} />
         </div>
@@ -702,6 +709,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
