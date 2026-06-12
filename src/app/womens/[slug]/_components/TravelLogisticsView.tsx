@@ -20,7 +20,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Bus, BedDouble, Clock, MapPin, Users, ArrowRight, Plus, X,
+  Bus, Clock, MapPin, Users, ArrowRight, Plus, X,
   Mail, Sparkles, AlertTriangle, CheckCircle2, Moon, Sun, Info,
 } from 'lucide-react'
 import {
@@ -90,7 +90,8 @@ export default function TravelLogisticsView({
     setLoading(false)
   }
 
-  useEffect(() => { reload() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [ds])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { reload() }, [ds])
 
   const selected = trips.find((t) => t.id === selectedId) ?? null
 
