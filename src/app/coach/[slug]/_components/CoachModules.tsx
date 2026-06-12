@@ -16,8 +16,14 @@ import { printBeltCertificate } from './BeltCertificate'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
+import { NewSummaryModal } from './NewSummary'
+import { getAddedLessons, subscribe as subscribeLessons } from '../_lib/lessons-store'
 import { BooksPanel } from './BooksPanel'
 import { openResource } from './ResourceDocs'
+import { DrillLibrary } from './DrillLibrary'
+import { OfferedPackages, PackageProgressModal } from './Packages'
+import { usedFromProgress, subscribe as subscribePackages } from '../_lib/packages-store'
+import type { Package } from '../_lib/coach-data'
 import { VideoModal } from './VideoModal'
 import { AddPlayerModal } from './AddPlayerModal'
 import { printWelcomePack } from './WelcomePack'
@@ -222,18 +228,23 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
 // LESSON SUMMARIES  (master–detail)
 // ════════════════════════════════════════════════════════════════════════════
 export function LessonsView({ T, accent, density }: Common) {
+  const players = useAllPlayers()
+  const [added, setAdded] = useState<Lesson[]>([])
+  useEffect(() => { const r = () => setAdded(getAddedLessons()); r(); return subscribeLessons(r) }, [])
+  const allLessons = [...added, ...LESSONS]
   const [selId, setSelId] = useState(LESSONS[0].id)
   const [shareOpen, setShareOpen] = useState(false)
-  const sel = LESSONS.find(l => l.id === selId)!
+  const [newOpen, setNewOpen] = useState(false)
+  const sel = allLessons.find(l => l.id === selId) ?? allLessons[0]
   const skillNames = (ids: string[]) => ids.map(id => ALL_SKILLS.find(s => s.id === id)?.name ?? id)
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Lesson Summaries" sub="What you covered, the key takeaways and the homework — ready to share with players and parents."
-        action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>} />
+        action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>} />
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: density.gap }}>
         {/* List */}
         <Card T={T} density={density} style={{ padding: 8, alignSelf: 'start' }}>
-          {LESSONS.map(l => {
+          {allLessons.map(l => {
             const active = l.id === selId
             return (
               <div key={l.id} onClick={() => setSelId(l.id)} style={{ padding: '10px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
@@ -319,6 +330,7 @@ export function LessonsView({ T, accent, density }: Common) {
         </Card>
       </div>
       {shareOpen && <LessonShareMenu T={T} accent={accent} lesson={sel} onClose={() => setShareOpen(false)} />}
+      {newOpen && <NewSummaryModal T={T} accent={accent} density={density} players={players} onClose={() => setNewOpen(false)} onCreated={id => setSelId(id)} />}
     </div>
   )
 }
@@ -752,19 +764,22 @@ export function MessagesView({ T, accent, density }: Common) {
 // RESOURCE CENTRE
 // ════════════════════════════════════════════════════════════════════════════
 export function ResourcesView({ T, accent, density }: Common) {
-  const cats = ['All', 'Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Books'] as const
+  const cats = ['All', 'Drill Library', 'Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Books'] as const
   const [cat, setCat] = useState<typeof cats[number]>('All')
   const [video, setVideo] = useState<Resource | null>(null)
-  const list = cat === 'All' || cat === 'Books' ? RESOURCES : RESOURCES.filter(r => r.category === cat)
+  const fullList = cat === 'All' || cat === 'Books' || cat === 'Drill Library'
+  const hideGrid = cat === 'Books' || cat === 'Drill Library'
+  const list = fullList ? RESOURCES : RESOURCES.filter(r => r.category === cat)
   const fmtIcon = (f: Resource['format']) => f === 'Video' ? 'play' : f === 'Plan' ? 'calendar' : f === 'Worksheet' ? 'note' : 'note'
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the belt system." />
       <div style={{ display: 'flex', gap: 6, marginBottom: density.gap, flexWrap: 'wrap' }}>
-        {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ appearance: 'none', border: `1px solid ${cat === c ? accent.border : T.border}`, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer', background: cat === c ? accent.dim : 'transparent', color: cat === c ? accent.hex : T.text2, fontWeight: cat === c ? 600 : 400 }}>{c === 'Books' ? '📚 Books' : c}</button>)}
+        {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ appearance: 'none', border: `1px solid ${cat === c ? accent.border : T.border}`, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer', background: cat === c ? accent.dim : 'transparent', color: cat === c ? accent.hex : T.text2, fontWeight: cat === c ? 600 : 400 }}>{c === 'Books' ? '📚 Books' : c === 'Drill Library' ? '🎾 Drill Library' : c}</button>)}
       </div>
+      {cat === 'Drill Library' && <DrillLibrary T={T} accent={accent} density={density} />}
       {cat === 'Books' && <BooksPanel T={T} accent={accent} density={density} />}
-      {cat !== 'Books' && (
+      {!hideGrid && (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
         {list.map(r => {
           const isVideo = r.format === 'Video'
@@ -807,6 +822,9 @@ function levelColour(T: ThemeTokens, l: string) { return l === 'Beginner' ? T.go
 export function PaymentsView({ T, accent, density }: Common) {
   const cfg = useCoachSettings()
   const statusTone = (s: string) => s === 'active' ? T.good : s === 'expiring' ? T.warn : T.bad
+  const [selected, setSelected] = useState<Package | null>(null)
+  const [, setTick] = useState(0)
+  useEffect(() => subscribePackages(() => setTick(t => t + 1)), [])
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Payments & Packages" sub={`Lesson packs, credits used and what's outstanding · Private £${cfg.privateRate}/hr`} />
@@ -823,8 +841,10 @@ export function PaymentsView({ T, accent, density }: Common) {
           </Card>
         ))}
       </div>
+      <OfferedPackages T={T} accent={accent} density={density} />
+
       <Card T={T} density={density}>
-        <SectionHead T={T} title="Lesson packages" />
+        <SectionHead T={T} title="Lesson packages" right="Tap a player to update their sessions" />
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
             <thead>
@@ -833,26 +853,34 @@ export function PaymentsView({ T, accent, density }: Common) {
               </tr>
             </thead>
             <tbody>
-              {PACKAGES.map((p, i) => (
-                <tr key={i} style={{ borderTop: `1px solid ${T.border}` }}>
-                  <td style={{ padding: '10px', fontSize: 12.5, color: T.text, fontWeight: 500 }}>{p.player}</td>
+              {PACKAGES.map((p, i) => {
+                const used = usedFromProgress(p.id) ?? p.used
+                return (
+                <tr key={i} onClick={() => setSelected(p)} style={{ borderTop: `1px solid ${T.border}`, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = T.hover)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <td style={{ padding: '10px', fontSize: 12.5, color: T.text, fontWeight: 500 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>{p.player}<Icon name="chevron-right" size={13} stroke={1.8} style={{ color: T.text3 }} /></span>
+                  </td>
                   <td style={{ padding: '10px', fontSize: 12, color: T.text2 }}>{p.plan}</td>
                   <td style={{ padding: '10px', minWidth: 120 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: 1, height: 5, borderRadius: 3, background: T.hover, overflow: 'hidden', minWidth: 60 }}>
-                        <div style={{ width: `${(p.used / p.total) * 100}%`, height: '100%', background: p.used >= p.total ? T.bad : accent.hex }} />
+                        <div style={{ width: `${(used / p.total) * 100}%`, height: '100%', background: used >= p.total ? T.bad : accent.hex }} />
                       </div>
-                      <span className="tnum" style={{ fontSize: 11, color: T.text2, fontFamily: FONT_MONO }}>{p.used}/{p.total}</span>
+                      <span className="tnum" style={{ fontSize: 11, color: T.text2, fontFamily: FONT_MONO }}>{used}/{p.total}</span>
                     </div>
                   </td>
                   <td style={{ padding: '10px' }}><Pill T={T} color={statusTone(p.status)} bg={`${statusTone(p.status)}1f`}>{p.status}</Pill></td>
                   <td style={{ padding: '10px', fontSize: 12, color: T.text2, fontFamily: FONT_MONO }}>{p.renews}</td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
       </Card>
+
+      {selected && <PackageProgressModal T={T} accent={accent} density={density} pkg={selected} onClose={() => setSelected(null)} />}
     </div>
   )
 }

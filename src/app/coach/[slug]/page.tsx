@@ -28,6 +28,7 @@ import {
 } from './_components/CoachModules'
 import { SessionPlannerView } from './_components/SessionPlanner'
 import { CourtPlannerView } from './_components/CourtPlanner'
+import { EquipmentView } from './_components/Equipment'
 
 const COACH_ROLES = [
   { id: 'head',      label: 'Head Coach',      icon: '🎾', description: 'Full access to every module' },
@@ -145,7 +146,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
     switch (active) {
       case 'dashboard':   return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'lessons':     return <LessonsView T={T} accent={accent} density={density} />
-      case 'planner':     return <SessionPlannerView T={T} accent={accent} density={density} />
+      case 'planner':     return <SessionPlannerView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'development': return <DevelopmentView T={T} accent={accent} density={density} />
       case 'belts':       return <BeltsView T={T} accent={accent} density={density} />
       case 'calendar':    return <CalendarView T={T} accent={accent} density={density} />
@@ -154,6 +155,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       case 'roster':      return <RosterView T={T} accent={accent} density={density} />
       case 'messages':    return <MessagesView T={T} accent={accent} density={density} />
       case 'resources':   return <ResourcesView T={T} accent={accent} density={density} />
+      case 'equipment':   return <EquipmentView T={T} accent={accent} density={density} />
       case 'payments':    return <PaymentsView T={T} accent={accent} density={density} />
       case 'settings':    return <SettingsView T={T} accent={accent} density={density} />
       default:            return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
@@ -329,11 +331,11 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
           </div>
 
           {/* right rail */}
-          <div className="coach-rail" style={{ width: 230, flexShrink: 0, borderLeft: `1px solid ${line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14, textAlign: 'center' }}>
-              <div style={{ width: 56, margin: '0 auto' }}><CoachAvatar size={56} /></div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 8 }}>{coachName}</div>
-              <div style={{ fontSize: 10.5, color: T.text3 }}>{settings.cert}</div>
+          <div className="coach-rail" style={{ width: 264, flexShrink: 0, borderLeft: `1px solid ${line}`, padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
+              <div style={{ width: 72, margin: '0 auto' }}><CoachAvatar size={72} /></div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
+              <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                 <RailStat T={T} label="Players" value={COACH_ORG.season.activePlayers} />
                 <RailStat T={T} label="Lessons/wk" value={COACH_ORG.season.lessonsThisWeek} />
@@ -341,7 +343,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
               </div>
             </div>
 
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Belt distribution</div>
               {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
                 <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
@@ -352,7 +354,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
               ))}
             </div>
 
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
               {[['Belts awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>

@@ -168,6 +168,112 @@ export const LTA_MAP: Record<string, LtaStage> = {
   black:  { stage: 'Performance · Regional–National', colour: '#2A3142', ages: 'Elite', focus: 'National-level performance & mastery' },
 }
 
+// ─── Playing standard ───────────────────────────────────────────────────────
+// The "standard" is the LTA pathway stage that the belt maps to. Belt ⇄ standard
+// are 1:1, so picking one syncs the other (see NewSession).
+export const STANDARDS: { id: string; label: string; belt: string }[] =
+  BELTS.map(b => ({ id: b.id, label: LTA_MAP[b.id].stage, belt: b.id }))
+
+export const beltIndexOf = (id: string) => Math.max(0, BELTS.findIndex(b => b.id === id))
+
+// ─── Session-focus catalogue ────────────────────────────────────────────────
+// A categorised list of coachable focuses, each tagged with the belt it most
+// naturally aligns to. Rendered as grouped <optgroup>s in the New session form;
+// choosing a belt jumps to that belt's headline focus.
+export type FocusOpt = { label: string; belt: string }
+export const FOCUS_CATALOGUE: { category: string; options: FocusOpt[] }[] = [
+  { category: 'Foundations & rallying', options: [
+    { label: 'Ready position & split-step',        belt: 'white' },
+    { label: 'Forehand groundstroke — low to high', belt: 'white' },
+    { label: 'Grips — eastern & continental',       belt: 'white' },
+    { label: 'Cooperative rally (3–5 balls)',       belt: 'white' },
+    { label: 'Two-handed backhand drive',           belt: 'yellow' },
+    { label: 'Sustained rally — 10+ cross-court',   belt: 'yellow' },
+    { label: 'Footwork & recovery to centre',       belt: 'yellow' },
+    { label: 'Ball tracking & timing',              belt: 'yellow' },
+  ] },
+  { category: 'Net & touch', options: [
+    { label: 'Forehand volley — punch & firm wrist', belt: 'orange' },
+    { label: 'Backhand volley — block forward',      belt: 'orange' },
+    { label: 'Backhand slice — stable, low',         belt: 'orange' },
+    { label: 'Net positioning & cutting angles',     belt: 'orange' },
+    { label: 'Half-volley pick-up in transition',    belt: 'purple' },
+  ] },
+  { category: 'Serve & return', options: [
+    { label: 'Flat first serve — trophy & pronation', belt: 'green' },
+    { label: 'Toss & service rhythm',                 belt: 'green' },
+    { label: 'Return of serve — split & block deep',  belt: 'green' },
+    { label: 'Serve placement — wide / body / T',     belt: 'green' },
+    { label: 'Second serve — reliable kick',          belt: 'blue' },
+    { label: 'Kick serve — heavy topspin',            belt: 'brown' },
+    { label: 'Slice serve — curve it wide',           belt: 'brown' },
+  ] },
+  { category: 'Spin & shape', options: [
+    { label: 'Topspin forehand — brush up & clear',  belt: 'blue' },
+    { label: 'Topspin backhand — drive with shape',  belt: 'blue' },
+    { label: 'Depth & heavy ball — back third',      belt: 'blue' },
+    { label: 'Net clearance & margin',               belt: 'blue' },
+  ] },
+  { category: 'Specialty shots', options: [
+    { label: 'Overhead smash — turn & finish',       belt: 'purple' },
+    { label: 'Drop shot — disguised touch',          belt: 'purple' },
+    { label: 'Lob — offensive & defensive',          belt: 'purple' },
+    { label: 'Inside-out forehand — run around BH',  belt: 'brown' },
+    { label: 'Approach & transition off short balls', belt: 'brown' },
+  ] },
+  { category: 'Tactics & match play', options: [
+    { label: 'Point construction — open & finish',   belt: 'red' },
+    { label: 'Pattern play — serve+1 / return+1',    belt: 'red' },
+    { label: 'Disguise & variation — spin/pace/height', belt: 'red' },
+    { label: 'Reading opponents — spot weaknesses',  belt: 'red' },
+    { label: 'Match management — score & momentum',  belt: 'black' },
+    { label: 'In-match adaptation — change the plan', belt: 'black' },
+    { label: 'Closing out matches — serve it out',   belt: 'black' },
+  ] },
+  { category: 'Movement & mindset', options: [
+    { label: 'Court movement & agility',             belt: 'yellow' },
+    { label: 'Speed & change of direction',          belt: 'green' },
+    { label: 'Match-play fitness & recovery',        belt: 'red' },
+    { label: 'Pressure & mental routines',           belt: 'black' },
+  ] },
+]
+
+// Headline focus for a belt — used to auto-match the focus dropdown to a belt.
+export function focusForBelt(beltId: string): string {
+  for (const g of FOCUS_CATALOGUE) {
+    const hit = g.options.find(o => o.belt === beltId)
+    if (hit) return hit.label
+  }
+  return FOCUS_CATALOGUE[0].options[0].label
+}
+
+// ─── Onboarding → belt mapping ──────────────────────────────────────────────
+// Maps a new player's onboarding answers (experience level, years playing, age)
+// to a sensible starting belt index. This is the "read the onboarding doc and
+// place them" step the coach would otherwise do by hand.
+export const ONBOARDING_LEVELS: { id: string; label: string; base: number }[] = [
+  { id: 'new',          label: 'Brand new to tennis',              base: 0 },
+  { id: 'recreational', label: 'Recreational / casual hitter',     base: 1 },
+  { id: 'club',         label: 'Club / social player',             base: 2 },
+  { id: 'school',       label: 'School team player',               base: 3 },
+  { id: 'improver',     label: 'Improver — solid all-court game',  base: 4 },
+  { id: 'county',       label: 'County junior',                    base: 5 },
+  { id: 'regional',     label: 'Regional / tournament player',     base: 6 },
+  { id: 'performance',  label: 'Performance / national',           base: 8 },
+  { id: 'adult-return', label: 'Adult returning after a break',    base: 2 },
+]
+
+export function mapOnboardingToBelt(level: string, years: number, age: number): number {
+  const base = (ONBOARDING_LEVELS.find(l => l.id === level)?.base) ?? 0
+  let idx = base
+  if (years >= 6) idx += 2
+  else if (years >= 3) idx += 1
+  // Young children stay on the early ball stages regardless of keenness.
+  if (age && age <= 7) idx = Math.min(idx, 1)
+  else if (age && age <= 9) idx = Math.min(idx, 3)
+  return Math.max(0, Math.min(BELTS.length - 1, idx))
+}
+
 // Flat list of every skill with its belt index — used to compute progress.
 export const ALL_SKILLS = BELTS.flatMap((b, bi) =>
   b.skills.map((s, si) => ({ ...s, beltIndex: bi, beltId: b.id, globalIndex: bi * 10 + si })))
@@ -382,6 +488,364 @@ export const RESOURCES: Resource[] = [
   { id: 'r12', title: 'Match-play tactics worksheet',      category: 'Mental',       level: 'Advanced',     format: 'Worksheet', duration: '—',      belt: 'red',    tags: ['tactics','scouting'],        desc: 'Pre-match plan and opponent-read worksheet.' },
 ]
 
+// ─── Drill library ──────────────────────────────────────────────────────────
+// A printable, court-diagrammed drill for every session focus, organised by
+// skill category and tagged to the belt system. Opened as A4 drill sheets from
+// the Resource Centre "Drills" tab. The `court` key chooses a reusable diagram.
+export type DrillCourt = 'rally' | 'baseline' | 'serve' | 'net' | 'movement' | 'target' | 'fullcourt'
+export type Drill = {
+  id: string
+  focus: string          // matches a FOCUS_CATALOGUE label
+  belt: string
+  category: string       // matches a FOCUS_CATALOGUE category
+  court: DrillCourt
+  setup: string
+  levels: [string, string, string, string]
+  cue: string
+  tags: string[]
+}
+
+export function drillLevel(beltId: string): 'Beginner' | 'Intermediate' | 'Advanced' {
+  const i = beltIndexOf(beltId)
+  return i <= 1 ? 'Beginner' : i <= 4 ? 'Intermediate' : 'Advanced'
+}
+
+export const DRILL_LIBRARY: Drill[] = [
+  // ── Foundations & rallying ──
+  { id: 'd1', focus: 'Ready position & split-step', belt: 'white', category: 'Foundations & rallying', court: 'movement',
+    setup: 'Player at the centre mark in an athletic ready position. Coach feeds from the opposite service line and calls “split” just before each feed.',
+    levels: [
+      'Shadow split-steps to a clap — land balanced and wide as the coach’s hand drops.',
+      'Split on the feed, touch the fed ball and recover to centre. 10 in a row.',
+      'Coach feeds left or right at random — split, move, catch the ball in two hands.',
+      'Live mini-rally; the player must visibly split-step before every ball or the point restarts.',
+    ], cue: 'Small hop, land wide and low — be moving before the ball is hit, not after.', tags: ['movement','footwork','warm-up'] },
+  { id: 'd2', focus: 'Forehand groundstroke — low to high', belt: 'white', category: 'Foundations & rallying', court: 'baseline',
+    setup: 'Coach hand-feeds gentle balls to the player’s forehand from a basket at the service line. Player rallies into the open court.',
+    levels: [
+      'Drop-feed to self, swing low-to-high, finish over the shoulder. 10 reps.',
+      'Coach feeds; player hits 8/10 over the net into the singles court.',
+      'Add a cross-court target cone; count balls landing past the service line.',
+      'Cooperative rally to 8 balls, every forehand finishing high.',
+    ], cue: 'Start the racket below the ball and brush up — low to high, finish by your ear.', tags: ['forehand','technique'] },
+  { id: 'd3', focus: 'Grips — eastern & continental', belt: 'white', category: 'Foundations & rallying', court: 'baseline',
+    setup: 'Mark the eastern (groundstroke) and continental (serve/volley) grips. Player practises finding and swapping grips without looking down.',
+    levels: [
+      'Coach calls “eastern” / “continental”; player changes grip in under 2 seconds, eyes up.',
+      'Shadow a forehand (eastern) then a volley (continental), changing between each.',
+      'Coach feeds alternating groundstroke / volley feeds — change grip on the move.',
+      'Live transition: rally, then approach and volley, holding the right grip at each stage.',
+    ], cue: 'Find the bevel by feel — knuckle on the right edge for the forehand, the hammer grip for volleys.', tags: ['grips','technique','fundamentals'] },
+  { id: 'd4', focus: 'Cooperative rally (3–5 balls)', belt: 'white', category: 'Foundations & rallying', court: 'rally',
+    setup: 'Player and partner (or coach) rally cooperatively over the net from the service lines, aiming to keep the ball going.',
+    levels: [
+      'Catch-and-feed — feed, the partner catches and feeds back. Build the rhythm.',
+      'Rally and count out loud; reach 3 in a row, then 5.',
+      'Step back to the baseline; keep a 5-ball rally going with control.',
+      'Co-op challenge — beat your best streak; one shared score for both players.',
+    ], cue: 'Aim for the middle of the court a metre over the net — height buys you time.', tags: ['rally','consistency','co-op'] },
+  { id: 'd5', focus: 'Two-handed backhand drive', belt: 'yellow', category: 'Foundations & rallying', court: 'baseline',
+    setup: 'Feeds to the player’s backhand from the basket. Two hands on the racket, shoulders turned early.',
+    levels: [
+      'Drop-feed, turn the shoulders, drive low-to-high with both hands. 10 reps.',
+      'Coach feeds; 8/10 land in the singles court cross-court.',
+      'Alternate forehand / backhand feeds — recover to centre between each.',
+      'Backhand cross-court rally to 8, then change one down the line.',
+    ], cue: 'Turn both shoulders early, lead with the bottom hand, finish high with the top.', tags: ['backhand','technique'] },
+  { id: 'd6', focus: 'Sustained rally — 10+ cross-court', belt: 'yellow', category: 'Foundations & rallying', court: 'rally',
+    setup: 'Players rally cross-court only, both aiming past the service line into the deep corner.',
+    levels: [
+      'Cooperative cross-court forehands — reach 10 without a miss.',
+      'Same on the backhand diagonal.',
+      'Mix — coach calls “forehand” or “backhand” diagonal each ball.',
+      'First pair to 15 cross-court in a row wins; reset to zero on a miss.',
+    ], cue: 'Same shape every ball — aim a metre over the net into the back third.', tags: ['rally','consistency','depth'] },
+  { id: 'd7', focus: 'Footwork & recovery to centre', belt: 'yellow', category: 'Foundations & rallying', court: 'movement',
+    setup: 'Coach feeds wide to alternate corners. Player hits and recovers to a cone at the centre mark each time.',
+    levels: [
+      'Feed-touch-recover at walking pace; touch the centre cone every time.',
+      'Hit the ball back, then side-shuffle to the cone before the next feed.',
+      'Random feeds left/right; recover with a split-step at centre.',
+      'Live point — coach moves the player, who must recover behind the baseline each shot.',
+    ], cue: 'Hit and get back — quick adjusting steps and a split before the next ball.', tags: ['footwork','movement','recovery'] },
+  { id: 'd8', focus: 'Ball tracking & timing', belt: 'yellow', category: 'Foundations & rallying', court: 'baseline',
+    setup: 'Feeds of varied height and pace. Player calls the bounce and meets clean contact out front.',
+    levels: [
+      'Player says “bounce” then “hit” out loud on each feed.',
+      'Vary the feed height; player adjusts to take it at the top of the bounce.',
+      'Coach shouts a colour at the feed; player calls it before hitting.',
+      'Live rally with the bounce-hit call kept going throughout.',
+    ], cue: 'Watch the ball onto the strings — read the bounce early and meet it out front.', tags: ['timing','tracking','contact'] },
+
+  // ── Net & touch ──
+  { id: 'd9', focus: 'Forehand volley — punch & firm wrist', belt: 'orange', category: 'Net & touch', court: 'net',
+    setup: 'Player at the service line in a continental grip. Coach feeds soft balls to the forehand volley.',
+    levels: [
+      'Catch the ball out front in the volley position to feel the contact point.',
+      'Punch the volley deep — short backswing, firm wrist. 8/10 in.',
+      'Coach feeds quicker; volley to alternating deep corners.',
+      'Feed-and-rally — two volleys then a put-away into the open court.',
+    ], cue: 'No backswing — meet it out front and punch, keep the wrist firm.', tags: ['volley','net','technique'] },
+  { id: 'd10', focus: 'Backhand volley — block forward', belt: 'orange', category: 'Net & touch', court: 'net',
+    setup: 'Continental grip, player at the net. Feeds to the backhand volley.',
+    levels: [
+      'Block-and-catch out front to set the contact point.',
+      'Punch deep with a firm wrist; 8/10 land past the service line.',
+      'Alternating forehand / backhand volley feeds — turn the shoulders each time.',
+      'Reflex volleys — quick hands at the net, keep 6 going.',
+    ], cue: 'Shoulder turn, block forward through the ball — short and firm, not a swing.', tags: ['volley','net','technique'] },
+  { id: 'd11', focus: 'Backhand slice — stable, low', belt: 'orange', category: 'Net & touch', court: 'baseline',
+    setup: 'Feeds to the backhand. Player slices high-to-low with a stable, slightly open face.',
+    levels: [
+      'Shadow the high-to-low path, then drop-feed slices over the net.',
+      'Coach feeds; the slice stays below net-post height past the service line.',
+      'Slice cross-court then down the line on call.',
+      'Rally where the backhand must be sliced — keep it low and deep.',
+    ], cue: 'High to low, hold the face steady — let the ball float and stay low.', tags: ['slice','backhand','touch'] },
+  { id: 'd12', focus: 'Net positioning & cutting angles', belt: 'orange', category: 'Net & touch', court: 'net',
+    setup: 'Player approaches and closes the net. Coach feeds passes and lobs to test position.',
+    levels: [
+      'Shadow the split-step at the net after each approach.',
+      'Coach feeds a passing ball; player volleys into the open court.',
+      'Two-ball pattern — first volley deep, close in, second volley angled away.',
+      'Live point from a feed; player must finish at the net within three shots.',
+    ], cue: 'Close the net behind your volley — take the ball early and cut off the angle.', tags: ['net','positioning','volley'] },
+  { id: 'd13', focus: 'Half-volley pick-up in transition', belt: 'purple', category: 'Net & touch', court: 'net',
+    setup: 'Player in no-man’s-land. Coach feeds at the feet to practise the half-volley pick-up.',
+    levels: [
+      'Soft feeds at the feet; cushion the half-volley back over the net.',
+      'Pick-up, then recover forward to a closer position.',
+      'Approach, get caught at the feet, half-volley deep, then close.',
+      'Live transition point — half-volley once, then finish at the net.',
+    ], cue: 'Low and still — short backswing, soft hands, let the racket do the work.', tags: ['half-volley','transition','touch'] },
+
+  // ── Serve & return ──
+  { id: 'd14', focus: 'Flat first serve — trophy & pronation', belt: 'green', category: 'Serve & return', court: 'serve',
+    setup: 'Player serving from the baseline, target cones in the box. Continental grip throughout.',
+    levels: [
+      'Trophy-pose checks and toss-and-catch — groove the position.',
+      'Serve from the service line, pronate through contact, into the box.',
+      'Serve from the baseline; 6/10 first serves in.',
+      'Serve + play out the point from your own serve.',
+    ], cue: 'Up to the trophy, then drive up and pronate — reach up to the ball, don’t pull down.', tags: ['serve','technique'] },
+  { id: 'd15', focus: 'Toss & service rhythm', belt: 'green', category: 'Serve & return', court: 'serve',
+    setup: 'Focus on a consistent toss and a smooth, unbroken service motion.',
+    levels: [
+      'Toss and let it drop onto a target just inside the baseline.',
+      'Toss-and-catch ten in a row landing in the same spot.',
+      'Full serve with a one-two count — no pause at the trophy.',
+      'Serve under a rhythm cue while hitting a target cone.',
+    ], cue: 'Place the toss, don’t throw it — smooth tempo, one motion, no hitch.', tags: ['serve','toss','rhythm'] },
+  { id: 'd16', focus: 'Return of serve — split & block deep', belt: 'green', category: 'Serve & return', court: 'serve',
+    setup: 'Coach serves; the returner splits on contact and blocks the return deep.',
+    levels: [
+      'Shadow the split-step timed to the coach’s contact.',
+      'Block the serve back deep down the middle with a short take-back.',
+      'Return cross-court into a target zone.',
+      'Return-and-rally — return deep then play the point.',
+    ], cue: 'Split as they strike — short, firm block, send it back deep and central.', tags: ['return','serve','reaction'] },
+  { id: 'd17', focus: 'Serve placement — wide / body / T', belt: 'green', category: 'Serve & return', court: 'serve',
+    setup: 'Cones in the wide, body and T positions of each service box.',
+    levels: [
+      'Serve only to the T; 5/10 hit the target zone.',
+      'Serve only wide; 5/10 in the wide zone.',
+      'Coach calls the target before each serve.',
+      'Serve + 1 — call the target, serve, then attack the likely reply.',
+    ], cue: 'Same toss for every target — disguise it, then aim small.', tags: ['serve','placement','tactics'] },
+  { id: 'd18', focus: 'Second serve — reliable kick', belt: 'blue', category: 'Serve & return', court: 'serve',
+    setup: 'Develop a high-margin spin second serve that lands in under pressure.',
+    levels: [
+      'Brush up the back of the ball, exaggerate the spin over the net.',
+      'Spin serve clears the net by a metre, lands in the box 7/10.',
+      'Second-serve-only points — a double fault loses two.',
+      '4-3 game from second serves only; manage the pressure.',
+    ], cue: 'Spin first, not pace — high over the net, let it kick down into the box.', tags: ['serve','spin','second-serve'] },
+  { id: 'd19', focus: 'Kick serve — heavy topspin', belt: 'brown', category: 'Serve & return', court: 'serve',
+    setup: 'Toss slightly over the head; brush up and across for a serve that jumps.',
+    levels: [
+      '“Throw the racket up at the ball” feeling; brush from 7 to 1 across the ball.',
+      'Kick serve clears the net high and lands in, 6/10.',
+      'Kick to the backhand corner; make it jump above shoulder height.',
+      'Kick second serve in points — earn a weak reply to attack.',
+    ], cue: 'Toss over your head, brush up the back and across — finish on the same side.', tags: ['serve','kick','spin'] },
+  { id: 'd20', focus: 'Slice serve — curve it wide', belt: 'brown', category: 'Serve & return', court: 'serve',
+    setup: 'Continental grip; hit around the outside of the ball to curve it.',
+    levels: [
+      'Side-spin feeds — brush the outside of the ball, watch the curve.',
+      'Slice serve out wide in the deuce court, pulling the returner off court.',
+      'Mix slice-wide and body-jam serves on call.',
+      'Slice-serve + 1 — open the court wide, attack the open side.',
+    ], cue: 'Hit the 3 o’clock of the ball — carve around it and let it swing wide.', tags: ['serve','slice','placement'] },
+
+  // ── Spin & shape ──
+  { id: 'd21', focus: 'Topspin forehand — brush up & clear', belt: 'blue', category: 'Spin & shape', court: 'baseline',
+    setup: 'Build heavy topspin with big net clearance and depth.',
+    levels: [
+      'Drop-feed, brush up sharply, exaggerate the clearance.',
+      'Coach feeds; 8/10 land past the service line with shape.',
+      'Aim a metre over the net into the deep cross-court zone.',
+      'Topspin rally — keep it heavy and deep, change direction on a short ball.',
+    ], cue: 'Low to high, brush up the back — heavy net clearance, let the spin bring it down.', tags: ['forehand','spin','depth'] },
+  { id: 'd22', focus: 'Topspin backhand — drive with shape', belt: 'blue', category: 'Spin & shape', court: 'baseline',
+    setup: 'Topspin backhand (one or two-handed) with depth and shape.',
+    levels: [
+      'Shadow then drop-feed the low-to-high drive.',
+      'Coach feeds; 8/10 deep cross-court with clearance.',
+      'Backhand line then cross-court on call.',
+      'Backhand rally with shape — heavy and deep to 8.',
+    ], cue: 'Drive up through the ball — finish high, keep the depth.', tags: ['backhand','spin','depth'] },
+  { id: 'd23', focus: 'Depth & heavy ball — back third', belt: 'blue', category: 'Spin & shape', court: 'baseline',
+    setup: 'Throw-down line across the court a metre inside the baseline; aim every ball beyond it.',
+    levels: [
+      'Co-op rally; count balls that land in the back third.',
+      'First to 10 in the back third wins.',
+      'Both players must land in the back third or lose the point.',
+      'Live points where short balls inside the line must be attacked.',
+    ], cue: 'Net clearance is depth — aim high and heavy into the back third.', tags: ['depth','consistency','spin'] },
+  { id: 'd24', focus: 'Net clearance & margin', belt: 'blue', category: 'Spin & shape', court: 'rally',
+    setup: 'Raise a rope or band a metre above the net; players must clear it.',
+    levels: [
+      'Co-op rally clearing the high line every ball.',
+      'Count consecutive balls over the high line.',
+      'Points where a ball under the line loses.',
+      'Pressure rally — keep margin on every ball while moving.',
+    ], cue: 'Aim well over the net — margin first, the spin keeps it in.', tags: ['margin','consistency','spin'] },
+
+  // ── Specialty shots ──
+  { id: 'd25', focus: 'Overhead smash — turn & finish', belt: 'purple', category: 'Specialty shots', court: 'net',
+    setup: 'Coach lobs to the net player; turn sideways and finish the smash.',
+    levels: [
+      'Point-and-track lobs without hitting; turn and shuffle under the ball.',
+      'Smash deep feeds into the open court, 7/10 in.',
+      'Smash to a called corner.',
+      'Lob-smash-lob rally — recover and finish under pressure.',
+    ], cue: 'Turn sideways, point at the ball, reach up and finish — like a serve.', tags: ['overhead','net','finishing'] },
+  { id: 'd26', focus: 'Drop shot — disguised touch', belt: 'purple', category: 'Specialty shots', court: 'target',
+    setup: 'Short target zone just over the net on each side. Disguise the drop off a groundstroke shape.',
+    levels: [
+      'Feel-feeds — float the ball softly into the short zone.',
+      'Drop from a feed; land it in the short zone 6/10.',
+      'Disguise it — same prep as a drive, then drop.',
+      'Live point — earn a short ball, drop, then close for the next.',
+    ], cue: 'Same backswing as a drive — soft hands, open face, let it die short.', tags: ['drop-shot','touch','disguise'] },
+  { id: 'd27', focus: 'Lob — offensive & defensive', belt: 'purple', category: 'Specialty shots', court: 'target',
+    setup: 'Mark a deep zone behind the service line. Practise the high defensive lob and the offensive topspin lob.',
+    levels: [
+      'Defensive lob — high and deep over a net player from a feed.',
+      'Offensive topspin lob over the net player into the deep zone.',
+      'Coach calls “defend” or “attack”; choose the right lob.',
+      'Live — the net player attacks, the baseliner mixes pass and lob.',
+    ], cue: 'Defensive: high and deep to reset. Offensive: brush up, over their reach.', tags: ['lob','defence','specialty'] },
+  { id: 'd28', focus: 'Inside-out forehand — run around BH', belt: 'brown', category: 'Specialty shots', court: 'baseline',
+    setup: 'Feeds to the backhand corner; the player runs around to hit the forehand inside-out.',
+    levels: [
+      'Shadow the cross-step around the backhand into an open stance.',
+      'Run-around forehand inside-out to the deep ad corner, 6/10.',
+      'Inside-out then inside-in on call.',
+      'Live — build the point to create the run-around forehand.',
+    ], cue: 'Get round it early — open stance, hit inside-out into the open court.', tags: ['forehand','patterns','weapons'] },
+  { id: 'd29', focus: 'Approach & transition off short balls', belt: 'brown', category: 'Specialty shots', court: 'baseline',
+    setup: 'Coach feeds a short ball; the player approaches and closes the net.',
+    levels: [
+      'Approach deep down the line off a short feed, then split at the net.',
+      'Approach + first volley into the open court.',
+      'Read the short ball — approach down the line, cover the pass.',
+      'Live point — must approach the first short ball and finish at the net.',
+    ], cue: 'Down-the-line approach, deep and through — then close behind it and split.', tags: ['approach','transition','net'] },
+
+  // ── Tactics & match play ──
+  { id: 'd30', focus: 'Point construction — open & finish', belt: 'red', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Build points with a purpose — move the opponent, open the court, finish the right ball.',
+    levels: [
+      'Three-ball pattern: deep, wide, finish — to targets, no opponent.',
+      'Co-op until a short ball appears, then finish to the open court.',
+      'Live points where you must hit two corners before finishing.',
+      'Full points scored — bonus for finishing off a constructed opening.',
+    ], cue: 'Deep gets you neutral, wide opens the court, then finish the short ball.', tags: ['tactics','construction','patterns'] },
+  { id: 'd31', focus: 'Pattern play — serve+1 / return+1', belt: 'red', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Drill the first-strike patterns: serve then the next forehand, return then the next ball.',
+    levels: [
+      'Serve wide + forehand into the open court (shadow, then live feed).',
+      'Serve+1 to targets, both deuce and ad.',
+      'Return+1 — block deep, then attack the next short ball.',
+      'Points starting from serve; score double for executing the pattern.',
+    ], cue: 'Serve to open the court, then the +1 forehand finishes it — know it before you serve.', tags: ['patterns','serve+1','tactics'] },
+  { id: 'd32', focus: 'Disguise & variation — spin/pace/height', belt: 'red', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Mix the ball — change spin, pace and height to break the opponent’s rhythm.',
+    levels: [
+      'Rally alternating a heavy topspin ball then a slice.',
+      'On call, change pace or height mid-rally.',
+      'Points where you must use two different balls before finishing.',
+      'Live — reward variation that forces the error.',
+    ], cue: 'Don’t give the same ball twice — change the picture, take their timing away.', tags: ['variation','disguise','tactics'] },
+  { id: 'd33', focus: 'Reading opponents — spot weaknesses', belt: 'red', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Scout live — find the weaker side and the patterns the opponent dislikes.',
+    levels: [
+      'Rally and report which wing is weaker.',
+      'Play five points attacking only the weaker side.',
+      'Test patterns — does the backhand break down under pace or under spin?',
+      'Match-play set targeting the identified weakness.',
+    ], cue: 'Probe early — find the weaker wing and the uncomfortable ball, then go there on the big points.', tags: ['scouting','tactics','match-play'] },
+  { id: 'd34', focus: 'Match management — score & momentum', belt: 'black', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Play scenarios that train smart score and momentum decisions.',
+    levels: [
+      'Discuss high-percentage choices at 30-30, 40-30 and break point.',
+      'Play from 30-30 each point; choose the right risk.',
+      'Play a game from 0-30 down — claw it back.',
+      'Tie-break focus — one big point at a time, reset between.',
+    ], cue: 'Play the score, not the moment — big points, high-percentage tennis.', tags: ['match-management','mental','tactics'] },
+  { id: 'd35', focus: 'In-match adaptation — change the plan', belt: 'black', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'A losing plan must change — train the in-match adjustment.',
+    levels: [
+      'Name a plan, play three points, then change one thing.',
+      'Down a break, switch tactics (target, spin, court position).',
+      'Coach freezes a point and asks “what now?” — adjust live.',
+      'Sets where you must change plan if two games slip.',
+    ], cue: 'If it’s not working, change something — court position, target, or the ball you give.', tags: ['adaptation','tactics','problem-solving'] },
+  { id: 'd36', focus: 'Closing out matches — serve it out', belt: 'black', category: 'Tactics & match play', court: 'fullcourt',
+    setup: 'Serving for the set — train the nerve and routine to finish.',
+    levels: [
+      'Serve a game from 40-0 up; hold focus to the end.',
+      'Serve out from 30-0; first-serve discipline.',
+      'Serve for the set from 0-0, every game.',
+      'Serve out under fatigue after a movement set.',
+    ], cue: 'Trust your routine — first serve in, play the patterns that got you here.', tags: ['closing','serve','mental'] },
+
+  // ── Movement & mindset ──
+  { id: 'd37', focus: 'Court movement & agility', belt: 'yellow', category: 'Movement & mindset', court: 'movement',
+    setup: 'Cone pattern around the court for first-step speed and recovery.',
+    levels: [
+      'Spider run to five cones at three-quarter pace.',
+      'Split-step then explode to a called cone and back.',
+      'Feed-and-move — hit, recover, react to the next call.',
+      'Live point with a movement focus — visible recovery every ball.',
+    ], cue: 'First step is everything — split, push off the outside foot, recover hard.', tags: ['movement','agility','footwork'] },
+  { id: 'd38', focus: 'Speed & change of direction', belt: 'green', category: 'Movement & mindset', court: 'movement',
+    setup: 'Short shuttle and reaction work for explosive direction changes.',
+    levels: [
+      '5-metre shuttles — plant and drive back.',
+      'React to a hand signal — go left or right.',
+      'Side-shuffle, plant, sprint to a cone on call.',
+      'Movement game — touch the called cone before the coach counts to three.',
+    ], cue: 'Low and balanced into the turn — plant the outside foot and explode out.', tags: ['speed','agility','conditioning'] },
+  { id: 'd39', focus: 'Match-play fitness & recovery', belt: 'red', category: 'Movement & mindset', court: 'movement',
+    setup: 'Point-based conditioning — play out demanding patterns with short recovery.',
+    levels: [
+      '6-ball side-to-side feeds, 20s rest, repeat ×4.',
+      'Two-corner rally for 30s, walk-back recovery.',
+      'Live points with a minimum rally length before they count.',
+      'Three games back-to-back; manage breathing between points.',
+    ], cue: 'Recover between points like a match — breathe, walk, reset, go again.', tags: ['fitness','conditioning','recovery'] },
+  { id: 'd40', focus: 'Pressure & mental routines', belt: 'black', category: 'Movement & mindset', court: 'fullcourt',
+    setup: 'Build a repeatable between-points routine that holds under pressure.',
+    levels: [
+      'Practise the reset routine after every feed (respond-relax-refocus-ready).',
+      'Add a trigger word before each serve and return.',
+      'Play points running the full routine between each.',
+      'Pressure game — one routine slip loses the point.',
+    ], cue: 'Same routine every point — breath, trigger word, then commit.', tags: ['mental','routines','pressure'] },
+]
+
 // ─── Coach AI brief ─────────────────────────────────────────────────────────
 export type CoachBriefItem = { tag: string; pri: 'high' | 'med' | 'low'; txt: string }
 
@@ -406,21 +870,71 @@ export const COACH_MESSAGES: CoachMessage[] = [
 ]
 
 // ─── Payments / packages ────────────────────────────────────────────────────
-export type Package = { player: string; plan: string; used: number; total: number; status: 'active' | 'expiring' | 'overdue'; renews: string }
+export type Package = { id: string; player: string; plan: string; used: number; total: number; status: 'active' | 'expiring' | 'overdue'; renews: string }
 
 export const PACKAGES: Package[] = [
-  { player: 'Tom Okafor',     plan: '10-lesson private pack', used: 7,  total: 10, status: 'active',   renews: '12 Jul' },
-  { player: 'Mia Chen',       plan: '10-lesson private pack', used: 9,  total: 10, status: 'expiring', renews: '20 Jun' },
-  { player: 'Leo Whitfield',  plan: 'Performance monthly',    used: 6,  total: 12, status: 'active',   renews: '01 Jul' },
-  { player: 'Hannah Berg',    plan: '5-lesson private pack',  used: 5,  total: 5,  status: 'overdue',  renews: '—'      },
-  { player: 'Priya Patel',    plan: 'Adult 8-lesson block',   used: 3,  total: 8,  status: 'active',   renews: '15 Aug' },
-  { player: 'Daniel Cruz',    plan: 'Performance monthly',    used: 9,  total: 12, status: 'active',   renews: '01 Jul' },
+  { id: 'pk-tom',    player: 'Tom Okafor',     plan: '10-lesson private pack', used: 7,  total: 10, status: 'active',   renews: '12 Jul' },
+  { id: 'pk-mia',    player: 'Mia Chen',       plan: '10-lesson private pack', used: 9,  total: 10, status: 'expiring', renews: '20 Jun' },
+  { id: 'pk-leo',    player: 'Leo Whitfield',  plan: 'Performance monthly',    used: 6,  total: 12, status: 'active',   renews: '01 Jul' },
+  { id: 'pk-hannah', player: 'Hannah Berg',    plan: '5-lesson private pack',  used: 5,  total: 5,  status: 'overdue',  renews: '—'      },
+  { id: 'pk-priya',  player: 'Priya Patel',    plan: 'Adult 8-lesson block',   used: 3,  total: 8,  status: 'active',   renews: '15 Aug' },
+  { id: 'pk-daniel', player: 'Daniel Cruz',    plan: 'Performance monthly',    used: 9,  total: 12, status: 'active',   renews: '01 Jul' },
 ]
 
 export const PAY_SUMMARY = { mtd: 4280, outstanding: 340, packagesActive: 28, expiringSoon: 3 }
 
+// ─── Packages on offer (the coach's price list) ─────────────────────────────
+export type PackageOffer = {
+  id: string
+  name: string
+  type: 'Private' | 'Group' | 'Performance' | 'Adult' | 'Junior' | 'Cardio'
+  sessions: number
+  price: number
+  per: 'pack' | 'month' | 'term'
+  desc: string
+  includes: string[]
+}
+
+export const PACKAGE_OFFERS: PackageOffer[] = [
+  { id: 'of-priv10', name: '10-lesson private pack', type: 'Private', sessions: 10, price: 360, per: 'pack',
+    desc: 'Ten 1-hour private lessons — best value for committed players.',
+    includes: ['10 × 60-min private lessons', 'Belt progress tracking', 'Lesson summary after each session', 'Saves £20 vs pay-as-you-go'] },
+  { id: 'of-priv5', name: '5-lesson private pack', type: 'Private', sessions: 5, price: 185, per: 'pack',
+    desc: 'A five-lesson block to get started or work on a specific goal.',
+    includes: ['5 × 60-min private lessons', 'Starting belt assessment', 'Lesson summaries', 'Flexible scheduling'] },
+  { id: 'of-perf', name: 'Performance monthly', type: 'Performance', sessions: 12, price: 240, per: 'month',
+    desc: 'Intensive monthly programme for competitive junior players.',
+    includes: ['12 sessions per month', 'Match-play & tactical work', 'Fitness & movement block', 'Tournament planning'] },
+  { id: 'of-adult8', name: 'Adult 8-lesson block', type: 'Adult', sessions: 8, price: 280, per: 'pack',
+    desc: 'Eight lessons for adult improvers — technique and match craft.',
+    includes: ['8 × 60-min lessons', 'Cardio & rally fitness option', 'Doubles tactics', 'Evening slots available'] },
+  { id: 'of-group', name: 'Junior group — term', type: 'Group', sessions: 10, price: 150, per: 'term',
+    desc: 'Weekly small-group coaching across a 10-week term.',
+    includes: ['10 weekly group sessions', 'Max 6 players per court', 'Belt pathway curriculum', 'End-of-term report'] },
+  { id: 'of-cardio', name: 'Cardio tennis — 6 pack', type: 'Cardio', sessions: 6, price: 60, per: 'pack',
+    desc: 'High-energy, music-led tennis fitness — all levels welcome.',
+    includes: ['6 × 45-min cardio sessions', 'All abilities', 'No booking needed — just turn up', 'Great for fitness'] },
+]
+
 // ─── Today's sessions (dashboard timeline) ──────────────────────────────────
 export type CoachScheduleItem = { t: string; what: string; where: string; type: string; highlight?: boolean }
+
+// Today's coaching sessions — the source for the Session Planner.
+export type TodaySession = {
+  id: string; time: string; end: string; player: string; playerId?: string
+  type: 'Private' | 'Group' | 'Cardio' | 'Match play' | 'Mini / red ball'
+  court: string; mins: number; focus: string; status: 'done' | 'now' | 'upcoming'
+  focusPoints?: string[]; drills?: string[]   // set when created via "New session"
+}
+
+export const TODAY_SESSIONS: TodaySession[] = [
+  { id: 'ts1', time: '09:00', end: '09:45', player: 'Mia Chen',     playerId: 'p1', type: 'Private',    court: 'Court 1', mins: 45, focus: 'First serve fundamentals', status: 'done' },
+  { id: 'ts2', time: '10:30', end: '11:30', player: 'Tom Okafor',   playerId: 'p2', type: 'Private',    court: 'Court 2', mins: 60, focus: 'Second serve into serve+1 patterns', status: 'now' },
+  { id: 'ts3', time: '12:00', end: '13:00', player: 'Junior Squad (6)',              type: 'Group',      court: 'Court 1', mins: 60, focus: 'Rally tolerance & match games', status: 'upcoming' },
+  { id: 'ts4', time: '16:00', end: '16:45', player: 'Ava Romero',   playerId: 'p3', type: 'Private',    court: 'Court 3', mins: 45, focus: 'Rally control — 10-ball target', status: 'upcoming' },
+  { id: 'ts5', time: '17:00', end: '18:00', player: 'Cardio Tennis (8)',            type: 'Cardio',     court: 'Court 4', mins: 60, focus: 'High-tempo fitness & live games', status: 'upcoming' },
+  { id: 'ts6', time: '18:00', end: '19:15', player: 'Daniel Cruz',  playerId: 'p6', type: 'Match play', court: 'Court 3', mins: 75, focus: 'Competitive sets — serve+1 patterns', status: 'upcoming' },
+]
 
 export const COACH_TODAY: CoachScheduleItem[] = [
   { t: '08:00', what: 'Court setup & planning',        where: 'Courts 1–3', type: 'Admin' },
@@ -446,6 +960,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'camps',       label: 'Training Camps',     icon: 'plane',        group: 'SCHEDULE', badge: 'NEW' },
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },
+  { id: 'equipment',   label: 'Equipment & Kit',    icon: 'wrench',       group: 'RESOURCES', badge: 'NEW' },
   { id: 'resources',   label: 'Resource Centre',    icon: 'grid',         group: 'RESOURCES', badge: 'NEW' },
   { id: 'payments',    label: 'Payments & Packs',   icon: 'pound',        group: 'BUSINESS' },
   { id: 'settings',    label: 'Settings',           icon: 'settings',     group: 'SETTINGS' },
@@ -800,6 +1315,80 @@ export const VENUES: Venue[] = [
   },
 ]
 
+// ─── Equipment & Kit (all sessions) ─────────────────────────────────────────
+// General coaching inventory so the coach never turns up short. Distinct from
+// camp equipment (one trip) — this is the everyday kit across all sessions.
+export type KitStatus = 'good' | 'low' | 'order' | 'repair'
+export type KitItem = { name: string; qty: string; status: KitStatus; location: string; note?: string }
+export type KitCategory = { category: string; icon: string; items: KitItem[] }
+
+export const EQUIPMENT_INVENTORY: KitCategory[] = [
+  { category: 'Balls & baskets', icon: 'crosshair', items: [
+    { name: 'Yellow balls',            qty: '24 dozen', status: 'good',   location: 'Main coaching bag' },
+    { name: 'Green (transition) balls', qty: '6 dozen',  status: 'low',    location: 'Main coaching bag', note: 'Down to last 2 tubes — reorder' },
+    { name: 'Orange balls',            qty: '5 dozen',  status: 'good',   location: 'Junior bag' },
+    { name: 'Red / foam balls',        qty: '4 dozen',  status: 'good',   location: 'Junior bag' },
+    { name: 'Ball baskets',            qty: '×3',       status: 'good',   location: 'Car boot' },
+    { name: 'Ball tubes (pickup)',     qty: '×2',       status: 'repair', location: 'Car boot', note: 'One spring gone' },
+  ]},
+  { category: 'Coaching aids', icon: 'flag', items: [
+    { name: 'Target cones',            qty: '×40',      status: 'good',   location: 'Main coaching bag' },
+    { name: 'Throw-down lines',        qty: '×4 sets',  status: 'good',   location: 'Main coaching bag' },
+    { name: 'Agility ladders',         qty: '×3',       status: 'good',   location: 'Car boot' },
+    { name: 'Spin / brush trainer',    qty: '×2',       status: 'good',   location: 'Main coaching bag' },
+    { name: 'Hand targets / hoops',    qty: '×6',       status: 'low',    location: 'Junior bag', note: '2 split' },
+    { name: 'Rebound net',             qty: '×1',       status: 'good',   location: 'Club store' },
+  ]},
+  { category: 'Court equipment', icon: 'grid', items: [
+    { name: 'Portable mini-nets',      qty: '×4',       status: 'order',  location: 'Club store', note: '2 damaged — replacements due' },
+    { name: 'Singles sticks',          qty: '×2 pairs', status: 'good',   location: 'Court shed' },
+    { name: 'Net measure stick',       qty: '×1',       status: 'good',   location: 'Main coaching bag' },
+    { name: 'Scoreboard (portable)',   qty: '×1',       status: 'good',   location: 'Car boot' },
+    { name: 'Line tape',               qty: '×3 rolls', status: 'low',    location: 'Club store' },
+  ]},
+  { category: 'Ball machine & tech', icon: 'play', items: [
+    { name: 'Ball machine',            qty: '×1',       status: 'good',   location: 'Club store' },
+    { name: 'Machine remote',          qty: '×1',       status: 'good',   location: 'Club store' },
+    { name: 'Spare batteries',         qty: '×4',       status: 'low',    location: 'Main coaching bag', note: 'Recharge / restock' },
+    { name: 'Camera + tripod',         qty: '×1',       status: 'good',   location: 'Car boot' },
+    { name: 'Coaching tablet',         qty: '×1',       status: 'good',   location: 'Main coaching bag' },
+  ]},
+  { category: 'Medical & welfare', icon: 'medical', items: [
+    { name: 'First aid kit',           qty: '×2',       status: 'good',   location: 'Main coaching bag', note: 'Check plasters' },
+    { name: 'Ice packs',               qty: '×6',       status: 'good',   location: 'Cool box' },
+    { name: 'Sunscreen SPF50',         qty: '×2',       status: 'order',  location: 'Main coaching bag' },
+    { name: 'Electrolyte sachets',     qty: '20',       status: 'low',    location: 'Main coaching bag' },
+    { name: 'Spare water bottles',     qty: '×6',       status: 'good',   location: 'Car boot' },
+  ]},
+  { category: 'Player merch & spares', icon: 'trophy', items: [
+    { name: 'Overgrips',               qty: '×30',      status: 'good',   location: 'Main coaching bag' },
+    { name: 'Vibration dampeners',     qty: '×20',      status: 'good',   location: 'Main coaching bag' },
+    { name: 'Reward stickers (juniors)', qty: '2 packs', status: 'low',   location: 'Junior bag' },
+    { name: 'Lumio wristbands',        qty: '×15',      status: 'good',   location: 'Junior bag' },
+  ]},
+  { category: 'Admin & bag', icon: 'note', items: [
+    { name: 'Coaching whiteboard + pens', qty: '×1',    status: 'good',   location: 'Main coaching bag', note: 'Pens drying out' },
+    { name: 'Register / clipboard',    qty: '×2',       status: 'good',   location: 'Main coaching bag' },
+    { name: 'Lesson cards / score sheets', qty: '×100', status: 'good',   location: 'Office' },
+    { name: 'Bibs / pinnies',          qty: '×20',      status: 'good',   location: 'Car boot' },
+  ]},
+  { category: 'Stringing', icon: 'wrench', items: [
+    { name: 'String reels',            qty: '×3',       status: 'low',    location: 'Office', note: 'Down to one full reel' },
+    { name: 'Grommets (assorted)',     qty: 'kit',      status: 'good',   location: 'Office' },
+    { name: 'Stencil + marker',        qty: '×1',       status: 'good',   location: 'Office' },
+    { name: 'Cutters / pliers',        qty: '×1',       status: 'good',   location: 'Office' },
+  ]},
+]
+
+// What to bring for each session type — the on-court checklist.
+export const SESSION_KITS: { type: string; icon: string; items: string[] }[] = [
+  { type: 'Private lesson', icon: 'flag',     items: ['Ball basket (60+)', 'Cones ×8', 'Throw-down lines', 'Target hoops', 'Whiteboard + pen', 'Water'] },
+  { type: 'Group / squad',  icon: 'people',   items: ['2× ball baskets', 'Cones ×20', 'Throw-down lines ×4', 'Bibs ×12', 'First aid kit', 'Spare balls (2 dozen)'] },
+  { type: 'Cardio Tennis',  icon: 'flame',    items: ['Ball machine or 2 baskets', 'Cones ×16', 'Agility ladders', 'Music speaker', 'Water station', 'Heart-rate cones'] },
+  { type: 'Match play',     icon: 'trophy',   items: ['New pressurised balls', 'Scoreboard', 'Net measure stick', 'Singles sticks', 'Shade / brolly'] },
+  { type: 'Mini / red ball',icon: 'sparkles', items: ['Red & orange balls', 'Mini-nets ×4', 'Fun targets / hoops', 'Reward stickers', 'Foam balls'] },
+]
+
 // ─── Player contact details ─────────────────────────────────────────────────
 export type PlayerContact = {
   playerEmail?: string; playerPhone?: string
@@ -817,6 +1406,36 @@ export const PLAYER_CONTACTS: Record<string, PlayerContact> = {
   p6: { playerEmail: 'daniel.cruz@example.com', playerPhone: '07700 900606', parentName: 'Maria Cruz', parentPhone: '07700 900607', emergencyName: 'Maria Cruz (mother)', emergencyPhone: '07700 900607', address: '9 Willow Way, Riverside', comms: 'Text Daniel directly', medical: 'No known allergies' },
   p7: { playerEmail: 'priya.patel@example.com', playerPhone: '07700 900707', emergencyName: 'Raj Patel (husband)', emergencyPhone: '07700 900708', address: '18 Hawthorn Drive, Riverside', comms: 'Email or WhatsApp', medical: 'No known allergies' },
   p8: { parentName: 'Anna Whitlock', parentEmail: 'anna.whitlock@example.com', parentPhone: '07700 900818', emergencyName: 'Anna Whitlock (mother)', emergencyPhone: '07700 900818', address: '26 Rowan Gardens, Riverside', comms: 'WhatsApp preferred', medical: 'No known allergies' },
+}
+
+// Full lesson history for a player — the real logged summaries (rich) plus a
+// generated earlier history so the profile reads as a complete record.
+export type LessonHistItem = { id: string; date: string; focus: string; type: string; mins: number; takeaway: string; homework: string; detailed?: boolean }
+
+export function playerLessons(p: Player): LessonHistItem[] {
+  const real: LessonHistItem[] = LESSONS.filter(l => l.playerId === p.id).map(l => ({
+    id: `r-${l.id}`, date: l.date, focus: l.focus, type: l.type, mins: l.duration,
+    takeaway: l.takeaways[0], homework: l.homework, detailed: true,
+  }))
+  const skillNames: string[] = []
+  for (let bi = 0; bi <= p.beltIndex; bi++) BELTS[bi].skills.forEach(s => skillNames.push(s.name))
+  const types = ['Private', 'Private', 'Group', 'Private', 'Match play', 'Private', 'Group', 'Private']
+  const dates = ['28 May 2026', '21 May 2026', '14 May 2026', '06 May 2026', '28 Apr 2026', '14 Apr 2026', '31 Mar 2026', '17 Mar 2026']
+  const takeTpl = (s: string, k: number) => [
+    `${s} — clear improvement, holding up well`,
+    `Worked ${s.toLowerCase()}; consistency building nicely`,
+    `${s} starting to click under a bit of pressure`,
+    `Good session on ${s.toLowerCase()} — keep reinforcing`,
+  ][k % 4]
+  const generated: LessonHistItem[] = Array.from({ length: 7 }).map((_, i) => {
+    const s = skillNames[(p.seed + i * 3) % skillNames.length] ?? 'Rally control'
+    return {
+      id: `g-${p.id}-${i}`, date: dates[i] ?? dates[dates.length - 1], focus: s,
+      type: types[i % types.length], mins: i % 3 === 0 ? 45 : 60,
+      takeaway: takeTpl(s, p.seed + i), homework: `10 min a day on ${s.toLowerCase()}; film one set`,
+    }
+  })
+  return [...real, ...generated]
 }
 
 // Richer per-player development stats (deterministic) for the Player
