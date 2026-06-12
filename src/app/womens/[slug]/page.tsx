@@ -56,6 +56,7 @@ import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import WomensInsightsView from '@/components/womens/WomensInsightsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
+import TravelLogisticsView from './_components/TravelLogisticsView'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -5575,8 +5576,11 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
       case 'kit-manager':  return <WomensKitManagerView />
-      case 'matchday-ops':
       case 'travel-logistics':
+        // Demo workspace (womens-demo) runs the canned/simulated path; a
+        // real signed-in portal (isDemoShell === false) would run live.
+        return <TravelLogisticsView mode={session.isDemoShell !== false ? 'demo' : 'live'} />
+      case 'matchday-ops':
       case 'pitch-grounds':
       case 'training-ground':
         return (
