@@ -984,9 +984,9 @@ const MentalHealthView = () => (
   <div>
     <SectionHeader title="Mental Health & Wellbeing" subtitle="Karen Carney Review Standards" icon="🧠" />
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Squad Size" value="24" color="pink" />
-      <StatCard label="Check-ins (month)" value="18" sub="Of 24 players" color="teal" />
-      <StatCard label="Flags Raised" value="1" sub="Performance anxiety" color="amber" />
+      <StatCard label="Squad Size" value="22" color="pink" />
+      <StatCard label="Check-ins (month)" value="17" sub="Of 22 players" color="teal" />
+      <StatCard label="Flags Raised" value="2" sub="Anxiety · rehab adjustment" color="amber" />
       <StatCard label="Referrals Made" value="0" sub="This season" color="green" />
     </div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
@@ -1002,6 +1002,18 @@ const MentalHealthView = () => (
             {player:'Charlotte Reed',date:'1 Apr',score:6,flag:'Performance anxiety — pre-match',followup:'Yes'},
             {player:'Jade Osei',date:'28 Mar',score:9,flag:'—',followup:'No'},
             {player:'Abbi Walsh',date:'28 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Megan Hughes',date:'27 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Fatima Al-Said',date:'27 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Tilly Brooks',date:'26 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Sophie Turner',date:'26 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Emily Zhang',date:'25 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Lucy Whitmore',date:'25 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Sasha Davies',date:'24 Mar',score:6,flag:'Adjusting to rehab — welfare check',followup:'Yes'},
+            {player:'Zara Williams',date:'24 Mar',score:9,flag:'—',followup:'No'},
+            {player:'Bea Chen',date:'23 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Maya Reid',date:'23 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Tessa Foley',date:'22 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Ellie Hayes',date:'22 Mar',score:8,flag:'—',followup:'No'},
           ].map((r: {player:string;date:string;score:number;flag:string;followup:string}, i: number) => (
             <tr key={i} className="border-b border-gray-800/50">
               <td className="p-3 text-gray-200">{r.player}</td>
@@ -1116,9 +1128,26 @@ const MedicalRecordsView = () => (
           {[
             {player:'Emma Clarke',injuries:0,status:'Fit',notes:'ACL screening overdue — schedule this week'},
             {player:'Sophie Turner',injuries:1,status:'RTP Phase 3',notes:'ACL reconstruction Dec 2024 — progressing well'},
-            {player:'Ava Mitchell',injuries:0,status:'Fit (maternity May)',notes:'Pre-leave medical complete'},
+            {player:'Sophie Lawson',injuries:0,status:'Maternity leave',notes:'Pre-leave medical complete · RTP plan on file'},
             {player:'Charlotte Reed',injuries:0,status:'Fit',notes:'Mental health support active — no physical concerns'},
             {player:'Priya Nair',injuries:1,status:'Fit',notes:'Minor ankle — resolved. ACL screening due.'},
+            {player:'Jade Osei',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Abbi Walsh',injuries:0,status:'Fit',notes:'Load managed — high ACWR this week'},
+            {player:'Megan Hughes',injuries:1,status:'Out — hamstring',notes:'Grade 2 hamstring — return May'},
+            {player:'Fatima Al-Said',injuries:0,status:'Fit',notes:'ITC pending — cleared medically'},
+            {player:'Tilly Brooks',injuries:1,status:'Concussion protocol',notes:'Graduated return-to-play — Day 6'},
+            {player:'Sasha Davies',injuries:1,status:'RTP — knee',notes:'Meniscus rehab — non-load phase'},
+            {player:'Emily Zhang',injuries:0,status:'Fit',notes:'Elevated ACL composite — prehab adherence monitored'},
+            {player:'Lucy Whitmore',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Bea Chen',injuries:0,status:'Fit',notes:'Minor knock cleared'},
+            {player:'Tessa Foley',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Lucy Brennan',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Maya Reid',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Ellie Hayes',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Jess Tilley',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Zara Williams',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Dani Morris',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Aria Rowe',injuries:0,status:'Fit',notes:'No current issues'},
           ].map((r: {player:string;injuries:number;status:string;notes:string}, i: number) => (
             <tr key={i} className="border-b border-gray-800/50">
               <td className="p-3 text-gray-200">{r.player}</td>
@@ -1134,7 +1163,7 @@ const MedicalRecordsView = () => (
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <h3 className="text-sm font-bold text-white">Current Injury List</h3>
-        <span className="text-[10px] text-gray-500">3 active</span>
+        <span className="text-[10px] text-gray-500">4 active</span>
       </div>
       <table className="w-full text-sm">
         <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
@@ -1145,6 +1174,7 @@ const MedicalRecordsView = () => (
             {player:'Sophie Turner',injury:'ACL reconstruction (right knee)',severity:'Severe', sustained:'12 Dec 2024',ret:'Aug 2026'},
             {player:'Megan Hughes', injury:'Grade 2 hamstring strain',         severity:'Moderate',sustained:'24 Mar 2026',ret:'May 2026'},
             {player:'Tilly Brooks', injury:'Mild concussion',                   severity:'Minor',   sustained:'30 Mar 2026',ret:'14 Apr 2026'},
+            {player:'Sasha Davies', injury:'Knee — meniscus rehab',               severity:'Moderate',sustained:'02 Apr 2026',ret:'Jun 2026'},
           ].map((r, i) => {
             const sevColor = r.severity === 'Severe' ? 'bg-red-600/20 text-red-400' : r.severity === 'Moderate' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'
             return (
@@ -6189,6 +6219,7 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
 
 
 
