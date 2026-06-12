@@ -10,7 +10,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
-  BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LESSONS, PLAYER_CONTACTS, COACH_ORG,
+  BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, PLAYER_CONTACTS, COACH_ORG, playerLessons,
   type Player, type Lesson,
 } from '../_lib/coach-data'
 import { addPlan, hasPlan } from '../_lib/session-plan'
@@ -135,11 +135,11 @@ export function LessonAiBrief({ T, accent, density, lesson }: Common & { lesson:
 export function PlayerDetailModal({ T, accent, density, player, onClose }: Common & { player: Player; onClose: () => void }) {
   const belt = BELTS[player.beltIndex]
   const prog = beltProgress(player, player.beltIndex)
-  const lessons = LESSONS.filter(l => l.playerId === player.id)
   const totalSkills = ALL_SKILLS.length
   const earned = ALL_SKILLS.filter(s => s.beltIndex < player.beltIndex).length
     + belt.skills.filter((_s, si) => skillScore(player.seed, player.beltIndex, si, player.beltIndex) >= 3).length
-  const [tab, setTab] = useState<'dev' | 'contact'>('dev')
+  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons'>('dev')
+  const history = playerLessons(player)
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
@@ -186,7 +186,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
 
           {/* tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-            {([['dev', 'Development'], ['contact', 'Contact']] as const).map(([id, lbl]) => (
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${history.length}`]] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400, boxShadow: tab === id ? `0 0 0 1px ${T.border}` : 'none' }}>{lbl}</button>
             ))}
           </div>
@@ -229,14 +229,27 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
                   )
                 })}
               </div>
-              <SectionHead T={T} title="Recent lessons" right={<span style={{ fontFamily: FONT_MONO }}>{lessons.length}</span>} />
-              {lessons.length ? lessons.map(l => (
-                <div key={l.id} style={{ padding: '7px 0', borderTop: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{l.focus}</div>
-                  <div style={{ fontSize: 10.5, color: T.text3 }}>{l.date} · {l.duration} min · {l.type}</div>
-                </div>
-              )) : <div style={{ fontSize: 11.5, color: T.text3, fontStyle: 'italic' }}>No lesson summaries logged yet.</div>}
             </div>
+          </div>
+          )}
+
+          {tab === 'lessons' && (
+          <div>
+            <SectionHead T={T} title="Lesson history" right={<span style={{ fontFamily: FONT_MONO }}>{history.length} logged</span>} />
+            {history.map((l, i) => (
+              <div key={l.id} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+                <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, width: 78, flexShrink: 0, paddingTop: 2 }}>{l.date}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{l.focus}</span>
+                    <span style={{ fontSize: 9, fontFamily: FONT_MONO, color: T.text3, padding: '1px 5px', borderRadius: 3, background: T.hover }}>{l.type} · {l.mins}m</span>
+                    {l.detailed && <Pill T={T} color={accent.hex} bg={accent.dim}>full summary</Pill>}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: T.text2, marginTop: 3 }}>{l.takeaway}</div>
+                  {l.homework && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>🏠 {l.homework}</div>}
+                </div>
+              </div>
+            ))}
           </div>
           )}
         </div>
