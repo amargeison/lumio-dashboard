@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { WOMENS_STAFF, DEPT_COLOR, type StaffDept } from '@/app/womens/[slug]/_lib/womens-staff-data'
 
 // ─── Avatar helper ──────────────────────────────────────────────────────────
 // CC0-licensed avatars via DiceBear "notionists" style by Bohdan Trotsenko
@@ -53,19 +54,9 @@ const C = {
   good:       '#22C55E',
 }
 
-// Department colour palette — drawn from WOMENS_ROLE_CONFIG accents.
-const DEPT_COLOR = {
-  Coaching:    '#BE185D', // pink-deep (matches portal accent)
-  DoF:         '#0EA5E9', // sky
-  Performance: '#22C55E', // green
-  Medical:     '#DC2626', // red
-  Welfare:     '#EF4444', // red-light
-  Operations:  '#F97316', // orange
-  Commercial:  '#F59E0B', // amber
-  Community:   '#22C55E', // green
-} as const
-
-type Dept = keyof typeof DEPT_COLOR
+// Dept colours + dept type come from the canonical staff roster
+// (womens-staff-data.ts) so the Staff Directory and these tabs match.
+type Dept = StaffDept
 
 interface ClubProps {
   name: string
@@ -95,16 +86,11 @@ type StaffToday = {
   rel: string
 }
 
-const STAFF_TODAY: StaffToday[] = [
-  { name: 'Sarah Frost',     role: 'Head Coach',           dept: 'Coaching',    status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Reports to Director' },
-  { name: 'Helen Voss',      role: 'Director of Football', dept: 'DoF',         status: 'In today', location: 'Office + scouting day Thu', rel: 'Direct report' },
-  { name: 'Dr Anna Reid',    role: 'Club Doctor',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept' },
-  { name: 'Mel Hooper',      role: 'Head Physio',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept' },
-  { name: 'Nina Walsh',      role: 'Welfare Lead',         dept: 'Welfare',     status: 'In today', location: 'Office, 9am-5pm', rel: 'Reports to Director' },
-  { name: 'James Kerr',      role: 'Performance Analyst',  dept: 'Performance', status: 'In today', location: 'Analysis suite, 9am-6pm', rel: 'Performance dept' },
-  { name: 'Marcus Chen',     role: 'S&C Coach',            dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept' },
-  { name: 'Jordan Clarke',   role: 'Commercial Director',  dept: 'Commercial',  status: 'Away',     location: 'Away — sponsor meetings London', rel: 'Reports to Director' },
-]
+// Derived from the canonical roster so Today always matches the Directory.
+const STAFF_TODAY: StaffToday[] = WOMENS_STAFF.map(s => ({
+  name: s.name, role: s.role, dept: s.dept, status: s.status, location: s.location,
+  rel: s.reportsTo === 'Board' ? 'Reports to Board' : `Reports to ${s.reportsTo.split(' ').slice(-1)[0]}`,
+}))
 
 const STAFF_FILTERS = ['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Welfare', 'Performance', 'Commercial'] as const
 type StaffFilter = typeof STAFF_FILTERS[number]
@@ -214,17 +200,14 @@ type StaffNode = {
 //   first-team coaching staff (not modelled at this level of detail).
 function staffRoster(club: ClubProps): StaffNode[] {
   const board = `${club.name} Board`
+  // Derived from the canonical roster; reportsTo 'Board' maps to the board node.
+  const nodes: StaffNode[] = WOMENS_STAFF.map(s => ({
+    name: s.name, role: s.role, dept: s.dept, avatar: s.name,
+    reportsTo: s.reportsTo === 'Board' ? board : s.reportsTo,
+  }))
   return [
-    { name: board,           role: 'Owner / Board',        dept: 'Board',       avatar: board,           reportsTo: null },
-    { name: club.director,   role: 'Club Director',        dept: 'Operations',  avatar: club.director,   reportsTo: board },
-    { name: club.manager,    role: 'Head Coach',           dept: 'Coaching',    avatar: club.manager,    reportsTo: board },
-    { name: 'Helen Voss',    role: 'Director of Football', dept: 'DoF',         avatar: 'Helen Voss',    reportsTo: board },
-    { name: 'Mark Walker',   role: 'Head of Operations',   dept: 'Operations',  avatar: 'Mark Walker',   reportsTo: club.director },
-    { name: 'Jordan Clarke', role: 'Commercial Director',  dept: 'Commercial',  avatar: 'Jordan Clarke', reportsTo: club.director },
-    { name: 'Sasha Lin',     role: 'Head of Community',    dept: 'Community',   avatar: 'Sasha Lin',     reportsTo: club.director },
-    { name: 'Marcus Chen',   role: 'Head of Performance',  dept: 'Performance', avatar: 'Marcus Chen',   reportsTo: 'Helen Voss' },
-    { name: 'Dr Anna Reid',  role: 'Club Doctor',          dept: 'Medical',     avatar: 'Dr Anna Reid',  reportsTo: 'Helen Voss' },
-    { name: 'Nina Walsh',    role: 'Welfare Lead',         dept: 'Welfare',     avatar: 'Nina Walsh',    reportsTo: 'Helen Voss' },
+    { name: board, role: 'Owner / Board', dept: 'Board', avatar: board, reportsTo: null },
+    ...nodes,
   ]
 }
 
@@ -341,44 +324,11 @@ type StaffCard = {
   available: boolean
 }
 
-const TEAM_INFO_CARDS: StaffCard[] = [
-  {
-    initials: 'SF', avatar: 'Sarah Frost', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
-    ref: 'WOM-001',
-    stats: { TAC: 92, MOT: 95, STR: 88, EXP: 91, COM: 90, PRE: 89 },
-    speciality: 'Tactical structure · matchday motivation', location: 'Oakridge Training Centre', available: true,
-  },
-  {
-    initials: 'HV', avatar: 'Helen Voss', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
-    ref: 'WOM-002',
-    stats: { STR: 91, NEG: 88, NET: 90, VIS: 89, DEC: 86, COM: 87 },
-    speciality: 'Recruitment strategy · WSL 2 squad model', location: 'Oakridge HQ', available: true,
-  },
-  {
-    initials: 'MC', avatar: 'Marcus Chen', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
-    ref: 'WOM-003',
-    stats: { STR: 89, COND: 92, REC: 88, GPS: 91, PRE: 87, SPT: 90 },
-    speciality: 'Cycle-aware load · ACL prehab integration', location: 'Oakridge Training Centre', available: true,
-  },
-  {
-    initials: 'AR', avatar: 'Dr Anna Reid', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
-    ref: 'WOM-004',
-    stats: { DIA: 94, TRT: 93, REC: 90, WMN: 95, CON: 92, SPT: 88 },
-    speciality: 'Women’s clinical care · postpartum RTP', location: 'Oakridge Medical Centre', available: true,
-  },
-  {
-    initials: 'JK', avatar: 'James Kerr', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
-    ref: 'WOM-005',
-    stats: { LOA: 90, GPS: 92, ACL: 87, CYC: 86, CON: 88, COM: 85 },
-    speciality: 'GPS load + cycle-aware modelling', location: 'Oakridge Analysis Suite', available: true,
-  },
-  {
-    initials: 'NW', avatar: 'Nina Walsh', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
-    ref: 'WOM-006',
-    stats: { SAF: 93, PSY: 88, CYC: 92, RTP: 90, COM: 91, CON: 89 },
-    speciality: 'Carney-standards safeguarding · player-led support', location: 'Oakridge HQ', available: true,
-  },
-]
+const TEAM_INFO_CARDS: StaffCard[] = WOMENS_STAFF.map(s => ({
+  initials: s.initials, avatar: s.name, name: s.name, role: s.role, dept: s.dept,
+  rating: s.rating, ref: s.ref, stats: s.stats, speciality: s.speciality,
+  location: s.location, available: s.available,
+}))
 
 function TeamInfoTab() {
   return (
@@ -709,3 +659,5 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
+

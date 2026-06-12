@@ -57,6 +57,7 @@ import WomensInsightsView from '@/components/womens/WomensInsightsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 import TravelLogisticsView from './_components/TravelLogisticsView'
+import { WOMENS_STAFF, DEPT_COLOR } from './_lib/womens-staff-data'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -172,7 +173,6 @@ const SIDEBAR_ITEMS = [
 
   // OPERATIONS — unchanged.
   { id: 'club-operations',  label: 'Club Operations',     icon: '🏟️', group: 'OPERATIONS' },
-  { id: 'matchday-ops',     label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
   { id: 'travel-logistics', label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
   { id: 'kit-manager',      label: 'Kit Manager',         icon: '🧦', group: 'OPERATIONS' },
   { id: 'team',             label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
@@ -4565,23 +4565,90 @@ const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
 }
 
 // ─── STAFF DIRECTORY VIEW ─────────────────────────────────────────────────────
-const StaffDirectoryView = () => (
-  <div>
-    <SectionHeader title="Staff Directory" subtitle="Club personnel and contacts" icon="📋" />
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-          <th className="text-left p-3">Name</th><th className="text-left p-3">Role</th><th className="text-left p-3">Dept</th><th className="text-left p-3">Email</th><th className="text-left p-3">Start</th>
-        </tr></thead>
-        <tbody>
-          {[{n:'Sarah Frost',r:'Head Coach',d:'Football',e:'s.frost@oakridge.com',s:'Aug 2022'},{n:'Kate Brennan',r:'Club Director',d:'Executive',e:'k.brennan@oakridge.com',s:'Jan 2020'},{n:'Dr Anna Reid',r:'Psychologist',d:'Welfare',e:'a.reid@oakridge.com',s:'Sep 2023'},{n:'Mel Hooper',r:'Head Physio',d:'Medical',e:'m.hooper@oakridge.com',s:'Mar 2021'},{n:'Jordan Clarke',r:'Commercial Dir',d:'Commercial',e:'j.clarke@oakridge.com',s:'Jun 2023'},{n:'Nina Walsh',r:'Welfare Coord',d:'Welfare',e:'n.walsh@oakridge.com',s:'Jan 2024'},{n:'Tom Reed',r:'Analyst',d:'Football',e:'t.reed@oakridge.com',s:'Aug 2024'}].map((s: {n:string;r:string;d:string;e:string;s:string}, i: number) => (
-            <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{s.n}</td><td className="p-3 text-gray-400 text-xs">{s.r}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400">{s.d}</span></td><td className="p-3 text-gray-500 text-xs">{s.e}</td><td className="p-3 text-gray-500 text-xs">{s.s}</td></tr>
-          ))}
-        </tbody>
-      </table>
+const StaffDirectoryView = () => {
+  const [selected, setSelected] = useState<string | null>(null)
+  const staff = WOMENS_STAFF
+  const sel = staff.find(s => s.name === selected) ?? null
+  return (
+    <div>
+      <SectionHeader title="Staff Directory" subtitle={`Club personnel and contacts · ${staff.length} staff`} icon="📋" />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Name</th><th className="text-left p-3">Role</th><th className="text-left p-3">Dept</th><th className="text-left p-3">Email</th><th className="text-left p-3">Phone</th><th className="text-left p-3">Start</th>
+          </tr></thead>
+          <tbody>
+            {staff.map(s => {
+              const color = DEPT_COLOR[s.dept]
+              return (
+                <tr key={s.name} onClick={() => setSelected(s.name)} className="border-b border-gray-800/50 hover:bg-pink-600/5 cursor-pointer transition-colors">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: `${color}22`, color }}>{s.initials}</span>
+                      <span className="text-gray-200 font-medium">{s.name}</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-gray-400 text-xs">{s.role}</td>
+                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: `${color}1f`, color }}>{s.dept === 'DoF' ? 'Football' : s.dept}</span></td>
+                  <td className="p-3 text-gray-500 text-xs">{s.email}</td>
+                  <td className="p-3 text-gray-500 text-xs">{s.phone}</td>
+                  <td className="p-3 text-gray-500 text-xs">{s.start}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-gray-600 mt-2">Click a staff member for full contact details.</p>
+      {sel && <StaffCardModal s={sel} onClose={() => setSelected(null)} />}
     </div>
-  </div>
-)
+  )
+}
+
+function StaffCardModal({ s, onClose }: { s: typeof WOMENS_STAFF[number]; onClose: () => void }) {
+  const color = DEPT_COLOR[s.dept]
+  const firstName = s.name.replace('Dr ', '').split(' ')[0]
+  const rows: Array<[string, string]> = [
+    ['Email', s.email],
+    ['Phone', s.phone],
+    ['Department', s.dept === 'DoF' ? 'Football (DoF)' : s.dept],
+    ['Reports to', s.reportsTo === 'Board' ? 'Club Board' : s.reportsTo],
+    ['Based', s.location],
+    ['At club since', s.start],
+    ['Speciality', s.speciality],
+  ]
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl border bg-[#0D1117] overflow-hidden" style={{ borderColor: `${color}55` }} onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 flex items-start gap-4" style={{ background: `linear-gradient(135deg, ${color}22, transparent)` }}>
+          <span className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ backgroundColor: `${color}26`, color, border: `1px solid ${color}55` }}>{s.initials}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-bold text-white">{s.name}</div>
+            <div className="text-sm" style={{ color }}>{s.role}</div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${color}1f`, color }}>{s.dept === 'DoF' ? 'Football' : s.dept}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: s.status === 'In today' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: s.status === 'In today' ? '#4ADE80' : '#FBBF24' }}>{s.status}</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-lg leading-none">✕</button>
+        </div>
+        <div className="px-5 py-4 space-y-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex items-start justify-between gap-3 text-xs">
+              <span className="text-gray-500 shrink-0">{k}</span>
+              <span className="text-gray-200 text-right">{v}</span>
+            </div>
+          ))}
+          <p className="pt-2 text-xs leading-relaxed text-gray-400 border-t border-gray-800 mt-2">{s.bio}</p>
+        </div>
+        <div className="px-5 py-3 flex items-center justify-end gap-2 border-t border-gray-800">
+          <a href={`mailto:${s.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ backgroundColor: color }}>Email {firstName}</a>
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-gray-400 hover:text-white">Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
@@ -6219,6 +6286,9 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
+
+
 
 
 
