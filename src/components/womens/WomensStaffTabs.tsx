@@ -244,6 +244,32 @@ function OrgChartTab({ club }: { club: ClubProps }) {
     )
   }
 
+  // Recursive sub-tree: renders a person + all of their reports beneath them,
+  // to any depth, so the chart shows the FULL roster (physios under the Head
+  // Physio, analysts under Performance, academy coaches under the Assistant,
+  // etc.) — not just the top two levels.
+  const Subtree = ({ node, depth }: { node: StaffNode; depth: number }) => {
+    const reports = directReports(node.name)
+    return (
+      <div className="flex flex-col items-center">
+        <PersonCard node={node} size={depth === 0 ? 'mid' : 'leaf'} />
+        {reports.length > 0 && (
+          <>
+            <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+            <div className="flex gap-3 justify-center items-start flex-wrap">
+              {reports.map(rep => (
+                <div key={rep.name} className="flex flex-col items-center">
+                  <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
+                  <Subtree node={rep} depth={depth + 1} />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
@@ -266,33 +292,15 @@ function OrgChartTab({ club }: { club: ClubProps }) {
           containing their card + their direct reports below. Reports are
           derived from the staff[].reportsTo edges, so changing a
           reportsTo here re-routes the lines automatically. */}
-      <div className="flex justify-center gap-6 items-start flex-wrap">
-        {level1.map(person => {
-          const myReports = directReports(person.name)
-          return (
-            <div key={person.name} className="flex flex-col items-center gap-3">
-              {/* Vertical connector from the root's horizontal bus down to this person */}
-              <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-              <PersonCard node={person} size="mid" />
-              {myReports.length > 0 && (
-                <>
-                  <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-                  {myReports.length > 1 && (
-                    <div className="h-px" style={{ backgroundColor: '#374151', width: `${Math.min(100, myReports.length * 60)}%` }} />
-                  )}
-                  <div className="flex gap-3 justify-center flex-wrap">
-                    {myReports.map(rep => (
-                      <div key={rep.name} className="flex flex-col items-center gap-1">
-                        <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
-                        <PersonCard node={rep} size="leaf" />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )
-        })}
+      {/* Full reporting tree — each board-reporting leader heads a column that
+          expands recursively to every level beneath them. */}
+      <div className="flex justify-center gap-8 items-start flex-wrap overflow-x-auto pb-2">
+        {level1.map(person => (
+          <div key={person.name} className="flex flex-col items-center">
+            <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
+            <Subtree node={person} depth={0} />
+          </div>
+        ))}
       </div>
 
       {/* Legend — dept colours present in the rendered roster */}
@@ -682,6 +690,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
